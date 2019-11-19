@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"configcenter/src/auth/meta"
@@ -411,4 +412,125 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 		return nil, lgc.ccErr.Errorf(common.CCErrCommRegistResourceToIAMFailed)
 	}
 	return nil, nil
+}
+
+// CloneHostProperty clone host info and host and module relation in same application
+func (lgc *Logics) CloneHostProperty(ctx context.Context, appID int64, srcHostID int64, dstHostID int64) errors.CCError {
+
+	// source host belong app
+	ok, err := lgc.IsHostExistInApp(ctx, appID, srcHostID)
+	if err != nil {
+		blog.Errorf("IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s", err.Error(), srcHostID, lgc.rid)
+		return err
+	}
+	if !ok {
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, srcHostID, lgc.rid)
+		return lgc.ccErr.Errorf(common.CCErrHostNotINAPPFail, srcHostID)
+	}
+
+	// destination host belong app
+	ok, err = lgc.IsHostExistInApp(ctx, appID, dstHostID)
+	if err != nil {
+		blog.Errorf("IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s", err.Error(), dstHostID, lgc.rid)
+		return err
+	}
+	if !ok {
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, dstHostID, lgc.rid)
+		return lgc.ccErr.Errorf(common.CCErrHostNotINAPPFail, dstHostID)
+	}
+
+	hostInfoArr, err := lgc.GetHostInfoByConds(ctx, map[string]interface{}{common.BKHostIDField: srcHostID})
+	if err != nil {
+		return err
+	}
+	if len(hostInfoArr) == 0 {
+		blog.Errorf("host not found. hostID:%s, rid:%s", srcHostID, lgc.rid)
+		return lgc.ccErr.CCErrorf(common.CCErrHostNotFound)
+	}
+	srcHostInfo := hostInfoArr[0]
+
+	delete(srcHostInfo, common.BKHostIDField)
+	delete(srcHostInfo, common.CreateTimeField)
+	delete(srcHostInfo, common.BKHostInnerIPField)
+	delete(srcHostInfo, common.BKHostOuterIPField)
+	delete(srcHostInfo, common.BKAssetIDField)
+	delete(srcHostInfo, common.BKSNField)
+	delete(srcHostInfo, common.BKImportFrom)
+
+	// get source host and module relation
+	hostModuleRelationCond := metadata.HostModuleRelationRequest{
+		ApplicationID: appID,
+		HostIDArr:     []int64{srcHostID},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+			Start: 0,
+		},
+	}
+	relationArr, err := lgc.GetHostModuleRelation(ctx, hostModuleRelationCond)
+	if err != nil {
+		return err
+	}
+	var moduleIDArr []int64
+	for _, relation := range relationArr.Info {
+		moduleIDArr = append(moduleIDArr, relation.ModuleID)
+	}
+
+	// destion host new module relation
+	dstModuleHostRelation := &metadata.HostsModuleRelation{
+		ApplicationID: appID,
+		HostID:        []int64{dstHostID},
+		ModuleID:      moduleIDArr,
+		IsIncrement:   false,
+	}
+	relationRet, err := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, lgc.header, dstModuleHostRelation)
+	if err != nil {
+		blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", err, relationRet, lgc.rid)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if err := relationRet.CCError(); err != nil {
+		return err
+	}
+
+	input := &metadata.UpdateOption{
+		Data: srcHostInfo,
+		Condition: mapstr.MapStr{
+			common.BKHostIDField: dstHostID,
+		},
+	}
+	result, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, lgc.header, common.BKInnerObjIDHost, input)
+	if err != nil {
+		blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", err, input, lgc.rid)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if err := result.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// IPCloudToHost get host id by ip and cloud
+func (lgc *Logics) IPCloudToHost(ctx context.Context, ip string, cloudID int64) (HostMap mapstr.MapStr, hostID int64, err error) {
+	// FIXME there must be a better ip to hostID solution
+	condition := mapstr.MapStr{
+		common.BKHostInnerIPField: ip,
+		common.BKCloudIDField:     cloudID,
+	}
+
+	hostInfoArr, err := lgc.GetHostInfoByConds(ctx, condition)
+	if err != nil {
+		blog.ErrorJSON("IPCloudToHost GetHostInfoByConds error. err:%s, conditon:%s, rid:%s", err.Error(), condition, lgc.rid)
+		return nil, 0, err
+	}
+	if len(hostInfoArr) == 0 {
+		return nil, 0, nil
+	}
+
+	hostID, err = hostInfoArr[0].Int64(common.BKHostIDField)
+	if nil != err {
+		blog.ErrorJSON("IPCloudToHost bk_host_id field not found hostMap:%s ip:%s, cloudID:%s,rid:%s", hostInfoArr, ip, cloudID, lgc.rid)
+		return nil, 0, fmt.Errorf("ip %+v:%+v not found", cloudID, ip)
+	}
+
+	return hostInfoArr[0], hostID, nil
 }

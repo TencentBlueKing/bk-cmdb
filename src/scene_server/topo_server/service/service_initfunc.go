@@ -14,8 +14,6 @@ package service
 
 import (
 	"net/http"
-
-	"configcenter/src/common"
 )
 
 func (s *Service) initHealth() {
@@ -65,21 +63,6 @@ func (s *Service) initAuditLog() {
 
 	s.addAction(http.MethodPost, "/audit/search", s.AuditQuery, nil)
 	s.addAction(http.MethodPost, "/object/{bk_obj_id}/audit/search", s.InstanceAuditQuery, nil)
-}
-
-func (s *Service) initCompatibleV2() {
-	s.addAction(http.MethodPost, "/app/searchAll", s.SearchAllApp, nil)
-
-	s.addAction(http.MethodPut, "/openapi/set/multi/{appid}", s.UpdateMultiSet, nil)
-	s.addAction(http.MethodDelete, "/openapi/set/multi/{appid}", s.DeleteMultiSet, nil)
-	s.addAction(http.MethodDelete, "/openapi/set/setHost/{appid}", s.DeleteSetHost, nil)
-
-	s.addAction(http.MethodPut, "/openapi/module/multi/{"+common.BKAppIDField+"}", s.UpdateMultiModule, nil)
-	s.addAction(http.MethodPost, "/openapi/module/searchByApp/{"+common.BKAppIDField+"}", s.SearchModuleByApp, nil)
-	s.addAction(http.MethodPost, "/openapi/module/searchByProperty/{"+common.BKAppIDField+"}", s.SearchModuleBySetProperty, nil)
-	s.addAction(http.MethodPost, "/openapi/module/multi", s.AddMultiModule, nil)
-	s.addAction(http.MethodDelete, "/openapi/module/multi/{"+common.BKAppIDField+"}", s.DeleteMultiModule, nil)
-
 }
 
 func (s *Service) initBusiness() {
@@ -193,7 +176,6 @@ func (s *Service) initService() {
 	s.initHealth()
 	s.initAssociation()
 	s.initAuditLog()
-	s.initCompatibleV2()
 	s.initBusiness()
 	s.initInst()
 	s.initModule()
