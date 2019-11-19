@@ -54,7 +54,7 @@
             <div class="property-name">
                 <span>{{$t('枚举值')}}</span>：
             </div>
-            <span class="property-value">{{getEnumValue(field)}}</span>
+            <span class="property-value">{{getEnumValue()}}</span>
         </div>
         <div class="property-item">
             <div class="property-name">
@@ -97,9 +97,9 @@
             }
         },
         methods: {
-            getEnumValue (field) {
-                const value = field.option
-                const type = field.bk_property_type
+            getEnumValue () {
+                const value = this.field.option
+                const type = this.field.bk_property_type
                 if (Array.isArray(value)) {
                     if (type === 'enum') {
                         const arr = value.map(item => {
