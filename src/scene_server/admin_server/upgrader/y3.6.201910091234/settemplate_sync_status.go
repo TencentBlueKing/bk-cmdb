@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -72,7 +73,15 @@ func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrade
 			},
 		}
 
+		existIndexes, err := db.Table(tableName).Indexes(ctx)
+		existIndexNames := make([]string, 0)
+		for _, item := range existIndexes {
+			existIndexNames = append(existIndexNames, item.Name)
+		}
 		for _, index := range indexArr {
+			if util.InStrArr(existIndexNames, index.Name) {
+				continue
+			}
 			err := db.Table(tableName).CreateIndex(ctx, index)
 			if err != nil {
 				blog.ErrorJSON("add index %s for table %s failed, err:%s", index, tableName, err.Error())
