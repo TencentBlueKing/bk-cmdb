@@ -14,8 +14,6 @@ package identifier
 
 import (
 	"context"
-	"encoding/json"
-	"sort"
 
 	"gopkg.in/redis.v5"
 
@@ -24,11 +22,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
 )
-
-func MarshalBinary(identifier *metadata.HostIdentifier) (data []byte, err error) {
-	sort.Sort(metadata.HostIdentProcessSorter(identifier.Process))
-	return json.Marshal(identifier)
-}
 
 func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, cache *redis.Client, db dal.RDB) *metadata.HostIdentifier {
 	// fill cloudName
@@ -40,31 +33,31 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 	identifier.CloudName = getString(cloud.data[common.BKCloudNameField])
 
 	// fill module
-	for moduleID := range identifier.HostIdentModule {
-		biz, err := getCache(ctx, cache, db, common.BKInnerObjIDApp, identifier.HostIdentModule[moduleID].BizID, false)
+	for _, hostIdentModule := range identifier.HostIdentModule {
+		biz, err := getCache(ctx, cache, db, common.BKInnerObjIDApp, hostIdentModule.BizID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
 		}
-		identifier.HostIdentModule[moduleID].BizName = getString(biz.data[common.BKAppNameField])
+		hostIdentModule.BizName = getString(biz.data[common.BKAppNameField])
 		identifier.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
 		identifier.SupplierID = getInt(biz.data, common.BKSupplierIDField)
 
-		set, err := getCache(ctx, cache, db, common.BKInnerObjIDSet, identifier.HostIdentModule[moduleID].SetID, false)
+		set, err := getCache(ctx, cache, db, common.BKInnerObjIDSet, hostIdentModule.SetID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
 		}
-		identifier.HostIdentModule[moduleID].SetName = getString(set.data[common.BKSetNameField])
-		identifier.HostIdentModule[moduleID].SetEnv = getString(set.data[common.BKSetEnvField])
-		identifier.HostIdentModule[moduleID].SetStatus = getString(set.data[common.BKSetStatusField])
+		hostIdentModule.SetName = getString(set.data[common.BKSetNameField])
+		hostIdentModule.SetEnv = getString(set.data[common.BKSetEnvField])
+		hostIdentModule.SetStatus = getString(set.data[common.BKSetStatusField])
 
-		module, err := getCache(ctx, cache, db, common.BKInnerObjIDModule, identifier.HostIdentModule[moduleID].ModuleID, false)
+		module, err := getCache(ctx, cache, db, common.BKInnerObjIDModule, hostIdentModule.ModuleID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
 		}
-		identifier.HostIdentModule[moduleID].ModuleName = getString(module.data[common.BKModuleNameField])
+		hostIdentModule.ModuleName = getString(module.data[common.BKModuleNameField])
 	}
 
 	// fill process
@@ -79,9 +72,9 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 		process.FuncID = getString(proc.data[common.BKFuncIDField])
 		process.FuncName = getString(proc.data[common.BKFuncName])
 		process.BindIP = getString(proc.data[common.BKBindIP])
-		process.PROTOCOL = getString(proc.data[common.BKProtocol])
-		process.PORT = getString(proc.data[common.BKPort])
-		process.StartParamRegex = getString(proc.data["bk_start_param_regex"])
+		process.Protocol = getString(proc.data[common.BKProtocol])
+		process.Port = getString(proc.data[common.BKPort])
+		process.StartParamRegex = getString(proc.data[common.BKStartParamRegex])
 	}
 
 	return identifier

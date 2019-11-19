@@ -232,7 +232,7 @@ func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64
 	}
 	err = i.dbQuery.ExecQuery(ctx, common.BKTableNameServiceInstance, nil, serviceInstFilter, &serviceInstInfos)
 	if err != nil {
-		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameBaseProcess, serviceInstFilter, ctx.ReqID)
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameServiceInstance, serviceInstFilter, ctx.ReqID)
 		return err
 	}
 	blog.V(5).Infof("findHostServiceInst query service instance info. service instance id:%#v, info:%#v, rid;%s", serviceInstIDs, serviceInstInfos, ctx.ReqID)
