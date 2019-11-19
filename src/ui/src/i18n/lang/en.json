@@ -1111,5 +1111,6 @@
     "转移主机到空闲模块": "Transfer host to idle module",
     "服务实例同步确认提示": "Changing all service instances under {path}, please confirm the service instance change details: ",
     "有模板进程未同步": "Unsynchronized template process, {link}",
-    "点击同步": "click sync"
+    "点击同步": "click sync",
+    "选项": "option"
 }
