@@ -121,6 +121,12 @@ type ListServiceInstanceDetailRequest struct {
 }
 
 type DiffModuleWithTemplateOption struct {
+	Metadata  *Metadata `json:"metadata"`
+	BizID     int64     `json:"bk_biz_id"`
+	ModuleIDs []int64   `json:"bk_module_ids"`
+}
+
+type DiffOneModuleWithTemplateOption struct {
 	Metadata *Metadata `json:"metadata"`
 	BizID    int64     `json:"bk_biz_id"`
 	ModuleID int64     `json:"bk_module_id"`
@@ -177,6 +183,7 @@ type ProcessChangedAttribute struct {
 
 // ModuleDiffWithTemplateDetail 模块与服务模板间的差异
 type ModuleDiffWithTemplateDetail struct {
+	ModuleID          int64                       `json:"bk_module_id"`
 	Unchanged         []ServiceInstanceDifference `json:"unchanged"`
 	Changed           []ServiceInstanceDifference `json:"changed"`
 	Added             []ServiceInstanceDifference `json:"added"`
@@ -227,7 +234,6 @@ type CreateServiceInstanceDetail struct {
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
 
-
 type ProcessInstanceDetail struct {
 	// ProcessTemplateID indicate which process to update if service instance bound with a template
 	ProcessTemplateID int64                  `json:"process_template_id"`
@@ -243,6 +249,13 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 }
 
 type SyncServiceInstanceByTemplateOption struct {
+	Metadata  *Metadata `json:"metadata"`
+	BizID     int64     `json:"bk_biz_id"`
+	ModuleIDs []int64   `json:"bk_module_ids"`
+}
+
+// 用于同步单个模块的服务实例
+type SyncModuleServiceInstanceByTemplateOption struct {
 	Metadata *Metadata `json:"metadata"`
 	BizID    int64     `json:"bk_biz_id"`
 	ModuleID int64     `json:"bk_module_id"`
@@ -741,7 +754,7 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 			process["bind_ip"] = nil
 			changed = true
 		} else if t.BindIP.Value != nil && i.BindIP == nil {
-			process["bind_ip"] = *t.BindIP.Value
+			process["bind_ip"] = t.BindIP.Value.IP()
 			changed = true
 		} else if t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP {
 			process["bind_ip"] = t.BindIP.Value.IP()

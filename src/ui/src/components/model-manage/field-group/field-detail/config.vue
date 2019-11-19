@@ -48,7 +48,8 @@
                     'longchar',
                     'objuser',
                     'timezone',
-                    'bool'
+                    'bool',
+                    'list'
                 ],
                 isrequiredMap: [
                     'singlechar',
@@ -58,7 +59,8 @@
                     'time',
                     'longchar',
                     'objuser',
-                    'timezone'
+                    'timezone',
+                    'list'
                 ],
                 localValue: {
                     editable: this.editable,

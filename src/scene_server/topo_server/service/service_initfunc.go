@@ -104,7 +104,7 @@ func (s *Service) initModule() {
 	s.addAction(http.MethodDelete, "/module/{app_id}/{set_id}/{module_id}", s.DeleteModule, nil)
 	s.addAction(http.MethodPut, "/module/{app_id}/{set_id}/{module_id}", s.UpdateModule, nil)
 	s.addAction(http.MethodPost, "/module/search/{owner_id}/{app_id}/{set_id}", s.SearchModule, nil)
-
+	s.addAction(http.MethodPost, "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}", s.ListModulesByServiceTemplateID, nil)
 }
 
 func (s *Service) initSet() {
