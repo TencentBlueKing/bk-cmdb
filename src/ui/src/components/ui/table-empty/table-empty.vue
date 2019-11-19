@@ -117,6 +117,7 @@
         }
         .text-btn {
             font-size: 14px;
+            height: auto;
         }
     }
 </style>

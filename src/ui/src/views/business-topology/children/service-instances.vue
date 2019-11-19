@@ -81,6 +81,7 @@
                     :key="instance.id"
                     :instance="instance"
                     :expanded="index === 0"
+                    :can-sync="topoStatus"
                     @create-process="handleCreateProcess"
                     @update-process="handleUpdateProcess"
                     @delete-instance="handleDeleteInstance"
@@ -392,11 +393,11 @@
                 try {
                     this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
                         params: this.$injectMetadata({
-                            bk_module_id: this.currentNode.data.bk_inst_id,
+                            bk_module_ids: [this.currentNode.data.bk_inst_id],
                             service_template_id: this.withTemplate
                         }, { injectBizId: true })
                     }).then(res => {
-                        this.topoStatus = res.has_difference
+                        this.topoStatus = res[0] && res[0].has_difference
                     })
                 } catch (error) {
                     console.error(error)
@@ -794,7 +795,9 @@
                     name: 'synchronous',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id,
+                        setId: this.currentNode.parent.data.bk_inst_id
+                    },
+                    query: {
                         path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
                     }
                 })
