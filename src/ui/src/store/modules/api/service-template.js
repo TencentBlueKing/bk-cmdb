@@ -69,6 +69,10 @@ const actions = {
      */
     findServiceTemplate ({ commit, state, dispatch, rootGetters }, { id, config }) {
         return $http.get(`find/proc/service_template/${id}/detail`, config)
+    },
+
+    getServiceTemplateModules (context, { bizId, serviceTemplateId, params, config }) {
+        return $http.post(`module/bk_biz_id/${bizId}/service_template_id/${serviceTemplateId}`, params, config)
     }
 }
 

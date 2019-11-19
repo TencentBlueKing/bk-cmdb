@@ -301,8 +301,11 @@
                         moduleIds.push(...datum.to_remove_from_modules.map(datum => datum.bk_module_id))
                     })
                     const uniqueModules = [...new Set(moduleIds)]
-                    const result = await this.$http.post(`find/topopath/biz/${this.bizId}`, {
-                        topo_nodes: uniqueModules.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
+                    const result = await this.$store.dispatch('objectMainLineModule/getTopoPath', {
+                        bizId: this.bizId,
+                        params: {
+                            topo_nodes: uniqueModules.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
+                        }
                     })
                     const moduleMap = {}
                     result.nodes.forEach(node => {

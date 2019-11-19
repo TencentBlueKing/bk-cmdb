@@ -388,16 +388,16 @@
                     console.error(e)
                 }
             },
-            getServiceInstanceDifferences () {
+            async getServiceInstanceDifferences () {
                 try {
-                    this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
+                    const data = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
                         params: this.$injectMetadata({
                             bk_module_id: this.currentNode.data.bk_inst_id,
                             service_template_id: this.withTemplate
                         }, { injectBizId: true })
-                    }).then(res => {
-                        this.topoStatus = res.has_difference
                     })
+                    const difference = data.find(difference => difference.bk_module_id === this.currentNode.data.bk_inst_id)
+                    this.topoStatus = !!difference && difference.has_difference
                 } catch (error) {
                     console.error(error)
                 }
