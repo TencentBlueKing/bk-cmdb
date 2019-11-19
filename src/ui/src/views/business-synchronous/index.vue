@@ -329,7 +329,7 @@
                 try {
                     await this.searchServiceInstanceDifferences({
                         params: this.$injectMetadata({
-                            bk_module_id: Number(this.routerParams.moduleId),
+                            bk_module_ids: [Number(this.routerParams.moduleId)],
                             service_template_id: this.serviceTemplateId
                         }, { injectBizId: true })
                     }).then(async res => {
@@ -486,7 +486,7 @@
                 this.syncServiceInstanceByTemplate({
                     params: this.$injectMetadata({
                         service_template_id: this.serviceTemplateId,
-                        bk_module_id: Number(this.routerParams.moduleId),
+                        bk_module_ids: [Number(this.routerParams.moduleId)],
                         service_instances: this.instanceIds
                     }, { injectBizId: true })
                 }).then(() => {
