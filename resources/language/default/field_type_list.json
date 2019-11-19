@@ -1,9 +1,0 @@
-{
-  "host_property_bk_current_status_list_0": "运营中[需告警]",
-  "host_property_bk_current_status_list_1": "运营中[无告警]",
-  "host_property_bk_current_status_list_2": "开发中[需告警]",
-  "host_property_bk_current_status_list_3": "开发中[无告警]",
-  "host_property_bk_current_status_list_4": "备用机",
-  "host_property_bk_current_status_list_5": "测试中",
-  "host_property_bk_current_status_list_6": "故障中"
-}

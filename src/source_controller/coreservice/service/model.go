@@ -404,9 +404,6 @@ func (s *coreService) SearchModelAttributesByCondition(params core.ContextParams
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
 			dataResult.Info[index].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
-		if dataResult.Info[index].PropertyType == common.FieldTypeList {
-			dataResult.Info[index].Option = s.TranslateListFields(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
-		}
 	}
 
 	return dataResult, err
@@ -424,15 +421,12 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 		return dataResult, err
 	}
 
-	// translate
+	// translate 主机内置字段bk_state不做翻译
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
 		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
 			dataResult.Info[index].Option = s.TranslateEnumName(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
-		}
-		if dataResult.Info[index].PropertyType == common.FieldTypeList {
-			dataResult.Info[index].Option = s.TranslateListFields(params.Context, params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
 	}
 

@@ -69,7 +69,7 @@ func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		ID:                attrID,
 		OwnerID:           conf.OwnerID,
 		ObjectID:          common.BKInnerObjIDHost,
-		PropertyID:        common.BKHostCurrentStatus,
+		PropertyID:        common.BKHostState,
 		PropertyName:      "当前状态",
 		PropertyGroup:     com.BaseInfo,
 		PropertyGroupName: com.BaseInfoName,
