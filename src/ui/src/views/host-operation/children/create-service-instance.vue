@@ -15,7 +15,7 @@
         <bk-select class="sort-options"
             :style="{ width: $i18n.locale === 'en' ? '110px' : '90px' }"
             :clearable="false"
-            prefix-icon="bk-icon icon-sort"
+            prefix-icon="icon-cc-order"
             v-model="sort"
             @selected="sortInfo">
             <bk-option id="ip" name="IP"></bk-option>
@@ -116,6 +116,10 @@
             position: absolute;
             top: -4px;
             right: 0;
+            /deep/ .icon-cc-order {
+                font-size: 14px;
+                color: #979BA5;
+            }
         }
     }
     .service-instance-table {
