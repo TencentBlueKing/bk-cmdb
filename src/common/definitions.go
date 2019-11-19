@@ -723,6 +723,9 @@ const (
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
 
+	// FieldTypeList the lis type
+	FieldTypeList string = "list"
+
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
 
@@ -1118,6 +1121,8 @@ const (
 	OptionOther          = "其他"
 	TimerPattern         = "^[\\d]+\\:[\\d]+$"
 	SyncSetTaskName      = "sync-settemplate2set"
+
+	BKHostState = "bk_state"
 )
 
 // 云同步

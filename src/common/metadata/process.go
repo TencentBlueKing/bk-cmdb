@@ -227,7 +227,6 @@ type CreateServiceInstanceDetail struct {
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
 
-
 type ProcessInstanceDetail struct {
 	// ProcessTemplateID indicate which process to update if service instance bound with a template
 	ProcessTemplateID int64                  `json:"process_template_id"`

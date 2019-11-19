@@ -93,7 +93,7 @@ func runTopoCheck(c *topoCheckConf) error {
 }
 
 func (s *topoCheckService) checkTopo() error {
-	fmt.Println("=====================\nstart check", )
+	fmt.Println("=====================\nstart check")
 	if err := s.searchMainlineModel(); err != nil {
 		return err
 	}
