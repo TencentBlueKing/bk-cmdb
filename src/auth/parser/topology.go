@@ -842,7 +842,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[4]})
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[4]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -850,13 +850,13 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		var modelType = meta.ModelInstance
 		var bizID int64
-		bizID, err = metadata.BizIDFromMetadata(model[0].Metadata)
+		bizID, err = metadata.BizIDFromMetadata(model.Metadata)
 		if err != nil {
 			ps.err = err
 			return ps
 		}
 
-		isMainline, err := ps.isMainlineModel(model[0].ObjectID)
+		isMainline, err := ps.isMainlineModel(model.ObjectID)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -880,7 +880,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
