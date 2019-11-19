@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"encoding/json"
 )
 
 // ValidPropertyOption valid property field option
@@ -89,6 +90,9 @@ func ValidFieldTypeIntOption(option interface{}, errProxy errors.DefaultCCErrorI
 			}
 
 			if !isPass {
+				if ok := IsNumeric(min); !ok {
+					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
+				}
 				minVal, err = GetIntByInterface(min)
 				if nil != err {
 					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
@@ -110,6 +114,9 @@ func ValidFieldTypeIntOption(option interface{}, errProxy errors.DefaultCCErrorI
 				}
 			}
 			if !isPass {
+				if ok := IsNumeric(max); !ok {
+					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
+				}
 				maxVal, err = GetIntByInterface(max)
 				if nil != err {
 					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
@@ -171,6 +178,16 @@ func IsInnerObject(objID string) bool {
 	case common.BKInnerObjIDProc:
 		return true
 	case common.BKInnerObjIDSet:
+		return true
+	}
+
+	return false
+}
+
+// IsNumeric judges if value is a number
+func IsNumeric(val interface{}) bool {
+	switch val.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
 		return true
 	}
 

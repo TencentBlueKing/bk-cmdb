@@ -154,7 +154,12 @@ func (ia *importAssociation) importAssociation() {
 			ia.parseImportDataErr[idx] = err.Error()
 			continue
 		}
-		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.params.Header, meta.Update, ia.objID, srcInstID, dstInstID)
+		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.params.Header, meta.Update, ia.objID, srcInstID)
+		if err != nil {
+			ia.parseImportDataErr[idx] = err.Error()
+			continue
+		}
+		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.params.Header, meta.Update, asstID.AsstObjID, dstInstID)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
 			continue
