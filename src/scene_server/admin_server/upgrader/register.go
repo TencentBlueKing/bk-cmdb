@@ -189,7 +189,7 @@ func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (currentVersion stri
 
 	cmdbVersion, err := getVersion(ctx, db)
 	if err != nil {
-		return "", nil, err
+		return "", nil, fmt.Errorf("getVersion failed, err: %s", err.Error())
 	}
 	cmdbVersion.Distro = ccversion.CCDistro
 	cmdbVersion.DistroVersion = ccversion.CCDistroVersion
@@ -207,13 +207,13 @@ func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (currentVersion stri
 		err = v.do(ctx, db, conf)
 		if err != nil {
 			blog.Errorf("upgrade version %s error: %s", v.version, err.Error())
-			return currentVersion, finishedMigrations, err
+			return currentVersion, finishedMigrations, fmt.Errorf("run migration %s failed, err: %s", v.version, err.Error())
 		}
 		cmdbVersion.CurrentVersion = v.version
 		err = saveVersion(ctx, db, cmdbVersion)
 		if err != nil {
 			blog.Errorf("save version %s error: %s", v.version, err.Error())
-			return currentVersion, finishedMigrations, err
+			return currentVersion, finishedMigrations, fmt.Errorf("saveVersion failed, err: %s", err.Error())
 		}
 		finishedMigrations = append(finishedMigrations, v.version)
 		blog.Infof("upgrade to version %s success", v.version)
@@ -223,7 +223,7 @@ func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (currentVersion stri
 		cmdbVersion.InitVersion = lastVersion
 		cmdbVersion.InitDistroVersion = ccversion.CCDistroVersion
 		if err := saveVersion(ctx, db, cmdbVersion); err != nil {
-			return currentVersion, finishedMigrations, err
+			return currentVersion, finishedMigrations, fmt.Errorf("saveVersion failed, err: %s", err.Error())
 		}
 	}
 	return currentVersion, finishedMigrations, nil
