@@ -434,13 +434,13 @@ const (
 	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
 	CCErrorTopoObjectInstanceObjIDFieldConflictWithURL     = 1101093
 	CCErrTopoImportMainlineForbidden                       = 1101094
-	
+
 	CCErrorTopoSyncModuleTaskFailed    = 1101095
 	CCErrorTopoSyncModuleTaskIsRunning = 1101096
 
 	CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate = 1101097
 	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
-    CCErrorTopoModuleNameDuplicated    = 1101099
+	CCErrorTopoModuleNameDuplicated                             = 1101099
 
 	// object controller 1102XXX
 
@@ -790,6 +790,8 @@ const (
 	CCErrOperationUpdateChartPositionFail = 1116008
 	CCErrCloudSyncDeleteSyncTaskFail      = 1116011
 	CCErrCloudSyncUpdateSyncTaskFail      = 1116012
+
+	CCErrParseAttrOptionListFailed = 1116040
 
 	// task_server 1117xxx
 	// CCErrTaskNotFound task not found
