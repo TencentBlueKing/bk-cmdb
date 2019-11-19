@@ -321,12 +321,38 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 		blog.Errorf("generateApplyPlan failed, err: %+v, rid: %s", err, rid)
 		return planResult, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
+	if hostRelations.Code != 0 {
+		blog.ErrorJSON("generateApplyPlan failed, response failed, filter: %s, response: %s, err: %s, rid: %s", relationRequest, hostRelations, err, rid)
+		return planResult, errors.New(hostRelations.Code, hostRelations.ErrMsg)
+	}
+	hostIDs := make([]int64, 0)
+	for _, item := range hostRelations.Data.Info {
+		hostIDs = append(hostIDs, item.HostID)
+	}
+	relationRequest = &meta.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		HostIDArr:     hostIDs,
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostRelations, err = s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relationRequest)
+	if err != nil {
+		blog.Errorf("generateApplyPlan failed, err: %+v, rid: %s", err, rid)
+		return planResult, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if hostRelations.Code != 0 {
+		blog.ErrorJSON("generateApplyPlan failed, response failed, filter: %s, response: %s, err: %s, rid: %s", relationRequest, hostRelations, err, rid)
+		return planResult, errors.New(hostRelations.Code, hostRelations.ErrMsg)
+	}
 	hostModuleMap := make(map[int64][]int64)
+	moduleIDs := make([]int64, 0)
 	for _, item := range hostRelations.Data.Info {
 		if _, exist := hostModuleMap[item.HostID]; exist == false {
 			hostModuleMap[item.HostID] = make([]int64, 0)
 		}
 		hostModuleMap[item.HostID] = append(hostModuleMap[item.HostID], item.ModuleID)
+		moduleIDs = append(moduleIDs, item.ModuleID)
 	}
 	hostModules := make([]meta.Host2Modules, 0)
 	for hostID, moduleIDs := range hostModuleMap {
@@ -337,7 +363,7 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 	}
 
 	ruleOption := meta.ListHostApplyRuleOption{
-		ModuleIDs: planRequest.ModuleIDs,
+		ModuleIDs: moduleIDs,
 		Page: meta.BasePage{
 			Limit: common.BKNoLimit,
 		},

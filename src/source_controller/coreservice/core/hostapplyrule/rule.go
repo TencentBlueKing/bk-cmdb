@@ -64,6 +64,11 @@ func (p *hostApplyRule) listHostAttributes(ctx core.ContextParams, bizID int64, 
 				metadata.MetadataBizField: map[string]interface{}{
 					common.BKDBExists: false,
 				},
+			}, {
+				// global attribute
+				metadata.BKMetadata: map[string]interface{}{
+					common.BKDBExists: false,
+				},
 			},
 		},
 		common.BKFieldID: map[string]interface{}{
@@ -71,7 +76,7 @@ func (p *hostApplyRule) listHostAttributes(ctx core.ContextParams, bizID int64, 
 		},
 	}
 	attributes := make([]metadata.Attribute, 0)
-	err := p.dbProxy.Table(common.BKTableNameObjAttDes).Find(filter).One(ctx.Context, &attributes)
+	err := p.dbProxy.Table(common.BKTableNameObjAttDes).Find(filter).All(ctx.Context, &attributes)
 	if err != nil {
 		if p.dbProxy.IsNotFoundError(err) {
 			blog.Errorf("get host attribute failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
