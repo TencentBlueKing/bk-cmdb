@@ -517,7 +517,8 @@ func (valid *ValidMap) validList(val interface{}, key string) error {
 
 	option, ok := valid.propertys[key]
 	if !ok {
-		return nil
+		blog.Errorf("option %v invalid, key: %s not exist", option, key)
+		return valid.errif.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist, key)
 	}
 	listOption, ok := option.Option.([]interface{})
 	if false == ok {
