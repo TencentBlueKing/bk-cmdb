@@ -7,8 +7,8 @@
             <bk-tab-panel :label="$t('模板配置')" name="config">
                 <service-template-config :style="{ padding: isUpdate ? '20px 18px' : '0 20px' }"></service-template-config>
             </bk-tab-panel>
-            <bk-tab-panel :label="$t('模板实例')" name="instance">
-                <service-template-instance></service-template-instance>
+            <bk-tab-panel :label="$t('模板实例')" name="instance" v-if="isUpdate">
+                <service-template-instance :active="active === 'instance'"></service-template-instance>
             </bk-tab-panel>
         </bk-tab>
     </div>
