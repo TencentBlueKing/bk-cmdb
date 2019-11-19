@@ -199,6 +199,11 @@ func (valid *validator) validInt(ctx context.Context, val interface{}, key strin
 		return nil
 	}
 
+	if !valid.isNumeric(val) {
+		blog.Errorf("params %s:%#v not int, rid: %s", key, val, rid)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
+	}
+
 	var value int64
 	value, err := util.GetInt64ByInterface(val)
 	if nil != err {
@@ -240,6 +245,11 @@ func (valid *validator) validFloat(ctx context.Context, val interface{}, key str
 
 		}
 		return nil
+	}
+
+	if !valid.isNumeric(val) {
+		blog.Errorf("params %s:%#v not int, rid: %s", key, val, rid)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
 	}
 
 	var value float64
