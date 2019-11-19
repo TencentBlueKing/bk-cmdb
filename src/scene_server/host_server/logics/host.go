@@ -420,6 +420,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, appID int64, srcHostID
 	// source host belong app
 	ok, err := lgc.IsHostExistInApp(ctx, appID, srcHostID)
 	if err != nil {
+		blog.Errorf("IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s", err.Error(), srcHostID, lgc.rid)
 		return err
 	}
 	if !ok {
@@ -430,6 +431,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, appID int64, srcHostID
 	// destination host belong app
 	ok, err = lgc.IsHostExistInApp(ctx, appID, dstHostID)
 	if err != nil {
+		blog.Errorf("IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s", err.Error(), dstHostID, lgc.rid)
 		return err
 	}
 	if !ok {
@@ -437,7 +439,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, appID int64, srcHostID
 		return lgc.ccErr.Errorf(common.CCErrHostNotINAPPFail, dstHostID)
 	}
 
-	hostInfoArr, err := lgc.GetHostInfoByConds(ctx, map[string]interface{}{common.BKHostIDField: dstHostID})
+	hostInfoArr, err := lgc.GetHostInfoByConds(ctx, map[string]interface{}{common.BKHostIDField: srcHostID})
 	if err != nil {
 		return err
 	}

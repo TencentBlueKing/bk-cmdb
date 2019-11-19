@@ -1063,9 +1063,28 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		return
 	}
 
+	if input.OrgIP == input.DstIP {
+		result := meta.Response{
+			BaseResp: meta.SuccessBaseResp,
+			Data:     nil,
+		}
+		_ = resp.WriteEntity(result)
+		return
+	}
+
 	if 0 == input.AppID {
 		blog.Errorf("CloneHostProperty, application not found input:%+v,rid:%s", input, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
+		return
+	}
+	if input.OrgIP == "" {
+		blog.Errorf("CloneHostProperty, OrgIP not found input:%+v,rid:%s", input, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "bk_org_ip")})
+		return
+	}
+	if input.DstIP == "" {
+		blog.Errorf("CloneHostProperty, OrgIP not found input:%+v,rid:%s", input, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "bk_dst_ip")})
 		return
 	}
 
@@ -1079,7 +1098,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	// check source host exist
 	if srcHostID == 0 {
 		blog.Errorf("host not found. params:%s,rid:%s", input, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, srvData.ccErr.CCErrorf(common.CCErrHostNotFound))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.CCErrorf(common.CCErrHostNotFound)})
 		return
 	}
 	// auth: check authorization
@@ -1098,7 +1117,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	// checkout destion host exist
 	if dstHostID == 0 {
 		blog.Errorf("host not found. params:%s,rid:%s", input, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, srvData.ccErr.CCErrorf(common.CCErrHostNotFound))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.CCErrorf(common.CCErrHostNotFound)})
 		return
 	}
 
@@ -1120,7 +1139,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 
 	err = srvData.lgc.CloneHostProperty(srvData.ctx, input.AppID, srcHostID, dstHostID)
 	if nil != err {
-		blog.Errorf("CloneHostProperty ,application not int , err: %v, input:%#v, rid:%s", err, input, srvData.rid)
+		blog.Errorf("CloneHostProperty  error , err: %v, input:%#v, rid:%s", err, input, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
