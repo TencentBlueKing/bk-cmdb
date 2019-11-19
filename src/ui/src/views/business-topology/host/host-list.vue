@@ -328,6 +328,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .list-layout {
+        overflow: hidden;
+    }
     .host-table {
         margin-top: 12px;
     }

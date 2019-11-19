@@ -9,6 +9,9 @@
         <bk-big-tree ref="tree" class="topology-tree"
             selectable
             :expand-on-click="false"
+            :style="{
+                height: $APP.height - 160 + 'px'
+            }"
             :options="{
                 idKey: getNodeId,
                 nameKey: 'bk_inst_name',
@@ -462,7 +465,6 @@
         margin: 0 20px;
     }
     .topology-tree {
-        height: calc(100vh - 160px);
         padding: 10px 0;
         margin-right: 4px;
         @include scrollbar-y(6px);

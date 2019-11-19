@@ -5,25 +5,26 @@
                 <div class="fr">
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
                         clearable
-                        :placeholder="$t('请输入模块名称搜索')">
+                        :placeholder="$t('请输入拓扑路径关键词')"
+                        v-model.trim="table.filter"
+                        @change="handleFilter">
                     </bk-input>
                 </div>
             </div>
             <bk-table class="instance-table"
                 ref="instanceTable"
-                v-bkloading="{ isLoading: $loading(Object.values(request)) }"
-                :data="table.data"
-                :pagination="table.pagination"
-                @page-change="handlePageChange"
-                @page-limit-change="handlePageLimitChange">
+                v-bkloading="{ isLoading: $loading(Object.values(request)) || table.filtering }"
+                :data="table.data">
                 <bk-table-column :label="$t('模块名称')" prop="bk_module_name"></bk-table-column>
-                <bk-table-column :label="$t('拓扑路径')">
-                    <div slot-scope="{ row }" :title="getRowTopoPath(row)">{{getRowTopoPath(row)}}</div>
+                <bk-table-column :label="$t('拓扑路径')" sortable :sort-method="sortByPath">
+                    <div slot-scope="{ row }" :title="row._path_">{{row._path_}}</div>
                 </bk-table-column>
-                <bk-table-column :label="$t('主机数量')" prop="host_count"></bk-table-column>
+                <bk-table-column :label="$t('上次同步时间')" sortable :sort-method="sortByTime">
+                    <div slot-scope="{ row }" :title="row.last_time | time">{{row.last_time | time}}</div>
+                </bk-table-column>
                 <bk-table-column :label="$t('操作')">
                     <template slot-scope="{ row }">
-                        <bk-button text :disabled="isSyncEnable(row)" @click="handleSync(row)">{{$t('去同步')}}</bk-button>
+                        <bk-button text :disabled="isSyncDisabled(row)" @click="handleSync(row)">{{$t('去同步')}}</bk-button>
                     </template>
                 </bk-table-column>
             </bk-table>
@@ -33,7 +34,13 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import { time } from '@/filters/formatter'
+    import debounce from 'lodash.debounce'
+    import Bus from '@/utils/bus'
     export default {
+        filters: {
+            time
+        },
         props: {
             active: Boolean
         },
@@ -41,15 +48,17 @@
             return {
                 table: {
                     filter: '',
+                    filtering: false,
                     data: [],
-                    syncStatus: [],
-                    topoPath: [],
-                    pagination: this.$tools.getDefaultPaginationConfig()
+                    backup: [],
+                    syncStatus: []
                 },
                 request: {
                     instance: Symbol('instance'),
-                    status: Symbol('status')
-                }
+                    status: Symbol('status'),
+                    path: Symbol('path')
+                },
+                handleFilter: null
             }
         },
         computed: {
@@ -66,18 +75,28 @@
                 }
             }
         },
+        created () {
+            this.handleFilter = debounce(this.filterData, 300)
+            this.refresh()
+        },
         methods: {
             async refresh () {
                 try {
                     const data = await this.getTemplateInstance()
-                    const [syncStatus, topoPath] = await Promise.all([
-                        this.getSyncStatus(data.info),
-                        this.getTopoPath(data.info)
-                    ])
-                    this.table.data = data.info
-                    this.table.pagination.count = data.count
-                    this.table.syncStatus = syncStatus
-                    this.table.topoPath = topoPath.nodes
+                    if (data.count) {
+                        const [syncStatus, topoPath] = await Promise.all([
+                            this.getSyncStatus(data.info),
+                            this.getTopoPath(data.info)
+                        ])
+                        this.table.syncStatus = syncStatus
+                        data.info.forEach(module => {
+                            const topo = topoPath.nodes.find(topo => topo.topo_node.bk_inst_id === module.bk_module_id)
+                            module._path_ = topo.topo_path.map(path => path.bk_inst_name).reverse().join(' / ')
+                        })
+                    }
+                    this.table.data = Object.freeze(data.info)
+                    this.table.backup = Object.freeze(data.info)
+                    Bus.$emit('module-loaded', data.count)
                 } catch (e) {
                     console.error(e)
                 }
@@ -86,46 +105,72 @@
                 return this.$store.dispatch('serviceTemplate/getServiceTemplateModules', {
                     bizId: this.bizId,
                     serviceTemplateId: this.serviceTemplateId,
-                    params: {
-                        ...this.$tools.getPageParams(this.table.pagination)
-                    },
+                    params: {},
                     config: {
                         requestId: this.request.instance
                     }
                 })
             },
             getSyncStatus (modules) {
-                return Promise.resolve([1])
+                return this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
+                    params: {
+                        bk_module_ids: modules.map(module => module.bk_module_id),
+                        service_template_id: this.serviceTemplateId,
+                        bk_biz_id: this.bizId
+                    },
+                    config: {
+                        requestId: this.request.status
+                    }
+                })
             },
             getTopoPath (modules) {
                 return this.$store.dispatch('objectMainLineModule/getTopoPath', {
                     bizId: this.bizId,
                     params: {
                         topo_nodes: modules.map(module => ({ bk_obj_id: 'module', bk_inst_id: module.bk_module_id }))
+                    },
+                    config: {
+                        requestId: this.request.path
                     }
                 })
             },
-            isSyncEnable (row) {
-                return this.table.syncStatus.includes(row.id)
-            },
-            getRowTopoPath (row) {
-                const topo = this.table.topoPath.find(topo => topo.topo_node.bk_inst_id === row.bk_module_id)
-                if (topo) {
-                    return topo.topo_path.map(path => path.bk_inst_name).reverse().join(' / ')
+            isSyncDisabled (row) {
+                const difference = this.table.syncStatus.find(difference => difference.bk_module_id === row.bk_module_id)
+                if (difference) {
+                    return !difference.has_difference
                 }
-                return '--'
+                return true
             },
             handleSync (row) {
-                console.log(row)
+                this.$router.push({
+                    name: 'syncServiceFromTemplate',
+                    params: {
+                        moduleId: row.bk_module_id,
+                        setId: row.bk_set_id
+                    },
+                    query: {
+                        path: row._path_
+                    }
+                })
             },
-            handlePageChange (current) {
-                this.table.pagination.current = current
-                this.refresh()
+            filterData () {
+                this.table.filtering = true
+                this.$nextTick(() => {
+                    if (this.table.filter) {
+                        this.table.data = this.table.backup.filter(row => row._path_.indexOf(this.table.filter) > -1)
+                    } else {
+                        this.table.data = [...this.table.backup]
+                    }
+                    this.table.filtering = false
+                })
             },
-            handlePageLimitChange (limit) {
-                this.table.pagination.current = 1
-                this.table.pagination.limit = limit
-                this.refresh()
+            sortByPath (rowA, rowB) {
+                return rowA._path_.toLowerCase().localeCompare(rowB._path_.toLowerCase(), 'zh-Hans-CN', { sensitivity: 'accent' })
+            },
+            sortByTime (rowA, rowB) {
+                const timeA = (new Date(rowA.last_time)).getTime()
+                const timeB = (new Date(rowB.last_time)).getTime()
+                return timeA - timeB
             }
         }
     }

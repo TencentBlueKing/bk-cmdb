@@ -792,7 +792,7 @@
             },
             handleSyncTemplate () {
                 this.$router.push({
-                    name: 'synchronous',
+                    name: 'syncServiceFromModule',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
                         setId: this.currentNode.parent.data.bk_inst_id
