@@ -14,6 +14,7 @@ package instances
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
@@ -198,6 +199,11 @@ func (valid *validator) validInt(ctx context.Context, val interface{}, key strin
 		return nil
 	}
 
+	if !valid.isNumeric(val) {
+		blog.Errorf("params %s:%#v not int, rid: %s", key, val, rid)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
+	}
+
 	var value int64
 	value, err := util.GetInt64ByInterface(val)
 	if nil != err {
@@ -239,6 +245,11 @@ func (valid *validator) validFloat(ctx context.Context, val interface{}, key str
 
 		}
 		return nil
+	}
+
+	if !valid.isNumeric(val) {
+		blog.Errorf("params %s:%#v not int, rid: %s", key, val, rid)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
 	}
 
 	var value float64
@@ -380,4 +391,14 @@ func (valid *validator) validChar(ctx context.Context, val interface{}, key stri
 	}
 
 	return nil
+}
+
+// isNumeric judges if value is a number
+func (valid *validator) isNumeric(val interface{}) bool {
+	switch val.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
+		return true
+	}
+
+	return false
 }
