@@ -29,7 +29,10 @@ import (
 func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
 	rid := ctx.ReqID
 
-	result := metadata.HostApplyPlanResult{}
+	result := metadata.HostApplyPlanResult{
+		Plans:          make([]metadata.OneHostApplyPlan, 0),
+		HostAttributes: make([]metadata.Attribute, 0),
+	}
 
 	// get hosts
 	hostIDs := make([]int64, 0)
@@ -53,7 +56,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 		host := struct {
 			HostID int64 `mapstructure:"bk_host_id"`
 		}{}
-		if err := mapstruct.Decode2Struct(item, host); err != nil {
+		if err := mapstruct.Decode2Struct(item, &host); err != nil {
 			blog.ErrorJSON("GenerateApplyPlan failed, parse hostID failed, host: %s, err: %s, rid: %s", item, err.Error(), rid)
 			return result, ctx.Error.CCError(common.CCErrCommParseDBFailed)
 		}
