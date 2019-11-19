@@ -130,13 +130,13 @@ func (ih *IdentifierHandler) handleInstFieldChange(event *metadata.EventInstCtx,
 
 		if common.BKInnerObjIDHost == event.ObjType {
 			hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
-			d := metadata.EventData{CurData: fillIdentifier(inst.ident, ih.ctx, ih.cache, ih.db), PreData: preIdentifier}
+			d := metadata.EventData{CurData: inst.ident, PreData: preIdentifier}
 			hostIdentify.Data = append(hostIdentify.Data, d)
 
 			ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify)
 			blog.InfoJSON("identifier: pushed event inst %s, rid: %s", hostIdentify, rid)
 		} else {
-			if err := ih.handleRelatedInst(hostIdentify, event.ObjType, instID, false); err != nil {
+			if err := ih.handleRelatedInst(hostIdentify, event.ObjType, instID); err != nil {
 				blog.Warnf("handleRelatedInst failed objType: %s, inst: %d, error: %v, rid: %s", event.ObjType, instID, err, rid)
 			}
 		}
@@ -173,6 +173,13 @@ func (ih *IdentifierHandler) handleModuleTransfer(e *metadata.EventInstCtx) {
 				continue
 			}
 
+			preInst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, instID, false)
+			if err != nil {
+				blog.Errorf("identifier: getCache error %+v, rid: %s", err, rid)
+				continue
+			}
+			preIdentifier := *preInst.ident
+
 			inst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, instID, true)
 			if err != nil {
 				blog.Errorf("identifier: getCache error %+v, rid: %s", err, rid)
@@ -185,7 +192,7 @@ func (ih *IdentifierHandler) handleModuleTransfer(e *metadata.EventInstCtx) {
 			if err := inst.saveCache(ih.cache); err != nil {
 				blog.Errorf("saveCache failed, err: %+v", err)
 			}
-			d := metadata.EventData{CurData: fillIdentifier(inst.ident, ih.ctx, ih.cache, ih.db)}
+			d := metadata.EventData{CurData: inst.ident, PreData: preIdentifier}
 			hostIdentify.Data = append(hostIdentify.Data, d)
 		}
 		hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
@@ -237,7 +244,7 @@ func (ih *IdentifierHandler) handleBindProcess(e *metadata.EventInstCtx) {
 			}
 
 			for _, module := range modules {
-				if err := ih.handleRelatedInst(hostIdentify, common.BKInnerObjIDModule, module.ModuleID, true); err != nil {
+				if err := ih.handleRelatedInst(hostIdentify, common.BKInnerObjIDModule, module.ModuleID); err != nil {
 					blog.Warnf("handleRelatedInst failed objtype: %s, inst: %d, error: %v, rid: %s", e.ObjType, instID, err, rid)
 				}
 			}
@@ -246,80 +253,72 @@ func (ih *IdentifierHandler) handleBindProcess(e *metadata.EventInstCtx) {
 	}()
 }
 
-func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, objType string, instID int64, formdb bool) error {
+func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, objType string, instID int64) error {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 	hosIDs, err := ih.findHost(objType, instID)
 	if err != nil {
 		blog.Warnf("identifier: find host failure: %v, rid: %s", err, rid)
 		return err
 	}
-	blog.V(3).Infof("identifier: handleRelatedInst by objType %s, instID %d,  hostIDs: %v, fromdb: %v, rid: %s", objType, instID, hosIDs, formdb, rid)
+	blog.V(3).Infof("identifier: handleRelatedInst by objType %s, instID %d,  hostIDs: %v, rid: %s", objType, instID, hosIDs, rid)
 	total := len(hosIDs)
+	bufSize := 256
 	index := 0
 	leftIndex := 0
 
 	for leftIndex < total {
-		leftIndex = index + 256
+		leftIndex = index + bufSize
 		if leftIndex > total {
 			leftIndex = total
 		}
 		hostIdentify.Data = nil
 
-		if formdb {
-			for _, hostID := range hosIDs[index:leftIndex] {
-				inst, getCacheErr := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, hostID, true)
-				if getCacheErr != nil {
-					blog.Errorf("identifier: getCache error %+v, rid: %s", getCacheErr, rid)
-					continue
-				}
-				if nil == inst {
-					continue
-				}
-				if err := inst.saveCache(ih.cache); err != nil {
-					blog.Errorf("saveCache failed, err: %+v", err)
-				}
-				d := metadata.EventData{CurData: fillIdentifier(inst.ident, ih.ctx, ih.cache, ih.db)}
-				hostIdentify.Data = append(hostIdentify.Data, d)
-			}
-		} else {
-			hostIDKeys := make([]string, 0)
-			for _, hostID := range hosIDs[index:leftIndex] {
-				hostIDKeys = append(hostIDKeys, getInstCacheKey(common.BKInnerObjIDHost, hostID))
-			}
-			idens, err := ih.cache.MGet(hostIDKeys...).Result()
-			if err != nil {
-				blog.Errorf("identifier: ih.cache.MGet by %v,%v. we will try to fetch it from db instead, rid: %s", hostIDKeys, err, rid)
-				idens = make([]interface{}, len(hostIDKeys))
-				for index := range idens {
-					// simulate that redis returns all nil
-					idens[index] = nilStr
-				}
-			}
-			for identIndex := range idens {
-				iden := metadata.HostIdentifier{}
-				if err = json.Unmarshal([]byte(getString(idens[identIndex])), &iden); err != nil {
-					blog.Warnf("identifier: unmarshal error %s, rid: %s", err.Error(), rid)
-					hostID := hosIDs[index:leftIndex][identIndex]
-					inst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, hostID, true)
-					if err != nil {
-						blog.Errorf("identifier: getCache error %+v, rid: %s", err, rid)
-						continue
-					}
-					if nil == inst {
-						continue
-					}
-					if err := inst.saveCache(ih.cache); err != nil {
-						blog.Errorf("saveCache failed, err: %+v", err)
-					}
-					d := metadata.EventData{CurData: fillIdentifier(inst.ident, ih.ctx, ih.cache, ih.db)}
-					hostIdentify.Data = append(hostIdentify.Data, d)
-					continue
-				}
-				d := metadata.EventData{CurData: fillIdentifier(&iden, ih.ctx, ih.cache, ih.db)}
-				hostIdentify.Data = append(hostIdentify.Data, d)
+		hostIDKeys := make([]string, 0)
+		for _, hostID := range hosIDs[index:leftIndex] {
+			hostIDKeys = append(hostIDKeys, getInstCacheKey(common.BKInnerObjIDHost, hostID))
+		}
+		idens, err := ih.cache.MGet(hostIDKeys...).Result()
+		if err != nil {
+			blog.Errorf("identifier: ih.cache.MGet by %v,%v. we will try to fetch it from db instead, rid: %s", hostIDKeys, err, rid)
+			idens = make([]interface{}, len(hostIDKeys))
+			for index := range idens {
+				// simulate that redis returns all nil
+				idens[index] = nilStr
 			}
 		}
-		index += 256
+		for identIndex, idenVal := range idens {
+			hostID := hosIDs[index:leftIndex][identIndex]
+			iden := metadata.HostIdentifier{}
+			var preIdentifier metadata.HostIdentifier
+
+			err = json.Unmarshal([]byte(getString(idenVal)), &iden)
+			if "" == idenVal || nilStr == idenVal || err != nil {
+				blog.Infof("hostID %d not in cache, fetch it from db, rid: %s", hostID, rid)
+				preInst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, instID, false)
+				if err != nil {
+					blog.Errorf("identifier: getCache error %+v, rid: %s", err, rid)
+					continue
+				}
+				preIdentifier = *preInst.ident
+			} else {
+				preIdentifier = iden
+			}
+
+			inst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, hostID, true)
+			if err != nil {
+				blog.Errorf("identifier: getCache error %+v, rid: %s", err, rid)
+				continue
+			}
+			if nil == inst {
+				continue
+			}
+			if err := inst.saveCache(ih.cache); err != nil {
+				blog.Errorf("saveCache failed, err: %+v", err)
+			}
+			d := metadata.EventData{CurData: inst.ident, PreData: preIdentifier}
+			hostIdentify.Data = append(hostIdentify.Data, d)
+		}
+		index += bufSize
 
 		hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
 		if err = ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify).Err(); err != nil {
@@ -330,14 +329,6 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 
 	}
 	return nil
-}
-
-func NewModule(m map[string]interface{}) *metadata.HostIdentModule {
-	belong := metadata.HostIdentModule{}
-	belong.BizID = getInt(m, common.BKAppIDField)
-	belong.SetID = getInt(m, common.BKSetIDField)
-	belong.ModuleID = getInt(m, common.BKModuleIDField)
-	return &belong
 }
 
 func getInt(data map[string]interface{}, key string) int64 {
