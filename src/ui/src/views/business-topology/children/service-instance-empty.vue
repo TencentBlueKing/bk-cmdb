@@ -27,7 +27,7 @@
                 </p>
             </template>
         </cmdb-auth>
-        <cmdb-dialog v-model="dialog.show" :width="850">
+        <cmdb-dialog v-model="dialog.show" :width="850" :height="460">
             <component
                 :is="dialog.component"
                 v-bind="dialog.componentProps"

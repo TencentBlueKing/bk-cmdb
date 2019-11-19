@@ -145,7 +145,7 @@
             <div class="dialog-title" slot="tools">{{$t('新建字段')}}</div>
             <div class="dialog-content">
                 <div class="dialog-filter">
-                    <bk-input type="text" class="cmdb-form-input" v-model.trim="dialog.filter" right-icon="bk-icon icon-search"></bk-input>
+                    <bk-input type="text" class="cmdb-form-input" clearable v-model.trim="dialog.filter" right-icon="bk-icon icon-search"></bk-input>
                 </div>
                 <ul class="dialog-property clearfix" ref="dialogProperty">
                     <li class="property-item fl"

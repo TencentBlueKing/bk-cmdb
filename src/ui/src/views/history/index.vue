@@ -13,6 +13,7 @@
             <bk-input class="history-host-filter ml10"
                 v-if="objId === 'host'"
                 right-icon="icon-search"
+                clearable
                 v-model="ip"
                 :placeholder="$t('请输入xx', { name: 'IP' })"
                 @enter="handlePageChange(1)">
