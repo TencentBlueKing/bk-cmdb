@@ -206,6 +206,8 @@ const (
 	CCErrCommModifyFieldForbidden                            = 1199077
 	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199078
 
+	CCErrParseAttrOptionListFailed = 1199080
+
 	// one argument: maxValue
 	CCErrExceedMaxOperationRecordsAtOnce = 1199077
 
@@ -790,8 +792,6 @@ const (
 	CCErrOperationUpdateChartPositionFail = 1116008
 	CCErrCloudSyncDeleteSyncTaskFail      = 1116011
 	CCErrCloudSyncUpdateSyncTaskFail      = 1116012
-
-	CCErrParseAttrOptionListFailed = 1116040
 
 	// task_server 1117xxx
 	// CCErrTaskNotFound task not found
