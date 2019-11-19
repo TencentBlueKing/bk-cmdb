@@ -453,14 +453,10 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	// 暂时兼容 bk_module_ids 与 bk_module_id 两种参数格式，未来需要移除 bk_module_id 的支持
 	if len(diffOption.ModuleIDs) == 0 {
-		if diffOption.ModuleID == 0 {
-			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
-			ctx.RespAutoError(err)
-			return
-		}
-		diffOption.ModuleIDs = []int64{diffOption.ModuleID}
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+		ctx.RespAutoError(err)
+		return
 	}
 
 	result := make([]*metadata.ModuleDiffWithTemplateDetail, 0)
@@ -829,14 +825,10 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	// 暂时兼容 bk_module_ids 与 bk_module_id 两种参数格式，未来需要移除 bk_module_id 的支持
 	if len(syncOption.ModuleIDs) == 0 {
-		if syncOption.ModuleID == 0 {
-			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
-			ctx.RespAutoError(err)
-			return
-		}
-		syncOption.ModuleIDs = []int64{syncOption.ModuleID}
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
+		ctx.RespAutoError(err)
+		return
 	}
 
 	for _, moduleID := range syncOption.ModuleIDs {

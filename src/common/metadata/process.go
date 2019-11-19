@@ -123,7 +123,6 @@ type ListServiceInstanceDetailRequest struct {
 type DiffModuleWithTemplateOption struct {
 	Metadata  *Metadata `json:"metadata"`
 	BizID     int64     `json:"bk_biz_id"`
-	ModuleID  int64     `json:"bk_module_id"`
 	ModuleIDs []int64   `json:"bk_module_ids"`
 }
 
@@ -252,7 +251,6 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 type SyncServiceInstanceByTemplateOption struct {
 	Metadata  *Metadata `json:"metadata"`
 	BizID     int64     `json:"bk_biz_id"`
-	ModuleID  int64     `json:"bk_module_id"`
 	ModuleIDs []int64   `json:"bk_module_ids"`
 }
 
