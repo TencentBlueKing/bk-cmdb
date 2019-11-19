@@ -741,7 +741,7 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 			process["bind_ip"] = nil
 			changed = true
 		} else if t.BindIP.Value != nil && i.BindIP == nil {
-			process["bind_ip"] = *t.BindIP.Value
+			process["bind_ip"] = t.BindIP.Value.IP()
 			changed = true
 		} else if t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP {
 			process["bind_ip"] = t.BindIP.Value.IP()

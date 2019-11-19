@@ -112,11 +112,13 @@
     "1101090": "update service category on module create by template forbidden",
     "1101091": "update name field on module create by template forbidden",
     "1101092": "can not add required attribute field for a mainline model",
-    "1101093": "line %d: bk_obj_id field conflict with url",
+	"1101093": "line %d: bk_obj_id field conflict with url",
     "1101094": "same name module already exist",
     "1101095": "sync set template failed",
     "1101096": "sync set template task is running",
     "1101097": "forbidden add/remove module on set initialized by set template",
     "1101098": "forbidden remove built in set or module",
+    "1101099": "instance of a mainline model, which is not allowed to be operated by excel import",
+    
     "": "" 
 }
