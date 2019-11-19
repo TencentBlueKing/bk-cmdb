@@ -5,7 +5,6 @@
                 <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
                 <i class="bk-icon icon-right-shape" v-else></i>
                 {{name}}
-                <i class="title-tips" v-if="showTips && !processList.length">{{tooltips.content}}</i>
             </div>
             <div class="fr">
                 <span v-if="topology" class="service-topology">{{topology}}</span>
@@ -103,10 +102,6 @@
                 default () {
                     return []
                 }
-            },
-            showTips: {
-                type: Boolean,
-                default: false
             },
             addible: {
                 type: Boolean,
@@ -363,16 +358,6 @@
             font-size: 12px;
             color: $textColor;
             cursor: default;
-        }
-        .title-tips {
-            display: inline-block;
-            padding: 0 10px;
-            vertical-align: 1px;
-            color: $dangerColor;
-            font-style: normal;
-            font-size: 12px;
-            line-height: 20px;
-            outline: 0;
         }
     }
     .add-process-options {
