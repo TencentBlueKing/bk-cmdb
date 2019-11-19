@@ -245,7 +245,8 @@ func (s *Service) ListModulesByServiceTemplateID(params types.ContextParams, pat
 	}
 
 	requestBody := struct {
-		Page *metadata.BasePage `field:"page" json:"page" mapstructure:"page"`
+		Page    *metadata.BasePage `field:"page" json:"page" mapstructure:"page"`
+		Keyword string             `field:"keyword" json:"keyword" mapstructure:"keyword"`
 	}{}
 	if err := mapstruct.Decode2Struct(data, &requestBody); err != nil {
 		blog.Errorf("ListModulesByServiceTemplateID failed, parse request body failed, err: %s, rid: %s", err.Error(), params.ReqID)
@@ -260,24 +261,30 @@ func (s *Service) ListModulesByServiceTemplateID(params types.ContextParams, pat
 		start = int64(requestBody.Page.Start)
 		sortArr = requestBody.Page.ToSearchSort()
 	}
-	filter := &metadata.QueryCondition{
+	filter := map[string]interface{}{
+		common.BKServiceTemplateIDField: serviceTemplateID,
+		common.BKAppIDField:             bizID,
+	}
+	if len(requestBody.Keyword) != 0 {
+		filter[common.BKModuleNameField] = map[string]interface{}{
+			common.BKDBLIKE: requestBody.Keyword,
+		}
+	}
+	qc := &metadata.QueryCondition{
 		Limit: metadata.SearchLimit{
 			Offset: start,
 			Limit:  limit,
 		},
-		SortArr: sortArr,
-		Condition: map[string]interface{}{
-			common.BKServiceTemplateIDField: serviceTemplateID,
-			common.BKAppIDField:             bizID,
-		},
+		SortArr:   sortArr,
+		Condition: filter,
 	}
-	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, filter)
+	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, qc)
 	if err != nil {
 		blog.Errorf("ListModulesByServiceTemplateID failed, http request failed, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if instanceResult.Code != 0 {
-		blog.ErrorJSON("ListModulesByServiceTemplateID failed, ReadInstance failed, filter: %s, response: %s, rid: %s", filter, instanceResult, params.ReqID)
+		blog.ErrorJSON("ListModulesByServiceTemplateID failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, params.ReqID)
 		return nil, errors.New(instanceResult.Code, instanceResult.ErrMsg)
 	}
 	return instanceResult.Data, nil

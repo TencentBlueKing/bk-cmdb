@@ -1839,7 +1839,7 @@ var (
 	deleteModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
 	updateModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
 	findModuleRegexp                  = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
-	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/[0-9]+/service_template_id/[0-9]+/?$`)
+	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/(?P<bk_biz_id>[0-9]+)/service_template_id/(?P<service_template_id>[0-9]+)/?$`)
 )
 
 func (ps *parseStream) objectModule() *parseStream {
@@ -2016,10 +2016,17 @@ func (ps *parseStream) objectModule() *parseStream {
 			ps.err = errors.New("find module by service template id, but got invalid url")
 			return ps
 		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		var bizIDStr string
+		match := findModuleByServiceTemplateRegexp.FindStringSubmatch(ps.RequestCtx.URI)
+		for i, name := range findModuleByServiceTemplateRegexp.SubexpNames() {
+			if name == common.BKAppIDField {
+				bizIDStr = match[i]
+				break
+			}
+		}
+		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find module, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("find module, but parse bk_biz_id failed, bizIDStr: %s, uri: %s, err: %+v", bizIDStr, ps.RequestCtx.URI, err)
 			return ps
 		}
 
