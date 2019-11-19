@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
@@ -75,8 +74,59 @@ func (m *operationManager) SearchChartDataCommon(ctx core.ContextParams, inputPa
 	}
 }
 
-func (m *operationManager) SearchTimerChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+	commonCount := make([]metadata.StringIDCount, 0)
+	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
 
+	if inputParam.ObjID == common.BKInnerObjIDHost {
+		pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+		if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
+			blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, err, ctx.ReqID)
+			return nil, err
+		}
+	} else {
+		pipeline := []M{{"$match": M{"bk_obj_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+		if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &commonCount); err != nil {
+			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, ctx.ReqID)
+			return nil, err
+		}
+	}
+
+	attribute := metadata.Attribute{}
+	opt := mapstr.MapStr{}
+	opt[common.BKObjIDField] = inputParam.ObjID
+	opt[common.BKPropertyIDField] = inputParam.Field
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).One(ctx, &attribute); err != nil {
+		blog.Errorf("model's instance count aggregate fail, chartName: %v, objID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, ctx.ReqID)
+		return nil, err
+	}
+	option, err := instances.ParseEnumOption(ctx, attribute.Option)
+	if err != nil {
+		blog.Errorf("count model's instance, parse enum option fail, ObjID: %v, err:%v, rid: %v", inputParam.ObjID, err, ctx.ReqID)
+		return nil, err
+	}
+
+	respData := make([]metadata.IDStringCountInt64, 0)
+	for _, opt := range option {
+		info := metadata.IDStringCountInt64{
+			Id:    opt.Name,
+			Count: 0,
+		}
+		for _, count := range commonCount {
+			if count.Id == opt.ID {
+				info.Count = count.Count
+			}
+			if opt.Name == common.OptionOther && count.Id == "" {
+				info.Count = count.Count
+			}
+		}
+		respData = append(respData, info)
+	}
+
+	return respData, nil
+}
+
+func (m *operationManager) SearchTimerChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 	condition := mapstr.MapStr{}
 	condition[common.OperationReportType] = inputParam.ReportType
 
@@ -87,93 +137,4 @@ func (m *operationManager) SearchTimerChartData(ctx core.ContextParams, inputPar
 	}
 
 	return chartData.Data, nil
-}
-
-func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
-	commonCount := make([]metadata.StringIDCount, 0)
-	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
-
-	respData := make([]metadata.IDStringCountInt64, 0)
-	attribute := metadata.Attribute{}
-	opt := mapstr.MapStr{}
-	opt[common.BKObjIDField] = inputParam.ObjID
-	opt[common.BKPropertyIDField] = inputParam.Field
-	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).One(ctx, &attribute); err != nil {
-		blog.Errorf("model's instance count aggregate fail, chartName: %v, objID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, ctx.ReqID)
-		return nil, err
-	}
-
-	instCount := uint64(0)
-	cond := M{}
-	var countErr error
-	if inputParam.ObjID == common.BKInnerObjIDHost {
-		instCount, countErr = m.dbProxy.Table(common.BKTableNameBaseHost).Find(cond).Count(ctx)
-		if countErr != nil {
-			blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, countErr, ctx.ReqID)
-			return nil, countErr
-		}
-		if instCount > 0 {
-			pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
-			if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
-				blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, err, ctx.ReqID)
-				return nil, err
-			}
-		}
-	} else {
-		instCount, countErr = m.dbProxy.Table(common.BKTableNameBaseInst).Find(cond).Count(ctx)
-		if countErr != nil {
-			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, countErr, ctx.ReqID)
-			return nil, countErr
-		}
-		if instCount > 0 {
-			pipeline := []M{{"$match": M{"bk_obj_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
-			if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &commonCount); err != nil {
-				blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, ctx.ReqID)
-				return nil, err
-			}
-		}
-	}
-
-	option, err := instances.ParseEnumOption(ctx, attribute.Option)
-	if err != nil {
-		blog.Errorf("count model's instance, parse enum option fail, ObjID: %v, err:%v, rid: %v", inputParam.ObjID, err, ctx.ReqID)
-		return nil, err
-	}
-	if instCount == 0 {
-		for _, opt := range option {
-			info := metadata.IDStringCountInt64{
-				Id:    opt.Name,
-				Count: 0,
-			}
-			respData = append(respData, info)
-		}
-		return respData, nil
-	}
-
-	allAttrs := make([]string, 0)
-	matched := make([]string, 0)
-	for _, opt := range option {
-		allAttrs = append(allAttrs, opt.Name)
-		for _, count := range commonCount {
-			if count.Id == opt.ID {
-				info := metadata.IDStringCountInt64{
-					Id:    opt.Name,
-					Count: count.Count,
-				}
-				respData = append(respData, info)
-				matched = append(matched, opt.Name)
-			}
-		}
-	}
-
-	for _, name := range allAttrs {
-		if !util.InStrArr(matched, name) {
-			info := metadata.IDStringCountInt64{
-				Id:    name,
-				Count: 0,
-			}
-			respData = append(respData, info)
-		}
-	}
-	return respData, nil
 }
