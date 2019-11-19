@@ -31,7 +31,6 @@ type CompatibleV2Operation interface {
 // Core core methods
 type Core interface {
 	AuthOperation() AuthOperation
-	CompatibleV2Operation() CompatibleV2Operation
 }
 
 type core struct {
@@ -40,17 +39,12 @@ type core struct {
 }
 
 // New create a new core instance
-func New(auth AuthOperation, v2 CompatibleV2Operation) Core {
+func New(auth AuthOperation) Core {
 	return &core{
 		auth: auth,
-		v2:   v2,
 	}
 }
 
 func (c *core) AuthOperation() AuthOperation {
 	return c.auth
-}
-
-func (c *core) CompatibleV2Operation() CompatibleV2Operation {
-	return c.v2
 }
