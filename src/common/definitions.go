@@ -1120,7 +1120,7 @@ const (
 	OperationDescription = "op_desc"
 	SyncSetTaskName      = "sync-settemplate2set"
 
-	BKHostCurrentStatus = "bk_current_status"
+	BKHostState = "bk_state"
 )
 
 // 云同步
