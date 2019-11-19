@@ -117,6 +117,8 @@ func (ih *IdentifierHandler) handleInstFieldChange(event *metadata.EventInstCtx,
 			blog.Errorf("identifier: inst == nil, continue, rid:%s", rid)
 			continue
 		}
+		// save previous host identifier data for later usage.
+		preIdentifier := *inst.ident
 		for _, field := range diffFields {
 			inst.set(field, curData[field])
 		}
@@ -128,7 +130,7 @@ func (ih *IdentifierHandler) handleInstFieldChange(event *metadata.EventInstCtx,
 
 		if common.BKInnerObjIDHost == event.ObjType {
 			hostIdentify.ID = ih.cache.Incr(types.EventCacheEventIDKey).Val()
-			d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db)}
+			d := metadata.EventData{CurData: inst.ident.fillIdentifier(ih.ctx, ih.cache, ih.db), PreData: preIdentifier}
 			hostIdentify.Data = append(hostIdentify.Data, d)
 
 			ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify)

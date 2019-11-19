@@ -123,6 +123,7 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 		setSyncStatus.CreateTime = set.CreateTime
 		setSyncStatus.LastTime = set.LastTime
 		setSyncStatus.TaskID = ""
+		setSyncStatus.Creator = params.User
 	} else {
 		setSyncStatus.Creator = detail.User
 		setSyncStatus.CreateTime = metadata.Time{Time: detail.CreateTime}

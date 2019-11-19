@@ -214,10 +214,10 @@ func (st *SetTemplate) ListSetTplRelatedSetsWeb(ctx context.Context, header http
 	return &ret.Data, nil
 }
 
-func (st *SetTemplate) DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder) {
+func (st *SetTemplate) DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) (*metadata.SetTplDiffResult, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
-		Data []metadata.SetDiff `json:"data"`
+		Data metadata.SetTplDiffResult `json:"data"`
 	}{}
 	subPath := fmt.Sprintf("/findmany/topo/set_template/%d/bk_biz_id/%d/diff_with_instances", setTemplateID, bizID)
 
@@ -237,5 +237,5 @@ func (st *SetTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
-	return ret.Data, nil
+	return &ret.Data, nil
 }

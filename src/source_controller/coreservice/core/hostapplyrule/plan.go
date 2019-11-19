@@ -14,7 +14,6 @@ package hostapplyrule
 
 import (
 	"fmt"
-	"github.com/google/go-cmp/cmp"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -22,12 +21,15 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // GenerateApplyPlan 生成主机属性自动应用执行计划
-func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, option metadata.HostApplyPlanOption) ([]metadata.OneHostApplyPlan, errors.CCErrorCoder) {
+func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
 	rid := ctx.ReqID
-	hostApplyPlans := make([]metadata.OneHostApplyPlan, 0)
+
+	result := metadata.HostApplyPlanResult{}
 
 	// get hosts
 	hostIDs := make([]int64, 0)
@@ -42,7 +44,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	hosts := make([]map[string]interface{}, 0)
 	if err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).All(ctx.Context, &hosts); err != nil {
 		blog.ErrorJSON("GenerateApplyPlan failed, list hosts failed, filter: %s, err: %s, rid: %s", hostFilter, err.Error(), rid)
-		return hostApplyPlans, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 
 	// convert to map
@@ -53,7 +55,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 		}{}
 		if err := mapstruct.Decode2Struct(item, host); err != nil {
 			blog.ErrorJSON("GenerateApplyPlan failed, parse hostID failed, host: %s, err: %s, rid: %s", item, err.Error(), rid)
-			return hostApplyPlans, ctx.Error.CCError(common.CCErrCommParseDBFailed)
+			return result, ctx.Error.CCError(common.CCErrCommParseDBFailed)
 		}
 		hostMap[host.HostID] = item
 	}
@@ -66,10 +68,11 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	attributes, err := p.listHostAttributes(ctx, bizID, attributeIDs...)
 	if err != nil {
 		blog.ErrorJSON("GenerateApplyPlan failed, listHostAttributes failed, attributeIDs: %s, err: %s, rid: %s", attributeIDs, err.Error(), rid)
-		return hostApplyPlans, err
+		return result, err
 	}
 
-	// convert to map
+	// compute apply plan one by one
+	hostApplyPlans := make([]metadata.OneHostApplyPlan, 0)
 	var hostApplyPlan metadata.OneHostApplyPlan
 	for _, hostModule := range option.HostModules {
 		host, exist := hostMap[hostModule.HostID]
@@ -86,11 +89,15 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 		hostApplyPlan, err = p.generateOneHostApplyPlan(ctx, host, hostModule.ModuleIDs, option.Rules, attributes)
 		if err != nil {
 			blog.ErrorJSON("generateOneHostApplyPlan failed, host: %s, moduleIDs: %s, rules: %s, err: %s, rid: %s", host, hostModule.ModuleIDs, option.Rules, err.Error(), rid)
-			return hostApplyPlans, err
+			return result, err
 		}
 		hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 	}
-	return hostApplyPlans, nil
+	result = metadata.HostApplyPlanResult{
+		Plans:          hostApplyPlans,
+		HostAttributes: attributes,
+	}
+	return result, nil
 }
 
 func (p *hostApplyRule) generateOneHostApplyPlan(

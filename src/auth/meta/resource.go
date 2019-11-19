@@ -147,6 +147,7 @@ var (
 			MoveResPoolHostToBizIdleModule,
 			MoveHostToBizFaultModule,
 			MoveHostToBizIdleModule,
+			MoveHostToBizRecycleModule,
 			MoveHostFromModuleToResPool,
 			MoveHostToAnotherBizModule,
 			CleanHostInSetOrModule,

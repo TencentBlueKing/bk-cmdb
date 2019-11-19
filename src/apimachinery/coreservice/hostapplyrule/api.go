@@ -149,3 +149,29 @@ func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Heade
 
 	return ret.Data, nil
 }
+
+func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data metadata.HostApplyPlanResult `json:"data"`
+	}{}
+	subPath := fmt.Sprintf("/findmany/host_apply_plan/bk_biz_id/%d/", bizID)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("GenerateApplyPlan failed, http request failed, err: %+v", err)
+		return ret.Data, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}

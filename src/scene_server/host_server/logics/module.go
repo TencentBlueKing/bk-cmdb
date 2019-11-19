@@ -170,7 +170,7 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, conds.Data(), lgc.rid)
 		return nil, err
 	}
-	errHostID, err := lgc.notExistAppModuleHost(ctx, conf.ApplicationID, moduleID, conf.HostID)
+	errHostID, err := lgc.notExistAppModuleHost(ctx, conf.ApplicationID, moduleID, conf.HostIDs)
 	if err != nil {
 		blog.Errorf("move host to resource pool, notExistAppModuleHost error, err: %v, owneAppID: %d, input:%#v, rid:%s", err, ownerAppID, conf, lgc.rid)
 		return nil, err
@@ -183,12 +183,12 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 
 	param := &metadata.TransferHostsCrossBusinessRequest{
 		SrcApplicationID: conf.ApplicationID,
-		HostIDArr:        conf.HostID,
+		HostIDArr:        conf.HostIDs,
 		DstApplicationID: ownerAppID,
 		DstModuleIDArr:   []int64{ownerModuleID},
 	}
 
-	audit := lgc.NewHostModuleLog(conf.HostID)
+	audit := lgc.NewHostModuleLog(conf.HostIDs)
 	if err := audit.WithPrevious(ctx); err != nil {
 		blog.Errorf("move host to resource pool, but get prev module host config failed, err: %v, input:%+v,rid:%s", err, conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
@@ -213,7 +213,7 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 		businessMetadata.Label = make(metadata.Label)
 	}
 	businessMetadata.Label.SetBusinessID(conf.ApplicationID)
-	if err := lgc.DeleteHostBusinessAttributes(ctx, conf.HostID, &businessMetadata); err != nil {
+	if err := lgc.DeleteHostBusinessAttributes(ctx, conf.HostIDs, &businessMetadata); err != nil {
 		blog.Errorf("move host to resource pool, delete host bussiness private, err: %v, input:%+v,rid:%s", err, conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
@@ -289,7 +289,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)
 	}
-	errHostID, err := lgc.notExistAppModuleHost(ctx, ownerAppID, ownerModuleID, conf.HostID)
+	errHostID, err := lgc.notExistAppModuleHost(ctx, ownerAppID, ownerModuleID, conf.HostIDs)
 	if err != nil {
 		blog.Errorf("move host to resource pool, notExistAppModuleHost error, err: %v, input:%+v, rid:%s", err, conf, lgc.rid)
 		return nil, err
@@ -314,11 +314,11 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	assignParams := &metadata.TransferHostsCrossBusinessRequest{
 		SrcApplicationID: ownerAppID,
 		DstApplicationID: conf.ApplicationID,
-		HostIDArr:        conf.HostID,
+		HostIDArr:        conf.HostIDs,
 		DstModuleIDArr:   []int64{moduleID},
 	}
 
-	audit := lgc.NewHostModuleLog(conf.HostID)
+	audit := lgc.NewHostModuleLog(conf.HostIDs)
 	if err := audit.WithPrevious(ctx); err != nil {
 		blog.Warnf("WithPrevious failed, err: %+v, rid: %s", err, lgc.rid)
 	}

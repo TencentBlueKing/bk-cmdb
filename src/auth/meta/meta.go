@@ -117,6 +117,7 @@ const (
 	MoveHostFromModuleToResPool    Action = "moveHostFromModuleToResPool"
 	MoveHostToBizFaultModule       Action = "moveHostToBizFaultModule"
 	MoveHostToBizIdleModule        Action = "moveHostToBizIdleModule"
+	MoveHostToBizRecycleModule     Action = "moveHostToBizRecycleModule"
 	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
 	CleanHostInSetOrModule         Action = "cleanHostInSetOrModule"
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"

@@ -23,17 +23,10 @@ import (
 )
 
 // FillLostedFieldValue fill the value in inst map data
-func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute, ignorefields []string) {
+func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	ignores := map[string]bool{}
-	for _, field := range ignorefields {
-		ignores[field] = true
-	}
 	for _, field := range propertys {
 		if field.PropertyID == common.BKChildStr || field.PropertyID == common.BKParentStr {
-			continue
-		}
-		if ignores[field.PropertyID] {
 			continue
 		}
 		_, ok := valData[field.PropertyID]

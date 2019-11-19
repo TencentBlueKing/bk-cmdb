@@ -131,3 +131,24 @@ func (s *coreService) ListHostApplyRule(params core.ContextParams, pathParams, q
 	}
 	return hostApplyRuleResult, nil
 }
+
+func (s *coreService) GenerateApplyPlan(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.HostApplyPlanOption{}
+	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+		blog.Errorf("GenerateApplyPlan failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	applyPlans, err := s.core.HostApplyRuleOperation().GenerateApplyPlan(params, bizID, option)
+	if err != nil {
+		blog.Errorf("GenerateApplyPlan failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, params.ReqID)
+		return nil, err
+	}
+	return applyPlans, nil
+}
