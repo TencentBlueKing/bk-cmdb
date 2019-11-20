@@ -159,7 +159,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	}
 
 	propertyCond := condition.CreateCondition()
-	propertyCond.Field(common.BKPropertyTypeField).In([]string{common.FieldTypeSingleAsst, common.FieldTypeMultiAsst})
+	propertyCond.Field(common.BKPropertyTypeField).In([]string{"multiasst", "singleasst"})
 	propertys := []metadata.ObjAttDes{}
 	err = db.Table(common.BKTableNameObjAttDes).Find(propertyCond.ToMapStr()).All(ctx, &propertys)
 	if err != nil {
@@ -208,9 +208,9 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			asst.AsstKindID = common.AssociationTypeDefault
 			property := properyMap[buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID)]
 			switch property.PropertyType {
-			case common.FieldTypeSingleAsst:
+			case "singleasst":
 				asst.Mapping = metadata.OneToManyMapping
-			case common.FieldTypeMultiAsst:
+			case "multiasst":
 				asst.Mapping = metadata.ManyToManyMapping
 			default:
 				blog.Warnf("property: %+v, asst: %+v, for key: %v", property, asst, buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID))
@@ -287,7 +287,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	cloudIDUpdateCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	cloudIDUpdateCond.Field(common.BKPropertyIDField).Eq(common.BKCloudIDField)
 	cloudIDUpdateData := mapstr.New()
-	cloudIDUpdateData.Set(common.BKPropertyTypeField, common.FieldTypeForeignKey)
+	cloudIDUpdateData.Set(common.BKPropertyTypeField, "foreignkey")
 	cloudIDUpdateData.Set(common.BKOptionField, nil)
 	blog.InfoJSON("update host cloud association cond:%s, data:%s", cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
