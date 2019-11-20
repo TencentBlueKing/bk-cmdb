@@ -80,12 +80,13 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	for _, hostModule := range option.HostModules {
 		host, exist := hostMap[hostModule.HostID]
 		if exist == false {
+			err := errors.New(common.CCErrCommNotFound, fmt.Sprintf("host[%d] not found", hostModule.HostID))
 			hostApplyPlan = metadata.OneHostApplyPlan{
+				HostID:         hostModule.HostID,
 				ExpiredHost:    host,
 				ConflictFields: nil,
-				ErrCode:        common.CCErrCommNotFound,
-				ErrMsg:         fmt.Sprintf("host[%d] not found", hostModule.HostID),
 			}
+			hostApplyPlan.SetError(err)
 			hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 			continue
 		}
@@ -94,6 +95,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 			blog.ErrorJSON("generateOneHostApplyPlan failed, host: %s, moduleIDs: %s, rules: %s, err: %s, rid: %s", host, hostModule.ModuleIDs, option.Rules, err.Error(), rid)
 			return result, err
 		}
+		hostApplyPlan.HostID = hostModule.HostID
 		hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 	}
 	result = metadata.HostApplyPlanResult{
@@ -113,8 +115,7 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	plan := metadata.OneHostApplyPlan{
 		ExpiredHost:    host,
 		ConflictFields: make([]metadata.HostApplyConflictField, 0),
-		ErrCode:        0,
-		ErrMsg:         "",
+		UpdateFields:   make(map[string]interface{}),
 	}
 
 	moduleIDSet := make(map[int64]bool)
@@ -139,7 +140,7 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 
 	// update host if conflicts not exist
 	for attributeID, targetRules := range attributeRules {
-		if len(targetRules) == 1 {
+		if len(targetRules) == 0 {
 			continue
 		}
 		attribute, exist := attributeMap[attributeID]
@@ -171,7 +172,8 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			break
 		}
 
-		host[propertyIDField] = firstValue
+		plan.ExpiredHost[propertyIDField] = firstValue
+		plan.UpdateFields[propertyIDField] = firstValue
 	}
 
 	return plan, nil

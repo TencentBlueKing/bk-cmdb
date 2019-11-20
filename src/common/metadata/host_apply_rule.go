@@ -13,6 +13,8 @@ package metadata
 
 import (
 	"time"
+
+	"configcenter/src/common/errors"
 )
 
 // HostApplyRule represent one rule of host property auto apply
@@ -115,11 +117,12 @@ type HostApplyConflictField struct {
 }
 
 type OneHostApplyPlan struct {
+	ErrorContainer `json:",inline"`
+	HostID         int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
 	// 预计执行后端主机信息
 	ExpiredHost    map[string]interface{}   `field:"expired_host" json:"expired_host" bson:"expired_host" mapstructure:"expired_host"`
+	UpdateFields   map[string]interface{}   `field:"update_fields" json:"update_fields" bson:"update_fields" mapstructure:"update_fields"`
 	ConflictFields []HostApplyConflictField `field:"conflicts" json:"conflicts" bson:"conflicts" mapstructure:"conflicts"`
-	ErrCode        int                      `json:"error_code" json:"error_code" bson:"error_code" mapstructure:"error_code"`
-	ErrMsg         string                   `json:"error_message" json:"error_message" bson:"error_message" mapstructure:"error_message"`
 }
 
 type HostApplyPlanResult struct {
@@ -131,4 +134,29 @@ type HostApplyPlanRequest struct {
 	AdditionalRules   []CreateHostApplyRuleOption `field:"additional_host_apply_rules" json:"additional_host_apply_rules" bson:"additional_host_apply_rules" mapstructure:"additional_host_apply_rules"`
 	ConflictResolvers []HostApplyConflictResolver `field:"conflict_resolvers" json:"conflict_resolvers" bson:"conflict_resolvers" mapstructure:"conflict_resolvers"`
 	ModuleIDs         []int64                     `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+}
+
+type HostApplyResult struct {
+	ErrorContainer `json:",inline"`
+	HostID         int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
+}
+
+type ErrorContainer struct {
+	ErrCode int    `json:"error_code" json:"error_code" bson:"error_code" mapstructure:"error_code"`
+	ErrMsg  string `json:"error_message" json:"error_message" bson:"error_message" mapstructure:"error_message"`
+}
+
+func (container *ErrorContainer) SetError(err errors.CCErrorCoder) {
+	if err == nil {
+		return
+	}
+	container.ErrCode = err.GetCode()
+	container.ErrMsg = err.Error()
+}
+
+func (container *ErrorContainer) GetError() errors.CCErrorCoder {
+	if container.ErrCode == 0 {
+		return nil
+	}
+	return errors.New(container.ErrCode, container.ErrMsg)
 }
