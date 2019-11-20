@@ -5,7 +5,6 @@ import request from './modules/request.js'
 import index from './modules/view/index.js'
 import hostDetails from './modules/view/host-details.js'
 import serviceProcess from './modules/view/service-process.js'
-import businessTopology from './modules/view/business-topology.js'
 import businessSync from './modules/view/business-sync.js'
 import hosts from './modules/view/hosts.js'
 import setFeatures from './modules/view/set-features.js'
@@ -66,7 +65,6 @@ export default new Vuex.Store({
         index,
         hostDetails,
         serviceProcess,
-        businessTopology,
         businessSync,
         hosts,
         setFeatures,

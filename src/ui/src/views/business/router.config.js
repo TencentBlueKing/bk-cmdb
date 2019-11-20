@@ -4,6 +4,7 @@ import {
     MENU_RESOURCE_BUSINESS_HISTORY,
     MENU_RESOURCE_MANAGEMENT
 } from '@/dictionary/menu-symbol'
+
 import {
     BUSINESS_ARCHIVE,
     GET_AUTH_META
@@ -29,7 +30,10 @@ export default [{
             relative: MENU_RESOURCE_MANAGEMENT
         },
         auth: {
-            view: { ...GET_AUTH_META(BUSINESS_ARCHIVE) }
+            view: { ...GET_AUTH_META(BUSINESS_ARCHIVE) },
+            operation: {
+                BUSINESS_ARCHIVE
+            }
         }
     })
 }]

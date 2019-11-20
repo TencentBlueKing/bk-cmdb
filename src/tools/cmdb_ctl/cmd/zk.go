@@ -101,7 +101,7 @@ func newZkService(zkaddr string, path string) (*zkService, error) {
 	if path == "" {
 		return nil, errors.New("zk-path must be set")
 	}
-	service, err := config.NewService(zkaddr, "")
+	service, err := config.NewZkService(zkaddr)
 	if err != nil {
 		return nil, err
 	}

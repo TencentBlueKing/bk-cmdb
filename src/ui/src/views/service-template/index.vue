@@ -59,7 +59,7 @@
             <bk-table-column prop="name" :label="$t('模板名称')" class-name="is-highlight"></bk-table-column>
             <bk-table-column prop="service_category" :label="$t('服务分类')"></bk-table-column>
             <bk-table-column prop="process_template_count" :label="$t('进程数量')"></bk-table-column>
-            <bk-table-column prop="module_count" :label="$t('应用模块数')"></bk-table-column>
+            <bk-table-column prop="module_count" :label="$t('已应用模块数')"></bk-table-column>
             <bk-table-column prop="modifier" :label="$t('修改人')"></bk-table-column>
             <bk-table-column prop="last_time" :label="$t('修改时间')">
                 <template slot-scope="{ row }">
@@ -102,12 +102,12 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff
+            <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$OPERATION.C_SERVICE_TEMPLATE"
+                :auth="$authResources({ type: $OPERATION.C_SERVICE_TEMPLATE })"
                 @create="operationTemplate"
-            ></cmdb-table-stuff>
+            ></cmdb-table-empty>
         </bk-table>
     </div>
 </template>

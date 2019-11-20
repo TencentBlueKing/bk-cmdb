@@ -162,7 +162,7 @@ const menus = [{
     }, {
         id: MENU_ANALYSIS_OPERATION,
         i18n: '运营统计',
-        icon: 'icon-cc-nav-associated',
+        icon: 'icon-cc-statistics',
         route: getMenuRoute(analysisViews, MENU_ANALYSIS_OPERATION, 'analysis')
     }]
 }]

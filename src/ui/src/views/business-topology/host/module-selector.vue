@@ -1,59 +1,62 @@
 <template>
-    <div class="layout clearfix">
-        <div class="wrapper-left fl">
-            <h2 class="title">{{title}}</h2>
-            <h3 class="subtitle">{{$t('请勾选需要转到的模块')}}</h3>
-            <bk-input class="tree-filter" right-icon="icon-search" v-model="filter" :placeholder="$t('请输入关键词')"></bk-input>
-            <bk-big-tree ref="tree" class="topology-tree"
-                :default-expand-all="moduleType === 'idle'"
-                :options="{
-                    idKey: getNodeId,
-                    nameKey: 'bk_inst_name',
-                    childrenKey: 'child'
-                }"
-                :show-checkbox="isShowCheckbox"
-                @node-click="handleNodeClick"
-                @check-change="handleNodeCheck">
-                <template slot-scope="{ node, data }">
-                    <i class="internal-node-icon fl"
-                        v-if="data.default !== 0"
-                        :class="getInternalNodeClass(node, data)">
-                    </i>
-                    <i v-else :class="['node-icon fl', { 'is-template': isTemplate(data) }]">{{data.bk_obj_name[0]}}</i>
-                    <span :class="['node-checkbox fr', { 'is-checked': checked.includes(node) }]"
-                        v-if="moduleType === 'idle' && data.bk_obj_id === 'module'">
-                    </span>
-                    <span class="node-name">{{node.name}}</span>
-                </template>
-            </bk-big-tree>
-        </div>
-        <div class="wrapper-right fl">
-            <div class="selected-info clearfix">
-                <i18n class="selected-count fl" path="已选择N个模块">
-                    <span class="count" place="count">{{checked.length}}</span>
-                </i18n>
-                <bk-button class="fr" text theme="primary"
-                    v-show="checked.length"
-                    @click="handleClearModule">
-                    {{$t('清空')}}
-                </bk-button>
-            </div>
-            <ul class="module-list">
-                <li class="module-item" v-for="node in checked"
-                    :key="node.id">
-                    <div class="module-info clearfix">
-                        <span class="info-icon fl">{{node.data.bk_obj_name[0]}}</span>
-                        <span class="info-name" :title="node.data.bk_inst_name">
-                            {{node.data.bk_inst_name}}
+    <div class="layout"
+        :style="{ height: $APP.height * 0.55 + 'px' }"
+        v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+        <div class="wrapper">
+            <div class="wrapper-column wrapper-left">
+                <h2 class="title">{{title}}</h2>
+                <h3 class="subtitle">{{$t('请勾选需要转到的模块')}}</h3>
+                <bk-input class="tree-filter" right-icon="icon-search" v-model="filter" :placeholder="$t('请输入关键词')"></bk-input>
+                <bk-big-tree ref="tree" class="topology-tree"
+                    :default-expand-all="moduleType === 'idle'"
+                    :options="{
+                        idKey: getNodeId,
+                        nameKey: 'bk_inst_name',
+                        childrenKey: 'child'
+                    }"
+                    :show-checkbox="isShowCheckbox"
+                    @node-click="handleNodeClick"
+                    @check-change="handleNodeCheck">
+                    <template slot-scope="{ node, data }">
+                        <i class="internal-node-icon fl"
+                            v-if="data.default !== 0"
+                            :class="getInternalNodeClass(node, data)">
+                        </i>
+                        <i v-else :class="['node-icon fl', { 'is-template': isTemplate(data) }]">{{data.bk_obj_name[0]}}</i>
+                        <span :class="['node-checkbox fr', { 'is-checked': checked.includes(node) }]"
+                            v-if="moduleType === 'idle' && data.bk_obj_id === 'module'">
                         </span>
-                    </div>
-                    <div class="module-topology" :title="getNodePath(node)">{{getNodePath(node)}}</div>
-                    <i class="bk-icon icon-close" @click="handleDeleteModule(node)"></i>
-                </li>
-            </ul>
+                        <span class="node-name">{{node.name}}</span>
+                    </template>
+                </bk-big-tree>
+            </div>
+            <div class="wrapper-column wrapper-right">
+                <div class="selected-info clearfix">
+                    <i18n class="selected-count fl" path="已选择N个模块">
+                        <span class="count" place="count">{{checked.length}}</span>
+                    </i18n>
+                    <bk-button class="fr" text theme="primary"
+                        v-show="checked.length"
+                        @click="handleClearModule">
+                        {{$t('清空')}}
+                    </bk-button>
+                </div>
+                <ul class="module-list">
+                    <li class="module-item" v-for="node in checked"
+                        :key="node.id">
+                        <div class="module-info clearfix">
+                            <span class="info-icon fl">{{node.data.bk_obj_name[0]}}</span>
+                            <span class="info-name" :title="node.data.bk_inst_name">
+                                {{node.data.bk_inst_name}}
+                            </span>
+                        </div>
+                        <div class="module-topology" :title="getNodePath(node)">{{getNodePath(node)}}</div>
+                        <i class="bk-icon icon-close" @click="handleDeleteModule(node)"></i>
+                    </li>
+                </ul>
+            </div>
         </div>
-        <i class="clearfix"></i>
-        <div class="wrapper-footer">
+        <div class="layout-footer">
             <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
             <bk-button theme="primary"
                 :disabled="!checked.length"
@@ -66,6 +69,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import debounce from 'lodash.debounce'
     export default {
         name: 'cmdb-module-selector',
         props: {
@@ -89,6 +93,7 @@
         data () {
             return {
                 filter: '',
+                handlerFilter: null,
                 checked: [],
                 request: {
                     internal: Symbol('internal'),
@@ -112,7 +117,15 @@
                 return map
             }
         },
+        watch: {
+            filter () {
+                this.handlerFilter()
+            }
+        },
         async created () {
+            this.handlerFilter = debounce(() => {
+                this.$refs.tree.filter(this.filter)
+            }, 300)
             this.getModules()
         },
         methods: {
@@ -252,37 +265,71 @@
 <style lang="scss" scoped>
     $leftPadding: 0 12px 0 23px;
     .layout {
-        height: 542px;
+        max-height: 540px;
+        min-height: 300px;
+        padding: 0 0 50px;
+        position: relative;
+        .layout-footer {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            padding: 8px 20px;
+            border-top: 1px solid $borderColor;
+            background-color: #FAFBFD;
+            text-align: right;
+            font-size: 0;
+            z-index: 100;
+        }
     }
-    .wrapper-left {
-        width: 350px;
-        height: 490px;
-        border-right: 1px solid $borderColor;
-        .title {
-            margin-top: 15px;
-            padding: $leftPadding;
-            font-size: 24px;
-            font-weight: normal;
-            color: #444444;
-            line-height:32px;
+    .wrapper {
+        display: flex;
+        height: 100%;
+        .wrapper-column {
+            flex: 1;
         }
-        .subtitle {
-            margin-top: 10px;
-            padding: $leftPadding;
-            font-size: 14px;
-            font-weight: normal;
-            color: $textColor;
-            line-height: 20px;
+        .wrapper-left {
+            border-right: 1px solid $borderColor;
+            .title {
+                margin-top: 15px;
+                padding: $leftPadding;
+                font-size: 24px;
+                font-weight: normal;
+                color: #444444;
+                line-height:32px;
+            }
+            .subtitle {
+                margin-top: 10px;
+                padding: $leftPadding;
+                font-size: 14px;
+                font-weight: normal;
+                color: $textColor;
+                line-height: 20px;
+            }
+            .tree-filter {
+                display: block;
+                width: auto;
+                margin: 10px 12px 0 23px;
+            }
         }
-        .tree-filter {
-            display: block;
-            width: auto;
-            margin: 10px 12px 0 23px;
+        .wrapper-right {
+            padding: 57px 23px 0;
+            .selected-info {
+                font-size: 14px;
+                line-height: 20px;
+                color: $textColor;
+                .count {
+                    padding: 0 4px;
+                    font-weight: bold;
+                    color: #2DCB56;
+                }
+            }
         }
     }
     .topology-tree {
         width: 100%;
-        max-height: 370px;
+        max-height: calc(100% - 120px);
         padding: 0 0 0 23px;
         @include scrollbar;
         .node-icon {
@@ -334,22 +381,8 @@
         }
     }
 
-    .wrapper-right {
-        width: 370px;
-        padding: 57px 23px 0;
-        .selected-info {
-            font-size: 14px;
-            line-height: 20px;
-            color: $textColor;
-            .count {
-                padding: 0 4px;
-                font-weight: bold;
-                color: #2DCB56;
-            }
-        }
-    }
     .module-list {
-        max-height: 400px;
+        height: calc(100% - 35px);
         margin-top: 12px;
         @include scrollbar-y;
         .module-item {
@@ -400,13 +433,5 @@
         font-size: 12px;
         color: #C4C6CC;
         @include ellipsis;
-    }
-    .wrapper-footer {
-        height: 51px;
-        padding: 9px 20px;
-        border-top: 1px solid $borderColor;
-        background-color: #FAFBFD;
-        text-align: right;
-        font-size: 0;
     }
 </style>
