@@ -6,7 +6,7 @@
             :desc="$t('主机属于多个模块，且同一属性的自动应用配置有差异，若不处理，将维持主机转移前的该项属性值')"
             @close-tips="showFeatureTips = false">
         </feature-tips>
-        <property-confirm-table :confirm-data="confirmData"></property-confirm-table>
+        <property-confirm-table :data="table.list" :total="table.total"></property-confirm-table>
         <div class="bottom-actionbar">
             <div class="actionbar-inner">
                 <bk-button theme="primary" :disabled="applyButtonDisabled">应用</bk-button>
@@ -30,32 +30,51 @@
             return {
                 showFeatureTips: false,
                 applyButtonDisabled: true,
-                confirmData: [
-                    {
-                        id: 1,
-                        bk_host_innerip: '120.23.3.3',
-                        bk_cloud_id: '直连区域',
-                        bk_asset_id: 'No90378',
-                        bk_host_name: 'nginx1_lol',
-                        diff_value: 'xxx'
-                    }
-                ]
+                table: {
+                    list: [],
+                    total: 0
+                }
             }
         },
         computed: {
             ...mapGetters(['featureTipsParams', 'supplierAccount'])
         },
         watch: {
-
         },
         created () {
             this.showFeatureTips = this.featureTipsParams['hostApplyConflict']
             this.setBreadcrumbs()
+            this.initData()
         },
         methods: {
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
             ]),
+            ...mapActions('hostApply', [
+                'getApplyRulePreview'
+            ]),
+            async initData () {
+                try {
+                    const { count, info } = await this.getApplyRulePreview({
+                        params: {},
+                        config: {
+                            requestId: 'getApplyRulePreview',
+                            fromCache: true
+                        }
+                    })
+
+                    let tableList = []
+                    let i = 0
+                    while (i < 20) {
+                        tableList = [...tableList, ...info]
+                        i++
+                    }
+                    this.table.list = tableList
+                    this.table.total = count
+                } catch (e) {
+                    console.error(e)
+                }
+            },
             setBreadcrumbs () {
                 this.$store.commit('setTitle', this.$t('冲突列表'))
                 this.$store.commit('setBreadcrumbs', [{

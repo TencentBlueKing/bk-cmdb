@@ -117,7 +117,7 @@
                 return true || this.data.host_config_id
             },
             isConfigEnabled () {
-                return false || this.data.enabled
+                return true || this.data.enabled
             },
             hasConflict () {
                 return this.initConfigData.conflict_num > 0
@@ -131,9 +131,9 @@
                 immediate: true
             },
             checkedPropertyIdList () {
-                if (this.isEdit) {
-                    this.toggleNexButtonDisabled()
-                }
+                this.$nextTick(() => {
+                    this.isEidt && this.toggleNexButtonDisabled()
+                })
             }
         },
         created () {
@@ -159,20 +159,6 @@
                     this.checkedPropertyIdList = this.initConfigData.config_list.map(item => item.bk_property_id)
                 }
             },
-            getDisplayValue (property) {
-                const value = property.__extra__.value
-                let displayValue = value
-                switch (property.bk_property_type) {
-                    case 'enum':
-                        displayValue = (property.option.find(item => item.id === value) || {}).name
-                        break
-                    case 'bool':
-                        displayValue = ['否', '是'][+value]
-                        break
-                }
-
-                return displayValue
-            },
             toggleNexButtonDisabled () {
                 const modulePropertyList = this.$refs.configEditTable.modulePropertyList
                 this.nextDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
@@ -184,21 +170,32 @@
                     value: property.__extra__.value
                 }))
 
+                // TODO 调用接口保存配置
+
                 this.$router.push({
                     name: 'hostApplyConfirm',
                     query: {
-                        batch: 0
+                        batch: 0,
+                        cid: 1
                     }
                 })
                 console.log(configData)
             },
             handleViewConflict () {
                 this.$router.push({
-                    name: 'hostApplyConflict'
+                    name: 'hostApplyConflict',
+                    query: {
+                        cid: 1
+                    }
                 })
             },
             handleCloseApply () {
-
+                this.$bkInfo({
+                    title: this.$t('确认关闭自动应用？'),
+                    subTitle: this.$t('关闭后，新转入的的主机将不会自动应用模块的主机属性'),
+                    confirmFn: () => {
+                    }
+                })
             },
             handlePropertyValueChange () {
                 this.toggleNexButtonDisabled()

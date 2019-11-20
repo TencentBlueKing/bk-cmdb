@@ -50,7 +50,6 @@
         data () {
             return {
                 show: this.visiable,
-                propertyList: [],
                 localChecked: []
             }
         },
@@ -88,7 +87,6 @@
                         }
                     })
 
-                    // this.propertyList = data
                     this.$store.commit('hosts/setPropertyList', data)
                 } catch (e) {
                     console.error(e)
@@ -102,7 +100,6 @@
             },
             handleCancel () {
                 this.localChecked = this.checkedList
-                // this.$emit('update:checkedList', this.checkedList)
             }
         }
     }

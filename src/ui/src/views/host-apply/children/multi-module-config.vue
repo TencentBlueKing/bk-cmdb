@@ -185,7 +185,7 @@
             handleDel () {
                 this.$bkInfo({
                     title: this.$t('确认删除自动应用字段？'),
-                    subTitle: '删除后，将会移除字段在对应模块中的配置',
+                    subTitle: this.$t('删除后，将会移除字段在对应模块中的配置'),
                     confirmFn: () => {
                     }
                 })
