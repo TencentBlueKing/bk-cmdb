@@ -406,3 +406,81 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 
 	return planResult, nil
 }
+
+func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	rid := srvData.rid
+
+	bizIDStr := req.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("GenerateApplyPlan failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	planRequest := meta.HostApplyPlanRequest{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&planRequest); err != nil {
+		blog.Errorf("GenerateApplyPlan failed, decode request body failed, err: %v,rid:%s", err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+	planResult, err := s.generateApplyPlan(srvData, bizID, planRequest)
+	if err != nil {
+		blog.ErrorJSON("GenerateApplyPlan failed, generateApplyPlan failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, planRequest, err, rid)
+		result := &meta.RespError{Msg: err}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	hostApplyResults := make([]meta.HostApplyResult, 0)
+	for _, item := range planResult.Plans {
+		hostApplyResult := meta.HostApplyResult{
+			HostID: item.HostID,
+		}
+		updateOption := &meta.UpdateOption{
+			Data: item.UpdateFields,
+			Condition: map[string]interface{}{
+				common.BKHostIDField: item.HostID,
+			},
+		}
+		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
+		if err != nil {
+			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
+			ccErr := srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+			hostApplyResult.SetError(ccErr)
+			hostApplyResults = append(hostApplyResults, hostApplyResult)
+			continue
+		}
+		if ccErr := updateResult.CCError(); ccErr != nil {
+			blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
+			hostApplyResult.SetError(ccErr)
+			hostApplyResults = append(hostApplyResults, hostApplyResult)
+			continue
+		}
+		hostApplyResults = append(hostApplyResults, hostApplyResult)
+	}
+
+	var ccErr errors.CCErrorCoder
+	for _, item := range hostApplyResults {
+		if err := item.GetError(); err != nil {
+			ccErr = err
+			break
+		}
+	}
+	if ccErr != nil {
+		result := &meta.RespError{Msg: ccErr}
+		result.Data = hostApplyResults
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	result := meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     hostApplyResults,
+	}
+	_ = resp.WriteEntity(result)
+	return
+}
