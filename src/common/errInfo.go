@@ -743,27 +743,6 @@ const (
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
 
-	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
-	CCErrAPIServerV2APPNameLenErr = 1170001
-
-	// CCErrAPIServerV2DirectErr  display error
-	CCErrAPIServerV2DirectErr = 1170002
-
-	// CCErrAPIServerV2SetNameLenErr  set name must be < 24 len
-	CCErrAPIServerV2SetNameLenErr = 1170003
-
-	// CCErrAPIServerV2MultiModuleIDErr  single module id  is int
-	CCErrAPIServerV2MultiModuleIDErr = 1170004
-
-	// CCErrAPIServerV2MultiSetIDErr  single set id is int
-	CCErrAPIServerV2MultiSetIDErr = 1170005
-
-	// CCErrAPIServerV2OSTypeErr osType must be linux or windows
-	CCErrAPIServerV2OSTypeErr = 1170006
-
-	// CCErrAPIServerV2HostModuleContainDefaultModuleErr  translate host to multiple module not contain default module
-	CCErrAPIServerV2HostModuleContainDefaultModuleErr = 1170007
-
 	// synchronize_server 1114xxx
 
 	CCErrSynchronizeError = 1114001
