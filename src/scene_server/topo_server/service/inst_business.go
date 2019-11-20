@@ -13,23 +13,22 @@
 package service
 
 import (
-	"fmt"
-	"reflect"
-	"sort"
-	"strconv"
+    "fmt"
+    "reflect"
+    "sort"
+    "strconv"
 
-	"configcenter/src/auth"
-	authmeta "configcenter/src/auth/meta"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	gparams "configcenter/src/common/paraparse"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/types"
-
-	"github.com/mitchellh/mapstructure"
+    "configcenter/src/auth"
+    authmeta "configcenter/src/auth/meta"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/condition"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/mapstruct"
+    "configcenter/src/common/metadata"
+    gparams "configcenter/src/common/paraparse"
+    "configcenter/src/common/util"
+    "configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateBusiness create a new business
@@ -40,7 +39,7 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	data.Set(common.BKDefaultField, 0)
+	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
 	if err != nil {
 		blog.Errorf("create business failed, err: %v, rid: %s", err, params.ReqID)
@@ -129,7 +128,8 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
-	_, bizs, err := s.Core.BusinessOperation().FindBusiness(params, obj, nil, condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID))
+	data = mapstr.New()
+	_, bizs, err := s.Core.BusinessOperation().FindBusiness(params, nil, condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID))
 	if nil != err {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 
 		data.Set(common.BKDataStatusField, pathParams("flag"))
 	case common.DataStatusEnable:
-		name, err := bizs[0].GetInstName()
+		name, err := bizs[0].String(common.BKAppNameField)
 		if nil != err {
 			return nil, params.Err.Error(common.CCErrCommNotFound)
 		}
@@ -187,15 +187,10 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 // 1. have any authorized resources in a business.
 // 2. only returned with a few field for this business info.
 func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
-		return nil, err
-	}
 	fields := []string{common.BKAppIDField, common.BKAppNameField, "business_dept_id", "business_dept_name"}
 	cond := condition.CreateCondition()
 	cond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
-	cond.Field(common.BKDefaultField).Eq(0)
+	cond.Field(common.BKDefaultField).Eq(common.DefaultFlagDefaultValue)
 	if s.AuthManager.Enabled() {
 		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
 		appList, err := s.AuthManager.Authorize.GetAnyAuthorizedBusinessList(params.Context, user)
@@ -211,7 +206,7 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 
 	}
 
-	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, fields, cond)
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, fields, cond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
 		return nil, err
@@ -219,19 +214,18 @@ func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathPara
 
 	datas := make([]mapstr.MapStr, 0)
 	for _, item := range instItems {
-		instMap := item.GetValues()
 		inst := mapstr.New()
-		inst[common.BKAppIDField] = instMap[common.BKAppIDField]
-		inst[common.BKAppNameField] = instMap[common.BKAppNameField]
-		inst["business_dept_id"] = instMap["business_dept_id"]
-		inst["business_dept_name"] = instMap["business_dept_name"]
+		inst[common.BKAppIDField] = item[common.BKAppIDField]
+		inst[common.BKAppNameField] = item[common.BKAppNameField]
+		inst["business_dept_id"] = item["business_dept_id"]
+		inst["business_dept_name"] = item["business_dept_name"]
 
-		if val, exist := instMap["business_dept_id"]; exist {
+		if val, exist := item["business_dept_id"]; exist {
 			inst["business_dept_id"] = val
 		} else {
 			inst["business_dept_id"] = ""
 		}
-		if val, exist := instMap["business_dept_name"]; exist {
+		if val, exist := item["business_dept_name"]; exist {
 			inst["business_dept_name"] = val
 		} else {
 			inst["business_dept_name"] = ""
@@ -273,12 +267,6 @@ func (s *Service) GetBusinessBasicInfo(params types.ContextParams, pathParams, q
 
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
-		return nil, err
-	}
-
 	searchCond := &gparams.SearchParams{
 		Condition: mapstr.New(),
 	}
@@ -287,7 +275,11 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	attrArr, err := obj.GetAttributes()
+	attrCond := condition.CreateCondition()
+	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
+	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
+	attrArr, err := s.Core.AttributeOperation().FindObjectAttribute(params, attrCond)
 	if nil != err {
 		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), util.GetHTTPCCRequestID(params.Header))
 		return nil, err
@@ -295,10 +287,7 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 	// userFieldArr Fields in the business are user-type fields
 	var userFieldArr []string
 	for _, attrInterface := range attrArr {
-		attr := attrInterface.Attribute()
-		if attr.PropertyType == common.FieldTypeUser {
-			userFieldArr = append(userFieldArr, attr.PropertyID)
-		}
+		userFieldArr = append(userFieldArr, attrInterface.Attribute().PropertyID)
 	}
 
 	innerCond := condition.CreateCondition()
@@ -378,11 +367,11 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		innerCond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
 	}
 
-	innerCond.Field(common.BKDefaultField).Eq(0)
+	innerCond.Field(common.BKDefaultField).Eq(common.DefaultFlagDefaultValue)
 	innerCond.SetPage(searchCond.Page)
 	innerCond.SetFields(searchCond.Fields)
 
-	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, searchCond.Fields, innerCond)
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, searchCond.Fields, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
 		return nil, err
@@ -397,15 +386,8 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 
 // search archived business by condition
 func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
-		return nil, err
-	}
-
 	innerCond := condition.CreateCondition()
-	if err = innerCond.Parse(data); nil != err {
+	if err := innerCond.Parse(data); nil != err {
 		blog.Errorf("[api-biz] failed to parse the input data, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
@@ -424,7 +406,7 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 		innerCond.Field(common.BKAppIDField).In(appList)
 	}
 
-	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, []string{}, innerCond)
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, []string{}, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
 		return nil, err
@@ -544,11 +526,6 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 
 // ListAllBusinessSimplify list all businesses with return only several fields
 func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
-	if nil != err {
-		blog.Errorf("ListAllBusinessSimplify failed, FindSingleObject failed, err: %s, rid: %s", err.Error(), params.ReqID)
-		return nil, err
-	}
 
 	fields := []string{
 		common.BKAppIDField,
@@ -560,7 +537,7 @@ func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams
 		Operator: condition.BKDBNE,
 		Value:    "disabled",
 	})
-	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, fields, filter)
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, fields, filter)
 	if nil != err {
 		blog.Errorf("ListAllBusinessSimplify failed, FindBusiness failed, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
@@ -568,7 +545,7 @@ func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams
 	businesses := make([]metadata.BizBasicInfo, 0)
 	for _, item := range instItems {
 		business := metadata.BizBasicInfo{}
-		if err := mapstructure.Decode(item.ToMapStr(), &business); err != nil {
+		if err := mapstruct.Decode2Struct(item, &business); err != nil {
 			blog.Errorf("ListAllBusinessSimplify failed, decode biz from db failed, err: %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.CCError(common.CCErrCommParseDBFailed)
 		}

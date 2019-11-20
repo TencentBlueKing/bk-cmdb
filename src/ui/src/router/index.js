@@ -89,6 +89,10 @@ const router = new Router({
 })
 
 const checkViewAuthorize = async to => {
+    // owener判断已经发现无业务时
+    if (to.meta.view === 'permission') {
+        return false
+    }
     const auth = to.meta.auth || {}
     const view = auth.view
     if (view) {

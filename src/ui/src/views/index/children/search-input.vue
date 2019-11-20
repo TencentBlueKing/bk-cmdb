@@ -1,8 +1,41 @@
 <template>
     <div class="search-layout" ref="searchLayout" :style="{ 'background-color': setStyle.backgroundColor }">
         <div :class="{ 'sticky-layout': result.isShow }" :style="{ 'padding-top': (setStyle.paddingTop) + 'px' }">
-            <div class="search-bar" v-click-outside="handleHideLenovo">
-                <div class="input-box">
+            <div class="search-bar">
+                <div class="search-box" v-if="result.isShow">
+                    <div :class="['search-tab', { 'is-focus': isFocus }]">
+                        <span :class="['tab-item', { 'active': activeName === 'host' }]"
+                            @click="handleChangeTab('host')">
+                            {{$t('主机搜索')}}
+                        </span>
+                        <span :class="['tab-item', { 'active': activeName === 'fullText' }]"
+                            @click="handleChangeTab('fullText')">
+                            {{$t('全文检索')}}
+                        </span>
+                    </div>
+                    <div class="tab-content">
+                        <host-search v-show="activeName === 'host'" @focus="handleFocus"></host-search>
+                        <div class="input-box" v-show="activeName === 'fullText'" v-click-outside="handleHideLenovo">
+                            <bk-input ref="searchInput"
+                                class="search-input"
+                                autocomplete="off"
+                                maxlength="32"
+                                :placeholder="placeholder"
+                                v-model.trim="keywords"
+                                @input="handleInputSearch"
+                                @focus="handleShowHistory"
+                                @blur="isFocus = false"
+                                @enter="handleShowResult">
+                            </bk-input>
+                            <i class="bk-icon search-clear icon-close-circle-shape" v-show="keywords" @click="handleClear"></i>
+                            <bk-button theme="primary" class="search-btn" @click="handleShowResult">
+                                <i class="bk-icon icon-search"></i>
+                                {{$t('搜索')}}
+                            </bk-button>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-box" v-else v-click-outside="handleHideLenovo">
                     <bk-input ref="searchInput"
                         class="search-input"
                         autocomplete="off"
@@ -21,7 +54,7 @@
                     </bk-button>
                 </div>
                 <transition name="slide">
-                    <div class="lenovo selectTips" v-show="showLenovo && lenovoList.length">
+                    <div class="lenovo selectTips" :style="{ top: result.isShow ? '76px' : '47px' }" v-show="showLenovo && lenovoList.length">
                         <ul class="lenovo-result">
                             <template v-for="(item, index) in lenovoList">
                                 <li :key="index" v-if="item.type === 'host'"
@@ -48,7 +81,7 @@
                 </transition>
 
                 <transition name="slide">
-                    <div class="history selectTips" v-show="showHistory">
+                    <div class="history selectTips" :style="{ top: result.isShow ? '76px' : '47px' }" v-show="showHistory">
                         <div class="history-title">
                             <span>{{$t('搜索历史')}}</span>
                             <bk-button :text="true" class="clear-btn" @click="handlClearHistory">
@@ -106,11 +139,13 @@
 
 <script>
     import searchResult from './full-text-search'
+    import hostSearch from './host-search'
     import { mapGetters } from 'vuex'
     import { MENU_INDEX, MENU_RESOURCE_INSTANCE, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
         components: {
-            searchResult
+            searchResult,
+            hostSearch
         },
         props: {
             isFullTextSearch: {
@@ -120,6 +155,8 @@
         },
         data () {
             return {
+                isFocus: false,
+                activeName: 'fullText',
                 toggleTips: null,
                 beforeKeywords: '',
                 keywords: '',
@@ -260,6 +297,12 @@
             }
         },
         methods: {
+            handleFocus (status) {
+                this.isFocus = status
+            },
+            handleChangeTab (name) {
+                this.activeName = name
+            },
             getShowModelName (source) {
                 let modelName = ''
                 try {
@@ -358,7 +401,10 @@
                 }, 300)
             },
             handleShowHistory () {
-                this.$emit('focus', true)
+                if (!this.keywords) {
+                    this.$emit('focus', true)
+                }
+                this.isFocus = true
                 this.showHistory = !this.keywords && this.historyList.length
             },
             handlClearHistory () {
@@ -398,6 +444,9 @@
                 })
                 this.result.isShow = true
                 this.updating = false
+                this.$nextTick(() => {
+                    this.$refs.searchInput.$refs.input.focus()
+                })
             },
             handleHistorySearch (keyword) {
                 this.keywords = keyword
@@ -514,6 +563,42 @@
             width: 100%;
             max-width: 726px;
             margin: 0 auto 38px;
+            .search-box {
+                height: calc(100% + 50px);
+                transition: all 0.4s;
+                .search-tab {
+                    max-width: 726px;
+                    margin: 0 auto;
+                    font-size: 0;
+                    &.is-focus .tab-item.active {
+                        border-color: #3A84FF;
+                    }
+                    .tab-item {
+                        @include inlineBlock;
+                        position: relative;
+                        height: 30px;
+                        line-height: 30px;
+                        text-align: center;
+                        padding: 0 14px;
+                        margin: 0 4px -1px 0;
+                        font-size: 14px;
+                        color: #63656E;
+                        background-color: #DCDEE5;
+                        border: 1px solid #C4C6CC;
+                        border-radius: 6px 6px 0 0;
+                        transition: all 0.2s;
+                        cursor: pointer;
+                        &.active {
+                            background-color: #FFFFFF;
+                            border-bottom-color: #FFFFFF !important;
+                            z-index: 1000;
+                        }
+                    }
+                }
+                .tab-content {
+                    height: 100%;
+                }
+            }
             .input-box {
                 width: 100%;
                 display: flex;
@@ -545,7 +630,7 @@
             .search-clear {
                 position: absolute;
                 right: 86px;
-                top: 0;
+                bottom: 0;
                 width: 50px;
                 height: 42px;
                 line-height: 42px;

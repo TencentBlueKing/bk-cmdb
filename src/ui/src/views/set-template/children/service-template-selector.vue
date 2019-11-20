@@ -3,13 +3,14 @@
         <bk-input v-if="templates.length"
             class="search"
             type="text"
-            :placeholder="$t('请输入xx', { name: $t('服务模板') })"
+            :placeholder="$t('请输入模板名称搜索')"
             right-icon="bk-icon icon-search"
             v-model.trim="searchName"
             @enter="hanldeFilterTemplates">
         </bk-input>
         <ul class="template-list clearfix"
             v-bkloading="{ isLoading: $loading('getServiceTemplate') }"
+            :style="{ height: !!templates.length ? '264px' : '306px' }"
             :class="{ 'is-loading': $loading('getServiceTemplate') }">
             <template v-if="templates.length">
                 <li class="template-item fl clearfix"

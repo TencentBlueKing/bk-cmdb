@@ -42,7 +42,7 @@
                     </bk-option>
                     <div class="add-template" slot="extension" @click="jumpServiceTemplate" v-if="!templateList.length">
                         <i class="bk-icon icon-plus-circle"></i>
-                        <span>{{$t('新建模板')}}</span>
+                        <span>{{$t('新建服务模板')}}</span>
                     </div>
                 </bk-select>
                 <span class="form-error" v-if="errors.has('template')">{{errors.first('template')}}</span>
@@ -91,7 +91,7 @@
             <bk-button theme="primary"
                 :disabled="$loading() || errors.any()"
                 @click="handleSave">
-                {{$t('确定')}}
+                {{$t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>

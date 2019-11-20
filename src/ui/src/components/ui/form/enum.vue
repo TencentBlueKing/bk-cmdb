@@ -93,6 +93,8 @@
                     } else {
                         this.selected = this.value
                     }
+                } else {
+                    this.selected = this.value
                 }
             }
         }

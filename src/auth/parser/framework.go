@@ -139,6 +139,6 @@ func ParseStreamWithFramework(ps *parseStream, authConfigs []AuthConfig) *parseS
 	if resources != nil {
 		ps.Attribute.Resources = resources
 	}
-	blog.Infof("\n\n %s", resources)
+	blog.V(7).Infof("ParseStreamWithFramework result: %s", resources)
 	return ps
 }

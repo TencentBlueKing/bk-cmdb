@@ -1,5 +1,5 @@
 <template>
-    <section class="layout">
+    <section class="move-layout">
         <cmdb-tips
             :tips-style="{
                 background: 'none',
@@ -12,9 +12,7 @@
             }">
             {{$t('移动到空闲机的主机提示')}}
         </cmdb-tips>
-        <bk-table class="table"
-            :data="list"
-            :cell-style="getCellStyle">
+        <bk-table class="table" :data="list">
             <bk-table-column :label="$t('操作')">
                 <!-- eslint-disable-next-line -->
                 <template slot-scope="{ row }">{{$t('转移到空闲机的主机')}}</template>
@@ -32,6 +30,7 @@
 <script>
     import { foreignkey, singlechar } from '@/filters/formatter.js'
     export default {
+        name: 'move-to-idle-host',
         filters: { foreignkey, singlechar },
         props: {
             info: {
@@ -55,14 +54,6 @@
             }
         },
         methods: {
-            getCellStyle ({ columnIndex }) {
-                if (columnIndex === 0) {
-                    return {
-                        color: '#3A84FF'
-                    }
-                }
-                return {}
-            },
             getHostValue (row, field) {
                 const host = row.host
                 if (host) {
