@@ -1093,5 +1093,14 @@
     "选择业务模块": "Select business module",
     "按模块路径排序": "Sort by module path",
     "转移到空闲模块": "Transfer to idle module",
-    "移除主机": "Remove host"
+    "移除主机": "Remove host",
+    "已选择模块": "{num} modules have been selected",
+    "请勾选要删除的字段": "Please select the fields you want to delete.",
+    "当前值": "The current value",
+    "冲突值": "Conflict value",
+    "修改后": "After modification",
+    "确认删除自动应用字段": "Confirm delete auto apply field",
+    "自动应用字段删除提示": "After deletion, the configuration of the field in the corresponding module will be removed.",
+    "处理冲突": "Handling conflicts [{host}]",
+    "解决应用字段冲突提示": "Resolve conflicts: The attributes of the same host must be consistent under different modules."
 }

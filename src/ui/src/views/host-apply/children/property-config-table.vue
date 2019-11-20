@@ -33,11 +33,11 @@
         >
             <template slot-scope="{ row }">
                 <template v-if="multiple">
-                    <div v-if="row.module_list">
+                    <template v-if="row.module_list">
                         <div v-for="item in row.module_list" :key="item.bk_inst_id">
                             {{getDisplayValue(item.value, row)}}
                         </div>
-                    </div>
+                    </template>
                     <span v-else>--</span>
                 </template>
                 <template v-else>
@@ -45,7 +45,7 @@
                 </template>
             </template>
         </bk-table-column>
-        <bk-table-column v-if="!readonly || !deletable" :label="$t(multiple ? '修改后' : '值')" class-name="table-cell-form-element">
+        <bk-table-column v-if="!readonly" :label="$t(multiple ? '修改后' : '值')" class-name="table-cell-form-element">
             <template slot-scope="{ row }">
                 <div class="form-element-content">
                     <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
@@ -53,7 +53,7 @@
             </template>
         </bk-table-column>
         <bk-table-column
-            v-if="!readonly || !deletable"
+            v-if="!readonly"
             width="200"
             :label="$t('操作')"
             :render-header="multiple ? (h, data) => renderTableHeader(h, data, '删除操作不影响原有配置') : null"
