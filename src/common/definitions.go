@@ -301,7 +301,7 @@ const (
 	// BKModuleNameField the module name field
 	BKModuleNameField = "bk_module_name"
 
-	HostPropertyApplyEnabledField = "apply_host_property_enabled"
+	HostApplyEnabledField = "host_apply_enabled"
 
 	// BKSubscriptionIDField the subscription id field
 	BKSubscriptionIDField = "subscription_id"
