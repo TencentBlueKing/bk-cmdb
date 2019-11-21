@@ -77,6 +77,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	// compute apply plan one by one
 	hostApplyPlans := make([]metadata.OneHostApplyPlan, 0)
 	var hostApplyPlan metadata.OneHostApplyPlan
+	conflictedStillExist := false
 	for _, hostModule := range option.HostModules {
 		host, exist := hostMap[hostModule.HostID]
 		if exist == false {
@@ -90,32 +91,47 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 			hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 			continue
 		}
-		hostApplyPlan, err = p.generateOneHostApplyPlan(ctx, host, hostModule.ModuleIDs, option.Rules, attributes)
+		hostApplyPlan, err = p.generateOneHostApplyPlan(ctx, hostModule.HostID, host, hostModule.ModuleIDs, option.Rules, attributes, option.ConflictResolvers)
 		if err != nil {
 			blog.ErrorJSON("generateOneHostApplyPlan failed, host: %s, moduleIDs: %s, rules: %s, err: %s, rid: %s", host, hostModule.ModuleIDs, option.Rules, err.Error(), rid)
 			return result, err
 		}
-		hostApplyPlan.HostID = hostModule.HostID
+		if hostApplyPlan.ConflictedStillExist {
+			conflictedStillExist = true
+		}
 		hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 	}
 	result = metadata.HostApplyPlanResult{
-		Plans:          hostApplyPlans,
-		HostAttributes: attributes,
+		Plans:                hostApplyPlans,
+		ConflictedStillExist: conflictedStillExist,
+		HostAttributes:       attributes,
 	}
 	return result, nil
 }
 
 func (p *hostApplyRule) generateOneHostApplyPlan(
 	ctx core.ContextParams,
+	hostID int64,
 	host map[string]interface{},
 	moduleIDs []int64,
 	rules []metadata.HostApplyRule,
 	attributes []metadata.Attribute,
+	resolvers []metadata.HostApplyConflictResolver,
 ) (metadata.OneHostApplyPlan, errors.CCErrorCoder) {
+	resolverMap := make(map[int64]interface{})
+	for _, item := range resolvers {
+		if item.HostID != hostID {
+			continue
+		}
+		resolverMap[item.AttributeID] = item.PropertyValue
+	}
+
 	plan := metadata.OneHostApplyPlan{
-		ExpiredHost:    host,
-		ConflictFields: make([]metadata.HostApplyConflictField, 0),
-		UpdateFields:   make(map[string]interface{}),
+		HostID:               hostID,
+		ExpiredHost:          host,
+		ConflictFields:       make([]metadata.HostApplyConflictField, 0),
+		UpdateFields:         make([]metadata.HostApplyUpdateField, 0),
+		ConflictedStillExist: false,
 	}
 
 	moduleIDSet := make(map[int64]bool)
@@ -153,14 +169,26 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 
 		// check conflicts
 		firstValue := targetRules[0].PropertyValue
+		conflictedStillExist := false
 		for _, rule := range targetRules {
 			if cmp.Equal(firstValue, rule.PropertyValue) == false {
+				conflictedStillExist = true
+				if propertyValue, exist := resolverMap[attribute.ID]; exist == true {
+					conflictedStillExist = false
+					firstValue = propertyValue
+				}
 				plan.ConflictFields = append(plan.ConflictFields, metadata.HostApplyConflictField{
-					AttributeID: attributeID,
-					Rules:       targetRules,
+					AttributeID:          attributeID,
+					Rules:                targetRules,
+					ConflictedStillExist: conflictedStillExist,
 				})
 				break
 			}
+		}
+
+		if conflictedStillExist == true {
+			plan.ConflictedStillExist = true
+			continue
 		}
 
 		// validate property value before update to host
@@ -173,7 +201,11 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		}
 
 		plan.ExpiredHost[propertyIDField] = firstValue
-		plan.UpdateFields[propertyIDField] = firstValue
+		plan.UpdateFields = append(plan.UpdateFields, metadata.HostApplyUpdateField{
+			AttributeID:   attributeID,
+			PropertyID:    propertyIDField,
+			PropertyValue: firstValue,
+		})
 	}
 
 	return plan, nil

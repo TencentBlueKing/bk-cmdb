@@ -114,6 +114,15 @@ type HostApplyPlanOption struct {
 type HostApplyConflictField struct {
 	AttributeID int64           `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
 	Rules       []HostApplyRule `field:"host_apply_rules" json:"host_apply_rules" bson:"host_apply_rules" mapstructure:"host_apply_rules"`
+	// ConflictedStillExist show whether conflict still exist after use possible conflict resolver
+	// if there is a conflict, but has a resolver for it, ConflictedStillExist will be false
+	ConflictedStillExist bool `field:"conflict_still_exist" json:"conflict_still_exist" mapstructure:"conflict_still_exist"`
+}
+
+type HostApplyUpdateField struct {
+	AttributeID   int64       `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
+	PropertyID    string      `field:"bk_property_id" json:"bk_property_id" mapstructure:"bk_property_id"`
+	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" mapstructure:"bk_property_value"`
 }
 
 type OneHostApplyPlan struct {
@@ -121,13 +130,17 @@ type OneHostApplyPlan struct {
 	HostID         int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
 	// 预计执行后端主机信息
 	ExpiredHost    map[string]interface{}   `field:"expired_host" json:"expired_host" bson:"expired_host" mapstructure:"expired_host"`
-	UpdateFields   map[string]interface{}   `field:"update_fields" json:"update_fields" bson:"update_fields" mapstructure:"update_fields"`
+	UpdateFields   []HostApplyUpdateField   `field:"update_fields" json:"update_fields" bson:"update_fields" mapstructure:"update_fields"`
 	ConflictFields []HostApplyConflictField `field:"conflicts" json:"conflicts" bson:"conflicts" mapstructure:"conflicts"`
+	// 是否有冲突字段存在
+	ConflictedStillExist bool `field:"conflict_still_exist" json:"conflict_still_exist" mapstructure:"conflict_still_exist"`
 }
 
 type HostApplyPlanResult struct {
-	Plans          []OneHostApplyPlan `field:"plans" json:"plans" bson:"plans" mapstructure:"plans"`
-	HostAttributes []Attribute        `field:"host_attributes" json:"host_attributes" bson:"host_attributes" mapstructure:"host_attributes"`
+	Plans []OneHostApplyPlan `field:"plans" json:"plans" bson:"plans" mapstructure:"plans"`
+	// 是否有冲突主机存在
+	ConflictedStillExist bool        `field:"conflict_still_exist" json:"conflict_still_exist" mapstructure:"conflict_still_exist"`
+	HostAttributes       []Attribute `field:"host_attributes" json:"host_attributes" bson:"host_attributes" mapstructure:"host_attributes"`
 }
 
 type HostApplyPlanRequest struct {

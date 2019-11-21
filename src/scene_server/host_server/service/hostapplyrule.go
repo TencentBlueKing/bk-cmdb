@@ -436,14 +436,21 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 	}
 
 	hostApplyResults := make([]meta.HostApplyResult, 0)
-	for _, item := range planResult.Plans {
+	for _, plan := range planResult.Plans {
 		hostApplyResult := meta.HostApplyResult{
-			HostID: item.HostID,
+			HostID: plan.HostID,
+		}
+		if len(plan.UpdateFields) == 0 {
+			continue
+		}
+		updateData := make(map[string]interface{})
+		for _, field := range plan.UpdateFields {
+			updateData[field.PropertyID] = field.PropertyValue
 		}
 		updateOption := &meta.UpdateOption{
-			Data: item.UpdateFields,
+			Data: updateData,
 			Condition: map[string]interface{}{
-				common.BKHostIDField: item.HostID,
+				common.BKHostIDField: plan.HostID,
 			},
 		}
 		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
