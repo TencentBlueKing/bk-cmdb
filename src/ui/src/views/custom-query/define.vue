@@ -55,15 +55,16 @@
                                             :disabled="disabled"
                                             v-model="property.operator">
                                         </filter-field-operator>
-                                        <cmdb-form-enum class="filter-field-value filter-field-enum fl"
-                                            v-if="property.propertyType === 'enum'"
+                                        <component class="filter-field-value filter-field-enum fl"
+                                            v-if="['list', 'enum'].includes(property.propertyType)"
+                                            :is="`cmdb-form-${property.propertyType}`"
                                             v-validate="'required'"
                                             :data-vv-name="property.propertyId"
                                             :allow-clear="true"
                                             :options="getEnumOptions(property)"
                                             :disabled="disabled"
                                             v-model="property.value">
-                                        </cmdb-form-enum>
+                                        </component>
                                         <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
                                             v-else-if="property.propertyType === 'bool'"
                                             v-model="property.value"
