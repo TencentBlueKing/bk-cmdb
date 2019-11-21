@@ -815,3 +815,83 @@ func ParseFloatOption(ctx context.Context, val interface{}) FloatOption {
 	}
 	return floatOption
 }
+
+func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (string, error) {
+	if val == nil {
+		return "", nil
+	}
+
+	fieldType := attribute.PropertyType
+	switch fieldType {
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
+		value, ok := val.(string)
+		if ok == false {
+			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
+		}
+		return value, nil
+	case common.FieldTypeInt:
+		var value int64
+		value, err := util.GetInt64ByInterface(val)
+		if nil != err {
+			return "", fmt.Errorf("invalid value type for %s, value: %+v, err: %+v", fieldType, val, err)
+		}
+		return strconv.FormatInt(value, 10), nil
+	case common.FieldTypeFloat:
+		var value float64
+		value, err := util.GetFloat64ByInterface(value)
+		if nil != err {
+			return "", fmt.Errorf("invalid value type for %s, value: %+v, err: %+v", fieldType, value, err)
+		}
+		return strconv.FormatFloat(value, 'E', -1, 64), nil
+	case common.FieldTypeEnum:
+		valStr, ok := val.(string)
+		if !ok {
+			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
+		}
+		// validate within enum
+		enumOption, err := ParseEnumOption(ctx, attribute.Option)
+		if err != nil {
+			return "", fmt.Errorf("parse options for enum type failed, err: %+v", err)
+		}
+		for _, k := range enumOption {
+			if k.ID == valStr {
+				return k.Name, nil
+			}
+		}
+		return "", fmt.Errorf("invalid value for %s, value: %s", fieldType, valStr)
+	case common.FieldTypeDate:
+		valStr, ok := val.(string)
+		if ok == false {
+			return "", fmt.Errorf("invalid data type for %s, value: %+v", fieldType, val)
+		}
+		return valStr, nil
+	case common.FieldTypeTime:
+		valStr, ok := val.(string)
+		if ok == false {
+			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
+		}
+		return valStr, nil
+	case common.FieldTypeTimeZone:
+		switch value := val.(type) {
+		case string:
+			return value, nil
+		default:
+			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
+		}
+	case common.FieldTypeBool:
+		value, ok := val.(bool)
+		if ok == false {
+			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
+		}
+		return strconv.FormatBool(value), nil
+	case common.FieldTypeForeignKey:
+		value, ok := util.GetTypeSensitiveUInt64(val)
+		if ok == false {
+			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
+		}
+		return strconv.FormatUint(value, 10), nil
+	default:
+		return "", fmt.Errorf("unexpected property type: %s", fieldType)
+	}
+	return "", nil
+}

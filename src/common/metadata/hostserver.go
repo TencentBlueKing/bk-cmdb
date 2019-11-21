@@ -207,8 +207,8 @@ type Topo struct {
 }
 
 type Module struct {
-	ModuleID   int64  `json:"bk_module_id"`
-	ModuleName string `json:"bk_module_name"`
+	ModuleID   int64  `json:"bk_module_id" bson:"bk_module_id" mapstructure:"bk_module_id"`
+	ModuleName string `json:"bk_module_name" bson:"bk_module_name" mapstructure:"bk_module_name"`
 }
 
 func (sh SearchHost) ExtractHostIDs() *[]int64 {
@@ -425,17 +425,17 @@ type HostTransferPreview struct {
 }
 
 type UpdateHostCloudAreaFieldOption struct {
-    BizID   int64   `field:"bk_biz_id" json:"bk_biz_id" mapstructure:"bk_biz_id"`
-    HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" mapstructure:"bk_host_ids"`
-    CloudID int64   `field:"bk_cloud_id" json:"bk_cloud_id" mapstructure:"bk_cloud_id"`
+	BizID   int64   `field:"bk_biz_id" json:"bk_biz_id" mapstructure:"bk_biz_id"`
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" mapstructure:"bk_host_ids"`
+	CloudID int64   `field:"bk_cloud_id" json:"bk_cloud_id" mapstructure:"bk_cloud_id"`
 }
 
 // UpdateHostPropertyBatchParameter batch update host property parameter
 type UpdateHostPropertyBatchParameter struct {
-    Update []updateHostProperty `json:"update"`
+	Update []updateHostProperty `json:"update"`
 }
 
 type updateHostProperty struct {
-    HostID     int64                  `json:"bk_host_id"`
-    Properties map[string]interface{} `json:"properties"`
+	HostID     int64                  `json:"bk_host_id"`
+	Properties map[string]interface{} `json:"properties"`
 }
