@@ -29,7 +29,7 @@ import (
 // createServiceInstances 创建服务实例
 // 支持直接创建和通过模板创建，用 module 是否绑定模版信息区分两种情况
 func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
-	rid := ctx.Kit.Rid
+	//rid := ctx.Kit.Rid
 	input := new(metadata.CreateServiceInstanceForServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -71,31 +71,31 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	header := ctx.Kit.Header
-	tx, e := ps.TransactionClient.Start(context.Background())
-	if e != nil {
-		blog.Errorf("start transaction failed, err: %+v", e)
-		return
-	}
-	txnInfo, e := tx.TxnInfo()
-	if e != nil {
-		blog.Errorf("TxnInfo err: %+v", e)
-		return
-	}
-	header = txnInfo.IntoHeader(header)
-	ctx.Kit.Header = header
-
-	defer func() {
-		if err != nil {
-			if txErr := tx.Abort(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("create service instance failed, abort translation failed, err: %v, rid: %s", txErr, rid)
-			}
-		} else {
-			if txErr := tx.Commit(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("create service instance failed, transaction commit failed, err: %v, rid: %s", txErr, rid)
-			}
-		}
-	}()
+	//header := ctx.Kit.Header
+	//tx, e := ps.TransactionClient.Start(context.Background())
+	//if e != nil {
+	//	blog.Errorf("start transaction failed, err: %+v", e)
+	//	return
+	//}
+	//txnInfo, e := tx.TxnInfo()
+	//if e != nil {
+	//	blog.Errorf("TxnInfo err: %+v", e)
+	//	return
+	//}
+	//header = txnInfo.IntoHeader(header)
+	//ctx.Kit.Header = header
+	//
+	//defer func() {
+	//	if err != nil {
+	//		if txErr := tx.Abort(ctx.Kit.Ctx); txErr != nil {
+	//			blog.Errorf("create service instance failed, abort translation failed, err: %v, rid: %s", txErr, rid)
+	//		}
+	//	} else {
+	//		if txErr := tx.Commit(ctx.Kit.Ctx); txErr != nil {
+	//			blog.Errorf("create service instance failed, transaction commit failed, err: %v, rid: %s", txErr, rid)
+	//		}
+	//	}
+	//}()
 
 	serviceInstanceIDs := make([]int64, 0)
 	for _, inst := range input.Instances {

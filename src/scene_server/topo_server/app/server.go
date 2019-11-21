@@ -32,8 +32,8 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 )
 
@@ -106,16 +106,23 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	txn, err := local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
+	db, err := local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
 	if err != nil {
 		blog.Errorf("failed to connect the txc server, error info is %v", err)
 		return err
 	}
-	err = txn.InitTxnManager(cache)
+	err = db.InitTxnManager(cache)
 	if err != nil {
 		blog.Errorf("failed to init txn manager, error info is %v", err)
 		return err
 	}
+
+	enableTxn := false
+	if server.Config.Mongo.TxnEnabled == "true" {
+		enableTxn = true
+	}
+	blog.Infof("enableTxn is %t", enableTxn)
+
 
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
@@ -140,7 +147,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Es:          essrv,
 		Core:        core.New(engine.CoreAPI, authManager),
 		Error:       engine.CCErr,
-		Txn:         txn,
+		DB:         db,
+		EnableTxn:   enableTxn,
 		Config:      server.Config,
 	}
 

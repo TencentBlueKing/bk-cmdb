@@ -34,7 +34,7 @@ type Config struct {
 	Mechanism    string
 	MaxOpenConns string
 	MaxIdleConns string
-	Enable       string
+	TxnEnabled    string
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -86,7 +86,7 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 		MaxOpenConns: conifgmap[prefix+".maxOpenConns"],
 		MaxIdleConns: conifgmap[prefix+".maxIDleConns"],
 		Mechanism:    conifgmap[prefix+".mechanism"],
-		Enable:       conifgmap[prefix+".enable"],
+		TxnEnabled:    conifgmap[prefix+".txnEnabled"],
 	}
 }
 
