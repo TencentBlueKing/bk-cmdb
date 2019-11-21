@@ -383,3 +383,77 @@ func matchRule(ctx context.Context, rule metadata.HostApplyRule, attribute metad
 
 	return false
 }
+
+func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx core.ContextParams, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder) {
+	rid := ctx.ReqID
+	batchResult := metadata.BatchCreateOrUpdateHostApplyRuleResult{
+		Items: make([]metadata.CreateOrUpdateHostApplyRuleResult, 0),
+	}
+	now := time.Now()
+	for index, item := range option.Rules {
+		itemResult := metadata.CreateOrUpdateHostApplyRuleResult{
+			Index: index,
+		}
+		ruleFilter := map[string]interface{}{
+			common.BKAppIDField:       bizID,
+			common.BkSupplierAccount:  ctx.SupplierAccount,
+			common.BKAttributeIDField: item.AttributeID,
+			common.BKModuleIDField:    item.ModuleID,
+		}
+		count, err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(ruleFilter).Count(ctx.Context)
+		if err != nil {
+			blog.ErrorJSON("BatchUpdateHostApplyRule failed, find rule failed, filter: %s, err: %s, rid: %s", ruleFilter, err.Error(), rid)
+			ccErr := ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+			itemResult.SetError(ccErr)
+			batchResult.Items = append(batchResult.Items, itemResult)
+			continue
+		}
+
+		// update rule
+		if count > 0 {
+			updateData := map[string]interface{}{
+				common.BKPropertyValueField: item.PropertyValue,
+				common.LastTimeField:        now,
+				common.ModifierField:        ctx.User,
+			}
+			if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Update(ctx.Context, ruleFilter, updateData); err != nil {
+				blog.ErrorJSON("BatchUpdateHostApplyRule failed, update rule failed, filter: %s, doc: %s, err: %s, rid: %s", ruleFilter, updateData, err.Error(), rid)
+				ccErr := ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+				itemResult.SetError(ccErr)
+			}
+			batchResult.Items = append(batchResult.Items, itemResult)
+			continue
+		}
+
+		// create new rule
+		newRuleID, err := p.dbProxy.NextSequence(ctx.Context, common.BKTableNameHostApplyRule)
+		if err != nil {
+			blog.ErrorJSON("BatchUpdateHostApplyRule failed, generate id field failed, err: %s, rid: %s", err.Error(), rid)
+			ccErr := ctx.Error.CCError(common.CCErrCommGenerateRecordIDFailed)
+			itemResult.SetError(ccErr)
+			batchResult.Items = append(batchResult.Items, itemResult)
+			continue
+		}
+		rule := metadata.HostApplyRule{
+			ID:              int64(newRuleID),
+			BizID:           bizID,
+			ModuleID:        item.ModuleID,
+			AttributeID:     item.AttributeID,
+			PropertyValue:   item.PropertyValue,
+			Creator:         ctx.User,
+			Modifier:        ctx.User,
+			CreateTime:      now,
+			LastTime:        now,
+			SupplierAccount: ctx.SupplierAccount,
+		}
+		if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Insert(ctx.Context, rule); err != nil {
+			blog.ErrorJSON("BatchUpdateHostApplyRule failed, insert rule failed, doc: %s, err: %s, rid: %s", rule, err.Error(), rid)
+			ccErr := ctx.Error.CCError(common.CCErrCommDBInsertFailed)
+			itemResult.SetError(ccErr)
+			batchResult.Items = append(batchResult.Items, itemResult)
+			continue
+		}
+		batchResult.Items = append(batchResult.Items, itemResult)
+	}
+	return batchResult, nil
+}

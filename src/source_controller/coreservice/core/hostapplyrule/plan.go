@@ -128,6 +128,7 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 
 	plan := metadata.OneHostApplyPlan{
 		HostID:                  hostID,
+		ModuleIDs:               moduleIDs,
 		ExpiredHost:             host,
 		ConflictFields:          make([]metadata.HostApplyConflictField, 0),
 		UpdateFields:            make([]metadata.HostApplyUpdateField, 0),
