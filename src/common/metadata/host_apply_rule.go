@@ -114,9 +114,9 @@ type HostApplyPlanOption struct {
 type HostApplyConflictField struct {
 	AttributeID int64           `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
 	Rules       []HostApplyRule `field:"host_apply_rules" json:"host_apply_rules" bson:"host_apply_rules" mapstructure:"host_apply_rules"`
-	// ConflictedStillExist show whether conflict still exist after use possible conflict resolver
+	// UnresolvedConflictExist show whether conflict still exist after use possible conflict resolver
 	// if there is a conflict, but has a resolver for it, ConflictedStillExist will be false
-	ConflictedStillExist bool `field:"conflict_still_exist" json:"conflict_still_exist" mapstructure:"conflict_still_exist"`
+	UnresolvedConflictExist bool `field:"unresolved_conflict_exist" json:"unresolved_conflict_exist" mapstructure:"unresolved_conflict_exist"`
 }
 
 type HostApplyUpdateField struct {
@@ -132,15 +132,15 @@ type OneHostApplyPlan struct {
 	ExpiredHost    map[string]interface{}   `field:"expired_host" json:"expired_host" bson:"expired_host" mapstructure:"expired_host"`
 	UpdateFields   []HostApplyUpdateField   `field:"update_fields" json:"update_fields" bson:"update_fields" mapstructure:"update_fields"`
 	ConflictFields []HostApplyConflictField `field:"conflicts" json:"conflicts" bson:"conflicts" mapstructure:"conflicts"`
-	// 是否有冲突字段存在
-	ConflictedStillExist bool `field:"conflict_still_exist" json:"conflict_still_exist" mapstructure:"conflict_still_exist"`
+	// 未解决的冲突字段数
+	UnresolvedConflictCount int64 `field:"unresolved_conflict_count" json:"unresolved_conflict_count" mapstructure:"unresolved_conflict_count"`
 }
 
 type HostApplyPlanResult struct {
 	Plans []OneHostApplyPlan `field:"plans" json:"plans" bson:"plans" mapstructure:"plans"`
-	// 是否有冲突主机存在
-	ConflictedStillExist bool        `field:"conflict_still_exist" json:"conflict_still_exist" mapstructure:"conflict_still_exist"`
-	HostAttributes       []Attribute `field:"host_attributes" json:"host_attributes" bson:"host_attributes" mapstructure:"host_attributes"`
+	// 未解决的冲突主机数
+	UnresolvedConflictCount int64       `field:"unresolved_conflict_count" json:"unresolved_conflict_count" mapstructure:"unresolved_conflict_count"`
+	HostAttributes          []Attribute `field:"host_attributes" json:"host_attributes" bson:"host_attributes" mapstructure:"host_attributes"`
 }
 
 type HostApplyPlanRequest struct {

@@ -77,7 +77,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	// compute apply plan one by one
 	hostApplyPlans := make([]metadata.OneHostApplyPlan, 0)
 	var hostApplyPlan metadata.OneHostApplyPlan
-	conflictedStillExist := false
+	unresolvedConflictCount := int64(0)
 	for _, hostModule := range option.HostModules {
 		host, exist := hostMap[hostModule.HostID]
 		if exist == false {
@@ -96,15 +96,15 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 			blog.ErrorJSON("generateOneHostApplyPlan failed, host: %s, moduleIDs: %s, rules: %s, err: %s, rid: %s", host, hostModule.ModuleIDs, option.Rules, err.Error(), rid)
 			return result, err
 		}
-		if hostApplyPlan.ConflictedStillExist {
-			conflictedStillExist = true
+		if hostApplyPlan.UnresolvedConflictCount > 0 {
+			unresolvedConflictCount += 1
 		}
 		hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 	}
 	result = metadata.HostApplyPlanResult{
-		Plans:                hostApplyPlans,
-		ConflictedStillExist: conflictedStillExist,
-		HostAttributes:       attributes,
+		Plans:                   hostApplyPlans,
+		UnresolvedConflictCount: unresolvedConflictCount,
+		HostAttributes:          attributes,
 	}
 	return result, nil
 }
@@ -127,11 +127,11 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	}
 
 	plan := metadata.OneHostApplyPlan{
-		HostID:               hostID,
-		ExpiredHost:          host,
-		ConflictFields:       make([]metadata.HostApplyConflictField, 0),
-		UpdateFields:         make([]metadata.HostApplyUpdateField, 0),
-		ConflictedStillExist: false,
+		HostID:                  hostID,
+		ExpiredHost:             host,
+		ConflictFields:          make([]metadata.HostApplyConflictField, 0),
+		UpdateFields:            make([]metadata.HostApplyUpdateField, 0),
+		UnresolvedConflictCount: 0,
 	}
 
 	moduleIDSet := make(map[int64]bool)
@@ -178,16 +178,16 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 					firstValue = propertyValue
 				}
 				plan.ConflictFields = append(plan.ConflictFields, metadata.HostApplyConflictField{
-					AttributeID:          attributeID,
-					Rules:                targetRules,
-					ConflictedStillExist: conflictedStillExist,
+					AttributeID:             attributeID,
+					Rules:                   targetRules,
+					UnresolvedConflictExist: conflictedStillExist,
 				})
 				break
 			}
 		}
 
 		if conflictedStillExist == true {
-			plan.ConflictedStillExist = true
+			plan.UnresolvedConflictCount += 1
 			continue
 		}
 
