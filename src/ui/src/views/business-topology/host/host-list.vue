@@ -162,7 +162,8 @@
                         id: row.host.bk_host_id
                     },
                     query: {
-                        from: 'business'
+                        from: 'business',
+                        node: this.selectedNode.id
                     }
                 })
             },
