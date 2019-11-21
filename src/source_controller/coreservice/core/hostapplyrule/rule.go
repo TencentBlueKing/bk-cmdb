@@ -13,13 +13,16 @@
 package hostapplyrule
 
 import (
+	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -270,4 +273,113 @@ func (p *hostApplyRule) ListHostApplyRule(ctx core.ContextParams, bizID int64, o
 
 	result.Info = rules
 	return result, nil
+}
+
+// SearchRuleRelatedModules 用于过滤主机应用规则相关的模块
+/*
+支持场景：
+_ 支持通过模块名过滤
+_ 支持通过模块上设置的主机应用配置字段名过滤
+_ 支持通过模块上设置的主机应用配置字段值过滤，字段值需要支持数值型和枚举字段的过滤，枚举类型翻译成对应的name域再过滤
+*/
+func (p *hostApplyRule) SearchRuleRelatedModules(ctx core.ContextParams, bizID int64, option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder) {
+	rid := ctx.ReqID
+
+	// list modules
+	moduleFilter := map[string]interface{}{
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: ctx.SupplierAccount,
+	}
+	modules := make([]metadata.Module, 0)
+	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(ctx.Context, &modules); err != nil {
+		blog.ErrorJSON("SearchRuleRelatedModules failed, find modules failed, filter: %s, err: %s, rid: %s", moduleFilter, err.Error(), rid)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	moduleMap := make(map[int64]metadata.Module)
+	for _, module := range modules {
+		moduleMap[module.ModuleID] = module
+	}
+
+	// list rules
+	ruleFilter := map[string]interface{}{
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: ctx.SupplierAccount,
+	}
+	rules := make([]metadata.HostApplyRule, 0)
+	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(ruleFilter).All(ctx.Context, &rules); err != nil {
+		blog.ErrorJSON("SearchRuleRelatedModules failed, find rules failed, filter: %s, err: %s, rid: %s", ruleFilter, err.Error(), rid)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// list attributes
+	attributeIDs := make([]int64, 0)
+	for _, item := range rules {
+		attributeIDs = append(attributeIDs, item.AttributeID)
+	}
+	attributeFilter := map[string]interface{}{
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: attributeIDs,
+		},
+	}
+	attributes := make([]metadata.Attribute, 0)
+	if err := p.dbProxy.Table(common.BKTableNameObjAttDes).Find(attributeFilter).All(ctx.Context, &attributes); err != nil {
+		blog.ErrorJSON("SearchRuleRelatedModules failed, find attributes failed, filter: %s, err: %s, rid: %s", attributeFilter, err.Error(), rid)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// attribute map
+	attributeMap := make(map[int64]metadata.Attribute)
+	for _, attribute := range attributes {
+		attributeMap[attribute.ID] = attribute
+	}
+
+	resultModules := make([]metadata.Module, 0)
+	for _, module := range modules {
+		if matchModule(ctx, module, option) {
+			resultModules = append(resultModules, module)
+			continue
+		}
+	}
+
+	for _, rule := range rules {
+		attribute, exist := attributeMap[rule.AttributeID]
+		if exist == false {
+			continue
+		}
+		if matchRule(ctx, rule, attribute, option) {
+			module, exist := moduleMap[rule.ModuleID]
+			if exist == false {
+				continue
+			}
+			resultModules = append(resultModules, module)
+		}
+	}
+	return resultModules, nil
+}
+
+func matchModule(ctx context.Context, module metadata.Module, option metadata.SearchRuleRelatedModulesOption) bool {
+	if strings.Contains(module.ModuleName, option.Keyword) {
+		return true
+	}
+	return false
+}
+
+func matchRule(ctx context.Context, rule metadata.HostApplyRule, attribute metadata.Attribute, option metadata.SearchRuleRelatedModulesOption) bool {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	if strings.Contains(attribute.PropertyName, option.Keyword) {
+		return true
+	}
+
+	prettyValue, err := attribute.PrettyValue(ctx, rule.PropertyValue)
+	if err != nil {
+		blog.Errorf("matchRule failed, PrettyValue failed, err: %s, rid: %s", err.Error(), rid)
+		return false
+	}
+
+	if strings.Contains(prettyValue, option.Keyword) {
+		return true
+	}
+
+	return false
 }

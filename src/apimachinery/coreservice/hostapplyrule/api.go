@@ -175,3 +175,32 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Heade
 
 	return ret.Data, nil
 }
+
+func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header http.Header, bizID int64, option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data []metadata.Module `json:"data"`
+	}{
+		BaseResp: metadata.BaseResp{},
+		Data:     make([]metadata.Module, 0),
+	}
+	subPath := fmt.Sprintf("/findmany/modules/bk_biz_id/%d/host_apply_rule_related", bizID)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %+v", err)
+		return ret.Data, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}

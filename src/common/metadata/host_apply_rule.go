@@ -160,3 +160,7 @@ func (container *ErrorContainer) GetError() errors.CCErrorCoder {
 	}
 	return errors.New(container.ErrCode, container.ErrMsg)
 }
+
+type SearchRuleRelatedModulesOption struct {
+	Keyword string `json:"keyword" field:"keyword" mapstructure:"keyword"`
+}

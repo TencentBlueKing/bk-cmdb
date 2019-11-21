@@ -341,3 +341,28 @@ func (s *Service) SearchModule(params types.ContextParams, pathParams, queryPara
 
 	return result, nil
 }
+
+func (s *Service) SearchRuleRelatedModules(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("SearchRuleRelatedModules failed, parse bk_biz_id failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+	}
+
+	requestBody := metadata.SearchRuleRelatedModulesOption{}
+	if err := mapstruct.Decode2Struct(data, &requestBody); err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, parse request body failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+	if len(requestBody.Keyword) == 0 {
+		blog.V(3).Info("SearchRuleRelatedModules failed, search keyword should'nt be empty, rid: %s", params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "keyword")
+	}
+
+	modules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().SearchRuleRelatedModules(params.Context, params.Header, bizID, requestBody)
+	if err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	return modules, nil
+}
