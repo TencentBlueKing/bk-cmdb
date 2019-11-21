@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/scene_server/validator"
+	validator "configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
 )
 
@@ -44,7 +44,7 @@ func fixesProcessPriorityPattern(ctx context.Context, db dal.RDB, conf *upgrader
 		common.BKPropertyIDField: "priority",
 	}
 	data := map[string]interface{}{
-		"option": validator.MinMaxOption{Min: "1", Max: "10000"},
+		"option": validator.IntOption{Min: "1", Max: "10000"},
 	}
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, condition, data)
 	if nil != err {
