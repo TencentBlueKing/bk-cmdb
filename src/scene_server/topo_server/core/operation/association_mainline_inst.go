@@ -345,6 +345,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	moduleServiceTemplateIDMap := make(map[int64]int64)
 	moduleSetTemplateIDMap := make(map[int64]int64)
 	setSetTemplateIDMap := make(map[int64]int64)
+	hostApplyEnabledMap := make(map[int64]bool)
 	for _, module := range modules.Data.Info {
 		moduleStruct := &metadata.ModuleInst{}
 		if err := module.ToStructByTag(moduleStruct, "field"); err != nil {
@@ -354,6 +355,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 		moduleServiceTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.ServiceTemplateID
 		moduleSetTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.SetTemplateID
 		setSetTemplateIDMap[moduleStruct.ParentID] = moduleStruct.SetTemplateID
+		hostApplyEnabledMap[moduleStruct.ModuleID] = moduleStruct.HostApplyEnabled
 	}
 
 	exactNodes := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule}
@@ -377,6 +379,10 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 				}
 				if id, exist := moduleSetTemplateIDMap[node.InstID]; exist == true {
 					node.SetTemplateID = id
+				}
+				node.HostApplyEnabled = new(bool)
+				if enabled, exist := hostApplyEnabledMap[node.InstID]; exist == true {
+					*node.HostApplyEnabled = enabled
 				}
 			}
 			if node.ObjID == common.BKInnerObjIDSet {

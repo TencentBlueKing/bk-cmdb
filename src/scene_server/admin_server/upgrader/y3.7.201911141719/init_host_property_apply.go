@@ -27,7 +27,7 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	// check attribute exist
 	moduleAttributeFilter := map[string]interface{}{
 		"bk_obj_id":      common.BKInnerObjIDModule,
-		"bk_property_id": common.HostPropertyApplyEnabledField,
+		"bk_property_id": common.HostApplyEnabledField,
 	}
 	count, err := db.Table(common.BKTableNameObjAttDes).Find(moduleAttributeFilter).Count(ctx)
 	if err != nil {
@@ -59,7 +59,7 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 		"isrequired":          false,
 		"bk_property_type":    common.FieldTypeBool,
 		"option":              make(map[string]interface{}),
-		"bk_property_id":      common.HostPropertyApplyEnabledField,
+		"bk_property_id":      common.HostApplyEnabledField,
 		"bk_property_name":    "主机属性自动应用",
 		"bk_property_group":   "default",
 		"placeholder":         "是否开启主机属性自动应用",
@@ -75,12 +75,12 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 
 	// add module flag, default value false
 	filter := map[string]interface{}{
-		common.HostPropertyApplyEnabledField: map[string]interface{}{
+		common.HostApplyEnabledField: map[string]interface{}{
 			common.BKDBExists: false,
 		},
 	}
 	doc := map[string]interface{}{
-		common.HostPropertyApplyEnabledField: false,
+		common.HostApplyEnabledField: false,
 	}
 	if err := db.Table(common.BKTableNameBaseModule).Update(ctx, filter, doc); err != nil {
 		blog.Errorf("InitHostPropertyApplyDataModel failed, init module flag failed, doc: %+v, err: %s", doc, err.Error())
