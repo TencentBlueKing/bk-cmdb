@@ -57,11 +57,12 @@
                             v-model="filterItem.operator"
                             :type="getOperatorType(filterItem)">
                         </filter-operator>
-                        <cmdb-form-enum class="filter-value"
-                            v-if="filterItem.bk_property_type === 'enum'"
+                        <component class="filter-value"
+                            v-if="['enum', 'list'].includes(filterItem.bk_property_type)"
+                            :is="`cmdb-form-${filterItem.bk_property_type}`"
                             :options="filterItem.option || []"
                             v-model="filterItem.value">
-                        </cmdb-form-enum>
+                        </component>
                         <cmdb-form-bool-input class="filter-value"
                             v-else-if="filterItem.bk_property_type === 'bool'"
                             v-model="filterItem.value">
