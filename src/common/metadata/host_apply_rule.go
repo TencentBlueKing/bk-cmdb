@@ -70,7 +70,6 @@ type CreateOrUpdateApplyRuleOption struct {
 	AttributeID   int64       `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
 	ModuleID      int64       `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id" mapstructure:"bk_module_id"`
 	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" bson:"bk_property_value" mapstructure:"bk_property_value"`
-	RuleID        int64       `field:"host_apply_rule_id" json:"host_apply_rule_id" bson:"host_apply_rule_id"`
 }
 
 type BatchCreateOrUpdateHostApplyRuleResult struct {
@@ -78,10 +77,8 @@ type BatchCreateOrUpdateHostApplyRuleResult struct {
 }
 
 type CreateOrUpdateHostApplyRuleResult struct {
-	Index   int           `json:"index"`
-	Rule    HostApplyRule `json:"rule"`
-	ErrCode int           `json:"error_code"`
-	ErrMsg  string        `json:"error_message"`
+	ErrorContainer `json:",inline"`
+	Index          int `json:"index"`
 }
 
 // ConflictResolver 定义单个冲突的解决办法
@@ -127,7 +124,8 @@ type HostApplyUpdateField struct {
 
 type OneHostApplyPlan struct {
 	ErrorContainer `json:",inline"`
-	HostID         int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
+	HostID         int64   `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
+	ModuleIDs      []int64 `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
 	// 预计执行后端主机信息
 	ExpiredHost    map[string]interface{}   `field:"expired_host" json:"expired_host" bson:"expired_host" mapstructure:"expired_host"`
 	UpdateFields   []HostApplyUpdateField   `field:"update_fields" json:"update_fields" bson:"update_fields" mapstructure:"update_fields"`

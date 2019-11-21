@@ -216,50 +216,24 @@ func (s *Service) BatchCreateOrUpdateHostApplyRule(req *restful.Request, resp *r
 		return
 	}
 
-	batchResult := meta.BatchCreateOrUpdateHostApplyRuleResult{
-		Items: make([]meta.CreateOrUpdateHostApplyRuleResult, 0),
+	batchResult, err := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(srvData.ctx, srvData.header, bizID, option)
+	if err != nil {
+		blog.ErrorJSON("BatchCreateOrUpdateHostApplyRule failed, coreservice BatchUpdateHostApplyRule failed, option: %s, result: %s, err: %s, rid:%s", option, batchResult, err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
 	}
-	var firstErr errors.CCErrorCoder
-	for index, item := range option.Rules {
-		var rule meta.HostApplyRule
-		var err errors.CCErrorCoder
-		if item.RuleID > 0 {
-			updateOption := meta.UpdateHostApplyRuleOption{
-				PropertyValue: item.PropertyValue,
-			}
-			rule, err = s.CoreAPI.CoreService().HostApplyRule().UpdateHostApplyRule(srvData.ctx, srvData.header, bizID, item.RuleID, updateOption)
-			if err != nil {
-				blog.ErrorJSON("BatchCreateOrUpdateHostApplyRule failed, core service UpdateHostApplyRule failed, bizID: %s, ruleID: %s, option: %s, err: %s, rid: %s", bizID, item.RuleID, updateOption, err.Error(), rid)
-			}
-		} else {
-			createOption := meta.CreateHostApplyRuleOption{
-				AttributeID:   item.AttributeID,
-				ModuleID:      item.ModuleID,
-				PropertyValue: item.PropertyValue,
-			}
-			rule, err = s.CoreAPI.CoreService().HostApplyRule().CreateHostApplyRule(srvData.ctx, srvData.header, bizID, createOption)
-			if err != nil {
-				blog.ErrorJSON("BatchCreateOrUpdateHostApplyRule failed, core service CreateHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, createOption, err.Error(), rid)
-			}
-		}
-		itemResult := meta.CreateOrUpdateHostApplyRuleResult{
-			Index:   index,
-			Rule:    rule,
-			ErrCode: 0,
-			ErrMsg:  "",
-		}
-		if err != nil {
-			itemResult.ErrCode = err.GetCode()
-			itemResult.ErrMsg = err.Error()
-			if firstErr == nil {
-				firstErr = err
-			}
-		}
-		batchResult.Items = append(batchResult.Items, itemResult)
-	}
+
 	response := meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     batchResult,
+	}
+	var firstErr errors.CCErrorCoder
+	for _, item := range batchResult.Items {
+		if err := item.GetError(); err != nil {
+			firstErr = err
+			break
+		}
 	}
 	if firstErr != nil {
 		response.BaseResp = meta.BaseResp{
