@@ -34,7 +34,7 @@
         },
         watch: {
             searchContent () {
-                this.$nextTick(this.setRows())
+                this.$nextTick(this.setRows)
             }
         },
         mounted () {
@@ -101,12 +101,17 @@
 
 <style lang="scss" scoped>
     .host-search-layout {
+        position: relative;
         width: 100%;
         max-width: 726px;
+        height: 42px;
         margin: 0 auto;
     }
     .search-bar {
-        position: relative;
+        position: absolute;
+        width: 100%;
+        height: 42px;
+        z-index: 999;
         display: flex;
     }
     .search-input {

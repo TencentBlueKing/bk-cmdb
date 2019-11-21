@@ -3,8 +3,10 @@
         <feature-tips
             :feature-name="'serviceTemplate'"
             :show-tips="showFeatureTips"
-            :desc="$t('服务模板功能提示')"
             @close-tips="showFeatureTips = false">
+            <i18n path="服务模板功能提示">
+                <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick" place="link">{{$t('创建集群模板')}}</a>
+            </i18n>
         </feature-tips>
         <div class="template-filter clearfix">
             <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_SERVICE_TEMPLATE })">
@@ -41,6 +43,7 @@
                     class="filter-search fl"
                     :placeholder="$t('模板名称搜索')"
                     :right-icon="'bk-icon icon-search'"
+                    clearable
                     font-size="medium"
                     v-model.trim="filter.templateName"
                     @enter="getTableData(true)">
@@ -59,7 +62,7 @@
             <bk-table-column prop="name" :label="$t('模板名称')" class-name="is-highlight"></bk-table-column>
             <bk-table-column prop="service_category" :label="$t('服务分类')"></bk-table-column>
             <bk-table-column prop="process_template_count" :label="$t('进程数量')"></bk-table-column>
-            <bk-table-column prop="module_count" :label="$t('应用模块数')"></bk-table-column>
+            <bk-table-column prop="module_count" :label="$t('已应用模块数')"></bk-table-column>
             <bk-table-column prop="modifier" :label="$t('修改人')"></bk-table-column>
             <bk-table-column prop="last_time" :label="$t('修改时间')">
                 <template slot-scope="{ row }">
@@ -102,12 +105,12 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff
+            <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$OPERATION.C_SERVICE_TEMPLATE"
+                :auth="$authResources({ type: $OPERATION.C_SERVICE_TEMPLATE })"
                 @create="operationTemplate"
-            ></cmdb-table-stuff>
+            ></cmdb-table-empty>
         </bk-table>
     </div>
 </template>
@@ -115,6 +118,7 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
+    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         components: {
             featureTips
@@ -298,6 +302,11 @@
             handleRowClick (row, event, column) {
                 if (column.property === 'operation') return
                 this.operationTemplate(row.id)
+            },
+            handleTipsLinkClick () {
+                this.$router.push({
+                    name: MENU_BUSINESS_SET_TEMPLATE
+                })
             }
         }
     }
@@ -306,6 +315,9 @@
 <style lang="scss" scoped>
     .template-wrapper {
         padding: 0 20px;
+        .tips-link {
+            margin: 0;
+        }
         .filter-text {
             .bk-select {
                 width: 184px;

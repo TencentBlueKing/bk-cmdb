@@ -11,7 +11,7 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
-            <i class="bk-icon icon-exclamation" v-if="withTemplate && !instance.process_count" v-bk-tooltips="tooltips"></i>
+            <i class="bk-icon icon-exclamation" v-if="withTemplate && !instance.process_count && !canSync" v-bk-tooltips="tooltips"></i>
             <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
                 <ul class="menu-list"
                     @mouseenter="handleShowDotMenu"
@@ -71,6 +71,7 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <div slot-scope="{ row }" :title="row[column.id]">{{row[column.id]}}</div>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
@@ -98,7 +99,15 @@
             </bk-table-column>
             <template slot="empty">
                 <template v-if="withTemplate">
-                    <i18n path="暂无模板进程">
+                    <i18n path="有模板进程未同步" v-if="canSync">
+                        <bk-button class="add-process-button" place="link"
+                            theme="primary"
+                            text
+                            @click.stop="handleSyncProcessToInstance">
+                            {{$t('点击同步')}}
+                        </bk-button>
+                    </i18n>
+                    <i18n path="暂无模板进程" v-else>
                         <bk-button class="add-process-button" place="link"
                             theme="primary"
                             text
@@ -152,7 +161,8 @@
                 type: Object,
                 required: true
             },
-            expanded: Boolean
+            expanded: Boolean,
+            canSync: Boolean
         },
         data () {
             return {
@@ -374,6 +384,9 @@
                     }
                 })
             },
+            handleSyncProcessToInstance () {
+                this.$parent.handleSyncTemplate()
+            },
             handleShowEditLabel (disabled) {
                 if (disabled) return
                 this.editLabel.list = this.labelList
@@ -510,6 +523,7 @@
     }
     .add-process-button {
         line-height: 32px;
+        opacity: .7;
         .bk-icon,
         span {
             @include inlineBlock;

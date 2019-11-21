@@ -56,7 +56,7 @@
                         theme="primary"
                         :disabled="disabled || !hasChange || $loading()"
                         @click="handleSave">
-                        {{$t('保存')}}
+                        {{type === 'create' ? $t('提交') : $t('保存')}}
                     </bk-button>
                 </cmdb-auth>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
@@ -154,10 +154,7 @@
             },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, this.inst)
-                const timer = setTimeout(() => {
-                    this.refrenceValues = this.$tools.clone(this.values)
-                    clearTimeout(timer)
-                })
+                this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
                 const availabelProperties = properties.filter(property => {

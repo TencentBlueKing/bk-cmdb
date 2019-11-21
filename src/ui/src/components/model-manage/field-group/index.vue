@@ -145,7 +145,7 @@
             <div class="dialog-title" slot="tools">{{$t('新建字段')}}</div>
             <div class="dialog-content">
                 <div class="dialog-filter">
-                    <bk-input type="text" class="cmdb-form-input" v-model.trim="dialog.filter" right-icon="bk-icon icon-search"></bk-input>
+                    <bk-input type="text" class="cmdb-form-input" clearable v-model.trim="dialog.filter" right-icon="bk-icon icon-search"></bk-input>
                 </div>
                 <ul class="dialog-property clearfix" ref="dialogProperty">
                     <li class="property-item fl"
@@ -191,8 +191,8 @@
                 </div>
             </div>
             <div class="group-dialog-footer" slot="footer">
-                <bk-button theme="primary" @click="handleCreateGroup" v-if="groupDialog.type === 'create'">{{$t('确定')}}</bk-button>
-                <bk-button theme="primary" @click="handleUpdateGroup" v-else>{{$t('确定')}}</bk-button>
+                <bk-button theme="primary" @click="handleCreateGroup" v-if="groupDialog.type === 'create'">{{$t('提交')}}</bk-button>
+                <bk-button theme="primary" @click="handleUpdateGroup" v-else>{{$t('保存')}}</bk-button>
                 <bk-button @click="groupDialog.isShow = false">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
@@ -278,7 +278,8 @@
                     'longchar': this.$t('长字符'),
                     'objuser': this.$t('用户'),
                     'timezone': this.$t('时区'),
-                    'bool': 'bool'
+                    'bool': 'bool',
+                    'list': this.$t('列表')
                 },
                 dialog: {
                     isShow: false,

@@ -103,7 +103,7 @@
             :properties="hostProperties"
             :selection="$parent.table.selection">
         </edit-multiple-host>
-        <cmdb-dialog v-model="dialog.show" v-bind="dialog.props">
+        <cmdb-dialog v-model="dialog.show" v-bind="dialog.props" :height="460">
             <component
                 :is="dialog.component"
                 v-bind="dialog.componentProps"
@@ -406,7 +406,8 @@
                         moduleId: this.selectedNode.data.bk_inst_id
                     },
                     query: {
-                        resources: selected.map(item => item.host.bk_host_id).join(',')
+                        resources: selected.map(item => item.host.bk_host_id).join(','),
+                        title: this.selectedNode.data.bk_inst_name
                     }
                 })
             },

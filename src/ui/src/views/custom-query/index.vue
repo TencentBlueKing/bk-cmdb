@@ -20,6 +20,7 @@
             <div class="api-input fr">
                 <bk-input type="text" class="cmdb-form-input"
                     right-icon="bk-icon icon-search"
+                    clearable
                     v-model="filter.name"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
@@ -78,12 +79,12 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff
+            <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$OPERATION.C_CUSTOM_QUERY"
+                :auth="$authResources({ type: $OPERATION.C_CUSTOM_QUERY })"
                 @create="showUserAPISlider('create')"
-            ></cmdb-table-stuff>
+            ></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom

@@ -125,8 +125,7 @@
                         'bk_supplier_account': this.supplierAccount
                     }),
                     config: {
-                        requestId: `post_searchObjectAttribute_${objId}`,
-                        fromCache: true
+                        requestId: `post_searchObjectAttribute_${objId}`
                     }
                 })
                 this.filteredProperties = properties.filter(property => {

@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"configcenter/src/common/errors"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -82,7 +81,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 	data.Set(common.BKAppIDField, bizID)
 
 	if !data.Exists(common.BKDefaultField) {
-		data.Set(common.BKDefaultField, 0)
+		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
 
 	setTemplate := metadata.SetTemplate{}
@@ -108,6 +107,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 
 	// TODO: run in transaction
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
+	data.Remove(common.MetadataField)
 	setInstance, err := s.inst.CreateInst(params, obj, data)
 	if err != nil {
 		blog.Errorf("create set instance failed, object: %+v, data: %+v, err: %s, rid: %s", obj, data, err.Error(), params.ReqID)
@@ -143,7 +143,6 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 			common.BKParentIDField:          setID,
 			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
 			common.BKAppIDField:             bizID,
-			common.MetadataField:            metadata.NewMetadata(bizID),
 		}
 		_, err := s.module.CreateModule(params, moduleObj, bizID, setID, createModuleParam)
 		if err != nil {
@@ -164,29 +163,6 @@ func (s *set) DeleteSet(params types.ContextParams, setModel model.Object, bizID
 	setCond.Field(common.BKAppIDField).Eq(bizID)
 	if nil != setIDS {
 		setCond.Field(common.BKSetIDField).In(setIDS)
-	}
-
-	// 检查是否时内置集群
-	qc := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
-			Limit: common.BKNoLimit,
-		},
-		Condition: setCond.ToMapStr(),
-	}
-	qc.Condition[common.BKDefaultField] = map[string]interface{}{
-		common.BKDBNE: 0,
-	}
-	rsp, err := s.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, qc)
-	if nil != err {
-		blog.Errorf("[operation-set] failed read set instance, err: %s, rid: %s", err.Error(), params.ReqID)
-		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if rsp.Result == false || rsp.Code != 0 {
-		blog.ErrorJSON("[operation-set] failed read set instance, option: %s, response: %s, rid: %s", qc, rsp, params.ReqID)
-		return errors.New(rsp.Code, rsp.ErrMsg)
-	}
-	if rsp.Data.Count > 0 {
-		return params.Err.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
 	}
 
 	exists, err := s.hasHost(params, bizID, setIDS)
@@ -232,6 +208,10 @@ func (s *set) UpdateSet(params types.ContextParams, data mapstr.MapStr, obj mode
 
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 	innerCond.Field(common.BKSetIDField).Eq(setID)
+
+	data.Remove(common.MetadataField)
+	data.Remove(common.BKAppIDField)
+	data.Remove(common.BKSetIDField)
 
 	return s.inst.UpdateInst(params, data, obj, innerCond, setID)
 }

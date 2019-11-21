@@ -20,7 +20,10 @@
                         :key="columnIndex"
                         :title="item.path">
                         <span class="topology-path">{{item.path}}</span>
-                        <i class="topology-remove-trigger icon-cc-tips-close" @click="handleRemove(item.id)"></i>
+                        <i class="topology-remove-trigger icon-cc-tips-close"
+                            v-if="!item.isInternal"
+                            @click="handleRemove(item.id)">
+                        </i>
                     </li>
                 </ul>
                 <a class="view-all fl"
@@ -75,7 +78,8 @@
                         if (business) {
                             topology.push({
                                 id: module.bk_module_id,
-                                path: `${business.bk_biz_name} / ${set.bk_set_name} / ${module.bk_module_name}`
+                                path: `${business.bk_biz_name} / ${set.bk_set_name} / ${module.bk_module_name}`,
+                                isInternal: module.default !== 0
                             })
                         }
                     }
@@ -115,7 +119,8 @@
                     query: {
                         sourceModel: 'module',
                         sourceId: moduleId,
-                        resources: this.$route.params.id
+                        resources: this.$route.params.id,
+                        from: this.$route.fullPath
                     }
                 })
             }

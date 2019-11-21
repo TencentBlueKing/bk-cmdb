@@ -1,6 +1,12 @@
 import Meta from '@/router/meta'
 import { MENU_BUSINESS, MENU_BUSINESS_CUSTOM_QUERY } from '@/dictionary/menu-symbol'
-import { R_CUSTOM_QUERY, GET_AUTH_META } from '@/dictionary/auth'
+import {
+    C_CUSTOM_QUERY,
+    U_CUSTOM_QUERY,
+    D_CUSTOM_QUERY,
+    R_CUSTOM_QUERY,
+    GET_AUTH_META
+} from '@/dictionary/auth'
 
 export default {
     name: MENU_BUSINESS_CUSTOM_QUERY,
@@ -18,6 +24,12 @@ export default {
                     bk_biz_id: bizId,
                     ...GET_AUTH_META(R_CUSTOM_QUERY)
                 }
+            },
+            operation: {
+                C_CUSTOM_QUERY,
+                U_CUSTOM_QUERY,
+                D_CUSTOM_QUERY,
+                R_CUSTOM_QUERY
             }
         }
     })

@@ -3,6 +3,7 @@
         <div class="archived-filter">
             <div class="filter-item">
                 <bk-input v-model="filter.name"
+                    clearable
                     :placeholder="$t('请输入xx', { name: $t('业务') })"
                     right-icon="bk-icon icon-search"
                     @enter="handlePageChange(1, $event)">
@@ -33,7 +34,7 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
     </div>
 </template>

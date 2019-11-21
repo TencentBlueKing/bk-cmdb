@@ -43,6 +43,7 @@
                 handler (value, oldValue) {
                     if (!this.turnOnVerify || !Object.keys(this.auth).length) {
                         this.disabled = false
+                        this.$emit('update-auth', true)
                     } else if (!deepEqual(value, oldValue)) {
                         resourceOperation.pushQueue({
                             component: this,

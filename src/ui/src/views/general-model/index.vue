@@ -2,7 +2,7 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST })">
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST, parent_layers: parentLayers })">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled"
@@ -10,7 +10,7 @@
                         {{$t('新建')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST] })">
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST], parent_layers: parentLayers })">
                     <bk-button slot-scope="{ disabled }"
                         class="models-button"
                         :disabled="disabled"
@@ -32,7 +32,7 @@
                         {{$t('批量更新')}}
                     </bk-button>
                 </div>
-                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST })">
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST, parent_layers: parentLayers })">
                     <bk-button slot-scope="{ disabled }"
                         class="models-button button-delete"
                         :disabled="!table.checked.length || disabled"
@@ -77,6 +77,8 @@
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
+                    clearable
+                    right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData(true)">
@@ -84,6 +86,8 @@
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
+                    clearable
+                    right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData(true)">
@@ -91,13 +95,12 @@
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
+                    clearable
+                    right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getTableData(true)">
                 </bk-input>
-                <i class="filter-search bk-icon icon-search"
-                    v-show="filter.type !== 'enum'"
-                    @click="getTableData(true)"></i>
             </div>
         </div>
         <bk-table class="models-table" ref="table"
@@ -123,13 +126,15 @@
                     <span>{{row[column.id] | addUnit(getPropertyUnit(column.id))}}</span>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff
+            <cmdb-table-empty
                 slot="empty"
-                :auth="$OPERATION.C_INST"
+                :auth="$authResources({
+                    type: $OPERATION.C_INST,
+                    parent_layers: parentLayers
+                })"
                 :stuff="table.stuff"
-                @create="handleCreate"
-            >
-            </cmdb-table-stuff>
+                @create="handleCreate">
+            </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -137,7 +142,9 @@
             :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
-            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.contentShow">
+            <bk-tab type="unborder-card" slot="content"
+                v-if="slider.contentShow"
+                :active.sync="tab.active" :show-header="attribute.type !== 'create'">
                 <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
@@ -316,6 +323,12 @@
             isPublicModel () {
                 const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
                 return !this.$tools.getMetadataBiz(model)
+            },
+            parentLayers () {
+                return [{
+                    resource_id: this.model.id,
+                    resource_type: 'model'
+                }]
             }
         },
         watch: {

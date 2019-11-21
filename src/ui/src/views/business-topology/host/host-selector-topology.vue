@@ -3,6 +3,7 @@
         <div class="tree-wrapper">
             <bk-big-tree ref="tree" class="tree"
                 :lazy-method="loadHost"
+                :lazy-disabled="isLazyDisabled"
                 :show-checkbox="shouldShowCheckbox"
                 :selectable="false"
                 :show-link-line="true"
@@ -17,9 +18,26 @@
                 @node-click="handleNodeClick"
                 @check-change="handleCheckedChange"
                 @expand-change="handleExpandChange">
+                <div class="node-info clearfix" slot-scope="{ node, data }">
+                    <template v-if="data.bk_obj_id !== 'host'">
+                        <i class="internal-node-icon fl"
+                            v-if="data.default !== 0"
+                            :class="getInternalNodeClass(node, data)">
+                        </i>
+                        <i v-else
+                            :class="['node-icon fl', { 'is-selected': node.selected, 'is-template': isTemplate(node) }]">
+                            {{data.bk_obj_name[0]}}
+                        </i>
+                    </template>
+                    <span class="node-count fr" v-if="data.bk_obj_id !== 'host'">
+                        {{getNodeCount(data)}}
+                    </span>
+                    <span class="node-name">{{node.name}}</span>
+                </div>
             </bk-big-tree>
         </div>
         <bk-input class="filter"
+            clearable
             left-icon="icon-search"
             :placeholder="$t('筛选')"
             v-model="filter">
@@ -39,6 +57,11 @@
                 hostMap: {},
                 request: {
                     host: Symbol('host')
+                },
+                nodeIconMap: {
+                    1: 'icon-cc-host-free-pool',
+                    2: 'icon-cc-host-breakdown',
+                    default: 'icon-cc-host-free-pool'
                 }
             }
         },
@@ -47,7 +70,7 @@
             ...mapGetters('businessHost', ['getDefaultSearchCondition']),
             deepestExpandedLevel () {
                 const maxLevel = Math.max.apply(null, [0, ...this.expandedNodes.map(node => node.level)])
-                return Math.max(2, maxLevel) - 2
+                return Math.max(4, maxLevel) - 4
             }
         },
         watch: {
@@ -140,7 +163,6 @@
                 try {
                     const result = await this.searchHost(node)
                     const data = []
-                    const leaf = []
                     result.info.forEach(item => {
                         const nodeData = {
                             bk_obj_id: 'host',
@@ -150,7 +172,6 @@
                             item: item
                         }
                         data.push(nodeData)
-                        leaf.push(this.getNodeId(nodeData))
                         this.$set(this.hostMap, item.host.bk_host_id, item)
                     })
                     this.$set(node.data, 'child', result.info)
@@ -162,11 +183,14 @@
                             }
                         })
                     }, 0)
-                    return { data, leaf }
+                    return { data }
                 } catch (e) {
                     console.log(e)
-                    return { data: [], leaf: [] }
+                    return { data: [] }
                 }
+            },
+            isLazyDisabled (node) {
+                return node.data.bk_obj_id === 'host' || node.data.host_count === 0
             },
             searchHost (node) {
                 const params = {
@@ -224,6 +248,19 @@
                 } else {
                     this.expandedNodes = this.expandedNodes.filter(exist => !ids.includes(exist.id))
                 }
+            },
+            getInternalNodeClass (node, data) {
+                return this.nodeIconMap[data.default] || this.nodeIconMap.default
+            },
+            isTemplate (node) {
+                return node.data.service_template_id || node.data.set_template_id
+            },
+            getNodeCount (data) {
+                const count = data.host_count
+                if (typeof count === 'number') {
+                    return count > 999 ? '999+' : count
+                }
+                return 0
             }
         }
     }
@@ -237,6 +274,91 @@
     }
     .tree {
         padding: 0 0 0 20px;
+        @include scrollbar-x;
+        .node-icon {
+            display: block;
+            width: 20px;
+            height: 20px;
+            margin: 8px 4px 8px 0;
+            vertical-align: middle;
+            border-radius: 50%;
+            background-color: #C4C6CC;
+            line-height: 1.666667;
+            text-align: center;
+            font-size: 12px;
+            font-style: normal;
+            color: #FFF;
+            &.is-template {
+                background-color: #97aed6;
+            }
+            &.is-selected {
+                background-color: #3A84FF;
+            }
+        }
+        .node-name {
+            display: block;
+            height: 36px;
+            line-height: 36px;
+            overflow: hidden;
+            @include ellipsis;
+        }
+        .node-count {
+            padding: 0 5px;
+            margin: 9px 20px 9px 4px;
+            height: 18px;
+            line-height: 17px;
+            border-radius: 2px;
+            background-color: #f0f1f5;
+            color: #979ba5;
+            font-size: 12px;
+            text-align: center;
+            &.is-selected {
+                background-color: #a2c5fd;
+                color: #fff;
+            }
+        }
+        .internal-node-icon{
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            margin: 8px 4px 8px 0;
+            &.is-selected {
+                color: #FFB400;
+            }
+        }
+    }
+    .node-info {
+        &:hover,
+        &.is-selected {
+            .info-create-trigger {
+                display: inline-block;
+                & ~ .node-count {
+                    display: none;
+                }
+            }
+        }
+        .info-create-trigger {
+            display: none;
+            font-size: 0;
+        }
+        .node-button {
+            height: 24px;
+            padding: 0 6px;
+            margin: 0 20px 0 4px;
+            line-height: 22px;
+            border-radius: 4px;
+            font-size: 12px;
+            min-width: auto;
+            &.set-template-button {
+                @include inlineBlock;
+                font-style: normal;
+                background-color: #dcdee5;
+                color: #ffffff;
+                outline: none;
+                cursor: not-allowed;
+            }
+        }
     }
     .filter {
         /deep/ {

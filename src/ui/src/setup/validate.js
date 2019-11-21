@@ -121,10 +121,14 @@ const customRules = {
         validate: (value) => {
             const nameList = value.split('\n').filter(name => name)
             const nameSet = new Set(nameList)
-            if (nameList.length !== nameSet.size) {
-                return false
-            }
-            return true
+            return nameList.length === nameSet.size
+        }
+    },
+    emptySetName: {
+        validate: (value) => {
+            const values = value.split('\n')
+            const list = values.map(text => text.trim()).filter(text => text)
+            return values.length === list.length
         }
     }
 }
@@ -146,8 +150,8 @@ const dictionary = {
             modelId: () => '格式不正确，请填写英文开头，下划线，数字，英文小写的组合',
             enumId: () => '请输入正确的内容',
             enumName: () => '请输入正确的内容',
-            number: () => '请输入正确的内容',
-            float: () => '请输入正确的内容',
+            number: () => '请输入正确的数字',
+            float: () => '请输入正确的浮点数',
             isBigger: () => '必须大于最小值',
             repeat: () => '重复的值',
             fieldId: () => '请输入正确的内容',
@@ -159,6 +163,7 @@ const dictionary = {
             max_value: () => '该值大于最大值',
             repeatTagKey: () => '标签键不能重复',
             setNameMap: () => '集群名称重复',
+            emptySetName: () => '请勿输入空白集群名称',
             instanceTagValue: () => '请输入英文 / 数字',
             instanceTagKey: () => '请输入英文 / 数字, 以英文开头'
         },
@@ -184,8 +189,8 @@ const dictionary = {
             modelId: () => 'The format is incorrect, can only contain underscores, numbers, and lowercase letter and start with a letter',
             enumId: () => 'Please enter the correct content',
             enumName: () => 'Please enter the correct content',
-            number: () => 'Please enter the correct content',
-            float: () => 'Please enter the correct content',
+            number: () => 'Please enter the correct number',
+            float: () => 'Please enter the correct float data',
             isBigger: () => 'Must be greater than the minimum',
             repeat: () => 'This value should not be repeated',
             fieldId: () => 'Please enter the correct content',
@@ -195,7 +200,8 @@ const dictionary = {
             namedCharacter: () => 'Special symbols only support(:_-)',
             min_value: () => 'This value is less than the minimum',
             max_value: () => 'This value is greater than the maximum',
-            setNameMap: () => 'Duplicate cluster name',
+            setNameMap: () => 'Duplicate Set name',
+            emptySetName: () => 'Do not enter blank Set name',
             instanceTagValue: () => 'Please enter letter / number',
             instanceTagKey: () => 'Please enter letter / number starts with letter',
             repeatTagKey: () => 'Label key cannot be repeated'

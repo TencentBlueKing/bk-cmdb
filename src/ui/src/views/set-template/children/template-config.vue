@@ -29,7 +29,7 @@
                 @service-selected="handleServiceSelected">
             </cmdb-set-template-tree>
             <input type="hidden" :value="services.length" v-validate="'min_value:1'" data-vv-name="service">
-            <p class="row-error" v-if="errors.has('service')">{{$t('请添加服务模板')}}</p>
+            <p class="row-error static" v-if="errors.has('service')">{{$t('请添加服务模板')}}</p>
         </div>
         <div class="template-options">
             <template v-if="isViewMode">
@@ -69,7 +69,7 @@
                         theme="primary"
                         :disabled="disabled || !hasChange"
                         @click="handleConfirm">
-                        {{$t('确定')}}
+                        {{mode === 'create' ? $t('提交') : $t('保存')}}
                     </bk-button>
                 </cmdb-auth>
                 <bk-button class="options-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
@@ -79,13 +79,13 @@
             :esc-close="false"
             :mask-close="false"
             :show-footer="false"
-            :on-close="handleBackToList">
+            :close-icon="false">
             <div class="update-alert-layout">
                 <i class="bk-icon icon-check-1"></i>
                 <h3>{{$t('修改成功')}}</h3>
                 <div class="btns">
-                    <bk-button class="mr10" theme="primary" v-if="isApplied" @click="handleToSyncInstance">{{$t('同步实例')}}</bk-button>
-                    <bk-button class="mr10" :theme="isApplied ? 'default' : 'primary'" @click="handleToCreateInstance">{{$t('创建实例')}}</bk-button>
+                    <bk-button class="mr10" theme="primary" v-if="isApplied" @click="handleToSyncInstance">{{$t('同步集群')}}</bk-button>
+                    <bk-button class="mr10" :theme="isApplied ? 'default' : 'primary'" @click="handleToCreateInstance">{{$t('创建集群')}}</bk-button>
                     <bk-button theme="default" @click="handleBackToList">{{$t('返回列表')}}</bk-button>
                 </div>
             </div>
@@ -239,7 +239,7 @@
                 this.$bkInfo({
                     type: 'success',
                     title: this.$t('创建成功'),
-                    okText: this.$t('创建实例'),
+                    okText: this.$t('创建集群'),
                     cancelText: this.$t('返回列表'),
                     confirmFn: () => {
                         this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
@@ -288,6 +288,8 @@
                 this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             handleToSyncInstance () {
+                this.showUpdateInfo = false
+                this.insideMode = null
                 this.$router.replace({
                     name: 'setTemplateConfig',
                     params: {
@@ -349,13 +351,16 @@
             padding-left: 145px;
             font-size: 12px;
             top: 100%;
+            &.static {
+                position: static;
+            }
         }
     }
     .template-row {
         margin-top: 39px;
     }
     .template-options {
-        padding:23px 0 0 144px;
+        padding: 20px 0 0 144px;
         font-size: 0;
         .options-confirm {
             margin-right: 10px;

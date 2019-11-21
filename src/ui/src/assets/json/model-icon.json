@@ -5,7 +5,7 @@
         "nameEn": "Default"
     },
     {
-        "value": "icon-cc-activeMQ",
+        "value": "icon-cc-activemq",
         "nameZh": "ActiveMQ",
         "nameEn": "ActiveMQ"
     },
@@ -175,7 +175,7 @@
         "nameEn": "ISP"
     },
     {
-        "value": "icon-cc-International",
+        "value": "icon-cc-international",
         "nameZh": "国家",
         "nameEn": "country"
     },

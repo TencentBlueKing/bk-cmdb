@@ -9,6 +9,7 @@
             <bk-input style="width: 240px;" class="fl ml10"
                 right-icon="icon-search"
                 v-model="searchName"
+                clearable
                 :placeholder="$t('集群名称')"
                 @enter="getData(true)">
             </bk-input>
@@ -58,7 +59,7 @@
                     <span>{{row.creator || '--'}}</span>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
     </div>
 </template>

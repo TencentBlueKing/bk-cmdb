@@ -28,7 +28,8 @@ import iconButton from './button/icon-button.vue'
 import tips from './other/tips.vue'
 import dialog from './dialog/dialog.vue'
 import auth from './auth/auth.vue'
-import tableStuff from './table-stuff/table-stuff.vue'
+import tableEmpty from './table-empty/table-empty.vue'
+import list from './form/list.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -61,7 +62,8 @@ const install = (Vue, opts = {}) => {
         dialog,
         cloudSelector,
         auth,
-        tableStuff
+        tableEmpty,
+        list
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -99,5 +101,6 @@ export default {
     dialog,
     cloudSelector,
     auth,
-    tableStuff
+    tableEmpty,
+    list
 }
