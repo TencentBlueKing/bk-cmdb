@@ -47,12 +47,13 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 
 		case universalsql.EQ, universalsql.NEQ,
 			universalsql.GT, universalsql.GTE, universalsql.LTE, universalsql.LT,
-			universalsql.IN, universalsql.NIN, universalsql.REGEX, universalsql.EXISTS:
-			ele, err := convertToElement(inputKey, operatorKey, val, outputCond, inputCondMapStr)
+			universalsql.IN, universalsql.NIN, universalsql.EXISTS:
+			ele, err := convertToElement(inputKey, operatorKey, val)
 			if nil != err {
 				return err
 			}
 			outputCond.Element(ele)
+
 		default:
 
 			tmpType := reflect.TypeOf(val)
@@ -79,6 +80,25 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 				operatorVal, err := inputCondMapStr.MapStr(operatorKey)
 				if nil != err {
 					return err
+				}
+
+				hit := false
+				operatorVal.ForEach(func(key string, val interface{}) error {
+					// $regexp operator maybe associate with a $options operator, so it need to skip out
+					// when it's a regex operator, do not to step into another embed parse operation.
+					if key == universalsql.REGEX {
+						hit = true
+						return nil
+					}
+					return nil
+				})
+
+				if hit {
+					// if hit, then add the element with the follow ways,
+					// which is a key:value element, just like the mongodb's
+					// original usage.
+					outputCond.Element(&element{Key: operatorKey, Val: val})
+					return nil
 				}
 
 				tmpCond := newCondition()
@@ -109,7 +129,7 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 
 }
 
-func convertToElement(key, operator string, val interface{}, inputCond *mongoCondition, inputCondMapStr mapstr.MapStr) (universalsql.ConditionElement, error) {
+func convertToElement(key, operator string, val interface{}) (universalsql.ConditionElement, error) {
 
 	switch operator {
 	case universalsql.EQ:

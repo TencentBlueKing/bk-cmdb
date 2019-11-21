@@ -215,6 +215,7 @@ func (s *coreService) sendCompleteResponse(resp *restful.Response, errorCode int
 	resp.Header().Set("Content-Type", "application/json")
 	rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info)
 	if nil == rspErr {
+		fmt.Printf("resp ->: %s\n\n", rsp)
 		io.WriteString(resp, rsp)
 		return
 	}

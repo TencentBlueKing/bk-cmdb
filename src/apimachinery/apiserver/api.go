@@ -39,20 +39,6 @@ func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID st
 	return
 }
 
-func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
-	resp = new(metadata.QueryInstResult)
-	subPath := fmt.Sprintf("biz/default/%s/search", ownerID)
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error) {
 	resp = new(metadata.ObjectAttrBatchResult)
 	subPath := fmt.Sprintf("object/search/batch")
