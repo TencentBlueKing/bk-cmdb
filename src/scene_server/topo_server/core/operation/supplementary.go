@@ -21,7 +21,6 @@ import (
 // Supplementary supplementary methods
 type Supplementary interface {
 	Audit(params types.ContextParams, client apimachinery.ClientSetInterface, obj model.Object, inst InstOperationInterface) AuditInterface
-	Validator(inst InstOperationInterface) ValidatorInterface
 }
 
 // NewSupplementary create a supplementary instance
@@ -38,11 +37,5 @@ func (s *supplementary) Audit(params types.ContextParams, client apimachinery.Cl
 		client: client,
 		inst:   inst,
 		obj:    obj,
-	}
-}
-
-func (s *supplementary) Validator(inst InstOperationInterface) ValidatorInterface {
-	return &valid{
-		inst: inst,
 	}
 }

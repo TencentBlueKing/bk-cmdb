@@ -24,7 +24,8 @@
                         </bk-option>
                     </bk-select>
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
-                        :placeholder="$t('集群名称')"
+                        clearable
+                        :placeholder="$t('请输入集群名称搜索')"
                         @enter="handleSearch">
                     </bk-input>
                     <icon-button class="ml10"
@@ -108,13 +109,13 @@
                         </cmdb-auth>
                     </template>
                 </bk-table-column>
-                <cmdb-table-stuff slot="empty" :stuff="table.stuff">
+                <cmdb-table-empty slot="empty" :stuff="table.stuff">
                     <div>
                         <i18n path="空集群模板实例提示" tag="div">
                             <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
                         </i18n>
                     </div>
-                </cmdb-table-stuff>
+                </cmdb-table-empty>
             </bk-table>
         </div>
     </div>

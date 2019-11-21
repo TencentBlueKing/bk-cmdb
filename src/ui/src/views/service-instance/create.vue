@@ -24,21 +24,20 @@
                     :name="item.host.bk_host_innerip"
                     :source-processes="sourceProcesses"
                     :templates="templates"
-                    :show-tips="showTips"
                     :addible="!withTemplate"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
-                <div class="buttons">
-                    <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
-                        <bk-button slot-scope="{ disabled }"
-                            theme="primary"
-                            :disabled="!hosts.length || disabled"
-                            @click="handleConfirm">
-                            {{$t('确定')}}
-                        </bk-button>
-                    </cmdb-auth>
-                    <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
-                </div>
+            </div>
+            <div class="buttons">
+                <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        :disabled="!hosts.length || disabled"
+                        @click="handleConfirm">
+                        {{$t('确定')}}
+                    </bk-button>
+                </cmdb-auth>
+                <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
             </div>
         </div>
         <cmdb-dialog v-model="dialog.show" v-bind="dialog.props">
@@ -70,11 +69,11 @@
                 moduleInstance: {},
                 hosts: [],
                 templates: [],
-                showTips: false,
                 dialog: {
                     show: false,
                     props: {
                         width: 850,
+                        height: 460,
                         showCloseIcon: false
                     },
                     component: null,
@@ -199,11 +198,11 @@
                 try {
                     const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
                         params: this.$injectMetadata({
-                            service_template_id: this.moduleInstance.service_template_id
+                            service_template_id: this.moduleInstance.service_template_id,
+                            page: { sort: 'id' }
                         }, { injectBizId: true }),
                         config: {
-                            requestId: 'getBatchProcessTemplate',
-                            cancelPrevious: true
+                            requestId: 'getBatchProcessTemplate'
                         }
                     })
                     this.templates = data.info
@@ -237,9 +236,10 @@
                                 instances: serviceInstanceTables.map(table => {
                                     return {
                                         bk_host_id: table.id,
-                                        processes: table.processList.map(item => {
+                                        processes: table.processList.map((item, index) => {
                                             return {
-                                                process_info: item
+                                                process_info: item,
+                                                process_template_id: table.templates[index].id
                                             }
                                         })
                                     }
@@ -247,10 +247,6 @@
                             }, { injectBizId: true })
                         })
                     } else {
-                        if (serviceInstanceTables.some(table => !table.processList.length)) {
-                            this.showTips = true
-                            return
-                        }
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
                             params: this.$injectMetadata({
                                 name: this.moduleInstance.bk_module_name,
@@ -331,14 +327,14 @@
         }
     }
     .create-tables {
-        height: calc(100% - 54px);
+        max-height: calc(100% - 120px);
         margin: 22px 0 0 0;
         @include scrollbar-y;
-        .buttons {
-            padding: 8px 0 0 0;
-        }
     }
-    .service-instance-table {
-        margin-bottom: 12px;
+    .service-instance-table +  .service-instance-table {
+        margin-top: 12px;
+    }
+    .buttons {
+        padding: 20px 0;
     }
 </style>

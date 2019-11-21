@@ -14,8 +14,6 @@ package service
 
 import (
 	"net/http"
-
-	"configcenter/src/common"
 )
 
 func (s *Service) initHealth() {
@@ -67,21 +65,6 @@ func (s *Service) initAuditLog() {
 	s.addAction(http.MethodPost, "/object/{bk_obj_id}/audit/search", s.InstanceAuditQuery, nil)
 }
 
-func (s *Service) initCompatibleV2() {
-	s.addAction(http.MethodPost, "/app/searchAll", s.SearchAllApp, nil)
-
-	s.addAction(http.MethodPut, "/openapi/set/multi/{appid}", s.UpdateMultiSet, nil)
-	s.addAction(http.MethodDelete, "/openapi/set/multi/{appid}", s.DeleteMultiSet, nil)
-	s.addAction(http.MethodDelete, "/openapi/set/setHost/{appid}", s.DeleteSetHost, nil)
-
-	s.addAction(http.MethodPut, "/openapi/module/multi/{"+common.BKAppIDField+"}", s.UpdateMultiModule, nil)
-	s.addAction(http.MethodPost, "/openapi/module/searchByApp/{"+common.BKAppIDField+"}", s.SearchModuleByApp, nil)
-	s.addAction(http.MethodPost, "/openapi/module/searchByProperty/{"+common.BKAppIDField+"}", s.SearchModuleBySetProperty, nil)
-	s.addAction(http.MethodPost, "/openapi/module/multi", s.AddMultiModule, nil)
-	s.addAction(http.MethodDelete, "/openapi/module/multi/{"+common.BKAppIDField+"}", s.DeleteMultiModule, nil)
-
-}
-
 func (s *Service) initBusiness() {
 	s.addAction(http.MethodPost, "/app/{owner_id}", s.CreateBusiness, nil)
 	s.addAction(http.MethodDelete, "/app/{owner_id}/{app_id}", s.DeleteBusiness, nil)
@@ -104,7 +87,7 @@ func (s *Service) initModule() {
 	s.addAction(http.MethodDelete, "/module/{app_id}/{set_id}/{module_id}", s.DeleteModule, nil)
 	s.addAction(http.MethodPut, "/module/{app_id}/{set_id}/{module_id}", s.UpdateModule, nil)
 	s.addAction(http.MethodPost, "/module/search/{owner_id}/{app_id}/{set_id}", s.SearchModule, nil)
-
+	s.addAction(http.MethodPost, "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}", s.ListModulesByServiceTemplateID, nil)
 }
 
 func (s *Service) initSet() {
@@ -193,7 +176,6 @@ func (s *Service) initService() {
 	s.initHealth()
 	s.initAssociation()
 	s.initAuditLog()
-	s.initCompatibleV2()
 	s.initBusiness()
 	s.initInst()
 	s.initModule()

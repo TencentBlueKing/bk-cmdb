@@ -13,7 +13,9 @@
                 </cmdb-auth>
             </div>
             <div class="fr">
-                <bk-input :placeholder="$t('模板名称搜索')"
+                <bk-input :style="{ width: '210px' }"
+                    :placeholder="$t('模板名称搜索')"
+                    clearable
                     right-icon="icon-search"
                     v-model="searchName"
                     @enter="handleFilterTemplate">
@@ -68,12 +70,12 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff
+            <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$OPERATION.C_SET_TEMPLATE"
+                :auth="$authResources({ type: $OPERATION.C_SET_TEMPLATE })"
                 @create="handleCreate"
-            ></cmdb-table-stuff>
+            ></cmdb-table-empty>
         </bk-table>
     </div>
 </template>

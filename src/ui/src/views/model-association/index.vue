@@ -74,12 +74,12 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff
+            <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
-                :auth="$OPERATION.C_RELATION"
+                :auth="$authResources({ type: $OPERATION.C_RELATION })"
                 @create="createRelation"
-            ></cmdb-table-stuff>
+            ></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -96,6 +96,7 @@
                 :is-edit="slider.isEdit"
                 :is-read-only="slider.isReadOnly"
                 :relation="slider.relation"
+                :save-btn-text="slider.isEdit ? $t('保存') : $t('提交')"
                 @saved="saveRelation"
                 @cancel="handleSliderBeforeClose">
             </the-relation>

@@ -17,13 +17,27 @@
                 :validate-active="false"
                 :before-toggle="handleTabToggle">
                 <bk-tab-panel name="hostList" :label="$t('主机列表')">
-                    <host-list :active="activeTab === 'hostList'"></host-list>
+                    <host-list :active="activeTab === 'hostList'" ref="hostList"></host-list>
                 </bk-tab-panel>
-                <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" :visible="showServiceInstance">
-                    <service-instance></service-instance>
+                <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" :disabled="!showServiceInstance">
+                    <span slot="label"
+                        v-bk-tooltips="{
+                            content: $t('请选择业务模块'),
+                            disabled: showServiceInstance
+                        }">
+                        {{$t('服务实例')}}
+                    </span>
+                    <service-instance ref="serviceInstance"></service-instance>
                 </bk-tab-panel>
-                <bk-tab-panel name="nodeInfo" :label="$t('节点信息')" :visible="showNodeInfo">
-                    <service-node-info :active="activeTab === 'nodeInfo'"></service-node-info>
+                <bk-tab-panel name="nodeInfo" :disabled="!showNodeInfo">
+                    <span slot="label"
+                        v-bk-tooltips="{
+                            content: $t('请选择非内置节点'),
+                            disabled: showNodeInfo
+                        }">
+                        {{$t('节点信息')}}
+                    </span>
+                    <service-node-info :active="activeTab === 'nodeInfo'" ref="nodeInfo"></service-node-info>
                 </bk-tab-panel>
             </bk-tab>
         </div>
@@ -77,6 +91,10 @@
                 if (!value) {
                     this.activeTab = 'hostList'
                 }
+            },
+            activeTab (tab) {
+                const refresh = this.$refs[tab].refresh
+                typeof refresh === 'function' && refresh(1)
             }
         },
         async created () {
@@ -128,7 +146,7 @@
     }
     .resize-layout {
         position: relative;
-        width: 280px;
+        width: 286px;
         height: 100%;
         padding-top: 10px;
         border-right: 1px solid $cmdbLayoutBorderColor;
@@ -160,7 +178,7 @@
         }
     }
     .tab-layout {
-        height: calc(100vh - 120px);
+        height: 100%;
         overflow: hidden;
         .topology-tab {
             /deep/ {

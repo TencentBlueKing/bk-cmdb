@@ -13,19 +13,21 @@
 package service
 
 import (
+	"context"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core/instances"
-	"context"
 )
 
 var defaultNameLanguagePkg = map[string]map[string][]string{
 	common.BKInnerObjIDModule: {
 		"1": {"inst_module_idle", common.BKModuleNameField, common.BKModuleIDField},
 		"2": {"inst_module_fault", common.BKModuleNameField, common.BKModuleIDField},
+		"3": {"inst_module_recycle", common.BKModuleNameField, common.BKModuleIDField},
 	},
 	common.BKInnerObjIDApp: {
 		"1": {"inst_biz_default", common.BKAppNameField, common.BKAppIDField},
@@ -72,5 +74,5 @@ func (s *coreService) TranslateClassificationName(defLang language.DefaultCCLang
 }
 
 func (s *coreService) TranslateOperationChartName(defLang language.DefaultCCLanguageIf, att metadata.ChartConfig) string {
-	return util.FirstNotEmptyString(defLang.Language("operation_chart_"+att.ChartType), att.Name, att.ChartType)
+	return util.FirstNotEmptyString(defLang.Language("operation_chart_"+att.ReportType), att.Name, att.ReportType)
 }

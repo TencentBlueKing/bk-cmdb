@@ -1,6 +1,6 @@
 <template>
-    <div class="service-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) || inSearch }">
-        <template v-if="instances.length">
+    <div class="service-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+        <template v-if="instances.length || inSearch">
             <div class="options">
                 <bk-checkbox class="options-checkall"
                     :size="16"
@@ -81,13 +81,14 @@
                     :key="instance.id"
                     :instance="instance"
                     :expanded="index === 0"
+                    :can-sync="topoStatus"
                     @create-process="handleCreateProcess"
                     @update-process="handleUpdateProcess"
                     @delete-instance="handleDeleteInstance"
                     @check-change="handleCheckChange">
                 </service-instance-table>
             </div>
-            <bk-pagination class="pagination"
+            <bk-pagination class="pagination" v-show="instances.length"
                 align="right"
                 size="small"
                 :current="pagination.current"
@@ -254,8 +255,7 @@
                 return this.currentNode && this.currentNode.data.bk_obj_id === 'module'
             },
             withTemplate () {
-                const nodeInstance = this.$store.state.businessHost.selectedNodeInstance
-                return this.isModuleNode && nodeInstance && nodeInstance.service_template_id
+                return this.isModuleNode && this.currentNode && this.currentNode.data.service_template_id
             },
             currentModule () {
                 if (this.currentNode && this.currentNode.data.bk_obj_id === 'module') {
@@ -313,12 +313,13 @@
             },
             checked () {
                 this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
+            },
+            searchSelectData (searchSelectData) {
+                if (!searchSelectData.length && this.inSearch) this.inSearch = false
             }
         },
         async created () {
             await this.getHistoryLabel()
-            this.getProcessProperties()
-            this.getProcessPropertyGroups()
             if (this.targetInstanceName) {
                 this.hasInitFilter = true
                 this.searchSelectData.push({
@@ -331,8 +332,14 @@
                 })
                 this.searchSelect.shift()
             }
+            this.getProcessProperties()
+            this.getProcessPropertyGroups()
         },
         methods: {
+            refresh () {
+                this.inSearch = false
+                this.getData()
+            },
             async getData () {
                 this.needRefresh = false
                 const node = this.currentNode
@@ -382,16 +389,16 @@
                     console.error(e)
                 }
             },
-            getServiceInstanceDifferences () {
+            async getServiceInstanceDifferences () {
                 try {
-                    this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
+                    const data = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
                         params: this.$injectMetadata({
-                            bk_module_id: this.currentNode.data.bk_inst_id,
+                            bk_module_ids: [this.currentNode.data.bk_inst_id],
                             service_template_id: this.withTemplate
                         }, { injectBizId: true })
-                    }).then(res => {
-                        this.topoStatus = res.has_difference
                     })
+                    const difference = data.find(difference => difference.bk_module_id === this.currentNode.data.bk_inst_id)
+                    this.topoStatus = !!difference && difference.has_difference
                 } catch (error) {
                     console.error(error)
                 }
@@ -785,10 +792,12 @@
             },
             handleSyncTemplate () {
                 this.$router.push({
-                    name: 'synchronous',
+                    name: 'syncServiceFromModule',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id,
+                        setId: this.currentNode.parent.data.bk_inst_id
+                    },
+                    query: {
                         path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
                     }
                 })
@@ -910,8 +919,7 @@
                             service_template_id: id
                         }, { injectBizId: true }),
                         config: {
-                            requestId: 'getBatchProcessTemplate',
-                            cancelPrevious: true
+                            requestId: 'getBatchProcessTemplate'
                         }
                     })
                     this.templates = data.info

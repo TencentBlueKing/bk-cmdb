@@ -44,7 +44,7 @@
                     </cmdb-auth>
                 </template>
             </bk-table-column>
-            <cmdb-table-stuff slot="empty" :stuff="table.stuff"></cmdb-table-stuff>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff" :auth="permissionAuth"></cmdb-table-empty>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.show">
             <p class="tips-content">{{$t('确认取消')}}</p>
@@ -122,6 +122,24 @@
             },
             model () {
                 return this.$store.getters['objectModelClassify/getModelById'](this.id)
+            },
+            permissionAuth () {
+                const map = {
+                    host: this.$OPERATION.R_HOST,
+                    biz: this.$OPERATION.R_BUSINESS
+                }
+                const auth = {
+                    type: map[this.model.bk_obj_id]
+                }
+                // 通用模型
+                if (!auth.type) {
+                    auth.type = this.$OPERATION.R_INST
+                    auth.parent_layers = [{
+                        resource_id: this.model.id,
+                        resource_type: 'model'
+                    }]
+                }
+                return auth
             },
             isBusinessModel () {
                 return !!this.$tools.getMetadataBiz(this.model)
@@ -208,7 +226,8 @@
                 const config = {
                     requestId: this.instanceRequest,
                     cancelPrevious: true,
-                    globalError: false
+                    globalError: false,
+                    globalPermission: false
                 }
                 try {
                     switch (this.id) {

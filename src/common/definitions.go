@@ -205,6 +205,8 @@ const (
 	DefaultResModuleName string = "空闲机"
 	// DefaultFaultModuleName the default fault module name
 	DefaultFaultModuleName string = "故障机"
+	// DefaultRecycleModuleName the default fault module name
+	DefaultRecycleModuleName string = "待回收"
 )
 
 const (
@@ -229,6 +231,9 @@ const (
 
 	// BKAssetIDField  the asset id field
 	BKAssetIDField = "bk_asset_id"
+
+	// BKSNField  the sn  field
+	BKSNField = "bk_sn"
 
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
@@ -640,6 +645,8 @@ const (
 // DefaultResSetFlag the default resource set flat
 const DefaultResSetFlag int = 1
 
+const DefaultFlagDefaultValue int = 0
+
 // DefaultAppFlag the default app flag
 const DefaultAppFlag int = 1
 
@@ -670,7 +677,15 @@ const (
 
 	// DefaultFaultModuleFlag the default fault module flag
 	DefaultFaultModuleFlag int = 2
+
+	// default recycle module flat
+	DefaultRecycleModuleFlag int = 3
 )
+
+const (
+	DefaultModuleType string = "1"
+)
+
 const (
 	// FieldTypeSingleChar the single char filed type
 	FieldTypeSingleChar string = "singlechar"
@@ -696,20 +711,14 @@ const (
 	// FieldTypeUser the user field type
 	FieldTypeUser string = "objuser"
 
-	// FieldTypeSingleAsst the single association
-	FieldTypeSingleAsst string = "singleasst"
-
-	// FieldTypeMultiAsst the multi association
-	FieldTypeMultiAsst string = "multiasst"
-
-	// FieldTypeForeignKey the multi association
-	FieldTypeForeignKey string = "foreignkey"
-
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"
 
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
+
+	// FieldTypeList the lis type
+	FieldTypeList string = "list"
 
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
@@ -1103,7 +1112,11 @@ const (
 	DeleteObject         = "delete object"
 	UpdateObject         = "update object"
 	OperationDescription = "op_desc"
+	OptionOther          = "其他"
+	TimerPattern         = "^[\\d]+\\:[\\d]+$"
 	SyncSetTaskName      = "sync-settemplate2set"
+
+	BKHostState = "bk_state"
 )
 
 // 云同步

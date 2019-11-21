@@ -159,7 +159,7 @@ func (assoc *association) SetMainlineInstAssociation(params types.ContextParams,
 		// we create the current object's instance for each parent instance belongs to the parent object.
 		currentInst := assoc.instFactory.CreateInst(params, current)
 		currentInst.SetValue(current.GetInstNameFieldName(), current.Object().ObjectName)
-		currentInst.SetValue(common.BKDefaultField, 0)
+		currentInst.SetValue(common.BKDefaultField, common.DefaultFlagDefaultValue)
 		// set current instance's parent id to parent instance's id, so that they can be chained.
 		currentInst.SetValue(common.BKInstParentStr, id)
 		object := parent.GetObject()
