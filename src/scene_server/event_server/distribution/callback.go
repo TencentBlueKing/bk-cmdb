@@ -36,7 +36,7 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 	req, err := http.NewRequest("POST", receiver.CallbackURL, body)
 	if err != nil {
 		increaseFailure(dh.cache, receiver.SubscriptionID)
-		return fmt.Errorf("event distribute fail, build request error: %v, date=[%s]", err, event)
+		return fmt.Errorf("event distribute fail, build request error: %v, data=[%s]", err, event)
 	}
 	var duration time.Duration
 	if receiver.TimeOutSeconds == 0 {
@@ -47,18 +47,18 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 	resp, err := httpCli.DoWithTimeout(duration, req)
 	if err != nil {
 		increaseFailure(dh.cache, receiver.SubscriptionID)
-		return fmt.Errorf("event distribute fail, send request error: %v, date=[%s]", err, event)
+		return fmt.Errorf("event distribute fail, send request error: %v, data=[%s]", err, event)
 	}
 	defer resp.Body.Close()
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		increaseFailure(dh.cache, receiver.SubscriptionID)
-		return fmt.Errorf("event distribute fail, read response error: %v, date=[%s]", err, event)
+		return fmt.Errorf("event distribute fail, read response error: %v, data=[%s]", err, event)
 	}
 	if receiver.ConfirmMode == metadata.ConfirmModeHTTPStatus {
 		if strconv.Itoa(resp.StatusCode) != receiver.ConfirmPattern {
 			increaseFailure(dh.cache, receiver.SubscriptionID)
-			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respData, event)
+			return fmt.Errorf("event distribute fail, received response %s, data=[%s]", respData, event)
 		}
 	} else if receiver.ConfirmMode == metadata.ConfirmModeRegular {
 		pattern, err := regexp.Compile(receiver.ConfirmPattern)
@@ -67,7 +67,7 @@ func (dh *DistHandler) SendCallback(receiver *metadata.Subscription, event strin
 		}
 		if !pattern.Match(respData) {
 			increaseFailure(dh.cache, receiver.SubscriptionID)
-			return fmt.Errorf("event distribute fail, received response %s, date=[%s]", respData, event)
+			return fmt.Errorf("event distribute fail, received response %s, data=[%s]", respData, event)
 		}
 		return nil
 	}

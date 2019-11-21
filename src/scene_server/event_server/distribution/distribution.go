@@ -248,7 +248,7 @@ func (dh *DistHandler) popDistInst(subID int64) *metadata.DistInstCtx {
 	eventBytes := []byte(eventSlice[1])
 	event := metadata.DistInst{}
 	if err := json.Unmarshal(eventBytes, &event); err != nil {
-		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventBytes)
+		blog.Errorf("event distribute fail, unmarshal error: %v, data=[%s]", err, eventBytes)
 		return nil
 	}
 
