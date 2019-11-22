@@ -232,6 +232,25 @@ func (p *hostApplyRule) GetHostApplyRule(ctx core.ContextParams, bizID int64, ru
 	return rule, nil
 }
 
+func (p *hostApplyRule) GetHostApplyRuleByAttributeID(ctx core.ContextParams, bizID, moduleID, attributeID int64) (metadata.HostApplyRule, errors.CCErrorCoder) {
+	rule := metadata.HostApplyRule{}
+	filter := map[string]interface{}{
+		common.BkSupplierAccount:  ctx.SupplierAccount,
+		common.BKAppIDField:       bizID,
+		common.BKModuleIDField:    moduleID,
+		common.BKAttributeIDField: attributeID,
+	}
+	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(filter).One(ctx.Context, &rule); err != nil {
+		if p.dbProxy.IsNotFoundError(err) {
+			blog.Errorf("GetHostApplyRuleByAttributeID failed, db select failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+			return rule, ctx.Error.CCError(common.CCErrCommNotFound)
+		}
+		blog.Errorf("GetHostApplyRuleByAttributeID failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
+		return rule, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	return rule, nil
+}
+
 func (p *hostApplyRule) ListHostApplyRule(ctx core.ContextParams, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
 	result := metadata.MultipleHostApplyRuleResult{}
 	if option.Page.Limit > common.BKMaxPageSize && option.Page.Limit != common.BKNoLimit {
@@ -455,5 +474,17 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx core.ContextParams, bizID i
 		}
 		batchResult.Items = append(batchResult.Items, itemResult)
 	}
+
+	for index, item := range option.Rules {
+		rule, ccErr := p.GetHostApplyRuleByAttributeID(ctx, bizID, item.ModuleID, item.AttributeID)
+		if ccErr != nil {
+			blog.Errorf("GetHostApplyRuleByAttributeID failed, bizID: %d, moduleID: %d, attribute: %d, err: %s, rid: %s", bizID, item.ModuleID, item.AttributeID, ccErr.Error(), rid)
+			if err := batchResult.Items[index].GetError(); err == nil {
+				batchResult.Items[index].SetError(ccErr)
+			}
+		}
+		batchResult.Items[index].Rule = rule
+	}
+
 	return batchResult, nil
 }

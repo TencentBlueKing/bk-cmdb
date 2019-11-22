@@ -78,7 +78,8 @@ type BatchCreateOrUpdateHostApplyRuleResult struct {
 
 type CreateOrUpdateHostApplyRuleResult struct {
 	ErrorContainer `json:",inline"`
-	Index          int `json:"index"`
+	Index          int           `json:"index"`
+	Rule           HostApplyRule `json:"rule"`
 }
 
 // ConflictResolver 定义单个冲突的解决办法
@@ -142,7 +143,8 @@ type HostApplyPlanResult struct {
 }
 
 type HostApplyPlanRequest struct {
-	AdditionalRules   []CreateHostApplyRuleOption `field:"additional_host_apply_rules" json:"additional_host_apply_rules" bson:"additional_host_apply_rules" mapstructure:"additional_host_apply_rules"`
+	RemoveRuleIDs     []int64                     `field:"remove_rule_ids" json:"remove_rule_ids" bson:"remove_rule_ids" mapstructure:"remove_rule_ids"`
+	AdditionalRules   []CreateHostApplyRuleOption `field:"additional_rules" json:"additional_rules" bson:"additional_rules" mapstructure:"additional_rules"`
 	ConflictResolvers []HostApplyConflictResolver `field:"conflict_resolvers" json:"conflict_resolvers" bson:"conflict_resolvers" mapstructure:"conflict_resolvers"`
 	ModuleIDs         []int64                     `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
 }
