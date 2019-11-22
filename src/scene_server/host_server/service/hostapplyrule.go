@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/util"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -366,8 +367,20 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 		}
 	}
 
+	// filter out removed rules
+	if planRequest.RemoveRuleIDs == nil {
+		planRequest.RemoveRuleIDs = make([]int64, 0)
+	}
+	finalRules := make([]meta.HostApplyRule, 0)
+	for _, item := range rules.Info {
+		if util.InArray(item.ID, planRequest.RemoveRuleIDs) == true {
+			continue
+		}
+		finalRules = append(finalRules, item)
+	}
+
 	planOption := meta.HostApplyPlanOption{
-		Rules:             rules.Info,
+		Rules:             finalRules,
 		HostModules:       hostModules,
 		ConflictResolvers: planRequest.ConflictResolvers,
 	}
