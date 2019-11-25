@@ -14,6 +14,7 @@ package hostapplyrule
 
 import (
 	"fmt"
+	"sort"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -101,6 +102,11 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 		}
 		hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 	}
+
+	sort.SliceStable(hostApplyPlans, func(i, j int) bool {
+		return hostApplyPlans[i].UnresolvedConflictCount > hostApplyPlans[j].UnresolvedConflictCount
+	})
+
 	result = metadata.HostApplyPlanResult{
 		Plans:                   hostApplyPlans,
 		UnresolvedConflictCount: unresolvedConflictCount,
