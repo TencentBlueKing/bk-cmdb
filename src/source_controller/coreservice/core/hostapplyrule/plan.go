@@ -109,6 +109,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 
 	result = metadata.HostApplyPlanResult{
 		Plans:                   hostApplyPlans,
+		Count:                   len(hostApplyPlans),
 		UnresolvedConflictCount: unresolvedConflictCount,
 		HostAttributes:          attributes,
 	}

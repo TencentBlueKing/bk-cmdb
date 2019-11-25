@@ -143,6 +143,7 @@ type HostApplyPlanResult struct {
 	// 未解决的冲突主机数
 	UnresolvedConflictCount int64       `field:"unresolved_conflict_count" json:"unresolved_conflict_count" mapstructure:"unresolved_conflict_count"`
 	HostAttributes          []Attribute `field:"host_attributes" json:"host_attributes" bson:"host_attributes" mapstructure:"host_attributes"`
+	Count                   int         `field:"count" json:"count" bson:"count" mapstructure:"count"`
 }
 
 type HostApplyPlanRequest struct {
