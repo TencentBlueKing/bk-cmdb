@@ -182,3 +182,7 @@ func (container *ErrorContainer) GetError() errors.CCErrorCoder {
 type SearchRuleRelatedModulesOption struct {
 	Keyword string `json:"keyword" field:"keyword" mapstructure:"keyword"`
 }
+
+type UpdateModuleHostApplyEnableStatusOption struct {
+	Enable bool `json:"enable" mapstructure:"enable"`
+}

@@ -366,3 +366,42 @@ func (s *Service) SearchRuleRelatedModules(params types.ContextParams, pathParam
 	}
 	return modules, nil
 }
+
+func (s *Service) UpdateModuleHostApplyEnableStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("UpdateModuleHostApplyEnableStatus failed, parse bk_biz_id failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+	}
+
+	moduleID, err := strconv.ParseInt(pathParams(common.BKModuleIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("UpdateModuleHostApplyEnableStatus failed, parse bk_module_id failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKModuleIDField)
+	}
+
+	requestBody := metadata.UpdateModuleHostApplyEnableStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &requestBody); err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, parse request body failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+	updateOption := &metadata.UpdateOption{
+		Condition: map[string]interface{}{
+			common.BKAppIDField:    bizID,
+			common.BKModuleIDField: moduleID,
+		},
+		Data: map[string]interface{}{
+			common.HostApplyEnabledField: requestBody.Enable,
+		},
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(params.Context, params.Header, common.BKInnerObjIDModule, updateOption)
+	if err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if ccErr := result.CCError(); ccErr != nil {
+		blog.ErrorJSON("SearchRuleRelatedModules failed, update module instance failed, updateOption: %s, response: %s, rid: %s", updateOption, result, params.ReqID)
+		return nil, ccErr
+	}
+	return result.Data, nil
+}

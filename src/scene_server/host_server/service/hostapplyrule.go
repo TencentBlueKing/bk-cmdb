@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common/util"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -23,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
