@@ -89,6 +89,7 @@ func (s *Service) initModule() {
 	s.addAction(http.MethodPost, "/module/search/{owner_id}/{app_id}/{set_id}", s.SearchModule, nil)
 	s.addAction(http.MethodPost, "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}", s.ListModulesByServiceTemplateID, nil)
 	s.addAction(http.MethodPost, "/module/bk_biz_id/{bk_biz_id}/host_apply_rule_related", s.SearchRuleRelatedModules, nil)
+	s.addAction(http.MethodPut, "/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}/bk_module_id/{bk_module_id}", s.UpdateModuleHostApplyEnableStatus, nil)
 }
 
 func (s *Service) initSet() {
