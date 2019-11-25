@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"configcenter/src/apimachinery/rest"
@@ -447,6 +448,30 @@ func (a *authClient) GetAnyAuthorizedScopes(ctx context.Context, scopeID string,
 	}
 	if !resp.Result {
 		return nil, fmt.Errorf("get authorized resource failed, err: %v", resp.ErrorString())
+	}
+
+	return resp.Data, nil
+}
+
+func (a *authClient) ListPageResources(ctx context.Context, header http.Header, searchCondition SearchCondition, limit, offset int64) (result PageBackendResource, err error) {
+	util.CopyHeader(a.basicHeader, header)
+
+	resp := new(SearchPageResult)
+
+	err = a.client.Post().
+		SubResourcef("/bkiam/api/v1/perm/systems/%s/resources/search", a.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(searchCondition).
+		WithParam("page", "1").
+		WithParam("limit", strconv.FormatInt(limit, 10)).
+		WithParam("offset", strconv.FormatInt(offset, 10)).
+		Do().Into(&resp)
+	if err != nil {
+		return resp.Data, fmt.Errorf("search resource with condition: %+v failed, error: %v", searchCondition, err)
+	}
+	if !resp.Result || resp.Code != 0 {
+		return resp.Data, fmt.Errorf("search resource with condition: %+v failed, message: %s, code: %v", searchCondition, resp.Message, resp.Code)
 	}
 
 	return resp.Data, nil
