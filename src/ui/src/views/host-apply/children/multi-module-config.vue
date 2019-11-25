@@ -2,12 +2,12 @@
     <div class="multi-module-config">
         <div class="config-bd">
             <div class="config-item">
-                <div class="item-label">已选择 {{checkedModuleList.length}} 个模块：</div>
+                <div class="item-label">已选择 {{moduleIds.length}} 个模块：</div>
                 <div class="item-content">
                     <div :class="['module-list', { 'show-more': showMore.isMoreModuleShowed }]" ref="moduleList">
-                        <div class="module-item" :title="'a / b / c'" v-for="(m, index) in checkedModuleList" :key="index">
+                        <div class="module-item" :title="getModulePath(id)" v-for="(id, index) in moduleIds" :key="index">
                             <span class="module-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
-                            GameSevers
+                            {{getModuleName(id)}}
                         </div>
                         <div
                             :class="['module-item', 'more', { 'opened': showMore.isMoreModuleShowed }]"
@@ -25,14 +25,14 @@
                 </div>
                 <div class="item-content">
                     <bk-button theme="default" icon="plus" @click="handleChooseField" class="choose-button" v-if="!isDel">添加字段</bk-button>
-                    <div class="config-table" v-if="checkedPropertyIdList.length">
+                    <div class="config-table" v-show="checkedPropertyIdList.length">
                         <property-config-table
                             ref="configEditTable"
                             :multiple="true"
                             :readonly="isDel"
                             :deletable="isDel"
                             :checked-property-id-list="checkedPropertyIdList"
-                            :init-data="initConfigData"
+                            :rule-list="initRuleList"
                             @property-value-change="handlePropertyValueChange"
                             @selection-change="handlePropertySelectionChange"
                         >
@@ -65,34 +65,37 @@
         },
         data () {
             return {
-                propertyModalVisiable: false,
-                nextButtonDisabled: true,
-                delButtonDisabled: true,
-                initConfigData: [],
+                moduleMap: {},
+                initRuleList: [],
                 checkedPropertyIdList: [],
-                checkedModuleList: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 showMore: {
                     moduleListMaxRow: 2,
                     showLink: false,
                     isMoreModuleShowed: false,
                     linkLeft: 0
                 },
-                selectedPropertyRow: []
+                selectedPropertyRow: [],
+                propertyModalVisiable: false,
+                nextButtonDisabled: true,
+                delButtonDisabled: true
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('hosts', ['configPropertyList']),
+            moduleIds () {
+                const mid = this.$route.query.mid
+                let moduleIds = []
+                if (mid) {
+                    moduleIds = String(mid).split(',').map(id => Number(id))
+                }
+                return moduleIds
+            },
             isDel () {
                 return this.$route.query.action === 'batch-del'
             }
         },
         watch: {
-            configPropertyList: {
-                handler () {
-                    this.initData()
-                },
-                immediate: true
-            },
             checkedPropertyIdList () {
                 this.$nextTick(() => {
                     this.toggleNexButtonDisabled()
@@ -111,46 +114,52 @@
         },
         methods: {
             async initData () {
-                // 请求接口获取配置数据
-                this.initConfigData = await Promise.resolve([
-                    {
-                        bk_property_id: 'bk_asset_id',
-                        module_list: [
-                            {
-                                bk_inst_id: 141,
-                                path: '广东区 / 大区一 / Apache模块1',
-                                value: 'No13878667'
-                            },
-                            {
-                                bk_inst_id: 142,
-                                path: '广东区 / 大区一 / Apache模块2',
-                                value: 'No13878645'
-                            }
-                        ]
+                try {
+                    const [ruleData, topopath] = await Promise.all([
+                        this.getRules(),
+                        this.getTopopath()
+                    ])
+                    const moduleMap = {}
+                    topopath.nodes.forEach(node => {
+                        moduleMap[node.topo_node.bk_inst_id] = node.topo_path
+                    })
+                    this.moduleMap = Object.freeze(moduleMap)
+                    this.initRuleList = ruleData.info
+                    const attrIds = this.initRuleList.map(item => item.bk_attribute_id)
+                    this.checkedPropertyIdList = [...new Set(attrIds)]
+                    this.checkedPropertyIdListCopy = [...this.checkedPropertyIdList]
+                } catch (e) {
+                    console.log(e)
+                }
+            },
+            getRules () {
+                return this.$store.dispatch('hostApply/getRules', {
+                    bizId: this.bizId,
+                    params: {
+                        bk_module_ids: this.moduleIds
                     },
-                    {
-                        bk_property_id: 'bk_state_name',
-                        module_list: [
-                            {
-                                bk_inst_id: 143,
-                                path: '广东区 / 大区一 / Apache模块1',
-                                value: 'BR'
-                            },
-                            {
-                                bk_inst_id: 132,
-                                path: '广东区 / 大区一 / Apache模块2',
-                                value: 'CN'
-                            },
-                            {
-                                bk_inst_id: 112,
-                                path: '广东区 / 大区一 / Apache模块2',
-                                value: 'US'
-                            }
-                        ]
+                    config: {
+                        requestId: 'getHostApplyConfigs'
                     }
-                ])
-
-                this.checkedPropertyIdList = this.initConfigData.map(item => item.bk_property_id)
+                })
+            },
+            getTopopath () {
+                return this.$store.dispatch('hostApply/getTopopath', {
+                    bizId: this.bizId,
+                    params: {
+                        topo_nodes: this.moduleIds.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
+                    }
+                })
+            },
+            getModulePath (id) {
+                const info = this.moduleMap[id] || []
+                const path = info.map(node => node.bk_inst_name).reverse().join(' / ')
+                return path
+            },
+            getModuleName (id) {
+                const topoInfo = this.moduleMap[id] || []
+                const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
+                return target.bk_inst_name
             },
             setShowMoreLinkStatus () {
                 const moduleList = this.$refs.moduleList
@@ -159,7 +168,7 @@
                 const moduleItemWidth = moduleItemEl.offsetWidth + parseInt(moduleItemStyle.marginLeft, 10) + parseInt(moduleItemStyle.marginRight, 10)
                 const moduleListWidth = moduleList.clientWidth
                 const maxCountInRow = Math.floor(moduleListWidth / moduleItemWidth)
-                const rowCount = Math.ceil(this.checkedModuleList.length / maxCountInRow)
+                const rowCount = Math.ceil(this.moduleIds.length / maxCountInRow)
                 this.showMore.showLink = rowCount > this.showMore.moduleListMaxRow
                 this.showMore.linkLeft = moduleItemWidth * (maxCountInRow - 1)
             },
@@ -168,11 +177,27 @@
                 this.nextButtonDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
             },
             handleNextStep () {
-                const modulePropertyList = this.$refs.configEditTable.modulePropertyList
-                const configData = modulePropertyList.map(property => ({
-                    key: property.bk_property_id,
-                    value: property.__extra__.value
-                }))
+                const { modulePropertyList, ignoreRuleIds } = this.$refs.configEditTable
+                const additionalRules = []
+                this.moduleIds.forEach(moduleId => {
+                    modulePropertyList.forEach(property => {
+                        additionalRules.push({
+                            bk_attribute_id: property.id,
+                            bk_module_id: moduleId,
+                            bk_property_value: property.__extra__.value
+                        })
+                    })
+                })
+
+                const savePropertyConfig = {
+                    // 模块列表
+                    bk_module_ids: this.moduleIds,
+                    // 附加的规则
+                    additional_rules: additionalRules,
+                    // 删除的规则，来源于编辑表格删除
+                    ignore_rule_ids: ignoreRuleIds
+                }
+                this.$store.commit('hostApply/setPropertyConfig', savePropertyConfig)
 
                 this.$router.push({
                     name: 'hostApplyConfirm',
@@ -180,7 +205,6 @@
                         batch: 1
                     }
                 })
-                console.log(configData)
             },
             handleDel () {
                 this.$bkInfo({

@@ -15,7 +15,7 @@
                 <li class="property-item" v-for="property in configPropertyList" :key="property.bk_property_id">
                     <bk-checkbox
                         :disabled="property.__extra__.disabled"
-                        :value="property.bk_property_id"
+                        :value="property.id"
                     >
                         <div
                             v-if="property.__extra__.disabled"

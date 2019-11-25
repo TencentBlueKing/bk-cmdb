@@ -13,9 +13,9 @@
                     <span v-bk-tooltips="{ content: $t('当一台主机同属多个模块时，且模块配置了不同的属性'), width: 185 }">
                         <i class="bk-cc-icon icon-cc-tips"></i>
                     </span>
-                    属性冲突<em class="conflict-num">8</em>台
+                    属性冲突<em class="conflict-num">{{conflictNum}}</em>台
                 </span>
-                <span>总检测<em class="check-num">2243</em>台</span>
+                <span>总检测<em class="check-num">{{table.total}}</em>台</span>
             </div>
         </div>
         <property-confirm-table :data="table.list" :total="table.total"></property-confirm-table>
@@ -30,7 +30,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters, mapState, mapActions } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
     import propertyConfirmTable from './children/property-confirm-table'
     import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
@@ -46,10 +46,13 @@
                 table: {
                     list: [],
                     total: 0
-                }
+                },
+                conflictNum: 0
             }
         },
         computed: {
+            ...mapState('hostApply', ['propertyConfig']),
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters(['featureTipsParams', 'supplierAccount']),
             isBatch () {
                 return this.$route.query.batch === 1
@@ -65,26 +68,21 @@
         },
         methods: {
             ...mapActions('hostApply', [
-                'getApplyRulePreview'
+                'getApplyPreview'
             ]),
             async initData () {
                 try {
-                    const { count, info } = await this.getApplyRulePreview({
-                        params: {},
+                    const previewData = await this.getApplyPreview({
+                        bizId: this.bizId,
+                        params: this.propertyConfig,
                         config: {
-                            requestId: 'getApplyRulePreview',
-                            fromCache: true
+                            requestId: 'getHostApplyPreview'
                         }
                     })
 
-                    let tableList = []
-                    let i = 0
-                    while (i < 20) {
-                        tableList = [...tableList, ...info]
-                        i++
-                    }
-                    this.table.list = tableList
-                    this.table.total = count
+                    this.table.list = previewData.plans || []
+                    this.table.total = this.table.list.length
+                    this.conflictNum = previewData.unresolved_conflict_count
                 } catch (e) {
                     console.error(e)
                 }
