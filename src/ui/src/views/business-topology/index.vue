@@ -178,7 +178,7 @@
         }
     }
     .tab-layout {
-        height: calc(100vh - 120px);
+        height: 100%;
         overflow: hidden;
         .topology-tab {
             /deep/ {

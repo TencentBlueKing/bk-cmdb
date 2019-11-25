@@ -3,8 +3,10 @@
         <feature-tips
             :feature-name="'serviceTemplate'"
             :show-tips="showFeatureTips"
-            :desc="$t('服务模板功能提示')"
             @close-tips="showFeatureTips = false">
+            <i18n path="服务模板功能提示">
+                <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick" place="link">{{$t('创建集群模板')}}</a>
+            </i18n>
         </feature-tips>
         <div class="template-filter clearfix">
             <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_SERVICE_TEMPLATE })">
@@ -41,6 +43,7 @@
                     class="filter-search fl"
                     :placeholder="$t('模板名称搜索')"
                     :right-icon="'bk-icon icon-search'"
+                    clearable
                     font-size="medium"
                     v-model.trim="filter.templateName"
                     @enter="getTableData(true)">
@@ -115,6 +118,7 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
+    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         components: {
             featureTips
@@ -298,6 +302,11 @@
             handleRowClick (row, event, column) {
                 if (column.property === 'operation') return
                 this.operationTemplate(row.id)
+            },
+            handleTipsLinkClick () {
+                this.$router.push({
+                    name: MENU_BUSINESS_SET_TEMPLATE
+                })
             }
         }
     }
@@ -306,6 +315,9 @@
 <style lang="scss" scoped>
     .template-wrapper {
         padding: 0 20px;
+        .tips-link {
+            margin: 0;
+        }
         .filter-text {
             .bk-select {
                 width: 184px;

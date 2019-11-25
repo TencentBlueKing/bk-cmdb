@@ -32,9 +32,7 @@
                     :placeholder="$t('分配到')"
                     v-model="assignBusiness"
                     @selected="handleAssignHosts">
-                    <bk-button class="select-btn" slot="trigger" :disabled="!table.checked.length">
-                        {{$t('分配到')}}
-                    </bk-button>
+                    <bk-option id="empty" :name="$t('分配到')" hidden></bk-option>
                     <bk-option v-for="option in businessList"
                         :key="option.bk_biz_id"
                         :id="option.bk_biz_id"
@@ -109,7 +107,7 @@
                     columnsConfigKey: 'resource_table_columns',
                     exportUrl: `${window.API_HOST}hosts/export`
                 },
-                assignBusiness: '',
+                assignBusiness: 'empty',
                 importInst: {
                     show: false,
                     active: 'import',
@@ -260,7 +258,7 @@
                 if (this.hasSelectAssignedHost()) {
                     this.$error(this.$t('请勿选择已分配主机'))
                     this.$nextTick(() => {
-                        this.assignBusiness = ''
+                        this.assignBusiness = 'empty'
                     })
                 } else {
                     this.$bkInfo({
@@ -270,7 +268,7 @@
                             this.assignHosts(business)
                         },
                         cancelFn: () => {
-                            this.assignBusiness = ''
+                            this.assignBusiness = 'empty'
                         }
                     })
                 }
@@ -289,11 +287,11 @@
                     }
                 }).then(() => {
                     this.$success(this.$t('分配成功'))
-                    this.assignBusiness = ''
+                    this.assignBusiness = 'empty'
                     this.$refs.resourceTable.table.checked = []
                     this.$refs.resourceTable.handlePageChange(1)
                 }).catch(e => {
-                    this.assignBusiness = ''
+                    this.assignBusiness = 'empty'
                 })
             },
             getConfirmContent (business) {
@@ -468,16 +466,6 @@
         display: inline-block;
         vertical-align: middle;
         margin: 0 10px 0 0;
-        .select-btn {
-            display: block;
-            height: 30px;
-            border: none;
-        }
-        /deep/ {
-            &::before {
-                display: none;
-            }
-        }
     }
     .automatic-import{
         padding:40px 30px 0 30px;
