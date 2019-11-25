@@ -128,8 +128,9 @@ type HostApplyUpdateField struct {
 
 type OneHostApplyPlan struct {
 	ErrorContainer `json:",inline"`
-	HostID         int64   `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
-	ModuleIDs      []int64 `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+	HostID         int64     `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
+	CloudInfo      CloudInst `field:"cloud_area" json:"cloud_area" bson:"cloud_area" mapstructure:"cloud_area"`
+	ModuleIDs      []int64   `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
 	// 预计执行后端主机信息
 	ExpiredHost    map[string]interface{}   `field:"expired_host" json:"expired_host" bson:"expired_host" mapstructure:"expired_host"`
 	UpdateFields   []HostApplyUpdateField   `field:"update_fields" json:"update_fields" bson:"update_fields" mapstructure:"update_fields"`
