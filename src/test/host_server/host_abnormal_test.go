@@ -1810,23 +1810,6 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("create object attribute for host", func() {
-			input := &metadata.ObjAttDes{
-				Attribute: metadata.Attribute{
-					OwnerID:       "0",
-					ObjectID:      "host",
-					PropertyID:    "a",
-					PropertyName:  "a",
-					PropertyGroup: "default",
-					IsEditable:    true,
-					PropertyType:  "singleasst",
-				},
-			}
-			rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-		})
-
 		It("update host using created attr", func() {
 			input := map[string]interface{}{
 				"bk_host_id": fmt.Sprintf("%v", hostId),

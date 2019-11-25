@@ -155,8 +155,8 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			err = valid.validTimeZone(ctx.Context, val, key)
 		case common.FieldTypeBool:
 			err = valid.validBool(ctx.Context, val, key)
-		case common.FieldTypeForeignKey:
-			err = valid.validForeignKey(ctx.Context, val, key)
+	    case common.FieldTypeList:
+			err = valid.validList(ctx.Context, val, key)
 		default:
 			continue
 		}
@@ -272,8 +272,8 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			err = valid.validTimeZone(ctx.Context, val, key)
 		case common.FieldTypeBool:
 			err = valid.validBool(ctx.Context, val, key)
-		case common.FieldTypeForeignKey:
-			err = valid.validForeignKey(ctx.Context, val, key)
+		case common.FieldTypeList:
+			err = valid.validList(ctx.Context, val, key)
 		default:
 			continue
 		}

@@ -13,16 +13,14 @@
 package service
 
 import (
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apiserver/core"
-	compatiblev2 "configcenter/src/apiserver/core/compatiblev2/service"
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/rdapi"
+    "configcenter/src/apimachinery/discovery"
+    "configcenter/src/auth"
+    "configcenter/src/auth/authcenter"
+    "configcenter/src/common/backbone"
+    "configcenter/src/common/errors"
+    "configcenter/src/common/rdapi"
 
-	"github.com/emicklei/go-restful"
+    "github.com/emicklei/go-restful"
 )
 
 // Service service methods
@@ -33,15 +31,12 @@ type Service interface {
 
 // NewService create a new service instance
 func NewService() Service {
-	return &service{
-		core: core.New(nil, compatiblev2.New(nil)),
-	}
+	return new(service)
 }
 
 type service struct {
 	engine     *backbone.Engine
 	client     HTTPClient
-	core       core.Core
 	discovery  discovery.DiscoveryInterface
 	authorizer auth.Authorizer
 }
@@ -50,7 +45,6 @@ func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, disc
 	s.engine = engine
 	s.client = httpClient
 	s.discovery = discovery
-	s.core.CompatibleV2Operation().SetConfig(engine)
 	s.authorizer = authorize
 }
 
@@ -80,6 +74,5 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	allWebServices := make([]*restful.WebService, 0)
 	allWebServices = append(allWebServices, ws)
 	allWebServices = append(allWebServices, s.RootWebService())
-	allWebServices = append(allWebServices, s.core.CompatibleV2Operation().WebService())
 	return allWebServices
 }

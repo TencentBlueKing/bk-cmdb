@@ -34,8 +34,7 @@
         data () {
             const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
             return {
-                showBrowserTips,
-                meta: this.$route.meta
+                showBrowserTips
                 // execMainScrollListener
             }
         },

@@ -10,36 +10,25 @@
  * limitations under the License.
  */
 
-package utils
+package y3_6_201911141516
 
 import (
-	"github.com/stretchr/testify/assert"
-	"net/url"
-	"testing"
+	"context"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func TestSliceStrToInt(t *testing.T) {
-	strs := []string{"0", "1", "2", "3"}
-	expects := []int{0, 1, 2, 3}
-	ints, err := SliceStrToInt(strs)
-	assert.Nil(t, err)
-
-	for i, n := range ints {
-		assert.Equal(t, expects[i], n)
-	}
+func init() {
+	upgrader.RegistUpgrader("y3.6.201911141516", upgrade)
 }
 
-func TestValidateFormData(t *testing.T) {
-	data := url.Values{
-		"key1": make([]string, 0),
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.6.201911141516")
+	if err := addHostFieldTypeList(ctx, db, conf); err != nil {
+		blog.Errorf("migrate y3.6.201911141516 failed, new add field type list failed, err: %+v", err)
+		return err
 	}
-
-	ok, _ := ValidateFormData(data, []string{"key1"})
-	assert.Equal(t, false, ok)
-
-	data = url.Values{
-		"key1": []string{"val1"},
-	}
-	ok, _ = ValidateFormData(data, []string{"key1"})
-	assert.Equal(t, true, ok)
+	return nil
 }

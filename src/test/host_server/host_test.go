@@ -82,6 +82,7 @@ var _ = Describe("host test", func() {
 						"bk_host_innerip": "1.0.0.1",
 						"bk_asset_id":     "addhost_api_asset_1",
 						"bk_cloud_id":     0,
+						"bk_comment":      "1.0.0.1 comment",
 					},
 				},
 			}
@@ -399,6 +400,21 @@ var _ = Describe("host test", func() {
 			Expect(int64(module["bk_module_id"].(float64))).To(Equal(moduleId))
 		})
 
+		It("add clone destion host", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": 1,
+				"host_info": map[string]interface{}{
+					"4": map[string]interface{}{
+						"bk_host_innerip": "1.0.0.5",
+						"bk_asset_id":     "add_clone_destion_host",
+						"bk_cloud_id":     0,
+					},
+				},
+			}
+			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
 		It("clone host", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   1,
@@ -439,7 +455,10 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
 			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.5"))
+			Expect(data["bk_comment"].(string)).To(Equal("1.0.0.1 comment"))
+
 		})
+		return
 
 		It("get instance topo", func() {
 			rsp, err := instClient.GetInternalModule(context.Background(), "0", strconv.FormatInt(bizId, 10), header)

@@ -18,7 +18,7 @@
                             'is-business-module': type === 'business'
                         }"
                         v-bk-tooltips="getModulePath(id)">
-                        <span class="module-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
+                        <span class="module-icon" v-if="type === 'business'">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
                         {{getModuleName(id)}}
                         <span class="module-mask"
                             v-if="type === 'idle'"
@@ -71,7 +71,7 @@
             <bk-button theme="primary" :disabled="!availableTabList.length" @click="handleConfrim">{{confirmText}}</bk-button>
             <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
-        <cmdb-dialog v-model="dialog.show" :width="dialog.width">
+        <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="460">
             <component
                 :is="dialog.component"
                 v-bind="dialog.props"
@@ -207,7 +207,7 @@
         },
         beforeRouteUpdate (to, from, next) {
             this.resolveData(to)
-            this.setBreadcrumbs()
+            this.$nextTick(this.setBreadcrumbs)
             this.getPreviewData()
             next()
         },
@@ -301,8 +301,11 @@
                         moduleIds.push(...datum.to_remove_from_modules.map(datum => datum.bk_module_id))
                     })
                     const uniqueModules = [...new Set(moduleIds)]
-                    const result = await this.$http.post(`find/topopath/biz/${this.bizId}`, {
-                        topo_nodes: uniqueModules.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
+                    const result = await this.$store.dispatch('objectMainLineModule/getTopoPath', {
+                        bizId: this.bizId,
+                        params: {
+                            topo_nodes: uniqueModules.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
+                        }
                     })
                     const moduleMap = {}
                     result.nodes.forEach(node => {

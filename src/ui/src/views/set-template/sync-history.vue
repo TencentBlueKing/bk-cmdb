@@ -9,6 +9,7 @@
             <bk-input style="width: 240px;" class="fl ml10"
                 right-icon="icon-search"
                 v-model="searchName"
+                clearable
                 :placeholder="$t('集群名称')"
                 @enter="getData(true)">
             </bk-input>

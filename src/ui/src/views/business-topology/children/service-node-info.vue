@@ -122,13 +122,13 @@
 </template>
 
 <script>
+    import debounce from 'lodash.debounce'
     export default {
         props: {
             active: Boolean
         },
         data () {
             return {
-                needRefresh: false,
                 type: 'details',
                 properties: [],
                 disabledProperties: [],
@@ -141,7 +141,8 @@
                     serviceTemplateName: this.$t('无'),
                     serviceCategory: '',
                     setTemplateName: this.$t('无')
-                }
+                },
+                refresh: null
             }
         },
         computed: {
@@ -204,10 +205,7 @@
                 immediate: true,
                 handler (modelId) {
                     if (modelId && this.active) {
-                        this.needRefresh = false
                         this.initProperties()
-                    } else {
-                        this.needRefresh = true
                     }
                 }
             },
@@ -215,28 +213,26 @@
                 immediate: true,
                 handler (node) {
                     if (node && this.active) {
-                        this.needRefresh = false
                         this.getNodeDetails()
-                    } else {
-                        this.needRefresh = true
                     }
                 }
             },
             active: {
                 immediate: true,
-                handler (value) {
-                    if (value && this.needRefresh) {
-                        this.needRefresh = false
+                handler (active) {
+                    if (active) {
                         this.refresh()
                     }
                 }
             }
         },
-        methods: {
-            refresh () {
+        created () {
+            this.refresh = debounce(() => {
                 this.initProperties()
                 this.getNodeDetails()
-            },
+            }, 10)
+        },
+        methods: {
             async initProperties () {
                 this.type = 'details'
                 try {
