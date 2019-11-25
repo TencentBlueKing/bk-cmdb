@@ -31,7 +31,9 @@ type AuthConfig struct {
 	// the system id that cmdb used in auth center.
 	SystemID string
 	// enable sync auth data to iam
-	EnableSync bool
+	EnableSync          bool
+	SyncWorkerCount     int
+	SyncIntervalMinutes int
 }
 
 type RegisterInfo struct {
@@ -189,6 +191,17 @@ type SearchResult struct {
 	BaseResponse
 	RequestID string                 `json:"request_id"`
 	Data      []meta.BackendResource `json:"data"`
+}
+
+type PageBackendResource struct {
+	Count   int64                  `json:"count"`
+	Results []meta.BackendResource `json:"results"`
+}
+
+type SearchPageResult struct {
+	BaseResponse
+	RequestID string              `json:"request_id"`
+	Data      PageBackendResource `json:"data"`
 }
 
 func (br BaseResponse) ErrorString() string {

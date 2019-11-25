@@ -16,7 +16,7 @@ def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v, redis_user_v,
         redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v,
         cc_url_v, paas_url_v, full_text_search, es_url_v, auth_address, auth_app_code,
-        auth_app_secret, auth_enabled, auth_scheme, log_level
+        auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level
 ):
     output = os.getcwd() + "/cmdb_adminserver/configures/"
     context = dict(
@@ -41,6 +41,8 @@ def generate_config_file(
         auth_app_secret=auth_app_secret,
         auth_enabled=auth_enabled,
         auth_scheme=auth_scheme,
+        auth_sync_workers=auth_sync_workers,
+        auth_sync_interval_minutes=auth_sync_interval_minutes,
         full_text_search=full_text_search
     )
     if not os.path.exists(output):
@@ -202,6 +204,8 @@ address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
 enableSync = false
+syncWorkers = $auth_sync_workers
+syncIntervalMinutes = $auth_sync_interval_minutes
     '''
 
     template = FileTemplate(migrate_file_template_str)
@@ -442,6 +446,8 @@ def main(argv):
         "auth_enabled": "false",
         "auth_app_code": "bk_cmdb",
         "auth_app_secret": "",
+        "auth_sync_workers": "1",
+        "auth_sync_interval_minutes": "45",
     }
     full_text_search = 'off'
     es_url = 'http://127.0.0.1:9200'
@@ -467,7 +473,7 @@ def main(argv):
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=",
         "blueking_paas_url=", "listen_port=", "es_url=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
-        "auth_scheme=", "full_text_search=", "log_level="
+        "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level="
     ]
     usage = '''
     usage:
@@ -512,6 +518,8 @@ def main(argv):
       --auth_address       https://iam.domain.com/ \\
       --auth_app_code      bk_cmdb \\
       --auth_app_secret    xxxxxxx \\
+      --auth_sync_workers  1 \\
+      --auth_sync_interval_minutes  45 \\
       --full_text_search   off \\
       --es_url             http://127.0.0.1:9200 \\
       --log_level          3
@@ -583,6 +591,12 @@ def main(argv):
         elif opt in ("--auth_app_secret",):
             auth["auth_app_secret"] = arg
             print("auth_app_secret:", auth["auth_app_secret"])
+        elif opt in ("--auth_sync_workers",):
+            auth["auth_sync_workers"] = arg
+            print("auth_sync_workers:", auth["auth_sync_workers"])
+        elif opt in ("--auth_sync_interval_minutes",):
+            auth["auth_sync_interval_minutes"] = arg
+            print("auth_sync_interval_minutes:", auth["auth_sync_interval_minutes"])
         elif opt in ("--full_text_search",):
             full_text_search = arg
             print('full_text_search:', full_text_search)
