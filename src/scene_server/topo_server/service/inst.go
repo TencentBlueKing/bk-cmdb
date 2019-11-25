@@ -60,18 +60,19 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 
 	if data.Exists("BatchInfo") {
 		/*
-		   BatchInfo data format:
-		    {
-		      "BatchInfo": {
-		        "4": { // excel line number
-		          "bk_inst_id": 1,
-		          "bk_inst_key": "a22",
-		          "bk_inst_name": "a11",
-		          "bk_version": "121",
-		          "import_from": "1"
-		        },
-		      "input_type": "excel"
-		    }
+			   BatchInfo data format:
+			    {
+			      "BatchInfo": {
+			        "4": { // excel line number
+			          "bk_inst_id": 1,
+			          "bk_inst_key": "a22",
+			          "bk_inst_name": "a11",
+			          "bk_version": "121",
+			          "import_from": "1"
+					}
+				  },
+			      "input_type": "excel"
+			    }
 		*/
 		batchInfo := new(operation.InstBatchInfo)
 		if err := data.MarshalJSONInto(batchInfo); err != nil {
@@ -521,7 +522,7 @@ func (s *Service) SearchInstChildTopo(params types.ContextParams, pathParams, qu
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), params.ReqID)
 		return nil, err
 	}
 

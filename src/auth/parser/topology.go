@@ -769,7 +769,7 @@ var (
 	updateObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
 	deleteObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
 	deleteObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
-	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
+	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/search/topo/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
 	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
 	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
@@ -836,32 +836,51 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object instance, but got invalid instance id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
 
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[4]})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		var modelType = meta.ModelInstance
+		var bizID int64
+		bizID, err = metadata.BizIDFromMetadata(model.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		isMainline, err := ps.isMainlineModel(model.ObjectID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if isMainline {
+			// only works for mainline instance update.
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			modelType = meta.MainlineInstance
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelInstance,
+					Type:       modelType,
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[4],
-					},
-				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -968,7 +987,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 	// find object instance topology operation
 	if ps.hitRegexp(findObjectInstanceSubTopologyRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 12 {
+		if len(ps.RequestCtx.Elements) != 11 {
 			ps.err = errors.New("find object instance topology, but got invalid url")
 			return ps
 		}
@@ -979,9 +998,9 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[11], 10, 64)
+		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[10], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s", ps.RequestCtx.Elements[11])
+			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s", ps.RequestCtx.Elements[10])
 			return ps
 		}
 
@@ -1713,6 +1732,12 @@ func (ps *parseStream) objectAttribute() *parseStream {
 
 	// create object's attribute operation.
 	if ps.hitPattern(createObjectAttributePattern, http.MethodPost) {
+		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			ps.err = fmt.Errorf("parse bizID from metadata failed, err: %s", err.Error())
@@ -1725,6 +1750,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps

@@ -64,7 +64,7 @@ type snapshotCheckService struct {
 }
 
 func newSnapshotCheckService(zkaddr string, bizID int) (*snapshotCheckService, error) {
-	service, err := config.NewService(zkaddr, "")
+	service, err := config.NewZkService(zkaddr)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func runSnapshotCheck(c *snapshotCheckConf) error {
 
 func (s *snapshotCheckService) snapshotCheck() error {
 	redis.SetLogger(log.New(os.Stdout, "redis", 0))
-	fmt.Println("=====================\nstart check", )
+	fmt.Println("=====================\nstart check")
 	fmt.Println("start checkConf")
 	if err := s.checkConf(); err != nil {
 		return err

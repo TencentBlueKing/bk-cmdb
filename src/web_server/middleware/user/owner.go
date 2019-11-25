@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/validator"
+	validator "configcenter/src/source_controller/coreservice/core/instances"
 
 	"gopkg.in/redis.v5"
 )
@@ -155,6 +155,6 @@ func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, er
 	fields := result.Data
 
 	ret := map[string]interface{}{}
-	validator.FillLostedFieldValue(ret, fields, nil)
+	validator.FillLostedFieldValue(context.Background(), ret, fields)
 	return ret, nil
 }

@@ -84,6 +84,7 @@ func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Facto
 	c.obj = obj
 }
 
+// CreateInstBatch
 func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
 	var err error
 	var bizID int64
@@ -94,6 +95,25 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 	}
 
+	object := obj.Object()
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(object.ObjectID) == true {
+		blog.V(5).Infof("CreateInstBatch failed, create %s instance with common create api forbidden, rid: %s", object.ObjectID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrTopoImportMainlineForbidden)
+	}
+
+	isMainlin, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", object.ObjectID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	if isMainlin {
+		blog.V(5).Infof("CreateInstBatch failed, create %s instance with common create api forbidden, rid: %s", object.ObjectID, params.ReqID)
+		return nil, params.Err.Error(common.CCErrTopoImportMainlineForbidden)
+
+	}
+
 	results := &BatchResult{}
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
@@ -102,18 +122,12 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		return results, fmt.Errorf("BatchInfo empty")
 	}
 
-	object := obj.Object()
-	isMainline, err := obj.IsMainlineObject()
-	if err != nil {
-		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
-		return results, err
-	}
 	// 1. 检查实例与URL参数指定的模型一致
 	for line, inst := range batchInfo.BatchInfo {
 		objID, exist := inst[common.BKObjIDField]
 		if exist == true && objID != object.ObjectID {
 			blog.Errorf("create object[%s] instance batch failed, because bk_obj_id field conflict with url field, rid: %s", object.ObjectID, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl, line)
+			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithURL, line)
 		}
 	}
 
@@ -149,6 +163,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
+	idFieldname := metadata.GetInstIDFieldByObjID(obj.GetObjectID())
 	for colIdx, colInput := range batchInfo.BatchInfo {
 		if colInput == nil {
 			// ignore empty excel line
@@ -158,15 +173,23 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		delete(colInput, "import_from")
 		// create memory object
 		item := c.instFactory.CreateInst(params, obj)
+
 		item.SetValues(colInput)
 
-		existInDB, filter, err := item.CheckInstanceExists(nonInnerAttributes)
-		if nil != err {
-			blog.Errorf("[operation-inst] failed to get inst is exist, err: %s, rid: %s", err.Error(), params.ReqID)
-			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-			continue
+		// 实例id 为空，表示要新建实例
+		// 实例ID已经赋值，更新数据.  (已经赋值, value not equal 0 or nil)
+
+		// 是否存在实例ID字段
+		instID, existInstID := colInput[idFieldname]
+		// 实例ID字段是否设置值
+		if existInstID && (instID == "" || instID == nil) {
+			existInstID = false
 		}
-		if existInDB {
+		if existInstID {
+			delete(colInput, idFieldname)
+			filter := condition.CreateCondition()
+			filter = filter.Field(idFieldname).Eq(instID)
+
 			preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
 			err = item.UpdateInstance(filter, colInput, nonInnerAttributes)
 			if nil != err {
@@ -181,15 +204,10 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				continue
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, instID)
+			results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
 			currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, filter.ToMapStr())
 			NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitUpdateLog(preAuditLog, currAuditLog, nil, nonInnerAttributes)
 			continue
-		}
-		if isMainline {
-			if err := c.validMainLineParentID(params, obj, colInput); nil != err {
-				blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
-				return nil, err
-			}
 		}
 
 		// create with metadata

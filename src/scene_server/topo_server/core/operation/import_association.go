@@ -154,7 +154,12 @@ func (ia *importAssociation) importAssociation() {
 			ia.parseImportDataErr[idx] = err.Error()
 			continue
 		}
-		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.params.Header, meta.Update, ia.objID, srcInstID, dstInstID)
+		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.params.Header, meta.Update, ia.objID, srcInstID)
+		if err != nil {
+			ia.parseImportDataErr[idx] = err.Error()
+			continue
+		}
+		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.params.Header, meta.Update, asstID.AsstObjID, dstInstID)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
 			continue
@@ -551,8 +556,6 @@ func convStrToCCType(val string, attr metadata.Attribute) (interface{}, error) {
 		return util.GetInt64ByInterface(val)
 	case common.FieldTypeFloat:
 		return util.GetFloat64ByInterface(val)
-	case common.FieldTypeForeignKey:
-		return util.GetInt64ByInterface(val)
 
 	default:
 		return val, nil
