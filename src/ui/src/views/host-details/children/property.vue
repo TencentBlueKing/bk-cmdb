@@ -35,7 +35,7 @@
                                     :options="property.option || []"
                                     :data-vv-name="property.bk_property_id"
                                     :data-vv-as="property.bk_property_name"
-                                    :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                    :placeholder="getPlaceholder(property)"
                                     :auto-check="false"
                                     v-validate="$tools.getValidateRules(property)"
                                     v-model.trim="editState.value"
@@ -103,6 +103,10 @@
             }
         },
         methods: {
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             isPropertyEditable (property) {
                 return property.editable && !property.bk_isapi
             },
@@ -330,7 +334,7 @@
         .form-component {
             display: inline-block;
             vertical-align: middle;
-            width: 270px;
+            width: 260px;
             margin: 0 4px 0 0;
             &.bool {
                 width: 42px;

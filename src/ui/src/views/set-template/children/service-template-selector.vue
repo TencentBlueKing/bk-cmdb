@@ -7,7 +7,8 @@
             clearable
             right-icon="bk-icon icon-search"
             v-model.trim="searchName"
-            @enter="hanldeFilterTemplates">
+            @enter="hanldeFilterTemplates"
+            @clear="hanldeFilterTemplates">
         </bk-input>
         <ul class="template-list clearfix"
             v-bkloading="{ isLoading: $loading('getServiceTemplate') }"
