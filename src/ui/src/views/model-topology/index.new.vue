@@ -307,7 +307,7 @@
                     zoom: 1,
                     minZoom: 0.1,
                     maxZoom: 5,
-                    wheelSensitivity: 0.5,
+                    wheelSensitivity: 0.05,
                     pixelRatio: 2,
 
                     // 元素定义，支持promise
@@ -583,7 +583,7 @@
                         node.data('popover', popover)
                         popover.show()
                     }
-                }, 160)).on('mouseout', 'node.model', throttle((event) => {
+                }, 60)).on('mouseout', 'node.model', throttle((event) => {
                     const node = event.target
                     node.removeClass('hover')
                     node.connectedEdges().removeClass('hover')
@@ -594,7 +594,7 @@
                     }
 
                     this.topoTooltip.hoverNode = null
-                }), 160).on('dragfreeon', 'node.model', (event) => {
+                }), 60).on('dragfreeon', 'node.model', (event) => {
                     const node = event.target
                     const nodeData = node.data()
                     const position = node.position()
@@ -794,10 +794,10 @@
                 })
                 const collectionBoundingBox = nodeCollection.boundingBox()
                 const nodeTotal = nodeCollection.length
-                const nodeGutter = 20
-                // 不超过总宽度则使用每个节点宽度的总和，防止自动散开
-                const boundingBoxW = Math.min((collectionBoundingBox.w + nodeGutter) * nodeTotal, extent.w)
-                const maxCountInOneRow = Math.floor(extent.w / collectionBoundingBox.w)
+                const nodeGutter = 15
+                // 总宽度占画面区域的0.3倍
+                const boundingBoxW = extent.w * 0.3
+                const maxCountInOneRow = Math.floor(boundingBoxW / (collectionBoundingBox.w + nodeGutter))
                 const rowTotal = Math.ceil(nodeTotal / maxCountInOneRow)
                 const boundingBoxH = collectionBoundingBox.h * rowTotal
                 nodeCollection.layout({
