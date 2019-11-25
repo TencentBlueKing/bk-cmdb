@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 
 	"github.com/google/go-cmp/cmp"
@@ -52,16 +53,38 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	}
 
 	// convert to map
+	hostID2CloudID := make(map[int64]int64)
 	hostMap := make(map[int64]map[string]interface{})
 	for _, item := range hosts {
 		host := struct {
-			HostID int64 `mapstructure:"bk_host_id"`
+			HostID  int64 `mapstructure:"bk_host_id"`
+			CloudID int64 `mapstructure:"bk_cloud_id"`
 		}{}
 		if err := mapstruct.Decode2Struct(item, &host); err != nil {
 			blog.ErrorJSON("GenerateApplyPlan failed, parse hostID failed, host: %s, err: %s, rid: %s", item, err.Error(), rid)
 			return result, ctx.Error.CCError(common.CCErrCommParseDBFailed)
 		}
 		hostMap[host.HostID] = item
+		hostID2CloudID[host.HostID] = host.CloudID
+	}
+
+	cloudIDs := make([]int64, 0)
+	for _, cloudID := range hostID2CloudID {
+		cloudIDs = append(cloudIDs, cloudID)
+	}
+	clouds := make([]metadata.CloudInst, 0)
+	cloudFilter := map[string]interface{}{
+		common.BKCloudIDField: map[string]interface{}{
+			common.BKDBIN: util.IntArrayUnique(cloudIDs),
+		},
+	}
+	if err := p.dbProxy.Table(common.BKTableNameBasePlat).Find(cloudFilter).All(ctx.Context, &clouds); err != nil {
+		blog.ErrorJSON("GenerateApplyPlan failed, read cloud failed, filter: %s, err: %s, rid: %s", cloudFilter, err.Error(), rid)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	cloudMap := make(map[int64]metadata.CloudInst)
+	for _, item := range clouds {
+		cloudMap[item.CloudID] = item
 	}
 
 	// get attributes
@@ -106,6 +129,19 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	sort.SliceStable(hostApplyPlans, func(i, j int) bool {
 		return hostApplyPlans[i].UnresolvedConflictCount > hostApplyPlans[j].UnresolvedConflictCount
 	})
+
+	// fill cloud area info
+	for index, item := range hostApplyPlans {
+		cloudID, ok := hostID2CloudID[item.HostID]
+		if ok == false {
+			continue
+		}
+		cloudArea, ok := cloudMap[cloudID]
+		if ok == false {
+			continue
+		}
+		hostApplyPlans[index].CloudInfo = cloudArea
+	}
 
 	result = metadata.HostApplyPlanResult{
 		Plans:                   hostApplyPlans,
