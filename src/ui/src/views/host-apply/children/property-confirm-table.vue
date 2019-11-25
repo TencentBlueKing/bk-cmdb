@@ -8,13 +8,13 @@
             @page-change="handlePageChange"
             @row-click="handleRowClick"
         >
-            <bk-table-column :label="$t('内网IP')" prop="bk_host_innerip" class-name="is-highlight"></bk-table-column>
-            <bk-table-column :label="$t('云区域')" prop="bk_cloud_id"></bk-table-column>
-            <bk-table-column :label="$t('固资编号')" prop="bk_asset_id"></bk-table-column>
-            <bk-table-column :label="$t('主机名称')" prop="bk_host_name"></bk-table-column>
+            <bk-table-column :label="$t('内网IP')" prop="expired_host.bk_host_innerip" class-name="is-highlight"></bk-table-column>
+            <bk-table-column :label="$t('云区域')" prop="expired_host.bk_cloud_id"></bk-table-column>
+            <bk-table-column :label="$t('固资编号')" prop="expired_host.bk_asset_id"></bk-table-column>
+            <bk-table-column :label="$t('主机名称')" prop="expired_host.bk_host_name"></bk-table-column>
             <bk-table-column :label="$t('修改值')" width="430" class-name="table-cell-change-value">
                 <template slot-scope="{ row }">
-                    <div class="cell-change-value" v-html="getDiffValue(row.diff_value)"></div>
+                    <div class="cell-change-value" v-html="getChangeValue(row)"></div>
                 </template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
@@ -115,15 +115,17 @@
                     console.error(e)
                 }
             },
-            getDiffValue (value) {
-                const list = {}
-                value.forEach(item => {
-                    list[item['bk_property_id']] = item.bk_property_value
+            getChangeValue (row) {
+                const { conflicts, update_fields: updateFields } = row
+                const valueMap = {}
+                const fieldList = [...conflicts, ...updateFields]
+                fieldList.forEach(item => {
+                    valueMap[item['bk_property_id']] = item.bk_property_value
                 })
-                const result = value.map(item => {
+                const result = fieldList.map(item => {
                     const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
-                    let content = `${property.bk_property_name}：${this.$tools.getPropertyText(property, list)}`
-                    if (item.is_conflict) {
+                    let content = `${property.bk_property_name}：${this.$tools.getPropertyText(property, valueMap)}`
+                    if (conflicts.find(conflictItem => conflictItem.bk_attribute_id === item.bk_attribute_id)) {
                         content = `<span class="conflict">${content}</span>`
                     }
                     return content

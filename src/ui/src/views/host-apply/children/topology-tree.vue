@@ -25,7 +25,7 @@
                     }">
                     {{modelIconMap[data.bk_obj_id]}}
                 </i>
-                <span v-show="hasConfiged(node)" class="config-icon fr"><i class="bk-cc-icon icon-cc-selected"></i></span>
+                <span v-show="applyEnabled(node)" class="config-icon fr"><i class="bk-cc-icon icon-cc-selected"></i></span>
                 <div class="info-content">
                     <span class="node-name">{{data.bk_inst_name}}</span>
                 </div>
@@ -111,10 +111,10 @@
                 }
             },
             getTopologyData () {
-                return this.$store.dispatch('objectMainLineModule/getInstTopo', {
+                return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
                     bizId: this.business,
                     config: {
-                        requestId: 'getTopologyData'
+                        requestId: 'getTopologyWithStatData'
                     }
                 })
             },
@@ -128,8 +128,8 @@
             idGenerator (data) {
                 return `${data.bk_obj_id}_${data.bk_inst_id}`
             },
-            hasConfiged (node) {
-                return this.isModule(node) && !node.data.config_id
+            applyEnabled (node) {
+                return this.isModule(node) && node.data.host_apply_enabled
             },
             isTemplate (node) {
                 return node.data.service_template_id || node.data.set_template_id

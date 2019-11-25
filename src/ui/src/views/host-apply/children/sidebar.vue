@@ -213,7 +213,7 @@
             .checked-num {
                 font-style: normal;
                 font-weight: bold;
-                color: red;
+                color: #2dcb56;
                 padding: .1em;
             }
 

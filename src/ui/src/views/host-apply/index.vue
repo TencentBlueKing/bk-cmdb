@@ -19,7 +19,7 @@
         </cmdb-resize-layout>
         <div class="main-layout">
             <template v-if="selectedModule.bk_inst_id">
-                <single-module-config :data="selectedModule"></single-module-config>
+                <single-module-config :module="selectedModule"></single-module-config>
             </template>
             <div v-else>
                 {{$t('请先选择模块')}}

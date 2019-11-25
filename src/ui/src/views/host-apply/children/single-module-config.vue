@@ -3,25 +3,25 @@
         <div class="config-head">
             <h2 class="config-title">
                 <i18n path="配置XXX模块主机属性">
-                    <span class="module-name" place="module">{{data.bk_inst_name}}</span>
+                    <span class="module-name" place="module">{{module.bk_inst_name}}</span>
                 </i18n>
-                <small class="last-edit-time" v-if="hasConfig">( {{$t('上次编辑时间')}}：2017.09.13 )</small>
+                <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}：2017.09.13 )</small>
             </h2>
         </div>
         <div class="config-body">
-            <template v-if="hasConfig && !isEdit">
+            <template v-if="hasRule && !isEdit">
                 <div class="view-field">
                     <div class="view-bd">
                         <div class="field-list">
-                            <div :class="['field-list-table', { disabled: !isConfigEnabled }]">
+                            <div :class="['field-list-table', { disabled: !applyEnabled }]">
                                 <property-config-table
                                     :readonly="true"
                                     :checked-property-id-list="checkedPropertyIdList"
-                                    :init-data="initConfigData.config_list"
+                                    :rule-list="initRuleList"
                                 >
                                 </property-config-table>
                             </div>
-                            <div class="closed-mask" v-if="!isConfigEnabled">
+                            <div class="closed-mask" v-if="!applyEnabled">
                                 <div class="empty">
                                     <div class="desc">
                                         <i class="bk-cc-icon icon-cc-tips"></i>
@@ -34,14 +34,14 @@
                             </div>
                         </div>
                     </div>
-                    <div class="view-ft" v-if="isConfigEnabled">
+                    <div class="view-ft" v-if="applyEnabled">
                         <bk-button theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
                         <bk-button theme="default" :disabled="!hasConflict" @click="handleViewConflict">
                             <span v-bk-tooltips="{ content: $t('无冲突需处理') }" v-if="!hasConflict">
-                                {{$t('查看冲突')}}<em class="conflict-num">{{initConfigData.conflict_num}}</em>
+                                {{$t('查看冲突')}}<em class="conflict-num">{{conflictNum}}</em>
                             </span>
                             <span v-else>
-                                {{$t('查看冲突')}}<em class="conflict-num">{{initConfigData.conflict_num}}</em>
+                                {{$t('查看冲突')}}<em class="conflict-num">{{conflictNum}}</em>
                             </span>
                         </bk-button>
                         <bk-button theme="default" @click="handleCloseApply">{{$t('关闭自动应用')}}</bk-button>
@@ -63,17 +63,17 @@
                         <span class="label">{{$t('请添加自动应用的字段')}}</span>
                         <bk-button theme="default" icon="plus" @click="handleChooseField">添加字段</bk-button>
                     </div>
-                    <div class="choose-bd" v-if="checkedPropertyIdList.length">
+                    <div class="choose-bd" v-show="checkedPropertyIdList.length">
                         <property-config-table
                             ref="configEditTable"
                             :checked-property-id-list="checkedPropertyIdList"
-                            :init-data="initConfigData.config_list"
+                            :rule-list="initRuleList"
                             @property-value-change="handlePropertyValueChange"
                         >
                         </property-config-table>
                     </div>
                     <div class="choose-ft">
-                        <bk-button theme="primary" :disabled="nextDisabled" @click="handleNextStep">下一步</bk-button>
+                        <bk-button theme="primary" :disabled="nextButtonDisabled" @click="handleNextStep">下一步</bk-button>
                         <bk-button theme="default" @click="handleCancel">取消</bk-button>
                     </div>
                 </div>
@@ -97,38 +97,40 @@
             propertyConfigTable
         },
         props: {
-            data: {
+            module: {
                 type: Object,
                 default: () => ({})
             }
         },
         data () {
             return {
+                initRuleList: [],
+                checkedPropertyIdList: [],
+                // 用于取消编辑时的还原
+                checkedPropertyIdListCopy: [],
+                conflictNum: 0,
                 isEdit: false,
-                nextDisabled: false,
-                propertyModalVisiable: false,
-                initConfigData: {},
-                checkedPropertyIdList: []
+                nextButtonDisabled: true,
+                hasRule: false,
+                propertyModalVisiable: false
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('hosts', ['configPropertyList']),
-            hasConfig () {
-                return true || this.data.host_config_id
+            moduleId () {
+                return this.module.bk_inst_id
             },
-            isConfigEnabled () {
-                return true || this.data.enabled
+            applyEnabled () {
+                return this.module.host_apply_enabled
             },
             hasConflict () {
-                return this.initConfigData.conflict_num > 0
+                return this.conflictNum > 0
             }
         },
         watch: {
-            configPropertyList: {
-                handler () {
-                    this.initData()
-                },
-                immediate: true
+            module () {
+                this.getConfigData()
             },
             checkedPropertyIdList () {
                 this.$nextTick(() => {
@@ -137,49 +139,86 @@
             }
         },
         created () {
+            this.getConfigData()
         },
         methods: {
-            async initData () {
-                // 请求接口获取配置数据
-                if (this.hasConfig) {
-                    this.initConfigData = await Promise.resolve({
-                        config_list: [
-                            {
-                                bk_property_id: 'bk_asset_id',
-                                value: 'a12356'
-                            },
-                            {
-                                bk_property_id: 'bk_state_name',
-                                value: 'BR'
-                            }
-                        ],
-                        conflict_num: 12
-                    })
+            async getConfigData () {
+                this.isEdit = false
+                try {
+                    const ruleData = await this.getRules()
+                    this.initRuleList = ruleData.info
+                    this.hasRule = ruleData.count > 0
+                    this.checkedPropertyIdList = this.initRuleList.map(item => item.bk_attribute_id)
+                    this.checkedPropertyIdListCopy = [...this.checkedPropertyIdList]
 
-                    this.checkedPropertyIdList = this.initConfigData.config_list.map(item => item.bk_property_id)
+                    if (this.hasRule && this.applyEnabled) {
+                        const previewData = await this.getApplyPreview()
+                        this.conflictNum = previewData.unresolved_conflict_count
+                    }
+                } catch (e) {
+                    console.log(e)
                 }
             },
-            toggleNexButtonDisabled () {
-                const modulePropertyList = this.$refs.configEditTable.modulePropertyList
-                this.nextDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
+            getRules () {
+                return this.$store.dispatch('hostApply/getRules', {
+                    bizId: this.bizId,
+                    params: {
+                        bk_module_ids: [this.moduleId]
+                    },
+                    config: {
+                        fromCache: true,
+                        requestId: `getHostApplyRules_${this.moduleId}`
+                    }
+                })
             },
-            handleNextStep () {
-                const modulePropertyList = this.$refs.configEditTable.modulePropertyList
-                const configData = modulePropertyList.map(property => ({
-                    key: property.bk_property_id,
-                    value: property.__extra__.value
+            getApplyPreview () {
+                return this.$store.dispatch('hostApply/getApplyPreview', {
+                    bizId: this.bizId,
+                    params: {
+                        bk_module_ids: [this.moduleId]
+                    },
+                    config: {
+                        fromCache: true,
+                        requestId: `getHostApplyPreview_${this.moduleId}`
+                    }
+                })
+            },
+            toggleNexButtonDisabled () {
+                const { modulePropertyList } = this.$refs.configEditTable
+                this.nextButtonDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
+            },
+            async handleNextStep () {
+                const { modulePropertyList, removeRuleIds } = this.$refs.configEditTable
+                const additionalRules = modulePropertyList.map(property => ({
+                    bk_attribute_id: property.id,
+                    bk_module_id: this.moduleId,
+                    bk_property_value: property.__extra__.value
                 }))
 
-                // TODO 调用接口保存配置
+                const savePropertyConfig = {
+                    // 模块列表
+                    bk_module_ids: [this.moduleId],
+                    // 附加的规则
+                    additional_rules: additionalRules,
+                    // 删除的规则，来源于编辑表格删除
+                    remove_rule_ids: removeRuleIds
+                    // 冲突解决，来源于冲突解决面板
+                    // conflict_resolvers: [
+                    //     {
+                    //         bk_attribute_id: 141,
+                    //         bk_host_id: 22,
+                    //         bk_property_value: 'xxx'
+                    //     }
+                    // ]
+                }
 
+                this.$store.commit('hostApply/setPropertyConfig', savePropertyConfig)
                 this.$router.push({
                     name: 'hostApplyConfirm',
                     query: {
-                        batch: 0,
-                        cid: 1
+                        batch: 0
                     }
                 })
-                console.log(configData)
             },
             handleViewConflict () {
                 this.$router.push({
@@ -207,6 +246,7 @@
                 this.propertyModalVisiable = true
             },
             handleCancel (id) {
+                this.checkedPropertyIdList = [...this.checkedPropertyIdListCopy]
                 this.isEdit = false
             }
         }

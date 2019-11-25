@@ -18,9 +18,9 @@
             class-name="table-cell-module-path"
         >
             <template slot-scope="{ row }">
-                <template v-if="row.module_list">
-                    <div v-for="(item, index) in row.module_list" :key="index">
-                        {{item.path}}
+                <template v-if="row.__extra__.moduleList.length">
+                    <div v-for="(item, index) in row.__extra__.moduleList" :key="index">
+                        {{$parent.getModulePath(item.bk_module_id)}}
                     </div>
                 </template>
                 <span v-else>--</span>
@@ -33,15 +33,15 @@
         >
             <template slot-scope="{ row }">
                 <template v-if="multiple">
-                    <template v-if="row.module_list">
-                        <div v-for="item in row.module_list" :key="item.bk_inst_id">
-                            {{getDisplayValue(item.value, row)}}
+                    <template v-if="row.__extra__.moduleList.length">
+                        <div v-for="(item, index) in row.__extra__.moduleList" :key="index">
+                            {{item.bk_property_value | formatter(row) | unit(row.unit)}}
                         </div>
                     </template>
                     <span v-else>--</span>
                 </template>
                 <template v-else>
-                    {{getDisplayValue(row.__extra__.value, row)}}
+                    {{row.__extra__.value | formatter(row) | unit(row.unit)}}
                 </template>
             </template>
         </bk-table-column>
@@ -59,7 +59,7 @@
             :render-header="multiple ? (h, data) => renderTableHeader(h, data, '删除操作不影响原有配置') : null"
         >
             <template slot-scope="{ row }">
-                <bk-button theme="primary" text @click="handlePropertyRowDel(row.bk_property_id)">删除</bk-button>
+                <bk-button theme="primary" text @click="handlePropertyRowDel(row)">删除</bk-button>
             </template>
         </bk-table-column>
     </bk-table>
@@ -76,7 +76,7 @@
                 type: Array,
                 default: () => ([])
             },
-            initData: {
+            ruleList: {
                 type: Array,
                 default: () => ([])
             },
@@ -95,7 +95,9 @@
         },
         data () {
             return {
-                modulePropertyList: []
+                modulePropertyList: [],
+                removeRuleIds: [],
+                ignoreRuleIds: []
             }
         },
         computed: {
@@ -104,45 +106,58 @@
         watch: {
             checkedPropertyIdList () {
                 this.setModulePropertyList()
+            },
+            configPropertyList () {
+                this.setModulePropertyList()
+            },
+            modulePropertyList () {
+                this.setConfigData()
             }
         },
         created () {
             this.setModulePropertyList()
         },
         methods: {
-            setModulePropertyList () {
+            setModulePropertyList (trigger) {
                 // 当前模块属性列表中不存在，则添加
-                this.checkedPropertyIdList.forEach(propertyId => {
-                    if (this.modulePropertyList.findIndex(property => propertyId === property.bk_property_id) === -1) {
-                        // 使用原始主机属性对象
-                        const findProperty = this.configPropertyList.find(item => propertyId === item.bk_property_id)
+                this.checkedPropertyIdList.forEach(id => {
+                    // 原始主机属性对象
+                    const moduleIndex = this.modulePropertyList.findIndex(property => id === property.id)
+                    if (moduleIndex === -1) {
+                        const findProperty = this.configPropertyList.find(item => id === item.id)
                         if (findProperty) {
+                            const property = this.$tools.clone(findProperty)
                             // 初始化值
                             if (this.multiple) {
-                                findProperty.module_list = (this.initData.find(item => item.bk_property_id === findProperty.bk_property_id) || {}).module_list
+                                property.__extra__.moduleList = this.ruleList.filter(item => item.bk_attribute_id === property.id)
                             } else {
-                                findProperty.__extra__.value = (this.initData.find(item => item.bk_property_id === findProperty.bk_property_id) || {}).value
+                                const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
+                                property.__extra__.ruleId = rule.id
+                                property.__extra__.value = rule.bk_property_value
                             }
-                            this.modulePropertyList.push(this.$tools.clone(findProperty))
+                            this.modulePropertyList.push(property)
                         }
                     }
                 })
 
                 // 删除或取消选择的，则去除
-                this.modulePropertyList = this.modulePropertyList.filter(property => this.checkedPropertyIdList.includes(property.bk_property_id))
+                this.modulePropertyList = this.modulePropertyList.filter(property => this.checkedPropertyIdList.includes(property.id))
             },
-            getDisplayValue (value, property) {
-                let displayValue = value
-                switch (property.bk_property_type) {
-                    case 'enum':
-                        displayValue = (property.option.find(item => item.id === value) || {}).name
-                        break
-                    case 'bool':
-                        displayValue = ['否', '是'][+value]
-                        break
-                }
-
-                return displayValue
+            setConfigData () {
+                this.removeRuleIds = []
+                this.ignoreRuleIds = []
+                // 找出不存在于初始数据中的规则
+                this.ruleList.forEach(rule => {
+                    const findIndex = this.modulePropertyList.findIndex(property => property.id === rule.bk_attribute_id)
+                    if (findIndex === -1) {
+                        // 批量模式标记为忽略，单个标记为删除
+                        if (this.multiple) {
+                            this.ignoreRuleIds.push(rule.id)
+                        } else {
+                            this.removeRuleIds.push(rule.id)
+                        }
+                    }
+                })
             },
             renderTableHeader (h, data, tips) {
                 const directive = {
@@ -154,8 +169,8 @@
             handleSelectionChange (value) {
                 this.$emit('selection-change', value)
             },
-            handlePropertyRowDel (id) {
-                const checkedIndex = this.checkedPropertyIdList.findIndex(propertyId => propertyId === id)
+            handlePropertyRowDel (property) {
+                const checkedIndex = this.checkedPropertyIdList.findIndex(id => id === property.id)
                 this.checkedPropertyIdList.splice(checkedIndex, 1)
             },
             handlePropertyValueChange (value) {
