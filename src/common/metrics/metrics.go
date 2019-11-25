@@ -15,6 +15,7 @@ package metrics
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -46,13 +47,13 @@ type Service struct {
 	registry        prometheus.Registerer
 	requestTotal    *prometheus.CounterVec
 	requestDuration *prometheus.HistogramVec
-	requestInfligh  *Gauge
+	requestInflight *Gauge
 }
 
 // NewService returns new metrics service
 func NewService(conf Config) *Service {
 	registry := prometheus.NewRegistry()
-	register := prometheus.WrapRegistererWith(prometheus.Labels{LableProcessName: conf.ProcessName, LabelHost: strings.Split(conf.ProcessInstance, ":")[0]}, registry)
+	register := prometheus.WrapRegistererWith(prometheus.Labels{LabelProcessName: conf.ProcessName, LabelHost: strings.Split(conf.ProcessInstance, ":")[0]}, registry)
 	srv := Service{conf: conf, registry: register}
 
 	srv.requestTotal = prometheus.NewCounterVec(
@@ -60,7 +61,7 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LableHandler, LableHTTPStatus, LableOrigin},
+		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin},
 	)
 	register.MustRegister(srv.requestTotal)
 
@@ -69,17 +70,17 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_duration_millisecond",
 			Help: "Histogram of latencies for HTTP requests.",
 		},
-		[]string{LableHandler},
+		[]string{LabelHandler},
 	)
 	register.MustRegister(srv.requestDuration)
 
-	srv.requestInfligh = NewGauge(
+	srv.requestInflight = NewGauge(
 		prometheus.GaugeOpts{
 			Name: ns + "http_request_in_flight",
 			Help: "current number of request being served.",
 		},
 	)
-	register.MustRegister(srv.requestInfligh)
+	register.MustRegister(srv.requestInflight)
 
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	register.MustRegister(prometheus.NewGoCollector())
@@ -90,16 +91,16 @@ func NewService(conf Config) *Service {
 	return &srv
 }
 
-// lables
+// labels
 const (
-	LableHandler     = "handler"
-	LableHTTPStatus  = "status_code"
-	LableOrigin      = "origin"
-	LableProcessName = "process_name"
+	LabelHandler     = "handler"
+	LabelHTTPStatus  = "status_code"
+	LabelOrigin      = "origin"
+	LabelProcessName = "process_name"
 	LabelHost        = "host"
 )
 
-// lables
+// labels
 const (
 	KeySelectedRoutePath string = "SelectedRoutePath"
 )
@@ -128,8 +129,8 @@ func (s *Service) RestfulWebService() *restful.WebService {
 // HTTPMiddleware is the http middleware for go-restful framework
 func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.requestInfligh.Inc()
-		defer s.requestInfligh.Dec()
+		s.requestInflight.Inc()
+		defer s.requestInflight.Dec()
 
 		if r.RequestURI == "/metrics" || r.RequestURI == "/metrics/" {
 			s.ServeHTTP(w, r)
@@ -142,15 +143,19 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 		before := time.Now()
 		next.ServeHTTP(resp, req)
 		if uri == "" {
-			uri = r.RequestURI
+			requestUrl, err := url.ParseRequestURI(r.RequestURI)
+			if err != nil {
+				return
+			}
+			uri = requestUrl.Path
 		}
 		duration := util.ToMillisecond(time.Since(before))
 
-		s.requestDuration.With(s.lable(LableHandler, uri)).Observe(duration)
-		s.requestTotal.With(s.lable(
-			LableHandler, uri,
-			LableHTTPStatus, strconv.Itoa(resp.StatusCode()),
-			LableOrigin, getOrigin(r.Header),
+		s.requestDuration.With(s.label(LabelHandler, uri)).Observe(duration)
+		s.requestTotal.With(s.label(
+			LabelHandler, uri,
+			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
+			LabelOrigin, getOrigin(r.Header),
 		)).Inc()
 
 	})
@@ -166,25 +171,25 @@ func (s *Service) RestfulMiddleWare(req *restful.Request, resp *restful.Response
 	chain.ProcessFilter(req, resp)
 }
 
-func (s *Service) lable(lableKVs ...string) prometheus.Labels {
-	lables := prometheus.Labels{}
-	for index := 0; index < len(lableKVs); index += 2 {
-		lables[lableKVs[index]] = lableKVs[index+1]
+func (s *Service) label(labelKVs ...string) prometheus.Labels {
+	labels := prometheus.Labels{}
+	for index := 0; index < len(labelKVs); index += 2 {
+		labels[labelKVs[index]] = labelKVs[index+1]
 	}
-	return lables
+	return labels
 }
 
 func getOrigin(header http.Header) string {
 	if header.Get(common.BKHTTPOtherRequestID) != "" {
 		return "ESB"
 	}
-	if uastring := header.Get("User-Agent"); uastring != "" {
-		ua := user_agent.New(uastring)
+	if userString := header.Get("User-Agent"); userString != "" {
+		ua := user_agent.New(userString)
 		browser, _ := ua.Browser()
 		if browser != "" {
 			return "browser"
 		}
 	}
 
-	return "Unknow"
+	return "Unknown"
 }

@@ -37,7 +37,7 @@ func NewGauge(opt prometheus.GaugeOpts) *Gauge {
 			Name: opt.Name,
 			Help: opt.Help,
 		},
-		func() float64 { return math.Float64frombits((atomic.LoadUint64(&g.val))) },
+		func() float64 { return math.Float64frombits(atomic.LoadUint64(&g.val)) },
 	)
 
 	g.maxGauge = prometheus.NewGaugeFunc(
@@ -45,7 +45,7 @@ func NewGauge(opt prometheus.GaugeOpts) *Gauge {
 			Name: opt.Name + "_max",
 			Help: "max number of " + opt.Name,
 		},
-		func() float64 { return math.Float64frombits((atomic.LoadUint64(&g.max))) },
+		func() float64 { return math.Float64frombits(atomic.LoadUint64(&g.max)) },
 	)
 
 	return &g
