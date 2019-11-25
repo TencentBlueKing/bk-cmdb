@@ -167,6 +167,10 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			plan.ErrMsg = err.Error()
 		}
 		propertyIDField := attribute.PropertyID
+		originalValue, ok := host[propertyIDField]
+		if ok == false {
+			originalValue = nil
+		}
 
 		// check conflicts
 		firstValue := targetRules[0].PropertyValue
@@ -180,6 +184,8 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 				}
 				plan.ConflictFields = append(plan.ConflictFields, metadata.HostApplyConflictField{
 					AttributeID:             attributeID,
+					PropertyID:              propertyIDField,
+					PropertyValue:           originalValue,
 					Rules:                   targetRules,
 					UnresolvedConflictExist: conflictedStillExist,
 				})

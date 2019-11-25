@@ -110,8 +110,11 @@ type HostApplyPlanOption struct {
 }
 
 type HostApplyConflictField struct {
-	AttributeID int64           `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
-	Rules       []HostApplyRule `field:"host_apply_rules" json:"host_apply_rules" bson:"host_apply_rules" mapstructure:"host_apply_rules"`
+	AttributeID   int64       `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
+	PropertyID    string      `field:"bk_property_id" json:"bk_property_id" mapstructure:"bk_property_id"`
+	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" mapstructure:"bk_property_value"`
+
+	Rules []HostApplyRule `field:"host_apply_rules" json:"host_apply_rules" bson:"host_apply_rules" mapstructure:"host_apply_rules"`
 	// UnresolvedConflictExist show whether conflict still exist after use possible conflict resolver
 	// if there is a conflict, but has a resolver for it, ConflictedStillExist will be false
 	UnresolvedConflictExist bool `field:"unresolved_conflict_exist" json:"unresolved_conflict_exist" mapstructure:"unresolved_conflict_exist"`
