@@ -140,8 +140,6 @@ func (attribute *Attribute) Validate(ctx context.Context, val interface{}, key s
 		rawError = attribute.validTimeZone(ctx, val, key)
 	case common.FieldTypeBool:
 		rawError = attribute.validBool(ctx, val, key)
-	case common.FieldTypeForeignKey:
-		rawError = attribute.validForeignKey(ctx, val, key)
 	default:
 		rawError = errors.RawErrorInfo{
 			ErrCode: common.CCErrCommUnexpectedFieldType,
@@ -332,33 +330,6 @@ func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, 
 			Args:    []interface{}{key},
 		}
 	}
-	return errors.RawErrorInfo{}
-}
-
-// validForeignKey valid object attribute that is foreign key type
-func (attribute *Attribute) validForeignKey(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
-		if attribute.IsRequired {
-			blog.Errorf("params can not be null, rid: %s", rid)
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsNeedSet,
-				Args:    []interface{}{key},
-			}
-
-		}
-		return errors.RawErrorInfo{}
-	}
-
-	_, ok := util.GetTypeSensitiveUInt64(val)
-	if !ok {
-		blog.Errorf("params %s:%#v not int, rid: %s", key, val, rid)
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedInt,
-			Args:    []interface{}{key},
-		}
-	}
-
 	return errors.RawErrorInfo{}
 }
 
@@ -884,12 +855,6 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
 		}
 		return strconv.FormatBool(value), nil
-	case common.FieldTypeForeignKey:
-		value, ok := util.GetTypeSensitiveUInt64(val)
-		if ok == false {
-			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
-		}
-		return strconv.FormatUint(value, 10), nil
 	default:
 		return "", fmt.Errorf("unexpected property type: %s", fieldType)
 	}

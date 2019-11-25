@@ -276,7 +276,11 @@ func (s *Service) GenerateApplyPlan(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	_ = resp.WriteEntity(result)
+	response := meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     result,
+	}
+	_ = resp.WriteEntity(response)
 	return
 }
 

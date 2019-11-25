@@ -14,7 +14,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -1049,35 +1048,8 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 }
 
 func (s *Service) ip2hostID(srvData *srvComm, ip string, cloudID int64) (hostID int64, err error) {
-	// FIXME there must be a better ip to hostID solution
-	condition := common.KvMap{
-		common.BKHostInnerIPField: ip,
-		common.BKCloudIDField:     cloudID,
-	}
-
-	phpApi := srvData.lgc.NewPHPAPI()
-	hostMap, hostIDArr, err := phpApi.GetHostMapByCond(srvData.ctx, condition)
-	if err != nil {
-		err := fmt.Errorf("GetHostMapByCond failed, %v", err)
-		return 0, err
-	}
-	if len(hostIDArr) == 0 {
-		return 0, nil
-	}
-
-	hostMapData, ok := hostMap[hostIDArr[0]]
-	if false == ok {
-		blog.Errorf("ip2hostID source ip invalid, raw data format hostMap:%+v, ip:%+v, cloudID:%+v, rid:%s", hostMap, ip, cloudID, srvData.rid)
-		return 0, fmt.Errorf("ip %d:%s not found", cloudID, ip)
-	}
-
-	hostID, err = util.GetInt64ByInterface(hostMapData[common.BKHostIDField])
-	if nil != err {
-		blog.Errorf("ip2hostID bk_host_id field not found hostMap:%+v ip:%+v, cloudID:%+v,rid:%s", hostMapData, ip, cloudID, srvData.rid)
-		return 0, fmt.Errorf("ip %+v:%+v not found", cloudID, ip)
-	}
-
-	return hostID, nil
+	_, hostID, err = srvData.lgc.IPCloudToHost(srvData.ctx, ip, cloudID)
+	return hostID, err
 }
 
 // CloneHostProperty clone host property from src host to dst host
@@ -1091,9 +1063,28 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		return
 	}
 
+	if input.OrgIP == input.DstIP {
+		result := meta.Response{
+			BaseResp: meta.SuccessBaseResp,
+			Data:     nil,
+		}
+		_ = resp.WriteEntity(result)
+		return
+	}
+
 	if 0 == input.AppID {
 		blog.Errorf("CloneHostProperty, application not found input:%+v,rid:%s", input, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
+		return
+	}
+	if input.OrgIP == "" {
+		blog.Errorf("CloneHostProperty, OrgIP not found input:%+v,rid:%s", input, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "bk_org_ip")})
+		return
+	}
+	if input.DstIP == "" {
+		blog.Errorf("CloneHostProperty, OrgIP not found input:%+v,rid:%s", input, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "bk_dst_ip")})
 		return
 	}
 
@@ -1102,6 +1093,12 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	if err != nil {
 		blog.Errorf("ip2hostID failed, ip:%s, input:%+v, rid:%s", input.OrgIP, input, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "OrgIP")})
+		return
+	}
+	// check source host exist
+	if srcHostID == 0 {
+		blog.Errorf("host not found. params:%s,rid:%s", input, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.CCErrorf(common.CCErrHostNotFound)})
 		return
 	}
 	// auth: check authorization
@@ -1117,6 +1114,13 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "DstIP")})
 		return
 	}
+	// checkout destion host exist
+	if dstHostID == 0 {
+		blog.Errorf("host not found. params:%s,rid:%s", input, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.CCErrorf(common.CCErrHostNotFound)})
+		return
+	}
+
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, dstHostID); err != nil {
 		if err != auth.NoAuthorizeError {
@@ -1133,16 +1137,16 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	res, err := srvData.lgc.CloneHostProperty(srvData.ctx, input, input.AppID, input.CloudID)
+	err = srvData.lgc.CloneHostProperty(srvData.ctx, input.AppID, srcHostID, dstHostID)
 	if nil != err {
-		blog.Errorf("CloneHostProperty ,application not int , err: %v, input:%#v, rid:%s", err, input, srvData.rid)
+		blog.Errorf("CloneHostProperty  error , err: %v, input:%#v, rid:%s", err, input, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
 	result := meta.Response{
 		BaseResp: meta.SuccessBaseResp,
-		Data:     res,
+		Data:     nil,
 	}
 	_ = resp.WriteEntity(result)
 }

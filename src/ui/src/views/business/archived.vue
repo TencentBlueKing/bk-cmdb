@@ -3,6 +3,7 @@
         <div class="archived-filter">
             <div class="filter-item">
                 <bk-input v-model="filter.name"
+                    clearable
                     :placeholder="$t('请输入xx', { name: $t('业务') })"
                     right-icon="bk-icon icon-search"
                     @enter="handlePageChange(1, $event)">

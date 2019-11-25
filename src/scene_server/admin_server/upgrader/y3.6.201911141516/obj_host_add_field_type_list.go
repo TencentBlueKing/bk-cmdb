@@ -9,22 +9,22 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package x18_12_12_01
+
+package y3_6_201911141516
 
 import (
+	"configcenter/src/common"
 	"context"
+	"fmt"
 	"time"
 
-	"configcenter/src/common"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
+	com "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
 type Attribute struct {
-	ID                int64       `json:"id" bson:"id"`
+	ID                uint64      `json:"id" bson:"id"`
 	OwnerID           string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	ObjectID          string      `json:"bk_obj_id" bson:"bk_obj_id"`
 	PropertyID        string      `json:"bk_property_id" bson:"bk_property_id"`
@@ -45,47 +45,51 @@ type Attribute struct {
 	Option            interface{} `json:"option" bson:"option"`
 	Description       string      `json:"description" bson:"description"`
 	Creator           string      `json:"creator" bson:"creator"`
-	CreateTime        *time.Time  `json:"create_time" bson:"create_time"`
-	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
+	CreateTime        time.Time   `json:"create_time" bson:"create_time"`
+	LastTime          time.Time   `json:"last_time" bson:"last_time"`
 }
 
-func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
-	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
-	cond.Field(common.BKPropertyIDField).Eq(common.BKOSTypeField)
-
-	ostypeProperty := Attribute{}
-	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &ostypeProperty)
+func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	attrID, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
 	if err != nil {
 		return err
 	}
 
-	enumOpts, err := metadata.ParseEnumOption(ctx, ostypeProperty.Option)
-	if err != nil {
-		return err
-	}
-	for _, enum := range enumOpts {
-		if enum.ID == "3" {
-			return nil
-		}
-	}
-
-	aixEnum := metadata.EnumVal{
-		ID:   "3",
-		Name: "AIX",
-		Type: "text",
-	}
-	enumOpts = append(enumOpts, aixEnum)
-
-	data := mapstr.MapStr{
-		common.BKOptionField: enumOpts,
+	optionVal := []string{
+		"运营中[需告警]",
+		"运营中[无告警]",
+		"开发中[需告警]",
+		"开发中[无告警]",
+		"备用机",
+		"测试中",
+		"故障中",
 	}
 
-	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
-	if err != nil {
-		return err
+	hostListTypeField := Attribute{
+		ID:                attrID,
+		OwnerID:           conf.OwnerID,
+		ObjectID:          common.BKInnerObjIDHost,
+		PropertyID:        common.BKHostState,
+		PropertyName:      "当前状态",
+		PropertyGroup:     com.BaseInfo,
+		PropertyGroupName: com.BaseInfoName,
+		IsEditable:        true,
+		IsPre:             true,
+		IsRequired:        false,
+		IsReadOnly:        false,
+		IsOnly:            false,
+		IsSystem:          false,
+		IsAPI:             false,
+		PropertyType:      common.FieldTypeList,
+		Option:            optionVal,
+		Creator:           conf.User,
+		CreateTime:        time.Now(),
+		LastTime:          time.Now(),
 	}
+
+	if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, hostListTypeField); err != nil {
+		return fmt.Errorf("upgrade y3_6_201911141516, bug insert host list type field failed, err: %v", err)
+	}
+
 	return nil
 }

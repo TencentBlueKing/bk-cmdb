@@ -33,7 +33,7 @@ export default [{
 }, {
     name: 'operationalTemplate',
     path: 'service/operational/template/:templateId?',
-    component: () => import('./children/operational.vue'),
+    component: () => import('./template.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {

@@ -79,7 +79,7 @@
             :esc-close="false"
             :mask-close="false"
             :show-footer="false"
-            :on-close="handleBackToList">
+            :close-icon="false">
             <div class="update-alert-layout">
                 <i class="bk-icon icon-check-1"></i>
                 <h3>{{$t('修改成功')}}</h3>

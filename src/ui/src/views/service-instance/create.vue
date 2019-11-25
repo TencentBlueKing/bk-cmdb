@@ -73,6 +73,7 @@
                     show: false,
                     props: {
                         width: 850,
+                        height: 460,
                         showCloseIcon: false
                     },
                     component: null,

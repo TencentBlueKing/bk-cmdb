@@ -17,8 +17,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
 )
 
@@ -34,7 +34,7 @@ func setTCPDefault(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 		return err
 	}
 
-	enumOpts, err := validator.ParseEnumOption(ostypeProperty.Option)
+	enumOpts, err := metadata.ParseEnumOption(ctx, ostypeProperty.Option)
 	if err != nil {
 		return err
 	}
