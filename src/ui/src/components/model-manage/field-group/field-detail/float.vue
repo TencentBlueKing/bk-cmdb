@@ -2,7 +2,7 @@
     <div>
         <div class="form-label">
             <span class="label-text">{{$t('最小值')}}</span>
-            <div class="cmdb-form-item">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('min') }">
                 <bk-input type="text" class="cmdb-form-input"
                     v-model="localValue.min"
                     @input="handleInput"
@@ -10,6 +10,7 @@
                     :disabled="isReadOnly"
                     :name="'min'">
                 </bk-input>
+                <p class="form-error">{{errors.first('min')}}</p>
             </div>
         </div>
         <div class="form-label">

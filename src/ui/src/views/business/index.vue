@@ -135,6 +135,7 @@
                 </bk-tab-panel>
                 <bk-tab-panel name="history" :label="$t('变更记录')" :visible="attribute.type !== 'create'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
+                        :properties="properties"
                         target="biz"
                         :inst-id="attribute.inst.details['bk_biz_id']">
                     </cmdb-audit-history>
@@ -532,7 +533,7 @@
         position: relative;
         margin-right: 10px;
         .filter-selector{
-            width: 115px;
+            width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
         }
