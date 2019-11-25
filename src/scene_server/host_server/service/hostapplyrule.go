@@ -375,9 +375,15 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 	if planRequest.RemoveRuleIDs == nil {
 		planRequest.RemoveRuleIDs = make([]int64, 0)
 	}
+	if planRequest.IgnoreRuleIDs == nil {
+		planRequest.IgnoreRuleIDs = make([]int64, 0)
+	}
 	finalRules := make([]meta.HostApplyRule, 0)
 	for _, item := range rules.Info {
 		if util.InArray(item.ID, planRequest.RemoveRuleIDs) == true {
+			continue
+		}
+		if util.InArray(item.ID, planRequest.IgnoreRuleIDs) == true {
 			continue
 		}
 		finalRules = append(finalRules, item)

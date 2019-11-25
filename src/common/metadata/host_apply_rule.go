@@ -148,6 +148,7 @@ type HostApplyPlanResult struct {
 
 type HostApplyPlanRequest struct {
 	RemoveRuleIDs     []int64                     `field:"remove_rule_ids" json:"remove_rule_ids" bson:"remove_rule_ids" mapstructure:"remove_rule_ids"`
+	IgnoreRuleIDs     []int64                     `field:"ignore_rule_ids" json:"ignore_rule_ids" bson:"ignore_rule_ids" mapstructure:"ignore_rule_ids"`
 	AdditionalRules   []CreateHostApplyRuleOption `field:"additional_rules" json:"additional_rules" bson:"additional_rules" mapstructure:"additional_rules"`
 	ConflictResolvers []HostApplyConflictResolver `field:"conflict_resolvers" json:"conflict_resolvers" bson:"conflict_resolvers" mapstructure:"conflict_resolvers"`
 	ModuleIDs         []int64                     `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
