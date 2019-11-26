@@ -60,7 +60,7 @@
             <bk-button theme="primary"
                 :disabled="!checked.length"
                 @click="handleNextStep">
-                {{$t('下一步')}}
+                {{confirmText || $t('下一步')}}
             </bk-button>
         </div>
     </div>
@@ -87,6 +87,10 @@
                 validator (moduleType) {
                     return ['idle', 'business'].includes(moduleType)
                 }
+            },
+            confirmText: {
+                type: String,
+                default: ''
             }
         },
         data () {

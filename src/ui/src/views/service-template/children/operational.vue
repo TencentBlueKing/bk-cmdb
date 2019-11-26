@@ -154,8 +154,7 @@
                 <i class="bk-icon icon-check-1"></i>
                 <h3>{{$t('修改成功')}}</h3>
                 <div class="btns">
-                    <bk-button class="mr10" theme="primary" v-if="!deletable" @click="handleToSyncInstance">{{$t('同步模块')}}</bk-button>
-                    <bk-button class="mr10" @click="handleToCreateSetTemplate">{{$t('创建集群模板')}}</bk-button>
+                    <bk-button class="mr10" theme="primary" @click="handleToSyncInstance">{{$t('同步实例')}}</bk-button>
                     <bk-button theme="default" @click="handleCancelOperation">{{$t('返回列表')}}</bk-button>
                 </div>
             </div>
@@ -170,19 +169,12 @@
                 <div class="content">
                     <i class="bk-icon icon-check-1"></i>
                     <p>{{$t('服务模板创建成功')}}</p>
-                    <span v-if="processList.length">{{$tc('创建成功前往服务拓扑', createdSucess.name, { name: createdSucess.name })}}</span>
-                    <span v-else>
+                    <span v-if="!processList.length">
                         <i class="bk-icon icon-exclamation"></i>
                         {{$t('创建成功无进程提示')}}
                     </span>
                 </div>
                 <div class="btn-box">
-                    <bk-button v-if="processList.length"
-                        theme="primary"
-                        class="mr10"
-                        @click="handleGoInstance">
-                        {{$t('创建服务实例')}}
-                    </bk-button>
                     <bk-button @click="handleCancelOperation">{{$t('返回列表')}}</bk-button>
                 </div>
             </div>
@@ -196,8 +188,7 @@
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     import {
         MENU_BUSINESS_SERVICE_TEMPLATE,
-        MENU_BUSINESS_HOST_AND_SERVICE,
-        MENU_BUSINESS_SET_TEMPLATE
+        MENU_BUSINESS_HOST_AND_SERVICE
     } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus'
     export default {
@@ -265,6 +256,9 @@
                     resource_id: Number(this.templateId) || null,
                     type: this.$OPERATION.U_SERVICE_TEMPLATE
                 }
+            },
+            setActive () {
+                return this.$route.params.active
             }
         },
         created () {
@@ -304,6 +298,10 @@
                     await this.reload()
                     if (!this.isCreateMode) {
                         this.initEdit()
+                    }
+                    if (this.setActive) {
+                        Bus.$emit('active-change', 'instance')
+                        this.$route.params.active = null
                     }
                 } catch (e) {
                     console.error(e)
@@ -567,9 +565,6 @@
                     this.handleSubmitProcessList()
                 })
             },
-            handleGoInstance () {
-                this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
-            },
             handleReturn () {
                 if (this.insideMode === 'edit') {
                     this.insideMode = 'view'
@@ -650,11 +645,6 @@
             handleToSyncInstance () {
                 Bus.$emit('active-change', 'instance')
                 this.showUpdateInfo = false
-            },
-            handleToCreateSetTemplate () {
-                this.$router.push({
-                    name: MENU_BUSINESS_SET_TEMPLATE
-                })
             }
         }
     }
@@ -740,10 +730,10 @@
         }
         p {
             font-size: 24px;
-            padding: 14px 0 24px;
+            padding: 14px 0 18px;
         }
         .btn-box {
-            padding: 32px 0 36px;
+            padding: 20px 0 16px;
         }
     }
     .view-group {
