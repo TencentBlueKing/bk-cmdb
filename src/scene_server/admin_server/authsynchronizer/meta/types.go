@@ -13,8 +13,10 @@
 package meta
 
 const (
-	JobIntervalSeconds     = 5
-	MinSyncIntervalMinutes = 45
+	JobIntervalSeconds            = 5
+	MinSyncIntervalMinutes        = 45
+	IamPageLimit                  = 1000
+	IamRequestIntervalMillisecond = 50
 )
 
 var (
