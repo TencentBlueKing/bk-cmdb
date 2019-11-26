@@ -289,8 +289,9 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 				userName := gparams.SpecialCharChange(targetStr)
 				// search with exactly the user's name with regexp
 				d[common.BKDBLIKE] = strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", userName, -1)
+				output[i] = d
 			} else {
-				output[i] = gparams.SpecialCharChange(targetStr)
+				output[i] = targetStr
 			}
 		default:
 			output[i] = j

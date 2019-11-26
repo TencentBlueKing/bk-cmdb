@@ -96,7 +96,7 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 					// if hit, then add the element with the follow ways,
 					// which is a key:value element, just like the mongodb's
 					// original usage.
-					outputCond.Element(&element{Key: operatorKey, Val: val})
+					outputCond.Element(&KV{Key: operatorKey, Val: val})
 					return nil
 				}
 

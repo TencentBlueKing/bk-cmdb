@@ -22,9 +22,11 @@ type element struct {
 	Val interface{}
 }
 
-func (e *element) ToMapStr() mapstr.MapStr {
+type KV element
+
+func (k *KV) ToMapStr() mapstr.MapStr {
 	return mapstr.MapStr{
-		e.Key: e.Val,
+		k.Key: k.Val,
 	}
 }
 
