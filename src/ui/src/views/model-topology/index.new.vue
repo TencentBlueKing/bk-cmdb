@@ -795,9 +795,9 @@
                 const collectionBoundingBox = nodeCollection.boundingBox()
                 const nodeTotal = nodeCollection.length
                 const nodeGutter = 15
-                // 总宽度占画面区域的0.3倍
-                const boundingBoxW = extent.w * 0.3
-                const maxCountInOneRow = Math.floor(boundingBoxW / (collectionBoundingBox.w + nodeGutter))
+                // 设定一行最多5个
+                const maxCountInOneRow = Math.min(nodeTotal, 5)
+                const boundingBoxW = (collectionBoundingBox.w + nodeGutter) * maxCountInOneRow
                 const rowTotal = Math.ceil(nodeTotal / maxCountInOneRow)
                 const boundingBoxH = collectionBoundingBox.h * rowTotal
                 nodeCollection.layout({
@@ -805,7 +805,7 @@
                     fit: false,
                     padding: 30,
                     rows: rowTotal,
-                    boundingBox: { x1: extent.x1 - boundingBoxW, y1: extent.y1 - boundingBoxH, w: boundingBoxW, h: boundingBoxH },
+                    boundingBox: { x1: extent.x2, y1: extent.y1, w: boundingBoxW, h: boundingBoxH },
                     stop: () => {
                         cy.fit()
                     }
