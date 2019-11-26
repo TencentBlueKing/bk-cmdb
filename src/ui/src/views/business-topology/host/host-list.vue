@@ -124,6 +124,10 @@
             this.refresh = debounce(current => {
                 this.handlePageChange(current)
             }, 10)
+            Bus.$on('refresh-list', this.getHostList)
+        },
+        beforeDestroy () {
+            Bus.$off('refresh-list', this.getHostList)
         },
         methods: {
             setTableHeader () {
