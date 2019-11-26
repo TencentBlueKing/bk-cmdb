@@ -17,7 +17,10 @@ import (
 	"os"
 	"strings"
 
+	"configcenter/src/common/auth"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/version"
+
 	"github.com/spf13/pflag"
 )
 
@@ -47,4 +50,6 @@ func InitFlags() {
 		version.ShowVersion()
 		os.Exit(0)
 	}
+
+	blog.Infof("[auth] enableAuth: %v", auth.IsAuthed())
 }
