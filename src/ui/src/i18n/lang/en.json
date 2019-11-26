@@ -1118,5 +1118,6 @@
     "集群模板实例": "Set Template Instance",
     "选项": "option",
     "同步模块": "Synchronization module",
-    "空服务模板实例提示": "No service instance, {setLink} or apply it to {topoLink}"
+    "空服务模板实例提示": "No service instance, {setLink} or apply it to {topoLink}",
+    "归还资源池提示": "Be sure to confirm that the business process is stopped or the host is shut down"
 }
