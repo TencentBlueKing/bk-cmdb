@@ -16,8 +16,8 @@ import (
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
+	testutil "configcenter/src/test/util"
 
-	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
@@ -46,7 +46,7 @@ func init() {
 	run.Concurrent = tConfig.Concurrent
 	run.SustainSeconds = tConfig.SustainSeconds
 
-	RegisterFailHandler(Fail)
+	RegisterFailHandler(testutil.Fail)
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
