@@ -28,15 +28,6 @@ type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Page      map[string]interface{} `json:"page,omitempty"`
 	Fields    []string               `json:"fields,omitempty"`
-	Native    int                    `json:"native,omitempty"`
-}
-
-// common result struct
-type CommonResult struct {
-	Result  bool        `json:"result"`
-	Code    int         `json:"int"`
-	Message interface{} `json:"message"`
-	Data    interface{} `json:"data"`
 }
 
 func ParseCommonParams(input []metadata.ConditionItem, output map[string]interface{}) error {
