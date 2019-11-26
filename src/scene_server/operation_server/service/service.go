@@ -187,7 +187,7 @@ func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[st
 	// 若是timer没配置，或者解析失败，给一个默认的定时时间
 	defer func() {
 		if spec == "" {
-			spec = "00:30"
+			spec = "30 0 * * *"
 		}
 	}()
 
