@@ -58,6 +58,10 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 // Start do main loop
 func (p *Producer) Start() {
 	// then tick and loop
+	if p.SyncIntervalMinutes < meta.MinSyncIntervalMinutes {
+		blog.Warnf("SyncIntervalMinutes min value is: %d, config is: %d", meta.MinSyncIntervalMinutes, p.SyncIntervalMinutes)
+		p.SyncIntervalMinutes = meta.MinSyncIntervalMinutes
+	}
 	duration := time.Duration(p.SyncIntervalMinutes) * time.Minute
 	ticker := time.NewTicker(duration)
 	go func(producer *Producer) {
@@ -86,8 +90,12 @@ func (p *Producer) loop() {
 		blog.Info("not master, don't generate iam sync job")
 		return
 	}
+
 	// get jobs
 	jobs := p.generateJobs()
+
+	blog.Infof("generate auth synchronize jobs, count: %d", len(*jobs))
+
 	for _, job := range *jobs {
 		p.WorkerQueue <- job
 	}
