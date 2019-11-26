@@ -55,7 +55,6 @@ func init() {
 func setEnableAuth(enable bool) {
 	once.Do(func() {
 		enableAuth = enable
-		blog.Infof("[auth] enableAuth: %v", enableAuth)
 	})
 }
 
