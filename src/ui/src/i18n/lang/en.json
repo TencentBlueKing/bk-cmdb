@@ -1117,5 +1117,6 @@
     "集群模板配置": "Set Template Config",
     "集群模板实例": "Set Template Instance",
     "选项": "option",
-    "同步模块": "Synchronization module"
+    "同步模块": "Synchronization module",
+    "空服务模板实例提示": "No service instance, {setLink} or apply it to {topoLink}"
 }
