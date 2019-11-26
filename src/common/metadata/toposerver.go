@@ -12,6 +12,8 @@
 
 package metadata
 
+import "configcenter/src/common/mapstr"
+
 type SearchInstResult struct {
 	BaseResp `json:",inline"`
 	Data     InstResult `json:"data"`
@@ -60,4 +62,10 @@ type SearchAssociationTopoResult struct {
 type SearchTopoResult struct {
 	BaseResp `json:",inline"`
 	Data     []*CommonInstTopo `json:"data"`
+}
+
+type QueryBusinessRequest struct {
+	Fields    []string      `json:"fields"`
+	Page      BasePage      `json:"page"`
+	Condition mapstr.MapStr `json:"condition"`
 }

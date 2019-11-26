@@ -119,13 +119,7 @@ func (m *OwnerManager) addDefaultApp() error {
 }
 
 func (m *OwnerManager) defaultAppIsExist() (bool, error) {
-
-	params := make(map[string]interface{})
-	params["condition"] = make(map[string]interface{})
-	params["fields"] = []string{common.BKAppIDField}
-	params["start"] = 0
-	params["limit"] = 20
-	result, err := m.Engine.CoreAPI.ApiServer().SearchDefaultApp(context.Background(), m.header, m.OwnerID, params)
+	result, err := m.Engine.CoreAPI.ApiServer().SearchDefaultApp(context.Background(), m.header, m.OwnerID)
 	if err != nil {
 		return false, err
 	}

@@ -22,6 +22,12 @@ type element struct {
 	Val interface{}
 }
 
+func (e *element) ToMapStr() mapstr.MapStr {
+	return mapstr.MapStr{
+		e.Key: e.Val,
+	}
+}
+
 // Comparison Operator Start
 
 // Eq mongodb operator $eq
