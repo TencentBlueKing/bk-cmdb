@@ -183,7 +183,14 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 	}
 }
 
-func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
+func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (spec string, err error) {
+	// 若是timer没配置，或者解析失败，给一个默认的定时时间
+	defer func() {
+		if spec == "" {
+			spec = "00:30"
+		}
+	}()
+
 	specStr, ok := configMap[prefix+".spec"]
 	if !ok {
 		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer")
@@ -218,6 +225,6 @@ func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[st
 		return "", goErr.New("parse time config failed, got invalid minute data, should between 0-59")
 	}
 
-	spec := fmt.Sprintf("%d %d * * *", intMinute, intHour)
+	spec = fmt.Sprintf("%d %d * * *", intMinute, intHour)
 	return spec, nil
 }
