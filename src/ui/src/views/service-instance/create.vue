@@ -43,6 +43,7 @@
         <cmdb-dialog v-model="dialog.show" v-bind="dialog.props">
             <component
                 :is="dialog.component"
+                :confirm-text="$t('确定')"
                 v-bind="dialog.componentProps"
                 @confirm="handleDialogConfirm"
                 @cancel="handleDialogCancel">

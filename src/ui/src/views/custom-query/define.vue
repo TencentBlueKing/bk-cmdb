@@ -7,7 +7,7 @@
             'getUserAPIDetail'
         ])
     }">
-        <div class="define-box">
+        <div class="define-box" ref="defineBox">
             <div class="userapi-group">
                 <label class="userapi-label">
                     {{$t('业务')}}<span class="color-danger"> * </span>
@@ -34,7 +34,7 @@
                 </cmdb-auth>
                 <span v-show="errors.has($t('查询名称'))" class="color-danger">{{ errors.first($t('查询名称')) }}</span>
             </div>
-            <div class="query-conditons">
+            <div class="query-conditons" ref="queryConditions">
                 <div class="query-title">
                     <span>{{$t('查询条件')}}</span>
                     <i class="icon-cc-tips" v-bk-tooltips.right="$t('针对查询内容进行条件过滤')"></i>
@@ -106,7 +106,7 @@
                                             @click="deleteUserProperty(property, index)">
                                         </i>
                                     </div>
-                                    <span class="error-tips"
+                                    <span class="error-tips" v-if="errors.has(property.propertyId)"
                                         :style="{ 'margin-left': ['date', 'time'].includes(property.propertyType) ? '0' : '120px' }">
                                         {{errors.first(property.propertyId)}}
                                     </span>
@@ -128,7 +128,7 @@
                 </cmdb-auth>
             </div>
         </div>
-        <div class="userapi-btn-group">
+        <div class="userapi-btn-group" :class="{ 'sticky': hasScrollbar }">
             <cmdb-auth :auth="authResources">
                 <bk-button slot-scope="{ disabled }"
                     theme="primary"
@@ -184,6 +184,7 @@
     import filterFieldOperator from '@/components/hosts/filter/_filter-field-operator'
     import vPreview from './preview'
     import propertySelector from './query-property-seletor'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         components: {
             filterFieldOperator,
@@ -248,7 +249,8 @@
                 propertySlider: {
                     isShow: false,
                     properties: {}
-                }
+                },
+                hasScrollbar: false
             }
         },
         computed: {
@@ -376,6 +378,12 @@
             }
             await this.initAttributeObject()
         },
+        mounted () {
+            addResizeListener(this.$refs.queryConditions, this.handleResize)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.queryConditions, this.handleResize)
+        },
         methods: {
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
@@ -386,6 +394,14 @@
                 'updateCustomQuery',
                 'deleteCustomQuery'
             ]),
+            handleResize () {
+                this.$nextTick(() => {
+                    const scroller = this.$refs.defineBox
+                    if (scroller) {
+                        this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
+                    }
+                })
+            },
             isCloseConfirmShow () {
                 if (this.name !== this.dataCopy.name || this.userProperties.length !== this.dataCopy.userProperties.length) {
                     return true
@@ -715,7 +731,7 @@
     .define-wrapper {
         height: 100%;
         .define-box {
-            height: calc(100% - 55px);
+            max-height: calc(100% - 55px);
             padding: 18px 20px;
             overflow: auto;
         }
@@ -808,14 +824,19 @@
             }
         }
         .userapi-btn-group {
+            position: sticky;
+            bottom: 0;
             display: flex;
             align-items: center;
-            width: 100%;
-            height: 54px;
-            line-height: 54px;
             background-color: #fff;
-            border-top: 1px solid #dcdee5;
             font-size: 0;
+            padding-left: 10px;
+            &.sticky {
+                border-top: 1px solid #dcdee5;
+                width: 100%;
+                height: 54px;
+                line-height: 54px;
+            }
             .bk-button {
                 margin-left: 10px;
             }

@@ -25,8 +25,10 @@
                     </bk-select>
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
                         clearable
+                        v-model="filterName"
                         :placeholder="$t('请输入集群名称搜索')"
-                        @enter="handleSearch">
+                        @enter="handleSearch"
+                        @clear="handleSearch">
                     </bk-input>
                     <icon-button class="ml10"
                         v-bk-tooltips="$t('同步历史')"
@@ -359,9 +361,8 @@
                 this.pagination.current = current
                 await this.getData()
 
-                if (event) {
-                    this.table.stuff.type = 'search'
-                }
+                const searchStatus = this.statusFilter !== 'all' || !!this.filterName
+                this.table.stuff.type = event && searchStatus ? 'search' : 'default'
 
                 if (this.list.length) {
                     this.getSetInstancesWithTopo()
