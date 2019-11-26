@@ -6,6 +6,7 @@
         :width="800"
         :before-close="handleSliderBeforeClose">
         <component :is="slider.component" slot="content"
+            v-if="slider.show"
             ref="multipleForm"
             v-bind="slider.props"
             @on-submit="handleMultipleSave"
