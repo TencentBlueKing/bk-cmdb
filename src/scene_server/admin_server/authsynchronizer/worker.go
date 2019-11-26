@@ -58,7 +58,7 @@ func (w *Worker) Start() {
 					blog.Infof("finished all auth synchronize jobs")
 				}
 				// time interval between two job
-				time.Sleep(time.Second * meta.JobIntervalSeconds)
+				time.Sleep(time.Millisecond * meta.JobIntervalMillisecond)
 
 			case <-w.QuitChan:
 				// We have been asked to stop.

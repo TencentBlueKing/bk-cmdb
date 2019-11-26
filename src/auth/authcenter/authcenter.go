@@ -114,12 +114,12 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 			return cfg, fmt.Errorf(`"syncIntervalMinutes" configuration should be integer for auth center, value: %s`, syncIntervalMinutesStr)
 		}
 	}
-	if syncIntervalMinutes < 5 {
-		syncIntervalMinutes = 5
+	if syncIntervalMinutes < 45 {
+		syncIntervalMinutes = 45
 	}
-	// max interval: one day
-	if workerCount > 24*60 {
-		syncIntervalMinutes = 24 * 60
+	// max interval: one week
+	if workerCount > 7*24*60 {
+		syncIntervalMinutes = 7 * 24 * 60
 	}
 	cfg.SyncIntervalMinutes = int(syncIntervalMinutes)
 
