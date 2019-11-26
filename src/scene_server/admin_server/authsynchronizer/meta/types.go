@@ -12,6 +12,11 @@
 
 package meta
 
+const (
+	JobIntervalSeconds     = 5
+	MinSyncIntervalMinutes = 45
+)
+
 var (
 	// HostResource represent host resource
 	HostBizResource  = ResourceType("host")
