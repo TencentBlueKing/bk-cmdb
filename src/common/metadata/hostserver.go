@@ -128,6 +128,10 @@ type ListHostsWithNoBizParameter struct {
 	Page               BasePage                  `json:"page"`
 }
 
+type CountTopoNodeHostsOption struct {
+	Nodes []TopoNode `json:"topo_nodes" mapstructure:"topo_nodes"`
+}
+
 type TimeRange struct {
 	Start *time.Time
 	End   *time.Time
@@ -385,6 +389,15 @@ type TopoNode struct {
 	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id" mapstructure:"bk_inst_id"`
 }
 
+func (node TopoNode) String() string {
+	return fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+}
+
+type TopoNodeHostCount struct {
+	Node      TopoNode `field:"topo_node" json:"topo_node" mapstructure:"topo_node"`
+	HostCount int      `field:"host_count" json:"host_count" mapstructure:"host_count"`
+}
+
 type TransferHostWithAutoClearServiceInstanceOption struct {
 	RemoveFromNode *TopoNode `field:"remove_from_node" json:"remove_from_node"`
 	HostIDs        []int64   `field:"bk_host_ids" json:"bk_host_ids"`
@@ -425,17 +438,17 @@ type HostTransferPreview struct {
 }
 
 type UpdateHostCloudAreaFieldOption struct {
-    BizID   int64   `field:"bk_biz_id" json:"bk_biz_id" mapstructure:"bk_biz_id"`
-    HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" mapstructure:"bk_host_ids"`
-    CloudID int64   `field:"bk_cloud_id" json:"bk_cloud_id" mapstructure:"bk_cloud_id"`
+	BizID   int64   `field:"bk_biz_id" json:"bk_biz_id" mapstructure:"bk_biz_id"`
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" mapstructure:"bk_host_ids"`
+	CloudID int64   `field:"bk_cloud_id" json:"bk_cloud_id" mapstructure:"bk_cloud_id"`
 }
 
 // UpdateHostPropertyBatchParameter batch update host property parameter
 type UpdateHostPropertyBatchParameter struct {
-    Update []updateHostProperty `json:"update"`
+	Update []updateHostProperty `json:"update"`
 }
 
 type updateHostProperty struct {
-    HostID     int64                  `json:"bk_host_id"`
-    Properties map[string]interface{} `json:"properties"`
+	HostID     int64                  `json:"bk_host_id"`
+	Properties map[string]interface{} `json:"properties"`
 }
