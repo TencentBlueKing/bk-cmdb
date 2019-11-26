@@ -555,13 +555,15 @@ func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams
 		common.BKAppIDField,
 		common.BKAppNameField,
 	}
-	filter := condition.CreateCondition()
-	filter.AddConditionItem(condition.ConditionItem{
-		Field:    "bk_data_status",
-		Operator: condition.BKDBNE,
-		Value:    "disabled",
-	})
-	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, fields, filter)
+
+	query := &metadata.QueryBusinessRequest{
+        Fields:    fields,
+        Page:      metadata.BasePage{},
+        Condition: mapstr.MapStr{
+            common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
+        },
+    }
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, query)
 	if nil != err {
 		blog.Errorf("ListAllBusinessSimplify failed, FindBusiness failed, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
