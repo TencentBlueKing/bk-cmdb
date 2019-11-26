@@ -429,7 +429,7 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level):
                     filedata = filedata.replace('rd_server_placeholder', rd_server)
 
                 extend_flag = ''
-                if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver', 'cmdb_toposerver']:
+                if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver', 'cmdb_toposerver', 'cmdb_eventserver']:
                     extend_flag += ' --enable-auth=%s ' % enable_auth
                 filedata = filedata.replace('extend_flag_placeholder', extend_flag)
 
