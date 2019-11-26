@@ -187,9 +187,11 @@ router.beforeEach((to, from, next) => {
                 next()
             } else if (e instanceof StatusError) {
                 next({ name: e.name, query: e.query })
-            } else {
+            } else if (e.status !== 401) {
                 console.error(e)
                 next({ name: 'error' })
+            } else {
+                next()
             }
         } finally {
             setLoading(false)
