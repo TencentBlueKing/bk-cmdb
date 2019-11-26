@@ -39,13 +39,13 @@ func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID st
 	return
 }
 
-func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
+func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID string) (resp *metadata.QueryInstResult, err error) {
 	resp = new(metadata.QueryInstResult)
 	subPath := fmt.Sprintf("biz/default/%s/search", ownerID)
 
 	err = a.client.Post().
 		WithContext(ctx).
-		Body(params).
+		Body(nil).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

@@ -101,12 +101,12 @@ func (t *instanceClient) GetAppBasicInfo(ctx context.Context, h http.Header, biz
 	return
 }
 
-func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h http.Header) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := fmt.Sprintf("/app/default/%s/search", ownerID)
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(s).
+		Body(nil).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
