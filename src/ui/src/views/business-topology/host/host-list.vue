@@ -236,7 +236,7 @@
                         count: this.table.selection.length
                     }
                     this.dialog.width = 400
-                    this.dialog.height = 211
+                    this.dialog.height = 231
                     this.dialog.component = MoveToResourceConfirm.name
                 }
                 this.dialog.show = true
