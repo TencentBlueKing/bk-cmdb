@@ -38,7 +38,7 @@
         <div class="info clearfix mb10" ref="changeInfo">
             <label class="info-label fl">{{$t('变更确认')}}：</label>
             <div class="info-content">
-                <template v-if="!loading && availableTabList.length">
+                <template v-if="availableTabList.length">
                     <ul class="tab clearfix">
                         <template v-for="(item, index) in availableTabList">
                             <li class="tab-grep fl" v-if="index" :key="index"></li>
@@ -62,13 +62,16 @@
                         :is="item.component">
                     </component>
                 </template>
-                <div class="tab-empty" v-else-if="!loading">
-                    {{$t('无预览数据')}}
+                <div class="tab-empty" v-else-if="isSameModule">
+                    {{$t('相同模块转移提示')}}
+                </div>
+                <div class="tab-empty" v-else-if="isEmptyChange">
+                    {{$t('无转移确认信息提示')}}
                 </div>
             </div>
         </div>
         <div class="options" :class="{ 'is-sticky': hasScrollbar }" v-show="!loading">
-            <bk-button theme="primary" :disabled="!availableTabList.length" @click="handleConfrim">{{confirmText}}</bk-button>
+            <bk-button theme="primary" :disabled="isSameModule" @click="handleConfrim">{{confirmText}}</bk-button>
             <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
         <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="460">
@@ -153,6 +156,8 @@
                 type: this.$route.params.type,
                 confirmParams: {},
                 moduleMap: {},
+                isSameModule: false,
+                isEmptyChange: false,
                 loading: true
             }
         },
@@ -230,11 +235,13 @@
                     this.resources = String(resources).split(',').map(id => Number(id))
                 }
 
+                const isTransfer = ['idle', 'business'].includes(this.type)
+
                 const params = {
                     bk_host_ids: this.resources,
                     remove_from_node: {
-                        bk_inst_id: Number(query.sourceId),
-                        bk_obj_id: query.sourceModel
+                        bk_inst_id: isTransfer ? this.bizId : Number(query.sourceId),
+                        bk_obj_id: isTransfer ? 'biz' : query.sourceModel
                     }
                 }
                 if (this.type === 'idle') {
@@ -282,6 +289,7 @@
                             requestId: this.request.preview
                         }
                     )
+                    this.setConfirmState(data)
                     this.setModulePathInfo(data)
                     this.setCreateServiceInstance(data)
                     this.setDeletedServiceInstance(data)
@@ -293,6 +301,16 @@
                     console.error(e)
                     this.loading = false
                 }
+            },
+            setConfirmState (data) {
+                // 是否是相同的模块转换
+                this.isSameModule = data.every(datum => !(datum.to_add_to_modules.length || datum.to_remove_from_modules.length))
+                // 是否溢出的是空服务实例（前端流转不会创建空服务实例，但是ESB会）
+                this.isEmptyChange = data.every(datum => {
+                    const hasAdd = !datum.to_add_to_modules.length
+                    const hasRemoveInstance = datum.to_remove_from_modules.some(module => !module.service_instances.length)
+                    return !(hasAdd || hasRemoveInstance)
+                })
             },
             async setModulePathInfo (data) {
                 try {
