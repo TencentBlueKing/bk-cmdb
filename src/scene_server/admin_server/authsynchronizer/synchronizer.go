@@ -31,25 +31,31 @@ import (
 
 // AuthSynchronizer stores all related resource
 type AuthSynchronizer struct {
-	AuthConfig  authcenter.AuthConfig
-	clientSet   apimachinery.ClientSetInterface
-	ctx         context.Context
-	Workers     *[]Worker
-	WorkerQueue chan meta.WorkRequest
-	Producer    *Producer
-	Engine      *backbone.Engine
+	AuthConfig          authcenter.AuthConfig
+	clientSet           apimachinery.ClientSetInterface
+	ctx                 context.Context
+	WorkerCount         int
+	Workers             *[]Worker
+	WorkerQueue         chan meta.WorkRequest
+	Producer            *Producer
+	Engine              *backbone.Engine
+	SyncIntervalMinutes int
 
 	reg prometheus.Registerer
 }
 
 // NewSynchronizer new a synchronizer object
-func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, clientSet apimachinery.ClientSetInterface, reg prometheus.Registerer, engine *backbone.Engine) *AuthSynchronizer {
+func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig,
+	clientSet apimachinery.ClientSetInterface, reg prometheus.Registerer,
+	engine *backbone.Engine) *AuthSynchronizer {
 	return &AuthSynchronizer{
-		ctx:        ctx,
-		AuthConfig: *authConfig,
-		clientSet:  clientSet,
-		reg:        reg,
-		Engine:     engine,
+		ctx:                 ctx,
+		AuthConfig:          *authConfig,
+		clientSet:           clientSet,
+		reg:                 reg,
+		Engine:              engine,
+		WorkerCount:         authConfig.SyncWorkerCount,
+		SyncIntervalMinutes: authConfig.SyncIntervalMinutes,
 	}
 }
 
@@ -60,7 +66,7 @@ func (d *AuthSynchronizer) Run() error {
 		return nil
 	}
 
-	blog.Infof("auth synchronize start...")
+	blog.Infof("auth synchronize start..., worker count: %d", d.WorkerCount)
 
 	// init queue
 	d.WorkerQueue = make(chan meta.WorkRequest, 1000)
@@ -76,8 +82,8 @@ func (d *AuthSynchronizer) Run() error {
 	workerHandler := handler.NewIAMHandler(d.clientSet, authManager)
 
 	// init worker
-	workers := make([]Worker, 3)
-	for w := 1; w <= 3; w++ {
+	workers := make([]Worker, d.WorkerCount)
+	for w := 1; w <= d.WorkerCount; w++ {
 		worker := NewWorker(w, d.WorkerQueue, workerHandler)
 		workers = append(workers, *worker)
 		worker.Start()
@@ -85,7 +91,7 @@ func (d *AuthSynchronizer) Run() error {
 	d.Workers = &workers
 
 	// init producer
-	d.Producer = NewProducer(d.clientSet, authManager, d.WorkerQueue, d.Engine)
+	d.Producer = NewProducer(d.clientSet, authManager, d.WorkerQueue, d.Engine, d.SyncIntervalMinutes)
 	d.Producer.Start()
 	blog.Infof("auth synchronize started")
 	return nil
