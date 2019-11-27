@@ -1,5 +1,27 @@
 <template>
     <div class="template-layout">
+        <cmdb-tips v-if="featureTips"
+            class="tips-layout"
+            :tips-style="{
+                overflow: 'unset',
+                fontSize: '12px',
+                height: 'auto',
+                minHeight: '32px',
+                lineHeight: 'normal'
+            }"
+            :icon-style="{
+                color: '#3a84ff',
+                fontSize: '16px',
+                lineHeight: 'normal'
+            }">
+            <div class="tips-main">
+                <i18n path="集群模板功能提示" class="tips-text">
+                    <a class="tips-link" href="javascript:void(0)" @click="handleGoBusinessTopo" place="topo">{{$t('业务拓扑')}}</a>
+                    <a class="tips-link" href="javascript:void(0)" @click="handleGoServiceTemplate" place="template">{{$t('服务模板')}}</a>
+                </i18n>
+                <i class="icon-cc-tips-close fr" @click="handleCloseTips"></i>
+            </div>
+        </cmdb-tips>
         <div class="options clearfix">
             <div class="fl">
                 <cmdb-auth class="fl" :auth="$authResources({ type: $OPERATION.C_SET_TEMPLATE })">
@@ -81,8 +103,10 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         data () {
+            const showSetTips = window.localStorage.getItem('showSetTips')
             return {
                 list: [],
                 originList: [],
@@ -94,7 +118,8 @@
                             resource: this.$t('集群模板')
                         }
                     }
-                }
+                },
+                featureTips: showSetTips === null
             }
         },
         computed: {
@@ -182,6 +207,20 @@
                         isApplied: !!row.set_instance_count
                     }
                 })
+            },
+            handleGoBusinessTopo () {
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                })
+            },
+            handleGoServiceTemplate () {
+                this.$router.push({
+                    name: MENU_BUSINESS_SERVICE_TEMPLATE
+                })
+            },
+            handleCloseTips () {
+                this.featureTips = false
+                window.localStorage.setItem('showSetTips', false)
             }
         }
     }
@@ -190,6 +229,37 @@
 <style lang="scss" scoped>
     .template-layout {
         padding: 0 20px;
+    }
+    .tips-layout {
+        padding: 6px 16px;
+        margin-bottom: 10px;
+        align-items: center;
+        /deep/ .tips-content {
+            width: 100%;
+            text-overflow: unset !important;
+            white-space: unset !important;
+        }
+    }
+    .tips-main {
+        display: flex;
+        align-items: center;
+        .tips-text {
+            flex: 1;
+        }
+        .icon-cc-tips-close {
+            font-size: 14px;
+            color: #979ba5;
+            cursor: pointer;
+            &:hover {
+                color: #7d8088;
+            }
+        }
+        .tips-link {
+            color: #3a84ff;
+            &:hover {
+                text-decoration: underline;
+            }
+        }
     }
     .options {
         font-size: 0;

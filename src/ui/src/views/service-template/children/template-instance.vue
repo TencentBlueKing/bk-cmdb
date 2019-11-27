@@ -27,6 +27,14 @@
                         <bk-button text :disabled="isSyncDisabled(row)" @click="handleSync(row)">{{$t('去同步')}}</bk-button>
                     </template>
                 </bk-table-column>
+                <cmdb-table-empty slot="empty" :stuff="table.stuff">
+                    <div>
+                        <i18n path="空服务模板实例提示" tag="div">
+                            <bk-button style="font-size: 14px;" text @click="handleToCreatedSetTemplate" place="topoLink">{{$t('集群模板')}}</bk-button>
+                            <bk-button style="font-size: 14px;" text @click="handleToCreatedInstance" place="setLink">{{$t('创建服务实例')}}</bk-button>
+                        </i18n>
+                    </div>
+                </cmdb-table-empty>
             </bk-table>
         </div>
     </div>
@@ -37,6 +45,10 @@
     import { time } from '@/filters/formatter'
     import debounce from 'lodash.debounce'
     import Bus from '@/utils/bus'
+    import {
+        MENU_BUSINESS_SET_TEMPLATE,
+        MENU_BUSINESS_HOST_AND_SERVICE
+    } from '@/dictionary/menu-symbol'
     export default {
         filters: {
             time
@@ -51,7 +63,11 @@
                     filtering: false,
                     data: [],
                     backup: [],
-                    syncStatus: []
+                    syncStatus: [],
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 request: {
                     instance: Symbol('instance'),
@@ -149,7 +165,9 @@
                         setId: row.bk_set_id
                     },
                     query: {
-                        path: row._path_
+                        path: row._path_,
+                        form: 'operationalTemplate',
+                        templateId: this.serviceTemplateId
                     }
                 })
             },
@@ -161,6 +179,7 @@
                     } else {
                         this.table.data = [...this.table.backup]
                     }
+                    this.table.stuff.type = this.table.filter ? 'search' : 'default'
                     this.table.filtering = false
                 })
             },
@@ -171,6 +190,12 @@
                 const timeA = (new Date(rowA.last_time)).getTime()
                 const timeB = (new Date(rowB.last_time)).getTime()
                 return timeA - timeB
+            },
+            handleToCreatedSetTemplate () {
+                this.$router.push({ name: MENU_BUSINESS_SET_TEMPLATE })
+            },
+            handleToCreatedInstance () {
+                this.$router.push({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             }
         }
     }

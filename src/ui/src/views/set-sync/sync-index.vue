@@ -281,6 +281,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .sync-set-layout {
+        height: auto;
+    }
     .no-content {
         position: absolute;
         top: 50%;

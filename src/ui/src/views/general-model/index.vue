@@ -167,6 +167,7 @@
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
                         ref="multipleForm"
+                        :uneditable-properties="['bk_inst_name']"
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
@@ -820,7 +821,7 @@
         position: relative;
         margin-right: 5px;
         .filter-selector{
-            width: 115px;
+            width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
         }
