@@ -117,7 +117,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		mainline.New(db),
 		host.New(db, cache, s),
 		auditlog.New(db),
-		process.New(db, s),
+		process.New(db, s, cache),
 		label.New(db),
 	)
 	return nil
