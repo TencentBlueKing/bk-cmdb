@@ -716,7 +716,7 @@
     "最新": "Latest",
     "采集方式": "Action",
     "获取单个": "Single",
-    "服务模板功能提示": "The service template can simplify the deployment and change of standardized services in multiple sets. It can also be used for {link} to standardize set management.",
+    "服务模板功能提示": "Service templates can predefine services that are common to the business and are used to deploy and change service instances in batches in {link}.",
     "模板名称": "Template name",
     "进程数量": "Number of processes",
     "已应用模块数": "Number of modules applied",
@@ -1119,5 +1119,6 @@
     "选项": "option",
     "同步模块": "Synchronization module",
     "空服务模板实例提示": "No service instance, {setLink} or apply it to {topoLink}",
-    "归还资源池提示": "Be sure to confirm that the business process is stopped or the host is shut down"
+    "归还资源池提示": "Be sure to confirm that the business process is stopped or the host is shut down",
+    "集群模板功能提示": "The Set template can define the common Set structure of the business, which is used to quickly deploy and maintain the Set in {topo}. This feature relies on {template} already existing."
 }
