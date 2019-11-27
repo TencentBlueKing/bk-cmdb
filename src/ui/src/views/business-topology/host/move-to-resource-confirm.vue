@@ -4,6 +4,7 @@
         <i18n tag="p" path="确认归还资源池主机数量" class="content">
             <span class="count" place="count">{{count}}</span>
         </i18n>
+        <p class="content">{{$t('归还资源池提示')}}</p>
         <div class="options">
             <bk-button class="mr10" theme="primary" @click="handleConfirm">{{$t('确定')}}</bk-button>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
@@ -36,14 +37,13 @@
         text-align: center;
     }
     .title {
-        margin-top: 45px;
+        margin: 45px 0 27px;
         line-height: 32px;
         font-size:24px;
         font-weight: normal;
         color: #313238;
     }
     .content {
-        margin-top: 27px;
         line-height:20px;
         font-size:14px;
         color: $textColor;

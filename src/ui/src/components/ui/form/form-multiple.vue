@@ -11,6 +11,7 @@
                         <ul class="property-list clearfix">
                             <li class="property-item fl"
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
+                                v-if="!uneditableProperties.includes(property.bk_property_id)"
                                 :key="propertyIndex">
                                 <div class="property-name">
                                     <bk-checkbox class="property-name-checkbox"
@@ -35,7 +36,7 @@
                                         :disabled="!editable[property['bk_property_id']]"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
-                                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                        :placeholder="getPlaceholder(property)"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]">
                                     </component>
@@ -110,7 +111,7 @@
             hasChange () {
                 let hasChange = false
                 for (const propertyId in this.editable) {
-                    if (this.editable[propertyId] && this.changedValues.hasOwnProperty(propertyId)) {
+                    if (this.editable[propertyId]) {
                         hasChange = true
                         break
                     }
@@ -183,6 +184,10 @@
             },
             getProperty (id) {
                 return this.properties.find(property => property['bk_property_id'] === id)
+            },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             getValidateRules (property) {
                 return this.$tools.getValidateRules(property)
