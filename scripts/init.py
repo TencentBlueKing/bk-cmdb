@@ -274,6 +274,9 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 enable = true
+
+[timer]
+spec = 00:30  # 00:00 - 23:59
 '''
     template = FileTemplate(operation_file_template_str)
     result = template.substitute(**context)
