@@ -183,27 +183,35 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 	}
 }
 
-func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (spec string, err error) {
+func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
 	// 若是timer没配置，或者解析失败，给一个默认的定时时间
-	defer func() {
-		if spec == "" {
-			spec = "30 0 * * *"
-		}
-	}()
+	defaultSpec := "30 0 * * *"
 
 	specStr, ok := configMap[prefix+".spec"]
 	if !ok {
 		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer")
-		return "", goErr.New("missing 'spec' configuration for timer")
+		blog.V(3).Infof("missing timer config, set timer-spec default value: 00:30")
+		return defaultSpec, goErr.New("missing 'spec' configuration for timer")
 	}
 
-	matched, err := regexp.MatchString(common.TimerPattern, specStr)
+	spec, err := parseTimerConfig(specStr)
+	if err != nil {
+		blog.Errorf("parse timer config failed, err: %v", err)
+		blog.V(3).Infof("parse timer config failed, set timer-spec default value: 00:30")
+		return defaultSpec, err
+	}
+
+	return spec, nil
+}
+
+func parseTimerConfig(spec string) (string, error) {
+	matched, err := regexp.MatchString(common.TimerPattern, spec)
 	if err != nil || !matched {
 		blog.Errorf("parse timer config failed, 'spec' not match required rules, err: %v", err)
 		return "", goErr.New("'spec' not match required rules")
 	}
 
-	numArray := strings.Split(specStr, ":")
+	numArray := strings.Split(spec, ":")
 	hour := numArray[0]
 	intHour, err := strconv.Atoi(hour)
 	if err != nil {
@@ -221,7 +229,7 @@ func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[st
 		return "", goErr.New("parse time config failed, got invalid minute data")
 	}
 	if intMinute < 0 || intMinute > 59 {
-		blog.Errorf("parse timer config failed: %v", err)
+		blog.Errorf("parse timer config failed, got invalid minute data, err: %v", err)
 		return "", goErr.New("parse time config failed, got invalid minute data, should between 0-59")
 	}
 
