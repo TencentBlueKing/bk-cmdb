@@ -101,9 +101,6 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 	if workerCount < 1 {
 		workerCount = 1
 	}
-	if workerCount > 16 {
-		workerCount = 16
-	}
 	cfg.SyncWorkerCount = int(workerCount)
 
 	syncIntervalMinutes := int64(45)
@@ -116,10 +113,6 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 	}
 	if syncIntervalMinutes < 45 {
 		syncIntervalMinutes = 45
-	}
-	// max interval: one week
-	if workerCount > 7*24*60 {
-		syncIntervalMinutes = 7 * 24 * 60
 	}
 	cfg.SyncIntervalMinutes = int(syncIntervalMinutes)
 
