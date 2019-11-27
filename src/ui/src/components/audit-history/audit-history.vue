@@ -40,7 +40,6 @@
                 <i class="bk-icon icon-close" @click="closeDetails"></i>
             </p>
             <v-details class="details-content"
-                :properties="properties"
                 :is-show="details.isShow"
                 :details="details.data"
                 :height="342"
@@ -70,10 +69,6 @@
             },
             instId: {
                 type: Number
-            },
-            properties: {
-                type: Array,
-                default: () => []
             }
         },
         data () {

@@ -166,7 +166,7 @@
                     },
                     query: {
                         path: row._path_,
-                        backRouterName: 'operationalTemplate',
+                        form: 'operationalTemplate',
                         templateId: this.serviceTemplateId
                     }
                 })
