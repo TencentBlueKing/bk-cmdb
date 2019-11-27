@@ -1120,5 +1120,7 @@
     "同步模块": "Synchronization module",
     "空服务模板实例提示": "No service instance, {setLink} or apply it to {topoLink}",
     "归还资源池提示": "Be sure to confirm that the business process is stopped or the host is shut down",
-    "集群模板功能提示": "The Set template can define the common Set structure of the business, which is used to quickly deploy and maintain the Set in {topo}. This feature relies on {template} already existing."
+    "集群模板功能提示": "The Set template can define the common Set structure of the business, which is used to quickly deploy and maintain the Set in {topo}. This feature relies on {template} already existing.",
+    "该模块下有主机不可删除": "This module has a host that cannot be deleted, {link}",
+    "该模块下有主机不可取消": "This module has a host and cannot be cancelled"
 }
