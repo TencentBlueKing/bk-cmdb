@@ -46,7 +46,7 @@ export default {
                     }
                 })
                 this.slider.show = false
-                Bus.$emit('refresh-list')
+                Bus.$emit('refresh-list', 1)
             } catch (e) {
                 console.error(e)
             }
