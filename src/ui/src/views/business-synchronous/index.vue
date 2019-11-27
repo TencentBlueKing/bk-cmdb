@@ -501,7 +501,7 @@
             handleGoBackModule () {
                 const query = this.$route.query
                 this.$router.replace({
-                    name: query.backRouterName ? query.backRouterName : this.$route.meta.menu.relative,
+                    name: query.form ? query.form : this.$route.meta.menu.relative,
                     params: {
                         templateId: query.templateId,
                         active: 'instance'

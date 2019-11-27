@@ -52,11 +52,7 @@
             details: Object,
             height: Number,
             width: Number,
-            isShow: Boolean,
-            properties: {
-                type: Array,
-                default: () => []
-            }
+            isShow: Boolean
         },
         data () {
             return {
@@ -161,7 +157,7 @@
                 this.isShowAllFields = !this.isShowAllFields
             },
             getCellValue (property, type) {
-                const data = this.$tools.flattenItem(this.properties, this.details.content[type] || {})
+                const data = this.details.content[type]
                 let value
                 if (data) {
                     value = data[property.bk_property_id]
