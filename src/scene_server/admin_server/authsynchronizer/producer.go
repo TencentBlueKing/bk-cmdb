@@ -62,6 +62,7 @@ func (p *Producer) Start() {
 		blog.Warnf("SyncIntervalMinutes min value is: %d, config is: %d", meta.MinSyncIntervalMinutes, p.SyncIntervalMinutes)
 		p.SyncIntervalMinutes = meta.MinSyncIntervalMinutes
 	}
+	blog.Infof("start producer with SyncIntervalMinutes value: %d", p.SyncIntervalMinutes)
 	duration := time.Duration(p.SyncIntervalMinutes) * time.Minute
 	ticker := time.NewTicker(duration)
 	go func(producer *Producer) {
