@@ -141,6 +141,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/lock").To(s.LockHost))
 	api.Route(api.DELETE("/host/lock").To(s.UnlockHost))
 	api.Route(api.POST("/host/lock/search").To(s.QueryHostLock))
+	api.Route(api.POST("/host/count_by_topo_node/bk_biz_id/{bk_biz_id}").To(s.CountTopoNodeHosts))
 
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
 
