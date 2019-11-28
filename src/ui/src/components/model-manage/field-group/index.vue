@@ -1076,7 +1076,7 @@
             color: #3a84ff;
             font-size: 16px;
             &.is-disabled {
-                color: #000000;
+                color: #C4C6cc;
                 .icon {
                     color: #63656E;
                 }
