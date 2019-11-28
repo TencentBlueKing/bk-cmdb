@@ -10,23 +10,22 @@
             {{$t('解决应用字段冲突提示')}}
         </cmdb-tips>
         <div class="conflict-table" ref="conflictTable">
-            <bk-table :data="list">
-                <bk-table-column :label="$t('字段名称')" width="160" :resizable="false">
-                    <template slot-scope="{ row }">
-                        <span class="conflict-name">{{row.name}}</span>
-                    </template>
-                </bk-table-column>
+            <bk-table :data="conflictPropertyList">
+                <bk-table-column :label="$t('字段名称')" width="160" :resizable="false" prop="bk_property_name"></bk-table-column>
                 <bk-table-column :label="$t('所属模块')" :render-header="hanldeColumnRender" :resizable="false">
                     <template slot-scope="{ row }">
                         <div class="conflict-modules">
-                            <div v-for="(module, index) in row.conflictList"
-                                :class="['module-item', { 'selected': module.selected }]"
-                                :key="index">
-                                <span :title="module.path || '--'">{{module.path || '--'}}</span>
-                                <span :title="module.value | formatter(row.property.bk_property_type, row.property.option)">
-                                    {{module.value | formatter(row.property.bk_property_type, row.property.option)}}
+                            <div
+                                v-for="(item, index) in row.__extra__.conflictList"
+                                :class="['module-item', { 'selected': item.selected }]"
+                                :key="index"
+                            >
+                                <span v-if="item.is_current">主机当前值</span>
+                                <span v-else :title="getModulePath(item.bk_module_id)">{{getModulePath(item.bk_module_id)}}</span>
+                                <span :title="item.bk_property_value | formatter(row.bk_property_type, row.option)">
+                                    {{item.bk_property_value | formatter(row.bk_property_type, row.option)}}
                                 </span>
-                                <i class="check-model-value" @click="handleSelectDefaultValue(row, index, module.value)">选定</i>
+                                <i class="check-model-value" @click="handlePickValue(row, index, item.bk_property_value)">选定</i>
                             </div>
                         </div>
                     </template>
@@ -35,24 +34,25 @@
                     width="230"
                     class-name="conflict-custom-column"
                     :resizable="false">
-                    <template slot-scope="{ row: { property = {} } = {} }">
+                    <template slot-scope="{ row }">
                         <component class="property-component"
-                            :is="`cmdb-form-${property.bk_property_type}`"
-                            :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
-                            :options="property.option || []"
-                            :data-vv-name="property.bk_property_id"
-                            :data-vv-as="property.bk_property_name"
-                            :placeholder="$t('请输入xx', { name: property.bk_property_name })"
-                            v-validate="$tools.getValidateRules(property)"
-                            v-model.trim="result[property.bk_property_id]">
+                            :is="`cmdb-form-${row.bk_property_type}`"
+                            :class="[row.bk_property_type, { error: errors.has(row.bk_property_id) }]"
+                            :options="row.option || []"
+                            :data-vv-name="row.bk_property_id"
+                            :data-vv-as="row.bk_property_name"
+                            :placeholder="$t('请输入xx', { name: row.bk_property_name })"
+                            v-validate="$tools.getValidateRules(row)"
+                            v-model.trim="row.__extra__.value"
+                        >
                         </component>
                     </template>
                 </bk-table-column>
             </bk-table>
         </div>
         <div :class="['footer-btns', { 'sticky': scrollbar }]">
-            <bk-button theme="primary" class="mr10">{{$t('确定')}}</bk-button>
-            <bk-button theme="default">{{$t('取消')}}</bk-button>
+            <bk-button theme="primary" class="mr10" @click="handleConfirm">{{$t('确定')}}</bk-button>
+            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
 </template>
@@ -61,19 +61,39 @@
     import { mapGetters } from 'vuex'
     import RESIZE_EVENTS from '@/utils/resize-events'
     export default {
+        props: {
+            dataRow: {
+                type: Object,
+                default: () => ({})
+            },
+            dataCache: {
+                type: Array,
+                default: () => ([])
+            }
+        },
         data () {
             return {
-                list: [],
+                conflictPropertyList: [],
+                conflictPropertyListSnapshot: [],
                 result: {},
-                scrollbar: false
+                scrollbar: false,
+                moduleMap: {}
             }
         },
         computed: {
-            ...mapGetters('hosts', ['configPropertyList'])
+            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('hosts', ['configPropertyList']),
+            moduleIds () {
+                return this.dataRow.bk_module_ids
+            }
         },
-        async created () {
-            const list = await this.getData()
-            this.getPropertyInfo(list)
+        watch: {
+            dataRow () {
+                this.getData()
+            }
+        },
+        created () {
+            this.getData()
         },
         mounted () {
             RESIZE_EVENTS.addResizeListener(this.$refs.conflictTable, this.checkScrollbar)
@@ -82,104 +102,61 @@
             RESIZE_EVENTS.removeResizeListener(this.$refs.conflictTable, this.checkScrollbar)
         },
         methods: {
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
+            async getData () {
+                try {
+                    const topopath = await this.getTopopath()
+                    const moduleMap = {}
+                    topopath.nodes.forEach(node => {
+                        moduleMap[node.topo_node.bk_inst_id] = node.topo_path
+                    })
+                    this.moduleMap = Object.freeze(moduleMap)
+                    this.setConflictPropertyList()
+                } catch (e) {
+                    console.error(e)
+                }
             },
-            getPropertyInfo (list) {
-                list.forEach((item, index) => {
-                    const property = this.configPropertyList.find(property => property.bk_property_id === item.bk_property_id)
-                    item.property = property
-                    this.result[item.bk_property_id] = item[item.bk_property_id]
+            setConflictPropertyList () {
+                let conflictPropertyList = []
+                if (this.dataCache.length) {
+                    conflictPropertyList = this.$tools.clone(this.dataCache)
+                } else {
+                    const conflicts = this.dataRow.conflicts || []
+                    conflicts.forEach(item => {
+                        const findProperty = this.configPropertyList.find(property => property.bk_property_id === item.bk_property_id)
+                        const property = this.$tools.clone(findProperty)
+                        // 主机当前值
+                        const hostCurrent = {
+                            is_current: true,
+                            // 任何一个配置值都未被使用则使用主机当前值
+                            selected: item.host_apply_rules.every(item => !item.selected),
+                            bk_attribute_id: item.bk_attribute_id,
+                            bk_property_value: item.bk_property_value
+                        }
+                        property.__extra__.conflictList = [hostCurrent, ...item.host_apply_rules]
+                        property.__extra__.value = hostCurrent.bk_property_value
+                        conflictPropertyList.push(property)
+                    })
+                }
+                this.conflictPropertyList = conflictPropertyList
+                this.conflictPropertyListSnapshot = this.$tools.clone(conflictPropertyList)
+            },
+            getTopopath () {
+                return this.$store.dispatch('hostApply/getTopopath', {
+                    bizId: this.bizId,
+                    params: {
+                        topo_nodes: this.moduleIds.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
+                    }
                 })
-                this.list = list
             },
-            getData () {
-                return [{
-                    name: '主机名称',
-                    bk_host_name: 'Selina',
-                    bk_property_id: 'bk_host_name',
-                    conflictList: [{
-                        path: '当前主机值',
-                        value: 'Quelly',
-                        selected: true
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块aaaa',
-                        value: 'Selina,Quelly',
-                        selected: false
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块dddddddd',
-                        value: 'Selina,Quelly',
-                        selected: false
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块ccccc',
-                        value: 'Selina,Quelly',
-                        selected: false
-                    }]
-                }, {
-                    name: '所属运营商',
-                    bk_isp_name: '0',
-                    bk_property_id: 'bk_isp_name',
-                    conflictList: [{
-                        path: '当前主机值',
-                        value: '0',
-                        selected: true
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块aaaa',
-                        value: '1',
-                        selected: false
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块dddddddd',
-                        value: '2',
-                        selected: false
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块ccccc',
-                        value: '3',
-                        selected: false
-                    }]
-                }, {
-                    name: 'CPU逻辑核心数',
-                    bk_cpu: 1,
-                    bk_property_id: 'bk_cpu',
-                    conflictList: [{
-                        path: '当前主机值',
-                        value: 1,
-                        selected: true
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块aaaa',
-                        value: 2,
-                        selected: false
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块dddddddd',
-                        value: 3,
-                        selected: false
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块ccccc',
-                        value: 4,
-                        selected: false
-                    }]
-                }, {
-                    name: '备份维护人',
-                    operator: 'admin',
-                    bk_property_id: 'operator',
-                    conflictList: [{
-                        path: '当前主机值',
-                        value: 'admin',
-                        selected: true
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块aaaa',
-                        value: 'peibiaoyang',
-                        selected: false
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块dddddddd',
-                        value: 'yunyaoyang',
-                        selected: false
-                    }, {
-                        path: '广东区 / 大区一 / Apache业务模块ccccc',
-                        value: 'v_dgzheng',
-                        selected: false
-                    }]
-                }]
+            getModulePath (id) {
+                const info = this.moduleMap[id] || []
+                const path = info.map(node => node.bk_inst_name).reverse().join(' / ')
+                return path
+            },
+            getModuleName (id) {
+                const topoInfo = this.moduleMap[id] || []
+                const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
+                return target.bk_inst_name
             },
             hanldeColumnRender (h, { column, $index }) {
                 const style = {
@@ -195,11 +172,25 @@
                     ]
                 )
             },
-            handleSelectDefaultValue (row, index, value) {
-                row.conflictList.forEach((module, _index) => {
-                    module.selected = _index === index
-                })
-                this.result[row.bk_property_id] = value
+            handlePickValue (row, index, value) {
+                row.__extra__.conflictList.forEach((item, i) => (item.selected = index === i))
+                row.__extra__.value = value
+            },
+            restoreConflictPropertyList () {
+                this.conflictPropertyList = this.$tools.clone(this.conflictPropertyListSnapshot)
+            },
+            handleConfirm () {
+                this.conflictPropertyListSnapshot = this.$tools.clone(this.conflictPropertyList)
+                this.$emit('save', this.conflictPropertyListSnapshot)
+                this.$emit('cancel')
+            },
+            handleCancel () {
+                this.restoreConflictPropertyList()
+                this.$emit('cancel')
+            },
+            checkScrollbar () {
+                const $layout = this.$el
+                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             }
         }
     }

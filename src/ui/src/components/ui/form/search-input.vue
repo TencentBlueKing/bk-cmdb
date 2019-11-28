@@ -82,7 +82,9 @@
                 this.focus = false
                 this.timer = setTimeout(() => {
                     this.rows = 1
-                    this.$refs.textarea.scrollTop = 0
+                    if (this.$refs.textarea) {
+                        this.$refs.textarea.scrollTop = 0
+                    }
                 }, 200)
             },
             handleEnter () {
