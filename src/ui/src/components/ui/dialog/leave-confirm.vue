@@ -1,11 +1,16 @@
 <template>
-    <bk-dialog></bk-dialog>
+    <span hidden></span>
 </template>
 
 <script>
+    import ConfirmStore from './confirm-store.js'
     export default {
         name: 'cmdb-leave-confirm',
         props: {
+            id: {
+                type: [String, Number, Symbol],
+                required: true
+            },
             active: Boolean,
             title: {
                 type: String,
@@ -17,24 +22,50 @@
             },
             okText: {
                 type: String,
-                default: this.$t('确认')
+                default: ''
             },
             cancelText: {
                 type: String,
-                default: this.$t('取消')
-            },
-            triggers: {
-                type: Array,
-                default () {}
+                default: ''
+            }
+        },
+        data () {
+            return {
+                visible: false,
+                confirmPromise: Promise.resolve(true),
+                confirmResolve: null
             }
         },
         mounted () {
+            ConfirmStore.install(this)
             this.addListener()
         },
-        beforeDestory () {
+        beforeDestroy () {
+            ConfirmStore.uninstall(this)
             this.removeListener()
         },
         methods: {
+            show () {
+                if (this.active) {
+                    this.confirmPromise = new Promise(resolve => {
+                        this.confirmResolve = resolve
+                    })
+                    this.$bkInfo({
+                        title: this.title,
+                        subTitle: this.content,
+                        okText: this.okText || this.$t('确认'),
+                        cancelText: this.cancelText || this.$t('取消'),
+                        confirmFn: () => {
+                            this.confirmResolve(true)
+                        },
+                        cancelFn: () => {
+                            this.confirmResolve(false)
+                        }
+                    })
+                } else {
+                    this.confirmPromise = Promise.resolve(true)
+                }
+            },
             addListener () {
                 window.addEventListener('beforeunload', this.unloadHandler)
                 this.$router.beforeHooks.unshift(this.beforeEachHook)
@@ -46,16 +77,20 @@
             },
             unloadHandler (e) {
                 if (this.active) {
+                    /* eslint-disable-next-line */
                     return (e || window.event).returnValue = this.title
                 }
             },
             async beforeEachHook (to, from, next) {
-                if (this.active) {
-                    const result = await this.promise
-                    result ? next() : next(false)
-                }
-                next()
+                const result = await ConfirmStore.popup(this.id)
+                result ? next() : next(false)
             }
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .leave-confirm-content {
+        text-align: center;
+    }
+</style>
