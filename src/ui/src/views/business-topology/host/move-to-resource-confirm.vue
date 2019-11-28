@@ -1,6 +1,6 @@
 <template>
     <div class="confirm-wrapper">
-        <h2 class="title">{{$t('归还资源池确认')}}</h2>
+        <h2 class="title">{{$t('确认归还资源池')}}</h2>
         <i18n tag="p" path="确认归还资源池主机数量" class="content">
             <span class="count" place="count">{{count}}</span>
         </i18n>

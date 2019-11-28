@@ -159,26 +159,6 @@
                 </div>
             </div>
         </bk-dialog>
-        <bk-dialog
-            v-model="createdSucess.show"
-            :width="490"
-            :close-icon="false"
-            :show-footer="false"
-            :title="createdSucess.title">
-            <div class="created-success">
-                <div class="content">
-                    <i class="bk-icon icon-check-1"></i>
-                    <p>{{$t('服务模板创建成功')}}</p>
-                    <span v-if="!processList.length">
-                        <i class="bk-icon icon-exclamation"></i>
-                        {{$t('创建成功无进程提示')}}
-                    </span>
-                </div>
-                <div class="btn-box">
-                    <bk-button @click="handleCancelOperation">{{$t('返回列表')}}</bk-button>
-                </div>
-            </div>
-        </bk-dialog>
     </div>
 </template>
 
@@ -208,10 +188,6 @@
                 originTemplateValues: {},
                 hasUsed: false,
                 emptyText: this.$t('请选择一级分类'),
-                createdSucess: {
-                    show: false,
-                    name: ''
-                },
                 attribute: {
                     type: null,
                     inst: {
@@ -513,11 +489,8 @@
                         })
                     }, { injectBizId: true })
                 }).then(() => {
-                    if (this.isCreateMode) {
-                        this.createdSucess.show = true
-                    } else {
-                        this.handleCancelOperation()
-                    }
+                    this.$success(this.$t('创建成功'))
+                    this.handleCancelOperation()
                 })
             },
             async handleSubmit () {
@@ -560,7 +533,6 @@
                         service_category_id: this.formData.secondaryClassification
                     }, { injectBizId: true })
                 }).then(data => {
-                    this.createdSucess.name = data.name
                     this.formData.templateId = data.id
                     this.handleSubmitProcessList()
                 })
