@@ -389,16 +389,16 @@
                     console.error(e)
                 }
             },
-            getServiceInstanceDifferences () {
+            async getServiceInstanceDifferences () {
                 try {
-                    this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
+                    const data = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
                         params: this.$injectMetadata({
                             bk_module_ids: [this.currentNode.data.bk_inst_id],
                             service_template_id: this.withTemplate
                         }, { injectBizId: true })
-                    }).then(res => {
-                        this.topoStatus = res[0] && res[0].has_difference
                     })
+                    const difference = data.find(difference => difference.bk_module_id === this.currentNode.data.bk_inst_id)
+                    this.topoStatus = !!difference && difference.has_difference
                 } catch (error) {
                     console.error(error)
                 }
@@ -792,7 +792,7 @@
             },
             handleSyncTemplate () {
                 this.$router.push({
-                    name: 'synchronous',
+                    name: 'syncServiceFromModule',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
                         setId: this.currentNode.parent.data.bk_inst_id

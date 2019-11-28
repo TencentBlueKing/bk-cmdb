@@ -74,5 +74,5 @@ func (s *coreService) TranslateClassificationName(defLang language.DefaultCCLang
 }
 
 func (s *coreService) TranslateOperationChartName(defLang language.DefaultCCLanguageIf, att metadata.ChartConfig) string {
-	return util.FirstNotEmptyString(defLang.Language("operation_chart_"+att.ChartType), att.Name, att.ChartType)
+	return util.FirstNotEmptyString(defLang.Language("operation_chart_"+att.ReportType), att.Name, att.ReportType)
 }

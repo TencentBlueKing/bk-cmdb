@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -10,21 +10,28 @@
  * limitations under the License.
  */
 
-package core
+package util
 
 import (
-	"context"
+	"encoding/json"
+	"fmt"
 
-	"configcenter/src/common/backbone"
-
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
+	"github.com/onsi/ginkgo"
 )
 
-// ContextParams the logics function params
-type ContextParams struct {
-	context.Context
-	*backbone.Engine
-	Error errors.DefaultCCErrorIf
-	Lang  language.DefaultCCLanguageIf
+var (
+	response interface{} = nil
+)
+
+func RegisterResponse(rsp interface{}) {
+	response = rsp
+}
+
+func Fail(message string, callerSkip ...int) {
+	msg := message
+	if response != nil {
+		j, _ := json.MarshalIndent(response, "", "\t")
+		msg = fmt.Sprintf("Test failed, message:\n%v\n\nresponse:\n%s", message, j)
+	}
+	ginkgo.Fail(msg, callerSkip ...)
 }

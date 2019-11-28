@@ -51,20 +51,21 @@
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
+                    clearable
                     font-size="medium"
+                    right-icon="icon-search"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
+                    clearable
                     font-size="medium"
+                    right-icon="icon-search"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
-                <i class="filter-search bk-icon icon-search"
-                    v-show="filter.type !== 'enum'"
-                    @click="handleFilterData"></i>
             </div>
         </div>
         <bk-table class="business-table"

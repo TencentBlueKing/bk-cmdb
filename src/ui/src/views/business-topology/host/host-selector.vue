@@ -1,6 +1,5 @@
 <template>
     <div class="layout clearfix"
-        :style="{ height: $APP.height * 0.45 + 'px' }"
         v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="wrapper">
             <div class="wrapper-column wrapper-left">
@@ -161,7 +160,7 @@
 <style lang="scss" scoped>
     .layout {
         position: relative;
-        max-height: 460px;
+        height: 460px;
         min-height: 300px;
         padding: 0 0 50px;
         .layout-footer {

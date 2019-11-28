@@ -2,59 +2,79 @@
     <div class="create-template-wrapper" v-bkloading="{ isLoading: $loading('getSingleServiceTemplate') }">
         <div class="info-group">
             <h3>{{$t('基本属性')}}</h3>
-            <div class="form-info clearfix">
-                <label class="label-text fl" for="templateName">
-                    {{$t('模板名称')}}
-                    <span class="color-danger">*</span>
-                </label>
-                <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
-                    <bk-input type="text" class="cmdb-form-input" id="templateName"
-                        name="templateName"
-                        :placeholder="$t('请输入模板名称')"
-                        :disabled="!isCreatedType"
-                        v-model.trim="formData.templateName"
-                        v-validate="'required|singlechar|length:256'">
-                    </bk-input>
-                    <p class="form-error">{{errors.first('templateName')}}</p>
+
+            <template v-if="isFormMode">
+                <div class="form-info clearfix">
+                    <label class="label-text fl" for="templateName">
+                        {{$t('模板名称')}}
+                        <span class="color-danger">*</span>
+                    </label>
+                    <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
+                        <bk-input type="text" class="cmdb-form-input" id="templateName"
+                            name="templateName"
+                            :placeholder="$t('请输入模板名称')"
+                            :disabled="!isCreateMode"
+                            v-model.trim="formData.templateName"
+                            v-validate="'required|singlechar|length:256'">
+                        </bk-input>
+                        <p class="form-error">{{errors.first('templateName')}}</p>
+                    </div>
                 </div>
-            </div>
-            <div class="form-info clearfix">
-                <span class="label-text fl">
-                    {{$t('服务分类')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('mainClassificationId') }" style="width: auto;">
-                    <cmdb-selector
-                        class="fl"
-                        :placeholder="$t('请选择一级分类')"
-                        :auto-select="false"
-                        :list="mainList"
-                        v-validate="'required'"
-                        name="mainClassificationId"
-                        v-model="formData['mainClassification']"
-                        @on-selected="handleSelect">
-                    </cmdb-selector>
-                    <p class="form-error">{{errors.first('mainClassificationId')}}</p>
+                <div class="form-info clearfix">
+                    <span class="label-text fl">
+                        {{$t('服务分类')}}
+                        <span class="color-danger">*</span>
+                    </span>
+                    <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('mainClassificationId') }" style="width: auto;">
+                        <cmdb-selector
+                            class="fl"
+                            :placeholder="$t('请选择一级分类')"
+                            :auto-select="false"
+                            :list="mainList"
+                            v-validate="'required'"
+                            name="mainClassificationId"
+                            v-model="formData['mainClassification']"
+                            @on-selected="handleSelect">
+                        </cmdb-selector>
+                        <p class="form-error">{{errors.first('mainClassificationId')}}</p>
+                    </div>
+                    <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('secondaryClassificationId') }" style="width: auto;">
+                        <cmdb-selector
+                            class="fl"
+                            :placeholder="$t('请选择二级分类')"
+                            :auto-select="true"
+                            :list="secondaryList"
+                            :empty-text="emptyText"
+                            v-validate="'required'"
+                            name="secondaryClassificationId"
+                            v-model="formData['secondaryClassification']">
+                        </cmdb-selector>
+                        <p class="form-error">{{errors.first('secondaryClassificationId')}}</p>
+                    </div>
                 </div>
-                <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('secondaryClassificationId') }" style="width: auto;">
-                    <cmdb-selector
-                        class="fl"
-                        :placeholder="$t('请选择二级分类')"
-                        :auto-select="true"
-                        :list="secondaryList"
-                        :empty-text="emptyText"
-                        v-validate="'required'"
-                        name="secondaryClassificationId"
-                        v-model="formData['secondaryClassification']">
-                    </cmdb-selector>
-                    <p class="form-error">{{errors.first('secondaryClassificationId')}}</p>
+            </template>
+
+            <div class="view-group clearfix" v-else>
+                <div class="view-info fl clearfix">
+                    <label class="info-label fl">
+                        {{$t('模板名称')}}
+                    </label>
+                    <span class="info-content" :title="formData.templateName">{{formData.templateName}}</span>
+                </div>
+                <div class="view-info fl clearfix">
+                    <label class="info-label fl">
+                        {{$t('服务分类')}}
+                    </label>
+                    <span class="info-content" :title="getServiceCategory()">
+                        {{getServiceCategory()}}
+                    </span>
                 </div>
             </div>
         </div>
         <div class="info-group">
             <h3>{{$t('服务进程')}}</h3>
             <div class="precess-box">
-                <div class="process-create">
+                <div class="process-create" v-if="isFormMode">
                     <cmdb-auth :auth="$authResources(auth)">
                         <bk-button slot-scope="{ disabled }"
                             class="create-btn"
@@ -82,10 +102,24 @@
                             theme="primary"
                             :disabled="disabled"
                             @click="handleSubmit">
-                            {{isCreatedType ? $t('提交') : $t('保存')}}
+                            {{getButtonText()}}
                         </bk-button>
                     </cmdb-auth>
-                    <bk-button @click="handleReturn">{{$t('取消')}}</bk-button>
+                    <cmdb-auth class="mr5"
+                        :auth="$authResources(auth)"
+                        v-if="!isFormMode && deletable">
+                        <bk-button slot-scope="{ disabled }"
+                            :disabled="disabled"
+                            @click="handleDeleteTemplate">
+                            {{$t('删除')}}
+                        </bk-button>
+                    </cmdb-auth>
+                    <span class="delete-disabled-btn"
+                        v-else-if="!isFormMode && !deletable"
+                        v-bk-tooltips.top="$t('不可删除')">
+                        {{$t('删除')}}
+                    </span>
+                    <bk-button @click="handleReturn" v-show="isFormMode">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
@@ -103,7 +137,7 @@
                     :property-groups="propertyGroups"
                     :inst="attribute.inst.edit"
                     :type="attribute.type"
-                    :is-created-service="isCreatedType"
+                    :is-created-service="isCreateMode"
                     :save-disabled="false"
                     :has-used="hasUsed"
                     @on-submit="handleSaveProcess"
@@ -111,6 +145,21 @@
                 </process-form>
             </template>
         </bk-sideslider>
+        <bk-dialog v-model="showUpdateInfo"
+            :esc-close="false"
+            :mask-close="false"
+            :show-footer="false"
+            :close-icon="false">
+            <div class="update-alert-layout">
+                <i class="bk-icon icon-check-1"></i>
+                <h3>{{$t('修改成功')}}</h3>
+                <div class="btns">
+                    <bk-button class="mr10" theme="primary" v-if="!deletable" @click="handleToSyncInstance">{{$t('同步模块')}}</bk-button>
+                    <bk-button class="mr10" @click="handleToCreateSetTemplate">{{$t('创建集群模板')}}</bk-button>
+                    <bk-button theme="default" @click="handleCancelOperation">{{$t('返回列表')}}</bk-button>
+                </div>
+            </div>
+        </bk-dialog>
         <bk-dialog
             v-model="createdSucess.show"
             :width="490"
@@ -145,7 +194,12 @@
     import processForm from './process-form.vue'
     import processTable from './process'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
-    import { MENU_BUSINESS_SERVICE_TEMPLATE, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_SERVICE_TEMPLATE,
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_SET_TEMPLATE
+    } from '@/dictionary/menu-symbol'
+    import Bus from '@/utils/bus'
     export default {
         components: {
             processTable,
@@ -183,20 +237,26 @@
                     secondaryClassification: '',
                     templateName: '',
                     templateId: ''
-                }
+                },
+                insideMode: 'view',
+                deletable: false,
+                showUpdateInfo: false
             }
         },
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
-            isCreatedType () {
-                return !this.$route.params['templateId']
-            },
             templateId () {
-                return this.$route.params['templateId']
+                return this.$route.params.templateId
+            },
+            isCreateMode () {
+                return this.templateId === undefined
+            },
+            isFormMode () {
+                return this.isCreateMode || this.insideMode === 'edit'
             },
             auth () {
-                if (this.isCreatedType) {
+                if (this.isCreateMode) {
                     return {
                         type: this.$OPERATION.C_SERVICE_TEMPLATE
                     }
@@ -207,19 +267,16 @@
                 }
             }
         },
-        async created () {
+        created () {
+            Bus.$on('module-loaded', count => {
+                this.deletable = !count
+            })
             this.setBreadcrumbs()
             this.processList = this.localProcessTemplate
-            try {
-                await this.reload()
-                if (!this.isCreatedType) {
-                    this.initEdit()
-                }
-            } catch (e) {
-                console.log(e)
-            }
+            this.refresh()
         },
         beforeDestroy () {
+            Bus.$off('module-loaded')
             this.clearLocalProcessTemplate()
         },
         methods: {
@@ -242,8 +299,18 @@
                 'deleteLocalProcessTemplate',
                 'clearLocalProcessTemplate'
             ]),
+            async refresh () {
+                try {
+                    await this.reload()
+                    if (!this.isCreateMode) {
+                        this.initEdit()
+                    }
+                } catch (e) {
+                    console.error(e)
+                }
+            },
             setBreadcrumbs () {
-                if (this.isCreatedType) {
+                if (this.isCreateMode) {
                     this.$store.commit('setTitle', this.$t('新建模板'))
                     this.$store.commit('setBreadcrumbs', [{
                         label: this.$t('服务模板'),
@@ -270,11 +337,11 @@
                 this.formData.templateName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']
                 this.formData.secondaryClassification = this.originTemplateValues['service_category_id']
-                this.hasUsed = this.isCreatedType ? false : Boolean(this.originTemplateValues['service_instance_count'])
+                this.hasUsed = this.isCreateMode ? false : Boolean(this.originTemplateValues['service_instance_count'])
                 this.getProcessList()
             },
             async reload () {
-                if (!this.isCreatedType) {
+                if (!this.isCreateMode) {
                     this.getSingleServiceTemplate()
                 }
                 this.properties = await this.searchObjectAttribute({
@@ -310,7 +377,6 @@
                         config: {
                             requestId: 'getSingleServiceTemplate',
                             globalError: false,
-                            cancelPrevious: true,
                             transformData: false
                         }
                     }).then(res => {
@@ -416,7 +482,7 @@
                 this.$bkInfo({
                     title: this.$t('确认删除模板进程'),
                     confirmFn: () => {
-                        if (this.isCreatedType) {
+                        if (this.isCreateMode) {
                             this.deleteLocalProcessTemplate(template)
                             this.processList = this.localProcessTemplate
                         } else {
@@ -449,7 +515,7 @@
                         })
                     }, { injectBizId: true })
                 }).then(() => {
-                    if (this.isCreatedType) {
+                    if (this.isCreateMode) {
                         this.createdSucess.show = true
                     } else {
                         this.handleCancelOperation()
@@ -457,6 +523,10 @@
                 })
             },
             async handleSubmit () {
+                if (!this.isCreateMode && this.insideMode === 'view') {
+                    this.insideMode = 'edit'
+                    return false
+                }
                 if (!await this.$validator.validateAll()) return
                 if (this.formData.templateId) {
                     this.updateServiceTemplate({
@@ -466,11 +536,10 @@
                             service_category_id: this.formData.secondaryClassification
                         }, { injectBizId: true })
                     }).then(() => {
-                        if (this.isCreatedType) {
+                        if (this.isCreateMode) {
                             this.handleSubmitProcessList()
                         } else {
-                            this.$success(this.$t('保存成功'))
-                            this.handleCancelOperation()
+                            this.showUpdateInfo = true
                         }
                     })
                 } else {
@@ -502,6 +571,11 @@
                 this.$router.replace({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             handleReturn () {
+                if (this.insideMode === 'edit') {
+                    this.insideMode = 'view'
+                    this.refresh()
+                    return
+                }
                 const moduleId = this.$route.params['moduleId']
                 if (moduleId) {
                     this.$router.replace({
@@ -515,6 +589,7 @@
                 }
             },
             handleCancelOperation () {
+                this.showUpdateInfo = false
                 this.$router.replace({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
             },
             handleSliderBeforeClose () {
@@ -535,6 +610,51 @@
                     })
                 }
                 return true
+            },
+            handleDeleteTemplate () {
+                this.$bkInfo({
+                    title: this.$t('确认删除模板'),
+                    subTitle: this.$tc('即将删除服务模板', name, { name: this.formData.templateName }),
+                    extCls: 'bk-dialog-sub-header-center',
+                    confirmFn: async () => {
+                        await this.$store.dispatch('serviceTemplate/deleteServiceTemplate', {
+                            params: {
+                                data: this.$injectMetadata({
+                                    service_template_id: this.templateId
+                                }, {
+                                    injectBizId: true
+                                })
+                            },
+                            config: {
+                                requestId: 'delete_proc_service_template'
+                            }
+                        })
+                        this.$success(this.$t('删除成功'))
+                        this.handleReturn()
+                    }
+                })
+            },
+            getServiceCategory () {
+                const first = this.mainList.find(first => first.id === this.formData.mainClassification) || {}
+                const second = this.allSecondaryList.find(second => second.id === this.formData.secondaryClassification) || {}
+                return `${first.name} / ${second.name}`
+            },
+            getButtonText () {
+                if (this.isCreateMode) {
+                    return this.$t('提交')
+                } else if (this.insideMode === 'view') {
+                    return this.$t('编辑')
+                }
+                return this.$t('保存')
+            },
+            handleToSyncInstance () {
+                Bus.$emit('active-change', 'instance')
+                this.showUpdateInfo = false
+            },
+            handleToCreateSetTemplate () {
+                this.$router.push({
+                    name: MENU_BUSINESS_SET_TEMPLATE
+                })
             }
         }
     }
@@ -542,7 +662,6 @@
 
 <style lang="scss" scoped>
     .create-template-wrapper {
-        padding: 0 20px;
         .info-group {
             h3 {
                 color: #63656e;
@@ -625,6 +744,58 @@
         }
         .btn-box {
             padding: 32px 0 36px;
+        }
+    }
+    .view-group {
+        margin-bottom: 22px;
+        padding-left: 30px;
+        .view-info {
+            width: 250px;
+            margin-right: 20px;
+            font-size: 14px;
+            .info-label:after {
+                content: "：";
+            }
+            .info-content {
+                display: block;
+                @include ellipsis;
+            }
+        }
+    }
+    .delete-disabled-btn {
+        display: inline-block;
+        vertical-align: middle;
+        height: 32px;
+        font-size: 14px;
+        line-height: 32px;
+        padding: 0 15px;
+        background-color: #fff;
+        border: 1px solid #dcdee5;
+        border-radius: 2px;
+        color: #c4c6cc;
+        cursor: not-allowed;
+    }
+    .update-alert-layout {
+        text-align: center;
+        .bk-icon {
+            width: 58px;
+            height: 58px;
+            line-height: 58px;
+            font-size: 30px;
+            color: #fff;
+            border-radius: 50%;
+            background-color: #2dcb56;
+            margin: 8px 0 15px;
+        }
+        h3 {
+            font-size: 24px;
+            color: #313238;
+            font-weight: normal;
+            padding-bottom: 32px;
+        }
+        .btns {
+            font-size: 0;
+            padding-bottom: 20px;
         }
     }
 </style>

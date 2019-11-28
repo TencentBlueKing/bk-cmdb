@@ -452,16 +452,33 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	result, err := ps.diffServiceInstanceWithTemplate(ctx, diffOption)
-	if err != nil {
+
+	if len(diffOption.ModuleIDs) == 0 {
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
 		ctx.RespAutoError(err)
 		return
 	}
+
+	result := make([]*metadata.ModuleDiffWithTemplateDetail, 0)
+	for _, moduleID := range diffOption.ModuleIDs {
+		option := metadata.DiffOneModuleWithTemplateOption{
+			Metadata: diffOption.Metadata,
+			BizID:    diffOption.BizID,
+			ModuleID: moduleID,
+		}
+		oneModuleResult, err := ps.diffServiceInstanceWithTemplate(ctx, option)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		result = append(result, oneModuleResult)
+	}
+
 	ctx.RespEntity(result)
 	return
 }
 
-func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOption metadata.DiffModuleWithTemplateOption) (*metadata.ModuleDiffWithTemplateDetail, errors.CCErrorCoder) {
+func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOption metadata.DiffOneModuleWithTemplateOption) (*metadata.ModuleDiffWithTemplateDetail, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
 
 	// why we need validate metadata here?
@@ -732,6 +749,7 @@ func (ps *ProcServer) diffServiceInstanceWithTemplate(ctx *rest.Contexts, diffOp
 		moduleDifference.HasDifference = true
 	}
 
+	moduleDifference.ModuleID = diffOption.ModuleID
 	return &moduleDifference, nil
 }
 
@@ -806,16 +824,30 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	err := ps.syncServiceInstanceByTemplate(ctx, syncOption)
-	if err != nil {
+
+	if len(syncOption.ModuleIDs) == 0 {
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_ids")
 		ctx.RespAutoError(err)
 		return
+	}
+
+	for _, moduleID := range syncOption.ModuleIDs {
+		option := metadata.SyncModuleServiceInstanceByTemplateOption{
+			Metadata: syncOption.Metadata,
+			BizID:    syncOption.BizID,
+			ModuleID: moduleID,
+		}
+		err := ps.syncServiceInstanceByTemplate(ctx, option)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
 	}
 	ctx.RespEntity(make(map[string]interface{}))
 	return
 }
 
-func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOption metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder {
+func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOption metadata.SyncModuleServiceInstanceByTemplateOption) errors.CCErrorCoder {
 	rid := ctx.Kit.Rid
 
 	bizID := syncOption.BizID

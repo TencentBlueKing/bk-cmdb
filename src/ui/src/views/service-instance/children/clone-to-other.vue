@@ -33,7 +33,7 @@
                 </div>
             </div>
         </div>
-        <cmdb-dialog v-model="dialog.show" :width="850" :show-close-icon="false">
+        <cmdb-dialog v-model="dialog.show" :width="850" :height="460" :show-close-icon="false">
             <component
                 :is="dialog.component"
                 v-bind="dialog.props"

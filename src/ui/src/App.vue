@@ -11,6 +11,11 @@
         <the-header></the-header>
         <router-view class="views-layout" v-bkloading="{ isLoading: isIndex && globalLoading }"></router-view>
         <the-permission-modal ref="permissionModal"></the-permission-modal>
+        <the-login-modal ref="loginModal"
+            v-if="loginUrl"
+            :login-url="loginUrl"
+            :success-url="loginSuccessUrl">
+        </the-login-modal>
         <cmdb-business-selector v-if="businessSelectorVisible" hidden
             @on-select="resolveBusinessSelectorPromise"
             @business-empty="resolveBusinessSelectorPromise">
@@ -21,6 +26,7 @@
 <script>
     import theHeader from '@/components/layout/header'
     import thePermissionModal from '@/components/modal/permission'
+    import theLoginModal from '@blueking/paas-login'
     // import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { MENU_INDEX } from '@/dictionary/menu-symbol'
@@ -29,13 +35,21 @@
         name: 'app',
         components: {
             theHeader,
-            thePermissionModal
+            thePermissionModal,
+            theLoginModal
         },
         data () {
             const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
+            const siteLoginUrl = window.Site.login
+            const loginStrIndex = siteLoginUrl.indexOf('login')
+            let loginModalUrl
+            if (loginStrIndex > -1) {
+                loginModalUrl = siteLoginUrl.substring(0, loginStrIndex) + 'login/plain'
+            }
             return {
                 showBrowserTips,
-                meta: this.$route.meta
+                loginUrl: loginModalUrl,
+                loginSuccessUrl: window.Site.url + 'static/login_success.html'
                 // execMainScrollListener
             }
         },
@@ -54,6 +68,7 @@
             // addResizeListener(this.$refs.mainScroller, execMainResizeListener)
             addResizeListener(this.$el, this.calculateAppHeight)
             window.permissionModal = this.$refs.permissionModal
+            window.loginModal = this.$refs.loginModal
         },
         beforeDestroy () {
             // removeResizeListener(this.$refs.mainScroller, execMainResizeListener)

@@ -22,19 +22,19 @@
             <i18n path="服务实例同步确认提示" tag="p" class="tips">
                 <span place="path">{{treePath}}</span>
             </i18n>
-            <div class="info-tab">
+            <div class="info-tab" ref="tab">
                 <div class="tab-head">
                     <div class="tab-nav">
                         <div v-for="(process, index) in list"
-                            :class="['nav-item', {
+                            :class="['nav-item', 'clearfix', {
                                 'delete-item': process['operational_type'] === 'removed',
                                 'active': showContentId === (process['process_template_name'] + index)
                             }]"
                             :key="index"
                             :title="process['process_template_name']"
                             @click="handleContentView(process['process_template_name'], index)">
-                            <span>{{process['process_template_name']}}</span>
-                            <i :class="['badge', { 'has-read': process['has_read'] }]">{{process['service_instance_count'] | badge}}</i>
+                            <span :class="['fl', { 'has-dot': !process.has_read }]">{{process['process_template_name']}}</span>
+                            <i class="badge fr">{{process['service_instance_count'] | badge}}</i>
                         </div>
                     </div>
                 </div>
@@ -43,39 +43,42 @@
                         v-for="(process, index) in list"
                         v-show="showContentId === (process['process_template_name'] + index)"
                         :key="index">
-                        <div class="change-box">
-                            <div class="title">
+                        <cmdb-collapse class="change-box">
+                            <div class="title" slot="title">
                                 <h3>{{$t('变更内容')}}</h3>
                                 <span v-if="process['operational_type'] === 'changed'">（{{properties[process['process_template_id']].length}}）</span>
                             </div>
-                            <div class="process-name"
-                                v-show="process['operational_type'] === 'changed'">
-                                {{$t('进程名称')}}：<span style="color: #313238;">{{process['process_template_name']}}</span>
-                            </div>
-                            <div class="process-name mb50"
-                                v-show="process['operational_type'] === 'added'">
-                                {{$t('模板中新增进程')}}
-                                <span style="font-weight: bold;">{{process['process_template_name']}}</span>
-                            </div>
-                            <div class="process-name mb50"
-                                v-show="process['operational_type'] === 'removed'">
-                                <span style="font-weight: bold;">{{process['process_template_name']}}</span>
-                                {{$t('从模板中删除')}}
-                            </div>
-                            <div class="process-info clearfix" v-show="process['operational_type'] === 'changed'">
-                                <div class="info-item fl"
-                                    v-for="(attribute, attributeIndex) in properties[process['process_template_id']]"
-                                    :key="attributeIndex">
-                                    {{`${attribute['property_name']}：${attribute['show_value'] ? attribute['show_value'] : '--'}`}}
+                            <div class="change-content">
+                                <div class="process-name"
+                                    v-show="process['operational_type'] === 'changed'">
+                                    {{$t('进程名称')}}：<span style="color: #313238;">{{process['process_template_name']}}</span>
+                                </div>
+                                <div class="process-name mb50"
+                                    v-show="process['operational_type'] === 'added'">
+                                    {{$t('模板中新增进程')}}
+                                    <span style="font-weight: bold;">{{process['process_template_name']}}</span>
+                                </div>
+                                <div class="process-name mb50"
+                                    v-show="process['operational_type'] === 'removed'">
+                                    <span style="font-weight: bold;">{{process['process_template_name']}}</span>
+                                    {{$t('从模板中删除')}}
+                                </div>
+                                <div class="process-info clearfix" v-show="process['operational_type'] === 'changed'">
+                                    <div class="info-item fl"
+                                        v-for="(attribute, attributeIndex) in properties[process['process_template_id']]"
+                                        :key="attributeIndex">
+                                        {{attribute.property_name}}：
+                                        <span class="info-item-value">{{attribute.show_value ? attribute.show_value : '--'}}</span>
+                                    </div>
+                                </div>
+                                <div class="mb50"
+                                    v-show="process['operational_type'] === 'others'">
+                                    {{$t('服务分类')}}：<span style="color: #313238;">{{process['service_category']}}</span>
                                 </div>
                             </div>
-                            <div class="mb50"
-                                v-show="process['operational_type'] === 'others'">
-                                {{$t('服务分类')}}：<span style="color: #313238;">{{process['service_category']}}</span>
-                            </div>
-                        </div>
-                        <div class="instances-box">
-                            <div class="title">
+                        </cmdb-collapse>
+                        <cmdb-collapse class="instances-box" collapse>
+                            <div class="title" slot="title">
                                 <h3>{{$t('涉及实例')}}</h3>
                                 <span>（{{process['service_instances'].length}}）</span>
                             </div>
@@ -97,7 +100,7 @@
                                 @change="handlePageChange"
                                 @limit-change="handleSizeChange">
                             </bk-pagination>
-                        </div>
+                        </cmdb-collapse>
                     </section>
                 </div>
             </div>
@@ -248,10 +251,11 @@
                 'syncServiceInstanceByTemplate'
             ]),
             setBreadcrumbs () {
+                const relative = this.$route.meta.menu.relative
                 this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('服务拓扑'),
+                    label: relative === MENU_BUSINESS_HOST_AND_SERVICE ? this.$t('服务拓扑') : this.$t('服务模板'),
                     route: {
-                        name: MENU_BUSINESS_HOST_AND_SERVICE,
+                        name: relative,
                         query: {
                             node: 'module-' + this.$route.params.moduleId
                         }
@@ -432,18 +436,18 @@
                 const resList = this.$tools.clone(list)
                 return resList.map(item => {
                     const result = item
-                    const property = this.modelProperties.find(property => property['bk_property_id'] === item['property_id'])
-                    if (['enum'].includes(property['bk_property_type'])) {
-                        result['before_value'] = property['option'].find(option => option['id'] === item['property_value'])['name']
-                        result['show_value'] = property['option'].find(option => option['id'] === item['template_property_value']['value'])['name']
-                    } else if (['bool'].includes(property['bk_property_type'])) {
-                        result['before_value'] = item['property_value'] ? this.$t('是') : this.$t('否')
-                        result['show_value'] = item['template_property_value']['value'] ? this.$t('是') : this.$t('否')
+                    const property = this.modelProperties.find(property => property.bk_property_id === item.property_id)
+                    if (['enum'].includes(property.bk_property_type)) {
+                        result.before_value = (property.option.find(option => option.id === item.property_value) || {}).name
+                        result.show_value = (property.option.find(option => option.id === item.template_property_value.value) || {}).name
+                    } else if (['bool'].includes(property.bk_property_type)) {
+                        result.before_value = item.property_value ? this.$t('是') : this.$t('否')
+                        result.show_value = item.template_property_value.value ? this.$t('是') : this.$t('否')
                     } else {
-                        result['before_value'] = item['property_value']
-                        result['show_value'] = item['property_id'] === 'bind_ip'
-                            ? item['template_property_value'] ? item['template_property_value'] : '--'
-                            : item['template_property_value']['value'] ? item['template_property_value']['value'] : '--'
+                        result.before_value = item.property_value
+                        result.show_value = item.property_id === 'bind_ip'
+                            ? item.template_property_value ? item.template_property_value : '--'
+                            : item.template_property_value.value ? item.template_property_value.value : '--'
                     }
                     return result
                 })
@@ -496,7 +500,7 @@
             },
             handleGoBackModule () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    name: this.$route.meta.menu.relative,
                     query: {
                         node: 'module-' + this.routerParams.moduleId
                     }
@@ -551,69 +555,75 @@
         }
         .tips {
             padding-bottom: 20px;
+            font-size: 14px;
             span {
                 font-weight: bold;
             }
         }
         .info-tab {
             @include space-between;
-            max-height: 500px;
+            align-items: flex-start;
+            max-height: calc(100vh - 280px);
             min-height: 300px;
-            height: calc(100% - 160px);
             border: 1px solid #dcdee5;
+            background-color: #fafbfd;
             .tab-head {
-                height: 100%;
                 .tab-nav {
                     @include scrollbar-y;
                     position: relative;
                     width: 200px;
-                    height: 100%;
                     background-color: #fafbfd;
-                    padding-bottom: 20px;
-                    &::after {
-                        content: '';
-                        position: absolute;
-                        top: 0;
-                        right: 0;
-                        width: 1px;
-                        height: 100%;
-                        background-color: #dcdee5;
-                    }
                 }
                 .nav-item {
-                    @include space-between;
                     position: relative;
                     height: 60px;
-                    padding: 0px 14px;
+                    line-height: 58px;
+                    padding: 0 12px 0 14px;
                     border-bottom: 1px solid #dcdee5;
                     cursor: pointer;
                     &.delete-item span {
                         text-decoration: line-through;
                     }
                     span {
+                        max-width: 120px;
+                        position: relative;
                         @include ellipsis;
-                        flex: 1;
                         padding-right: 10px;
-                        font-size: 16px;
+                        font-size: 14px;
+                    }
+                    .has-dot:after {
+                        content: '';
+                        position: absolute;
+                        width: 6px;
+                        height: 6px;
+                        top: 20px;
+                        right: 0;
+                        border-radius: 50%;
+                        background-color: #FF5656;
+                        z-index: 1;
                     }
                     .badge {
                         display: inline-block;
-                        width: 56px;
-                        height: 36px;
-                        line-height: 36px;
-                        font-size: 20px;
+                        padding: 0 8px;
+                        margin: 21px 0;
+                        height: 16px;
+                        line-height: 16px;
+                        font-size: 12px;
                         font-style: normal;
-                        font-weight: bold;
                         text-align: center;
-                        background-color: #ff5656;
+                        background-color: #c4c6cc;
                         color: #ffffff;
-                        border-radius: 20px;
-                        margin-right: -14px;
-                        transform: scale(.5);
-                        &.has-read {
-                            color: #ffffff;
-                            background-color: #c4c6cc;
-                        }
+                        border-radius: 8px;
+                    }
+                    &:after {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        right: 0;
+                        width: 1px;
+                        height: 60px;
+                        background-color: $borderColor;
+                        z-index: 2;
                     }
                     &.active {
                         color: #3a84ff;
@@ -621,36 +631,32 @@
                         span {
                             font-weight: bold;
                         }
-                        &::after {
-                            content: '';
-                            position: absolute;
-                            top: 0;
-                            right: 0;
-                            width: 1px;
-                            height: 60px;
-                            background-color: #ffffff;
-                            z-index: 2;
-                        }
                         &.delete-item {
                             color: #ff5656;
+                        }
+                        &:after {
+                            background-color: #FFF;
                         }
                     }
                 }
             }
             .tab-content {
-                @include scrollbar-y;
                 flex: 1;
-                height: 100%;
                 background-color: #ffffff;
+                border-left: 1px solid $borderColor;
+                margin-left: -1px;
+                min-height: 300px;
+                max-height: calc(100vh - 282px);
+                @include scrollbar-y;
                 .tab-pane {
                     font-size: 14px;
                     padding: 20px 20px 20px 38px;
                     .title {
                         display: flex;
                         align-items: center;
-                        padding-bottom: 24px;
+                        color: $textColor;
                         h3 {
-                            font-size: 16px;
+                            font-size: 14px;
                         }
                         span {
                             color: #c4c6cc;
@@ -667,20 +673,22 @@
                                 padding-right: 20px;
                                 padding-bottom: 20px;
                             }
+                            .info-item-value {
+                                color: #313238;
+                            }
                         }
                     }
                     .service-instances {
-                        @include scrollbar-y;
-                        height: 256px;
+                        padding: 24px 0 0 18px;
                         display: flex;
                         flex-wrap: wrap;
                         align-content: flex-start;
                         .instances-item {
                             @include space-between;
                             width: 240px;
-                            height: 24px;
-                            line-height: 24px;
-                            font-size: 14px;
+                            height: 22px;
+                            line-height: 20px;
+                            font-size: 12px;
                             padding: 0 6px;
                             margin-bottom: 16px;
                             margin-right: 14px;
@@ -691,7 +699,7 @@
                             h6 {
                                 @include ellipsis;
                                 flex: 1;
-                                font-size: 14px;
+                                font-size: 12px;
                                 padding-right: 4px;
                                 font-weight: normal;
                             }
@@ -707,5 +715,8 @@
         .btn-box {
             padding-top: 20px;
         }
+    }
+    .change-content {
+        padding: 24px 0 0 18px;
     }
 </style>

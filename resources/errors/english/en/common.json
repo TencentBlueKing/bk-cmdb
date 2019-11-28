@@ -75,6 +75,7 @@
     "1199077": "operate too many records at once, max: %d",
     "1199078": "forbidden operate inner model instance with common instance API",
     "1199079": "modify field %s forbidden",
+    "1199080": "Parsing property list content failed",
     
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",

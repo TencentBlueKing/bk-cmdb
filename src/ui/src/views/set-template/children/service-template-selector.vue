@@ -4,6 +4,7 @@
             class="search"
             type="text"
             :placeholder="$t('请输入模板名称搜索')"
+            clearable
             right-icon="bk-icon icon-search"
             v-model.trim="searchName"
             @enter="hanldeFilterTemplates">
