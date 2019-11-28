@@ -270,7 +270,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: top;
-                font-size: 12px;
+                font-size: 14px;
                 @include ellipsis;
                 &.required:after{
                     position: absolute;
