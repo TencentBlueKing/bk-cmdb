@@ -375,6 +375,29 @@
             await this.initObjectProperties()
             if (this.type !== 'create') {
                 await this.getUserAPIDetail()
+            } else {
+                this.userProperties.push(...[
+                    {
+                        asstObjId: undefined,
+                        objId: 'host',
+                        objName: '主机',
+                        operator: '$eq',
+                        propertyId: 'operator',
+                        propertyName: '主要维护人',
+                        propertyType: 'objuser',
+                        value: ''
+                    },
+                    {
+                        asstObjId: undefined,
+                        objId: 'host',
+                        objName: '主机',
+                        operator: '$eq',
+                        propertyId: 'bk_cloud_id',
+                        propertyName: '云区域',
+                        propertyType: 'foreignkey',
+                        value: ''
+                    }
+                ])
             }
             await this.initAttributeObject()
         },

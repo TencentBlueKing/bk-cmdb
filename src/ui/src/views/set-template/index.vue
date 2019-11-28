@@ -36,7 +36,7 @@
             </div>
             <div class="fr">
                 <bk-input :style="{ width: '210px' }"
-                    :placeholder="$t('模板名称搜索')"
+                    :placeholder="$t('请输入xx', { name: $t('模板名称') })"
                     clearable
                     right-icon="icon-search"
                     v-model="searchName"
