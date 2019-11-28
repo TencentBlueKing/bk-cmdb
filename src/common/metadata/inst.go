@@ -61,8 +61,8 @@ type BizBasicInfo struct {
 }
 
 type CloudInst struct {
-	CloudID   int64  `bson:"bk_cloud_id"`
-	CloudName string `bson:"bk_cloud_name"`
+	CloudID   int64  `bson:"bk_cloud_id" json:"bk_cloud_id"`
+	CloudName string `bson:"bk_cloud_name" json:"bk_cloud_name"`
 }
 
 type ProcessInst struct {
