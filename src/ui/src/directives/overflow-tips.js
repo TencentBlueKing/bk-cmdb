@@ -17,7 +17,7 @@ const createDom = el => {
     const dom = document.createElement('div')
     const width = parseFloat(css['width']) ? Math.ceil(parseFloat(css['width'])) + 'px' : css['width']
     dom.style.cssText = `width: ${width}; line-height: ${css['line-height']}; font-size: ${css['font-size']}; word-break: ${css['word-break']}`
-    dom.innerText = el.innerText
+    dom.textContent = el.textContent
     return dom
 }
 
