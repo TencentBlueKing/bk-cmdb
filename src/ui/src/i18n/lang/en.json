@@ -1117,5 +1117,12 @@
     "服务模板实例": "Service Template Instance",
     "集群模板配置": "Set Template Config",
     "集群模板实例": "Set Template Instance",
-    "选项": "option"
+    "选项": "option",
+    "正在应用中": "Applying...",
+    "应用异常": "Exception occurred when applying",
+    "应用成功": "Apply success",
+    "应用完成": "Apply done",
+    "应用结果": "Apply {success} host successfully, {fail} host failed.",
+    "立即查看主机": "View Host",
+    "查看失败": "View Failure"
 }
