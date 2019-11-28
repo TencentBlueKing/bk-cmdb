@@ -5,6 +5,7 @@ import (
 
 	"configcenter/src/test"
 	"configcenter/src/test/reporter"
+	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,7 +21,7 @@ var objectClient = topoServerClient.Object()
 var serviceClient = clientSet.ProcServer().Service()
 
 func TestTopoServer(t *testing.T) {
-	RegisterFailHandler(Fail)
+	RegisterFailHandler(util.Fail)
 	reporters := []Reporter{
 		reporter.NewHtmlReporter(test.GetReportDir()+"toposerver.html", test.GetReportUrl(), true),
 	}

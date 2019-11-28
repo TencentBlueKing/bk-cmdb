@@ -44,9 +44,6 @@
                         id: '$in',
                         name: this.$t('等于')
                     }, {
-                        id: '$eq',
-                        name: this.$t('等于')
-                    }, {
                         id: '$ne',
                         name: this.$t('不等于')
                     }]

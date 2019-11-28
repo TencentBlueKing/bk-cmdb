@@ -124,6 +124,10 @@
             this.refresh = debounce(current => {
                 this.handlePageChange(current)
             }, 10)
+            Bus.$on('refresh-list', this.handlePageChange)
+        },
+        beforeDestroy () {
+            Bus.$off('refresh-list', this.handlePageChange)
         },
         methods: {
             setTableHeader () {
@@ -162,7 +166,8 @@
                         id: row.host.bk_host_id
                     },
                     query: {
-                        from: 'business'
+                        from: 'business',
+                        node: this.selectedNode.id
                     }
                 })
             },
@@ -231,7 +236,7 @@
                         count: this.table.selection.length
                     }
                     this.dialog.width = 400
-                    this.dialog.height = 211
+                    this.dialog.height = 231
                     this.dialog.component = MoveToResourceConfirm.name
                 }
                 this.dialog.show = true
