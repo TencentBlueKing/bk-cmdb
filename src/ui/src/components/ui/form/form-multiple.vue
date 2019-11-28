@@ -20,7 +20,7 @@
                                     </bk-checkbox>
                                     <label class="property-name-text"
                                         :for="`property-name-${property['bk_property_id']}`"
-                                        :class="{ required: property['isrequired'] }">
+                                        :class="{ required: property['isrequired'] && editable[property['bk_property_id']] }">
                                         {{property['bk_property_name']}}
                                     </label>
                                     <i class="property-name-tooltips icon icon-cc-tips"
@@ -190,6 +190,9 @@
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             getValidateRules (property) {
+                if (!this.editable[property['bk_property_id']]) {
+                    return {}
+                }
                 return this.$tools.getValidateRules(property)
             },
             getMultipleValues () {
@@ -267,7 +270,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: top;
-                font-size: 12px;
+                font-size: 14px;
                 @include ellipsis;
                 &.required:after{
                     position: absolute;

@@ -175,7 +175,9 @@
             },
             handleReset () {
                 this.$bkInfo({
-                    title: this.$t('是否要还原回系统默认显示属性？'),
+                    title: this.$t('确认还原配置'),
+                    subTitle: this.$t('是否还原为系统默认的列表属性配置？'),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: () => {
                         this.$emit('on-reset')
                     }
