@@ -33,7 +33,8 @@ import (
 type BusinessOperationInterface interface {
 	CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error
-	FindBusiness(params types.ContextParams, fields []string, cond condition.Condition) (count int, results []mapstr.MapStr, err error)
+	// FindBusiness(params types.ContextParams, fields []string, cond condition.Condition) (count int, results []mapstr.MapStr, err error)
+	FindBusiness(params types.ContextParams, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error)
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
 	HasHosts(params types.ContextParams, bizID int64) (bool, error)
@@ -301,16 +302,17 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	return b.inst.DeleteInst(params, bizModel, innerCond, true)
 }
 
-func (b *business) FindBusiness(params types.ContextParams, fields []string, cond condition.Condition) (count int, results []mapstr.MapStr, err error) {
-	cond.Field(common.BKDefaultField).Eq(0)
+func (b *business) FindBusiness(params types.ContextParams, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
+
+	cond.Condition[common.BKDefaultField] = 0
 	query := &metadata.QueryCondition{
-		Fields:    fields,
-		Condition: cond.ToMapStr(),
+		Fields:    cond.Fields,
+		Condition: cond.Condition,
 		Limit: metadata.SearchLimit{
-			Limit:  cond.GetLimit(),
-			Offset: cond.GetStart(),
+			Limit:  int64(cond.Page.Limit),
+			Offset: int64(cond.Page.Start),
 		},
-		SortArr: metadata.NewSearchSortParse().String(cond.GetSort()).ToSearchSortArr(),
+		SortArr: metadata.NewSearchSortParse().String(cond.Page.Sort).ToSearchSortArr(),
 	}
 
 	result, err := b.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDApp, query)
@@ -318,6 +320,11 @@ func (b *business) FindBusiness(params types.ContextParams, fields []string, con
 		blog.ErrorJSON("failed to find business by query condition: %s, err: %s, rid: %s", query, err.Error(), params.ReqID)
 		return 0, nil, err
 	}
+
+	if !result.Result {
+		return 0, nil, params.Err.Errorf(result.Code, result.ErrMsg)
+	}
+
 	return result.Data.Count, result.Data.Info, err
 }
 

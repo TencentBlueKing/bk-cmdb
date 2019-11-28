@@ -8,6 +8,7 @@ import (
 	"configcenter/src/common"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/test"
+	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -31,6 +32,7 @@ var _ = Describe("business test", func() {
 			"time_zone":         "Africa/Accra",
 		}
 		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("eereeede"))
@@ -50,6 +52,7 @@ var _ = Describe("business test", func() {
 			"time_zone":         "Africa/Accra",
 		}
 		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -66,6 +69,7 @@ var _ = Describe("business test", func() {
 			"time_zone":         "Africa/Accra",
 		}
 		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -83,6 +87,7 @@ var _ = Describe("business test", func() {
 			"time_zone":         "Africa/Accra",
 		}
 		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -100,6 +105,7 @@ var _ = Describe("business test", func() {
 			"time_zone":         "Africa/Accra",
 		}
 		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("mmrmm"))
@@ -118,6 +124,7 @@ var _ = Describe("business test", func() {
 			Condition: map[string]interface{}{},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(3))
@@ -137,6 +144,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(3))
@@ -155,6 +163,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -174,6 +183,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(2))
@@ -192,6 +202,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(3))
@@ -210,6 +221,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -222,6 +234,7 @@ var _ = Describe("business test", func() {
 			"life_cycle":  "2",
 		}
 		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", bizId, header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -232,6 +245,7 @@ var _ = Describe("business test", func() {
 			"life_cycle":  "2",
 		}
 		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", "1000", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -242,6 +256,7 @@ var _ = Describe("business test", func() {
 			"life_cycle":  "2",
 		}
 		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", bizId, header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -252,24 +267,28 @@ var _ = Describe("business test", func() {
 			"life_cycle":  "2",
 		}
 		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", bizId, header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
 	It(fmt.Sprintf("update business enable status bk_biz_id = %s", bizId2), func() {
 		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, bizId2, header)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
 
 	It("update nonexist business enable status diable", func() {
 		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, "1000", header)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
 	It("update nonexist business enable status enable", func() {
 		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusEnable, "1000", header)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -285,6 +304,7 @@ var _ = Describe("business test", func() {
 			Condition: map[string]interface{}{},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(2))
@@ -306,6 +326,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -314,6 +335,7 @@ var _ = Describe("business test", func() {
 
 	It(fmt.Sprintf("update business enable status bk_biz_id = %s enable", bizId2), func() {
 		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusEnable, bizId2, header)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -331,6 +353,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
