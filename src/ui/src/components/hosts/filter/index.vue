@@ -32,7 +32,7 @@
             <div class="filter-scroller" ref="scroller">
                 <div class="filter-group" style="padding: 0;">
                     <label class="filter-label">IP</label>
-                    <bk-input type="textarea" v-model="ip.text" :rows="4" :placeholder="$t('请输入IP')"></bk-input>
+                    <bk-input type="textarea" v-model="ip.text" :rows="4" :placeholder="$t('请输入IP，多个IP请使用换行分隔')"></bk-input>
                 </div>
                 <div class="filter-group checkbox-group">
                     <bk-checkbox class="filter-checkbox"
@@ -252,6 +252,22 @@
             initCustomFilterList () {
                 const key = this.$route.meta.filterPropertyKey
                 const customData = this.$store.getters['userCustom/getCustomData'](key, [])
+                if (!customData.length && !this.isCollection) {
+                    customData.push(...[
+                        {
+                            bk_obj_id: 'host',
+                            bk_property_id: 'operator',
+                            operator: '',
+                            value: ''
+                        },
+                        {
+                            bk_obj_id: 'host',
+                            bk_property_id: 'bk_cloud_id',
+                            operator: '',
+                            value: ''
+                        }
+                    ])
+                }
                 this.$store.commit('hosts/setFilterList', customData)
             },
             handleToggleFilter (visible) {

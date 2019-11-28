@@ -1,5 +1,5 @@
 <template>
-    <div class="group-layout" v-bkloading="{ isLoading: $loading() }">
+    <div class="group-layout" v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }">
         <div class="layout-header">
             <bk-button @click="previewShow = true" :disabled="!preview.properties.length">{{$t('字段预览')}}</bk-button>
         </div>
@@ -113,7 +113,7 @@
                                         :disabled="disabled"
                                         @click.stop="handleAddField(group)">
                                         <i class="bk-icon icon-plus"></i>
-                                        {{$t('添加')}}
+                                        {{customObjId ? $t('新建业务字段') : $t('添加')}}
                                     </bk-button>
                                 </cmdb-auth>
                             </li>
@@ -129,7 +129,7 @@
                             :disabled="disabled || activeModel['bk_ispaused']"
                             @click.stop="handleAddGroup">
                             <i class="bk-icon icon-plus-circle"></i>
-                            {{$t('添加分组')}}
+                            {{customObjId ? $t('新建业务分组') : $t('添加分组')}}
                         </bk-button>
                     </cmdb-auth>
                 </div>
@@ -177,6 +177,7 @@
                     <span class="color-danger">*</span>
                     <div class="cmdb-form-item" :class="{ 'is-error': errors.has('groupName') }">
                         <bk-input v-model.trim="groupForm.groupName"
+                            :placeholder="$t('请输入xx', { name: $t('分组名称') })"
                             name="groupName"
                             v-validate="'required'">
                         </bk-input>
@@ -1075,7 +1076,7 @@
             color: #3a84ff;
             font-size: 16px;
             &.is-disabled {
-                color: #000000;
+                color: #C4C6cc;
                 .icon {
                     color: #63656E;
                 }
@@ -1154,5 +1155,11 @@
                 }
             }
         }
+    }
+</style>
+
+<style lang="scss">
+    .field-loading {
+        position: sticky !important;
     }
 </style>

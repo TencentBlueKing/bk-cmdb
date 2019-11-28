@@ -41,7 +41,7 @@
                 </cmdb-selector>
                 <bk-input type="text"
                     class="filter-search fl"
-                    :placeholder="$t('模板名称搜索')"
+                    :placeholder="$t('请输入xx', { name: $t('模板名称') })"
                     :right-icon="'bk-icon icon-search'"
                     clearable
                     font-size="medium"

@@ -501,7 +501,8 @@
                             requestId: this.request.confirm
                         }
                     )
-                    this.$success('转移成功')
+                    const success = this.type === 'remove' ? '移除成功' : '转移成功'
+                    this.$success(this.$t(success))
                     this.redirect()
                 } catch (e) {
                     console.error(e)

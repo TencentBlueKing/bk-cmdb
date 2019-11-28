@@ -5,7 +5,7 @@
                 <div class="fr">
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
                         clearable
-                        :placeholder="$t('请输入拓扑路径关键词')"
+                        :placeholder="$t('请输入拓扑路径')"
                         v-model.trim="table.filter"
                         @change="handleFilter">
                     </bk-input>
@@ -24,14 +24,14 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')">
                     <template slot-scope="{ row }">
-                        <bk-button text :disabled="isSyncDisabled(row)" @click="handleSync(row)">{{$t('去同步')}}</bk-button>
+                        <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="$t('已经是最新，无需同步')">{{$t('去同步')}}</span>
+                        <bk-button v-else text :disabled="isSyncDisabled(row)" @click="handleSync(row)">{{$t('去同步')}}</bk-button>
                     </template>
                 </bk-table-column>
                 <cmdb-table-empty slot="empty" :stuff="table.stuff">
                     <div>
                         <i18n path="空服务模板实例提示" tag="div">
-                            <bk-button style="font-size: 14px;" text @click="handleToCreatedSetTemplate" place="topoLink">{{$t('集群模板')}}</bk-button>
-                            <bk-button style="font-size: 14px;" text @click="handleToCreatedInstance" place="setLink">{{$t('创建服务实例')}}</bk-button>
+                            <bk-button style="font-size: 14px;" text @click="handleToCreatedInstance" place="link">{{$t('创建服务实例')}}</bk-button>
                         </i18n>
                     </div>
                 </cmdb-table-empty>
@@ -45,10 +45,7 @@
     import { time } from '@/filters/formatter'
     import debounce from 'lodash.debounce'
     import Bus from '@/utils/bus'
-    import {
-        MENU_BUSINESS_SET_TEMPLATE,
-        MENU_BUSINESS_HOST_AND_SERVICE
-    } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         filters: {
             time
@@ -191,9 +188,6 @@
                 const timeB = (new Date(rowB.last_time)).getTime()
                 return timeA - timeB
             },
-            handleToCreatedSetTemplate () {
-                this.$router.push({ name: MENU_BUSINESS_SET_TEMPLATE })
-            },
             handleToCreatedInstance () {
                 this.$router.push({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             }
@@ -216,6 +210,11 @@
             .icon-cc-updating {
                 color: #C4C6CC;
             }
+        }
+        .latest-sync {
+            font-size: 12px;
+            cursor: not-allowed;
+            color: #DCDEE5;
         }
     }
 </style>

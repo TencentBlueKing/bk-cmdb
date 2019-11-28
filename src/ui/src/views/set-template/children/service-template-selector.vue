@@ -15,17 +15,30 @@
             :style="{ height: !!templates.length ? '264px' : '306px' }"
             :class="{ 'is-loading': $loading('getServiceTemplate') }">
             <template v-if="templates.length">
-                <li class="template-item fl clearfix"
-                    v-for="(template, index) in templates"
-                    :class="{
-                        'is-selected': localSelected.includes(template.id),
-                        'is-middle': index % 3 === 1
-                    }"
-                    :key="template.id"
-                    @click="handleClick(template)">
-                    <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
-                    <span class="template-name" :title="template.name">{{template.name}}</span>
-                </li>
+                <template v-for="(template, index) in templates">
+                    <li v-if="$parent.$parent.serviceExistHost(template.id)"
+                        class="template-item disabled fl clearfix"
+                        :class="{
+                            'is-selected': localSelected.includes(template.id),
+                            'is-middle': index % 3 === 1
+                        }"
+                        :key="template.id"
+                        v-bk-tooltips="$t('该模块下有主机不可取消')">
+                        <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
+                        <span class="template-name" :title="template.name">{{template.name}}</span>
+                    </li>
+                    <li v-else
+                        class="template-item fl clearfix"
+                        :class="{
+                            'is-selected': localSelected.includes(template.id),
+                            'is-middle': index % 3 === 1
+                        }"
+                        :key="template.id"
+                        @click="handleClick(template)">
+                        <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
+                        <span class="template-name" :title="template.name">{{template.name}}</span>
+                    </li>
+                </template>
             </template>
             <li class="template-empty" v-else>
                 <div class="empty-content">
@@ -45,9 +58,11 @@
         props: {
             selected: {
                 type: Array,
-                default () {
-                    return []
-                }
+                default: () => []
+            },
+            servicesHost: {
+                type: Array,
+                default: () => []
             }
         },
         data () {
@@ -138,6 +153,13 @@
                     border-radius: initial;
                     background-color: initial;
                     color: #3A84FF;
+                }
+            }
+            &.disabled {
+                cursor: not-allowed;
+                .select-icon {
+                    color: #C4C6CC;
+                    cursor: not-allowed;
                 }
             }
             .select-icon {
