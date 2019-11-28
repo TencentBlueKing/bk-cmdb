@@ -39,18 +39,6 @@
                         <span class="template-name" :title="template.name">{{template.name}}</span>
                     </li>
                 </template>
-                <!-- <li class="template-item fl clearfix"
-                    v-for="(template, index) in templates"
-                    :class="{
-                        'is-selected': localSelected.includes(template.id),
-                        'is-middle': index % 3 === 1,
-                        'disabled': $parent.$parent.serviceExistHost(template.id)
-                    }"
-                    :key="template.id"
-                    @click="handleClick(template, $parent.$parent.serviceExistHost(template.id))">
-                    <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
-                    <span class="template-name" :title="template.name">{{template.name}}</span>
-                </li> -->
             </template>
             <li class="template-empty" v-else>
                 <div class="empty-content">
