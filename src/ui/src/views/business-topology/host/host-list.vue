@@ -27,7 +27,7 @@
                 </div>
             </bk-table-column>
         </bk-table>
-        <cmdb-dialog v-model="dialog.show" :width="dialog.width">
+        <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="dialog.height">
             <component
                 :is="dialog.component"
                 v-bind="dialog.props"
@@ -70,8 +70,7 @@
                     header: [],
                     selection: [],
                     sort: 'bk_host_id',
-                    pagination: this.$tools.getDefaultPaginationConfig(),
-                    refreshOptions: {}
+                    pagination: this.$tools.getDefaultPaginationConfig()
                 },
                 columnsConfig: {
                     selected: [],
@@ -79,6 +78,7 @@
                 },
                 dialog: {
                     width: 720,
+                    height: 460,
                     show: false,
                     component: null,
                     props: {}
@@ -121,8 +121,7 @@
             }
         },
         created () {
-            this.refresh = debounce((current, options = {}) => {
-                this.table.refreshOptions = options
+            this.refresh = debounce(current => {
                 this.handlePageChange(current)
             }, 10)
         },
@@ -182,13 +181,6 @@
                     })
                     this.table.data = result.info
                     this.table.pagination.count = result.count
-                    if (this.table.refreshOptions.refresh) {
-                        Bus.$emit('refresh-count', {
-                            type: 'host_count',
-                            count: result.count,
-                            node: this.table.refreshOptions.node
-                        })
-                    }
                 } catch (e) {
                     console.error(e)
                     this.table.data = []
@@ -232,12 +224,14 @@
                         title: type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块')
                     }
                     this.dialog.width = 720
+                    this.dialog.height = 460
                     this.dialog.component = ModuleSelector.name
                 } else {
                     this.dialog.props = {
                         count: this.table.selection.length
                     }
                     this.dialog.width = 400
+                    this.dialog.height = 211
                     this.dialog.component = MoveToResourceConfirm.name
                 }
                 this.dialog.show = true
@@ -281,10 +275,12 @@
                             requestId: this.request.moveToIdleModule
                         }
                     )
-                    this.refresh(1, {
-                        refresh: true,
-                        node: selectedNode
+                    Bus.$emit('refresh-count', {
+                        type: 'host_count',
+                        hosts: [...this.table.selection],
+                        target: internalModule
                     })
+                    this.refresh(1)
                     this.table.selection = []
                     this.$success('转移成功')
                 } catch (e) {
@@ -307,7 +303,6 @@
             },
             async moveHostToResource () {
                 try {
-                    const selectedNode = this.selectedNode
                     await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
                         params: {
                             bk_biz_id: this.bizId,
@@ -317,11 +312,12 @@
                             requestId: this.request.moveToResource
                         }
                     })
-                    this.table.selection = []
-                    this.refresh(1, {
-                        refresh: true,
-                        node: selectedNode
+                    Bus.$emit('refresh-count', {
+                        type: 'host_count',
+                        hosts: [...this.table.selection]
                     })
+                    this.table.selection = []
+                    this.refresh(1)
                     this.$success('转移成功')
                 } catch (e) {
                     console.error(e)
@@ -332,6 +328,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .list-layout {
+        overflow: hidden;
+    }
     .host-table {
         margin-top: 12px;
     }

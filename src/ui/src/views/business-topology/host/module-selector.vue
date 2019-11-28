@@ -1,12 +1,11 @@
 <template>
     <div class="layout"
-        :style="{ height: $APP.height * 0.55 + 'px' }"
         v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="wrapper">
             <div class="wrapper-column wrapper-left">
                 <h2 class="title">{{title}}</h2>
                 <h3 class="subtitle">{{$t('请勾选需要转到的模块')}}</h3>
-                <bk-input class="tree-filter" right-icon="icon-search" v-model="filter" :placeholder="$t('请输入关键词')"></bk-input>
+                <bk-input class="tree-filter" clearable right-icon="icon-search" v-model="filter" :placeholder="$t('请输入关键词')"></bk-input>
                 <bk-big-tree ref="tree" class="topology-tree"
                     :default-expand-all="moduleType === 'idle'"
                     :options="{
@@ -265,7 +264,7 @@
 <style lang="scss" scoped>
     $leftPadding: 0 12px 0 23px;
     .layout {
-        max-height: 540px;
+        height: 460px;
         min-height: 300px;
         padding: 0 0 50px;
         position: relative;

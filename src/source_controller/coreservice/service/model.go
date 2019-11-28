@@ -421,7 +421,7 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 		return dataResult, err
 	}
 
-	// translate
+	// translate 主机内置字段bk_state不做翻译
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
 		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])

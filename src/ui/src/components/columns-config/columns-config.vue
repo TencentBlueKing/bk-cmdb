@@ -4,6 +4,7 @@
             <div class="wrapper-header unselected-header">
                 <bk-input class="header-filter"
                     type="text"
+                    clearable
                     right-icon="bk-icon icon-search"
                     :placeholder="$t('搜索属性')"
                     v-model.trim="filter">

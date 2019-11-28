@@ -38,10 +38,11 @@ type Logics struct {
 	ccErr       errors.DefaultCCErrorIf
 	ccLang      language.DefaultCCLanguageIf
 	AuthManager *extensions.AuthManager
+	timerSpec   string
 }
 
 // NewLogics get logics handle
-func NewLogics(b *backbone.Engine, header http.Header, authManager *extensions.AuthManager) *Logics {
+func NewLogics(b *backbone.Engine, header http.Header, authManager *extensions.AuthManager, spec string) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
 		Engine:      b,
@@ -52,6 +53,7 @@ func NewLogics(b *backbone.Engine, header http.Header, authManager *extensions.A
 		user:        util.GetUser(header),
 		ownerID:     util.GetOwnerID(header),
 		AuthManager: authManager,
+		timerSpec:   spec,
 	}
 }
 
@@ -68,13 +70,14 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 		header.Set(common.BKHTTPCCRequestID, rid)
 	}
 	newLgc := &Logics{
-		header:  header,
-		Engine:  lgc.Engine,
-		rid:     rid,
-		cache:   lgc.cache,
-		esbServ: lgc.esbServ,
-		user:    util.GetUser(header),
-		ownerID: util.GetOwnerID(header),
+		header:    header,
+		Engine:    lgc.Engine,
+		rid:       rid,
+		cache:     lgc.cache,
+		esbServ:   lgc.esbServ,
+		user:      util.GetUser(header),
+		ownerID:   util.GetOwnerID(header),
+		timerSpec: lgc.timerSpec,
 	}
 	// if language not exist, use old language
 	if lang == "" {

@@ -29,6 +29,8 @@ import tips from './other/tips.vue'
 import dialog from './dialog/dialog.vue'
 import auth from './auth/auth.vue'
 import tableEmpty from './table-empty/table-empty.vue'
+import list from './form/list.vue'
+import leaveConfirm from './dialog/leave-confirm.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -61,7 +63,9 @@ const install = (Vue, opts = {}) => {
         dialog,
         cloudSelector,
         auth,
-        tableEmpty
+        tableEmpty,
+        list,
+        leaveConfirm
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -99,5 +103,7 @@ export default {
     dialog,
     cloudSelector,
     auth,
-    tableEmpty
+    tableEmpty,
+    list,
+    leaveConfirm
 }

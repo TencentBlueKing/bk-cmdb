@@ -245,7 +245,9 @@
                 }
             },
             isCollection (menu) {
-                return menu.id.startsWith('collection')
+                return false
+                // innerdocs 1437
+                // return menu.id.startsWith('collection')
             },
             handleMouseEnter () {
                 if (this.timer) {

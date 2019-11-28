@@ -71,6 +71,7 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <div slot-scope="{ row }" :title="row[column.id]">{{row[column.id]}}</div>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">

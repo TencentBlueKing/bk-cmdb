@@ -102,11 +102,11 @@ func (s *coreService) SearchChartWithPosition(params core.ContextParams, pathPar
 		}, err
 	}
 
-	for _, chart := range result.Host {
-		chart.Name = s.TranslateOperationChartName(params.Lang, chart)
+	for index, chart := range result.Host {
+		result.Host[index].Name = s.TranslateOperationChartName(params.Lang, chart)
 	}
-	for _, chart := range result.Inst {
-		chart.Name = s.TranslateOperationChartName(params.Lang, chart)
+	for index, chart := range result.Inst {
+		result.Inst[index].Name = s.TranslateOperationChartName(params.Lang, chart)
 	}
 
 	count, err := s.db.Table(common.BKTableNameChartConfig).Find(opt).Count(params.Context)

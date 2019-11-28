@@ -103,7 +103,7 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams, wg *sync.Wait
 
 	innerObject := []string{"host", "biz", "set", "cloud", "module", "process", "plat"}
 	cond := mapstr.MapStr{}
-	cond["bk_obj_id"] = mapstr.MapStr{"$nin": innerObject}
+	cond[common.BKObjIDField] = mapstr.MapStr{"$nin": innerObject}
 	modelData := make([]metadata.Object, 0)
 	if err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).All(ctx, &modelData); nil != err {
 		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, cond, err.Error())

@@ -202,7 +202,7 @@
             }
             .property-name {
                 position: relative;
-                width: 150px;
+                width: 160px;
                 line-height: 32px;
                 padding: 0 16px 0 36px;
                 font-size: 14px;
@@ -216,7 +216,7 @@
             }
             .property-value {
                 margin: 6px 0 0 4px;
-                max-width: 296px;
+                max-width: 286px;
                 font-size: 14px;
                 color: #313237;
                 overflow:hidden;

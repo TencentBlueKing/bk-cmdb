@@ -3,6 +3,7 @@
         <div class="tree-wrapper">
             <bk-big-tree ref="tree" class="tree"
                 :lazy-method="loadHost"
+                :lazy-disabled="isLazyDisabled"
                 :show-checkbox="shouldShowCheckbox"
                 :selectable="false"
                 :show-link-line="true"
@@ -36,6 +37,7 @@
             </bk-big-tree>
         </div>
         <bk-input class="filter"
+            clearable
             left-icon="icon-search"
             :placeholder="$t('筛选')"
             v-model="filter">
@@ -161,7 +163,6 @@
                 try {
                     const result = await this.searchHost(node)
                     const data = []
-                    const leaf = []
                     result.info.forEach(item => {
                         const nodeData = {
                             bk_obj_id: 'host',
@@ -171,7 +172,6 @@
                             item: item
                         }
                         data.push(nodeData)
-                        leaf.push(this.getNodeId(nodeData))
                         this.$set(this.hostMap, item.host.bk_host_id, item)
                     })
                     this.$set(node.data, 'child', result.info)
@@ -183,11 +183,14 @@
                             }
                         })
                     }, 0)
-                    return { data, leaf }
+                    return { data }
                 } catch (e) {
                     console.log(e)
-                    return { data: [], leaf: [] }
+                    return { data: [] }
                 }
+            },
+            isLazyDisabled (node) {
+                return node.data.bk_obj_id === 'host' || node.data.host_count === 0
             },
             searchHost (node) {
                 const params = {

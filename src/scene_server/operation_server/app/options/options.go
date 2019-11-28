@@ -31,6 +31,7 @@ type Config struct {
 	Mongo     mongo.Config
 	Redis     redis.Config
 	Auth      authcenter.AuthConfig
+	Timer     string
 }
 
 func NewServerOption() *ServerOption {

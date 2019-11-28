@@ -556,8 +556,6 @@ func convStrToCCType(val string, attr metadata.Attribute) (interface{}, error) {
 		return util.GetInt64ByInterface(val)
 	case common.FieldTypeFloat:
 		return util.GetFloat64ByInterface(val)
-	case common.FieldTypeForeignKey:
-		return util.GetInt64ByInterface(val)
 
 	default:
 		return val, nil

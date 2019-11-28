@@ -13,7 +13,7 @@
                     <span v-else>{{row[column.id] || '--'}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')" prop="operation">
+            <bk-table-column :label="$t('操作')" prop="operation" v-if="$parent.isFormMode">
                 <template slot-scope="{ row }">
                     <cmdb-auth :auth="$authResources(auth)">
                         <bk-button slot-scope="{ disabled }"

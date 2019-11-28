@@ -232,6 +232,9 @@ const (
 	// BKAssetIDField  the asset id field
 	BKAssetIDField = "bk_asset_id"
 
+	// BKSNField  the sn  field
+	BKSNField = "bk_sn"
+
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
 
@@ -708,20 +711,14 @@ const (
 	// FieldTypeUser the user field type
 	FieldTypeUser string = "objuser"
 
-	// FieldTypeSingleAsst the single association
-	FieldTypeSingleAsst string = "singleasst"
-
-	// FieldTypeMultiAsst the multi association
-	FieldTypeMultiAsst string = "multiasst"
-
-	// FieldTypeForeignKey the multi association
-	FieldTypeForeignKey string = "foreignkey"
-
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"
 
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
+
+	// FieldTypeList the lis type
+	FieldTypeList string = "list"
 
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
@@ -1115,7 +1112,11 @@ const (
 	DeleteObject         = "delete object"
 	UpdateObject         = "update object"
 	OperationDescription = "op_desc"
+	OptionOther          = "其他"
+	TimerPattern         = "^[\\d]+\\:[\\d]+$"
 	SyncSetTaskName      = "sync-settemplate2set"
+
+	BKHostState = "bk_state"
 )
 
 // 云同步

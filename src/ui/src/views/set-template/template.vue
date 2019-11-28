@@ -4,10 +4,10 @@
             <bk-tab class="info-tab"
                 type="unborder-card"
                 :active.sync="active">
-                <bk-tab-panel name="setting" :label="$t('模板配置')">
+                <bk-tab-panel name="setting" :label="$t('集群模板配置')">
                     <set-template-config class="template-config-view"></set-template-config>
                 </bk-tab-panel>
-                <bk-tab-panel name="instance" render-directive="if" :label="$t('已应用集群')">
+                <bk-tab-panel name="instance" render-directive="if" :label="$t('集群模板实例')">
                     <set-template-instance :template-id="templateId"></set-template-instance>
                 </bk-tab-panel>
             </bk-tab>

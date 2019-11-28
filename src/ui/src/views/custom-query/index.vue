@@ -20,6 +20,7 @@
             <div class="api-input fr">
                 <bk-input type="text" class="cmdb-form-input"
                     right-icon="bk-icon icon-search"
+                    clearable
                     v-model="filter.name"
                     font-size="medium"
                     :placeholder="$t('快速查询')"

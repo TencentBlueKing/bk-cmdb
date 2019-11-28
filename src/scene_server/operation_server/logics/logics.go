@@ -21,6 +21,8 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+
+	"github.com/robfig/cron"
 )
 
 func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
@@ -104,37 +106,6 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 	return result.Data, nil
 }
 
-func (lgc *Logics) TimerFreshData(ctx context.Context) {
-	opt := mapstr.MapStr{}
-	// 检测cc_chartData集合是否存在
-	for {
-		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
-		if err != nil {
-			blog.Error("statistic chart data fail, err: %v, rid: %v", err)
-			time.Sleep(10 * time.Second)
-			continue
-		}
-		if resp.Data {
-			blog.V(3).Info("collection cc_ChartData inited")
-			break
-		}
-		time.Sleep(10 * time.Second)
-		blog.V(3).Info("waiting collection cc_ChartData init")
-	}
-
-	ticker := time.NewTicker(24 * time.Hour)
-	for range ticker.C {
-		blog.V(3).Info("begin statistic chart data, time: %v", time.Now())
-		// 主服务器跑定时
-		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
-		if isMaster {
-			if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
-				blog.Error("start statistic chart data timer fail, err: %v", err)
-			}
-		}
-	}
-}
-
 func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {
 	switch chartInfo.ReportType {
 	case common.BizModuleHostChart:
@@ -157,4 +128,53 @@ func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig)
 		}
 		return result.Data, nil
 	}
+}
+
+func (lgc *Logics) TimerFreshData(ctx context.Context) {
+	lgc.CheckTableExist(ctx)
+
+	c := cron.New()
+	spec := lgc.timerSpec // 从配置文件读取的时间
+	_, err := c.AddFunc(spec, func() {
+		blog.V(3).Infof("begin statistic chart data, time: %v", time.Now())
+		// 主服务器跑定时
+		opt := mapstr.MapStr{}
+		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
+		if isMaster {
+			if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
+				blog.Error("statistic chart data fail, err: %v", err)
+			}
+		}
+	})
+
+	if err != nil {
+		blog.Errorf("new cron failed, please contact developer, err: %v", err)
+		return
+	}
+	c.Start()
+
+	select {
+	case <-ctx.Done():
+		return
+	}
+}
+
+// CheckTableExist 检测cc_chartData集合是否存在
+func (lgc *Logics) CheckTableExist(ctx context.Context) {
+	opt := mapstr.MapStr{}
+	for {
+		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
+		if err != nil {
+			blog.Error("statistic chart data fail, err: %v", err)
+			time.Sleep(10 * time.Second)
+			continue
+		}
+		if resp.Data {
+			blog.V(3).Info("collection cc_ChartData inited")
+			break
+		}
+		time.Sleep(10 * time.Second)
+		blog.V(3).Info("waiting collection cc_ChartData init")
+	}
+	return
 }

@@ -204,12 +204,18 @@
             },
             changedValues () {
                 const changedValues = {}
-                if (!this.values['bind_ip']['value']) this.values['bind_ip']['value'] = ''
-                for (const propertyId in this.values) {
-                    if (JSON.stringify(this.values[propertyId]) !== JSON.stringify(this.refrenceValues[propertyId])) {
+                if (!this.values['bind_ip']['value']) {
+                    this.$set(this.values.bind_ip, 'value', '')
+                    this.$set(this.refrenceValues.bind_ip, 'value', '')
+                }
+                Object.keys(this.values).forEach(propertyId => {
+                    const isChange = Object.keys(this.values[propertyId]).some(key => {
+                        return JSON.stringify(this.values[propertyId][key]) !== JSON.stringify(this.refrenceValues[propertyId][key])
+                    })
+                    if (isChange) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
-                }
+                })
                 return changedValues
             },
             hasChange () {
