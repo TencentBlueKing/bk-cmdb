@@ -15,10 +15,6 @@
             return {
             }
         },
-        computed: {
-        },
-        watch: {
-        },
         created () {
             this.setBreadcrumbs()
         },

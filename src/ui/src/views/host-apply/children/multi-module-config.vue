@@ -21,10 +21,10 @@
             </div>
             <div class="config-item">
                 <div class="item-label">
-                    {{$t(isDel ? '请勾选要删除的字段' : '请添加自动应用的字段')}}
+                    {{$t(isDel ? '请勾选要删除的字段：' : '已配置的字段：')}}
                 </div>
                 <div class="item-content">
-                    <bk-button theme="default" icon="plus" @click="handleChooseField" class="choose-button" v-if="!isDel">添加字段</bk-button>
+                    <bk-button theme="default" icon="plus" @click="handleChooseField" class="choose-button" v-if="!isDel">选择字段</bk-button>
                     <div class="config-table" v-show="checkedPropertyIdList.length">
                         <property-config-table
                             ref="configEditTable"
@@ -76,7 +76,7 @@
                 },
                 selectedPropertyRow: [],
                 propertyModalVisiable: false,
-                nextButtonDisabled: true,
+                nextButtonDisabled: false,
                 delButtonDisabled: true
             }
         },
@@ -210,7 +210,20 @@
                 this.$bkInfo({
                     title: this.$t('确认删除自动应用字段？'),
                     subTitle: this.$t('删除后，将会移除字段在对应模块中的配置'),
-                    confirmFn: () => {
+                    confirmFn: async () => {
+                        const ruleIds = this.selectedPropertyRow.reduce((acc, cur) => acc.concat(cur.__extra__.moduleList.map(item => item.id)), [])
+                        try {
+                            await this.$store.dispatch('hostApply/deleteRules', {
+                                bizId: this.bizId,
+                                params: {
+                                    data: {
+                                        host_apply_rule_ids: ruleIds
+                                    }
+                                }
+                            })
+                        } catch (e) {
+                            console.log(e)
+                        }
                     }
                 })
             },

@@ -1,11 +1,12 @@
 <template>
     <div class="property-confirm-table">
         <bk-table
-            :data="data"
+            :data="tableList"
             :pagination="pagination"
             :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 240"
             @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
             @row-click="handleRowClick"
         >
             <bk-table-column :label="$t('内网IP')" prop="expired_host.bk_host_innerip" class-name="is-highlight"></bk-table-column>
@@ -17,17 +18,14 @@
                     <div class="cell-change-value" v-html="getChangeValue(row)"></div>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')">
-                <template slot-scope="{}">
-                    <bk-button theme="primary" text>处理冲突</bk-button>
-                </template>
-            </bk-table-column>
+            <bk-table-column :label="$t('操作')" class-name="is-highlight" :formatter="getOperationColumnText"></bk-table-column>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
             :width="800"
             :is-show.sync="slider.isShow"
             :title="slider.title"
+            @hidden="handleSliderCancel"
         >
             <template slot="content">
                 <cmdb-details
@@ -37,7 +35,15 @@
                     :properties="details.properties"
                     :property-groups="details.propertyGroups">
                 </cmdb-details>
-                <conflict-resolve v-else-if="slider.content === 'conflict'"></conflict-resolve>
+                <conflict-resolve
+                    v-else-if="slider.content === 'conflict'"
+                    ref="conflictResolve"
+                    :data-row="currentRow"
+                    :data-cache="conflictResolveCache"
+                    @cancel="handleSliderCancel"
+                    @save="handleConflictSave"
+                >
+                </conflict-resolve>
             </template>
         </bk-sideslider>
     </div>
@@ -51,7 +57,7 @@
             conflictResolve
         },
         props: {
-            data: {
+            list: {
                 type: Array,
                 default: () => ([])
             },
@@ -63,8 +69,8 @@
             return {
                 pagination: {
                     current: 1,
-                    count: this.total,
-                    limit: 20
+                    count: 0,
+                    ...this.$tools.getDefaultPaginationConfig()
                 },
                 details: {
                     show: false,
@@ -78,7 +84,10 @@
                     isShow: false,
                     content: '',
                     title: this.$t('拓扑显示设置')
-                }
+                },
+                currentRow: {},
+                conflictResolveResult: {},
+                tableList: []
             }
         },
         computed: {
@@ -86,12 +95,23 @@
                 'getModelById'
             ]),
             ...mapGetters('hosts', ['configPropertyList']),
-            ...mapState('hosts', ['propertyList'])
+            ...mapState('hosts', ['propertyList']),
+            conflictResolveCache () {
+                const key = this.currentRow.bk_host_id
+                return this.conflictResolveResult[key] || []
+            }
         },
         watch: {
+            list (data) {
+                this.setTableList()
+            },
+            total (value) {
+                this.pagination.count = value
+            }
         },
         created () {
             this.getHostPropertyList()
+            this.setTableList()
         },
         methods: {
             ...mapActions('objectModelProperty', [
@@ -115,6 +135,10 @@
                     console.error(e)
                 }
             },
+            setTableList () {
+                const { start, limit } = this.$tools.getPageParams(this.pagination)
+                this.tableList = this.list.slice(start, start + limit)
+            },
             getChangeValue (row) {
                 const { conflicts, update_fields: updateFields } = row
                 const valueMap = {}
@@ -125,7 +149,8 @@
                 const result = fieldList.map(item => {
                     const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
                     let content = `${property.bk_property_name}：${this.$tools.getPropertyText(property, valueMap)}`
-                    if (conflicts.find(conflictItem => conflictItem.bk_attribute_id === item.bk_attribute_id)) {
+                    const conflictExist = conflicts.find(conflictItem => conflictItem.bk_attribute_id === item.bk_attribute_id && conflictItem.unresolved_conflict_exist)
+                    if (conflictExist) {
                         content = `<span class="conflict">${content}</span>`
                     }
                     return content
@@ -142,22 +167,35 @@
                     })
                 })
             },
+            getOperationColumnText (row) {
+                let text = '--'
+                if (row.conflicts.length > 0) {
+                    text = row.unresolved_conflict_count > 0 ? '处理冲突' : '已处理'
+                }
+                return text
+            },
             handlePageChange (page) {
                 this.pagination.current = page
+                this.setTableList()
             },
-            handleRowClick (item) {
-                const hasConflict = item.diff_value.some(item => item.is_conflict)
-                if (hasConflict) {
-                    this.handleShowConflict(item)
+            handleSizeChange (size) {
+                this.pagination.limit = size
+                this.setTableList()
+            },
+            handleRowClick (row) {
+                this.currentRow = row
+                const conflictExist = row.unresolved_conflict_count > 0
+                if (conflictExist) {
+                    this.handleShowConflict(row)
                 } else {
-                    this.handleShowDetails(item)
+                    this.handleShowDetails(row)
                 }
             },
-            async handleShowDetails (item) {
-                this.slider.title = `属性详情【${item.bk_host_innerip}】`
+            async handleShowDetails (row) {
+                this.slider.title = `属性详情【${row.expired_host.bk_host_innerip}】`
                 this.slider.content = 'detail'
                 const properties = this.propertyList
-                const inst = item
+                const inst = row
                 try {
                     const propertyGroups = await this.getPropertyGroups()
                     this.details.inst = this.$tools.flattenItem(properties, inst)
@@ -172,10 +210,29 @@
                     this.slider.isShow = false
                 }
             },
-            handleShowConflict (item) {
-                this.slider.title = `处理冲突【${item.bk_host_innerip}】`
+            handleShowConflict (row) {
+                this.slider.title = `处理冲突【${row.expired_host.bk_host_innerip}】`
                 this.slider.content = 'conflict'
                 this.slider.isShow = true
+            },
+            handleConflictSave (data) {
+                // 将处理结果保存
+                this.conflictResolveResult[this.currentRow.bk_host_id] = data
+
+                // 标记冲突状态并更新属性值
+                this.currentRow.conflicts.forEach(item => {
+                    item.unresolved_conflict_exist = false
+                    item.bk_property_value = data.find(property => property.id === item.bk_attribute_id).__extra__.value
+                })
+                this.currentRow.unresolved_conflict_count = 0
+            },
+            handleSliderCancel () {
+                if (this.slider.content === 'conflict') {
+                    if (this.$refs.conflictResolve) {
+                        this.$refs.conflictResolve.restoreConflictPropertyList()
+                    }
+                }
+                this.slider.isShow = false
             }
         }
     }

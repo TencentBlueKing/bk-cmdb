@@ -5,15 +5,15 @@
                 <i18n path="配置XXX模块主机属性">
                     <span class="module-name" place="module">{{module.bk_inst_name}}</span>
                 </i18n>
-                <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}：2017.09.13 )</small>
+                <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}：{{ruleLastEditTime}} )</small>
             </h2>
         </div>
         <div class="config-body">
-            <template v-if="hasRule && !isEdit">
-                <div class="view-field">
+            <template v-if="applyEnabled || isEdit">
+                <div class="view-field" v-if="hasRule && !isEdit">
                     <div class="view-bd">
                         <div class="field-list">
-                            <div :class="['field-list-table', { disabled: !applyEnabled }]">
+                            <div class="field-list-table">
                                 <property-config-table
                                     :readonly="true"
                                     :checked-property-id-list="checkedPropertyIdList"
@@ -21,20 +21,9 @@
                                 >
                                 </property-config-table>
                             </div>
-                            <div class="closed-mask" v-if="!applyEnabled">
-                                <div class="empty">
-                                    <div class="desc">
-                                        <i class="bk-cc-icon icon-cc-tips"></i>
-                                        <span>{{$t('该模块已关闭属性自动应用')}}</span>
-                                    </div>
-                                    <div class="action">
-                                        <bk-button theme="primary" :outline="true" @click="handleEdit">{{$t('重新启用')}}</bk-button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
-                    <div class="view-ft" v-if="applyEnabled">
+                    <div class="view-ft">
                         <bk-button theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
                         <bk-button theme="default" :disabled="!hasConflict" @click="handleViewConflict">
                             <span v-bk-tooltips="{ content: $t('无冲突需处理') }" v-if="!hasConflict">
@@ -47,21 +36,10 @@
                         <bk-button theme="default" @click="handleCloseApply">{{$t('关闭自动应用')}}</bk-button>
                     </div>
                 </div>
-            </template>
-            <template v-else>
-                <div class="empty" v-if="!isEdit">
-                    <div class="desc">
-                        <i class="bk-cc-icon icon-cc-tips"></i>
-                        <span>{{$t('尚未配置模块的属性自动应用')}}</span>
-                    </div>
-                    <div class="action">
-                        <bk-button theme="primary" :outline="true" @click="handleEdit">立即启用</bk-button>
-                    </div>
-                </div>
                 <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]" v-else>
                     <div class="choose-hd">
-                        <span class="label">{{$t('请添加自动应用的字段')}}</span>
-                        <bk-button theme="default" icon="plus" @click="handleChooseField">添加字段</bk-button>
+                        <span class="label">{{$t('自动应用字段：')}}</span>
+                        <bk-button theme="default" icon="plus" @click="handleChooseField">选择字段</bk-button>
                     </div>
                     <div class="choose-bd" v-show="checkedPropertyIdList.length">
                         <property-config-table
@@ -75,6 +53,42 @@
                     <div class="choose-ft">
                         <bk-button theme="primary" :disabled="nextButtonDisabled" @click="handleNextStep">下一步</bk-button>
                         <bk-button theme="default" @click="handleCancel">取消</bk-button>
+                    </div>
+                </div>
+            </template>
+            <template v-else>
+                <div class="empty" v-if="!hasRule">
+                    <div class="desc">
+                        <i class="bk-cc-icon icon-cc-tips"></i>
+                        <span>{{$t('尚未配置模块的属性自动应用')}}</span>
+                    </div>
+                    <div class="action">
+                        <bk-button theme="primary" :outline="true" @click="handleEdit">立即启用</bk-button>
+                    </div>
+                </div>
+                <div class="view-field" v-else>
+                    <div class="view-bd">
+                        <div class="field-list">
+                            <div class="field-list-table disabled">
+                                <property-config-table
+                                    :readonly="true"
+                                    :checked-property-id-list="checkedPropertyIdList"
+                                    :rule-list="initRuleList"
+                                >
+                                </property-config-table>
+                            </div>
+                            <div class="closed-mask">
+                                <div class="empty">
+                                    <div class="desc">
+                                        <i class="bk-cc-icon icon-cc-tips"></i>
+                                        <span>{{$t('该模块已关闭属性自动应用')}}</span>
+                                    </div>
+                                    <div class="action">
+                                        <bk-button theme="primary" :outline="true" @click="handleEdit">{{$t('重新启用')}}</bk-button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </template>
@@ -109,10 +123,11 @@
                 // 用于取消编辑时的还原
                 checkedPropertyIdListCopy: [],
                 conflictNum: 0,
-                isEdit: false,
-                nextButtonDisabled: true,
                 hasRule: false,
-                propertyModalVisiable: false
+                isEdit: false,
+                nextButtonDisabled: false,
+                propertyModalVisiable: false,
+                clearRules: true
             }
         },
         computed: {
@@ -126,6 +141,11 @@
             },
             hasConflict () {
                 return this.conflictNum > 0
+            },
+            ruleLastEditTime () {
+                const lastTimeList = this.initRuleList.map(rule => new Date(rule.last_time).getTime())
+                const latestTime = Math.max(...lastTimeList)
+                return this.$tools.formatTime(latestTime, 'YYYY-MM-DD HH:mm:ss')
             }
         },
         watch: {
@@ -146,7 +166,7 @@
                 this.isEdit = false
                 try {
                     const ruleData = await this.getRules()
-                    this.initRuleList = ruleData.info
+                    this.initRuleList = ruleData.info || []
                     this.hasRule = ruleData.count > 0
                     this.checkedPropertyIdList = this.initRuleList.map(item => item.bk_attribute_id)
                     this.checkedPropertyIdListCopy = [...this.checkedPropertyIdList]
@@ -166,8 +186,7 @@
                         bk_module_ids: [this.moduleId]
                     },
                     config: {
-                        fromCache: true,
-                        requestId: `getHostApplyRules_${this.moduleId}`
+                        requestId: `getHostApplyRules`
                     }
                 })
             },
@@ -178,8 +197,7 @@
                         bk_module_ids: [this.moduleId]
                     },
                     config: {
-                        fromCache: true,
-                        requestId: `getHostApplyPreview_${this.moduleId}`
+                        requestId: `getHostApplyPreview`
                     }
                 })
             },
@@ -202,14 +220,6 @@
                     additional_rules: additionalRules,
                     // 删除的规则，来源于编辑表格删除
                     remove_rule_ids: removeRuleIds
-                    // 冲突解决，来源于冲突解决面板
-                    // conflict_resolvers: [
-                    //     {
-                    //         bk_attribute_id: 141,
-                    //         bk_host_id: 22,
-                    //         bk_property_value: 'xxx'
-                    //     }
-                    // ]
                 }
 
                 this.$store.commit('hostApply/setPropertyConfig', savePropertyConfig)
@@ -229,10 +239,37 @@
                 })
             },
             handleCloseApply () {
+                // this.closeApply.confirmModalVisiable = true
+                const h = this.$createElement
                 this.$bkInfo({
                     title: this.$t('确认关闭自动应用？'),
-                    subTitle: this.$t('关闭后，新转入的的主机将不会自动应用模块的主机属性'),
-                    confirmFn: () => {
+                    extCls: 'close-apply-confirm-modal',
+                    subHeader: h('div', { class: 'content' }, [
+                        h('p', { class: 'tips' }, this.$t('关闭后，新转入的主机将不会自动应用模块的主机属性')),
+                        h('bk-checkbox', {
+                            props: {
+                                checked: true,
+                                trueValue: true,
+                                falseFalue: false
+                            },
+                            on: {
+                                change: (value) => (this.clearRules = value)
+                            }
+                        }, '清空配置历史')
+                    ]),
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('hostApply/setEnableStatus', {
+                                bizId: this.bizId,
+                                moduleId: this.moduleId,
+                                params: {
+                                    host_apply_enabled: false,
+                                    clear_rules: this.clearRules
+                                }
+                            })
+                        } catch (e) {
+                            console.log(e)
+                        }
                     }
                 })
             },
@@ -324,7 +361,7 @@
 
         &.not-choose {
             .choose-ft {
-                margin-left: 152px;
+                margin-left: 111px;
             }
         }
     }
@@ -371,5 +408,23 @@
         padding: 0px 4px;
         font-family: arial;
         margin-left: 4px;
+    }
+
+    .close-apply-confirm-modal {
+        .content {
+            font-size: 14px;
+        }
+        .tips {
+            margin: 12px 0;
+        }
+    }
+</style>
+
+<style lang="scss">
+    .close-apply-confirm-modal {
+        .bk-dialog-sub-header {
+            padding-left: 32px !important;
+            padding-right: 32px !important;
+        }
     }
 </style>

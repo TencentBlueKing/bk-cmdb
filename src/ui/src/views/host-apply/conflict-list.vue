@@ -6,18 +6,23 @@
             :desc="$t('主机属于多个模块，且同一属性的自动应用配置有差异，若不处理，将维持主机转移前的该项属性值')"
             @close-tips="showFeatureTips = false">
         </feature-tips>
-        <property-confirm-table :data="table.list" :total="table.total"></property-confirm-table>
+        <property-confirm-table
+            ref="propertyConfirmTable"
+            :list="table.list"
+            :total="table.total"
+        >
+        </property-confirm-table>
         <div class="bottom-actionbar">
             <div class="actionbar-inner">
-                <bk-button theme="primary" :disabled="applyButtonDisabled">应用</bk-button>
-                <bk-button theme="default">返回</bk-button>
+                <bk-button theme="primary" @click="handleApply">应用</bk-button>
+                <bk-button theme="default" @click="handleBack">返回</bk-button>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters, mapState, mapActions } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
     import propertyConfirmTable from './children/property-confirm-table'
     import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
@@ -37,6 +42,8 @@
             }
         },
         computed: {
+            ...mapState('hostApply', ['propertyConfig']),
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters(['featureTipsParams', 'supplierAccount'])
         },
         watch: {
@@ -47,30 +54,22 @@
             this.initData()
         },
         methods: {
-            ...mapActions('objectModelProperty', [
-                'searchObjectAttribute'
-            ]),
             ...mapActions('hostApply', [
-                'getApplyRulePreview'
+                'getApplyPreview',
+                'runApply'
             ]),
             async initData () {
                 try {
-                    const { count, info } = await this.getApplyRulePreview({
-                        params: {},
+                    const previewData = await this.getApplyPreview({
+                        bizId: this.bizId,
+                        params: this.propertyConfig,
                         config: {
-                            requestId: 'getApplyRulePreview',
-                            fromCache: true
+                            requestId: 'getHostApplyPreview'
                         }
                     })
-
-                    let tableList = []
-                    let i = 0
-                    while (i < 20) {
-                        tableList = [...tableList, ...info]
-                        i++
-                    }
-                    this.table.list = tableList
-                    this.table.total = count
+                    const conflictList = (previewData.plans || []).filter(item => item.unresolved_conflict_count > 0)
+                    this.table.list = conflictList
+                    this.table.total = previewData.unresolved_conflict_count
                 } catch (e) {
                     console.error(e)
                 }
@@ -85,6 +84,42 @@
                 }, {
                     label: this.$t('冲突列表')
                 }])
+            },
+            async handleApply () {
+                const conflictResolveResult = this.$refs.propertyConfirmTable.conflictResolveResult
+                const conflictResolvers = []
+                Object.keys(conflictResolveResult).forEach(key => {
+                    const propertyList = conflictResolveResult[key]
+                    propertyList.forEach(property => {
+                        conflictResolvers.push({
+                            bk_host_id: Number(key),
+                            bk_attribute_id: property.id,
+                            bk_property_value: property.__extra__.value
+                        })
+                    })
+                })
+
+                // 合入冲突结果数据
+                const propertyConfig = { ...this.propertyConfig, ...{ conflict_resolvers: conflictResolvers } }
+
+                try {
+                    const result = await this.runApply({
+                        bizId: this.bizId,
+                        params: propertyConfig,
+                        config: {
+                            requestId: 'runHostApply'
+                        }
+                    })
+
+                    // 更新属性配置
+                    this.$store.commit('hostApply/setPropertyConfig', propertyConfig)
+                    console.log(result)
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleBack () {
+                this.$router.back()
             }
         }
     }
