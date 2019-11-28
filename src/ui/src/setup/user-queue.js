@@ -23,17 +23,17 @@ export default new Vue({
     methods: {
         getUserInfo (user) {
             const userList = user.split(',')
-            let userInfo = ''
+            const userInfo = []
             let exist = true
             for (const name of userList) {
                 if (!this.userMap[name]) {
                     exist = false
                     return
                 }
-                userInfo += `${this.userMap[name]},`
+                userInfo.push(this.userMap[name])
             }
             if (!exist) return false
-            return userInfo.slice(0, -1)
+            return userInfo.join(',')
         },
         addUser (data) {
             this.updateList.push(data)
@@ -59,8 +59,8 @@ export default new Vue({
                 })
                 for (const instance of updateList) {
                     const nameList = instance.user.split(',')
-                    const userInfo = nameList.reduce((acc, name, index) => (acc += `${this.userMap[name]},`), '')
-                    const user = userInfo.slice(0, -1)
+                    const userInfo = nameList.map(name => this.userMap[name])
+                    const user = userInfo.join(',')
                     if (instance.node instanceof Vue) {
                         instance.node.updateUserText(user)
                     } else {
