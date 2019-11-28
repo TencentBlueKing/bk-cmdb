@@ -439,6 +439,31 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 		return
 	}
 
+	// enable host apply on module
+	moduleUpdateOption := &meta.UpdateOption{
+		Data: map[string]interface{}{
+			common.HostApplyEnabledField: true,
+		},
+		Condition: map[string]interface{}{
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: planRequest.ModuleIDs,
+			},
+		},
+	}
+	updateModuleResult, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, moduleUpdateOption)
+	if err != nil {
+		blog.ErrorJSON("GenerateApplyPlan failed, UpdateInstance of module http failed, option: %s, err: %v, rid:%s", moduleUpdateOption, err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+	if ccErr := updateModuleResult.CCError(); ccErr != nil {
+		blog.ErrorJSON("GenerateApplyPlan failed, UpdateInstance of module failed, option: %s, result: %s, rid:%s", moduleUpdateOption, updateModuleResult, rid)
+		result := &meta.RespError{Msg: ccErr}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
 	// save rules to database
 	rulesOption := make([]meta.CreateOrUpdateApplyRuleOption, 0)
 	for _, rule := range planResult.Rules {
