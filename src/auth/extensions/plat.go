@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -249,4 +251,31 @@ func (am *AuthManager) DeregisterPlatByID(ctx context.Context, header http.Heade
 		return fmt.Errorf("get plats by id failed, err: %+v", err)
 	}
 	return am.DeregisterPlat(ctx, header, plats...)
+}
+
+func (am *AuthManager) ListAuthorizedPlatIDs(ctx context.Context, username string) ([]int64, error) {
+	authorizedResources, err := am.Authorize.ListAuthorizedResources(ctx, username, 0, meta.Plat, meta.FindMany)
+	if err != nil {
+		return nil, err
+	}
+
+	authorizedPlatIDs := make([]int64, 0)
+	for _, iamResource := range authorizedResources {
+		if len(iamResource) == 0 {
+			continue
+		}
+		resource := iamResource[len(iamResource)-1]
+		if strings.HasPrefix(resource.ResourceID, "plat:") {
+			parts := strings.Split(resource.ResourceID, ":")
+			if len(parts) < 2 {
+				return nil, fmt.Errorf("parse platID from iamResource failed,  iamResourceID: %s, format error", resource.ResourceID)
+			}
+			platID, err := strconv.ParseInt(parts[1], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("parse platID from iamResource failed, iamResourceID: %s, err: %+v", resource.ResourceID, err)
+			}
+			authorizedPlatIDs = append(authorizedPlatIDs, platID)
+		}
+	}
+	return authorizedPlatIDs, nil
 }
