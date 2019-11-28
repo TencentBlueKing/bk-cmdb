@@ -355,7 +355,14 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 
 	now := time.Now()
 	if len(planRequest.AdditionalRules) > 0 {
+	OuterLoop:
 		for _, item := range planRequest.AdditionalRules {
+			for index, rule := range rules.Info {
+				if item.ModuleID == rule.ModuleID && item.AttributeID == rule.AttributeID {
+					rules.Info[index].PropertyValue = item.PropertyValue
+					continue OuterLoop
+				}
+			}
 			rules.Info = append(rules.Info, meta.HostApplyRule{
 				ID:              0,
 				BizID:           bizID,
@@ -400,7 +407,7 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 		blog.ErrorJSON("generateApplyPlan failed, core service GenerateApplyPlan failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, planOption, ccErr.Error(), rid)
 		return planResult, ccErr
 	}
-
+	planResult.Rules = rules.Info
 	return planResult, nil
 }
 
@@ -430,6 +437,38 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 		result := &meta.RespError{Msg: err}
 		_ = resp.WriteError(http.StatusBadRequest, result)
 		return
+	}
+
+	// save rules to database
+	rulesOption := make([]meta.CreateOrUpdateApplyRuleOption, 0)
+	for _, rule := range planResult.Rules {
+		rulesOption = append(rulesOption, meta.CreateOrUpdateApplyRuleOption{
+			AttributeID:   rule.AttributeID,
+			ModuleID:      rule.ModuleID,
+			PropertyValue: rule.PropertyValue,
+		})
+	}
+	saveRuleOption := meta.BatchCreateOrUpdateApplyRuleOption{
+		Rules: rulesOption,
+	}
+	if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(srvData.ctx, srvData.header, bizID, saveRuleOption); ccErr != nil {
+		blog.ErrorJSON("GenerateApplyPlan failed, BatchUpdateHostApplyRule failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, saveRuleOption, ccErr, rid)
+		result := &meta.RespError{Msg: ccErr}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	// delete rules
+	if len(planRequest.RemoveRuleIDs) > 0 {
+		deleteRuleOption := meta.DeleteHostApplyRuleOption{
+			RuleIDs: planRequest.RemoveRuleIDs,
+		}
+		if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(srvData.ctx, srvData.header, bizID, deleteRuleOption); ccErr != nil {
+			blog.ErrorJSON("GenerateApplyPlan failed, DeleteHostApplyRule failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, deleteRuleOption, ccErr, rid)
+			result := &meta.RespError{Msg: ccErr}
+			_ = resp.WriteError(http.StatusBadRequest, result)
+			return
+		}
 	}
 
 	hostApplyResults := make([]meta.HostApplyResult, 0)
