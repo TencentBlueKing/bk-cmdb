@@ -41,7 +41,7 @@
         </div>
         <div class="layout-footer">
             <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <bk-button theme="primary" :disabled="!selected.length" @click="handleNextStep">{{$t('下一步')}}</bk-button>
+            <bk-button theme="primary" :disabled="!selected.length" @click="handleNextStep">{{confirmText || $t('下一步')}}</bk-button>
         </div>
     </div>
 </template>
@@ -67,6 +67,10 @@
             exclude: {
                 type: Array,
                 default: () => ([])
+            },
+            confirmText: {
+                type: String,
+                default: ''
             }
         },
         data () {

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package x19_05_22_01
+package y3_6_201911261109
 
 import (
 	"context"
@@ -21,32 +21,32 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19_05_22_01", upgrade)
+	upgrader.RegistUpgrader("y3.6.201911261109", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
 	err = addChartConfigTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19_05_22_01] addChartConfigTable error  %s", err.Error())
+		blog.Errorf("[upgrade y3_6_201911261109] addChartConfigTable error  %s", err.Error())
 		return err
 	}
 
 	err = addChartPositionTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19_05_22_01] addChartPositionTable error  %s", err.Error())
+		blog.Errorf("[upgrade y3_6_201911261109] addChartPositionTable error  %s", err.Error())
 		return err
 	}
 
 	err = addChartDataTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19_05_22_01] addChartDataTable error  %s", err.Error())
+		blog.Errorf("[upgrade y3_6_201911261109] addChartDataTable error  %s", err.Error())
 		return err
 	}
 
 	err = initInnerChart(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19_05_22_01] init inner chart error  %s", err.Error())
+		blog.Errorf("[upgrade y3_6_201911261109] init inner chart error  %s", err.Error())
 		return err
 	}
 	return

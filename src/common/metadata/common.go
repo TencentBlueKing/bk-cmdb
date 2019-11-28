@@ -241,7 +241,6 @@ type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Page      map[string]interface{} `json:"page,omitempty"`
 	Fields    []string               `json:"fields,omitempty"`
-	Native    int                    `json:"native,omitempty"`
 }
 
 // PropertyGroupCondition used to reflect the property group json

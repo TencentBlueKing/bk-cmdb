@@ -13,7 +13,7 @@
                         <div class="header-title fl">
                             <div class="group-name">
                                 {{group.info['bk_group_name']}}
-                                <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('内置组不支持修改，排序')}}）</span>
+                                <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('全局配置不可以在业务内调整')}}）</span>
                             </div>
                             <div class="title-icon-btn" v-if="!(!isAdminView && isBuiltInGroup(group.info))" @click.stop>
                                 <cmdb-auth class="ml10" :auth="authResources" @update-auth="handleReceiveAuth">
@@ -29,7 +29,7 @@
                                     <bk-button slot-scope="{ disabled }"
                                         class="icon-btn"
                                         :text="true"
-                                        :disabled="disabled || !isEditable(group.info) || ['default'].includes(group.info['bk_group_id'])"
+                                        :disabled="disabled || !isEditable(group.info) || group.info['bk_isdefault']"
                                         @click.stop="handleDeleteGroup(group, index)">
                                         <i class="title-icon bk-icon icon-cc-delete"></i>
                                     </bk-button>
@@ -99,7 +99,7 @@
                                             class="property-icon-btn"
                                             :text="true"
                                             :disabled="disabled || !isFieldEditable(property)"
-                                            @click.stop="handleDeleteField({ property, index, _index })">
+                                            @click.stop="handleDeleteField({ property, index, fieldIndex })">
                                             <i class="property-icon bk-icon icon-cc-delete"></i>
                                         </bk-button>
                                     </cmdb-auth>
@@ -934,6 +934,9 @@
         &.disabled {
             .property-item {
                 cursor: pointer;
+                &::before {
+                    display: none !important;
+                }
             }
         }
         .property-item {
@@ -962,7 +965,7 @@
                 .property-icon-btn {
                     display: inline-block;
                 }
-                &:not(.only-ready)::before {
+                &::before {
                     display: block;
                 }
             }

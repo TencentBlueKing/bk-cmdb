@@ -5,7 +5,7 @@
             :show-tips="showFeatureTips"
             @close-tips="showFeatureTips = false">
             <i18n path="服务模板功能提示">
-                <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick" place="link">{{$t('创建集群模板')}}</a>
+                <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick" place="link">{{$t('业务拓扑')}}</a>
             </i18n>
         </feature-tips>
         <div class="template-filter clearfix">
@@ -118,7 +118,7 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
-    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         components: {
             featureTips
@@ -305,7 +305,7 @@
             },
             handleTipsLinkClick () {
                 this.$router.push({
-                    name: MENU_BUSINESS_SET_TEMPLATE
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             }
         }

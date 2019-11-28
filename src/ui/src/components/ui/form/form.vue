@@ -30,7 +30,7 @@
                                             :options="property.option || []"
                                             :data-vv-name="property['bk_property_id']"
                                             :data-vv-as="property['bk_property_name']"
-                                            :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                            :placeholder="getPlaceholder(property)"
                                             v-validate="getValidateRules(property)"
                                             v-model.trim="values[property['bk_property_id']]">
                                         </component>
@@ -181,6 +181,10 @@
                 temp = null
                 return output
             },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             getValidateRules (property) {
                 return this.$tools.getValidateRules(property)
             },
@@ -284,7 +288,7 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 28px 32px 0;
+        padding: 10px 32px 0;
         font-size: 0;
         &.sticky {
             padding: 10px 32px;
