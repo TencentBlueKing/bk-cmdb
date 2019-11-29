@@ -49,7 +49,7 @@
                 }
             },
             updateUserText (user) {
-                this.localText = user || '--'
+                this.localText = user || this.text || '--'
             }
         }
     }
