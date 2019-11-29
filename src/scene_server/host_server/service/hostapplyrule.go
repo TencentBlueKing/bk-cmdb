@@ -441,13 +441,13 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 
 	// enable host apply on module
 	moduleUpdateOption := &meta.UpdateOption{
-		Data: map[string]interface{}{
-			common.HostApplyEnabledField: true,
-		},
 		Condition: map[string]interface{}{
 			common.BKModuleIDField: map[string]interface{}{
 				common.BKDBIN: planRequest.ModuleIDs,
 			},
+		},
+		Data: map[string]interface{}{
+			common.HostApplyEnabledField: true,
 		},
 	}
 	updateModuleResult, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, moduleUpdateOption)

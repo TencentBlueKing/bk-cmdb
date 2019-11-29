@@ -119,6 +119,11 @@ type ObjAttDes struct {
 	PropertyGroupName string `json:"bk_property_group_name"`
 }
 
+type HostObjAttDes struct {
+	ObjAttDes        `json:",inline" bson:",inline"`
+	HostApplyEnabled bool `json:"host_apply_enabled"`
+}
+
 func (attribute *Attribute) Validate(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	fieldType := attribute.PropertyType
 	switch fieldType {
@@ -859,4 +864,35 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 		return "", fmt.Errorf("unexpected property type: %s", fieldType)
 	}
 	return "", nil
+}
+
+var HostApplyFieldMap = map[string]bool{
+	common.BKHostInnerIPField: false,
+	common.BKHostOuterIPField: false,
+	common.BKOperatorField:    true,
+	common.BKBakOperatorField: true,
+	common.BKAssetIDField:     false,
+	common.BKSNField:          false,
+	"bk_comment":              true,
+	"bk_service_term":         false,
+	"bk_sla":                  false,
+	common.BKCloudIDField:     false,
+	"bk_state_name":           false,
+	"bk_province_name":        false,
+	"bk_isp_name":             false,
+	common.BKHostNameField:    false,
+	common.BKOSTypeField:      false,
+	common.BKOSNameField:      false,
+	"bk_os_version":           false,
+	"bk_os_bit":               false,
+	"bk_cpu":                  false,
+	"bk_cpu_mhz":              false,
+	"bk_cpu_module":           false,
+	"bk_mem":                  false,
+	"bk_disk":                 false,
+	"bk_mac":                  false,
+	"bk_outer_mac":            false,
+	common.CreateTimeField:    false,
+	common.LastTimeField:      false,
+	common.BKImportFrom:       false,
 }
