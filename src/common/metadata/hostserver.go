@@ -426,6 +426,7 @@ type HostTransferPreview struct {
 	FinalModules        []int64                `field:"final_modules" json:"final_modules"`
 	ToRemoveFromModules []RemoveFromModuleInfo `field:"to_remove_from_modules" json:"to_remove_from_modules"`
 	ToAddToModules      []AddToModuleInfo      `field:"to_add_to_modules" json:"to_add_to_modules"`
+	HostApplyPlan       OneHostApplyPlan       `field:"host_apply_plan" json:"host_apply_plan"`
 }
 
 type UpdateHostCloudAreaFieldOption struct {
