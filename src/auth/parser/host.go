@@ -1,8 +1,6 @@
 package parser
 
 import (
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -10,8 +8,10 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
 
 	"github.com/tidwall/gjson"
@@ -292,6 +292,8 @@ var (
 
 	transferHostWithAutoClearServiceInstanceRegex        = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/?$")
 	transferHostWithAutoClearServiceInstancePreviewRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview/?$")
+
+	countHostByTopoNodeRegexp = regexp.MustCompile(`^/api/v3/host/count_by_topo_node/bk_biz_id/[0-9]+$`)
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -618,6 +620,27 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostsToBusinessOrModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(countHostByTopoNodeRegexp, http.MethodPost) {
+		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
+		bizID, err := util.GetInt64ByInterface(match[1])
+		if err != nil {
+			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s", countHostByTopoNodeRegexp, err, ps.RequestCtx.Rid)
+			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
 				},
 			},
 		}

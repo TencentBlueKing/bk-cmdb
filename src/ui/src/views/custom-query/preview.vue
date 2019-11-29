@@ -6,6 +6,7 @@
             <i class="bk-icon icon-close" @click="closePreview"></i>
             <div class="preview-table">
                 <bk-table
+                    ref="table"
                     v-bkloading="{ isLoading: $loading('searchHost') }"
                     :data="table.list"
                     :pagination="table.pagination"
@@ -173,6 +174,7 @@
                 })
                 this.table.pagination.count = res.count
                 this.table.list = res.info
+                this.fixPageLimitPosition()
             },
             handlePageChange (current) {
                 this.table.pagination.current = current
@@ -188,6 +190,12 @@
             },
             closePreview () {
                 this.$emit('close')
+            },
+            fixPageLimitPosition () {
+                this.$nextTick(() => {
+                    const limitRefs = this.$refs.table.$el.querySelector('.bk-table-pagination .bk-page-count .bk-tooltip-ref')
+                    limitRefs && limitRefs._tippy.set({ boundary: 'window' })
+                })
             }
         }
     }

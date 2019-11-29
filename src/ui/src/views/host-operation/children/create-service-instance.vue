@@ -73,7 +73,7 @@
                     })
                 } else {
                     this.instances = [...this.info].sort((A, B) => {
-                        return A.bk_host_id - B.bk_host_id
+                        return this.getName(A).localeCompare(this.getName(B))
                     })
                 }
             },
