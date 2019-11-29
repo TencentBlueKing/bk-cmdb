@@ -154,6 +154,8 @@ type HostApplyPlanRequest struct {
 	AdditionalRules   []CreateHostApplyRuleOption `field:"additional_rules" json:"additional_rules" bson:"additional_rules" mapstructure:"additional_rules"`
 	ConflictResolvers []HostApplyConflictResolver `field:"conflict_resolvers" json:"conflict_resolvers" bson:"conflict_resolvers" mapstructure:"conflict_resolvers"`
 	ModuleIDs         []int64                     `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+	// optional, if set, only hostID in HostIDs will be used
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids" mapstructure:"bk_host_ids"`
 }
 
 type HostApplyResult struct {

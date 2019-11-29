@@ -306,6 +306,11 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 	}
 	hostIDs := make([]int64, 0)
 	for _, item := range hostRelations.Data.Info {
+		if planRequest.HostIDs != nil {
+			if util.InArray(item.HostID, planRequest.HostIDs) == false {
+				continue
+			}
+		}
 		hostIDs = append(hostIDs, item.HostID)
 	}
 	relationRequest = &meta.HostModuleRelationRequest{
