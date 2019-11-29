@@ -5,6 +5,7 @@ import (
 
 	"configcenter/src/test"
 	"configcenter/src/test/reporter"
+	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,7 +17,7 @@ var apiServerClient = test.GetClientSet().ApiServer()
 var instClient = test.GetClientSet().TopoServer().Instance()
 
 func TestHostServer(t *testing.T) {
-	RegisterFailHandler(Fail)
+	RegisterFailHandler(util.Fail)
 	reporters := []Reporter{
 		reporter.NewHtmlReporter(test.GetReportDir()+"hostserver.html", test.GetReportUrl(), true),
 	}
