@@ -764,6 +764,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(req *restful.R
 			FinalModules:        plan.FinalModules,
 			ToRemoveFromModules: make([]metadata.RemoveFromModuleInfo, 0),
 			ToAddToModules:      make([]metadata.AddToModuleInfo, 0),
+			HostApplyPlan:       plan.HostApplyPlan,
 		}
 		for _, moduleID := range plan.ToRemoveFromModules {
 			removeInfo := metadata.RemoveFromModuleInfo{
