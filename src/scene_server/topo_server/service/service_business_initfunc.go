@@ -38,6 +38,7 @@ func (s *Service) initBusinessClassification() {
 func (s *Service) initBusinessObjectAttribute() {
 	s.addAction(http.MethodPost, "/create/objectattr", s.CreateObjectAttribute, nil)
 	s.addAction(http.MethodPost, "/find/objectattr", s.SearchObjectAttribute, nil)
+	s.addAction(http.MethodPost, "/find/objectattr/host", s.ListHostModelAttribute, nil)
 	s.addAction(http.MethodPut, "/update/objectattr/{id}", s.UpdateObjectAttribute, nil)
 	s.addAction(http.MethodDelete, "/delete/objectattr/{id}", s.DeleteObjectAttribute, nil)
 }
