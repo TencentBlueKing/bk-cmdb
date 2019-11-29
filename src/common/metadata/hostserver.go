@@ -386,25 +386,29 @@ type TopoNode struct {
 }
 
 type TransferHostWithAutoClearServiceInstanceOption struct {
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids"`
+
 	RemoveFromNode *TopoNode `field:"remove_from_node" json:"remove_from_node"`
-	HostIDs        []int64   `field:"bk_host_ids" json:"bk_host_ids"`
 	AddToModules   []int64   `field:"add_to_modules" json:"add_to_modules"`
 	// 主机从 RemoveFromNode 移除后如果不再属于其它模块， 默认转移到空闲机模块
 	// DefaultInternalModule 支持调整这种模型行为，可设置成待回收模块或者故障机模块
-	DefaultInternalModule int64           `field:"default_internal_module" json:"default_internal_module"`
-	Options               TransferOptions `field:"options" json:"options"`
+	DefaultInternalModule int64 `field:"default_internal_module" json:"default_internal_module"`
+
+	Options TransferOptions `field:"options" json:"options"`
 }
 
 type TransferOptions struct {
-	ServiceInstanceOptions []CreateServiceInstanceOption `field:"service_instance_options" json:"service_instance_options"`
+	ServiceInstanceOptions     []CreateServiceInstanceOption `field:"service_instance_options" json:"service_instance_options"`
+	HostApplyConflictResolvers []HostApplyConflictResolver   `field:"host_apply_conflict_resolvers" json:"host_apply_conflict_resolvers" bson:"host_apply_conflict_resolvers" mapstructure:"host_apply_conflict_resolvers"`
 }
 
 type HostTransferPlan struct {
-	HostID                  int64   `field:"bk_host_id" json:"bk_host_id"`
-	FinalModules            []int64 `field:"final_modules" json:"final_modules"`
-	ToRemoveFromModules     []int64 `field:"to_remove_from_modules" json:"to_remove_from_modules"`
-	ToAddToModules          []int64 `field:"to_add_to_modules" json:"to_add_to_modules"`
-	IsTransferToInnerModule bool    `field:"is_transfer_to_inner_module" json:"is_transfer_to_inner_module"`
+	HostID                  int64            `field:"bk_host_id" json:"bk_host_id"`
+	FinalModules            []int64          `field:"final_modules" json:"final_modules"`
+	ToRemoveFromModules     []int64          `field:"to_remove_from_modules" json:"to_remove_from_modules"`
+	ToAddToModules          []int64          `field:"to_add_to_modules" json:"to_add_to_modules"`
+	IsTransferToInnerModule bool             `field:"is_transfer_to_inner_module" json:"is_transfer_to_inner_module"`
+	HostApplyPlan           OneHostApplyPlan `field:"host_apply_plan" json:"host_apply_plan" mapstructure:"host_apply_plan"`
 }
 
 type RemoveFromModuleInfo struct {
