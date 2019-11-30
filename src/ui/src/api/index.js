@@ -183,9 +183,13 @@ function handleReject (error, config) {
     }
     if (error.response) {
         const { status, data } = error.response
-        const nextError = { message: error.message }
+        const nextError = { message: error.message, status }
         if (status === 401) {
-            window.Site.login && (window.location.href = window.Site.login)
+            if (window.loginModal) {
+                window.loginModal.show()
+            } else {
+                window.Site.login && (window.location.href = window.Site.login)
+            }
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
         } else if (status === 403) {
@@ -193,7 +197,7 @@ function handleReject (error, config) {
         } else if (status === 500) {
             nextError.message = language === 'en' ? 'System error, please contact developers.' : '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
         }
-        config.globalError && $error(nextError.message)
+        config.globalError && status !== 401 && $error(nextError.message)
         return Promise.reject(nextError)
     } else {
         config.globalError && $error(error.message)

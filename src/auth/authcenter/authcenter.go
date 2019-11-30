@@ -90,6 +90,32 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
 	}
 
+	workerCount := int64(1)
+	workerCountStr, exist := configmap[prefix+".syncWorkers"]
+	if exist {
+		workerCount, err = strconv.ParseInt(workerCountStr, 10, 64)
+		if err != nil {
+			return cfg, fmt.Errorf(`"syncWorkers" configuration should be integer for auth center, value: %s`, workerCountStr)
+		}
+	}
+	if workerCount < 1 {
+		workerCount = 1
+	}
+	cfg.SyncWorkerCount = int(workerCount)
+
+	syncIntervalMinutes := int64(45)
+	syncIntervalMinutesStr, exist := configmap[prefix+".syncIntervalMinutes"]
+	if exist {
+		syncIntervalMinutes, err = strconv.ParseInt(syncIntervalMinutesStr, 10, 64)
+		if err != nil {
+			return cfg, fmt.Errorf(`"syncIntervalMinutes" configuration should be integer for auth center, value: %s`, syncIntervalMinutesStr)
+		}
+	}
+	if syncIntervalMinutes < 45 {
+		syncIntervalMinutes = 45
+	}
+	cfg.SyncIntervalMinutes = int(syncIntervalMinutes)
+
 	cfg.SystemID = SystemIDCMDB
 
 	return cfg, nil
@@ -756,6 +782,37 @@ func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
 }
 
+func (ac *AuthCenter) ListPageResources(ctx context.Context, r *meta.ResourceAttribute, limit, offset int64) (PageBackendResource, error) {
+	pagedResources := PageBackendResource{}
+	if !auth.IsAuthed() {
+		return pagedResources, nil
+	}
+
+	scopeInfo, err := ac.getScopeInfo(r)
+	if err != nil {
+		return pagedResources, err
+	}
+	resourceType, err := ConvertResourceType(r.Type, r.BusinessID)
+	if err != nil {
+		return pagedResources, err
+	}
+	header := http.Header{}
+	resourceID, err := GenerateResourceID(*resourceType, r)
+	if err != nil {
+		return pagedResources, err
+	}
+	blog.V(5).Infof("GenerateResourceID result: %+v", resourceID)
+	searchCondition := SearchCondition{
+		ScopeInfo:    *scopeInfo,
+		ResourceType: *resourceType,
+	}
+	if resourceID != nil && len(resourceID) > 0 {
+		searchCondition.ParentResources = resourceID[:len(resourceID)-1]
+	}
+	result, err := ac.authClient.ListPageResources(ctx, header, searchCondition, limit, offset)
+	return result, err
+}
+
 func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error) {
 	if !auth.IsAuthed() {
 		return nil, nil
@@ -784,6 +841,10 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	}
 	result, err := ac.authClient.ListResources(ctx, header, searchCondition)
 	return result, err
+}
+
+func (ac *AuthCenter) RawPageListResources(ctx context.Context, header http.Header, searchCondition SearchCondition, limit, offset int64) (PageBackendResource, error) {
+	return ac.authClient.ListPageResources(ctx, header, searchCondition, limit, offset)
 }
 
 // list iam resource with convert level

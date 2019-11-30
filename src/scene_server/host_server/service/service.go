@@ -139,25 +139,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.DELETE("/host/lock").To(s.UnlockHost))
 	api.Route(api.POST("/host/lock/search").To(s.QueryHostLock))
 
-	api.Route(api.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppIDAndField))
-	api.Route(api.PUT("/openapi/host/{" + common.BKAppIDField + "}").To(s.UpdateHost))
-	api.Route(api.PUT("/host/updateHostByAppID/{appid}").To(s.UpdateHostByAppID))
-	api.Route(api.POST("/gethostlistbyip").To(s.HostSearchByIP))
-	api.Route(api.POST("/gethostlistbyconds").To(s.HostSearchByConds))
-	api.Route(api.POST("/getmodulehostlist").To(s.HostSearchByModuleID))
-	api.Route(api.POST("/getsethostlist").To(s.HostSearchBySetID))
-	api.Route(api.POST("/getapphostlist").To(s.HostSearchByAppID))
-	api.Route(api.POST("/gethostsbyproperty").To(s.HostSearchByProperty))
-	api.Route(api.POST("/getIPAndProxyByCompany").To(s.GetIPAndProxyByCompany))
-	api.Route(api.PUT("/openapi/updatecustomproperty").To(s.UpdateCustomProperty))
-	api.Route(api.POST("/openapi/host/getHostAppByCompanyId").To(s.GetHostAppByCompanyId))
-	api.Route(api.DELETE("/openapi/host/delhostinapp").To(s.DelHostInApp))
-	api.Route(api.POST("/openapi/host/getGitServerIp").To(s.GetGitServerIp))
-	api.Route(api.GET("/plat").To(s.GetPlat))
-	api.Route(api.POST("/plat").To(s.CreatePlat))
-	api.Route(api.PUT("/plat/{bk_cloud_id}").To(s.UpdatePlat))
-	api.Route(api.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
-
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
 
 	// cloud sync

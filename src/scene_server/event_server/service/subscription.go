@@ -232,7 +232,7 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	}
 	if err = s.auth.DeregisterResource(s.ctx, iamResource); err != nil {
 		blog.Errorf("deregister subscribe to iam failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed, err)}
 		resp.WriteError(http.StatusOK, result)
 		return
 	}
@@ -300,7 +300,7 @@ func (s *Service) UpdateSubscription(req *restful.Request, resp *restful.Respons
 		},
 	}
 	if err := s.auth.UpdateResource(s.ctx, &iamResource); err != nil {
-		blog.Errorf("deregister subscribe to iam failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("update subscribe to iam failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
 		resp.WriteError(http.StatusOK, result)
 		return

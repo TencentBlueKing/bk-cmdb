@@ -1,7 +1,6 @@
 package proc_server_test
 
 import (
-	"configcenter/src/test/reporter"
 	"context"
 	"strconv"
 	"testing"
@@ -9,6 +8,8 @@ import (
 	"configcenter/src/common/mapstr"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/test"
+	"configcenter/src/test/reporter"
+	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -25,7 +26,7 @@ var apiServerClient = test.GetClientSet().ApiServer()
 var bizId, hostId1, hostId2, setId int64
 
 func TestProcServer(t *testing.T) {
-	RegisterFailHandler(Fail)
+	RegisterFailHandler(util.Fail)
 	reporters := []Reporter{
 		reporter.NewHtmlReporter(test.GetReportDir()+"procserver.html", test.GetReportUrl(), true),
 	}
@@ -45,6 +46,7 @@ var _ = BeforeSuite(func() {
 				"time_zone":         "Africa/Accra",
 			}
 			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			bizId = int64(rsp.Data["bk_biz_id"].(float64))
@@ -67,6 +69,7 @@ var _ = BeforeSuite(func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -76,6 +79,7 @@ var _ = BeforeSuite(func() {
 				AppID: int(bizId),
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -93,6 +97,7 @@ var _ = BeforeSuite(func() {
 				"bk_set_env":          "3",
 			}
 			rsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId, 10), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_set_name"].(string)).To(Equal("test"))

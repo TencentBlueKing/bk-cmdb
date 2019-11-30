@@ -152,10 +152,6 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 				targetAttr.Metadata = *params.MetaData
 			}
 
-			if targetAttr.PropertyType == common.FieldTypeMultiAsst || targetAttr.PropertyType == common.FieldTypeSingleAsst {
-				continue
-			}
-
 			if targetAttr.PropertyID == common.BKChildStr || targetAttr.PropertyID == common.BKInstParentStr {
 				continue
 			}
