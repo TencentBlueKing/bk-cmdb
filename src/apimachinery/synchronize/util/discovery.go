@@ -62,12 +62,12 @@ func NewSyncrhonizeConfig(flag string) SynchronizeServDiscoveryInterace {
 }
 
 func (s *synchronizeConfig) GetEsbServDiscoveryInterace(flag string) SynchronizeServDiscoveryInterace {
-	// mabye will deal some logic about server
+	// mabye will deal some logics about server
 	return s
 }
 
 func (s *synchronizeConfig) GetServers() ([]string, error) {
-	// mabye will deal some logic about server
+	// mabye will deal some logics about server
 	synchronize.RLock()
 	defer synchronize.RUnlock()
 

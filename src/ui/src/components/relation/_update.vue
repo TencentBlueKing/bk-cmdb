@@ -51,6 +51,11 @@
                     </a>
                 </template>
             </bk-table-column>
+            <cmdb-table-empty
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$authResources({ type: tableDataPermission })">
+            </cmdb-table-empty>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.show">
             <p class="tips-content">{{$t('更新确认')}}</p>
@@ -86,7 +91,11 @@
                         current: 1,
                         limit: 10
                     },
-                    sort: ''
+                    sort: '',
+                    stuff: {
+                        type: 'search',
+                        payload: {}
+                    }
                 },
                 specialObj: {
                     'host': 'bk_host_innerip',
@@ -184,6 +193,13 @@
             },
             getLabelText () {
                 return (this.getProperty(this.filter.id) || {}).bk_property_name
+            },
+            tableDataPermission () {
+                const map = {
+                    host: this.$OPERATION.R_HOST,
+                    biz: this.$OPERATION.R_BUSINESS
+                }
+                return map[this.currentAsstObj] || this.$OPERATION.R_INST
             }
         },
         async created () {
@@ -416,7 +432,7 @@
                 const objId = this.currentAsstObj
                 const config = {
                     requestId: 'get_relation_inst',
-                    cancelPrevious: true
+                    globalPermission: false
                 }
                 let promise
                 switch (objId) {
@@ -430,7 +446,16 @@
                         promise = this.getObjInstance(objId, config)
                 }
                 promise.then(data => {
+                    this.table.stuff.type = 'search'
                     this.setTableList(data, objId)
+                }).catch(e => {
+                    console.error(e)
+                    if (e.permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission: e.permission }
+                        }
+                    }
                 })
             },
             getHostInstance (config) {

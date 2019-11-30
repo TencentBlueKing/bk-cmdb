@@ -371,6 +371,50 @@ func (valid *validator) validChar(ctx context.Context, val interface{}, key stri
 	return nil
 }
 
+//valid list
+func (valid *validator) validList(ctx context.Context, val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null, list field key: %s", key)
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+		}
+		return nil
+	}
+
+	strVal, ok := val.(string)
+	if !ok {
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+	}
+
+	option, ok := valid.propertys[key]
+	if !ok {
+		blog.Errorf("option %v invalid, not string type list option", option)
+		return valid.errif.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist, key)
+	}
+	listOption, ok := option.Option.([]interface{})
+	if false == ok {
+		blog.Errorf("option %v invalid, not string type list option", option)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+	}
+	match := false
+	for _, inVal := range listOption {
+		inValStr, ok := inVal.(string)
+		if !ok {
+			blog.Errorf("inner list option convert to string  failed, params %s not valid , list field value: %#v", key, val)
+			return valid.errif.Errorf(common.CCErrParseAttrOptionListFailed, key)
+		}
+		if strVal == inValStr {
+			match = true
+			break
+		}
+	}
+	if !match {
+		blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, option, val)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+	}
+	return nil
+}
+
 // isNumeric judges if value is a number
 func (valid *validator) isNumeric(val interface{}) bool {
 	switch val.(type) {

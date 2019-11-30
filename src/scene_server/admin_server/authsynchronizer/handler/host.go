@@ -33,7 +33,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 	blog.Infof("sync host with biz: %d", businessSimplify.BKAppIDField)
 
-	// step1 get instances by business from core service
+	// step1 get instances by business from logics service
 	bizID := businessSimplify.BKAppIDField
 	hosts, err := ih.authManager.CollectHostByBusinessID(context.Background(), *header, bizID)
 	if err != nil {

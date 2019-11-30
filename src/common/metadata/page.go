@@ -73,3 +73,7 @@ func ParsePage(origin interface{}) BasePage {
 	}
 	return result
 }
+
+func (page BasePage) ToSearchSort() []SearchSort {
+	return NewSearchSortParse().String(page.Sort).ToSearchSortArr()
+}

@@ -1,0 +1,9 @@
+{
+  "operation_chart_host_os_chart": "按操作系统类型统计",
+  "operation_chart_host_biz_chart": "按业务统计",
+  "operation_chart_host_cloud_chart": "按云区域统计",
+  "operation_chart_host_change_biz_chart": "主机数量变化趋势",
+  "operation_chart_model_inst_chart": "实例数量统计",
+  "operation_chart_model_inst_change_chart": "实例变更统计",
+  "": ""
+}

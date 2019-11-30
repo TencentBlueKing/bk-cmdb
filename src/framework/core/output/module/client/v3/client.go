@@ -47,9 +47,9 @@ func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 	c.httpCli.SetHeader("Accept", "application/json")
 
 	c.disc = disc
-	c.supplierAccount = conf.Get("core.supplierAccount")
-	c.user = conf.Get("core.user")
-	c.SetAddress(conf.Get("core.ccaddress"))
+	c.supplierAccount = conf.Get("logics.supplierAccount")
+	c.user = conf.Get("logics.user")
+	c.SetAddress(conf.Get("logics.ccaddress"))
 	return c
 }
 

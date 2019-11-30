@@ -123,13 +123,13 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	// redis
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err()))
 	if s.snapcli != nil {
-		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis + " - snapcli", s.snapcli.Ping().Err()))
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis+" - snapcli", s.snapcli.Ping().Err()))
 	}
 	if s.disCli != nil {
-		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis + " - disCli", s.disCli.Ping().Err()))
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis+" - disCli", s.disCli.Ping().Err()))
 	}
 	if s.netCli != nil {
-		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis + " - netCli", s.netCli.Ping().Err()))
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis+" - netCli", s.netCli.Ping().Err()))
 	}
 
 	for _, item := range meta.Items {

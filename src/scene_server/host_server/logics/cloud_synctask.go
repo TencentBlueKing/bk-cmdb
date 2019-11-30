@@ -80,7 +80,7 @@ func (lgc *Logics) TimerTriggerCheckStatus(ctx context.Context) {
 }
 
 func (lgc *Logics) SyncTaskDBManager(ctx context.Context) {
-
+	mutex := &sync.Mutex{}
 	if isMaster := lgc.Engine.ServiceManageInterface.IsMaster(); !isMaster {
 		blog.Errorf("not master, stop syncTaskDBManager, rid: %v", lgc.rid)
 		return
@@ -100,9 +100,11 @@ func (lgc *Logics) SyncTaskDBManager(ctx context.Context) {
 			newHeader.Set(common.BKHTTPHeaderUser, taskInfo.User)
 
 			taskID := taskInfo.TaskID
+			mutex.Lock()
 			if _, ok := taskChan[taskID]; ok {
 				continue
 			}
+			mutex.Unlock()
 			nextTrigger := lgc.NextTrigger(ctx, taskInfo.PeriodType, taskInfo.Period)
 			taskInfoItem := &meta.TaskInfo{
 				Method:      taskInfo.PeriodType,
@@ -194,11 +196,11 @@ func (lgc *Logics) ListenRedisSubscribe(ctx context.Context) {
 				blog.Errorf("interface convert to int64 fail, err: %v, rid: %v", err, lgc.rid)
 				continue
 			}
+			mutex.Lock()
 			if _, ok := taskChan[taskID]; ok {
-				mutex.Lock()
 				taskChan[taskID] <- true
-				mutex.Unlock()
 			}
+			mutex.Unlock()
 		}
 	}
 }
@@ -224,13 +226,13 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 		taskID := pendingStartItem.TaskID
 
 		if pendingStartItem.Update {
+			mutex.Lock()
 			if _, ok := taskChan[taskID]; ok {
-				mutex.Lock()
 				taskChan[taskID] <- true
-				mutex.Unlock()
 			} else {
 				lgc.cache.Publish("stop", strconv.FormatInt(taskID, 10))
 			}
+			mutex.Unlock()
 		}
 		taskInfoItem := pendingStartItem.TaskItemInfo
 
@@ -319,7 +321,6 @@ func (lgc *Logics) SyncTaskRedisStopManager(ctx context.Context) {
 					blog.Errorf("remove stop task item fail, taskInfo: %s, error: %v, rid: %s", item, err, lgc.rid)
 					continue
 				}
-
 				mutex.Lock()
 				taskChan[key] <- true
 				mutex.Lock()
@@ -509,11 +510,13 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 }
 
 func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem *meta.TaskInfo) {
+	mutex := &sync.Mutex{}
+
+	timer := time.NewTimer(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
 	go func() {
 		for {
-			ticker := time.NewTicker(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
 			select {
-			case <-ticker.C:
+			case <-timer.C:
 				lgc.ExecSync(ctx, taskInfoItem.Args)
 				switch taskInfoItem.Method {
 				case "day":
@@ -523,9 +526,12 @@ func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem *meta.TaskI
 				case "minute":
 					taskInfoItem.NextTrigger = 5
 				}
+				timer.Reset(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
 			case <-taskChan[taskInfoItem.Args.TaskID]:
+				mutex.Lock()
 				close(taskChan[taskInfoItem.Args.TaskID])
 				delete(taskChan, taskInfoItem.Args.TaskID)
+				mutex.Unlock()
 				lgc.deleteStartedTaskRedis(ctx, taskInfoItem.Args.TaskID)
 				return
 			}
@@ -778,7 +784,7 @@ func (lgc *Logics) AddCloudHosts(ctx context.Context, newCloudHost []mapstr.MapS
 
 	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).Data()
 	cond[common.BKDefaultField] = common.DefaultResModuleFlag
-	moduleID, err := lgc.GetResoulePoolModuleID(ctx, cond)
+	moduleID, err := lgc.GetResourcePoolModuleID(ctx, cond)
 	if err != nil {
 		blog.Errorf("add host, but get module id failed, err: %s, rid: %s", err.Error(), lgc.rid)
 		return err

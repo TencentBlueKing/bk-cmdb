@@ -21,55 +21,48 @@ import (
 // utility.AddHandler(rest.Action{Verb: , Path: , Handler: ps.UpdateServiceCategory})
 var ServiceCategoryAuthConfigs = []AuthConfig{
 	{
-		Name:                  "findmanyServiceCategoryPattern",
-		Description:           "list 服务分类",
-		Pattern:               "/api/v3/findmany/proc/service_category",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceCategory,
-		ResourceAction:        meta.Find,
+		Name:           "findmanyServiceCategoryPattern",
+		Description:    "list 服务分类",
+		Pattern:        "/api/v3/findmany/proc/service_category",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceCategory,
+		ResourceAction: meta.Find,
 	}, {
-		Name:                  "findmanyServiceCategoryPattern",
-		Description:           "list 服务分类(含引用统计)",
-		Pattern:               "/api/v3/findmany/proc/service_category/with_statistics",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceCategory,
-		ResourceAction:        meta.Find,
+		Name:           "findmanyServiceCategoryPattern",
+		Description:    "list 服务分类(含引用统计)",
+		Pattern:        "/api/v3/findmany/proc/service_category/with_statistics",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceCategory,
+		ResourceAction: meta.Find,
 	}, {
-		Name:                  "createServiceCategoryPattern",
-		Description:           "创建服务分类",
-		Pattern:               "/api/v3/create/proc/service_category",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceCategory,
-		ResourceAction:        meta.Create,
+		Name:           "createServiceCategoryPattern",
+		Description:    "创建服务分类",
+		Pattern:        "/api/v3/create/proc/service_category",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceCategory,
+		ResourceAction: meta.Create,
 	}, {
-		Name:                  "deleteServiceCategoryPattern",
-		Description:           "修改服务分类",
-		Pattern:               "/api/v3/update/proc/service_category",
-		HTTPMethod:            http.MethodPut,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceCategory,
-		ResourceAction:        meta.Update,
+		Name:           "deleteServiceCategoryPattern",
+		Description:    "修改服务分类",
+		Pattern:        "/api/v3/update/proc/service_category",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceCategory,
+		ResourceAction: meta.Update,
 	}, {
-		Name:                  "deleteServiceCategoryPattern",
-		Description:           "删除服务分类",
-		Pattern:               "/api/v3/delete/proc/service_category",
-		HTTPMethod:            http.MethodDelete,
-		RequiredBizInMetadata: true,
-		ResourceType:          meta.ProcessServiceCategory,
-		ResourceAction:        meta.Delete,
+		Name:           "deleteServiceCategoryPattern",
+		Description:    "删除服务分类",
+		Pattern:        "/api/v3/delete/proc/service_category",
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceCategory,
+		ResourceAction: meta.Delete,
 	},
 }
 
 func (ps *parseStream) ServiceCategory() *parseStream {
-	resources, err := MatchAndGenerateIAMResource(ServiceCategoryAuthConfigs, ps.RequestCtx)
-	if err != nil {
-		ps.err = err
-	}
-	if resources != nil {
-		ps.Attribute.Resources = resources
-	}
-	return ps
+	return ParseStreamWithFramework(ps, ServiceCategoryAuthConfigs)
 }

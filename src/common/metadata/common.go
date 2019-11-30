@@ -70,9 +70,19 @@ type Response struct {
 	Data     interface{} `json:"data"`
 }
 
+type BoolResponse struct {
+	BaseResp `json:",inline"`
+	Data     bool `json:"data"`
+}
+
 type Uint64Response struct {
 	BaseResp `json:",inline"`
 	Count    uint64 `json:"count"`
+}
+
+type CoreUint64Response struct {
+	BaseResp `json:",inline"`
+	Data     uint64 `json:"data"`
 }
 
 type MapArrayResponse struct {
@@ -222,16 +232,15 @@ type BkHostInfo struct {
 
 type DefaultModuleHostConfigParams struct {
 	ApplicationID int64    `json:"bk_biz_id"`
-	HostID        []int64  `json:"bk_host_id"`
+	HostIDs       []int64  `json:"bk_host_id"`
 	Metadata      Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
-//common search struct
+// common search struct
 type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Page      map[string]interface{} `json:"page,omitempty"`
 	Fields    []string               `json:"fields,omitempty"`
-	Native    int                    `json:"native,omitempty"`
 }
 
 // PropertyGroupCondition used to reflect the property group json

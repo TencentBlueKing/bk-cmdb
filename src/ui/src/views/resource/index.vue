@@ -12,31 +12,28 @@
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
             <template slot="options-left">
-                <span style="display: inline-block;" v-if="isAdminView"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_RESOURCE_HOST),
-                        auth: [$OPERATION.C_RESOURCE_HOST]
-                    }">
-                    <bk-button class="options-button" theme="primary" style="margin-left: 0"
-                        :disabled="!$isAuthorized($OPERATION.C_RESOURCE_HOST)"
+                <cmdb-auth v-if="isAdminView" :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="options-button"
+                        theme="primary"
+                        style="margin-left: 0"
+                        :disabled="disabled"
                         @click="importInst.show = true">
                         {{$t('导入主机')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <bk-select class="options-business-selector"
                     v-if="isAdminView"
-                    :font-size="14"
+                    font-size="medium"
                     :popover-width="180"
-                    :searchable="authorizedBusiness.length > 7"
+                    :searchable="businessList.length > 7"
                     :disabled="!table.checked.length"
                     :clearable="false"
                     :placeholder="$t('分配到')"
                     v-model="assignBusiness"
                     @selected="handleAssignHosts">
-                    <bk-button class="select-btn" slot="trigger" :disabled="!table.checked.length">
-                        {{$t('分配到')}}
-                    </bk-button>
-                    <bk-option v-for="option in authorizedBusiness"
+                    <bk-option id="empty" :name="$t('分配到')" hidden></bk-option>
+                    <bk-option v-for="option in businessList"
                         :key="option.bk_biz_id"
                         :id="option.bk_biz_id"
                         :name="option.bk_biz_name">
@@ -110,7 +107,7 @@
                     columnsConfigKey: 'resource_table_columns',
                     exportUrl: `${window.API_HOST}hosts/export`
                 },
-                assignBusiness: '',
+                assignBusiness: 'empty',
                 importInst: {
                     show: false,
                     active: 'import',
@@ -118,33 +115,28 @@
                     importUrl: `${window.API_HOST}hosts/import`
                 },
                 isDropdownShow: false,
-                ready: false
+                ready: false,
+                businessList: []
             }
         },
         computed: {
             ...mapGetters(['userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectBiz', ['authorizedBusiness', 'bizId']),
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapState('hosts', ['filterParams']),
             buttons () {
                 return [{
                     id: 'edit',
                     text: this.$t('修改'),
                     handler: this.handleMultipleEdit,
-                    disabled: !this.table.checked.length || !this.$isAuthorized(this.$OPERATION.U_RESOURCE_HOST),
-                    auth: {
-                        active: !this.$isAuthorized(this.$OPERATION.U_RESOURCE_HOST),
-                        auth: [this.$OPERATION.U_RESOURCE_HOST]
-                    }
+                    disabled: !this.table.checked.length,
+                    auth: this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
                 }, {
                     id: 'delete',
                     text: this.$t('删除'),
                     handler: this.handleMultipleDelete,
-                    disabled: !this.table.checked.length || !this.$isAuthorized(this.$OPERATION.D_RESOURCE_HOST),
-                    auth: {
-                        active: !this.$isAuthorized(this.$OPERATION.D_RESOURCE_HOST),
-                        auth: [this.$OPERATION.D_RESOURCE_HOST]
-                    },
+                    disabled: !this.table.checked.length,
+                    auth: this.$authResources({ type: this.$OPERATION.D_RESOURCE_HOST }),
                     available: this.isAdminView
                 }, {
                     id: 'export',
@@ -178,14 +170,14 @@
             },
             filterParams () {
                 if (this.ready) {
-                    this.getHostList()
+                    this.getHostList(false, true)
                 }
             }
         },
         async created () {
             try {
                 this.setDynamicBreadcrumbs()
-                this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+                await this.getFullAmountBusiness()
                 await this.getProperties()
                 this.getHostList()
                 this.ready = true
@@ -212,6 +204,15 @@
                     label: this.$t('主机')
                 }])
             },
+            async getFullAmountBusiness () {
+                try {
+                    const data = await this.$store.dispatch('objectBiz/getFullAmountBusiness')
+                    this.businessList = data.info || []
+                } catch (e) {
+                    console.error(e)
+                    this.businessList = []
+                }
+            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
@@ -229,9 +230,9 @@
                     return result
                 })
             },
-            getHostList (resetPage = false) {
+            getHostList (resetPage = false, event = false) {
                 const params = this.getParams()
-                this.$refs.resourceTable.search(-1, params, resetPage)
+                this.$refs.resourceTable.search(-1, params, resetPage, event)
             },
             getParams () {
                 const defaultModel = ['biz', 'set', 'module', 'host']
@@ -257,17 +258,17 @@
                 if (this.hasSelectAssignedHost()) {
                     this.$error(this.$t('请勿选择已分配主机'))
                     this.$nextTick(() => {
-                        this.assignBusiness = ''
+                        this.assignBusiness = 'empty'
                     })
                 } else {
                     this.$bkInfo({
-                        title: this.$t('请确认是否转移'),
+                        title: this.$t('确认分配到业务'),
                         subHeader: this.getConfirmContent(business),
                         confirmFn: () => {
                             this.assignHosts(business)
                         },
                         cancelFn: () => {
-                            this.assignBusiness = ''
+                            this.assignBusiness = 'empty'
                         }
                     })
                 }
@@ -286,40 +287,29 @@
                     }
                 }).then(() => {
                     this.$success(this.$t('分配成功'))
-                    this.assignBusiness = ''
+                    this.assignBusiness = 'empty'
                     this.$refs.resourceTable.table.checked = []
                     this.$refs.resourceTable.handlePageChange(1)
                 }).catch(e => {
-                    this.assignBusiness = ''
+                    this.assignBusiness = 'empty'
                 })
             },
             getConfirmContent (business) {
                 const render = this.$createElement
-                let content
-                if (this.$i18n.locale === 'en') {
-                    content = render('p', [
-                        render('span', 'Selected '),
-                        render('span', {
-                            style: { color: '#3c96ff' }
-                        }, this.table.checked.length),
-                        render('span', ' Hosts Transfer to Idle machine under '),
-                        render('span', {
-                            style: { color: '#3c96ff' }
-                        }, business['bk_biz_name'])
-                    ])
-                } else {
-                    content = render('p', [
-                        render('span', '选中的 '),
-                        render('span', {
-                            style: { color: '#3c96ff' }
-                        }, this.table.checked.length),
-                        render('span', ' 个主机转移到 '),
-                        render('span', {
-                            style: { color: '#3c96ff' }
-                        }, business['bk_biz_name']),
-                        render('span', ' 下的空闲机模块')
-                    ])
-                }
+                const content = render('i18n', {
+                    props: {
+                        path: '确认转移主机信息'
+                    }
+                }, [
+                    render('span', {
+                        attrs: { place: 'num' },
+                        style: { color: '#3c96ff' }
+                    }, this.table.checked.length),
+                    render('span', {
+                        attrs: { place: 'name' },
+                        style: { color: '#3c96ff' }
+                    }, business['bk_biz_name'])
+                ])
                 return content
             },
             handleChecked (checked) {
@@ -465,16 +455,6 @@
         display: inline-block;
         vertical-align: middle;
         margin: 0 10px 0 0;
-        .select-btn {
-            display: block;
-            height: 30px;
-            border: none;
-        }
-        /deep/ {
-            &::before {
-                display: none;
-            }
-        }
     }
     .automatic-import{
         padding:40px 30px 0 30px;

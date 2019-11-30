@@ -288,7 +288,7 @@ func (c *commonInst) validMainLineParentID(params types.ContextParams, obj model
 		return nil
 	}
 	def, exist := data.Get(common.BKDefaultField)
-	if exist && def.(int) != 0 {
+	if exist && def.(int) != common.DefaultFlagDefaultValue {
 		return nil
 	}
 	parent, err := obj.GetMainlineParentObject()

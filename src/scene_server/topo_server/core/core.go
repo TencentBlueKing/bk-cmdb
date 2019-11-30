@@ -18,6 +18,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
+	"configcenter/src/scene_server/topo_server/core/settemplate"
 )
 
 // Core Provides management interfaces for models and instances
@@ -36,6 +37,7 @@ type Core interface {
 	AuditOperation() operation.AuditOperationInterface
 	HealthOperation() operation.HealthOperationInterface
 	UniqueOperation() operation.UniqueOperationInterface
+	SetTemplateOperation() settemplate.SetTemplate
 }
 
 type core struct {
@@ -53,9 +55,10 @@ type core struct {
 	identifier     operation.IdentifierOperationInterface
 	health         operation.HealthOperationInterface
 	unique         operation.UniqueOperationInterface
+	setTemplate    settemplate.SetTemplate
 }
 
-// New create a core manager
+// New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Core {
 
 	// health
@@ -67,7 +70,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	groupOperation := operation.NewGroupOperation(client)
 	objectOperation := operation.NewObjectOperation(client, authManager)
 	instOperation := operation.NewInstOperation(client)
-	moduleOperation := operation.NewModuleOperation(client)
+	moduleOperation := operation.NewModuleOperation(client, authManager)
 	setOperation := operation.NewSetOperation(client)
 	businessOperation := operation.NewBusinessOperation(client, authManager)
 	associationOperation := operation.NewAssociationOperation(client, authManager)
@@ -75,6 +78,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	identifier := operation.NewIdentifier(client)
 	audit := operation.NewAuditOperation(client)
 	unique := operation.NewUniqueOperation(client, authManager)
+	setTemplate := settemplate.NewSetTemplate(client)
 
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
@@ -108,6 +112,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		identifier:     identifier,
 		health:         healthOperation,
 		unique:         unique,
+		setTemplate:    setTemplate,
 	}
 }
 
@@ -155,4 +160,7 @@ func (c *core) HealthOperation() operation.HealthOperationInterface {
 }
 func (c *core) UniqueOperation() operation.UniqueOperationInterface {
 	return c.unique
+}
+func (c *core) SetTemplateOperation() settemplate.SetTemplate {
+	return c.setTemplate
 }

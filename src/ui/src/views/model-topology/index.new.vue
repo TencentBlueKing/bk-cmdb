@@ -1,51 +1,50 @@
 <template>
     <div :class="['topo-wrapper', { hover: isTopoHover }]">
         <div class="toolbar">
+            <cmdb-auth style="display: none;" ref="addBusinessLevel" :auth="$authResources({ type: $OPERATION.SYSTEM_TOPOLOGY })" @update-auth="handleReceiveAuth"></cmdb-auth>
             <template v-if="!topoEdit.isEdit">
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS),
-                        auth: [$OPERATION.SYSTEM_MODEL_GRAPHICS]
-                    }">
-                    <bk-button class="edit-button" theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.SYSTEM_MODEL_GRAPHICS })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="edit-button"
+                        theme="primary"
+                        :disabled="disabled"
                         @click="handleEditTopo">
                         {{$t('编辑拓扑')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </template>
             <template v-else>
-                <bk-button theme="primary" @click="handleExitEdit">
+                <bk-button style="margin-top: -2px;" theme="primary" @click="handleExitEdit">
                     {{$t('返回')}}
                 </bk-button>
                 <p class="edit-cue">{{$t('所有更改已自动保存')}}</p>
             </template>
             <div class="vis-button-group">
-                <i class="bk-icon icon-full-screen" @click="resizeFull" v-bk-tooltips="$t('还原')"></i>
-                <i class="bk-icon icon-plus" @click="zoomIn" v-bk-tooltips="$t('放大')"></i>
-                <i class="bk-icon icon-minus" @click="zoomOut" v-bk-tooltips="$t('缩小')"></i>
-                <div class="topo-example" v-if="!isAdminView">
-                    <p class="example-item">
-                        <i></i>
-                        <span>{{$t('业务私有模型')}}</span>
-                    </p>
-                    <p class="example-item">
-                        <i></i>
-                        <span>{{$t('公有模型')}}</span>
-                    </p>
-                </div>
-                <div class="topo-example" v-else>
-                    <p class="example-item">
+                <i
+                    :class="['bk-cc-icon', mainFullScreen ? 'icon-cc-fullscreen-outlined-reset' : 'icon-cc-fullscreen-outlined']"
+                    @click="resizeFull"
+                    v-bk-tooltips="$t(mainFullScreen ? '取消全屏' : '全屏')"
+                >
+                </i>
+                <i class="bk-cc-icon icon-cc-fit" @click="resizeFit" v-bk-tooltips="$t('还原')"></i>
+                <i class="bk-cc-icon icon-cc-zoom-out" @click="zoomOut" v-bk-tooltips="$t('缩小')"></i>
+                <i class="bk-cc-icon icon-cc-zoom-in" @click="zoomIn" v-bk-tooltips="$t('放大')"></i>
+                <div class="topo-legend">
+                    <p class="legend-item built-in">
                         <i></i>
                         <span>{{$t('内置模型')}}</span>
+                    </p>
+                    <p class="legend-item custom">
+                        <i></i>
+                        <span>{{$t('自定义模型')}}</span>
                     </p>
                 </div>
             </div>
         </div>
 
         <ul class="topo-nav">
-            <li class="group-item group-total">
-                <div :class="['group-info', { 'selected': topoNav.selectedGroupId === -1 }]" @click="handleSelectGroup()">
+            <li class="group-item">
+                <div :class="['group-info', 'group-total', { 'selected': topoNav.selectedGroupId === -1 }]" @click="handleSelectGroup()">
                     <span class="group-name">全部模型</span>
                     <span class="model-count">{{localTopoModelList.length > 1000 ? '999+' : localTopoModelList.length}}</span>
                 </div>
@@ -85,7 +84,7 @@
                                 'node-icon',
                                 model['bk_obj_icon'],
                                 {
-                                    'is-public': !$tools.getMetadataBiz(model)
+                                    'is-public': model.ispre
                                 }
                             ]">
                             </i>
@@ -124,27 +123,26 @@
 
         <div class="topology-node-tooltips" v-show="topoTooltip.hoverNode" ref="nodeTooltips">
             <div
-                class="icon-box is-line"
+                class="icon-box"
                 ref="addEdgeIcon"
                 @click="handleAddEdge"
             >
                 <i class="icon-cc-line"></i>
             </div>
             <div
-                class="icon-box is-del"
-                ref="deleteNodeIcon"
-                v-show="topoTooltip.showDelete"
-                @click="handleDeleteNode"
+                class="icon-box"
+                ref="hideNodeIcon"
+                @click="handleHideNode"
             >
-                <i class="icon-cc-del"></i>
+                <i class="icon-cc-hide"></i>
             </div>
         </div>
 
         <the-create-model
-            :is-show.sync="addLevel.showDialog"
+            :is-show.sync="addBusinessLevel.showDialog"
             :is-main-line="true"
             :title="$t('新建层级')"
-            @confirm="handleCreateLevel"
+            @confirm="handleCreateBusinessLevel"
         ></the-create-model>
     </div>
 </template>
@@ -153,21 +151,19 @@
     import cytoscape from 'cytoscape'
     import edgehandles from 'cytoscape-edgehandles'
     import popper from 'cytoscape-popper'
-    import noOverlap from 'cytoscape-no-overlap'
     import theRelation from './children/create-relation'
     import theRelationDetail from './children/relation-detail'
     import theCreateModel from '@/components/model-manage/_create-model'
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
     import memoize from 'lodash.memoize'
+    import debounce from 'lodash.debounce'
+    import throttle from 'lodash.throttle'
 
     // cytoscape实例，不能放到data中管理
     let cy = null
     // edge操作实例
     let eh = null
-
-    // 已删除节点集合
-    let deletedNodes
 
     const NODE_WIDTH = 55
 
@@ -198,8 +194,7 @@
                     title: this.$t('拓扑显示设置')
                 },
                 topoTooltip: {
-                    hoverNode: null,
-                    showDelete: true
+                    hoverNode: null
                 },
                 topoEdit: {
                     isEdit: false
@@ -214,28 +209,28 @@
                     isSelectAll: true,
                     selectedNodeId: ''
                 },
-                addLevel: {
+                addBusinessLevel: {
                     showDialog: false,
                     parent: null
                 },
                 loading: true,
-                isTopoHover: false
+                isTopoHover: false,
+                createAuth: false
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'isBusinessSelected']),
+            ...mapGetters(['isAdminView', 'isBusinessSelected', 'supplierAccount', 'userName', 'featureTipsParams', 'mainFullScreen']),
+            ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', [
                 'classifications',
                 'getModelById'
             ]),
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView', 'featureTipsParams']),
-            createAuth () {
-                return this.$isAuthorized(this.$OPERATION.SYSTEM_TOPOLOGY)
-            },
             noPositionModels () {
                 return this.localTopoModelList.filter(model => {
                     const position = model.position
-                    return position.x === null && position.y === null
+                    const isMainNode = this.isMainNode(model)
+                    return position.x === null && position.y === null && !isMainNode
                 })
             },
             localClassifications () {
@@ -245,6 +240,18 @@
                     })
                     return classify
                 })
+            },
+            hideModelConfigKey () {
+                return `${this.userName}_model_${this.isAdminView ? 'adminView' : this.bizId}_hide_models`
+            },
+            hideModels () {
+                return this.usercustom[this.hideModelConfigKey] || {}
+            }
+        },
+        watch: {
+            'topoNav.hideNodeIds' (hideNodeIds) {
+                this.saveHideModelConfig(hideNodeIds)
+                this.toggleAddBusinessBtn()
             }
         },
         created () {
@@ -254,9 +261,11 @@
             if (typeof cytoscape('core', 'popper') !== 'function') {
                 cytoscape.use(popper)
             }
-            if (typeof cytoscape('collection', 'noOverlap') !== 'function') {
-                cytoscape.use(noOverlap)
-            }
+
+            // 已记录的隐藏节点信息
+            const { hideNodeIds, hideGroupIds } = this.hideModels
+            this.topoNav.hideNodeIds = hideNodeIds || []
+            this.topoNav.hideGroupIds = hideGroupIds || []
         },
         mounted () {
             this.getMainLineModel()
@@ -265,6 +274,9 @@
         destroyed () {
             cy = null
             eh = null
+
+            // 取消全屏
+            this.resizeFull(true)
         },
         methods: {
             ...mapActions('objectAssociation', [
@@ -289,13 +301,14 @@
                 }).then(res => res.info)
             },
             initNetwork () {
-                cy = cytoscape({
+                cy = window.cy = cytoscape({
                     container: this.$refs.topo,
-
                     autolock: true,
-
-                    minZoom: 0.5,
+                    zoom: 1,
+                    minZoom: 0.1,
                     maxZoom: 5,
+                    wheelSensitivity: 0.05,
+                    pixelRatio: 2,
 
                     // 元素定义，支持promise
                     elements: this.getTopoElements(),
@@ -303,7 +316,13 @@
                     layout: {
                         name: 'preset',
                         fit: true,
-                        padding: 30
+                        padding: 30,
+                        ready: () => {
+                            this.loadNodeImage()
+                        },
+                        stop: () => {
+                            this.updateElementPostion()
+                        }
                     },
 
                     style: [
@@ -377,7 +396,7 @@
 
                         // 添加按钮
                         {
-                            selector: 'node.add-btn',
+                            selector: 'node.add-business-btn',
                             style: {
                                 'width': 20,
                                 'height': 20,
@@ -385,8 +404,8 @@
                                 'text-valign': 'bottom',
                                 'text-halign': 'center',
                                 'font-size': '20px',
-                                'text-margin-y': '-21px',
-                                'font-weight': 'bold',
+                                'text-margin-y': '-19px',
+                                'font-family': 'arial',
                                 'label': '+',
                                 'shape': 'round-rectangle',
                                 'background-color': '#3c96ff',
@@ -427,7 +446,14 @@
                             }
                         },
                         {
-                            selector: 'edge[?twoway]', // 双箭头
+                            selector: 'edge[direction="none"]', // 无方向
+                            style: {
+                                'source-arrow-shape': 'none',
+                                'target-arrow-shape': 'none'
+                            }
+                        },
+                        {
+                            selector: 'edge[direction="bidirectional"]', // 双向
                             style: {
                                 'source-arrow-shape': 'triangle-backcurve',
                                 'source-arrow-color': '#c3cdd7'
@@ -509,15 +535,22 @@
                 })
 
                 // 所有操作的事件绑定
-                cy.on('layoutstart', (event) => {
-                    this.loadNodeImage()
+                cy.on('ready', (event) => {
+                    const cy = event.cy
+
+                    // 初始化节点隐藏
+                    cy.batch(() => {
+                        this.topoNav.hideNodeIds.forEach((id) => {
+                            cy.$(`node#${id}`).style('visibility', 'hidden').connectedEdges().style('visibility', 'hidden')
+                        })
+                    })
                 }).on('layoutstop', (event) => {
-                    this.setMainNodePosition()
-                }).on('ready', (event) => {
-                    event.cy.nodes().noOverlap({ padding: 5 })
-                }).on('resize', (event) => {
-                    event.cy.fit()
-                }).on('mouseover', 'node.model', (event) => {
+                    this.fitMaxZoom(event.cy)
+                }).on('resize', debounce((event) => {
+                    const cy = event.cy
+                    cy.fit()
+                    this.fitMaxZoom(cy)
+                }, 500)).on('mouseover', 'node.model', throttle((event) => {
                     const node = event.target
                     const nodeData = node.data()
 
@@ -529,7 +562,6 @@
                     if (this.topoEdit.isEdit && !this.specialModel.includes(nodeData.id)) {
                         // 设置tooltip状态数据
                         this.topoTooltip.hoverNode = nodeData
-                        this.checkIsShowDelete(nodeData.id)
 
                         // todo根据画布缩放值更新操作按钮大小
 
@@ -544,13 +576,14 @@
                             theme: 'node-tooltip',
                             boundary: this.$refs.topo,
                             trigger: 'manual',
-                            distance: 0
+                            distance: 6,
+                            offset: 12
                         })
 
                         node.data('popover', popover)
                         popover.show()
                     }
-                }).on('mouseout', 'node.model', (event) => {
+                }, 60)).on('mouseout', 'node.model', throttle((event) => {
                     const node = event.target
                     node.removeClass('hover')
                     node.connectedEdges().removeClass('hover')
@@ -561,7 +594,7 @@
                     }
 
                     this.topoTooltip.hoverNode = null
-                }).on('dragfreeon', 'node.model', (event) => {
+                }), 60).on('dragfreeon', 'node.model', (event) => {
                     const node = event.target
                     const nodeData = node.data()
                     const position = node.position()
@@ -601,16 +634,22 @@
                     targetNode.data('ehhoverover', true)
                 }).on('ehhoverout', (event, sourceNode, targetNode) => {
                     targetNode.data('ehhoverover', false)
-                }).on('click', 'node.add-btn', (event) => {
+                }).on('click', 'node.add-business-btn', (event) => {
                     const node = event.target
-                    this.handleAddLevel(node.data('model'))
-                }).on('mouseover', 'node.add-btn', (event) => {
+                    this.handleAddBusinessLevel(node.data('model'))
+                }).on('mouseover', 'node.add-business-btn', (event) => {
                     this.isTopoHover = true
-                }).on('mouseout', 'node.add-btn', (event) => {
+                }).on('mouseout', 'node.add-business-btn', (event) => {
                     this.isTopoHover = false
                 })
+            },
+            async updateNetwork () {
+                // 全量更新画布元素，如存在性能问题则需要依赖数据返回做按需更新
+                const elements = await this.getTopoElements()
+                cy.json({ elements })
 
-                deletedNodes = cy.collection()
+                this.loadNodeImage()
+                this.updateElementPostion()
             },
             async getTopoElements () {
                 const [asstData, mainLineData, nodeData] = await Promise.all([
@@ -630,27 +669,34 @@
                 // 包含分类属性的节点数据
                 const nodeObjects = this.localClassifications.reduce((acc, cur) => acc.concat(cur['bk_objects']), [])
 
-                // 主线模型
-                const mainLineIds = this.mainLineModelList.map(model => model['bk_obj_id'])
-
                 this.localTopoModelList.forEach((nodeItem, i) => {
-                    // nodes
+                    // nodes，模型节点
                     const nodeObjId = nodeItem.bk_obj_id
-                    const isMainNode = mainLineIds.includes(nodeObjId)
+                    const isMainNode = this.isMainNode(nodeItem)
+                    const nodeClasses = ['model']
+                    if (isMainNode) {
+                        nodeClasses.push('main')
+                    }
+                    if (nodeItem.ispre) {
+                        nodeClasses.push('ispre')
+                    }
                     elements.push({
                         data: {
                             id: nodeObjId,
                             name: nodeItem.node_name,
                             icon: nodeItem.bk_obj_icon,
-                            group: (nodeObjects.find(item => item.bk_obj_id === nodeObjId) || {}).bk_classification_id,
+                            groupId: (nodeObjects.find(item => item.bk_obj_id === nodeObjId) || {}).bk_classification_id,
                             instId: nodeItem.bk_inst_id,
-                            type: nodeItem.node_type,
-                            main: isMainNode
+                            type: nodeItem.node_type
                         },
-                        position: nodeItem.position,
+                        position: {
+                            x: nodeItem.position.x || 0,
+                            y: nodeItem.position.y || 0
+                        },
                         group: 'nodes',
                         locked: false,
-                        classes: 'model'
+                        selectable: false,
+                        classes: nodeClasses.join(' ')
                     })
 
                     // edges
@@ -667,7 +713,7 @@
                                         label: asstName || asstId,
                                         source: nodeItem.bk_obj_id,
                                         target: asstItem.bk_obj_id,
-                                        twoway: direction === 'bidirectional',
+                                        direction,
                                         instId: asstItem['bk_inst_id']
                                     },
                                     group: 'edges',
@@ -675,6 +721,21 @@
                                     classes: 'model'
                                 })
                             }
+                        })
+                    }
+                })
+
+                // nodes，添加业务层级操作按钮
+                this.mainLineModelList.forEach((model, i) => {
+                    if (this.canAddBusinessLevel(model)) {
+                        elements.push({
+                            data: {
+                                id: `add-business-btn-${model.bk_obj_id}`,
+                                model
+                            },
+                            group: 'nodes',
+                            locked: false,
+                            classes: 'add-business-btn'
                         })
                     }
                 })
@@ -690,28 +751,68 @@
                     node.addClass('bg')
                 })
             },
-            setMainNodePosition () {
+            updateElementPostion () {
                 const extent = cy.extent()
+                const isEdit = this.topoEdit.isEdit
+
+                // 先给节点解锁
+                cy.autolock(false)
+
+                // 1. 设置主节点位置
                 const centerPos = { x: (extent.x1 + extent.x2) / 2, y: (extent.y1 + extent.y2) / 2 }
                 const startPosY = extent.y1 + NODE_WIDTH
-                // todo分配空间可以再优化
                 // const nodeSpace = extent.h * 0.8 / this.mainLineModelList.length
                 const nodeSpace = 200
 
-                // 将主线节点坚排并lock
-                cy.autolock(false)
+                // 坚排并lock
                 this.mainLineModelList.forEach((model, i) => {
                     cy.nodes(`#${model['bk_obj_id']}`).position({
                         x: centerPos.x,
                         y: i * nodeSpace + startPosY
                     }).lock()
                 })
-                cy.autolock(true)
 
-                // 添加新建层级操作节点
-                this.makeAddLevelBtns()
+                // 2. 摆放添加业务层级按钮节点
+                cy.nodes('.add-business-btn').positions((node, i) => {
+                    // 所属模型节点信息
+                    const modelNodeId = node.data('model').bk_obj_id
+                    const modelNode = cy.nodes(`#${modelNodeId}`)
+                    const modelNodePos = modelNode.position()
+                    const modelNodeHeight = modelNode.outerHeight() + 10
 
-                // todo将位置更新回写到数据
+                    return {
+                        x: modelNodePos.x,
+                        y: modelNodePos.y + modelNodeHeight
+                    }
+                }).style('display', isEdit ? 'element' : 'none').lock()
+
+                // 3. 摆放无位置节点
+                const nodeCollection = cy.collection()
+                this.noPositionModels.forEach((model, i) => {
+                    const node = cy.nodes(`#${model['bk_obj_id']}`)
+                    nodeCollection.merge(node)
+                })
+                const collectionBoundingBox = nodeCollection.boundingBox()
+                const nodeTotal = nodeCollection.length
+                const nodeGutter = 15
+                // 设定一行最多5个
+                const maxCountInOneRow = Math.min(nodeTotal, 5)
+                const boundingBoxW = (collectionBoundingBox.w + nodeGutter) * maxCountInOneRow
+                const rowTotal = Math.ceil(nodeTotal / maxCountInOneRow)
+                const boundingBoxH = collectionBoundingBox.h * rowTotal
+                nodeCollection.layout({
+                    name: 'grid',
+                    fit: false,
+                    padding: 30,
+                    rows: rowTotal,
+                    boundingBox: { x1: extent.x2, y1: extent.y1, w: boundingBoxW, h: boundingBoxH },
+                    stop: () => {
+                        cy.fit()
+                    }
+                }).run()
+
+                // 更新节点锁状态
+                cy.autolock(!isEdit)
             },
             handleToggleGroup (group) {
                 const groupId = group['bk_classification_id']
@@ -726,8 +827,8 @@
                 }
                 this.toggleNodeByGroup(group, display)
             },
-            handleToggleNode (node, group) {
-                const nodeId = node['bk_obj_id']
+            handleToggleNode (model, group) {
+                const nodeId = model['bk_obj_id']
                 const groupId = group['bk_classification_id']
 
                 // 当前节点在隐藏列表中的索引
@@ -737,16 +838,14 @@
                     this.topoNav.hideNodeIds.splice(index, 1)
 
                     // 即时切换拓扑图中的节点显示状态
-                    cy.$(`node#${nodeId}`).style('display', 'element')
+                    cy.$(`node#${nodeId}`).style('visibility', 'visible').connectedEdges().style('visibility', 'visible')
                 } else {
                     this.topoNav.hideNodeIds.push(nodeId)
-
-                    // 使用display none会同时隐藏关联的edge
-                    cy.$(`node#${nodeId}`).style('display', 'none')
+                    cy.$(`node#${nodeId}`).style('visibility', 'hidden').connectedEdges().style('visibility', 'hidden')
                 }
 
                 // 节点所关联的组中所有节点id
-                const nodeIds = group['bk_objects'].map(node => node['bk_obj_id'])
+                const nodeIds = group['bk_objects'].map(model => model['bk_obj_id'])
                 const nodeCount = nodeIds.length
                 const hideNodeCount = this.topoNav.hideNodeIds.filter(id => nodeIds.includes(id)).length
                 const hideGroupIndex = this.topoNav.hideGroupIds.indexOf(groupId)
@@ -762,11 +861,12 @@
             handleSelectGroup (group) {
                 if (group) {
                     const groupId = group['bk_classification_id']
+                    const groupNodes = cy.$(`node[groupId='${groupId}']`)
 
                     // 通过样式降低其它节点透明度，使用batch降低开销
                     cy.startBatch()
-                    cy.$('node').addClass('mask').outgoers().addClass('mask')
-                    cy.$(`node[group='${groupId}']`).removeClass('mask').outgoers().removeClass('mask')
+                    cy.$('*').addClass('mask')
+                    groupNodes.removeClass('mask').edgesWith(groupNodes).removeClass('mask')
                     cy.endBatch()
 
                     this.topoNav.selectedGroupId = group['bk_classification_id']
@@ -779,13 +879,13 @@
                 // 取消单个节点选择
                 this.topoNav.selectedNodeId = ''
             },
-            handleSelectNode (node) {
-                const nodeId = node['bk_obj_id']
+            handleSelectNode (model) {
+                const nodeId = model['bk_obj_id']
                 this.topoNav.selectedNodeId = nodeId
 
                 cy.startBatch()
                 cy.$('*').addClass('mask')
-                cy.$(`node#${nodeId}`).removeClass('mask').outgoers().removeClass('mask')
+                cy.$(`node#${nodeId}`).removeClass('mask')
                 cy.endBatch()
 
                 // 取消组选择
@@ -793,7 +893,7 @@
             },
             toggleNodeByGroup (group, display) {
                 const groupId = group['bk_classification_id']
-                const nodeIds = group['bk_objects'].map(node => node['bk_obj_id'])
+                const nodeIds = group['bk_objects'].map(model => model['bk_obj_id'])
 
                 if (display) {
                     // 显示则从隐藏记录中过滤掉
@@ -803,7 +903,8 @@
                 }
 
                 // 同时在拓扑图中显示/隐藏这组节点
-                cy.$(`node[group='${groupId}']`).style('display', display ? 'element' : 'none')
+                const visibility = display ? 'visible' : 'hidden'
+                cy.$(`node[groupId='${groupId}']`).style('visibility', visibility).connectedEdges().style('visibility', visibility)
             },
             makeSvg (nodeData) {
                 return new Promise((resolve, reject) => {
@@ -813,7 +914,7 @@
                         const svg = {
                             unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                 name: nodeData.name,
-                                iconColor: this.$tools.getMetadataBiz(model) ? '#3c96ff' : '#868b97',
+                                iconColor: model.ispre ? '#798aad' : '#3c96ff',
                                 backgroundColor: '#fff'
                             }))}`,
                             selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
@@ -890,48 +991,13 @@
                 }
 
                 // 显示新建层级操作节点
-                cy.nodes('.add-btn').style('display', 'element')
-            },
-            makeAddLevelBtns () {
-                if (cy.nodes('.add-btn').length) {
-                    return
-                }
-
-                this.mainLineModelList.forEach((model, i) => {
-                    if (this.canAddLevel(model)) {
-                        const modelNode = cy.nodes(`#${model.bk_obj_id}`)
-                        const nodePos = modelNode.position()
-                        const nodeHeight = modelNode.outerHeight() + 10
-
-                        cy.add({
-                            data: {
-                                id: `addbtn-${model.bk_obj_id}`,
-                                model
-                            },
-                            group: 'nodes',
-                            position: { x: nodePos.x, y: nodePos.y + nodeHeight },
-                            classes: 'add-btn'
-                        })
-                    }
-                })
-
-                if (this.topoEdit.isEdit) {
-                    cy.nodes('.add-btn').style('display', 'element')
-                }
-            },
-            async addLevelNode (data) {
-                // 全量更新画布元素，如存在性能问题则需要依赖数据返回做按需更新
-                const elements = await this.getTopoElements()
-                cy.json({ elements })
-
-                this.loadNodeImage()
-                this.setMainNodePosition()
+                this.toggleAddBusinessBtn()
             },
             handleExitEdit () {
                 this.topoEdit.isEdit = false
                 cy.autolock(true)
                 eh.disable()
-                cy.nodes('.add-btn').style('display', 'none')
+                cy.nodes('.add-business-btn').style('display', 'none')
             },
             handleAddEdge () {
                 const nodeId = this.topoTooltip.hoverNode.id
@@ -940,32 +1006,18 @@
                 // 触发edge编辑，node为source
                 eh.start(node)
             },
-            handleDeleteNode () {
-                const { hoverNode } = this.topoTooltip
-                if (this.checkNodeAsst(hoverNode)) {
-                    return
+            handleHideNode () {
+                const { id, groupId } = this.topoTooltip.hoverNode
+                const group = this.localClassifications.find(item => item.bk_classification_id === groupId) || {}
+                const model = this.localTopoModelList.find(item => item.bk_obj_id === id) || {}
+
+                const node = cy.$(`node#${id}`)
+                const popover = node.data('popover')
+                if (popover) {
+                    popover.hide()
                 }
-                this.$bkInfo({
-                    title: this.$t('确定移除模型?'),
-                    subTitle: this.$t('移除模型提示'),
-                    confirmFn: () => {
-                        this.updateSingleNodePosition({
-                            bk_obj_id: hoverNode.id,
-                            bk_inst_id: hoverNode.instId,
-                            node_type: hoverNode.type,
-                            position: { x: null, y: null }
-                        })
 
-                        // 重置节点位置
-                        cy.$(`node#${hoverNode.id}`).position({ x: 0, y: 0 })
-                        // this.addToDeletedNodes(cy.$(`node#${hoverNode.id}`))
-
-                        this.topoTooltip.hoverNode = null
-                    },
-                    cancelFn: () => {
-                        this.topoTooltip.hoverNode = null
-                    }
-                })
+                this.handleToggleNode(model, group)
             },
             clearEditingEdge () {
                 // 删除编辑中的edge
@@ -985,42 +1037,13 @@
                     target: params.bk_asst_obj_id
                 })
                 edge.data({
+                    direction,
                     label: asstName || asstId,
-                    twoway: direction === 'bidirectional',
                     instId: params.id
                 })
             },
-            addToDeletedNodes (node) {
-                deletedNodes.merge(node)
-                deletedNodes.layout({
-                    name: 'random'
-                }).run()
-            },
-            checkNodeAsst (node) {
-                let asstNum = 0
-                this.localTopoModelList.forEach(model => {
-                    if (model.hasOwnProperty('assts') && model.assts.length) {
-                        if (model['bk_obj_id'] === node.id) {
-                            asstNum += model.assts.length
-                        } else {
-                            model.assts.forEach(asst => {
-                                if (asst['bk_obj_id'] === node.id) {
-                                    asstNum++
-                                }
-                            })
-                        }
-                    }
-                })
-                if (asstNum) {
-                    this.$error(this.$tc('移除失败提示', asstNum, { asstNum }))
-                }
-                return !!asstNum
-            },
             handleSliderSave (params) {
                 switch (this.slider.content) {
-                    case 'theDisplay':
-                        this.handleDisplaySave(params)
-                        break
                     case 'theRelation':
                         this.handleRelationSave(params)
                         break
@@ -1036,16 +1059,12 @@
                 }
                 this.slider.isShow = false
             },
-            checkIsShowDelete (id) {
-                if (this.isAdminView) {
-                    this.topoTooltip.showDelete = true
-                } else {
-                    const model = this.getModelById(id)
-                    this.topoTooltip.showDelete = !!this.$tools.getMetadataBiz(model)
-                }
-            },
-            canAddLevel (model) {
+            canAddBusinessLevel (model) {
                 return this.isAdminView && !['set', 'module', 'host'].includes(model['bk_obj_id'])
+            },
+            isMainNode (model) {
+                const mainLineIds = this.mainLineModelList.map(model => model['bk_obj_id'])
+                return mainLineIds.includes(model['bk_obj_id'])
             },
             handleShowDetails (labelInfo) {
                 this.slider.title = labelInfo.text
@@ -1085,8 +1104,12 @@
                     this.topoNav.activeGroupId = ''
                 }
             },
-            resizeFull () {
+            resizeFit () {
                 cy.fit()
+            },
+            resizeFull (reset) {
+                const mainFullScreen = reset === true ? false : !this.mainFullScreen
+                this.$store.commit('setLayoutStatus', { mainFullScreen })
             },
             zoomIn () {
                 const zoom = cy.zoom()
@@ -1103,17 +1126,22 @@
                     }
                 })
             },
-            handleAddLevel (model) {
+            handleAddBusinessLevel (model) {
                 if (this.createAuth) {
-                    this.addLevel.parent = model
-                    this.addLevel.showDialog = true
+                    this.addBusinessLevel.parent = model
+                    this.addBusinessLevel.showDialog = true
+                } else {
+                    const addBusinessLevel = this.$refs.addBusinessLevel
+                    if (addBusinessLevel) {
+                        addBusinessLevel.$el && addBusinessLevel.$el.click()
+                    }
                 }
             },
-            async handleCreateLevel (data) {
+            async handleCreateBusinessLevel (data) {
                 try {
                     await this.createMainlineObject({
                         params: this.$injectMetadata({
-                            'bk_asst_obj_id': this.addLevel.parent['bk_obj_id'],
+                            'bk_asst_obj_id': this.addBusinessLevel.parent['bk_obj_id'],
                             'bk_classification_id': 'bk_biz_topo',
                             'bk_obj_icon': data['bk_obj_icon'],
                             'bk_obj_id': data['bk_obj_id'],
@@ -1132,17 +1160,44 @@
                         }
                     })
 
-                    // 在画布中添加节点
-                    this.addLevelNode()
+                    // 更新拓扑图
+                    this.updateNetwork()
 
-                    this.cancelCreateLevel()
+                    this.cancelCreateBusinessLevel()
                 } catch (e) {
                     console.log(e)
                 }
             },
-            cancelCreateLevel () {
-                this.addLevel.parent = null
-                this.addLevel.showDialog = false
+            cancelCreateBusinessLevel () {
+                this.addBusinessLevel.parent = null
+                this.addBusinessLevel.showDialog = false
+            },
+            saveHideModelConfig (hideNodeIds) {
+                this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.hideModelConfigKey]: { hideNodeIds, hideGroupIds: this.topoNav.hideGroupIds }
+                })
+            },
+            toggleAddBusinessBtn () {
+                if (this.topoEdit.isEdit) {
+                    cy.nodes('.add-business-btn').forEach((node) => {
+                        const model = node.data('model')
+                        if (this.topoNav.hideNodeIds.includes(model.bk_obj_id)) {
+                            node.style('display', 'none')
+                        } else {
+                            node.style('display', 'element')
+                        }
+                    })
+                }
+            },
+            fitMaxZoom (cy) {
+                const fitMaxZoom = 1
+                if (cy.zoom() > fitMaxZoom) {
+                    cy.zoom(fitMaxZoom)
+                    cy.center()
+                }
+            },
+            handleReceiveAuth (auth) {
+                this.createAuth = auth
             }
         }
     }
@@ -1152,7 +1207,6 @@
     .topo-wrapper {
         position: relative;
         padding: 0;
-        height: 100%;
         &.hover {
             cursor: pointer;
         }
@@ -1178,19 +1232,19 @@
         }
         .vis-button-group {
             float: right;
-            padding-top: 11px;
             >i {
-                margin-left: 32px;
-                font-size: 14px;
-                font-weight: bold;
+                margin-left: 22px;
+                font-size: 20px;
                 cursor: pointer;
                 outline: 0;
+                color: #979ba5;
+                padding: 6px;
                 &:hover {
                     color: $cmdbBorderFocusColor;
                 }
             }
         }
-        .topo-example {
+        .topo-legend {
             position: absolute;
             padding: 3px 10px;
             top: 57px;
@@ -1199,14 +1253,14 @@
             box-shadow: 0px 2px 1px 0px rgba(185, 203, 222, 0.5);
             font-size: 12px;
             z-index: 1;
-            .example-item {
+            .legend-item {
                 line-height: 30px;
                 font-size: 0;
-                &:first-child i{
+                &.custom i {
                     background: $cmdbBorderFocusColor;
                 }
-                &:last-child i{
-                    background: #868b97;
+                &.built-in i {
+                    background: #798aad;
                 }
                 i {
                     display: inline-block;
@@ -1234,16 +1288,24 @@
         @include scrollbar;
         .group-info {
             line-height: 42px;
-            padding: 0 20px 0 15px;
+            padding: 0 16px 0 5px;
             font-size: 14px;
             cursor: pointer;
             color: #63656e;
             position: relative;
+            &.group-total {
+                padding-left: 15px;
+            }
             &:hover {
                 background: #e1ecff;
 
                 .icon-cc-hide {
                     display: inline-block;
+                }
+            }
+            &:not(.group-total):hover {
+                .model-count {
+                    display: none;
                 }
             }
             &.active {
@@ -1255,22 +1317,33 @@
                 color: #3a84ff;
                 background: #e1ecff;
                 .model-count {
-                    background: #fff;
-                    color: #3a84ff;
+                    color: #fff;
+                    background-color: #a2c5fd;
                 }
             }
             &.invisible {
-                opacity: 0.5;
                 .icon-cc-hide {
                     display: inline-block;
                 }
+                .group-name {
+                    opacity: 0.5;
+                }
+                .model-count {
+                    display: none;
+                }
             }
             .model-count {
+                position: absolute;
+                right: 16px;
+                top: 12px;
                 padding: 0 5px;
-                border-radius: 4px;
+                border-radius: 2px;
                 font-size: 12px;
                 color: #979ba5;
                 background: #f0f1f5;
+                height: 18px;
+                line-height: 17px;
+                text-align: center;
             }
             .toggle-arrow {
                 padding: 0 8px 0 15px;
@@ -1285,7 +1358,7 @@
             .icon-cc-hide {
                 display: none;
                 position: absolute;
-                right: 14px;
+                right: 16px;
                 top: 12px;
                 font-size: 18px;
                 color: #979ba5;
@@ -1299,7 +1372,7 @@
             padding: 8px 0;
         }
         .model-item {
-            padding: 5px 12px 5px 30px;
+            padding: 5px 16px 5px 20px;
             position: relative;
             cursor: pointer;
             &:hover {
@@ -1314,9 +1387,12 @@
                 opacity: .6;
             }
             &.invisible {
-                opacity: 0.5;
                 .icon-cc-hide {
                     display: inline-block;
+                }
+                .info,
+                .node-icon {
+                    opacity: 0.5;
                 }
             }
             &.selected {
@@ -1335,7 +1411,7 @@
                 border: 1px solid $cmdbTableBorderColor;
                 border-radius: 50%;
                 &.is-public {
-                    color: #868b97;
+                    color: #798aad;
                 }
             }
             .info {
@@ -1354,7 +1430,7 @@
             .icon-cc-hide {
                 display: none;
                 position: absolute;
-                right: 14px;
+                right: 16px;
                 top: 14px;
                 font-size: 18px;
                 color: #979ba5;
@@ -1368,7 +1444,8 @@
     .global-model {
         float: left;
         width: calc(100% - 210px);
-        height: calc(100% - 50px - 58px);
+        height: calc(100% - 50px);
+        padding: 12px;
         background-color: #f4f5f8;
         background-image: linear-gradient(#eef1f5 1px, transparent 0), linear-gradient(90deg, #eef1f5 1px, transparent 0);
         background-size: 10px 10px;
@@ -1452,7 +1529,6 @@
 
     .tippy-popper {
         transition: none!important;
-
     }
 
     .tippy-tooltip {

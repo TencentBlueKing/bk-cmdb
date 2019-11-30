@@ -115,7 +115,7 @@ func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (b
 	return true, nil
 }
 
-// ExistHostIDSInApp exist host id in app return []int64 don't exist in app hostID, error handle logic error
+// ExistHostIDSInApp exist host id in app return []int64 don't exist in app hostID, error handle logics error
 func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArray []int64) ([]int64, error) {
 	defErr := lgc.ccErr
 

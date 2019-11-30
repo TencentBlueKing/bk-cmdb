@@ -414,7 +414,7 @@ var _ = Describe("user operation test", func() {
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search host created using api", func() {
@@ -432,7 +432,7 @@ var _ = Describe("user operation test", func() {
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
 			Expect(data["bk_host_innerip"].(string)).To(Equal("3.0.0.1"))
@@ -443,7 +443,7 @@ var _ = Describe("user operation test", func() {
 			rsp, err := hostServerClient.GetUserCustomQueryResult(context.Background(), strconv.FormatInt(bizId, 10), queryId, "0", "10", header)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
 			data := metadata.SearchHostResult{}
 			json.Unmarshal(j, &data)

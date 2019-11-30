@@ -20,7 +20,6 @@
                                 :key="propertyIndex">
                                 <div class="property-name clearfix">
                                     <bk-checkbox class="form-checkbox"
-                                        v-bk-tooltips="checkboxTips"
                                         v-if="property['isLocking'] !== undefined"
                                         v-model="values[property['bk_property_id']]['as_default_value']"
                                         @change="handleResetValue(values[property['bk_property_id']]['as_default_value'], property)">
@@ -40,7 +39,8 @@
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
-                                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                        :placeholder="getPlaceholder(property)"
+                                        :auto-select="false"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]['value']">
                                     </component>
@@ -56,17 +56,15 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <span style="display: inline-block"
-                    v-cursor="{
-                        active: !$isAuthorized(auth),
-                        auth: [auth]
-                    }">
-                    <bk-button class="button-save" theme="primary"
-                        :disabled="saveDisabled || $loading() || !$isAuthorized(auth)"
+                <cmdb-auth :auth="$authResources(auth)">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-save"
+                        theme="primary"
+                        :disabled="saveDisabled || $loading() || disabled"
                         @click="handleSave">
-                        {{$t('保存')}}
+                        {{type === 'create' ? $t('提交') : $t('保存')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
@@ -113,6 +111,10 @@
             hasUsed: {
                 type: Boolean,
                 default: false
+            },
+            auth: {
+                type: Object,
+                default: () => ({})
             }
         },
         data () {
@@ -167,31 +169,6 @@
                     return filterProperties
                 })
                 return properties
-            },
-            auth () {
-                if (this.isCreatedService) {
-                    return this.$OPERATION.C_SERVICE_TEMPLATE
-                }
-                return this.$OPERATION.U_SERVICE_TEMPLATE
-            },
-            checkboxTips () {
-                return {
-                    content: this.$t('纳入模板管理'),
-                    placement: 'top-start',
-                    offset: -2,
-                    popperOptions: {
-                        modifiers: {
-                            customArrowStyles: {
-                                enabled: true,
-                                order: 100,
-                                fn (data, options) {
-                                    Object.assign(data.arrowStyles, { left: 0 })
-                                    return data
-                                }
-                            }
-                        }
-                    }
-                }
             }
         },
         watch: {
@@ -227,12 +204,18 @@
             },
             changedValues () {
                 const changedValues = {}
-                if (!this.values['bind_ip']['value']) this.values['bind_ip']['value'] = ''
-                for (const propertyId in this.values) {
-                    if (JSON.stringify(this.values[propertyId]) !== JSON.stringify(this.refrenceValues[propertyId])) {
+                if (!this.values['bind_ip']['value']) {
+                    this.$set(this.values.bind_ip, 'value', '')
+                    this.$set(this.refrenceValues.bind_ip, 'value', '')
+                }
+                Object.keys(this.values).forEach(propertyId => {
+                    const isChange = Object.keys(this.values[propertyId]).some(key => {
+                        return JSON.stringify(this.values[propertyId][key]) !== JSON.stringify(this.refrenceValues[propertyId][key])
+                    })
+                    if (isChange) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
-                }
+                })
                 return changedValues
             },
             hasChange () {
@@ -298,36 +281,12 @@
                 temp = null
                 return output
             },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             getValidateRules (property) {
-                const rules = {}
-                const {
-                    bk_property_type: propertyType,
-                    option,
-                    isrequired
-                } = property
-                if (isrequired) {
-                    rules.required = true
-                }
-                if (option) {
-                    if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                            rules['min_value'] = option.min
-                        }
-                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                            rules['max_value'] = option.max
-                        }
-                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
-                    }
-                }
-                if (['singlechar', 'longchar'].includes(propertyType)) {
-                    rules[propertyType] = true
-                    rules.length = propertyType === 'singlechar' ? 256 : 2000
-                }
-                if (propertyType === 'float') {
-                    rules['float'] = true
-                }
-                return rules
+                return this.$tools.getValidateRules(property)
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
@@ -385,11 +344,7 @@
             handleResetValue (status, property) {
                 if (!status) {
                     const type = property['bk_property_type']
-                    if (['enum'].includes(type)) {
-                        const option = property['option']
-                        const defaultValue = option[0]['id'] ? option[0]['id'] : ''
-                        this.values[property['bk_property_id']]['value'] = defaultValue
-                    } else if (['bool'].includes(type)) {
+                    if (['bool'].includes(type)) {
                         this.values[property['bk_property_id']]['value'] = false
                     } else if (['int'].includes(type)) {
                         this.values[property['bk_property_id']]['value'] = null

@@ -32,17 +32,15 @@
             </bk-table-column>
         </bk-table>
         <div class="page-options">
-            <span
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                    auth: [$OPERATION.C_SERVICE_INSTANCE]
-                }">
-                <bk-button class="options-button" theme="primary"
-                    :disabled="!!repeatedProcesses.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+            <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                <bk-button slot-scope="{ disabled }"
+                    class="options-button"
+                    theme="primary"
+                    :disabled="!!repeatedProcesses.length || disabled"
                     @click="doClone">
                     {{$t('确定')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <bk-button class="options-button" @click="backToModule">{{$t('取消')}}</bk-button>
         </div>
         <bk-sideslider
@@ -76,7 +74,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         name: 'clone-to-source',
         props: {
@@ -264,7 +262,7 @@
             },
             async getInstanceIpByHost (hostId) {
                 try {
-                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    const instanceIpMap = this.$store.state.businessHost.instanceIpMap
                     let res = null
                     if (instanceIpMap.hasOwnProperty(hostId)) {
                         res = instanceIpMap[hostId]
@@ -275,7 +273,7 @@
                                 requestId: 'getInstanceIpByHost'
                             }
                         })
-                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                        this.$store.commit('businessHost/setInstanceIp', { hostId, res })
                     }
                     this.processBindIp = res.options.map(ip => {
                         return {
@@ -333,7 +331,7 @@
                                     processes: this.getCloneProcessValues()
                                 }
                             ]
-                        })
+                        }, { injectBizId: true })
                     })
                     this.$success(this.$t('克隆成功'))
                     this.backToModule()
@@ -354,9 +352,9 @@
             },
             backToModule () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.$route.params.moduleId
+                        node: 'module-' + this.$route.params.moduleId
                     }
                 })
             }

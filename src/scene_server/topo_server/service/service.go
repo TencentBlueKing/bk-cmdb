@@ -59,17 +59,16 @@ func (s *Service) WebService() *restful.Container {
 	// init service actions
 	s.initService()
 
-	api := new(restful.WebService)
-	healthz := new(restful.WebService).Produces(restful.MIME_JSON)
-
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Error
 	}
 
+	api := new(restful.WebService)
 	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
-	innerActions := s.Actions()
+	healthz := new(restful.WebService).Produces(restful.MIME_JSON)
 
+	innerActions := s.Actions()
 	for _, actionItem := range innerActions {
 		action := api
 		if actionItem.Path == "/healthz" {
@@ -209,6 +208,7 @@ func (s *Service) Actions() []*httpserver.Action {
 				defLang := s.Language.CreateDefaultCCLanguageIf(language)
 
 				// get the error info by the language
+				errors.SetGlobalCCError(s.Error)
 				defErr := s.Error.CreateDefaultCCErrorIf(language)
 
 				value, err := ioutil.ReadAll(req.Request.Body)
@@ -222,12 +222,14 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
-					if err = json.Unmarshal(value, &mData); nil != err && len(value) != 0 {
+					jsonData := make(map[string]interface{})
+					if err = json.Unmarshal(value, &jsonData); nil != err && len(value) != 0 {
 						blog.Errorf("failed to unmarshal the data, error %s, rid: %s", err.Error(), rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
 					}
+					mData = mapstr.MapStr(jsonData)
 				} else {
 					mData, err = act.HandlerParseOriginDataFunc(value)
 					if nil != err {

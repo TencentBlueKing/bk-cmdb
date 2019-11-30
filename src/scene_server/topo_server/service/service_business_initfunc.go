@@ -25,7 +25,6 @@ func (s *Service) initBusinessObject() {
 	s.addAction(http.MethodPut, "/update/object/{id}", s.UpdateObject, nil)
 	s.addAction(http.MethodDelete, "/delete/object/{id}", s.DeleteObject, nil)
 	s.addAction(http.MethodPut, "/find/objecttopology", s.SearchObjectTopo, nil)
-
 }
 
 func (s *Service) initBusinessClassification() {
@@ -34,7 +33,6 @@ func (s *Service) initBusinessClassification() {
 	s.addAction(http.MethodPost, "/find/objectclassification", s.SearchClassification, nil)
 	s.addAction(http.MethodPut, "/update/objectclassification/{id}", s.UpdateClassification, nil)
 	s.addAction(http.MethodDelete, "/delete/objectclassification/{id}", s.DeleteClassification, nil)
-
 }
 
 func (s *Service) initBusinessObjectAttribute() {
@@ -72,6 +70,7 @@ func (s *Service) initBusinessAssociation() {
 	s.addAction(http.MethodPost, "/find/topomodelmainline", s.SearchMainLineObjectTopo, nil)
 	s.addAction(http.MethodPost, "/find/topoinst/biz/{bk_biz_id}", s.SearchBusinessTopo, nil)
 	s.addAction(http.MethodPost, "/find/topoinst_with_statistics/biz/{bk_biz_id}", s.SearchBusinessTopoWithStatistics, nil)
+	s.addAction(http.MethodPost, "/find/topopath/biz/{bk_biz_id}", s.SearchTopoPath, nil)
 
 	// association type methods ,NOT SUPPORT BUSINESS
 	s.addAction(http.MethodPost, "/find/topoassociationtype", s.SearchObjectAssocWithAssocKindList, nil)
@@ -98,7 +97,6 @@ func (s *Service) initBusinessAssociation() {
 	// ATTENTION: the following methods is not recommended
 	s.addAction(http.MethodPost, "/find/insttopo/object/{bk_obj_id}/inst/{inst_id}", s.SearchInstChildTopo, nil)
 	s.addAction(http.MethodPost, "/import/instassociation/{bk_obj_id}", s.ImportInstanceAssociation, nil)
-
 }
 
 func (s *Service) initBusinessInst() {
@@ -109,5 +107,4 @@ func (s *Service) initBusinessInst() {
 	s.addAction(http.MethodPut, "/updatemany/instance/object/{bk_obj_id}", s.UpdateInsts, nil)
 	s.addAction(http.MethodPost, "/find/instance/object/{bk_obj_id}", s.SearchInstAndAssociationDetail, nil)
 	s.addAction(http.MethodPost, "/find/instdetail/object/{bk_obj_id}/inst/{inst_id}", s.SearchInstByInstID, nil)
-
 }

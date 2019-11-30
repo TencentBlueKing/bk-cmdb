@@ -160,6 +160,7 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, o
 		filter[common.BKProcIDField] = processIDFilter
 	}
 
+	blog.Debug("filter: %v", filter)
 	var total uint64
 	var err error
 	if total, err = p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Count(ctx.Context); nil != err {

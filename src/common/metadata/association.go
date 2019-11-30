@@ -401,8 +401,9 @@ type TopoInst struct {
 	ObjName              string `json:"bk_obj_name"`
 	Default              int    `json:"default"`
 	HostCount            int64  `json:"host_count"`
-	ServiceInstanceCount int64  `json:"service_instance_count"`
-	ServiceTemplateID    int64  `json:"service_template_id"`
+	ServiceInstanceCount int64  `json:"service_instance_count,omitempty"`
+	ServiceTemplateID    int64  `json:"service_template_id,omitempty"`
+	SetTemplateID        int64  `json:"set_template_id,omitempty"`
 }
 
 // TopoInstRst 拓扑实例
@@ -477,4 +478,18 @@ type RequestInstAssociationObjectIDCondition struct {
 type InstBaseInfo struct {
 	ID   int64  `json:"bk_inst_id"`
 	Name string `json:"bk_inst_name"`
+}
+
+type FindTopoPathRequest struct {
+	Nodes []TopoNode `json:"topo_nodes" mapstructure:"topo_nodes"`
+}
+
+type TopoPathResult struct {
+	Nodes []NodeTopoPath `json:"nodes" mapstructure:"nodes"`
+}
+
+type NodeTopoPath struct {
+	BizID int64                       `json:"bk_biz_id" mapstructure:"bk_biz_id"`
+	Node  TopoNode                    `json:"topo_node" mapstructure:"topo_node"`
+	Path  []*TopoInstanceNodeSimplify `json:"topo_path" mapstructure:"topo_path"`
 }

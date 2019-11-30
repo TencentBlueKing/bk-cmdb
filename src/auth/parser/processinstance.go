@@ -22,47 +22,40 @@ var ProcessInstanceIAMResourceType = meta.ProcessServiceInstance
 
 var ProcessInstanceAuthConfigs = []AuthConfig{
 	{
-		Name:                  "createProcessInstances",
-		Description:           "创建进程实例",
-		Pattern:               "/api/v3/create/proc/process_instance",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          ProcessInstanceIAMResourceType,
-		ResourceAction:        meta.Update,
+		Name:           "createProcessInstances",
+		Description:    "创建进程实例",
+		Pattern:        "/api/v3/create/proc/process_instance",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   ProcessInstanceIAMResourceType,
+		ResourceAction: meta.Update,
 	}, {
-		Name:                  "updateProcessInstances",
-		Description:           "更新进程实例",
-		Pattern:               "/api/v3/update/proc/process_instance",
-		HTTPMethod:            http.MethodPut,
-		RequiredBizInMetadata: true,
-		ResourceType:          ProcessInstanceIAMResourceType,
-		ResourceAction:        meta.Update,
+		Name:           "updateProcessInstances",
+		Description:    "更新进程实例",
+		Pattern:        "/api/v3/update/proc/process_instance",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   ProcessInstanceIAMResourceType,
+		ResourceAction: meta.Update,
 	}, {
-		Name:                  "deleteProcessInstance",
-		Description:           "删除进程实例",
-		Pattern:               "/api/v3/delete/proc/process_instance",
-		HTTPMethod:            http.MethodDelete,
-		RequiredBizInMetadata: true,
-		ResourceType:          ProcessInstanceIAMResourceType,
-		ResourceAction:        meta.Update,
+		Name:           "deleteProcessInstance",
+		Description:    "删除进程实例",
+		Pattern:        "/api/v3/delete/proc/process_instance",
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   ProcessInstanceIAMResourceType,
+		ResourceAction: meta.Update,
 	}, {
-		Name:                  "listProcessInstances",
-		Description:           "查找进程实例",
-		Pattern:               "/api/v3/findmany/proc/process_instance",
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: true,
-		ResourceType:          ProcessInstanceIAMResourceType,
-		ResourceAction:        meta.Find,
+		Name:           "listProcessInstances",
+		Description:    "查找进程实例",
+		Pattern:        "/api/v3/findmany/proc/process_instance",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   ProcessInstanceIAMResourceType,
+		ResourceAction: meta.Find,
 	},
 }
 
 func (ps *parseStream) ProcessInstance() *parseStream {
-	resources, err := MatchAndGenerateIAMResource(ProcessInstanceAuthConfigs, ps.RequestCtx)
-	if err != nil {
-		ps.err = err
-	}
-	if resources != nil {
-		ps.Attribute.Resources = resources
-	}
-	return ps
+	return ParseStreamWithFramework(ps, ProcessInstanceAuthConfigs)
 }

@@ -78,6 +78,7 @@ func (s *Service) initBusiness() {
 	s.addAction(http.MethodGet, "/topo/internal/{owner_id}/{app_id}/with_statistics", s.GetInternalModuleWithStatistics, nil)
 	// find reduced business list with only few fields for business itself.
 	s.addAction(http.MethodGet, "/app/with_reduced", s.SearchReducedBusinessList, nil)
+	s.addAction(http.MethodGet, "/app/simplify", s.ListAllBusinessSimplify, nil)
 
 }
 
@@ -86,13 +87,13 @@ func (s *Service) initModule() {
 	s.addAction(http.MethodDelete, "/module/{app_id}/{set_id}/{module_id}", s.DeleteModule, nil)
 	s.addAction(http.MethodPut, "/module/{app_id}/{set_id}/{module_id}", s.UpdateModule, nil)
 	s.addAction(http.MethodPost, "/module/search/{owner_id}/{app_id}/{set_id}", s.SearchModule, nil)
-
+	s.addAction(http.MethodPost, "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}", s.ListModulesByServiceTemplateID, nil)
 }
 
 func (s *Service) initSet() {
 	s.addAction(http.MethodPost, "/set/{app_id}", s.CreateSet, nil)
+	s.addAction(http.MethodPost, "/set/{app_id}/batch", s.BatchCreateSet, nil)
 	s.addAction(http.MethodDelete, "/set/{app_id}/{set_id}", s.DeleteSet, nil)
-	s.addAction(http.MethodDelete, "/set/{app_id}/batch", s.DeleteSets, nil)
 	s.addAction(http.MethodPut, "/set/{app_id}/{set_id}", s.UpdateSet, nil)
 	s.addAction(http.MethodPost, "/set/search/{owner_id}/{app_id}", s.SearchSet, nil)
 
@@ -166,6 +167,7 @@ func (s *Service) initIdentifier() {
 	s.addAction(http.MethodPost, "/identifier/{obj_type}/search", s.SearchIdentifier, s.ParseSearchIdentifierOriginData)
 }
 
+// 全文索引
 func (s *Service) initFind() {
 	s.addAction(http.MethodPost, "/find/full_text", s.FullTextFind, nil)
 }
@@ -196,4 +198,6 @@ func (s *Service) initService() {
 	s.initBusinessInst()
 
 	s.initFind()
+	s.initSetTemplate()
+	s.initInternalTask()
 }

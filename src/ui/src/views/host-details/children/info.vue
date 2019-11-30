@@ -16,10 +16,14 @@
                         height: getListHeight(topologyList[column]) + 'px'
                     }">
                     <li class="topology-item"
-                        v-for="(path, columnIndex) in topologyList[column]"
+                        v-for="(item, columnIndex) in topologyList[column]"
                         :key="columnIndex"
-                        :title="path">
-                        {{path}}
+                        :title="item.path">
+                        <span class="topology-path">{{item.path}}</span>
+                        <i class="topology-remove-trigger icon-cc-tips-close"
+                            v-if="!item.isInternal"
+                            @click="handleRemove(item.id)">
+                        </i>
                     </li>
                 </ul>
                 <a class="view-all fl"
@@ -35,6 +39,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_TRANSFER_HOST } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     export default {
         name: 'cmdb-host-info',
@@ -71,7 +76,11 @@
                     if (set) {
                         const business = businesses.find(business => business.bk_biz_id === set.bk_biz_id)
                         if (business) {
-                            topology.push(`${business.bk_biz_name} / ${set.bk_set_name} / ${module.bk_module_name}`)
+                            topology.push({
+                                id: module.bk_module_id,
+                                path: `${business.bk_biz_name} / ${set.bk_set_name} / ${module.bk_module_name}`,
+                                isInternal: module.default !== 0
+                            })
                         }
                     }
                 })
@@ -100,6 +109,20 @@
                 const itemHeight = 21
                 const itemMargin = 9
                 return (this.showAll ? items.length : 1) * (itemHeight + itemMargin)
+            },
+            handleRemove (moduleId) {
+                this.$router.push({
+                    name: MENU_BUSINESS_TRANSFER_HOST,
+                    params: {
+                        type: 'remove'
+                    },
+                    query: {
+                        sourceModel: 'module',
+                        sourceId: moduleId,
+                        resources: this.$route.params.id,
+                        from: this.$route.fullPath
+                    }
+                })
             }
         }
     }
@@ -163,14 +186,44 @@
     }
     .topology-list {
         overflow: hidden;
-        max-width: 350px;
         color: #63656e;
         will-change: height;
         transition: height .2s ease-in;
         .topology-item {
-            font-size: 14px;
+            font-size: 0px;
             margin: 0 0 9px 0;
-            @include ellipsis;
+            height: 20px;
+            line-height: 20px;
+            &:before {
+                content: "";
+                height: 100%;
+                width: 0;
+                display: inline-block;
+                vertical-align: middle;
+            }
+            &:hover {
+                color: #000000;
+                .topology-remove-trigger {
+                    opacity: 1;
+                }
+            }
+            .topology-path {
+                display: inline-block;
+                vertical-align: middle;
+                font-size: 14px;
+                max-width: 330px;
+                @include ellipsis;
+            }
+            .topology-remove-trigger {
+                opacity: 0;
+                font-size: 12px;
+                cursor: pointer;
+                margin: 0 0 0 10px;
+                color: $textColor;
+                &:hover {
+                    color: $primaryColor;
+                }
+            }
         }
     }
     .topology-list.right-list {

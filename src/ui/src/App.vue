@@ -1,5 +1,9 @@
 <template>
-    <div id="app" :bk-language="$i18n.locale">
+    <div id="app" :bk-language="$i18n.locale"
+        :class="{
+            'no-breadcrumb': hideBreadcrumbs,
+            'main-full-screen': mainFullScreen
+        }">
         <div class="browser-tips" v-if="showBrowserTips">
             <span class="tips-text">{{$t('您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果')}}</span>
             <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
@@ -50,10 +54,13 @@
             }
         },
         computed: {
-            ...mapGetters(['globalLoading', 'businessSelectorVisible']),
+            ...mapGetters(['globalLoading', 'businessSelectorVisible', 'mainFullScreen']),
             ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey']),
             isIndex () {
                 return this.$route.name === MENU_INDEX
+            },
+            hideBreadcrumbs () {
+                return !(this.$route.meta.layout || {}).breadcrumbs
             }
         },
         mounted () {
@@ -101,5 +108,28 @@
     }
     .views-layout{
         height: calc(100% - 58px);
+    }
+    // 主内容区全屏
+    .main-full-screen {
+        /deep/ {
+            .header-layout,
+            .nav-layout {
+                display: none;
+            }
+        }
+        .views-layout {
+            height: 100%;
+        }
+    }
+    .no-breadcrumb {
+        /deep/ {
+            .main-layout {
+                margin-top: 0
+            }
+            .main-views {
+                height: 100%;
+                margin-top: 0;
+            }
+        }
     }
 </style>

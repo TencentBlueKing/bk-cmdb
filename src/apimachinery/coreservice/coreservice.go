@@ -23,7 +23,9 @@ import (
 	"configcenter/src/apimachinery/coreservice/label"
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
+	"configcenter/src/apimachinery/coreservice/operation"
 	"configcenter/src/apimachinery/coreservice/process"
+	"configcenter/src/apimachinery/coreservice/settemplate"
 	"configcenter/src/apimachinery/coreservice/synchronize"
 	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/rest"
@@ -39,9 +41,11 @@ type CoreServiceClientInterface interface {
 	Host() host.HostClientInterface
 	Audit() auditlog.AuditClientInterface
 	Process() process.ProcessInterface
+	Operation() operation.OperationClientInterface
 	Cloud() cloudsync.CloudSyncClientInterface
 	Label() label.LabelInterface
 	TopoGraphics() topographics.TopoGraphicsInterface
+	SetTemplate() settemplate.SetTemplateInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -85,6 +89,11 @@ func (c *coreService) Audit() auditlog.AuditClientInterface {
 
 func (c *coreService) Process() process.ProcessInterface {
 	return process.NewProcessInterfaceClient(c.restCli)
+
+}
+
+func (c *coreService) Operation() operation.OperationClientInterface {
+	return operation.NewOperationClientInterface(c.restCli)
 }
 
 func (c *coreService) Cloud() cloudsync.CloudSyncClientInterface {
@@ -97,4 +106,8 @@ func (c *coreService) Label() label.LabelInterface {
 
 func (c *coreService) TopoGraphics() topographics.TopoGraphicsInterface {
 	return topographics.NewTopoGraphicsInterface(c.restCli)
+}
+
+func (c *coreService) SetTemplate() settemplate.SetTemplateInterface {
+	return settemplate.NewSetTemplateInterfaceClient(c.restCli)
 }

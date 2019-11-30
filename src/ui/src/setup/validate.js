@@ -32,7 +32,7 @@ const customRules = {
     },
     classifyId: {
         validate: value => {
-            return /^[a-z0-9_]{1,20}$/.test(value)
+            return /^[a-zA-Z0-9_]{1,20}$/.test(value)
         }
     },
     http: {
@@ -116,13 +116,29 @@ const customRules = {
         validate: (value, otherValue) => {
             return otherValue.findIndex(item => item === value) === -1
         }
+    },
+    setNameMap: {
+        validate: (value) => {
+            const nameList = value.split('\n').filter(name => name)
+            const nameSet = new Set(nameList)
+            return nameList.length === nameSet.size
+        }
+    },
+    emptySetName: {
+        validate: (value) => {
+            const values = value.split('\n')
+            const list = values.map(text => text.trim()).filter(text => text)
+            return values.length === list.length
+        }
     }
 }
 
 const dictionary = {
     'zh_CN': {
         messages: {
-            regex: () => '请输入符合自定义正则的内容',
+            regex: (field) => {
+                return `请输入合法的${field}`
+            },
             longchar: () => '请输入正确的长字符内容',
             singlechar: () => '请输入正确的短字符内容',
             length: (field, [maxLength]) => {
@@ -136,8 +152,8 @@ const dictionary = {
             modelId: () => '格式不正确，请填写英文开头，下划线，数字，英文小写的组合',
             enumId: () => '请输入正确的内容',
             enumName: () => '请输入正确的内容',
-            number: () => '请输入正确的内容',
-            float: () => '请输入正确的内容',
+            number: () => '请输入正确的数字',
+            float: () => '请输入正确的浮点数',
             isBigger: () => '必须大于最小值',
             repeat: () => '重复的值',
             fieldId: () => '请输入正确的内容',
@@ -147,9 +163,11 @@ const dictionary = {
             namedCharacter: () => '格式不正确，特殊符号仅支持(:_-)',
             min_value: () => '该值小于最小值',
             max_value: () => '该值大于最大值',
+            repeatTagKey: () => '标签键不能重复',
+            setNameMap: () => '集群名称重复',
+            emptySetName: () => '请勿输入空白集群名称',
             instanceTagValue: () => '请输入英文 / 数字',
-            instanceTagKey: () => '请输入英文 / 数字, 以英文开头',
-            repeatTagKey: () => '标签键不能重复'
+            instanceTagKey: () => '请输入英文 / 数字, 以英文开头'
         },
         custom: {
             asst: {
@@ -159,7 +177,9 @@ const dictionary = {
     },
     en: {
         messages: {
-            regex: () => 'Please enter the correct content that conform custom regex',
+            regex: (field) => {
+                return `Please enter a valid $ {field}`
+            },
             longchar: () => 'Please enter the correct content',
             singlechar: () => 'Please enter the correct content',
             length: (field, [maxLength]) => {
@@ -173,8 +193,8 @@ const dictionary = {
             modelId: () => 'The format is incorrect, can only contain underscores, numbers, and lowercase letter and start with a letter',
             enumId: () => 'Please enter the correct content',
             enumName: () => 'Please enter the correct content',
-            number: () => 'Please enter the correct content',
-            float: () => 'Please enter the correct content',
+            number: () => 'Please enter the correct number',
+            float: () => 'Please enter the correct float data',
             isBigger: () => 'Must be greater than the minimum',
             repeat: () => 'This value should not be repeated',
             fieldId: () => 'Please enter the correct content',
@@ -184,6 +204,8 @@ const dictionary = {
             namedCharacter: () => 'Special symbols only support(:_-)',
             min_value: () => 'This value is less than the minimum',
             max_value: () => 'This value is greater than the maximum',
+            setNameMap: () => 'Duplicate Set name',
+            emptySetName: () => 'Do not enter blank Set name',
             instanceTagValue: () => 'Please enter letter / number',
             instanceTagKey: () => 'Please enter letter / number starts with letter',
             repeatTagKey: () => 'Label key cannot be repeated'

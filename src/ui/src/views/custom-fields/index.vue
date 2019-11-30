@@ -1,6 +1,13 @@
 <template>
     <div class="custom-fields-layout">
+        <feature-tips class="ml20 mr20"
+            :feature-name="'customFields'"
+            :show-tips="showFeatureTips"
+            :desc="$t('自定义字段功能提示')"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <bk-tab class="tab-layout"
+            :style="`--subHeight: ${showFeatureTips ? '42px' : 0}`"
             type="unborder-card"
             @tab-change="handleTabChange">
             <bk-tab-panel v-for="model in mainLine"
@@ -8,20 +15,12 @@
                 :key="model.bk_obj_id"
                 :name="model.bk_obj_id"
                 :label="model.bk_obj_name">
-                <template>
-                    <feature-tips
-                        :feature-name="'customFields'"
-                        :show-tips="showFeatureTips"
-                        :desc="$t('自定义字段功能提示')"
-                        @close-tips="showFeatureTips = false">
-                    </feature-tips>
-                    <field-group class="model-detail-wrapper"
-                        :class="{
-                            'has-tips': showFeatureTips
-                        }"
-                        :custom-obj-id="model.bk_obj_id">
-                    </field-group>
-                </template>
+                <field-group class="model-detail-wrapper"
+                    :class="{
+                        'has-tips': showFeatureTips
+                    }"
+                    :custom-obj-id="model.bk_obj_id">
+                </field-group>
             </bk-tab-panel>
         </bk-tab>
     </div>
@@ -75,6 +74,7 @@
         padding: 0;
     }
     .tab-layout {
+        height: calc(100% - var(--subHeight));
         /deep/ {
             .bk-tab-content {
                 padding-top: 10px;

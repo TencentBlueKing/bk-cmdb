@@ -221,9 +221,9 @@ func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	option := &metadata.ListProcessTemplatesOption{
-		BusinessID:        bizID,
-		ServiceTemplateID: input.ServiceTemplateID,
-		Page:              input.Page,
+		BusinessID:         bizID,
+		ServiceTemplateIDs: []int64{input.ServiceTemplateID},
+		Page:               input.Page,
 	}
 	if input.ProcessTemplatesIDs != nil {
 		option.ProcessTemplateIDs = input.ProcessTemplatesIDs

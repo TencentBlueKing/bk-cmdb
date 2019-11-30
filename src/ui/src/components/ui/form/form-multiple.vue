@@ -11,6 +11,7 @@
                         <ul class="property-list clearfix">
                             <li class="property-item fl"
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
+                                v-if="!uneditableProperties.includes(property.bk_property_id)"
                                 :key="propertyIndex">
                                 <div class="property-name">
                                     <bk-checkbox class="property-name-checkbox"
@@ -19,7 +20,7 @@
                                     </bk-checkbox>
                                     <label class="property-name-text"
                                         :for="`property-name-${property['bk_property_id']}`"
-                                        :class="{ required: property['isrequired'] }">
+                                        :class="{ required: property['isrequired'] && editable[property['bk_property_id']] }">
                                         {{property['bk_property_name']}}
                                     </label>
                                     <i class="property-name-tooltips icon icon-cc-tips"
@@ -35,7 +36,7 @@
                                         :disabled="!editable[property['bk_property_id']]"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
-                                        :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                        :placeholder="getPlaceholder(property)"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]">
                                     </component>
@@ -55,17 +56,15 @@
         </div>
         <div class="form-options" :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <span class="inline-block-middle"
-                    v-cursor="{
-                        active: !$isAuthorized(saveAuth),
-                        auth: [saveAuth]
-                    }">
-                    <bk-button class="button-save" theme="primary"
-                        :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
+                <cmdb-auth class="inline-block-middle" :auth="authResources">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-save"
+                        theme="primary"
+                        :disabled="disabled || !hasChange || $loading()"
                         @click="handleSave">
                         {{$t('保存')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
         </div>
@@ -112,7 +111,7 @@
             hasChange () {
                 let hasChange = false
                 for (const propertyId in this.editable) {
-                    if (this.editable[propertyId] && this.changedValues.hasOwnProperty(propertyId)) {
+                    if (this.editable[propertyId]) {
                         hasChange = true
                         break
                     }
@@ -132,6 +131,12 @@
             },
             hasAvaliableGroups () {
                 return this.groupedProperties.some(properties => !!properties.length)
+            },
+            authResources () {
+                const auth = this.saveAuth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
             }
         },
         watch: {
@@ -159,10 +164,7 @@
             },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, {})
-                const timer = setTimeout(() => {
-                    this.refrenceValues = this.$tools.clone(this.values)
-                    clearTimeout(timer)
-                })
+                this.refrenceValues = this.$tools.clone(this.values)
             },
             initEditableStatus () {
                 const editable = {}
@@ -183,36 +185,15 @@
             getProperty (id) {
                 return this.properties.find(property => property['bk_property_id'] === id)
             },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             getValidateRules (property) {
-                const rules = {}
-                const {
-                    bk_property_type: propertyType,
-                    option,
-                    isrequired
-                } = property
-                if (isrequired) {
-                    rules.required = true
+                if (!this.editable[property['bk_property_id']]) {
+                    return {}
                 }
-                if (option) {
-                    if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                            rules['min_value'] = option.min
-                        }
-                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                            rules['max_value'] = option.max
-                        }
-                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
-                    }
-                }
-                if (['singlechar', 'longchar'].includes(propertyType)) {
-                    rules[propertyType] = true
-                    rules.length = propertyType === 'singlechar' ? 256 : 2000
-                }
-                if (propertyType === 'int') {
-                    rules['numeric'] = true
-                }
-                return rules
+                return this.$tools.getValidateRules(property)
             },
             getMultipleValues () {
                 const multipleValues = {}
@@ -289,7 +270,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: top;
-                font-size: 12px;
+                font-size: 14px;
                 @include ellipsis;
                 &.required:after{
                     position: absolute;
