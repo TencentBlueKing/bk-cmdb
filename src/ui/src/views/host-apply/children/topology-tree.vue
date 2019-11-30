@@ -12,7 +12,7 @@
                 childrenKey: 'child'
             }"
             selectable
-            :before-select="isModule"
+            :before-select="beforeSelect"
             @select-change="handleSelectChange"
             @check-change="handleCheckChange"
         >
@@ -36,9 +36,11 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import ConfirmStore from '@/components/ui/dialog/confirm-store.js'
+
+    const LEAVE_CONFIRM_ID = 'singleModule'
+
     export default {
-        components: {
-        },
         props: {
             treeOptions: {
                 type: Object,
@@ -136,6 +138,17 @@
             },
             isModule (node) {
                 return node.data.bk_obj_id === 'module'
+            },
+            async beforeSelect (node) {
+                if (this.isModule(node)) {
+                    if (this.$parent.editing) {
+                        const leaveConfirmResult = await ConfirmStore.popup(LEAVE_CONFIRM_ID)
+                        return !leaveConfirmResult
+                    }
+                    return true
+                } else {
+                    return false
+                }
             },
             handleSelectChange (node) {
                 this.$emit('selected', node)

@@ -14,12 +14,13 @@
         >
             <sidebar
                 :action-mode.sync="actionMode"
+                :editing="editing"
                 @module-selected="handleSelectModule"
             ></sidebar>
         </cmdb-resize-layout>
         <div class="main-layout">
             <template v-if="selectedModule.bk_inst_id">
-                <single-module-config :module="selectedModule"></single-module-config>
+                <single-module-config :module="selectedModule" :editing.sync="editing"></single-module-config>
             </template>
             <div v-else>
                 {{$t('请先选择模块')}}
@@ -43,7 +44,8 @@
             return {
                 actionMode: '',
                 selectedModule: {},
-                showFeatureTips: false
+                showFeatureTips: false,
+                editing: false
             }
         },
         computed: {
@@ -54,6 +56,7 @@
         },
         methods: {
             handleSelectModule (data) {
+                this.editing = false
                 this.selectedModule = data
             }
         }

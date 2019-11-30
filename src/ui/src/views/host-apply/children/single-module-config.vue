@@ -98,15 +98,27 @@
             :checked-list.sync="checkedPropertyIdList"
         >
         </host-property-modal>
+        <leave-confirm
+            :id="leaveConfirm.id"
+            :active="leaveConfirm.active"
+            title="是否放弃配置？"
+            content="启用步骤未完成，是否放弃当前配置"
+            ok-text="留在当前页"
+            cancel-text="确认放弃"
+        >
+        </leave-confirm>
     </div>
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
+    import ConfirmStore from '@/components/ui/dialog/confirm-store.js'
+    import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import hostPropertyModal from './host-property-modal'
     import propertyConfigTable from './property-config-table'
     export default {
         components: {
+            leaveConfirm,
             hostPropertyModal,
             propertyConfigTable
         },
@@ -114,6 +126,9 @@
             module: {
                 type: Object,
                 default: () => ({})
+            },
+            editing: {
+                type: Boolean
             }
         },
         data () {
@@ -124,15 +139,20 @@
                 checkedPropertyIdListCopy: [],
                 conflictNum: 0,
                 hasRule: false,
-                isEdit: false,
+                isEdit: this.editing,
                 nextButtonDisabled: false,
                 propertyModalVisiable: false,
-                clearRules: true
+                clearRules: true,
+                leaveConfirm: {
+                    id: 'singleModule',
+                    active: false
+                }
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('hosts', ['configPropertyList']),
+            ...mapState('hostApply', ['ruleDraft']),
             moduleId () {
                 return this.module.bk_inst_id
             },
@@ -151,19 +171,28 @@
         watch: {
             module () {
                 this.getConfigData()
+                // 切换模块时将草稿数据清空
+                this.$store.commit('hostApply/clearRuleDraft')
+            },
+            editing (value) {
+                this.isEdit = value
             },
             checkedPropertyIdList () {
                 this.$nextTick(() => {
-                    this.isEidt && this.toggleNexButtonDisabled()
+                    this.isEdit && this.toggleNexButtonDisabled()
                 })
+            },
+            isEdit (value) {
+                this.$emit('update:editing', value)
+                this.leaveConfirm.active = value
             }
         },
         created () {
             this.getConfigData()
+            this.isEdit = Object.keys(this.ruleDraft).length > 0
         },
         methods: {
             async getConfigData () {
-                this.isEdit = false
                 try {
                     const ruleData = await this.getRules()
                     this.initRuleList = ruleData.info || []
@@ -206,6 +235,9 @@
                 this.nextButtonDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
             },
             async handleNextStep () {
+                // 使离开确认失活
+                this.leaveConfirm.active = false
+
                 const { modulePropertyList, removeRuleIds } = this.$refs.configEditTable
                 const additionalRules = modulePropertyList.map(property => ({
                     bk_attribute_id: property.id,
@@ -223,11 +255,19 @@
                 }
 
                 this.$store.commit('hostApply/setPropertyConfig', savePropertyConfig)
-                this.$router.push({
-                    name: 'hostApplyConfirm',
-                    query: {
-                        batch: 0
-                    }
+                this.$store.commit('hostApply/setRuleDraft', {
+                    moduleIds: [this.moduleId],
+                    rules: modulePropertyList
+                })
+
+                // 使leaveConfirmActive更新完成之后
+                this.$nextTick(function () {
+                    this.$router.push({
+                        name: 'hostApplyConfirm',
+                        query: {
+                            batch: 0
+                        }
+                    })
                 })
             },
             handleViewConflict () {
@@ -239,7 +279,6 @@
                 })
             },
             handleCloseApply () {
-                // this.closeApply.confirmModalVisiable = true
                 const h = this.$createElement
                 this.$bkInfo({
                     title: this.$t('确认关闭自动应用？'),
@@ -282,9 +321,12 @@
             handleChooseField () {
                 this.propertyModalVisiable = true
             },
-            handleCancel (id) {
-                this.checkedPropertyIdList = [...this.checkedPropertyIdListCopy]
-                this.isEdit = false
+            async handleCancel (id) {
+                const leaveConfirmResult = await ConfirmStore.popup(this.leaveConfirm.id)
+                if (leaveConfirmResult) {
+                    this.checkedPropertyIdList = [...this.checkedPropertyIdListCopy]
+                    this.isEdit = false
+                }
             }
         }
     }

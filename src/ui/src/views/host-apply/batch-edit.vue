@@ -1,6 +1,6 @@
 <template>
     <div class="batch-edit">
-        <multi-module-config></multi-module-config>
+        <multi-module-config :module-ids="moduleIds" :action="action"></multi-module-config>
     </div>
 </template>
 
@@ -13,6 +13,19 @@
         },
         data () {
             return {
+            }
+        },
+        computed: {
+            moduleIds () {
+                const mid = this.$route.query.mid
+                let moduleIds = []
+                if (mid) {
+                    moduleIds = String(mid).split(',').map(id => Number(id))
+                }
+                return moduleIds
+            },
+            action () {
+                return this.$route.query.action
             }
         },
         created () {
