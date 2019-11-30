@@ -24,7 +24,10 @@
                     {{$t(isDel ? '请勾选要删除的字段：' : '已配置的字段：')}}
                 </div>
                 <div class="item-content">
-                    <bk-button theme="default" icon="plus" @click="handleChooseField" class="choose-button" v-if="!isDel">选择字段</bk-button>
+                    <div class="choose-toolbar">
+                        <bk-button theme="default" icon="plus" @click="handleChooseField" v-if="!isDel">选择字段</bk-button>
+                        <span class="tips"><i class="bk-cc-icon icon-cc-tips"></i><span>此功能可以批量设置字段的自动应用，不需要批量变更的字段需点击“删除”从列表中移除</span></span>
+                    </div>
                     <div class="config-table" v-show="checkedPropertyIdList.length">
                         <property-config-table
                             ref="configEditTable"
@@ -44,7 +47,7 @@
         <div class="config-ft">
             <bk-button theme="primary" :disabled="nextButtonDisabled" @click="handleNextStep" v-if="!isDel">下一步</bk-button>
             <bk-button theme="primary" :disabled="delButtonDisabled" @click="handleDel" v-else>确定删除</bk-button>
-            <bk-button theme="default">取消</bk-button>
+            <bk-button theme="default" @click="handleCancel">取消</bk-button>
         </div>
 
         <host-property-modal
@@ -52,16 +55,37 @@
             :checked-list.sync="checkedPropertyIdList"
         >
         </host-property-modal>
+        <leave-confirm
+            v-bind="leaveConfirm"
+            title="是否放弃配置？"
+            content="启用步骤未完成，是否放弃当前配置"
+            ok-text="留在当前页"
+            cancel-text="确认放弃"
+        >
+        </leave-confirm>
     </div>
 </template>
 <script>
     import { mapGetters } from 'vuex'
+    import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import hostPropertyModal from './host-property-modal'
     import propertyConfigTable from './property-config-table'
+    import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
     export default {
         components: {
+            leaveConfirm,
             hostPropertyModal,
             propertyConfigTable
+        },
+        props: {
+            moduleIds: {
+                type: Array,
+                default: () => ([])
+            },
+            action: {
+                type: String,
+                default: ''
+            }
         },
         data () {
             return {
@@ -77,22 +101,18 @@
                 selectedPropertyRow: [],
                 propertyModalVisiable: false,
                 nextButtonDisabled: false,
-                delButtonDisabled: true
+                delButtonDisabled: true,
+                leaveConfirm: {
+                    id: 'multiModule',
+                    active: true
+                }
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('hosts', ['configPropertyList']),
-            moduleIds () {
-                const mid = this.$route.query.mid
-                let moduleIds = []
-                if (mid) {
-                    moduleIds = String(mid).split(',').map(id => Number(id))
-                }
-                return moduleIds
-            },
             isDel () {
-                return this.$route.query.action === 'batch-del'
+                return this.action === 'batch-del'
             }
         },
         watch: {
@@ -198,7 +218,12 @@
                     ignore_rule_ids: ignoreRuleIds
                 }
                 this.$store.commit('hostApply/setPropertyConfig', savePropertyConfig)
+                this.$store.commit('hostApply/setRuleDraft', {
+                    moduleIds: this.moduleIds,
+                    rules: modulePropertyList
+                })
 
+                this.leaveConfirm.active = false
                 this.$router.push({
                     name: 'hostApplyConfirm',
                     query: {
@@ -225,6 +250,14 @@
                             console.log(e)
                         }
                     }
+                })
+            },
+            handleCancel () {
+                // 删除离开不用确认
+                this.leaveConfirm.active = !this.isDel
+                // 回到入口页
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_APPLY
                 })
             },
             handlePropertySelectionChange (value) {
@@ -263,8 +296,15 @@
                 flex: auto;
             }
 
-            .choose-button {
+            .choose-toolbar {
                 margin-bottom: 18px;;
+                .tips {
+                    font-size: 12px;
+                    margin-left: 8px;
+                    .icon-cc-tips {
+                        margin-right: 8px;
+                    }
+                }
             }
         }
         .config-ft {

@@ -11,7 +11,8 @@
 import $http from '@/api'
 
 const state = {
-    propertyConfig: {}
+    propertyConfig: {},
+    ruleDraft: {}
 }
 
 const getters = {
@@ -42,6 +43,12 @@ const actions = {
 const mutations = {
     setPropertyConfig (state, config) {
         state.propertyConfig = config
+    },
+    setRuleDraft (state, draft) {
+        state.ruleDraft = draft
+    },
+    clearRuleDraft (state) {
+        state.ruleDraft = {}
     }
 }
 

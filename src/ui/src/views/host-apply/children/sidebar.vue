@@ -5,7 +5,7 @@
                 <div class="search-select">
                     <search-select-mix></search-select-mix>
                 </div>
-                <div class="action-menu">
+                <div class="action-menu" v-show="!actionMode">
                     <bk-dropdown-menu>
                         <div :class="['dropdown-trigger', { selected: actionMode }]" slot="dropdown-trigger">
                             <i class="bk-cc-icon icon-cc-menu"></i>
@@ -63,6 +63,11 @@
             searchSelectMix,
             topologyTree
         },
+        props: {
+            editing: {
+                type: Boolean
+            }
+        },
         data () {
             return {
                 treeOptions: {
@@ -79,6 +84,10 @@
             }
         },
         methods: {
+            removeChecked () {
+                const tree = this.topologyTree.$refs.tree
+                tree.removeChecked({ emitEvent: true })
+            },
             handleBatchEdit () {
                 this.actionMode = 'batch-edit'
                 this.showCheckedPanel = true
@@ -119,8 +128,7 @@
                 tree.setChecked(checkedIds, { emitEvent: true, beforeCheck: true, checked: true })
             },
             handleClearChecked () {
-                const tree = this.topologyTree.$refs.tree
-                tree.removeChecked({ emitEvent: true })
+                this.removeChecked()
             },
             handleGoEdit () {
                 const checkedIds = this.checkedList.map(item => item.bk_inst_id)
@@ -136,6 +144,7 @@
                 this.treeOptions.showCheckbox = false
                 this.showCheckedPanel = false
                 this.actionMode = ''
+                this.removeChecked()
             }
         }
     }

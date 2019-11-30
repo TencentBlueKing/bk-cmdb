@@ -27,20 +27,30 @@
         <div class="bottom-actionbar">
             <div class="actionbar-inner">
                 <bk-button theme="primary" @click="handleApply">应用</bk-button>
-                <bk-button theme="default">上一步</bk-button>
-                <bk-button theme="default">取消</bk-button>
+                <bk-button theme="default" @click="handlePrevStep">上一步</bk-button>
+                <bk-button theme="default" @click="handleCancel">取消</bk-button>
             </div>
         </div>
+        <leave-confirm
+            v-bind="leaveConfirm"
+            title="是否放弃配置？"
+            content="启用步骤未完成，是否放弃当前配置"
+            ok-text="留在当前页"
+            cancel-text="确认放弃"
+        >
+        </leave-confirm>
     </div>
 </template>
 
 <script>
     import { mapGetters, mapState, mapActions } from 'vuex'
+    import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import featureTips from '@/components/feature-tips/index'
     import propertyConfirmTable from './children/property-confirm-table'
     import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
     export default {
         components: {
+            leaveConfirm,
             featureTips,
             propertyConfirmTable
         },
@@ -51,7 +61,11 @@
                     list: [],
                     total: 0
                 },
-                conflictNum: 0
+                conflictNum: 0,
+                leaveConfirm: {
+                    id: 'propertyConfirm',
+                    active: true
+                }
             }
         },
         computed: {
@@ -65,7 +79,16 @@
         watch: {
 
         },
+        beforeDestroy () {
+            // this.$store.commit('hostApply/clearRuleDraft')
+        },
         created () {
+            if (!Object.keys(this.propertyConfig).length) {
+                this.leaveConfirm.active = false
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_APPLY
+                })
+            }
             this.showFeatureTips = this.featureTipsParams['hostApplyConfirm']
             this.setBreadcrumbs()
             this.initData()
@@ -136,6 +159,16 @@
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            handleCancel () {
+                // 回到入口页
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_APPLY
+                })
+            },
+            handlePrevStep () {
+                this.leaveConfirm.active = false
+                this.$router.back({ query: { a: 111 } })
             }
         }
     }

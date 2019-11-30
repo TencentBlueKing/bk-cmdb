@@ -65,7 +65,7 @@
     </bk-table>
 </template>
 <script>
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
     import propertyFormElement from './property-form-element'
     export default {
         components: {
@@ -101,7 +101,8 @@
             }
         },
         computed: {
-            ...mapGetters('hosts', ['configPropertyList'])
+            ...mapGetters('hosts', ['configPropertyList']),
+            ...mapState('hostApply', ['ruleDraft'])
         },
         watch: {
             checkedPropertyIdList () {
@@ -116,9 +117,12 @@
         },
         created () {
             this.setModulePropertyList()
+            if (Object.keys(this.ruleDraft).length) {
+                this.modulePropertyList = this.$tools.clone(this.ruleDraft.rules)
+            }
         },
         methods: {
-            setModulePropertyList (trigger) {
+            setModulePropertyList () {
                 // 当前模块属性列表中不存在，则添加
                 this.checkedPropertyIdList.forEach(id => {
                     // 原始主机属性对象
@@ -180,6 +184,11 @@
     }
 </script>
 
+<style lang="scss" scoped>
+    .form-element-content {
+        width: 80%;
+    }
+</style>
 <style lang="scss">
     .table-cell-module-path:not(.header-cell) {
         .cell {
