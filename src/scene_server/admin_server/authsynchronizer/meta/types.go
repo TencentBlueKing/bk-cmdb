@@ -12,6 +12,13 @@
 
 package meta
 
+const (
+	JobIntervalMillisecond        = 100
+	MinSyncIntervalMinutes        = 45
+	IamPageLimit                  = 1000
+	IamRequestIntervalMillisecond = 50
+)
+
 var (
 	// HostResource represent host resource
 	HostBizResource  = ResourceType("host")

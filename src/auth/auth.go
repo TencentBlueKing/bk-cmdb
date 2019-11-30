@@ -62,6 +62,11 @@ type ResourceHandler interface {
 	// list resources by condition
 	ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error)
 	RawListResources(ctx context.Context, header http.Header, searchCondition authcenter.SearchCondition) ([]meta.BackendResource, error)
+
+	// page interface
+	ListPageResources(ctx context.Context, r *meta.ResourceAttribute, limit, offset int64) (authcenter.PageBackendResource, error)
+	RawPageListResources(ctx context.Context, header http.Header, searchCondition authcenter.SearchCondition, limit, offset int64) (authcenter.PageBackendResource, error)
+
 	// init the auth center
 	Init(ctx context.Context, config meta.InitConfig) error
 }
