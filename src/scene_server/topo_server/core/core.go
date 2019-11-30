@@ -31,7 +31,6 @@ type Core interface {
 	GroupOperation() operation.GroupOperationInterface
 	InstOperation() operation.InstOperationInterface
 	ObjectOperation() operation.ObjectOperationInterface
-	CompatibleV2Operation() operation.CompatibleV2OperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AuditOperation() operation.AuditOperationInterface
@@ -49,7 +48,6 @@ type core struct {
 	group          operation.GroupOperationInterface
 	inst           operation.InstOperationInterface
 	object         operation.ObjectOperationInterface
-	compatibleV2   operation.CompatibleV2OperationInterface
 	graphics       operation.GraphicsOperationInterface
 	audit          operation.AuditOperationInterface
 	identifier     operation.IdentifierOperationInterface
@@ -73,7 +71,6 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	setOperation := operation.NewSetOperation(client)
 	businessOperation := operation.NewBusinessOperation(client, authManager)
 	associationOperation := operation.NewAssociationOperation(client, authManager)
-	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
 	graphics := operation.NewGraphics(client, authManager)
 	identifier := operation.NewIdentifier(client)
 	audit := operation.NewAuditOperation(client)
@@ -106,7 +103,6 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		classification: classificationOperation,
 		group:          groupOperation,
 		object:         objectOperation,
-		compatibleV2:   compatibleV2Operation,
 		graphics:       graphics,
 		audit:          audit,
 		identifier:     identifier,
@@ -144,9 +140,6 @@ func (c *core) InstOperation() operation.InstOperationInterface {
 }
 func (c *core) ObjectOperation() operation.ObjectOperationInterface {
 	return c.object
-}
-func (c *core) CompatibleV2Operation() operation.CompatibleV2OperationInterface {
-	return c.compatibleV2
 }
 func (c *core) GraphicsOperation() operation.GraphicsOperationInterface {
 	return c.graphics

@@ -256,7 +256,7 @@ func (eh *EventHandler) popEvent() *metadata.EventInstCtx {
 	eventBytes := []byte(eventStr)
 	event := metadata.EventInst{}
 	if err := json.Unmarshal(eventBytes, &event); err != nil {
-		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventBytes)
+		blog.Errorf("event distribute fail, unmarshal error: %v, data=[%s]", err, eventBytes)
 		return nil
 	}
 	return &metadata.EventInstCtx{EventInst: event, Raw: eventStr}

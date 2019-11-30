@@ -230,6 +230,9 @@ const (
 	// BKAssetIDField  the asset id field
 	BKAssetIDField = "bk_asset_id"
 
+	// BKSNField  the sn  field
+	BKSNField = "bk_sn"
+
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
 
@@ -693,15 +696,6 @@ const (
 
 	// FieldTypeUser the user field type
 	FieldTypeUser string = "objuser"
-
-	// FieldTypeSingleAsst the single association
-	FieldTypeSingleAsst string = "singleasst"
-
-	// FieldTypeMultiAsst the multi association
-	FieldTypeMultiAsst string = "multiasst"
-
-	// FieldTypeForeignKey the multi association
-	FieldTypeForeignKey string = "foreignkey"
 
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"

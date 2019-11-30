@@ -14,6 +14,7 @@ package authsynchronizer
 
 import (
 	"fmt"
+	"time"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
@@ -53,6 +54,11 @@ func (w *Worker) Start() {
 				if err := w.doWork(&work); err != nil {
 					blog.Errorf("do work failed, err: %v", err)
 				}
+				if len(w.WorkerQueue) == 0 {
+					blog.Infof("finished all auth synchronize jobs")
+				}
+				// time interval between two job
+				time.Sleep(time.Millisecond * meta.JobIntervalMillisecond)
 
 			case <-w.QuitChan:
 				// We have been asked to stop.

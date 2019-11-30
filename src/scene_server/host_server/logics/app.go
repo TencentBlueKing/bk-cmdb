@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
@@ -88,7 +88,7 @@ func (lgc *Logics) GetAppDetails(ctx context.Context, fields string, condition m
 	return result.Data.Info[0], nil
 }
 
-func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (bool, errors.CCError) {
+func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (bool, errors.CCErrorCoder) {
 	conf := metadata.ModuleHostConfigParams{
 		ApplicationID: appID,
 		HostID:        hostID,
@@ -97,11 +97,11 @@ func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (b
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModulesIDs(ctx, lgc.header, &conf)
 	if err != nil {
 		blog.Errorf("IsHostExistInApp http do error, err:%s, input:%+v, rid:%s", err.Error(), hostID, lgc.rid)
-		return false, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		return false, lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
+	if err := result.CCError(); err != nil {
 		blog.Errorf("IsHostExistInApp http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, hostID, lgc.rid)
-		return false, lgc.ccErr.New(result.Code, result.ErrMsg)
+		return false, err
 	}
 
 	if result.Data == nil {

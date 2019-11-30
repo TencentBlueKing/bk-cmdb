@@ -135,37 +135,6 @@ func GetFloat64ByInterface(a interface{}) (float64, error) {
 	}
 }
 
-func GetTypeSensitiveUInt64(v interface{}) (uint64, bool) {
-	switch tv := v.(type) {
-	case int8:
-		return uint64(tv), true
-	case int16:
-		return uint64(tv), true
-	case int32:
-		return uint64(tv), true
-	case int64:
-		return uint64(tv), true
-	case int:
-		return uint64(tv), true
-	case uint8:
-		return uint64(tv), true
-	case uint16:
-		return uint64(tv), true
-	case uint32:
-		return uint64(tv), true
-	case uint64:
-		return uint64(tv), true
-	case uint:
-		return uint64(tv), true
-	case float32:
-		return uint64(tv), true
-	case float64:
-		return uint64(tv), true
-	default:
-		return 0, false
-	}
-}
-
 func GetMapInterfaceByInerface(data interface{}) ([]interface{}, error) {
 	values := make([]interface{}, 0)
 	switch data.(type) {
