@@ -75,7 +75,7 @@ func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64
 		conds := condition.CreateCondition()
 		// Unsynchronized resource pool
 		if !fi.syncConfig.SyncResource {
-			conds.Field(common.BKDefaultField).Eq(0)
+			conds.Field(common.BKDefaultField).Eq(common.DefaultFlagDefaultValue)
 		}
 		if len(fi.syncConfig.AppNames) > 0 {
 			if fi.syncConfig.WhiteList {

@@ -3,57 +3,56 @@
         <label class="create-label fl">{{$t('添加主机')}}</label>
         <div class="create-hosts">
             <bk-button class="select-host-button" theme="default"
-                @click="hostSelectorVisible = true">
+                @click="handleAddHost">
                 <i class="bk-icon icon-plus"></i>
                 {{$t('添加主机')}}
             </bk-button>
             <div class="create-tables">
                 <service-instance-table class="service-instance-table"
-                    v-for="(host, index) in hosts"
+                    v-for="(data, index) in hosts"
                     ref="serviceInstanceTable"
                     deletable
                     expanded
-                    :key="index"
+                    :key="data.host.bk_host_id"
                     :index="index"
-                    :id="host.bk_host_id"
-                    :name="host.bk_host_innerip"
+                    :id="data.host.bk_host_id"
+                    :name="data.host.bk_host_innerip"
                     :source-processes="sourceProcesses"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                            auth: [$OPERATION.C_SERVICE_INSTANCE]
-                        }">
-                        <bk-button theme="primary"
-                            :disabled="!hosts.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                    <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            :disabled="!hosts.length || disabled"
                             @click="handleConfirm">
                             {{$t('确定')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
-        <host-selector
-            :visible.sync="hostSelectorVisible"
-            :module-instance="module"
-            :exclude="[hostId]"
-            @host-selected="handleSelectHost">
-        </host-selector>
+        <cmdb-dialog v-model="dialog.show" :width="850" :height="460" :show-close-icon="false">
+            <component
+                :is="dialog.component"
+                v-bind="dialog.props"
+                @confirm="handleDialogConfirm"
+                @cancel="handleDialogCancel">
+            </component>
+        </cmdb-dialog>
     </div>
 </template>
 
 <script>
-    import hostSelector from '@/components/ui/selector/host.vue'
+    import HostSelector from '@/views/business-topology/host/host-selector'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         name: 'clone-to-other',
         components: {
-            hostSelector,
-            serviceInstanceTable
+            serviceInstanceTable,
+            [HostSelector.name]: HostSelector
         },
         props: {
             module: {
@@ -71,7 +70,11 @@
         },
         data () {
             return {
-                hostSelectorVisible: false,
+                dialog: {
+                    show: false,
+                    component: null,
+                    props: {}
+                },
                 hosts: []
             }
         },
@@ -90,9 +93,20 @@
             }
         },
         methods: {
-            handleSelectHost (checked, hosts) {
-                this.hosts.push(...hosts)
-                this.hostSelectorVisible = false
+            handleAddHost () {
+                this.dialog.component = HostSelector.name
+                this.dialog.props = {
+                    exist: this.hosts.map(datum => datum.host.bk_host_id),
+                    exclude: [this.hostId]
+                }
+                this.dialog.show = true
+            },
+            handleDialogConfirm (selected) {
+                this.hosts = selected
+                this.dialog.show = false
+            },
+            handleDialogCancel () {
+                this.dialog.show = false
             },
             handleDeleteInstance (index) {
                 this.hosts.splice(index, 1)
@@ -114,7 +128,7 @@
                                     })
                                 }
                             })
-                        })
+                        }, { injectBizId: true })
                     })
                     this.$success(this.$t('克隆成功'))
                     this.handleBackToModule()
@@ -124,9 +138,9 @@
             },
             handleBackToModule () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.moduleId
+                        node: 'module-' + this.moduleId
                     }
                 })
             }
@@ -175,10 +189,10 @@
     }
     .create-tables {
         height: calc(100% - 54px);
-        margin: 22px 0 0 0;
+        margin: 20px 0 0 0;
         @include scrollbar-y;
         .buttons {
-            padding: 18px 0 0 0;
+            padding: 8px 0 0 0;
         }
     }
     .service-instance-table {

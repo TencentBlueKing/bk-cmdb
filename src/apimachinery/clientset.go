@@ -22,6 +22,7 @@ import (
 	"configcenter/src/apimachinery/healthz"
 	"configcenter/src/apimachinery/hostserver"
 	"configcenter/src/apimachinery/procserver"
+	"configcenter/src/apimachinery/taskserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
 )
@@ -35,6 +36,7 @@ type ClientSetInterface interface {
 	EventServer() eventserver.EventServerClientInterface
 
 	CoreService() coreservice.CoreServiceClientInterface
+	TaskServer() taskserver.TaskServerClientInterface
 
 	Healthz() healthz.HealthzInterface
 }
@@ -155,4 +157,14 @@ func (cs *ClientSet) CoreService() coreservice.CoreServiceClientInterface {
 		Mock:     cs.Mock,
 	}
 	return coreservice.NewCoreServiceClient(c, cs.version)
+}
+
+func (cs *ClientSet) TaskServer() taskserver.TaskServerClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.TaskServer(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	return taskserver.NewProcServerClientInterface(c, cs.version)
 }

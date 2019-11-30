@@ -147,7 +147,6 @@ maxIDleConns = 1000
 addr = $rd_server
 user = bkzk
 pwd = L%blKas
-
 [redis]
 host = $redis_host
 port = $redis_port
@@ -157,7 +156,6 @@ database = 0
 port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
-
 [auth]
 address = $auth_address
 appCode = $auth_app_code
@@ -175,12 +173,10 @@ enable = $auth_enabled
 addrs = $rd_server
 usr =
 pwd =
-
 [register-server]
 addrs = $rd_server
 usr =
 pwd =
-
 [mongodb]
 host =$mongo_host
 usr = $mongo_user
@@ -198,7 +194,6 @@ dir = $configures_dir
 res = conf/errors
 [language]
 res = conf/language
-
 [auth]
 address = $auth_address
 appCode = $auth_app_code
@@ -283,6 +278,9 @@ port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 enable = true
+
+[timer]
+spec = 00:30  # 00:00 - 23:59
 '''
     template = FileTemplate(operation_file_template_str)
     result = template.substitute(**context)
@@ -299,7 +297,6 @@ database = $db
 port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
-
 [redis]
 host = $redis_host
 port = $redis_port
@@ -309,7 +306,6 @@ database = 0
 port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
-
 [transaction]
 enable = false
 transactionLifetimeSecond = 60
@@ -335,7 +331,6 @@ enable = true
 
 [level]
 businessTopoMax = 7
-
 [auth]
 address = $auth_address
 appCode = $auth_app_code
@@ -363,7 +358,6 @@ host = $redis_host
 port = $redis_port
 secret = $redis_pass
 multiple_owner = 0
-
 [site]
 domain_url = ${cc_url}
 bk_login_url = ${paas_url}/login/?app_id=%s&c_url=%s
@@ -373,7 +367,6 @@ bk_account_url = ${paas_url}/login/accounts/get_all_user/?bk_token=%s
 resources_path = /tmp/
 html_root = $ui_root
 full_text_search = $full_text_search
-
 [app]
 agent_app_url = ${agent_url}/console/?app=bk_agent_setup
 authscheme = $auth_scheme
@@ -386,6 +379,34 @@ authscheme = $auth_scheme
     with open(output + "webserver.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
+    # task.conf
+    taskserver_file_template_str = '''
+[mongodb]
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIdleConns = 1000
+mechanism = SCRAM-SHA-1
+enable = true
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
+[redis]
+host = $redis_host
+port = $redis_port
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+'''
+    template = FileTemplate(taskserver_file_template_str)
+    result = template.substitute(**context)
+    with open(output + "task.conf", 'w') as tmp_file:
+        tmp_file.write(result)
 
 def update_start_script(rd_server, server_ports, enable_auth, log_level):
     list_dirs = os.walk(os.getcwd()+"/")
@@ -465,7 +486,8 @@ def main(argv):
         "cmdb_toposerver": 60002,
         "cmdb_webserver": 8083,
         "cmdb_synchronizeserver": 60010,
-        "cmdb_operationserver": 60011
+        "cmdb_operationserver": 60011,
+        "cmdb_taskserver": 60012
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",

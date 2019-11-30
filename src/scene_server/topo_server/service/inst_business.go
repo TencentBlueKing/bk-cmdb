@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
@@ -39,7 +40,7 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	data.Set(common.BKDefaultField, 0)
+	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
 	if err != nil {
 		blog.Errorf("create business failed, err: %v, rid: %s", err, params.ReqID)
@@ -136,6 +137,7 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 	if len(bizs) <= 0 {
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
+	data = mapstr.New()
 	switch common.DataStatusFlag(pathParams("flag")) {
 	case common.DataStatusDisabled:
 		innerCond := condition.CreateCondition()
@@ -284,12 +286,13 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 		case reflect.String:
 			targetStr := j.(string)
 			if util.InStrArr(userFieldArr, i) {
-				d := make(map[string]interface{})
-				// field type is user, use regex
-				userName := gparams.SpecialCharChange(targetStr)
-				// search with exactly the user's name with regexp
-				d[common.BKDBLIKE] = strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", userName, -1)
-				output[i] = d
+				exactOr := make([]map[string]interface{}, 0)
+				for _, user := range strings.Split(strings.Trim(targetStr, ","), ",") {
+					// search with exactly the user's name with regexp
+					like := strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", gparams.SpecialCharChange(user), -1)
+					exactOr = append(exactOr, mapstr.MapStr{i: mapstr.MapStr{common.BKDBLIKE: like}})
+				}
+				output[common.BKDBOR] = exactOr
 			} else {
 				output[i] = targetStr
 			}
@@ -544,4 +547,42 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 	}
 	set["module"] = modules
 	return set, nil
+}
+
+// ListAllBusinessSimplify list all businesses with return only several fields
+func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	fields := []string{
+		common.BKAppIDField,
+		common.BKAppNameField,
+	}
+
+	query := &metadata.QueryBusinessRequest{
+		Fields: fields,
+		Page:   metadata.BasePage{},
+		Condition: mapstr.MapStr{
+			common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
+		},
+	}
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, query)
+	if nil != err {
+		blog.Errorf("ListAllBusinessSimplify failed, FindBusiness failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
+	businesses := make([]metadata.BizBasicInfo, 0)
+	for _, item := range instItems {
+		business := metadata.BizBasicInfo{}
+		if err := mapstruct.Decode2Struct(item, &business); err != nil {
+			blog.Errorf("ListAllBusinessSimplify failed, decode biz from db failed, err: %s, rid: %s", err.Error(), params.ReqID)
+			return nil, params.Err.CCError(common.CCErrCommParseDBFailed)
+		}
+		businesses = append(businesses, business)
+	}
+
+	result := map[string]interface{}{
+		"count": cnt,
+		"info":  businesses,
+	}
+
+	return result, nil
 }

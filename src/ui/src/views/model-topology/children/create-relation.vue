@@ -38,12 +38,11 @@
         <label class="form-label">
             <span class="label-text">
                 {{$t('关联描述')}}
-                <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
                 <bk-input type="text" class="cmdb-form-input"
                     name="asstName"
-                    v-validate="'required|singlechar|length:256'"
+                    v-validate="'singlechar|length:256'"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
                     :placeholder="$t('请输入关联描述')">
                 </bk-input>
@@ -68,7 +67,7 @@
         </div>
         <div class="btn-group">
             <bk-button theme="primary" :loading="$loading('createObjectAssociation')" @click="saveRelation">
-                {{$t('确定')}}
+                {{$t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
                 {{$t('取消')}}

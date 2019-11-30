@@ -90,10 +90,10 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	appModelData[common.BKAppNameField] = common.BKAppName
 	appModelData[common.BKMaintainersField] = admin
 	appModelData[common.BKTimeZoneField] = "Asia/Shanghai"
-	appModelData[common.BKLanguageField] = "1" //"中文"
+	appModelData[common.BKLanguageField] = "1" // "中文"
 	appModelData[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 	appModelData[common.BKOwnerIDField] = conf.OwnerID
-	appModelData[common.BKDefaultField] = 0
+	appModelData[common.BKDefaultField] = common.DefaultFlagDefaultValue
 	appModelData[common.BKSupplierIDField] = conf.SupplierID
 	filled := fillEmptyFields(appModelData, AppRow())
 	var preData map[string]interface{}
@@ -275,7 +275,7 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 		setModelData[common.BKAppIDField] = bizID
 		setModelData[common.BKOwnerIDField] = conf.OwnerID
 		setModelData[common.BKInstParentStr] = bizID
-		setModelData[common.BKDefaultField] = 0
+		setModelData[common.BKDefaultField] = common.DefaultFlagDefaultValue
 		setModelData[common.CreateTimeField] = time.Now()
 		setModelData[common.LastTimeField] = time.Now()
 		filled := fillEmptyFields(setModelData, SetRow())
@@ -327,7 +327,7 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 	return nil
 }
 
-//addModuleInSet add module in set
+// addModuleInSet add module in set
 func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, moduleArr map[string]string, setID, bizID uint64) error {
 	for moduleName, processNameStr := range moduleArr {
 		moduleModelData := map[string]interface{}{}
@@ -336,7 +336,7 @@ func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, modu
 		moduleModelData[common.BKSetIDField] = setID
 		moduleModelData[common.BKOwnerIDField] = conf.OwnerID
 		moduleModelData[common.BKInstParentStr] = setID
-		moduleModelData[common.BKDefaultField] = 0
+		moduleModelData[common.BKDefaultField] = common.DefaultFlagDefaultValue
 		var preData map[string]interface{}
 		filled := fillEmptyFields(moduleModelData, ModuleRow())
 		moduleID, preData, err := upgrader.Upsert(ctx, db, "cc_ModuleBase", moduleModelData, common.BKModuleIDField, []string{common.BKModuleNameField, common.BKOwnerIDField, common.BKAppIDField, common.BKSetIDField},

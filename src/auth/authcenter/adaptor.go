@@ -115,7 +115,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		}
 
 	case meta.HostFavorite:
-	    iamResourceType = BizHostInstance
+		iamResourceType = BizHostInstance
 
 	case meta.Process:
 		iamResourceType = BizProcessInstance
@@ -143,6 +143,11 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizProcessServiceInstance
 	case meta.BizTopology:
 		iamResourceType = BizTopology
+	case meta.SetTemplate:
+		iamResourceType = BizSetTemplate
+
+	case meta.OperationStatistic:
+		iamResourceType = SysOperationStatistic
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -155,15 +160,16 @@ type ResourceTypeID string
 
 // System Resource
 const (
-	SysSystemBase       ResourceTypeID = "sys_system_base"
-	SysBusinessInstance ResourceTypeID = "sys_business_instance"
-	SysHostInstance     ResourceTypeID = "sys_host_instance"
-	SysEventPushing     ResourceTypeID = "sys_event_pushing"
-	SysModelGroup       ResourceTypeID = "sys_model_group"
-	SysModel            ResourceTypeID = "sys_model"
-	SysInstance         ResourceTypeID = "sys_instance"
-	SysAssociationType  ResourceTypeID = "sys_association_type"
-	SysAuditLog         ResourceTypeID = "sys_audit_log"
+	SysSystemBase         ResourceTypeID = "sys_system_base"
+	SysBusinessInstance   ResourceTypeID = "sys_business_instance"
+	SysHostInstance       ResourceTypeID = "sys_host_instance"
+	SysEventPushing       ResourceTypeID = "sys_event_pushing"
+	SysModelGroup         ResourceTypeID = "sys_model_group"
+	SysModel              ResourceTypeID = "sys_model"
+	SysInstance           ResourceTypeID = "sys_instance"
+	SysAssociationType    ResourceTypeID = "sys_association_type"
+	SysAuditLog           ResourceTypeID = "sys_audit_log"
+	SysOperationStatistic ResourceTypeID = "sys_operation_statistic"
 )
 
 // Business Resource
@@ -180,6 +186,7 @@ const (
 	BizProcessServiceTemplate ResourceTypeID = "biz_process_service_template"
 	BizProcessServiceCategory ResourceTypeID = "biz_process_service_category"
 	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
+	BizSetTemplate            ResourceTypeID = "biz_set_template"
 )
 
 const (
@@ -209,6 +216,8 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizProcessServiceTemplate: "服务模板",
 	BizProcessServiceCategory: "服务分类",
 	BizProcessServiceInstance: "服务实例",
+	BizSetTemplate:            "集群模板",
+	SysOperationStatistic:     "运营统计",
 }
 
 type ActionID string
@@ -334,6 +343,7 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostToBizFaultModule,
 		meta.MoveHostToBizIdleModule,
+		meta.MoveHostToBizRecycleModule,
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
@@ -503,5 +513,10 @@ var (
 	SystemBaseDescribe = ResourceDetail{
 		Type:    SysSystemBase,
 		Actions: []ActionID{Get, Delete, Edit, Create},
+	}
+
+	OperationStatistic = ResourceDetail{
+		Type:    SysOperationStatistic,
+		Actions: []ActionID{Get, Edit},
 	}
 )

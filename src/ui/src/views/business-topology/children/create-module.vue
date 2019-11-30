@@ -42,7 +42,7 @@
                     </bk-option>
                     <div class="add-template" slot="extension" @click="jumpServiceTemplate" v-if="!templateList.length">
                         <i class="bk-icon icon-plus-circle"></i>
-                        <span>{{$t('新建模板')}}</span>
+                        <span>{{$t('新建服务模板')}}</span>
                     </div>
                 </bk-select>
                 <span class="form-error" v-if="errors.has('template')">{{errors.first('template')}}</span>
@@ -67,7 +67,7 @@
                 <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
             </div>
             <div class="form-item clearfix" v-if="!withTemplate">
-                <label>{{$t('服务实例分类')}}<font color="red">*</font></label>
+                <label>{{$t('所属服务分类')}}<font color="red">*</font></label>
                 <cmdb-selector class="service-class fl"
                     v-model="firstClass"
                     v-validate.disabled="'required'"
@@ -91,7 +91,7 @@
             <bk-button theme="primary"
                 :disabled="$loading() || errors.any()"
                 @click="handleSave">
-                {{$t('确定')}}
+                {{$t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
@@ -135,13 +135,13 @@
                 return this.$store.getters['objectBiz/bizId']
             },
             serviceTemplateMap () {
-                return this.$store.state.businessTopology.serviceTemplateMap
+                return this.$store.state.businessHost.serviceTemplateMap
             },
             currentTemplate () {
                 return this.templateList.find(item => item.id === this.template) || {}
             },
             categoryMap () {
-                return this.$store.state.businessTopology.categoryMap
+                return this.$store.state.businessHost.categoryMap
             },
             currentCategory () {
                 return this.firstClassList.find(category => category.id === this.firstClass) || {}
@@ -178,11 +178,11 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-                            params: this.$injectMetadata()
+                            params: this.$injectMetadata({}, { injectBizId: true })
                         })
                         const templates = data.info.map(item => item.service_template)
                         this.templateList = templates
-                        this.$store.commit('businessTopology/setServiceTemplate', {
+                        this.$store.commit('businessHost/setServiceTemplate', {
                             id: this.business,
                             templates: templates
                         })
@@ -199,11 +199,11 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                            params: this.$injectMetadata()
+                            params: this.$injectMetadata({}, { injectBizId: true })
                         })
                         const categories = this.collectServiceCategories(data.info)
                         this.firstClassList = categories
-                        this.$store.commit('businessTopology/setCategories', {
+                        this.$store.commit('businessHost/setCategories', {
                             id: this.business,
                             categories: categories
                         })
@@ -325,9 +325,6 @@
     font {
         padding: 0 2px;
     }
-</style>
-
-<style lang="scss">
     .add-template {
         width: 20%;
         cursor: pointer;

@@ -145,6 +145,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		meta.ClassificationResource,
 		// meta.UserGroupSyncResource,
 		meta.ServiceTemplateResource,
+		meta.SetTemplateResource,
 	}
 	for _, resourceType := range resourceTypes {
 		for _, businessSimplify := range businessList {
@@ -196,7 +197,32 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 			Header:       *header,
 		})
 	}
-	blog.Infof("jobs: count: %d", len(jobs))
 
+	jobs = FilterJobs(jobs)
+
+	blog.Infof("jobs: count: %d", len(jobs))
 	return &jobs
+}
+
+func FilterJobs(jobs []meta.WorkRequest) []meta.WorkRequest {
+	debugSync := false
+	if debugSync == false {
+		return jobs
+	}
+	debugResourceType := make([]meta.ResourceType, 0)
+	finalJobs := make([]meta.WorkRequest, 0)
+	for _, job := range jobs {
+		found := false
+		for _, resourceType := range debugResourceType {
+			if resourceType == job.ResourceType {
+				found = true
+				break
+			}
+		}
+		if found {
+			finalJobs = append(finalJobs, job)
+		}
+	}
+
+	return finalJobs
 }

@@ -233,4 +233,22 @@ var expectSystemResourceType = []ResourceType{
 			},
 		},
 	},
+	{
+		ResourceTypeID:       SysOperationStatistic,
+		ResourceTypeName:     "运营统计",
+		ParentResourceTypeID: "",
+		Share:                false,
+		Actions: []Action{
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
+				IsRelatedResource: false,
+			},
+		},
+	},
 }

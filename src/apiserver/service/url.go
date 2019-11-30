@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
 
 // URLPath url path filter
@@ -43,7 +43,11 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 	case u.WithEvent(req):
 		serverType = EventType
 	case u.WithDataCollect(req):
-		serverType = DataCollectType
+		return DataCollectType, nil
+	case u.WithOperation(req):
+		return OperationType, nil
+	case u.WithTask(req):
+		return TaskType, nil
 	default:
 		serverType = UnknownType
 		err = errors.New("unknown requested with backend process")
@@ -66,6 +70,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath+"/biz", topoRoot+"/app", true
 
 	case strings.HasPrefix(string(*u), rootPath+"/topo/"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case topoURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/identifier/"):
@@ -121,6 +128,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/objectattgroupproperty"):
 		from, to, isHit = rootPath, topoRoot, true
 
+	// TODO remove it
 	case strings.Contains(string(*u), "/objectattgroupasst"):
 		from, to, isHit = rootPath, topoRoot, true
 
@@ -131,6 +139,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.Contains(string(*u), "/topoinst"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/topopath"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.Contains(string(*u), "/topoassociationtype"):
@@ -272,6 +283,46 @@ func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/collector/"):
 		from, to, isHit = rootPath+"/collector", dataCollectRoot, true
+
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
+}
+
+// WithOperation transform OperationStatistic's url
+func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
+	statisticsRoot := "/operation/v3"
+	from, to := rootPath, statisticsRoot
+
+	switch {
+	case strings.Contains(string(*u), "/operation/"):
+		from, to, isHit = rootPath, statisticsRoot, true
+
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
+}
+
+// WithTask transform task server  url
+func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
+	statisticsRoot := "/task/v3"
+	from, to := rootPath, statisticsRoot
+
+	switch {
+	case strings.Contains(string(*u), "/task/"):
+		from, to, isHit = rootPath, statisticsRoot, true
 
 	default:
 		isHit = false

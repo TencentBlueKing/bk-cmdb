@@ -153,16 +153,16 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @param {reject} promise拒绝函数
  * @return
  */
-
 const PermissionCode = 9900403
 function handleResponse ({ config, response, resolve, reject }) {
     const transformedResponse = response.data
+    const { bk_error_msg: message, permission } = transformedResponse
     if (transformedResponse.bk_error_code === PermissionCode) {
-        popupPermissionModal(transformedResponse.permission)
-        return reject({ message: transformedResponse['bk_error_msg'], code: PermissionCode })
+        config.globalPermission && popupPermissionModal(transformedResponse.permission)
+        return reject({ message, permission, code: PermissionCode })
     }
     if (!transformedResponse.result && config.globalError) {
-        reject({ message: transformedResponse['bk_error_msg'] })
+        reject({ message })
     } else {
         resolve(config.originalResponse ? response : config.transformData ? transformedResponse.data : transformedResponse)
     }
@@ -238,7 +238,9 @@ function initConfig (method, url, userConfig) {
         // 当路由变更时取消请求
         cancelWhenRouteChange: false,
         // 取消上次请求
-        cancelPrevious: false
+        cancelPrevious: false,
+        // 是否全局捕获权限异常
+        globalPermission: true
     }
     return Object.assign(defaultConfig, userConfig)
 }
@@ -260,7 +262,7 @@ function getCancelToken () {
     }
 }
 
-function download (options = {}) {
+async function download (options = {}) {
     const { url, method = 'post', data } = options
     const config = Object.assign({
         globalError: false,
@@ -277,25 +279,25 @@ function download (options = {}) {
     } else {
         promise = $http[method](url, config)
     }
-    promise.then(response => {
-        try {
-            const disposition = response.headers['content-disposition']
-            const fileName = disposition.substring(disposition.indexOf('filename') + 9)
-            const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
-                type: response.headers['content-type']
-            }))
-            const link = document.createElement('a')
-            link.style.display = 'none'
-            link.href = downloadUrl
-            link.setAttribute('download', fileName)
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-        } catch (e) {
-            $error('Download failure')
-        }
-        return response
-    })
+    try {
+        const response = await promise
+        const disposition = response.headers['content-disposition']
+        const fileName = disposition.substring(disposition.indexOf('filename') + 9)
+        const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
+            type: response.headers['content-type']
+        }))
+        const link = document.createElement('a')
+        link.style.display = 'none'
+        link.href = downloadUrl
+        link.setAttribute('download', fileName)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        return Promise.resolve(response)
+    } catch (e) {
+        $error('Download failure')
+        return Promise.reject(e)
+    }
 }
 
 export default $http

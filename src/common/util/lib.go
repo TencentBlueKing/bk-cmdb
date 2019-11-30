@@ -22,6 +22,7 @@ import (
 	"sync/atomic"
 
 	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
@@ -222,4 +223,13 @@ func BuildMongoField(key ...string) string {
 // BuildMongoSyncItemField build mongodb sub item synchronize field key
 func BuildMongoSyncItemField(key string) string {
 	return BuildMongoField(common.MetadataField, common.MetaDataSynchronizeField, key)
+}
+
+func GetDefaultCCError(header http.Header) errors.DefaultCCErrorIf {
+	globalCCError := errors.GetGlobalCCError()
+	if globalCCError == nil {
+		return nil
+	}
+	language := GetLanguage(header)
+	return globalCCError.CreateDefaultCCErrorIf(language)
 }

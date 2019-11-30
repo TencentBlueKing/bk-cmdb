@@ -205,6 +205,8 @@ const (
 	DefaultResModuleName string = "空闲机"
 	// DefaultFaultModuleName the default fault module name
 	DefaultFaultModuleName string = "故障机"
+	// DefaultRecycleModuleName the default fault module name
+	DefaultRecycleModuleName string = "待回收"
 )
 
 const (
@@ -466,6 +468,8 @@ const (
 	BKProcessTemplateIDField = "process_template_id"
 	BKServiceCategoryIDField = "service_category_id"
 
+	BKSetTemplateIDField = "set_template_id"
+
 	BKParentIDField = "bk_parent_id"
 	BKRootIDField   = "bk_root_id"
 
@@ -641,6 +645,8 @@ const (
 // DefaultResSetFlag the default resource set flat
 const DefaultResSetFlag int = 1
 
+const DefaultFlagDefaultValue int = 0
+
 // DefaultAppFlag the default app flag
 const DefaultAppFlag int = 1
 
@@ -671,7 +677,15 @@ const (
 
 	// DefaultFaultModuleFlag the default fault module flag
 	DefaultFaultModuleFlag int = 2
+
+	// default recycle module flat
+	DefaultRecycleModuleFlag int = 3
 )
+
+const (
+	DefaultModuleType string = "1"
+)
+
 const (
 	// FieldTypeSingleChar the single char filed type
 	FieldTypeSingleChar string = "singlechar"
@@ -702,6 +716,9 @@ const (
 
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
+
+	// FieldTypeList the lis type
+	FieldTypeList string = "list"
 
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
@@ -1066,6 +1083,7 @@ const (
 
 	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
 	ServiceTemplateIDNotSet = 0
+	SetTemplateIDNotSet     = 0
 
 	MetadataLabelBiz = "metadata.label.bk_biz_id"
 
@@ -1076,6 +1094,29 @@ const (
 	ContextRequestIDField    = "request_id"
 	ContextRequestUserField  = "request_user"
 	ContextRequestOwnerField = "request_owner"
+)
+
+const (
+	OperationCustom      = "custom"
+	OperationReportType  = "report_type"
+	OperationConfigID    = "config_id"
+	BizModuleHostChart   = "biz_module_host_chart"
+	HostOSChart          = "host_os_chart"
+	HostBizChart         = "host_biz_chart"
+	HostCloudChart       = "host_cloud_chart"
+	HostChangeBizChart   = "host_change_biz_chart"
+	ModelAndInstCount    = "model_and_inst_count"
+	ModelInstChart       = "model_inst_chart"
+	ModelInstChangeChart = "model_inst_change_chart"
+	CreateObject         = "create object"
+	DeleteObject         = "delete object"
+	UpdateObject         = "update object"
+	OperationDescription = "op_desc"
+	OptionOther          = "其他"
+	TimerPattern         = "^[\\d]+\\:[\\d]+$"
+	SyncSetTaskName      = "sync-settemplate2set"
+
+	BKHostState = "bk_state"
 )
 
 // 云同步

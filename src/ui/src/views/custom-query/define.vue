@@ -7,7 +7,7 @@
             'getUserAPIDetail'
         ])
     }">
-        <div class="define-box">
+        <div class="define-box" ref="defineBox">
             <div class="userapi-group">
                 <label class="userapi-label">
                     {{$t('业务')}}<span class="color-danger"> * </span>
@@ -21,21 +21,20 @@
                 <label class="userapi-label">
                     {{$t('查询名称')}}<span class="color-danger"> * </span>
                 </label>
-                <div v-cursor="{
-                    active: !editable,
-                    auth: [$OPERATION.U_CUSTOM_QUERY]
-                }">
-                    <bk-input type="text" class="cmdb-form-input"
+                <cmdb-auth style="display: block;" :auth="authResources">
+                    <bk-input slot-scope="{ disabled }"
+                        type="text"
+                        class="cmdb-form-input"
                         v-model.trim="name"
                         :name="$t('查询名称')"
                         :placeholder="$t('请输入xx', { name: $t('查询名称') })"
-                        :disabled="!editable"
+                        :disabled="disabled"
                         v-validate="'required|length:256'">
                     </bk-input>
-                </div>
+                </cmdb-auth>
                 <span v-show="errors.has($t('查询名称'))" class="color-danger">{{ errors.first($t('查询名称')) }}</span>
             </div>
-            <div class="query-conditons">
+            <div class="query-conditons" ref="queryConditions">
                 <div class="query-title">
                     <span>{{$t('查询条件')}}</span>
                     <i class="icon-cc-tips" v-bk-tooltips.right="$t('针对查询内容进行条件过滤')"></i>
@@ -45,82 +44,102 @@
                         <label class="filter-label">
                             {{property.objName}} - {{property.propertyName}}
                         </label>
-                        <div class="filter-content clearfix" :class="{ disabled: !editable }"
-                            v-cursor="{
-                                active: !editable,
-                                auth: [$OPERATION.U_CUSTOM_QUERY]
-                            }">
-                            <filter-field-operator class="filter-field-operator fl"
-                                v-if="!['date', 'time'].includes(property.propertyType)"
-                                :type="getOperatorType(property)"
-                                :disabled="!editable"
-                                v-model="property.operator">
-                            </filter-field-operator>
-                            <cmdb-form-enum class="filter-field-value filter-field-enum fl"
-                                v-if="property.propertyType === 'enum'"
-                                :allow-clear="true"
-                                :options="getEnumOptions(property)"
-                                :disabled="!editable"
-                                v-model="property.value">
-                            </cmdb-form-enum>
-                            <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
-                                v-else-if="property.propertyType === 'bool'"
-                                v-model="property.value"
-                                :disabled="!editable">
-                            </cmdb-form-bool-input>
-                            <cmdb-search-input class="filter-field-value filter-field-char fl" :style="{ '--index': 99 - index }"
-                                v-else-if="['singlechar', 'longchar'].includes(property.propertyType)"
-                                v-model="property.value"
-                                :disabled="!editable">
-                            </cmdb-search-input>
-                            <cmdb-form-date-range class="filter-field-value"
-                                v-else-if="['date', 'time'].includes(property.propertyType)"
-                                v-model="property.value">
-                            </cmdb-form-date-range>
-                            <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
-                                v-else
-                                :is="`cmdb-form-${property.propertyType}`"
-                                :disabled="!editable"
-                                v-model="property.value">
-                            </component>
-                            <i class="userapi-delete fr bk-icon icon-close"
-                                v-if="editable"
-                                @click="deleteUserProperty(property, index)">
-                            </i>
-                        </div>
+                        <cmdb-auth style="display: block;"
+                            :auth="authResources">
+                            <template slot-scope="{ disabled }">
+                                <div class="filter-main">
+                                    <div class="filter-content clearfix" :class="{ disabled: disabled }">
+                                        <filter-field-operator class="filter-field-operator fl"
+                                            v-if="!['date', 'time'].includes(property.propertyType)"
+                                            :type="getOperatorType(property)"
+                                            :disabled="disabled"
+                                            v-model="property.operator">
+                                        </filter-field-operator>
+                                        <component class="filter-field-value filter-field-enum fl"
+                                            v-if="['list', 'enum'].includes(property.propertyType)"
+                                            :is="`cmdb-form-${property.propertyType}`"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :allow-clear="true"
+                                            :options="getEnumOptions(property)"
+                                            :disabled="disabled"
+                                            v-model="property.value">
+                                        </component>
+                                        <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
+                                            v-else-if="property.propertyType === 'bool'"
+                                            v-model="property.value"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :disabled="disabled">
+                                        </cmdb-form-bool-input>
+                                        <cmdb-search-input class="filter-field-value filter-field-char fl" :style="{ '--index': 99 - index }"
+                                            v-else-if="['singlechar', 'longchar'].includes(property.propertyType)"
+                                            v-model="property.value"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :disabled="disabled">
+                                        </cmdb-search-input>
+                                        <cmdb-form-date-range class="filter-field-value"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            v-else-if="['date', 'time'].includes(property.propertyType)"
+                                            v-model="property.value">
+                                        </cmdb-form-date-range>
+                                        <cmdb-cloud-selector
+                                            v-else-if="property.propertyId === 'bk_cloud_id'"
+                                            class="filter-field-value fl"
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :allow-clear="true"
+                                            v-model="property.value">
+                                        </cmdb-cloud-selector>
+                                        <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
+                                            v-else
+                                            v-validate="'required'"
+                                            :data-vv-name="property.propertyId"
+                                            :is="`cmdb-form-${property.propertyType}`"
+                                            :disabled="disabled"
+                                            v-model="property.value">
+                                        </component>
+                                        <i class="userapi-delete fr bk-icon icon-close"
+                                            v-if="!disabled"
+                                            @click="deleteUserProperty(property, index)">
+                                        </i>
+                                    </div>
+                                    <span class="error-tips" v-if="errors.has(property.propertyId)"
+                                        :style="{ 'margin-left': ['date', 'time'].includes(property.propertyType) ? '0' : '120px' }">
+                                        {{errors.first(property.propertyId)}}
+                                    </span>
+                                </div>
+                            </template>
+                        </cmdb-auth>
                     </li>
                 </ul>
-                <span class="inline-block-middle"
-                    v-cursor="{
-                        active: !editable,
-                        auth: [$OPERATION.U_CUSTOM_QUERY]
-                    }">
-                    <bk-button class="add-conditon-btn"
+                <cmdb-auth :auth="authResources">
+                    <bk-button slot-scope="{ disabled }"
+                        class="add-conditon-btn"
                         theme="primary"
                         :text="true"
-                        :disabled="!editable"
+                        :disabled="disabled"
                         icon="icon-plus-circle"
                         @click="handleAddQueryCondition">
                         {{$t('继续添加')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </div>
         </div>
-        
-        <div class="userapi-btn-group">
-            <span class="inline-block-middle"
-                v-cursor="{
-                    active: !editable,
-                    auth: [$OPERATION.U_CUSTOM_QUERY]
-                }">
-                <bk-button theme="primary" class="userapi-btn"
+        <div class="userapi-btn-group" :class="{ 'sticky': hasScrollbar }">
+            <cmdb-auth :auth="authResources">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    class="userapi-btn"
                     v-bk-tooltips="$t('保存后的查询可通过接口调用生效')"
                     :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
-                    :disabled="errors.any() || !editable"
+                    :disabled="errors.any() || disabled"
                     @click="saveUserAPI">
-                    {{$t('保存')}}
+                    {{type === 'create' ? $t('提交') : $t('保存')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <bk-button class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
                 {{$t('预览')}}
             </bk-button>
@@ -165,6 +184,7 @@
     import filterFieldOperator from '@/components/hosts/filter/_filter-field-operator'
     import vPreview from './preview'
     import propertySelector from './query-property-seletor'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         components: {
             filterFieldOperator,
@@ -229,24 +249,16 @@
                 propertySlider: {
                     isShow: false,
                     properties: {}
-                }
+                },
+                hasScrollbar: false
             }
         },
         computed: {
             ...mapGetters([
                 'supplierAccount'
             ]),
-            editable () {
-                if (this.type === 'update') {
-                    return this.$isAuthorized(this.$OPERATION.U_CUSTOM_QUERY)
-                }
-                return true
-            },
             filterList () {
                 return this.filter.allList.filter(item => {
-                    if (['foreignkey'].includes(item['bk_property_type'])) {
-                        return false
-                    }
                     return !this.userProperties.some(property => {
                         return item['bk_obj_id'] === property.objId && item['bk_property_id'] === property.propertyId
                     })
@@ -351,6 +363,12 @@
             },
             selectedProperties () {
                 return this.userProperties.map(property => `${property.objId}-${property.propertyId}`)
+            },
+            authResources () {
+                if (this.type === 'update') {
+                    return this.$authResources({ type: this.$OPERATION.U_CUSTOM_QUERY })
+                }
+                return {}
             }
         },
         async created () {
@@ -359,6 +377,12 @@
                 await this.getUserAPIDetail()
             }
             await this.initAttributeObject()
+        },
+        mounted () {
+            addResizeListener(this.$refs.queryConditions, this.handleResize)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.queryConditions, this.handleResize)
         },
         methods: {
             ...mapActions('objectModelProperty', [
@@ -370,6 +394,14 @@
                 'updateCustomQuery',
                 'deleteCustomQuery'
             ]),
+            handleResize () {
+                this.$nextTick(() => {
+                    const scroller = this.$refs.defineBox
+                    if (scroller) {
+                        this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
+                    }
+                })
+            },
             isCloseConfirmShow () {
                 if (this.name !== this.dataCopy.name || this.userProperties.length !== this.dataCopy.userProperties.length) {
                     return true
@@ -600,9 +632,8 @@
                     }
                 })
                 this.filter.allList = [...hostList, ...setList, ...moduleList]
-                const sliderProperty = this.filter.allList.filter(item => !['foreignkey'].includes(item['bk_property_type']))
                 const propertyMap = {}
-                sliderProperty.forEach(item => {
+                this.filter.allList.forEach(item => {
                     if (propertyMap.hasOwnProperty(item['bk_obj_id'])) {
                         propertyMap[item['bk_obj_id']].push({
                             ...item,
@@ -700,7 +731,7 @@
     .define-wrapper {
         height: 100%;
         .define-box {
-            height: calc(100% - 55px);
+            max-height: calc(100% - 55px);
             padding: 18px 20px;
             overflow: auto;
         }
@@ -741,6 +772,12 @@
                 display: block;
                 margin-top: 20px;
                 line-height: 1;
+            }
+            .filter-main {
+                position: relative;
+                .error-tips {
+                    color: #ff5656;
+                }
             }
             .filter-content {
                 display: flex;
@@ -787,14 +824,19 @@
             }
         }
         .userapi-btn-group {
+            position: sticky;
+            bottom: 0;
             display: flex;
             align-items: center;
-            width: 100%;
-            height: 54px;
-            line-height: 54px;
             background-color: #fff;
-            border-top: 1px solid #dcdee5;
             font-size: 0;
+            padding-left: 10px;
+            &.sticky {
+                border-top: 1px solid #dcdee5;
+                width: 100%;
+                height: 54px;
+                line-height: 54px;
+            }
             .bk-button {
                 margin-left: 10px;
             }

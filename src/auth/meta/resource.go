@@ -59,6 +59,8 @@ const (
 	ResourceSync             ResourceType = "resourceSync" // 云资源发现
 	UserCustom               ResourceType = "usercustom"   // 用户自定义
 	SystemBase               ResourceType = "systemBase"
+	SetTemplate              ResourceType = "setTemplate"
+	OperationStatistic       ResourceType = "operationStatistic" // 运营统计
 )
 
 const (
@@ -145,6 +147,7 @@ var (
 			MoveResPoolHostToBizIdleModule,
 			MoveHostToBizFaultModule,
 			MoveHostToBizIdleModule,
+			MoveHostToBizRecycleModule,
 			MoveHostFromModuleToResPool,
 			MoveHostToAnotherBizModule,
 			CleanHostInSetOrModule,

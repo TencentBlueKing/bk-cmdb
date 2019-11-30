@@ -13,12 +13,12 @@
 package handler
 
 import (
-	"context"
 	"fmt"
 
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
 )
@@ -27,21 +27,38 @@ import (
 func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
+	ctx := util.NewContextFromHTTPHeader(*header)
 
-	// step1 get instances by business from core service
+	// step1 get instances by business from logics service
 	businessID := businessSimplify.BKAppIDField
-	objects, err := ih.authManager.CollectObjectsByBusinessID(context.Background(), *header, businessID)
-
+	objects, err := ih.authManager.CollectObjectsByBusinessID(ctx, *header, businessID)
 	if err != nil {
-		blog.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
+		blog.Errorf("HandleModelSync failed, get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
 		return fmt.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
 	}
-	blog.V(4).Infof("list model by business %d result: %+v", businessID, objects)
+	blog.V(4).Infof("HandleModelSync, list model by business %d result: %+v", businessID, objects)
 
-	resources, err := ih.authManager.MakeResourcesByObjects(context.Background(), *header, authmeta.EmptyAction, objects...)
+	resources, err := ih.authManager.MakeResourcesByObjects(ctx, *header, authmeta.EmptyAction, objects...)
 	if err != nil {
-		blog.Errorf("make iam resource from models failed, err: %+v", err)
-		return nil
+		blog.Errorf("HandleModelSync failed, make iam resource from models failed, err: %+v", err)
+		return fmt.Errorf("make iam resource from models failed, err: %+v", err)
+	}
+
+	// append global model in business scope
+	if businessID != 0 {
+		globalModels, err := ih.authManager.CollectObjectsByBusinessID(ctx, *header, 0)
+		if err != nil {
+			blog.Errorf("HandleModelSync failed, get global models failed, err: %+v", err)
+			return fmt.Errorf("get global models failed, err: %+v", err)
+		}
+		blog.V(4).Infof("HandleModelSync, list global model result: %+v", globalModels)
+
+		globalResources, err := ih.authManager.MakeGlobalModelAsBizResources(ctx, *header, businessID, authmeta.EmptyAction, globalModels...)
+		if err != nil {
+			blog.Errorf("HandleModelSync failed, make global resource in biz scope failed, err: %+v", err)
+			return fmt.Errorf("make global resource in biz scope failed, err: %+v", err)
+		}
+		resources = append(resources, globalResources...)
 	}
 
 	// step2 get models from iam

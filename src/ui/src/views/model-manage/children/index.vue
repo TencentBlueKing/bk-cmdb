@@ -1,6 +1,9 @@
 <template>
     <div class="model-detail-wrapper">
         <div class="model-info" v-bkloading="{ isLoading: $loading('searchObjects') }">
+            <cmdb-auth style="display: none;" :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })"
+                @update-auth="handleReceiveAuth">
+            </cmdb-auth>
             <template v-if="activeModel !== null">
                 <div class="choose-icon-wrapper">
                     <span class="model-type">{{getModelType()}}</span>
@@ -61,31 +64,25 @@
                         <i class="icon-cc-share"></i>
                     </div>
                 </div>
-                <span class="restart-btn"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_MODEL),
-                        auth: [$OPERATION.U_MODEL]
-                    }"
+                <cmdb-auth class="restart-btn"
                     v-if="!isMainLine && activeModel['bk_ispaused']"
-                    v-bk-tooltips.right="$t('保留模型和相应实例，隐藏关联关系')">
-                    <bk-button
+                    v-bk-tooltips.right="$t('保留模型和相应实例，隐藏关联关系')"
+                    :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })">
+                    <bk-button slot-scope="{ disabled }"
                         theme="primary"
+                        :disabled="disabled"
                         @click="dialogConfirm('restart')">
                         {{$t('立即启用')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <div class="btn-group">
                     <template v-if="canBeImport">
                         <label class="label-btn"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION.U_MODEL),
-                                auth: [$OPERATION.U_MODEL]
-                            }"
                             v-if="tab.active === 'field'"
                             :class="{ 'disabled': isReadOnly }">
                             <i class="icon-cc-import"></i>
                             <span>{{$t('导入')}}</span>
-                            <input v-if="!isReadOnly && $isAuthorized($OPERATION.U_MODEL)" ref="fileInput" type="file" @change.prevent="handleFile">
+                            <input v-if="!isReadOnly && updateAuth" ref="fileInput" type="file" @change.prevent="handleFile">
                         </label>
                         <label class="label-btn" @click="exportField">
                             <i class="icon-cc-derivation"></i>
@@ -93,28 +90,29 @@
                         </label>
                     </template>
                     <template v-if="isShowOperationButton">
-                        <label class="label-btn"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION.U_MODEL),
-                                auth: [$OPERATION.U_MODEL]
-                            }"
+                        <cmdb-auth class="label-btn"
                             v-if="!isMainLine && !activeModel['bk_ispaused']"
-                            v-bk-tooltips="$t('保留模型和相应实例，隐藏关联关系')">
-                            <i class="bk-icon icon-minus-circle-shape"></i>
-                            <span @click="dialogConfirm('stop')">
-                                {{$t('停用')}}
-                            </span>
-                        </label>
-                        <label class="label-btn"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION.D_MODEL),
-                                auth: [$OPERATION.D_MODEL]
-                            }"
+                            v-bk-tooltips="$t('保留模型和相应实例，隐藏关联关系')"
+                            :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })">
+                            <bk-button slot-scope="{ disabled }"
+                                text
+                                :disabled="disabled"
+                                @click="dialogConfirm('stop')">
+                                <i class="bk-icon icon-minus-circle-shape"></i>
+                                <span>{{$t('停用')}}</span>
+                            </bk-button>
+                        </cmdb-auth>
+                        <cmdb-auth class="label-btn"
                             v-bk-tooltips="$t('删除模型和其下所有实例，此动作不可逆，请谨慎操作')"
-                            @click="dialogConfirm('delete')">
-                            <i class="icon-cc-del"></i>
-                            <span>{{$t('删除')}}</span>
-                        </label>
+                            :auth="$authResources({ resource_id: modelId, type: $OPERATION.D_MODEL })">
+                            <bk-button slot-scope="{ disabled }"
+                                text
+                                :disabled="disabled"
+                                @click="dialogConfirm('delete')">
+                                <i class="icon-cc-del"></i>
+                                <span>{{$t('删除')}}</span>
+                            </bk-button>
+                        </cmdb-auth>
                     </template>
                 </div>
             </template>
@@ -124,10 +122,10 @@
                 <the-field-group ref="field" v-if="tab.active === 'field'"></the-field-group>
             </bk-tab-panel>
             <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
-                <the-relation v-if="tab.active === 'relation'"></the-relation>
+                <the-relation v-if="tab.active === 'relation'" :model-id="modelId"></the-relation>
             </bk-tab-panel>
             <bk-tab-panel name="verification" :label="$t('唯一校验')">
-                <the-verification v-if="tab.active === 'verification'"></the-verification>
+                <the-verification v-if="tab.active === 'verification'" :model-id="modelId"></the-verification>
             </bk-tab-panel>
         </bk-tab>
     </div>
@@ -165,7 +163,8 @@
                 isIconListShow: false,
                 isEditName: false,
                 specialModel: ['process', 'plat'],
-                modelStatisticsSet: {}
+                modelStatisticsSet: {},
+                updateAuth: false
             }
         },
         computed: {
@@ -194,8 +193,7 @@
                 return false
             },
             isEditable () {
-                const updateAuth = this.$isAuthorized(this.$OPERATION.U_MODEL)
-                if (!updateAuth) {
+                if (!this.updateAuth) {
                     return false
                 }
                 if (this.isAdminView) {
@@ -224,9 +222,13 @@
             },
             canBeImport () {
                 const cantImport = ['host', 'biz', 'process', 'plat']
-                return this.$isAuthorized(this.$OPERATION.U_MODEL)
+                return this.updateAuth
                     && !this.isMainLine
                     && !cantImport.includes(this.$route.params.modelId)
+            },
+            modelId () {
+                const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
+                return model.id || null
             }
         },
         watch: {
@@ -402,13 +404,6 @@
                 this.exportExcel(res)
             },
             dialogConfirm (type) {
-                if (type === 'delete') {
-                    if (!this.$isAuthorized(this.$OPERATION.D_MODEL)) {
-                        return false
-                    }
-                } else if (!this.$isAuthorized(this.$OPERATION.U_MODEL)) {
-                    return false
-                }
                 switch (type) {
                     case 'restart':
                         this.$bkInfo({
@@ -495,6 +490,9 @@
                         }
                     })
                 }
+            },
+            handleReceiveAuth (auth) {
+                this.updateAuth = auth
             }
         }
     }
@@ -684,9 +682,19 @@
             float: right;
             height: 70px;
             line-height: 70px;
+            display: flex;
+            align-items: center;
             .label-btn {
+                line-height: normal;
                 outline: 0;
                 position: relative;
+                .bk-button-text {
+                    color: #737987;
+                    &:disabled {
+                        color: #dcdee5 !important;
+                        cursor: not-allowed;
+                    }
+                }
                 &.disabled {
                     cursor: not-allowed;
                 }
@@ -711,6 +719,9 @@
                 cursor: pointer;
                 &:hover {
                     color: $cmdbBorderFocusColor;
+                    .bk-button-text {
+                        color: $cmdbBorderFocusColor;
+                    }
                 }
             }
             i,

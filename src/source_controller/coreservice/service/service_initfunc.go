@@ -170,6 +170,20 @@ func (s *coreService) audit() {
 	s.addAction(http.MethodPost, "/read/auditlog", s.SearchAuditLog, nil)
 }
 
+func (s *coreService) initOperation() {
+	s.addAction(http.MethodPost, "/create/operation/chart", s.CreateOperationChart, nil)
+	s.addAction(http.MethodPost, "/search/operation/chart", s.SearchChartWithPosition, nil)
+	s.addAction(http.MethodPost, "/update/operation/chart", s.UpdateOperationChart, nil)
+	s.addAction(http.MethodDelete, "/delete/operation/chart/{id}", s.DeleteOperationChart, nil)
+	s.addAction(http.MethodPost, "/search/operation/chart/common", s.SearchChartCommon, nil)
+
+	s.addAction(http.MethodPost, "/read/operation/inst/count", s.SearchInstCount, nil)
+	s.addAction(http.MethodPost, "/read/operation/chart/data/common", s.SearchChartDataCommon, nil)
+	s.addAction(http.MethodPost, "/update/operation/chart/position", s.UpdateChartPosition, nil)
+	s.addAction(http.MethodPost, "/search/operation/chart/data", s.SearchTimerChartData, nil)
+	s.addAction(http.MethodPost, "/start/operation/chart/timer", s.TimerFreshData, nil)
+}
+
 func (s *coreService) label() {
 	s.addAction(http.MethodPost, "/createmany/labels", s.AddLabels, nil)
 	s.addAction(http.MethodDelete, "/deletemany/labels", s.RemoveLabels, nil)
@@ -192,8 +206,11 @@ func (s *coreService) initService() {
 	s.initMainline()
 	s.host()
 	s.audit()
+	s.initOperation()
 	s.initProcess()
+	s.initOperation()
 	s.initCloudSync()
 	s.label()
 	s.topographics()
+	s.initSetTemplate()
 }

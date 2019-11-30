@@ -32,6 +32,16 @@ func (cli *ccDefaultErrorHelper) New(errorCode int, msg string) error {
 	}
 }
 
+func NewCCError(errorCode int, msg string) CCErrorCoder {
+	err := &ccError{
+		code: errorCode,
+		callback: func() string {
+			return msg
+		},
+	}
+	return err
+}
+
 var CCHttpError = &ccError{
 	code: common.CCErrCommHTTPDoRequestFailed,
 	callback: func() string {

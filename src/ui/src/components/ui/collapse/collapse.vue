@@ -88,7 +88,7 @@
         .collapse-trigger {
             display: inline-block;
             vertical-align: middle;
-            font-size: 14px;
+            font-size: 0px;
             line-height: 16px;
             color: #333948;
             font-weight: bold;
@@ -96,13 +96,19 @@
             cursor: pointer;
             .collapse-arrow {
                 display: inline-block;
-                vertical-align: baseline;
+                vertical-align: middle;
                 font-size: 12px;
                 font-weight: 700;
+                margin-right: 6px;
                 transition: transform .2s ease-in-out;
                 &.is-collapsed {
                     transform: rotate(-90deg);
                 }
+            }
+            .collapse-text {
+                display: inline-block;
+                vertical-align: middle;
+                font-size: 14px;
             }
         }
     }

@@ -50,11 +50,11 @@
                 <span class="property-value">{{field.option.max || '--'}}</span>
             </div>
         </template>
-        <div class="property-item" v-else-if="['enum'].includes(field.bk_property_type)">
+        <div class="property-item" v-else-if="['enum', 'list'].includes(field.bk_property_type)">
             <div class="property-name">
                 <span>{{$t('枚举值')}}</span>：
             </div>
-            <span class="property-value">{{getEnumValue(field.option)}}</span>
+            <span class="property-value">{{getEnumValue()}}</span>
         </div>
         <div class="property-item">
             <div class="property-name">
@@ -91,20 +91,27 @@
                     'longchar': this.$t('长字符'),
                     'objuser': this.$t('用户'),
                     'timezone': this.$t('时区'),
-                    'bool': 'bool'
+                    'bool': 'bool',
+                    'list': this.$t('列表')
                 }
             }
         },
         methods: {
-            getEnumValue (value) {
+            getEnumValue () {
+                const value = this.field.option
+                const type = this.field.bk_property_type
                 if (Array.isArray(value)) {
-                    const arr = value.map(item => {
-                        if (item.is_default) {
-                            return `${item.name}(${this.$t('默认值')})`
-                        }
-                        return item.name
-                    })
-                    return arr.length ? arr.join(' / ') : '--'
+                    if (type === 'enum') {
+                        const arr = value.map(item => {
+                            if (item.is_default) {
+                                return `${item.name}(${this.$t('默认值')})`
+                            }
+                            return item.name
+                        })
+                        return arr.length ? arr.join(' / ') : '--'
+                    } else if (type === 'list') {
+                        return value.length ? value.join(' / ') : '--'
+                    }
                 }
                 return '--'
             }

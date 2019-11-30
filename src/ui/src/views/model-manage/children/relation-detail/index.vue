@@ -104,7 +104,7 @@
         </div>
         <div class="btn-group">
             <bk-button theme="primary" :disabled="isReadOnly" :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
-                {{$t('确定')}}
+                {{isEdit ? $t('保存') : $t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
                 {{$t('取消')}}

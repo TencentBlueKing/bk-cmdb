@@ -1,3 +1,5 @@
+import i18n from '@/i18n'
+
 // 模型分组
 export const C_MODEL_GROUP = 'modelClassification.create'
 export const U_MODEL_GROUP = 'modelClassification.update'
@@ -89,6 +91,12 @@ export const R_CLOUD_CONFIRM = 'cloudConfirm.findMany'
 // 确认历史
 export const R_CONFIRM_HISTORY = 'cloudConfirmHistory.findMany'
 
+// 统计报表
+export const C_STATISTICAL_REPORT = 'operationStatistic.create'
+export const U_STATISTICAL_REPORT = 'operationStatistic.update'
+export const D_STATISTICAL_REPORT = 'operationStatistic.delete'
+export const R_STATISTICAL_REPORT = 'operationStatistic.findMany'
+
 // 服务分类
 export const C_SERVICE_CATEGORY = 'processServiceCategory.create'
 export const U_SERVICE_CATEGORY = 'processServiceCategory.update'
@@ -107,105 +115,57 @@ export const U_SERVICE_INSTANCE = 'processServiceInstance.update'
 export const D_SERVICE_INSTANCE = 'processServiceInstance.delete'
 export const R_SERVICE_INSTANCE = 'processServiceInstance.findMany'
 
-export const STATIC_BUSINESS_MODE = [
-    C_MODEL,
-    R_MODEL,
-
-    C_MODEL_GROUP,
-    U_MODEL_GROUP,
-    D_MODEL_GROUP,
-
-    C_CUSTOM_QUERY,
-    U_CUSTOM_QUERY,
-    D_CUSTOM_QUERY,
-    R_CUSTOM_QUERY,
-
-    C_PROCESS,
-    U_PROCESS,
-    D_PROCESS,
-    R_PROCESS,
-    PROCESS_BIND_MODULE,
-    PROCESS_UNBIND_MODULE,
-    PROCESS_SEARCH_MODULE,
-    
-    C_HOST,
-    U_HOST,
-    D_HOST,
-    HOST_TO_RESOURCE,
-
-    C_SERVICE_CATEGORY,
-    U_SERVICE_CATEGORY,
-    D_SERVICE_CATEGORY,
-    R_SERVICE_CATEGORY,
-
-    C_SERVICE_TEMPLATE,
-    U_SERVICE_TEMPLATE,
-    D_SERVICE_TEMPLATE,
-    R_SERVICE_TEMPLATE,
-
-    C_SERVICE_INSTANCE,
-    U_SERVICE_INSTANCE,
-    D_SERVICE_INSTANCE,
-    R_SERVICE_INSTANCE,
-
-    C_TOPO,
-    U_TOPO,
-    D_TOPO,
-    R_TOPO
-]
-
-export const DYNAMIC_BUSINESS_MODE = [
-    C_INST,
-    U_INST,
-    D_INST,
-    R_INST
-]
+// 集群模板
+export const C_SET_TEMPLATE = 'setTemplate.create'
+export const U_SET_TEMPLATE = 'setTemplate.update'
+export const D_SET_TEMPLATE = 'setTemplate.delete'
 
 export const RESOURCE_TYPE_NAME = {
-    modelClassification: '模型分类',
-    model: '模型',
-    modelInstance: '实例',
-    dynamicGrouping: '动态分组',
-    process: '进程',
-    mainlineInstanceTopology: '业务拓扑',
-    hostInstance: '主机',
-    associationType: '关联类型',
-    business: '业务',
-    eventPushing: '事件推送',
-    auditlog: '操作审计',
-    systemBase: '系统基础',
-    cloudDiscover: '云资源发现',
-    cloudConfirm: '云资源确认',
-    cloudConfirmHistory: '云资源确认历史',
-    processServiceCategory: '服务分类',
-    processServiceTemplate: '服务模板',
-    processServiceInstance: '服务实例',
-    mainlineInstance: '服务拓扑'
+    modelClassification: i18n.t('模型分类'),
+    model: i18n.t('模型'),
+    modelInstance: i18n.t('实例'),
+    dynamicGrouping: i18n.t('动态分组'),
+    process: i18n.t('进程'),
+    mainlineInstanceTopology: i18n.t('业务拓扑'),
+    hostInstance: i18n.t('主机'),
+    associationType: i18n.t('关联类型'),
+    business: i18n.t('业务'),
+    eventPushing: i18n.t('事件推送'),
+    auditlog: i18n.t('操作审计'),
+    systemBase: i18n.t('系统基础'),
+    cloudDiscover: i18n.t('云资源发现'),
+    cloudConfirm: i18n.t('云资源确认'),
+    cloudConfirmHistory: i18n.t('云资源确认历史'),
+    processServiceCategory: i18n.t('服务分类'),
+    processServiceTemplate: i18n.t('服务模板'),
+    processServiceInstance: i18n.t('服务实例'),
+    mainlineInstance: i18n.t('服务拓扑'),
+    operationStatistic: i18n.t('运营统计'),
+    setTemplate: i18n.t('集群模板')
 }
 
 export const RESOURCE_ACTION_NAME = {
-    create: '新建',
-    update: '编辑',
-    delete: '删除',
-    findMany: '查询',
-    boundModuleToProcess: '绑定到模块',
-    unboundModelToProcess: '解绑模块',
-    findBoundModuleProcess: '查询已绑定模块',
-    transferHost: '转移主机',
-    moveHostFromModuleToResPool: '删除/归还',
-    moveResPoolHostToBizIdleModule: '分配主机到业务空闲机',
-    archive: '归档',
-    modelTopologyOperation: '拓扑层级管理',
-    adminEntrance: '管理页面入口',
-    modelTopologyView: '模型拓扑视图'
+    create: i18n.t('新建'),
+    update: i18n.t('编辑'),
+    delete: i18n.t('删除'),
+    findMany: i18n.t('查询'),
+    boundModuleToProcess: i18n.t('绑定到模块'),
+    unboundModelToProcess: i18n.t('解绑模块'),
+    findBoundModuleProcess: i18n.t('查询已绑定模块'),
+    transferHost: i18n.t('转移主机'),
+    moveHostFromModuleToResPool: i18n.t('删除/归还'),
+    moveResPoolHostToBizIdleModule: i18n.t('分配主机到业务空闲机'),
+    archive: i18n.t('归档'),
+    modelTopologyOperation: i18n.t('拓扑层级管理'),
+    adminEntrance: i18n.t('管理页面入口'),
+    modelTopologyView: i18n.t('模型拓扑视图')
 }
 
 const AUTH_META_KEYS = ['bk_biz_id', 'parent_layers', 'resource_id']
 
 export const GET_AUTH_META = (auth, options = {}) => {
-    const [type, action, scope] = auth.split('.')
+    const [type, action] = auth.split('.')
     const meta = {
-        scope: scope || 'global',
         resource_type: type,
         action: action
     }

@@ -69,7 +69,7 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 	return newLgc
 }
 
-// NewLogics get logic handle
+// NewLogics get logics handle
 func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, synchronizeSrv synchronize.SynchronizeClientInterface) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{

@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/mapstruct"
 	"context"
 	"sort"
 	"strconv"
@@ -341,4 +342,47 @@ func (s *Service) DeleteAssociationInst(params types.ContextParams, pathParams, 
 		return ret.Data, nil
 
 	}
+}
+
+func (s *Service) SearchTopoPath(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	rid := params.ReqID
+
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if nil != err {
+		blog.Errorf("SearchTopoPath failed, bizIDStr: %s, err: %s, rid: %s", bizIDStr, err.Error(), rid)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	input := metadata.FindTopoPathRequest{}
+	if err := mapstruct.Decode2Struct(data, &input); err != nil {
+		blog.ErrorJSON("SearchTopoPath failed, parse request body failed, data: %s, err: %s, rid: %s", data, err.Error(), rid)
+		return nil, params.Err.Errorf(common.CCErrCommPostInputParseError)
+	}
+	if len(input.Nodes) == 0 {
+		return nil, params.Err.Errorf(common.CCErrCommHTTPBodyEmpty)
+	}
+
+	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(params.Context, params.Header, bizID, false)
+	if err != nil {
+		blog.Errorf("SearchTopoPath failed, SearchMainlineInstanceTopo failed, bizID:%d, err:%s, rid:%s", bizID, err.Error(), rid)
+		return nil, err
+	}
+	result := metadata.TopoPathResult{}
+	for _, node := range input.Nodes {
+		topoPath := topoRoot.TraversalFindNode(node.ObjectID, node.InstanceID)
+		path := make([]*metadata.TopoInstanceNodeSimplify, 0)
+		for _, item := range topoPath {
+			simplify := item.ToSimplify()
+			path = append(path, simplify)
+		}
+		nodeTopoPath := metadata.NodeTopoPath{
+			BizID: bizID,
+			Node:  node,
+			Path:  path,
+		}
+		result.Nodes = append(result.Nodes, nodeTopoPath)
+	}
+
+	return result, nil
 }

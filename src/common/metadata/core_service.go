@@ -137,7 +137,7 @@ type SearchTopoModelNodeResult struct {
 	Data     TopoModelNode `json:"data"`
 }
 
-// LeftestObjectIDList extrac leftest node's id of each level, arrange as a list
+// LeftestObjectIDList extract leftest node's id of each level, arrange as a list
 // it's useful in model mainline topo case, as bk_mainline relationship degenerate to a list.
 func (tn *TopoModelNode) LeftestObjectIDList() []string {
 	objectIDs := make([]string, 0)
@@ -153,9 +153,9 @@ func (tn *TopoModelNode) LeftestObjectIDList() []string {
 }
 
 type TopoInstanceNodeSimplify struct {
-	ObjectID     string
-	InstanceID   int64
-	InstanceName string
+	ObjectID     string `json:"bk_obj_id" field:"bk_obj_id" mapstructure:"bk_obj_id"`
+	InstanceID   int64  `json:"bk_inst_id" field:"bk_inst_id" mapstructure:"bk_inst_id"`
+	InstanceName string `json:"bk_inst_name" field:"bk_inst_name" mapstructure:"bk_inst_name"`
 }
 
 type TopoInstanceNode struct {
@@ -201,7 +201,7 @@ func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanc
 }
 
 func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int64) []*TopoInstanceNode {
-	if common.GetObjByType(node.ObjectID) == objectType && node.InstanceID == targetID {
+	if node.ObjectID == objectType && node.InstanceID == targetID {
 		return []*TopoInstanceNode{node}
 	}
 
@@ -214,6 +214,27 @@ func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int6
 	}
 
 	return []*TopoInstanceNode{}
+}
+
+func (node *TopoInstanceNode) DeepFirstTraversal(f func(node *TopoInstanceNode)) {
+	if node == nil {
+		return
+	}
+	for _, child := range node.Children {
+		child.DeepFirstTraversal(f)
+	}
+	f(node)
+}
+
+func (node *TopoInstanceNode) ToSimplify() *TopoInstanceNodeSimplify {
+	if node == nil {
+		return nil
+	}
+	return &TopoInstanceNodeSimplify{
+		ObjectID:     node.ObjectID,
+		InstanceID:   node.InstanceID,
+		InstanceName: node.InstanceName,
+	}
 }
 
 type TopoInstance struct {
@@ -314,9 +335,19 @@ type OneServiceTemplateResult struct {
 	Data     ServiceTemplate `json:"data"`
 }
 
-type OneServiceTemplateDetailResult struct {
+type OneServiceTemplateWithStatisticsResult struct {
 	BaseResp `json:",inline"`
-	Data     ServiceTemplateDetail `json:"data"`
+	Data     ServiceTemplateWithStatistics `json:"data"`
+}
+
+type MultipleServiceTemplateDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceTemplateDetail `json:"data"`
+}
+
+type MultipleServiceTemplateDetail struct {
+	Count uint64                  `json:"count"`
+	Info  []ServiceTemplateDetail `json:"info"`
 }
 
 type MultipleServiceTemplate struct {
@@ -326,13 +357,13 @@ type MultipleServiceTemplate struct {
 
 type ListServiceInstanceOption struct {
 	BusinessID         int64              `json:"bk_biz_id"`
-	ServiceTemplateID  int64              `json:"service_template_id,omitempty"`
-	HostID             int64              `json:"host_id,omitempty"`
-	ModuleID           int64              `json:"module_id,omitempty"`
-	SearchKey          *string            `json:"search_key,omitempty"`
+	ServiceTemplateID  int64              `json:"service_template_id"`
+	HostIDs            []int64            `json:"bk_host_ids"`
+	ModuleIDs          []int64            `json:"bk_module_ids"`
+	SearchKey          *string            `json:"search_key"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
-	Selectors          selector.Selectors `json:"selectors,omitempty"`
-	Page               BasePage           `json:"page,omitempty"`
+	Selectors          selector.Selectors `json:"selectors"`
+	Page               BasePage           `json:"page"`
 }
 
 type ListServiceInstanceDetailOption struct {
@@ -386,7 +417,7 @@ type DeleteProcessInstanceRelationOption struct {
 type ListProcessTemplatesOption struct {
 	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
 	ProcessTemplateIDs []int64  `json:"process_template_ids,omitempty" bson:"process_template_ids"`
-	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
+	ServiceTemplateIDs []int64  `json:"service_template_ids,omitempty" bson:"service_template_ids"`
 	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
 type ListServiceCategoriesOption struct {
@@ -436,9 +467,19 @@ type MultipleProcessInstanceRelationResult struct {
 }
 
 type BusinessDefaultSetModuleInfo struct {
-	IdleSetID     int64 `json:"idle_set_id"`
-	IdleModuleID  int64 `json:"idle_module_id"`
-	FaultModuleID int64 `json:"fault_module_id"`
+	IdleSetID       int64 `json:"idle_set_id"`
+	IdleModuleID    int64 `json:"idle_module_id"`
+	FaultModuleID   int64 `json:"fault_module_id"`
+	RecycleModuleID int64 `json:"recycle_module_id"`
+}
+
+func (b BusinessDefaultSetModuleInfo) IsInternalModule(moduleID int64) bool {
+	if moduleID == b.IdleModuleID ||
+		moduleID == b.FaultModuleID ||
+		moduleID == b.RecycleModuleID {
+		return true
+	}
+	return false
 }
 
 type BusinessDefaultSetModuleInfoResult struct {

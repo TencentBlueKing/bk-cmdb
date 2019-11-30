@@ -14,10 +14,13 @@ export default class Meta {
         }, data.menu)
 
         this.auth = Object.assign({
-            authScope: 'global',
             view: null,
-            operation: {}
+            operation: null
         }, data.auth)
+
+        this.layout = Object.assign({
+            breadcrumbs: true
+        }, data.layout)
 
         this.view = 'default'
     }

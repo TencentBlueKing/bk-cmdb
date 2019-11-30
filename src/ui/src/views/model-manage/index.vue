@@ -11,28 +11,22 @@
                 @close-tips="showFeatureTips = false">
             </feature-tips>
             <div class="fl">
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_MODEL),
-                        auth: [$OPERATION.C_MODEL]
-                    }">
-                    <bk-button theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_MODEL })">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        :disabled="disabled || modelType === 'disabled'"
                         @click="showModelDialog()">
                         {{$t('新建模型')}}
                     </bk-button>
-                </span>
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_MODEL_GROUP),
-                        auth: [$OPERATION.C_MODEL_GROUP]
-                    }">
-                    <bk-button theme="default"
-                        :disabled="!$isAuthorized($OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
+                </cmdb-auth>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_MODEL_GROUP })">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="default"
+                        :disabled="disabled || modelType === 'disabled'"
                         @click="showGroupDialog(false)">
                         {{$t('新建分组')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </div>
             <div class="model-type-options fr">
                 <bk-button class="model-type-button enable"
@@ -77,32 +71,39 @@
                         <span class="number">({{classification['bk_objects'].length}})</span>
                     </div>
                     <template v-if="isEditable(classification) && modelType === 'enable'">
-                        <i class="icon-cc-add-line text-primary"
-                            :class="[{ 'disabled': !$isAuthorized($OPERATION.C_MODEL) }]"
-                            :style="{ 'margin': '0 6px' }"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION.C_MODEL),
-                                auth: [$OPERATION.C_MODEL]
-                            }"
-                            @click="showModelDialog(classification.bk_classification_id)">
-                        </i>
-                        <i class="icon-cc-edit text-primary"
-                            :class="[{ 'disabled': !$isAuthorized($OPERATION.U_MODEL_GROUP) }]"
-                            :style="{ 'margin-right': '4px' }"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION.U_MODEL_GROUP),
-                                auth: [$OPERATION.U_MODEL_GROUP]
-                            }"
-                            @click="showGroupDialog(true, classification)">
-                        </i>
-                        <i class="icon-cc-delete text-primary"
-                            :class="[{ 'disabled': !$isAuthorized($OPERATION.D_MODEL_GROUP) }]"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION.D_MODEL_GROUP),
-                                auth: [$OPERATION.D_MODEL_GROUP]
-                            }"
-                            @click="deleteGroup(classification)">
-                        </i>
+                        <cmdb-auth class="group-btn ml5" :auth="$authResources({ type: $OPERATION.C_MODEL })">
+                            <bk-button slot-scope="{ disabled }"
+                                theme="primary"
+                                text
+                                :disabled="disabled"
+                                @click="showModelDialog(classification.bk_classification_id)">
+                                <i class="icon-cc-add-line"></i>
+                            </bk-button>
+                        </cmdb-auth>
+                        <cmdb-auth class="group-btn" :auth="$authResources({
+                            resource_id: classification.id,
+                            type: $OPERATION.U_MODEL_GROUP
+                        })">
+                            <bk-button slot-scope="{ disabled }"
+                                theme="primary"
+                                text
+                                :disabled="disabled"
+                                @click="showGroupDialog(true, classification)">
+                                <i class="icon-cc-edit"></i>
+                            </bk-button>
+                        </cmdb-auth>
+                        <cmdb-auth class="group-btn" :auth="$authResources({
+                            resource_id: classification.id,
+                            type: $OPERATION.D_MODEL_GROUP
+                        })">
+                            <bk-button slot-scope="{ disabled }"
+                                theme="primary"
+                                text
+                                :disabled="disabled"
+                                @click="deleteGroup(classification)">
+                                <i class="icon-cc-delete"></i>
+                            </bk-button>
+                        </cmdb-auth>
                     </template>
                 </div>
                 <ul class="model-list clearfix">
@@ -158,7 +159,7 @@
                             </bk-input>
                             <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文小写的组合')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文大小写的组合')"></i>
                     </label>
                     <label>
                         <span class="label-title">
@@ -179,7 +180,11 @@
                 </div>
             </div>
             <div slot="footer" class="footer">
-                <bk-button theme="primary" :loading="$loading(['updateClassification', 'createClassification'])" @click="saveGroup">{{$t('保存')}}</bk-button>
+                <bk-button theme="primary"
+                    :loading="$loading(['updateClassification', 'createClassification'])"
+                    @click="saveGroup">
+                    {{groupDialog.isEdit ? $t('保存') : $t('提交')}}
+                </bk-button>
                 <bk-button theme="default" @click="hideGroupDialog">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
@@ -378,14 +383,12 @@
             },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
-                    if (!this.$isAuthorized(this.$OPERATION.U_MODEL_GROUP)) return
                     this.groupDialog.data.id = group.id
                     this.groupDialog.title = this.$t('编辑分组')
                     this.groupDialog.data.bk_classification_id = group['bk_classification_id']
                     this.groupDialog.data.bk_classification_name = group['bk_classification_name']
                     this.groupDialog.data.id = group.id
                 } else {
-                    if (!this.$isAuthorized(this.$OPERATION.C_MODEL_GROUP)) return
                     this.groupDialog.title = this.$t('新建分组')
                     this.groupDialog.data.bk_classification_id = ''
                     this.groupDialog.data.bk_classification_name = ''
@@ -444,7 +447,6 @@
                 this.searchModel = ''
             },
             deleteGroup (group) {
-                if (!this.$isAuthorized(this.$OPERATION.D_MODEL_GROUP)) return
                 this.$bkInfo({
                     title: this.$t('确认要删除此分组'),
                     confirmFn: async () => {
@@ -617,17 +619,16 @@
             .number {
                 color: $cmdbBorderColor;
             }
-            >.text-primary {
+            .group-btn {
                 display: none;
                 vertical-align: middle;
-                cursor: pointer;
-                &.disabled {
-                    opacity: 1 !important;
-                    color: #c4c6cc !important;
+                margin-right: 4px;
+                .bk-button-text {
+                    font-size: 16px;
                 }
             }
             &:hover {
-                >.text-primary {
+                .group-btn {
                     display: inline-block;
                 }
             }
