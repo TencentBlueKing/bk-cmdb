@@ -55,6 +55,7 @@ func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttr
 }
 
 // diffAndSyncInstances only for instances
+// which can use a more extract filter condition without list all common instances from iam
 func (ih *IAMHandler) diffAndSyncInstances(header http.Header, taskName string, searchCondition authcenter.SearchCondition, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
 	offset := int64(0)
 	iamResources := make([]authmeta.BackendResource, 0)

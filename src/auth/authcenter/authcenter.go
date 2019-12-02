@@ -673,12 +673,15 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 		if err != nil {
 			return nil, fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
-		entity := ResourceEntity{}
-		entity.ScopeInfo.ScopeID = scope.ScopeID
-		entity.ScopeInfo.ScopeType = scope.ScopeType
-		entity.ResourceType = rscInfo.ResourceType
-		entity.ResourceID = rscInfo.ResourceID
-		entity.ResourceName = rscInfo.ResourceName
+		entity := ResourceEntity{
+			ResourceType: rscInfo.ResourceType,
+			ScopeInfo: ScopeInfo{
+				ScopeType: scope.ScopeType,
+				ScopeID:   scope.ScopeID,
+			},
+			ResourceName: rscInfo.ResourceName,
+			ResourceID:   rscInfo.ResourceID,
+		}
 
 		// TODO replace register with batch create or update interface, currently is register one by one.
 		info.Resources = append(info.Resources, entity)
