@@ -363,10 +363,6 @@ func auditLogResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 }
 
 func platID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	if attribute.InstanceID <= 0 {
-		return make([]RscTypeAndID, 0), nil
-	}
-
 	if len(attribute.Layers) < 1 {
 		return nil, NotEnoughLayer
 	}
