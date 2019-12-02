@@ -271,13 +271,11 @@ func (s *ServerSession) writeloop() {
 			blog.Errorf("Failed to write: %v", err)
 		}
 		if s.done.IsSet() {
-			if queuelen := len(s.responses); queuelen > 0 {
-				for queuelen > 0 {
-					msg := <-s.responses
-					if err := s.wire.Write(msg); err != nil {
-						blog.Errorf("Failed to write: %v", err)
-						break
-					}
+			for len(s.responses) > 0 {
+				msg := <-s.responses
+				if err := s.wire.Write(msg); err != nil {
+					blog.Errorf("Failed to write: %v", err)
+					break
 				}
 			}
 			msg := &Message{
