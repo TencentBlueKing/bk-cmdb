@@ -458,6 +458,139 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 	return decisions, nil
 }
+func convertAction(resourceType meta.ResourceType, action meta.Action) (ActionID, error) {
+	defaultActionMap := map[meta.Action]ActionID{
+		meta.Create:                      Create,
+		meta.CreateMany:                  Create,
+		meta.Find:                        Get,
+		meta.FindMany:                    Get,
+		meta.Delete:                      Delete,
+		meta.DeleteMany:                  Delete,
+		meta.Update:                      Edit,
+		meta.UpdateMany:                  Edit,
+		meta.MoveHostToBizFaultModule:    Edit,
+		meta.MoveHostToBizIdleModule:     Edit,
+		meta.MoveHostToBizRecycleModule:  Edit,
+		meta.MoveHostToAnotherBizModule:  Edit,
+		meta.CleanHostInSetOrModule:      Edit,
+		meta.TransferHost:                Edit,
+		meta.MoveBizHostToModule:         Edit,
+		meta.MoveHostFromModuleToResPool: Delete,
+		meta.MoveHostsToBusinessOrModule: Edit,
+		meta.ModelTopologyView:           ModelTopologyView,
+		meta.ModelTopologyOperation:      ModelTopologyOperation,
+		meta.AdminEntrance:               AdminEntrance,
+	}
+	resourceSpecifiedActionMap := map[meta.ResourceType]map[meta.Action]ActionID{
+		meta.ModelInstance: {
+			meta.MoveResPoolHostToBizIdleModule: Edit,
+		},
+		meta.Host: {
+			meta.MoveResPoolHostToBizIdleModule: Edit,
+		},
+		meta.ModelAttributeGroup: {
+			meta.Delete: Edit,
+			meta.Update: Edit,
+			meta.Create: Edit,
+		},
+		meta.ModelUnique: {
+			meta.Delete: Edit,
+			meta.Update: Edit,
+			meta.Create: Edit,
+		},
+		meta.ModelAttribute: {
+			meta.Delete: Edit,
+			meta.Update: Edit,
+			meta.Create: Edit,
+		},
+		meta.Business: {
+			meta.Archive: Archive,
+			meta.Create:  Create,
+			meta.Update:  Edit,
+		},
+		meta.DynamicGrouping: {
+			meta.Execute: Get,
+		},
+		meta.MainlineModel: {
+			meta.Find:   ModelTopologyOperation,
+			meta.Create: ModelTopologyOperation,
+			meta.Delete: ModelTopologyOperation,
+		},
+		meta.ModelTopology: {
+			meta.Find:   ModelTopologyView,
+			meta.Update: ModelTopologyView,
+		},
+		meta.MainlineModelTopology: {
+			meta.Find:   ModelTopologyOperation,
+			meta.Update: ModelTopologyOperation,
+		},
+		meta.Process: {
+			meta.BoundModuleToProcess:   Edit,
+			meta.UnboundModuleToProcess: Edit,
+		},
+		meta.HostInstance: {
+			meta.MoveResPoolHostToBizIdleModule: Edit,
+			meta.AddHostToResourcePool:          Create,
+		},
+	}
+	if _, exist := resourceSpecifiedActionMap[resourceType]; exist == true {
+		actionID, ok := resourceSpecifiedActionMap[resourceType][action]
+		if ok == true {
+			return actionID, nil
+		}
+	}
+	actionID, ok := defaultActionMap[action]
+	if ok == true {
+		return actionID, nil
+	}
+
+	return Unknown, fmt.Errorf("unsupported action: %s", action)
+}
+
+func (ac *AuthCenter) ListAuthorizedResources(ctx context.Context, username string, bizID int64, resourceType meta.ResourceType, action meta.Action) ([]IamResource, error) {
+	iamResourceType, err := ConvertResourceType(resourceType, 0)
+	if err != nil {
+		return nil, fmt.Errorf("ConvertResourceType failed, err: %+v", err)
+	}
+	iamActionID, err := convertAction(resourceType, action)
+	if err != nil {
+		return nil, fmt.Errorf("convertAction failed, err: %+v", err)
+	}
+	var scopeInfo ScopeInfo
+	if bizID > 0 {
+		scopeInfo.ScopeType = ScopeTypeIDBiz
+		scopeInfo.ScopeID = strconv.FormatInt(bizID, 10)
+	} else {
+		scopeInfo.ScopeType = ScopeTypeIDSystem
+		scopeInfo.ScopeID = SystemIDCMDB
+	}
+	info := ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   username,
+		},
+		ScopeInfo: scopeInfo,
+		TypeActions: []TypeAction{
+			{
+				ActionID:     iamActionID,
+				ResourceType: *iamResourceType,
+			},
+		},
+		DataType: "array",
+		Exact:    true,
+	}
+	authorizedResources, err := ac.authClient.GetAuthorizedResources(ctx, &info)
+	if err != nil {
+		return nil, err
+	}
+	iamResources := make([]IamResource, 0)
+	for _, sameTypeResources := range authorizedResources {
+		for _, iamResource := range sameTypeResources.ResourceIDs {
+			iamResources = append(iamResources, iamResource)
+		}
+	}
+	return iamResources, nil
+}
 
 func (ac *AuthCenter) GetAnyAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
 	if !auth.IsAuthed() {
