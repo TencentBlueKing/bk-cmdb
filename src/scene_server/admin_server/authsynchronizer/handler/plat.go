@@ -13,6 +13,8 @@
 package handler
 
 import (
+	"fmt"
+
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
@@ -26,20 +28,25 @@ func (ih *IAMHandler) HandlePlatSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 	ctx := util.NewContextFromHTTPHeader(*header)
+	rid := util.GetHTTPCCRequestID(*header)
 
 	// step1 get instances by business from core service
 	plats, err := ih.authManager.CollectAllPlats(ctx, *header)
 	if err != nil {
-		blog.Errorf("collect plat by business id failed, err: %+v", err)
-		return err
+		blog.Errorf("collect plat by business id failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("CollectAllPlats failed, err: %s", err.Error())
 	}
 	if len(plats) == 0 {
 		blog.Info("no plat found")
 		return nil
 	}
-	resources := ih.authManager.MakeResourcesByPlat(*header, authmeta.EmptyAction, plats...)
+	resources, err := ih.authManager.MakeResourcesByPlat(*header, authmeta.EmptyAction, plats...)
+	if err != nil {
+		blog.Errorf("MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 	if len(resources) == 0 && len(plats) > 0 {
-		blog.Errorf("make iam resource for plat %+v return empty", plats)
+		blog.Errorf("make iam resource for plat %+v return empty, rid: %s", plats, rid)
 		return nil
 	}
 
