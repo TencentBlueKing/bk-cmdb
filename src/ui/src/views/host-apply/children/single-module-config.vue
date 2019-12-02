@@ -15,8 +15,9 @@
                         <div class="field-list">
                             <div class="field-list-table">
                                 <property-config-table
+                                    ref="propertyConfigTable"
                                     :readonly="true"
-                                    :checked-property-id-list="checkedPropertyIdList"
+                                    :checked-property-id-list.sync="checkedPropertyIdList"
                                     :rule-list="initRuleList"
                                 >
                                 </property-config-table>
@@ -43,8 +44,8 @@
                     </div>
                     <div class="choose-bd" v-show="checkedPropertyIdList.length">
                         <property-config-table
-                            ref="configEditTable"
-                            :checked-property-id-list="checkedPropertyIdList"
+                            ref="propertyConfigTable"
+                            :checked-property-id-list.sync="checkedPropertyIdList"
                             :rule-list="initRuleList"
                             @property-value-change="handlePropertyValueChange"
                         >
@@ -71,8 +72,9 @@
                         <div class="field-list">
                             <div class="field-list-table disabled">
                                 <property-config-table
+                                    ref="propertyConfigTable"
                                     :readonly="true"
-                                    :checked-property-id-list="checkedPropertyIdList"
+                                    :checked-property-id-list.sync="checkedPropertyIdList"
                                     :rule-list="initRuleList"
                                 >
                                 </property-config-table>
@@ -140,7 +142,7 @@
                 conflictNum: 0,
                 hasRule: false,
                 isEdit: this.editing,
-                nextButtonDisabled: false,
+                nextButtonDisabled: true,
                 propertyModalVisiable: false,
                 clearRules: true,
                 leaveConfirm: {
@@ -166,6 +168,9 @@
                 const lastTimeList = this.initRuleList.map(rule => new Date(rule.last_time).getTime())
                 const latestTime = Math.max(...lastTimeList)
                 return this.$tools.formatTime(latestTime, 'YYYY-MM-DD HH:mm:ss')
+            },
+            hasRuleDraft () {
+                return Object.keys(this.ruleDraft).length > 0
             }
         },
         watch: {
@@ -178,26 +183,32 @@
                 this.isEdit = value
             },
             checkedPropertyIdList () {
-                this.$nextTick(() => {
-                    this.isEdit && this.toggleNexButtonDisabled()
-                })
+                this.toggleNexButtonDisabled()
             },
             isEdit (value) {
                 this.$emit('update:editing', value)
                 this.leaveConfirm.active = value
+                this.toggleNexButtonDisabled()
             }
         },
         created () {
             this.getConfigData()
-            this.isEdit = Object.keys(this.ruleDraft).length > 0
+            this.isEdit = this.hasRuleDraft
         },
         methods: {
             async getConfigData () {
                 try {
                     const ruleData = await this.getRules()
+
+                    // 重置配置表格数据
+                    if (this.$refs.propertyConfigTable) {
+                        this.$refs.propertyConfigTable.reset()
+                    }
+
                     this.initRuleList = ruleData.info || []
                     this.hasRule = ruleData.count > 0
-                    this.checkedPropertyIdList = this.initRuleList.map(item => item.bk_attribute_id)
+                    const checkedPropertyIdList = this.initRuleList.map(item => item.bk_attribute_id)
+                    this.checkedPropertyIdList = this.hasRuleDraft ? [...this.checkedPropertyIdList, ...checkedPropertyIdList] : checkedPropertyIdList
                     this.checkedPropertyIdListCopy = [...this.checkedPropertyIdList]
 
                     if (this.hasRule && this.applyEnabled) {
@@ -231,14 +242,18 @@
                 })
             },
             toggleNexButtonDisabled () {
-                const { modulePropertyList } = this.$refs.configEditTable
-                this.nextButtonDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
+                this.$nextTick(() => {
+                    if (this.$refs.propertyConfigTable) {
+                        const { modulePropertyList } = this.$refs.propertyConfigTable
+                        this.nextButtonDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
+                    }
+                })
             },
             async handleNextStep () {
                 // 使离开确认失活
                 this.leaveConfirm.active = false
 
-                const { modulePropertyList, removeRuleIds } = this.$refs.configEditTable
+                const { modulePropertyList, removeRuleIds } = this.$refs.propertyConfigTable
                 const additionalRules = modulePropertyList.map(property => ({
                     bk_attribute_id: property.id,
                     bk_module_id: this.moduleId,
@@ -263,10 +278,7 @@
                 // 使leaveConfirmActive更新完成之后
                 this.$nextTick(function () {
                     this.$router.push({
-                        name: 'hostApplyConfirm',
-                        query: {
-                            batch: 0
-                        }
+                        name: 'hostApplyConfirm'
                     })
                 })
             },
@@ -274,7 +286,7 @@
                 this.$router.push({
                     name: 'hostApplyConflict',
                     query: {
-                        cid: 1
+                        mid: this.moduleId
                     }
                 })
             },

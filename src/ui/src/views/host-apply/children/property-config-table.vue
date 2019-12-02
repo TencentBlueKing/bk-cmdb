@@ -102,7 +102,10 @@
         },
         computed: {
             ...mapGetters('hosts', ['configPropertyList']),
-            ...mapState('hostApply', ['ruleDraft'])
+            ...mapState('hostApply', ['ruleDraft']),
+            hasRuleDraft () {
+                return Object.keys(this.ruleDraft).length > 0
+            }
         },
         watch: {
             checkedPropertyIdList () {
@@ -116,9 +119,12 @@
             }
         },
         created () {
-            this.setModulePropertyList()
-            if (Object.keys(this.ruleDraft).length) {
+            if (this.hasRuleDraft) {
                 this.modulePropertyList = this.$tools.clone(this.ruleDraft.rules)
+                const checkedPropertyIdList = this.modulePropertyList.map(item => item.id)
+                this.$emit('update:checkedPropertyIdList', checkedPropertyIdList)
+            } else {
+                this.setModulePropertyList()
             }
         },
         methods: {
@@ -137,7 +143,7 @@
                             } else {
                                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
                                 property.__extra__.ruleId = rule.id
-                                property.__extra__.value = rule.bk_property_value
+                                property.__extra__.value = rule.bk_property_value || ''
                             }
                             this.modulePropertyList.push(property)
                         }
@@ -162,6 +168,11 @@
                         }
                     }
                 })
+            },
+            reset () {
+                if (!this.hasRuleDraft) {
+                    this.modulePropertyList = []
+                }
             },
             renderTableHeader (h, data, tips) {
                 const directive = {
