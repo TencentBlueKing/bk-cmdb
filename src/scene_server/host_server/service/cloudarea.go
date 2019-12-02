@@ -43,7 +43,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 
 	// set default limit
 	if input.Page.Limit == 0 {
-		input.Page.Limit = common.BKDefaultLimit
+		input.Page.Limit = common.BKMaxPageSize
 	}
 
 	if input.Page.IsIllegal() {
