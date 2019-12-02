@@ -79,7 +79,22 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 	return plats, nil
 }
 
-func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) []meta.ResourceAttribute {
+// be careful: plat is registered as a common instance in iam
+func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) ([]meta.ResourceAttribute, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.GetHTTPCCRequestID(header)
+
+	platModels, err := am.collectObjectsByObjectIDs(ctx, header, 0, common.BKInnerObjIDPlat)
+	if err != nil {
+		blog.Errorf("get plat model failed, err: %+v, rid: %s", err, rid)
+		return nil, fmt.Errorf("get plat model failed, err: %+v", err)
+	}
+	if len(platModels) == 0 {
+		blog.Errorf("get plat model failed, not found, rid: %s", rid)
+		return nil, fmt.Errorf("get plat model failed, not found")
+	}
+	platModel := platModels[0]
+
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, plat := range plats {
 		resource := meta.ResourceAttribute{
@@ -90,11 +105,18 @@ func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Actio
 				InstanceID: plat.BKCloudIDField,
 			},
 			SupplierAccount: util.GetOwnerID(header),
+			Layers: []meta.Item{
+				{
+					Type:       meta.Model,
+					Name:       platModel.ObjectName,
+					InstanceID: platModel.ID,
+				},
+			},
 		}
 
 		resources = append(resources, resource)
 	}
-	return resources
+	return resources, nil
 }
 
 func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, action meta.Action, plats ...PlatSimplify) error {
@@ -102,8 +124,14 @@ func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, 
 		return nil
 	}
 
+	rid := util.GetHTTPCCRequestID(header)
+
 	// make auth resources
-	resources := am.MakeResourcesByPlat(header, action, plats...)
+	resources, err := am.MakeResourcesByPlat(header, action, plats...)
+	if err != nil {
+		blog.Errorf("AuthorizeByPlat failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 
 	return am.authorize(ctx, header, 0, resources...)
 }
@@ -129,8 +157,14 @@ func (am *AuthManager) UpdateRegisteredPlat(ctx context.Context, header http.Hea
 		return nil
 	}
 
+	rid := util.GetHTTPCCRequestID(header)
+
 	// make auth resources
-	resources := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	resources, err := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	if err != nil {
+		blog.Errorf("UpdateRegisteredPlat failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -198,8 +232,14 @@ func (am *AuthManager) RegisterPlat(ctx context.Context, header http.Header, pla
 		return nil
 	}
 
+	rid := util.GetHTTPCCRequestID(header)
+
 	// make auth resources
-	resources := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	resources, err := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	if err != nil {
+		blog.Errorf("RegisterPlat failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -229,8 +269,14 @@ func (am *AuthManager) DeregisterPlat(ctx context.Context, header http.Header, p
 		return nil
 	}
 
+	rid := util.GetHTTPCCRequestID(header)
+
 	// make auth resources
-	resources := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	resources, err := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	if err != nil {
+		blog.Errorf("DeregisterPlat failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
