@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstruct"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -558,6 +559,7 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 	return
 }
 
+// ListHostRelatedApplyRule 返回主机关联的规则信息（仅返回启用模块的规则）
 func (s *Service) ListHostRelatedApplyRule(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	rid := srvData.rid
@@ -621,8 +623,41 @@ func (s *Service) listHostRelatedApplyRule(srvData *srvComm, bizID int64, option
 		hostModuleIDMap[item.HostID] = append(hostModuleIDMap[item.HostID], item.ModuleID)
 	}
 
+	// filter enabled modules
+	moduleFilter := &meta.QueryCondition{
+		Limit: meta.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: moduleIDs,
+			},
+			common.HostApplyEnabledField: true,
+		},
+	}
+	moduleResult, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, moduleFilter)
+	if err != nil {
+		blog.ErrorJSON("listHostRelatedApplyRule failed, ReadInstance of module failed, option: %s, err: %s, rid: %s", moduleFilter, err.Error(), rid)
+		return nil, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if ccErr := moduleResult.CCError(); ccErr != nil {
+		blog.ErrorJSON("listHostRelatedApplyRule failed, ReadInstance of module failed, filter: %s, result: %s, rid: %s", moduleFilter, moduleResult, rid)
+		return nil, ccErr
+	}
+	validModuleIDs := make([]int64, 0)
+	for _, item := range moduleResult.Data.Info {
+		module := struct {
+			ModuleID int64 `mapstructure:"bk_module_id" json:"bk_module_id"`
+		}{}
+		if err := mapstruct.Decode2Struct(item, &module); err != nil {
+			blog.ErrorJSON("listHostRelatedApplyRule failed, ReadInstance of module failed, parse module data failed, filter: %s, item: %s, rid: %s", moduleFilter, item, rid)
+			return nil, srvData.ccErr.CCError(common.CCErrCommParseDBFailed)
+		}
+		validModuleIDs = append(validModuleIDs, module.ModuleID)
+	}
+
 	ruleOption := meta.ListHostApplyRuleOption{
-		ModuleIDs: moduleIDs,
+		ModuleIDs: validModuleIDs,
 		Page: meta.BasePage{
 			Limit: common.BKNoLimit,
 		},
