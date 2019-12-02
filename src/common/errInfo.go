@@ -209,7 +209,9 @@ const (
 	CCErrParseAttrOptionListFailed = 1199080
 
 	// one argument: maxValue
-	CCErrExceedMaxOperationRecordsAtOnce = 1199077
+	CCErrExceedMaxOperationRecordsAtOnce = 1199081
+
+	CCErrCommListAuthorizedResourceFromIAMFailed = 1199082
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998

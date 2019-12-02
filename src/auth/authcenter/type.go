@@ -233,10 +233,12 @@ type ListAuthorizedScopeResult struct {
 }
 
 type AuthorizedResource struct {
-	ActionID     ActionID         `json:"action_id"`
-	ResourceType ResourceTypeID   `json:"resource_type"`
-	ResourceIDs  [][]RscTypeAndID `json:"resource_ids"`
+	ActionID     ActionID       `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceIDs  []IamResource  `json:"resource_ids"`
 }
+
+type IamResource []RscTypeAndID
 
 type RoleWithAuthResources struct {
 	RoleTemplateName string       `json:"perm_template_name"`
