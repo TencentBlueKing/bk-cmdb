@@ -37,6 +37,9 @@ const actions = {
     },
     deleteRules ({ commit, state, dispatch }, { bizId, params }) {
         return $http.delete(`deletemany/host_apply_rule/bk_biz_id/${bizId}`, params)
+    },
+    getProperties (context, config) {
+        return $http.post('find/objectattr/host', {}, config)
     }
 }
 
