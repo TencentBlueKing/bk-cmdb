@@ -403,5 +403,29 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(params types.ContextParams, 
 		blog.ErrorJSON("SearchRuleRelatedModules failed, update module instance failed, updateOption: %s, response: %s, rid: %s", updateOption, result, params.ReqID)
 		return nil, ccErr
 	}
+	if requestBody.ClearRules {
+		listRuleOption := metadata.ListHostApplyRuleOption{
+			ModuleIDs: []int64{moduleID},
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+		listRuleResult, ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(params.Context, params.Header, bizID, listRuleOption)
+		if ccErr != nil {
+			blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, params.ReqID)
+			return nil, ccErr
+		}
+		ruleIDs := make([]int64, 0)
+		for _, item := range listRuleResult.Info {
+			ruleIDs = append(ruleIDs, item.ID)
+		}
+		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+			RuleIDs: nil,
+		}
+		if ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(params.Context, params.Header, bizID, deleteRuleOption); ccErr != nil {
+			blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, params.ReqID)
+			return nil, ccErr
+		}
+	}
 	return result.Data, nil
 }

@@ -269,11 +269,31 @@ func (s *Service) GenerateApplyPlan(req *restful.Request, resp *restful.Response
 		_ = resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
+	if len(planRequest.ModuleIDs) == 0 {
+		blog.Errorf("GenerateApplyPlan failed, bk_module_ids shouldn't empty, err: %v, rid:%s", err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "bk_module_ids")}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
 	result, err := s.generateApplyPlan(srvData, bizID, planRequest)
 	if err != nil {
 		blog.ErrorJSON("GenerateApplyPlan failed, generateApplyPlan failed, bizID: %s, request: %s, err: %v, rid:%s", bizID, planRequest, err, rid)
 		result := &meta.RespError{Msg: err}
 		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	var ccErr errors.CCErrorCoder
+	for _, item := range result.Plans {
+		if err := item.GetError(); err != nil {
+			ccErr = err
+			break
+		}
+	}
+	if ccErr != nil {
+		response := &meta.RespError{Msg: ccErr}
+		response.Data = result
+		_ = resp.WriteError(http.StatusBadRequest, response)
 		return
 	}
 
