@@ -13,32 +13,27 @@
                     <span v-else>{{row[column.id] || '--'}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')" prop="operation">
+            <bk-table-column :label="$t('操作')" prop="operation" v-if="$parent.isFormMode">
                 <template slot-scope="{ row }">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.U_SERVICE_TEMPLATE]
-                        }">
-                        <bk-button class="mr10"
-                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_TEMPLATE)"
+                    <cmdb-auth :auth="$authResources(auth)">
+                        <bk-button slot-scope="{ disabled }"
+                            class="mr10"
+                            theme="primary"
+                            :disabled="disabled"
                             :text="true"
                             @click.stop="handleEdite(row['originData'])">
                             {{$t('编辑')}}
                         </bk-button>
-                    </span>
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_SERVICE_TEMPLATE),
-                            auth: [$OPERATION.D_SERVICE_TEMPLATE]
-                        }">
-                        <bk-button
-                            :disabled="!$isAuthorized($OPERATION.D_SERVICE_TEMPLATE)"
+                    </cmdb-auth>
+                    <cmdb-auth :auth="$authResources(auth)">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            :disabled="disabled"
                             :text="true"
                             @click.stop="handleDelete(row['originData'])">
                             {{$t('删除')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -57,6 +52,10 @@
             }
         },
         props: {
+            auth: {
+                type: Object,
+                default: () => ({})
+            },
             list: {
                 type: Array,
                 default: () => {

@@ -255,6 +255,7 @@ func (t *genericTransfer) validParameterModule(ctx core.ContextParams) errors.CC
 	}
 	bizID := t.bizID
 
+	t.moduleIDArr = util.IntArrayUnique(t.moduleIDArr)
 	moduleInfoArr, err := t.getModuleInfoByModuleID(ctx, bizID, t.moduleIDArr, []string{common.BKModuleIDField, common.BKDefaultField, common.BKSetIDField})
 	if err != nil {
 		return err
@@ -472,7 +473,7 @@ func (t *genericTransfer) getInnerModuleIDArr(ctx core.ContextParams) errors.CCE
 	}
 	moduleConds := condition.CreateCondition()
 	moduleConds.Field(common.BKAppIDField).Eq(bizID)
-	moduleConds.Field(common.BKDefaultField).NotEq(0)
+	moduleConds.Field(common.BKDefaultField).NotEq(common.DefaultFlagDefaultValue)
 	cond := util.SetQueryOwner(moduleConds.ToMapStr(), ctx.SupplierAccount)
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)

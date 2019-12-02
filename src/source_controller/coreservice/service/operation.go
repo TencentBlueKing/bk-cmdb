@@ -102,11 +102,11 @@ func (s *coreService) SearchChartWithPosition(params core.ContextParams, pathPar
 		}, err
 	}
 
-	for _, chart := range result.Host {
-		chart.Name = s.TranslateOperationChartName(params.Lang, chart)
+	for index, chart := range result.Host {
+		result.Host[index].Name = s.TranslateOperationChartName(params.Lang, chart)
 	}
-	for _, chart := range result.Inst {
-		chart.Name = s.TranslateOperationChartName(params.Lang, chart)
+	for index, chart := range result.Inst {
+		result.Inst[index].Name = s.TranslateOperationChartName(params.Lang, chart)
 	}
 
 	count, err := s.db.Table(common.BKTableNameChartConfig).Find(opt).Count(params.Context)
@@ -218,7 +218,8 @@ func (s *coreService) TimerFreshData(params core.ContextParams, pathParams, quer
 		return false, nil
 	}
 
-	if err = s.core.StatisticOperation().TimerFreshData(params); err != nil {
+	err = s.core.StatisticOperation().TimerFreshData(params)
+	if err != nil {
 		blog.Errorf("TimerFreshData fail, err: %v, rid: %v", err, params.ReqID)
 	}
 

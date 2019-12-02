@@ -124,7 +124,7 @@
     
     "bk_firewall_property_bk_asset_id":"固资编号",
     "bk_firewall_property_bk_sn":"SN",
-  "bk_firewall_property_bk_inst_name": "名称",
+    "bk_firewall_property_bk_inst_name": "名称",
     "bk_firewall_property_bk_func":"用途",
     "bk_firewall_property_bk_vendor":"厂商",
     "bk_firewall_property_bk_model":"设备型号",

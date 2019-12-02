@@ -155,30 +155,45 @@ func StringToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
-		if t != reflect.TypeOf(local) {
+
+		isLocalTimeType := t == reflect.TypeOf(local)
+		isStdTimeType := t == reflect.TypeOf(local.Time)
+		if !isLocalTimeType && !isStdTimeType {
 			return data, nil
 		}
-
-		// Convert it by parsing
-		parsed, err := time.ParseInLocation(`"2006-01-02 15:04:05"`, data.(string), time.UTC)
-		if err == nil {
+		parsed, err := ParseTime(data)
+		if err != nil {
+			return nil, err
+		}
+		if isLocalTimeType {
 			return Time{parsed}, nil
 		}
-
-		parsed, err = time.Parse(time.RFC3339, strings.Trim(data.(string), "\""))
-		if err == nil {
-			return Time{parsed}, nil
-		}
-
-		parsed, err = timeparser.TimeParser(strings.Trim(data.(string), "\""))
-		if err == nil {
-			return Time{parsed}, nil
-		}
-
-		timestamp, err := strconv.ParseInt(fmt.Sprintf("%s", data), 10, 64)
-		if err == nil {
-			return Time{time.Unix(timestamp, 0)}, nil
-		}
-		return nil, err
+		return parsed, nil
 	}
+}
+
+func ParseTime(data interface{}) (time.Time, error) {
+	// Convert it by parsing
+	var parsed time.Time
+	var err error
+	parsed, err = time.ParseInLocation(`"2006-01-02 15:04:05"`, data.(string), time.UTC)
+	if err == nil {
+		return parsed, nil
+	}
+
+	parsed, err = time.Parse(time.RFC3339, strings.Trim(data.(string), "\""))
+	if err == nil {
+		return parsed, nil
+	}
+
+	parsed, err = timeparser.TimeParser(strings.Trim(data.(string), "\""))
+	if err == nil {
+		return parsed, nil
+	}
+
+	timestamp, err := strconv.ParseInt(fmt.Sprintf("%s", data), 10, 64)
+	if err == nil {
+		return time.Unix(timestamp, 0), nil
+	}
+	return time.Now(), err
 }

@@ -13,11 +13,11 @@
 package service
 
 import (
-	"configcenter/src/auth"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"configcenter/src/auth"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -111,12 +111,16 @@ func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Respons
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-func (s *Service) MoveHost2EmptyModule(req *restful.Request, resp *restful.Response) {
-	s.moveHostToModuleByName(req, resp, common.DefaultResModuleName)
+func (s *Service) MoveHost2IdleModule(req *restful.Request, resp *restful.Response) {
+	s.moveHostToDefaultModule(req, resp, common.DefaultResModuleFlag)
 }
 
 func (s *Service) MoveHost2FaultModule(req *restful.Request, resp *restful.Response) {
-	s.moveHostToModuleByName(req, resp, common.DefaultFaultModuleName)
+	s.moveHostToDefaultModule(req, resp, common.DefaultFaultModuleFlag)
+}
+
+func (s *Service) MoveHost2RecycleModule(req *restful.Request, resp *restful.Response) {
+	s.moveHostToDefaultModule(req, resp, common.DefaultRecycleModuleFlag)
 }
 
 func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Response) {
@@ -129,19 +133,19 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	if 0 == len(conf.HostID) {
+	if 0 == len(conf.HostIDs) {
 		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 		return
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostFromModuleToResPool, conf.HostID...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostID, err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostFromModuleToResPool, conf.HostIDs...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostIDs, err)
 		if err != auth.NoAuthorizeError {
 			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		perm, err := s.AuthManager.GenMoveBizHostToResPoolNoPermissionResp(srvData.ctx, srvData.header, conf.HostID)
+		perm, err := s.AuthManager.GenMoveBizHostToResPoolNoPermissionResp(srvData.ctx, srvData.header, conf.HostIDs)
 		if err != nil {
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
@@ -150,8 +154,8 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 	// auth: deregister hosts
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostID, err, srvData.rid)
+	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostIDs...); err != nil {
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostIDs, err, srvData.rid)
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
@@ -163,8 +167,8 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 
 	// auth: register hosts
-	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid: %s", conf.HostID, err, srvData.rid)
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostIDs...); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid: %s", conf.HostIDs, err, srvData.rid)
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
@@ -198,8 +202,8 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	// }
 
 	// auth: deregister hosts
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid:%s", conf.HostID, err, srvData.rid)
+	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostIDs...); err != nil {
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid:%s", conf.HostIDs, err, srvData.rid)
 		_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
@@ -212,8 +216,8 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	}
 
 	// register host to new business
-	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid:%s", conf.HostID, err, srvData.rid)
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostIDs...); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid:%s", conf.HostIDs, err, srvData.rid)
 		_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
@@ -257,7 +261,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		mConds.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 		mConds.Set(common.BKModuleNameField, common.DefaultResModuleName)
 		mConds.Set(common.BKAppIDField, ownerAppID)
-		ownerModuleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, mConds)
+		ownerModuleID, err := srvData.lgc.GetResourcePoolModuleID(srvData.ctx, mConds)
 		if nil != err {
 			blog.Errorf("assign host to app module, but get unused host pool failed, ownerid[%v], err: %v,input:%+v,param:%+v,rid:%s", ownerModuleID, err, data, mConds, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModuleFailStr, err.Error())})
@@ -423,59 +427,71 @@ func (s *Service) DeleteHostFromBusiness(req *restful.Request, resp *restful.Res
 	return
 }
 
-// move host to idle or fault module under the same business.
-func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Response, moduleName string) {
-	pheader := req.Request.Header
-	srvData := s.newSrvComm(pheader)
+// move host to idle, fault or recycle module under the same business.
+func (s *Service) moveHostToDefaultModule(req *restful.Request, resp *restful.Response, defaultModuleFlag int) {
+	header := req.Request.Header
+	srvData := s.newSrvComm(header)
 	defErr := srvData.ccErr
 	ctx := srvData.ctx
 	rid := srvData.rid
 	conf := new(metadata.DefaultModuleHostConfigParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(&conf); err != nil {
-		blog.Errorf("move host to module %s failed with decode body err: %v,rid: %s", moduleName, err, rid)
+		blog.Errorf("move host to default module failed, decode request body failed, defaultModuleFlag: %d, err: %v,rid: %s", defaultModuleFlag, err, rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	bizID := conf.ApplicationID
 
-	conds := make(map[string]interface{})
+	moduleFilter := make(map[string]interface{})
 	var moduleNameLogKey string
 	var action authmeta.Action
-	if common.DefaultResModuleName == moduleName {
+	if defaultModuleFlag == common.DefaultResModuleFlag {
 		// 空闲机
 		moduleNameLogKey = "idle"
-		conds[common.BKDefaultField] = common.DefaultResModuleFlag
-		conds[common.BKModuleNameField] = common.DefaultResModuleName
 		action = authmeta.MoveHostToBizIdleModule
-	} else {
+		moduleFilter[common.BKDefaultField] = common.DefaultResModuleFlag
+		moduleFilter[common.BKModuleNameField] = common.DefaultResModuleName
+	} else if defaultModuleFlag == common.DefaultFaultModuleFlag {
 		// 故障机器
 		moduleNameLogKey = "fault"
-		conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
-		conds[common.BKModuleNameField] = common.DefaultFaultModuleName
 		action = authmeta.MoveHostToBizFaultModule
-	}
-	conds[common.BKAppIDField] = conf.ApplicationID
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
-	if err != nil {
-		blog.Errorf("move host to module %s, get module id err: %v, rid: %s", moduleName, err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")})
+		moduleFilter[common.BKDefaultField] = common.DefaultFaultModuleFlag
+		moduleFilter[common.BKModuleNameField] = common.DefaultFaultModuleName
+	} else if defaultModuleFlag == common.DefaultRecycleModuleFlag {
+		// 待回收
+		moduleNameLogKey = "recycle"
+		action = authmeta.MoveHostToBizRecycleModule
+		moduleFilter[common.BKDefaultField] = common.DefaultRecycleModuleFlag
+		moduleFilter[common.BKModuleNameField] = common.DefaultRecycleModuleName
+	} else {
+		blog.Errorf("move host to default module failed, unexpected flag, bizID: %d, defaultModuleFlag: %d, rid: %s", bizID, defaultModuleFlag, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return
 	}
 
-	audit := srvData.lgc.NewHostModuleLog(conf.HostID)
+	moduleFilter[common.BKAppIDField] = bizID
+	moduleID, err := srvData.lgc.GetResourcePoolModuleID(srvData.ctx, moduleFilter)
+	if err != nil {
+		blog.ErrorJSON("move host to default module failed, get default module id failed, filter: %s, err: %s, rid: %s", moduleFilter, err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModuleFailStr, moduleFilter[common.BKModuleNameField].(string)+" not foud ")})
+		return
+	}
+
+	audit := srvData.lgc.NewHostModuleLog(conf.HostIDs)
 	if err := audit.WithPrevious(srvData.ctx); err != nil {
-		blog.Errorf("move host to module %s, get prev module host config failed, err: %v, rid: %s", moduleName, err, srvData.rid)
+		blog.Errorf("move host to default module s failed, get prev module host config failed, hostIDs: %v, err: %s, rid: %s", conf.HostIDs, err.Error(), srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, action, conf.HostID...); err != nil {
-		blog.Errorf("auth host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostID, err, srvData.rid)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, action, conf.HostIDs...); err != nil {
+		blog.Errorf("auth host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostIDs, err, srvData.rid)
 		if err != auth.NoAuthorizeError {
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, conf.HostID)
+		perm, err := s.AuthManager.GenEditBizHostNoPermissionResp(srvData.ctx, srvData.header, conf.HostIDs)
 		if err != nil {
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
@@ -484,37 +500,37 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		return
 	}
 	// auth: deregister hosts
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
+	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostIDs...); err != nil {
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", conf.HostIDs, err)
 		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
 
 	transferInput := &metadata.TransferHostToInnerModule{
 		ApplicationID: conf.ApplicationID,
-		HostID:        conf.HostID,
+		HostID:        conf.HostIDs,
 		ModuleID:      moduleID,
 	}
-	result, err := s.CoreAPI.CoreService().Host().TransferToInnerModule(ctx, pheader, transferInput)
+	result, err := s.CoreAPI.CoreService().Host().TransferToInnerModule(ctx, header, transferInput)
 	if err != nil {
-		blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http do error. input:%#v,condition:%#v,err:%v,rid:%s", conf, transferInput, err.Error(), rid)
+		blog.ErrorJSON("move host to default module failed, TransferHostToDefaultModule http do error. input:%s, condition:%s, err:%s, rid:%s", conf, transferInput, err.Error(), rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}
 	if !result.Result {
-		blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http reply error. input:%#v,condition:%#v,err:%#v,rid:%s", conf, transferInput, result, rid)
+		blog.ErrorJSON("move host to default module failed, TransferHostToDefaultModule response failed. input:%s, transferInput:%s, response:%s, rid:%s", conf, transferInput, result, rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.New(result.Code, result.ErrMsg), Data: result.Data})
 		return
 	}
 	// auth: register hosts
-	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v,rid:%s", conf.HostID, err, srvData.rid)
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostIDs...); err != nil {
+		blog.Errorf("move host to default module failed, register host to iam failed, hosts: %+v, err: %v,rid:%s", conf.HostIDs, err, srvData.rid)
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
 
 	if err := audit.SaveAudit(srvData.ctx, conf.ApplicationID, srvData.user, "host to "+moduleNameLogKey+" module"); err != nil {
-		blog.Errorf("move host to module %s, save audit log failed, err: %v,input:%+v,rid:%s", moduleName, err, conf, srvData.rid)
+		blog.ErrorJSON("move host to default module failed, save audit log failed, input:%s, err:%s, rid:%s", conf, err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return
 	}
@@ -534,7 +550,7 @@ func (s *Service) GetAppHostTopoRelation(req *restful.Request, resp *restful.Res
 
 	result, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, *data)
 	if err != nil {
-		blog.Errorf("GetHostModuleRelation logcis err:%s,cond:%#v,rid:%s", err.Error(), data, srvData.rid)
+		blog.Errorf("GetHostModuleRelation logic failed, cond:%#v, err:%s, rid:%s", data, err.Error(), srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
 		return
 	}

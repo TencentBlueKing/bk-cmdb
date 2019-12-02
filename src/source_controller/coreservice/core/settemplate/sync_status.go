@@ -93,3 +93,17 @@ func (p *setTemplateOperation) listSetTemplateSyncStatus(ctx core.ContextParams,
 
 	return result, nil
 }
+
+func (p *setTemplateOperation) DeleteSetTemplateSyncStatus(ctx core.ContextParams, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder {
+	filter := map[string]interface{}{
+		common.BKSetIDField: map[string]interface{}{
+			common.BKDBIN: option.SetIDs,
+		},
+		common.BKAppIDField: option.BizID,
+	}
+	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Delete(ctx.Context, filter); err != nil {
+		blog.Errorf("RemoveSetTemplateSyncStatus failed, db delete sync status failed, option: %s, err: %s, rid: %s", option, err.Error(), ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+	}
+	return nil
+}

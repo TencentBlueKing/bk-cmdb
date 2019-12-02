@@ -4,20 +4,12 @@ import {
     MENU_BUSINESS_SERVICE,
     MENU_BUSINESS_SET_TEMPLATE
 } from '@/dictionary/menu-symbol'
-
 import {
     C_SET_TEMPLATE,
     U_SET_TEMPLATE,
     D_SET_TEMPLATE,
     U_TOPO
 } from '@/dictionary/auth'
-
-export const OPERATION = {
-    C_SET_TEMPLATE,
-    U_SET_TEMPLATE,
-    D_SET_TEMPLATE,
-    U_TOPO
-}
 
 export default [{
     name: MENU_BUSINESS_SET_TEMPLATE,
@@ -30,8 +22,12 @@ export default [{
             parent: MENU_BUSINESS_SERVICE
         },
         auth: {
-            operation: OPERATION,
-            authScope: 'business'
+            operation: {
+                C_SET_TEMPLATE,
+                U_SET_TEMPLATE,
+                D_SET_TEMPLATE,
+                U_TOPO
+            }
         }
     })
 }, {
@@ -45,8 +41,12 @@ export default [{
             relative: MENU_BUSINESS_SET_TEMPLATE
         },
         auth: {
-            operation: OPERATION,
-            authScope: 'business'
+            operation: {
+                C_SET_TEMPLATE,
+                U_SET_TEMPLATE,
+                D_SET_TEMPLATE,
+                U_TOPO
+            }
         }
     })
 }, {
@@ -58,10 +58,6 @@ export default [{
         menu: {
             i18n: '同步历史',
             relative: MENU_BUSINESS_SET_TEMPLATE
-        },
-        auth: {
-            operation: OPERATION,
-            authScope: 'business'
         }
     })
 }]

@@ -18,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/auth/extensions"
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -29,7 +31,7 @@ import (
 
 func (assoc *association) ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error) {
 
-	ia := NewImportAssociation(ctx, assoc, params, objID, importData)
+	ia := NewImportAssociation(ctx, assoc, params, objID, importData, assoc.authManager)
 	err = ia.ParsePrimaryKey()
 	if err != nil {
 		return resp, err
@@ -74,6 +76,8 @@ type importAssociation struct {
 	instIDAttrKeyValMap map[string]map[string][]*importAssociationInst
 	//http header http request id
 	rid string
+
+	authManager *extensions.AuthManager
 }
 
 type importAssociationInterface interface {
@@ -81,7 +85,7 @@ type importAssociationInterface interface {
 	ImportAssociation() map[int]string
 }
 
-func NewImportAssociation(ctx context.Context, cli *association, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) importAssociationInterface {
+func NewImportAssociation(ctx context.Context, cli *association, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation, authManager *extensions.AuthManager) importAssociationInterface {
 
 	return &importAssociation{
 		objID:      objID,
@@ -97,6 +101,8 @@ func NewImportAssociation(ctx context.Context, cli *association, params types.Co
 		instIDAttrKeyValMap: make(map[string]map[string][]*importAssociationInst),
 
 		rid: util.GetHTTPCCRequestID(params.Header),
+
+		authManager: authManager,
 	}
 }
 
@@ -144,6 +150,16 @@ func (ia *importAssociation) importAssociation() {
 			continue
 		}
 		dstInstID, err := ia.getInstIDByPrimaryKey(asstID.AsstObjID, asstInfo.DstPrimary)
+		if err != nil {
+			ia.parseImportDataErr[idx] = err.Error()
+			continue
+		}
+		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.params.Header, meta.Update, ia.objID, srcInstID)
+		if err != nil {
+			ia.parseImportDataErr[idx] = err.Error()
+			continue
+		}
+		err = ia.authManager.AuthorizeByInstanceID(ia.ctx, ia.params.Header, meta.Update, asstID.AsstObjID, dstInstID)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
 			continue
@@ -540,6 +556,7 @@ func convStrToCCType(val string, attr metadata.Attribute) (interface{}, error) {
 		return util.GetInt64ByInterface(val)
 	case common.FieldTypeFloat:
 		return util.GetFloat64ByInterface(val)
+
 	default:
 		return val, nil
 	}

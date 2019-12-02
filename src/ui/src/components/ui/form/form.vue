@@ -30,7 +30,7 @@
                                             :options="property.option || []"
                                             :data-vv-name="property['bk_property_id']"
                                             :data-vv-as="property['bk_property_name']"
-                                            :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                            :placeholder="getPlaceholder(property)"
                                             v-validate="getValidateRules(property)"
                                             v-model.trim="values[property['bk_property_id']]">
                                         </component>
@@ -50,17 +50,15 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <span class="inline-block-middle"
-                    v-cursor="{
-                        active: !$isAuthorized(saveAuth),
-                        auth: [saveAuth]
-                    }">
-                    <bk-button class="button-save" theme="primary"
-                        :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
+                <cmdb-auth class="inline-block-middle" :auth="saveAuthResources">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-save"
+                        theme="primary"
+                        :disabled="disabled || !hasChange || $loading()"
                         @click="handleSave">
-                        {{$t('保存')}}
+                        {{type === 'create' ? $t('提交') : $t('保存')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
@@ -124,6 +122,12 @@
                 return this.$groupedProperties.map(properties => {
                     return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                 })
+            },
+            saveAuthResources () {
+                const auth = this.saveAuth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
             }
         },
         watch: {
@@ -150,10 +154,7 @@
             },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, this.inst)
-                const timer = setTimeout(() => {
-                    this.refrenceValues = this.$tools.clone(this.values)
-                    clearTimeout(timer)
-                })
+                this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
                 const availabelProperties = properties.filter(property => {
@@ -180,36 +181,12 @@
                 temp = null
                 return output
             },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             getValidateRules (property) {
-                const rules = {}
-                const {
-                    bk_property_type: propertyType,
-                    option,
-                    isrequired
-                } = property
-                if (isrequired) {
-                    rules.required = true
-                }
-                if (option) {
-                    if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                            rules['min_value'] = option.min
-                        }
-                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                            rules['max_value'] = option.max
-                        }
-                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
-                    }
-                }
-                if (['singlechar', 'longchar'].includes(propertyType)) {
-                    rules[propertyType] = true
-                    rules.length = propertyType === 'singlechar' ? 256 : 2000
-                }
-                if (propertyType === 'float') {
-                    rules['float'] = true
-                }
-                return rules
+                return this.$tools.getValidateRules(property)
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
@@ -274,7 +251,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: middle;
-                font-size: 12px;
+                font-size: 14px;
                 @include ellipsis;
                 &.required:after{
                     position: absolute;
@@ -311,7 +288,7 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 28px 32px 0;
+        padding: 10px 32px 0;
         font-size: 0;
         &.sticky {
             padding: 10px 32px;

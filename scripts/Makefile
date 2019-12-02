@@ -39,10 +39,14 @@ NOW=$(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 TARGET_NAME?=
 TARGET_PORT?=9999
 
+PREPARE_CFG?=true
+
 # building
 ${TARGET_NAME}: $(GOFILES_ALL)
+ifeq ($(PREPARE_CFG),true)
 	@python $(SCRIPT_DIR)/prepare_cfg.py $(BIN_PATH) $(TARGET_NAME) $(RESOURCE_DIR) $(SCRIPT_DIR) $(TARGET_PORT) $(VERSION)
-	@echo 
+	@echo
+endif
 	@echo -e "\033[34mbuilding the target: $@... \033[0m"
 	@echo 
 	go build -i $(GOBUILD_FLAGS) -o $(BIN_PATH)/$(TARGET_NAME)/$(TARGET_NAME)

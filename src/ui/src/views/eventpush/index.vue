@@ -8,17 +8,14 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="btn-wrapper clearfix">
-            <span class="inline-block-middle"
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_EVENT),
-                    auth: [$OPERATION.C_EVENT]
-                }">
-                <bk-button theme="primary"
-                    :disabled="!$isAuthorized($OPERATION.C_EVENT)"
+            <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_EVENT })">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    :disabled="disabled"
                     @click="createPush">
                     {{$t('新建')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('searchSubscription') }"
@@ -49,38 +46,32 @@
             </bk-table-column>
             <bk-table-column prop="setting" :label="$t('配置')">
                 <template slot-scope="{ row }">
-                    <span class="text-primary mr20"
-                        v-if="$isAuthorized($OPERATION.U_EVENT)"
-                        @click.stop="editPush(row)">
-                        {{$t('编辑')}}
-                    </span>
-                    <span class="text-primary disabled mr20"
-                        v-else
-                        v-cursor="{
-                            active: true,
-                            auth: [$OPERATION.U_EVENT]
-                        }">
-                        {{$t('编辑')}}
-                    </span>
-                    <span class="text-primary"
-                        v-if="$isAuthorized($OPERATION.D_EVENT)"
-                        @click.stop="deleteConfirm(row)">
-                        {{$t('删除')}}
-                    </span>
-                    <span class="text-primary disabled"
-                        v-else
-                        v-cursor="{
-                            active: true,
-                            auth: [$OPERATION.D_EVENT]
-                        }">
-                        {{$t('删除')}}
-                    </span>
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_EVENT })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            text
+                            :disabled="disabled"
+                            @click.stop="editPush(row)">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </cmdb-auth>
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.D_EVENT })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            text
+                            :disabled="disabled"
+                            @click.stop="deleteConfirm(row)">
+                            {{$t('删除')}}
+                        </bk-button>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
-            <div slot="empty">
-                <p>{{$t('暂时没有数据')}}</p>
-                <p>{{$t('事件推送功能提示')}}</p>
-            </div>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff">
+                <template>
+                    <p>{{$t('暂时没有数据')}}</p>
+                    <p>{{$t('事件推送功能提示')}}</p>
+                </template>
+            </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -123,7 +114,11 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-last_time',
-                    sort: '-last_time'
+                    sort: '-last_time',
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 slider: {
                     isShow: false,
@@ -207,17 +202,33 @@
                         sort: this.table.sort
                     }
                 }
-                const res = await this.searchSubscription({ bkBizId: 0, params, config: { requestId: 'searchSubscription' } })
-                if (res.count && !res.info.length) {
-                    this.table.pagination.current -= 1
-                    this.getTableData()
+                try {
+                    const res = await this.searchSubscription({
+                        bkBizId: 0,
+                        params,
+                        config: {
+                            requestId: 'searchSubscription',
+                            globalPermission: false
+                        }
+                    })
+                    if (res.count && !res.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
+                    }
+                    res.info.map(item => {
+                        item['subscription_form'] = item['subscription_form'].split(',')
+                        item['last_time'] = formatTime(item['last_time'])
+                    })
+                    this.table.list = res.info
+                    pagination.count = res.count
+                } catch ({ permission }) {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 }
-                res.info.map(item => {
-                    item['subscription_form'] = item['subscription_form'].split(',')
-                    item['last_time'] = formatTime(item['last_time'])
-                })
-                this.table.list = res.info
-                pagination.count = res.count
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)

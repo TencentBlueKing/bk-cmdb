@@ -91,6 +91,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
 	// api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
 	api.Route(api.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
+	api.Route(api.PUT("/updatemany/hosts/cloudarea_field").To(s.UpdateHostCloudAreaField))
 
 	// host favorites
 	api.Route(api.POST("/hosts/favorites/search").To(s.ListHostFavourites))
@@ -100,17 +101,21 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
 
 	api.Route(api.POST("/hosts/modules").To(s.TransferHostModule))
-	api.Route(api.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))
+	api.Route(api.POST("/hosts/modules/idle").To(s.MoveHost2IdleModule))
 	api.Route(api.POST("/hosts/modules/fault").To(s.MoveHost2FaultModule))
+	api.Route(api.POST("/hosts/modules/recycle").To(s.MoveHost2RecycleModule))
 	api.Route(api.POST("/hosts/modules/resource").To(s.MoveHostToResourcePool))
 	api.Route(api.POST("/hosts/modules/resource/idle").To(s.AssignHostToApp))
 	api.Route(api.POST("/host/add/module").To(s.AssignHostToAppModule))
+	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/").To(s.TransferHostWithAutoClearServiceInstance))
+	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/").To(s.TransferHostWithAutoClearServiceInstancePreview))
 	api.Route(api.POST("/usercustom").To(s.SaveUserCustom))
 	api.Route(api.POST("/usercustom/user/search").To(s.GetUserCustom))
 	api.Route(api.POST("/usercustom/default/search").To(s.GetDefaultCustom))
 	api.Route(api.POST("/hosts/search").To(s.SearchHost))
 	api.Route(api.POST("/hosts/search/asstdetail").To(s.SearchHostWithAsstDetail))
 	api.Route(api.PUT("/hosts/batch").To(s.UpdateHostBatch))
+	api.Route(api.PUT("/hosts/property/batch").To(s.UpdateHostPropertyBatch))
 	api.Route(api.PUT("/hosts/property/clone").To(s.CloneHostProperty))
 	api.Route(api.POST("/hosts/modules/idle/set").To(s.MoveSetHost2IdleModule))
 	// get host module relation in app
@@ -124,6 +129,7 @@ func (s *Service) WebService() *restful.Container {
 	// next generation host search api
 	api.Route(api.POST("/hosts/list_hosts_without_app").To(s.ListHostsWithNoBiz))
 	api.Route(api.POST("/hosts/app/{appid}/list_hosts").To(s.ListBizHosts))
+	api.Route(api.POST("/hosts/app/{bk_biz_id}/list_hosts_topo").To(s.ListBizHostsTopo))
 
 	api.Route(api.POST("/userapi").To(s.AddUserCustomQuery))
 	api.Route(api.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
@@ -135,24 +141,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/lock").To(s.LockHost))
 	api.Route(api.DELETE("/host/lock").To(s.UnlockHost))
 	api.Route(api.POST("/host/lock/search").To(s.QueryHostLock))
-
-	api.Route(api.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppIDAndField))
-	api.Route(api.PUT("/openapi/host/{" + common.BKAppIDField + "}").To(s.UpdateHost))
-	api.Route(api.PUT("/host/updateHostByAppID/{appid}").To(s.UpdateHostByAppID))
-	api.Route(api.POST("/gethostlistbyip").To(s.HostSearchByIP))
-	api.Route(api.POST("/gethostlistbyconds").To(s.HostSearchByConds))
-	api.Route(api.POST("/getmodulehostlist").To(s.HostSearchByModuleID))
-	api.Route(api.POST("/getsethostlist").To(s.HostSearchBySetID))
-	api.Route(api.POST("/getapphostlist").To(s.HostSearchByAppID))
-	api.Route(api.POST("/gethostsbyproperty").To(s.HostSearchByProperty))
-	api.Route(api.POST("/getIPAndProxyByCompany").To(s.GetIPAndProxyByCompany))
-	api.Route(api.PUT("/openapi/updatecustomproperty").To(s.UpdateCustomProperty))
-	api.Route(api.POST("/openapi/host/getHostAppByCompanyId").To(s.GetHostAppByCompanyId))
-	api.Route(api.DELETE("/openapi/host/delhostinapp").To(s.DelHostInApp))
-	api.Route(api.POST("/openapi/host/getGitServerIp").To(s.GetGitServerIp))
-	api.Route(api.GET("/plat").To(s.GetPlat))
-	api.Route(api.POST("/plat").To(s.CreatePlat))
-	api.Route(api.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
+	api.Route(api.POST("/host/count_by_topo_node/bk_biz_id/{bk_biz_id}").To(s.CountTopoNodeHosts))
 
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
 
@@ -171,6 +160,7 @@ func (s *Service) WebService() *restful.Container {
 
 	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
+	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
 
 	container.Add(api)

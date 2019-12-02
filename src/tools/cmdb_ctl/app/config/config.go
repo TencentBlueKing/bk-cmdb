@@ -16,8 +16,11 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"time"
 
 	"configcenter/src/common/zkclient"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/spf13/cobra"
 )
@@ -26,31 +29,43 @@ var Conf *Config
 
 type Config struct {
 	ZkAddr   string
-	AddrPort string
+	MongoURI string
 }
 
 // AddFlags add flags
 func (c *Config) AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&c.ZkAddr, "zkaddr", os.Getenv("ZK_ADDR"), "the ip address and port for the zookeeper hosts, separated by ',', corresponding environment variable is ZK_ADDR")
+	cmd.PersistentFlags().StringVar(&c.ZkAddr, "zk-addr", os.Getenv("ZK_ADDR"), "the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR")
 	// TODO add zkuser and zkpwd
-	cmd.PersistentFlags().StringVar(&c.AddrPort, "addrport", os.Getenv("ADDR_PORT"), "the ip address and port for the hosts to apply command, separated by ',', corresponding environment variable is ADDR_PORT")
+	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"), "the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
 }
 
 type Service struct {
-	ZkCli    *zkclient.ZkClient
-	Addrport []string
+	ZkCli   *zkclient.ZkClient
+	DbProxy dal.RDB
 }
 
-func NewService(zkaddr string, addrport string) (*Service, error) {
-	if zkaddr == "" {
-		return nil, errors.New("zkaddr must set via flag or environment variable")
+func NewZkService(zkAddr string) (*Service, error) {
+	if zkAddr == "" {
+		return nil, errors.New("zk-addr must set via flag or environment variable")
 	}
 	service := &Service{
-		ZkCli:    zkclient.NewZkClient(strings.Split(zkaddr, ",")),
-		Addrport: strings.Split(addrport, ","),
+		ZkCli: zkclient.NewZkClient(strings.Split(zkAddr, ",")),
 	}
 	if err := service.ZkCli.Connect(); err != nil {
 		return nil, err
 	}
 	return service, nil
+}
+
+func NewMongoService(mongoURI string) (*Service, error) {
+	if mongoURI == "" {
+		return nil, errors.New("mongo-uri must set via flag or environment variable")
+	}
+	db, err := local.NewMgo(mongoURI, time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	return &Service{
+		DbProxy: db,
+	}, nil
 }

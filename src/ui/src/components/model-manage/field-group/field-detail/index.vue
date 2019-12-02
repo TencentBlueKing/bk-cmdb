@@ -56,6 +56,7 @@
             <the-config
                 :type="fieldInfo['bk_property_type']"
                 :is-read-only="isReadOnly"
+                :is-main-line-model="isMainLineModel"
                 :editable.sync="fieldInfo['editable']"
                 :isrequired.sync="fieldInfo['isrequired']"
             ></the-config>
@@ -87,7 +88,7 @@
             <bk-button theme="primary"
                 :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
                 @click="saveField">
-                {{$t('确定')}}
+                {{isEditField ? $t('保存') : $t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
                 {{$t('取消')}}
@@ -101,6 +102,7 @@
     import theFieldInt from './int'
     import theFieldFloat from './float'
     import theFieldEnum from './enum'
+    import theFieldList from './list'
     import theConfig from './config'
     import { mapGetters, mapActions } from 'vuex'
     export default {
@@ -109,6 +111,7 @@
             theFieldInt,
             theFieldFloat,
             theFieldEnum,
+            theFieldList,
             theConfig
         },
         props: {
@@ -129,6 +132,10 @@
             propertyIndex: {
                 type: Number,
                 default: 0
+            },
+            isMainLineModel: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -163,6 +170,9 @@
                 }, {
                     id: 'bool',
                     name: 'bool'
+                }, {
+                    id: 'list',
+                    name: this.$t('列表')
                 }],
                 fieldInfo: {
                     bk_property_name: '',
@@ -195,7 +205,7 @@
                 return type
             },
             isComponentShow () {
-                return ['singlechar', 'longchar', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+                return ['singlechar', 'longchar', 'enum', 'int', 'float', 'list'].indexOf(this.fieldInfo['bk_property_type']) !== -1
             },
             changedValues () {
                 const changedValues = {}

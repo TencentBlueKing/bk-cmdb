@@ -19,8 +19,10 @@ import (
 	"net/http"
 	"time"
 
-	"configcenter/src/common/mapstr"
+	//"configcenter/src/common/mapstr"
 	"configcenter/src/test"
+	//"configcenter/src/common"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/test/run"
 
 	. "github.com/onsi/ginkgo"
@@ -47,11 +49,11 @@ var _ = Describe("Business Test", func() {
 	header := test.GetHeader()
 
 	Describe("get business list load test", func() {
-		var cond map[string]interface{}
+		var cond *params.SearchParams
 		BeforeEach(func() {
-			cond = mapstr.MapStr{
-				"condition": mapstr.MapStr{
-					"bk_data_status": mapstr.MapStr{
+			cond = &params.SearchParams{
+				Condition: map[string]interface{}{
+					"bk_data_status": map[string]interface{}{
 						"$ne": "disabled",
 					},
 				},
@@ -60,7 +62,7 @@ var _ = Describe("Business Test", func() {
 
 		Measure("emit the request", func(b Benchmarker) {
 			runtime := b.Time("runtime", func() {
-				_, err := clientSet.ApiServer().GetUserPrivilegeApp(context.Background(), header, "0", "admin", cond)
+				_, err := clientSet.ApiServer().SearchBiz(context.Background(), "0", header, cond)
 				Expect(err).Should(BeNil())
 			})
 			Expect(runtime.Seconds()).Should(BeNumerically("<", 0.07))
@@ -70,7 +72,7 @@ var _ = Describe("Business Test", func() {
 			m := run.FireLoadTest(func() error {
 				//h := CopyHeader(header)
 
-				rsp, err := clientSet.ApiServer().GetUserPrivilegeApp(context.Background(), header, "0", "admin", cond)
+				rsp, err := clientSet.ApiServer().SearchBiz(context.Background(), "0", header, cond)
 				if err != nil {
 					return err
 				}
@@ -91,7 +93,7 @@ var _ = Describe("Business Test", func() {
 
 				ts := fmt.Sprintf("%d", time.Now().UnixNano())
 				morediff := fmt.Sprintf("%d", time.Now().UnixNano())
-				bizSuffix := ts+morediff
+				bizSuffix := ts + morediff
 				input := map[string]interface{}{
 					"life_cycle":        "2",
 					"language":          "1",
@@ -100,7 +102,7 @@ var _ = Describe("Business Test", func() {
 					"bk_biz_tester":     "",
 					"bk_biz_developer":  "",
 					"operator":          "",
-					"bk_biz_name":       "testBiz"+bizSuffix,
+					"bk_biz_name":       "testBiz" + bizSuffix,
 					"time_zone":         "Africa/Accra",
 				}
 				_, err := clientSet.ApiServer().CreateBiz(context.Background(), "0", header, input)
@@ -113,7 +115,7 @@ var _ = Describe("Business Test", func() {
 			m := run.FireLoadTest(func() error {
 				ts := fmt.Sprintf("%d", time.Now().UnixNano())
 				morediff := fmt.Sprintf("%d", time.Now().UnixNano())
-				bizSuffix := ts+morediff
+				bizSuffix := ts + morediff
 				input := map[string]interface{}{
 					"life_cycle":        "2",
 					"language":          "1",
@@ -122,7 +124,7 @@ var _ = Describe("Business Test", func() {
 					"bk_biz_tester":     "",
 					"bk_biz_developer":  "",
 					"operator":          "",
-					"bk_biz_name":       "testBiz"+bizSuffix,
+					"bk_biz_name":       "testBiz" + bizSuffix,
 					"time_zone":         "Africa/Accra",
 				}
 				rsp, err := clientSet.ApiServer().CreateBiz(context.Background(), "0", header, input)

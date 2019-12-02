@@ -13,7 +13,12 @@ package service
 
 import (
 	"context"
+	goErr "errors"
+	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
@@ -52,7 +57,6 @@ type OperationServer struct {
 	Config      *options.Config
 	ConfigMap   map[string]string
 	AuthManager *extensions.AuthManager
-	Logic       *logics.Logic
 }
 
 func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
@@ -70,7 +74,7 @@ func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(o.Engine, header, o.AuthManager),
+		lgc:           logics.NewLogics(o.Engine, header, o.AuthManager, o.Config.Timer),
 	}
 }
 
@@ -169,5 +173,64 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 	o.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 	if err != nil {
 		blog.Warnf("parse auth center config failed: %v", err)
+		return
 	}
+
+	o.Config.Timer, err = o.ParseTimerConfigFromKV("timer", current.ConfigMap)
+	if err != nil {
+		blog.Errorf("parse timer config failed, err: %v", err)
+		return
+	}
+}
+
+func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
+	// 若是timer没配置，或者解析失败，给一个默认的定时时间
+	defaultSpec := "30 0 * * *"
+
+	specStr, ok := configMap[prefix+".spec"]
+	if !ok {
+		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer, set timer-spec default value: 00:30")
+		return defaultSpec, goErr.New("missing 'spec' configuration for timer")
+	}
+
+	spec, err := parseTimerConfig(specStr)
+	if err != nil || spec == "" {
+		blog.Errorf("parse timer config failed, set timer-spec default value: 00:30, err: %v", err)
+		return defaultSpec, err
+	}
+
+	return spec, nil
+}
+
+func parseTimerConfig(spec string) (string, error) {
+	matched, err := regexp.MatchString(common.TimerPattern, spec)
+	if err != nil || !matched {
+		blog.Errorf("parse timer config failed, 'spec' not match required rules, err: %v", err)
+		return "", goErr.New("'spec' not match required rules")
+	}
+
+	numArray := strings.Split(spec, ":")
+	hour := numArray[0]
+	intHour, err := strconv.Atoi(hour)
+	if err != nil {
+		blog.Errorf("parse timer config failed, got invalid hour data, err: %v", err)
+		return "", goErr.New("parse time config failed, got invalid hour data")
+	}
+	if intHour < 0 || intHour > 23 {
+		blog.Errorf("parse timer config failed, got invalid hour data, err: %v", err)
+		return "", goErr.New("'parse time config failed, got invalid hour data, should between 0-23")
+	}
+	minute := numArray[1]
+	intMinute, err := strconv.Atoi(minute)
+	if err != nil {
+		blog.Errorf("parse timer config failed, got invalid minute data, err: %v", err)
+		return "", goErr.New("parse time config failed, got invalid minute data")
+	}
+	if intMinute < 0 || intMinute > 59 {
+		blog.Errorf("parse timer config failed, got invalid minute data, err: %v", err)
+		return "", goErr.New("parse time config failed, got invalid minute data, should between 0-59")
+	}
+
+	spec = fmt.Sprintf("%d %d * * *", intMinute, intHour)
+	return spec, nil
 }

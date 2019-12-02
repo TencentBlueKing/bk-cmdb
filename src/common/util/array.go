@@ -70,6 +70,27 @@ func IntArrayUnique(a []int64) (ret []int64) {
 	return ret
 }
 
+func BoolArrayUnique(a []bool) (ret []bool) {
+	ret = make([]bool, 0)
+	trueExist := false
+	falseExist := false
+	for _, item := range a {
+		if item == true {
+			trueExist = true
+		}
+		if item == false {
+			falseExist = true
+		}
+	}
+	if trueExist {
+		ret = append(ret, true)
+	}
+	if falseExist {
+		ret = append(ret, false)
+	}
+	return ret
+}
+
 func RemoveDuplicatesAndEmpty(slice []string) (ret []string) {
 	ret = make([]string, 0)
 	for _, a := range slice {

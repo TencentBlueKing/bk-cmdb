@@ -1,20 +1,44 @@
 <template>
     <section>
+        <bk-input v-if="templates.length"
+            class="search"
+            type="text"
+            :placeholder="$t('请输入模板名称搜索')"
+            clearable
+            right-icon="bk-icon icon-search"
+            v-model.trim="searchName"
+            @enter="hanldeFilterTemplates"
+            @clear="hanldeFilterTemplates">
+        </bk-input>
         <ul class="template-list clearfix"
             v-bkloading="{ isLoading: $loading('getServiceTemplate') }"
+            :style="{ height: !!templates.length ? '264px' : '306px' }"
             :class="{ 'is-loading': $loading('getServiceTemplate') }">
             <template v-if="templates.length">
-                <li class="template-item fl clearfix"
-                    v-for="(template, index) in templates"
-                    :class="{
-                        'is-selected': localSelected.includes(template.id),
-                        'is-middle': index % 3 === 1
-                    }"
-                    :key="template.id"
-                    @click="handleClick(template)">
-                    <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
-                    <span class="template-name" :title="template.name">{{template.name}}</span>
-                </li>
+                <template v-for="(template, index) in templates">
+                    <li v-if="$parent.$parent.serviceExistHost(template.id)"
+                        class="template-item disabled fl clearfix"
+                        :class="{
+                            'is-selected': localSelected.includes(template.id),
+                            'is-middle': index % 3 === 1
+                        }"
+                        :key="template.id"
+                        v-bk-tooltips="$t('该模块下有主机不可取消')">
+                        <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
+                        <span class="template-name" :title="template.name">{{template.name}}</span>
+                    </li>
+                    <li v-else
+                        class="template-item fl clearfix"
+                        :class="{
+                            'is-selected': localSelected.includes(template.id),
+                            'is-middle': index % 3 === 1
+                        }"
+                        :key="template.id"
+                        @click="handleClick(template)">
+                        <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
+                        <span class="template-name" :title="template.name">{{template.name}}</span>
+                    </li>
+                </template>
             </template>
             <li class="template-empty" v-else>
                 <div class="empty-content">
@@ -34,15 +58,19 @@
         props: {
             selected: {
                 type: Array,
-                default () {
-                    return []
-                }
+                default: () => []
+            },
+            servicesHost: {
+                type: Array,
+                default: () => []
             }
         },
         data () {
             return {
+                allTemplates: [],
                 templates: [],
-                localSelected: [...this.selected]
+                localSelected: [...this.selected],
+                searchName: ''
             }
         },
         created () {
@@ -64,6 +92,7 @@
                         const weightB = this.selected.includes(B.id) ? 1 : 0
                         return weightB - weightA
                     })
+                    this.allTemplates = this.templates
                 } catch (e) {
                     console.error(e)
                     this.templates = []
@@ -78,20 +107,27 @@
                 }
             },
             getSelectedServices () {
-                return this.localSelected.map(id => this.templates.find(template => template.id === id))
+                return this.localSelected.map(id => this.allTemplates.find(template => template.id === id))
             },
             handleLinkClick () {
                 this.$router.push({
                     name: 'operationalTemplate'
                 })
+            },
+            hanldeFilterTemplates () {
+                this.templates = this.allTemplates.filter(template => template.name.indexOf(this.searchName) > -1)
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .search {
+        width: 240px;
+        margin-bottom: 10px;
+    }
     .template-list {
-        max-height: 340px;
+        height: 264px;
         @include scrollbar-y;
         &.is-loading {
             min-height: 144px;
@@ -117,6 +153,13 @@
                     border-radius: initial;
                     background-color: initial;
                     color: #3A84FF;
+                }
+            }
+            &.disabled {
+                cursor: not-allowed;
+                .select-icon {
+                    color: #C4C6CC;
+                    cursor: not-allowed;
                 }
             }
             .select-icon {

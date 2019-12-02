@@ -127,6 +127,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
+		return err
 	}
 
 	essrv := new(elasticsearch.EsSrv)
@@ -134,7 +135,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		// if use https, config tls.Config{xxx}, and instead NewEsClient param nil
 		esclient, err := elasticsearch.NewEsClient(server.Config.EsUrl, nil)
 		if err != nil {
-			blog.Errorf("failed to create elasticsearch client, err:%s", err.Error())
+			blog.Errorf("failed to create elastic search client, err:%s", err.Error())
+			return fmt.Errorf("new es client failed, err: %v", err)
 		}
 		essrv.Client = esclient
 	}

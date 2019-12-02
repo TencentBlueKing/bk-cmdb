@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
@@ -130,6 +131,37 @@ func (s *Service) createSet(params types.ContextParams, bizID int64, obj model.O
 	return set, nil
 }
 
+func (s *Service) CheckIsBuiltInSet(params types.ContextParams, setIDs ...int64) errors.CCErrorCoder {
+	// 检查是否时内置集群
+	filter := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKSetIDField: map[string]interface{}{
+				common.BKDBIN: setIDs,
+			},
+			common.BKDefaultField: map[string]interface{}{
+				common.BKDBNE: common.DefaultFlagDefaultValue,
+			},
+		},
+	}
+
+	rsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+	if nil != err {
+		blog.ErrorJSON("CheckIsBuiltInSet failed, ReadInstance failed, option: %s, err: %s, rid: %s", filter, err.Error(), params.ReqID)
+		return params.Err.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if rsp.Result == false || rsp.Code != 0 {
+		blog.ErrorJSON("ReadInstance failed, ReadInstance failed, option: %s, response: %s, rid: %s", filter, rsp, params.ReqID)
+		return errors.New(rsp.Code, rsp.ErrMsg)
+	}
+	if rsp.Data.Count > 0 {
+		return params.Err.CCError(common.CCErrorTopoForbiddenDeleteBuiltInSetModule)
+	}
+	return nil
+}
+
 func (s *Service) DeleteSets(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
@@ -150,8 +182,14 @@ func (s *Service) DeleteSets(params types.ContextParams, pathParams, queryParams
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
+	setIDs := cond.Delete.InstID
+	// 检查是否时内置集群
+	if err := s.CheckIsBuiltInSet(params, setIDs...); err != nil {
+		return nil, err
+	}
+
 	// auth: deregister set
-	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, cond.Delete.InstID...); err != nil {
+	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, setIDs...); err != nil {
 		blog.Errorf("delete sets failed, deregister sets from iam failed, %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
@@ -183,6 +221,11 @@ func (s *Service) DeleteSet(params types.ContextParams, pathParams, queryParams 
 
 	if nil != err {
 		blog.Errorf("delete set failed, failed to search the set, %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+
+	// 检查是否时内置集群
+	if err := s.CheckIsBuiltInSet(params, setID); err != nil {
 		return nil, err
 	}
 

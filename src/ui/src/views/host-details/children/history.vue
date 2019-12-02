@@ -30,6 +30,7 @@
                     {{$tools.formatTime(row['op_time'])}}
                 </template>
             </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -58,6 +59,14 @@
                     current: 1,
                     limit: 10
                 },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
+                },
                 sort: '-op_time',
                 details: {
                     show: false,
@@ -74,7 +83,7 @@
             this.getHistory()
         },
         methods: {
-            async getHistory () {
+            async getHistory (event) {
                 try {
                     const condition = {
                         op_target: 'host',
@@ -96,6 +105,10 @@
                     })
                     this.history = data.info
                     this.pagination.count = data.count
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
                 } catch (e) {
                     console.log(e)
                     this.history = []
@@ -104,7 +117,7 @@
             },
             handlePageChange (page) {
                 this.pagination.current = page
-                this.getHistory()
+                this.getHistory(true)
             },
             handleSizeChange (size) {
                 this.pagination.limit = size

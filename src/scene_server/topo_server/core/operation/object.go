@@ -152,10 +152,6 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 				targetAttr.Metadata = *params.MetaData
 			}
 
-			if targetAttr.PropertyType == common.FieldTypeMultiAsst || targetAttr.PropertyType == common.FieldTypeSingleAsst {
-				continue
-			}
-
 			if targetAttr.PropertyID == common.BKChildStr || targetAttr.PropertyID == common.BKInstParentStr {
 				continue
 			}
@@ -290,6 +286,23 @@ func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr)
 		attrs, err := obj.GetNonInnerAttributes()
 		if nil != err {
 			return nil, err
+		}
+
+		for _, attr := range attrs {
+			attribute := attr.Attribute()
+			grpCond := condition.CreateCondition()
+			grpCond.Field(metadata.GroupFieldGroupID).Eq(attribute.PropertyGroup)
+			grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attribute.OwnerID)
+			grpCond.Field(metadata.GroupFieldObjectID).Eq(attribute.ObjectID)
+			grps, err := o.grp.FindObjectGroup(params, grpCond)
+			if nil != err {
+				return nil, err
+			}
+
+			for _, grp := range grps {
+				// should be only one
+				attribute.PropertyGroupName = grp.Group().GroupName
+			}
 		}
 
 		result.Set(objID, mapstr.MapStr{

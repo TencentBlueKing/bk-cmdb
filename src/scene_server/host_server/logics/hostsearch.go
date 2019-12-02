@@ -434,7 +434,7 @@ func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInf
 
 				moduleName, err := moduleInfo.String(common.BKModuleNameField)
 				if nil != err {
-                    blog.V(5).Infof("hostSearch not found module name, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID, sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
+					blog.V(5).Infof("hostSearch not found module name, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID, sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
 					continue
 				}
 				datacp := make(map[string]interface{})
@@ -826,8 +826,8 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	return nil
 }
 
-// searchByAssocation  Query host information based on associated objects, alternate code
-func (sh *searchHost) searchByAssocation() errors.CCError {
+// Query host information based on associated objects, alternate code
+func (sh *searchHost) searchByAssociation() errors.CCError {
 	instAsstHostIDArr := make([]int64, 0)
 	//search host id by object
 	firstCond := true

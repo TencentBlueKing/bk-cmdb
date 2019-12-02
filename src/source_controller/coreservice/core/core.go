@@ -145,6 +145,7 @@ type HostOperation interface {
 	DeleteFromSystem(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error)
 	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
+	UpdateHostCloudAreaField(ctx ContextParams, input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
 
 	LockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError
 	UnlockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError
@@ -262,6 +263,7 @@ type SetTemplateOperation interface {
 	UpdateSetTemplateSyncStatus(ctx ContextParams, setID int64, option metadata.SetTemplateSyncStatus) errors.CCErrorCoder
 	ListSetTemplateSyncStatus(ctx ContextParams, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
 	ListSetTemplateSyncHistory(ctx ContextParams, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
+	DeleteSetTemplateSyncStatus(ctx ContextParams, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder
 }
 
 type core struct {

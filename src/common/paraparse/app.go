@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // common search struct
@@ -29,15 +28,6 @@ type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Page      map[string]interface{} `json:"page,omitempty"`
 	Fields    []string               `json:"fields,omitempty"`
-	Native    int                    `json:"native,omitempty"`
-}
-
-// common result struct
-type CommonResult struct {
-	Result  bool        `json:"result"`
-	Code    int         `json:"int"`
-	Message interface{} `json:"message"`
-	Data    interface{} `json:"data"`
 }
 
 func ParseCommonParams(input []metadata.ConditionItem, output map[string]interface{}) error {
@@ -89,7 +79,7 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 
 func SpecialCharChange(targetStr string) string {
 
-	re := regexp.MustCompile(`([\^\$\(\)\*\+\?\.\\\|\[\]\{\}])`)
+	re := regexp.MustCompile("[.()\\\\|\\[\\]\\-\\*{}\\^\\$\\?]")
 	delItems := re.FindAllString(targetStr, -1)
 	tmp := map[string]struct{}{}
 	for _, target := range delItems {
@@ -101,28 +91,4 @@ func SpecialCharChange(targetStr string) string {
 	}
 
 	return targetStr
-}
-
-// ParseAppSearchParams parse search app parameter. input user parameter, userFieldArr Fields in the business are user-type fields
-func ParseAppSearchParams(input map[string]interface{}, userFieldArr []string) map[string]interface{} {
-	output := make(map[string]interface{})
-	for i, j := range input {
-		objtype := reflect.TypeOf(j)
-		switch objtype.Kind() {
-		case reflect.String:
-			d := make(map[string]interface{})
-			targetStr := j.(string)
-			if util.InStrArr(userFieldArr, i) {
-				// field type is user, use regex
-				userName := SpecialCharChange(targetStr)
-				d[common.BKDBLIKE] = fmt.Sprintf("^%s,|,%s,|,%s$|^%s$", userName, userName, userName, userName)
-			} else {
-				d[common.BKDBLIKE] = SpecialCharChange(targetStr)
-			}
-			output[i] = d
-		default:
-			output[i] = j
-		}
-	}
-	return output
 }

@@ -13,29 +13,16 @@
 package app
 
 import (
-	"os"
-
 	"configcenter/src/tools/cmdb_ctl/app/config"
 	"configcenter/src/tools/cmdb_ctl/cmd"
-
-	"github.com/spf13/cobra"
 )
 
 func Run() error {
 	config.Conf = new(config.Config)
 
-	rootCmd := &cobra.Command{
-		Use: os.Args[0],
-		Run: func(cmd *cobra.Command, args []string) {
-			_ = cmd.Help()
-		},
-	}
+	rootCmd := cmd.GetRootCmd()
 
 	config.Conf.AddFlags(rootCmd)
-	rootCmd.AddCommand(cmd.NewLogCommand())
-	rootCmd.AddCommand(cmd.NewExitCommand())
-	rootCmd.AddCommand(cmd.NewZkCommand())
-	rootCmd.AddCommand(cmd.NewEchoCommand())
 
 	return rootCmd.Execute()
 }

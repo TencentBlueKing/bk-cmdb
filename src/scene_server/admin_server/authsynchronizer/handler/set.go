@@ -55,7 +55,7 @@ func (ih *IAMHandler) HandleSetSync(task *meta.WorkRequest) error {
 	}
 
 	taskName := fmt.Sprintf("sync set for business: %d", businessSimplify.BKAppIDField)
-	iamIDPrefix := "set"
+	iamIDPrefix := "set:"
 	skipDeregister := false
 	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }

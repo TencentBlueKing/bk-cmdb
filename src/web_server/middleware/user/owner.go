@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/validator"
+	validator "configcenter/src/source_controller/coreservice/core/instances"
 
 	"gopkg.in/redis.v5"
 )
@@ -119,13 +119,7 @@ func (m *OwnerManager) addDefaultApp() error {
 }
 
 func (m *OwnerManager) defaultAppIsExist() (bool, error) {
-
-	params := make(map[string]interface{})
-	params["condition"] = make(map[string]interface{})
-	params["fields"] = []string{common.BKAppIDField}
-	params["start"] = 0
-	params["limit"] = 20
-	result, err := m.Engine.CoreAPI.ApiServer().SearchDefaultApp(context.Background(), m.header, m.OwnerID, params)
+	result, err := m.Engine.CoreAPI.ApiServer().SearchDefaultApp(context.Background(), m.header, m.OwnerID)
 	if err != nil {
 		return false, err
 	}
@@ -155,6 +149,6 @@ func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, er
 	fields := result.Data
 
 	ret := map[string]interface{}{}
-	validator.FillLostedFieldValue(ret, fields, nil)
+	validator.FillLostedFieldValue(context.Background(), ret, fields)
 	return ret, nil
 }

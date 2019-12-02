@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"time"
+
 	"configcenter/src/common"
 )
 
@@ -88,7 +90,7 @@ type HostChangeChartData struct {
 	ReportType string                    `json:"report_type" bson:"report_type"`
 	Data       map[string][]BizHostChart `json:"data" bson:"data"`
 	OwnerID    string                    `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	UpdateTime Time                      `json:"update_time" bson:"update_time"`
+	LastTime   Time                      `json:"last_time" bson:"last_time"`
 }
 
 type BizHostChart struct {
@@ -105,6 +107,7 @@ type ChartData struct {
 	ReportType string      `json:"report_type" bson:"report_type"`
 	Data       interface{} `json:"data" data:"data"`
 	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime   time.Time   `json:"last_time" bson:"last_time"`
 }
 
 type SearchChartResponse struct {

@@ -152,14 +152,6 @@ func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterfac
 			clientSet: o.clientSet,
 		}
 
-		// reset the group name
-		grp, err := attr.GetGroup()
-		if nil != err {
-			blog.Errorf("[model-obj] failed to get the attribute group info , error info is %s, rid: %s", err.Error(), o.params.ReqID)
-			return nil, err
-		}
-		attr.SetGroup(grp)
-
 		rstItems = append(rstItems, attr)
 
 	}

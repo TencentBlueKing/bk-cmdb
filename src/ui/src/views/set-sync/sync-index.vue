@@ -1,5 +1,5 @@
 <template>
-    <div class="sync-set-layout" v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
+    <div class="sync-set-layout" ref="instancesInfo" v-bkloading="{ isLoading: $loading('diffTemplateAndInstances') }">
         <template v-if="noInfo">
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
@@ -15,58 +15,67 @@
             </div>
         </template>
         <template v-else-if="diffList.length">
-            <div class="title clearfix">
-                <div class="tips fl">
-                    <p class="mr10">{{$t('请确认以下模板修改信息')}}：</p>
-                    <span class="mr30">
-                        <i class="dot"></i>
-                        {{$t('新增模块')}}
-                    </span>
-                    <span>
-                        <i class="dot red"></i>
-                        {{$t('删除模块')}}
-                    </span>
+            <div class="main">
+                <div class="title clearfix">
+                    <p class="fl" v-if="isSingleSync">{{$t('请确认单个实例更改信息')}}</p>
+                    <i18n path="请确认实例更改信息"
+                        tag="p"
+                        class="fl"
+                        v-else>
+                        <span place="count">{{setInstancesId.length}}</span>
+                    </i18n>
+                    <div class="tips fr">
+                        <span class="mr30">
+                            <i class="dot"></i>
+                            {{$t('新增模块')}}
+                        </span>
+                        <span class="mr30">
+                            <i class="dot delete"></i>
+                            {{$t('删除模块')}}
+                        </span>
+                        <bk-checkbox class="expand-all"
+                            v-if="!isSingleSync"
+                            v-model="expandAll"
+                            @change="handleExpandAll">
+                            {{$t('全部展开')}}
+                        </bk-checkbox>
+                    </div>
                 </div>
-                <bk-checkbox class="expand-all fr"
-                    v-if="!isSingleSync"
-                    v-model="expandAll"
-                    @change="handleExpandAll">
-                    {{$t('全部展开')}}
-                </bk-checkbox>
+                <div class="instance-list">
+                    <set-instance class="instance-item"
+                        ref="setInstance"
+                        v-for="(instance, index) in diffList"
+                        :key="instance.bk_set_id"
+                        :instance="instance"
+                        :icon-close="diffList.length > 1"
+                        :expand="index === 0"
+                        :module-host-count="moduleHostCount"
+                        @close="handleCloseInstance">
+                    </set-instance>
+                </div>
             </div>
-            <div class="instance-list">
-                <set-instance class="instance-item"
-                    ref="setInstance"
-                    v-for="(instance, index) in diffList"
-                    :key="instance.bk_set_id"
-                    :instance="instance"
-                    :icon-close="diffList.length > 1"
-                    :expand="index === 0"
-                    @close="handleCloseInstance">
-                </set-instance>
-            </div>
-            <div class="footer">
-                <span style="display: inlink-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_TOPO),
-                        auth: [$OPERATION.U_TOPO]
-                    }">
-                    <bk-button class="mr10"
-                        theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
-                        @click="handleConfirmSync">
-                        {{$t('确认同步')}}
-                    </bk-button>
-                </span>
+            <div class="options" :class="{ 'is-sticky': hasScrollbar }">
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                    <template slot-scope="{ disabled }">
+                        <bk-button v-if="canSyncStatus()"
+                            class="mr10"
+                            theme="primary"
+                            :disabled="disabled"
+                            @click="handleConfirmSync">
+                            {{$t('确认同步')}}
+                        </bk-button>
+                        <span class="text-btn mr10" v-else v-bk-tooltips="$t('请先删除不可同步的实例')">{{$t('确认同步')}}</span>
+                    </template>
+                </cmdb-auth>
                 <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
-                <span v-if="!isSingleSync">{{$tc('已选集群实例', setInstancesId.length, { count: setInstancesId.length })}}</span>
             </div>
         </template>
     </div>
 </template>
 
 <script>
-    import { MENU_BUSINESS_SET_TEMPLATE, MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+    import { MENU_BUSINESS_SET_TEMPLATE, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import setInstance from './set-instance'
     export default {
         components: {
@@ -74,11 +83,13 @@
         },
         data () {
             return {
+                hasScrollbar: false,
                 expandAll: false,
                 diffList: [],
                 noInfo: false,
                 isLatestInfo: false,
-                templateName: ''
+                templateName: '',
+                moduleHostCount: {}
             }
         },
         computed: {
@@ -106,7 +117,19 @@
             this.getSetTemplateInfo()
             this.getDiffData()
         },
+        mounted () {
+            addResizeListener(this.$refs.instancesInfo, this.resizeHandler)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.instancesInfo, this.resizeHandler)
+        },
         methods: {
+            resizeHandler () {
+                this.$nextTick(() => {
+                    const scroller = this.$el.parentElement
+                    this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
+                })
+            },
             setBreadcrumbs () {
                 this.$store.commit('setBreadcrumbs', [{
                     label: this.$t('集群模板'),
@@ -127,6 +150,15 @@
                     label: this.$t('同步集群模板')
                 }])
             },
+            canSyncStatus () {
+                let status = true
+                this.$refs.setInstance.forEach(instance => {
+                    if (!instance.canSyncStatus && status) {
+                        status = false
+                    }
+                })
+                return status
+            },
             async getSetTemplateInfo () {
                 try {
                     const info = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
@@ -146,7 +178,7 @@
                         this.noInfo = true
                         return
                     }
-                    this.diffList = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
+                    const data = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
                         bizId: this.business,
                         setTemplateId: this.setTemplateId,
                         params: {
@@ -154,6 +186,21 @@
                         },
                         config: {
                             requestId: 'diffTemplateAndInstances'
+                        }
+                    })
+                    this.moduleHostCount = data.module_host_count || {}
+                    const list = data.difference || []
+                    this.diffList = list.sort((prev, next) => {
+                        const res = (module) => (module.diff_type === 'remove' && this.moduleHostCount[module.bk_module_id] > 0)
+                        const prevEixstHostList = prev.module_diffs.filter(module => res(module))
+                        const nextEixstHostList = next.module_diffs.filter(module => res(module))
+                        if ((prevEixstHostList.length && nextEixstHostList.length)
+                            || (!prevEixstHostList.length && !nextEixstHostList.length)) {
+                            return 0
+                        } else if (prevEixstHostList.length) {
+                            return -1
+                        } else {
+                            return 1
                         }
                     })
                     const changeList = this.diffList.filter(set => {
@@ -165,6 +212,7 @@
                 } catch (e) {
                     console.error(e)
                     this.noInfo = true
+                    this.moduleHostCount = {}
                 }
             },
             async handleConfirmSync () {
@@ -210,9 +258,9 @@
                 const moduleId = this.$route.params['moduleId']
                 if (moduleId) {
                     this.$router.replace({
-                        name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                        name: MENU_BUSINESS_HOST_AND_SERVICE,
                         query: {
-                            module: moduleId
+                            node: 'module-' + moduleId
                         }
                     })
                 } else {
@@ -234,7 +282,7 @@
 
 <style lang="scss" scoped>
     .sync-set-layout {
-        padding: 0 20px;
+        height: auto;
     }
     .no-content {
         position: absolute;
@@ -251,11 +299,17 @@
             padding: 20px 0 30px;
         }
     }
+    .main {
+        padding: 0 20px;
+    }
+    .title {
+        font-size: 14px;
+        color: #63656E;
+    }
     .tips {
         display: flex;
         align-items: center;
-        font-size: 14px;
-        color: #63656E;
+        font-size: 12px;
         .dot {
             display: inline-block;
             width: 10px;
@@ -263,13 +317,16 @@
             border-radius: 50%;
             background-color: #2DCB56;
             margin-right: 2px;
-            &.red {
-                background-color: #FF5656;
+            &.delete {
+                background-color: #C4C6CC;
             }
         }
     }
     .expand-all {
         color: #888991;
+        /deep/ .bk-checkbox-text {
+            font-size: 12px;
+        }
     }
     .instance-list {
         padding: 20px 0 0;
@@ -277,16 +334,37 @@
             margin-bottom: 10px;
         }
     }
-    .footer {
+    .options {
         position: sticky;
+        left: 0;
         bottom: 0;
         display: flex;
         align-items: center;
-        padding: 10px 0 20px;
+        padding: 10px 20px;
+        border-top: 1px solid transparent;
         background-color: #fafbfd;
+        &.is-sticky {
+            background-color: #ffffff;
+            border-top-color: #dcdee5;
+            z-index: 100;
+        }
         > span {
             color: #979BA5;
             font-size: 14px;
+        }
+        .text-btn {
+            @include inlineBlock;
+            height: 32px;
+            line-height: 32px;
+            outline: none;
+            padding: 0 15px;
+            text-align: center;
+            font-size: 14px;
+            background-color: #DCDEE5;
+            border-radius: 2px;
+            color: #FFFFFF;
+            min-width: 68px;
+            cursor: not-allowed;
         }
     }
 </style>

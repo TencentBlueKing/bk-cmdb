@@ -8,17 +8,15 @@
                         @click="handleMultipleEdit">
                         {{$t('编辑')}}
                     </bk-button>
-                    <span class="inline-block-middle mr10"
-                        v-cursor="{
-                            active: !$isAuthorized(transferAuth),
-                            auth: [transferAuth]
-                        }">
-                        <bk-button class="options-button" theme="default"
-                            :disabled="!table.checked.length || !$isAuthorized(transferAuth)"
+                    <cmdb-auth class="inline-block-middle mr10" :auth="transferAuthResources">
+                        <bk-button slot-scope="{ disabled }"
+                            class="options-button"
+                            theme="default"
+                            :disabled="!table.checked.length || disabled"
                             @click="transfer.show = true">
                             {{$t('转移')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <bk-button class="options-button mr10"
                         theme="default"
                         type="submit"
@@ -48,7 +46,7 @@
                     <i class="options-split"></i>
                     <bk-select class="options-collection"
                         v-model="scope"
-                        font-size="14"
+                        font-size="medium"
                         :clearable="false">
                         <bk-option id="all" :name="$t('全部主机')"></bk-option>
                         <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
@@ -60,7 +58,7 @@
                         v-if="showCollection"
                         ref="collectionSelector"
                         v-model="selectedCollection"
-                        font-size="14"
+                        font-size="medium"
                         :loading="$loading('searchCollection')"
                         :placeholder="$t('请选择收藏条件')"
                         @selected="handleCollectionSelect"
@@ -121,6 +119,7 @@
                     {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option')) | addUnit(getPropertyValue(column.objId, column.id, 'unit')) }}
                 </template>
             </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -267,7 +266,13 @@
                     },
                     defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
-                    exportUrl: `${window.API_HOST}hosts/export`
+                    exportUrl: `${window.API_HOST}hosts/export`,
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
                 filter: {
                     business: '',
@@ -303,7 +308,13 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapState('hosts', ['collectionList']),
+            ...mapState('hosts', ['collectionList', 'isHostSearch']),
+            transferAuthResources () {
+                const auth = this.transferAuth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
+            },
             customColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
@@ -315,7 +326,7 @@
             },
             filterProperties () {
                 const { module, set, host } = this.properties
-                const filterProperty = ['bk_host_innerip', 'bk_host_outerip', 'bk_cloud_id']
+                const filterProperty = ['bk_host_innerip', 'bk_host_outerip']
                 return {
                     host: host.filter(property => !filterProperty.includes(property.bk_property_id)),
                     module,
@@ -342,7 +353,8 @@
                 this.setTableHeader()
             },
             scope () {
-                this.handlePageChange(1)
+                if (this.isHostSearch) return
+                this.handlePageChange(1, true)
             }
         },
         async created () {
@@ -353,6 +365,9 @@
                 ])
                 if (this.showCollection) {
                     this.getCollectionList()
+                }
+                if (this.isHostSearch) {
+                    this.scope = 'all'
                 }
             } catch (e) {
                 console.log(e)
@@ -505,7 +520,7 @@
                 })
                 return text.join(',') || '--'
             },
-            getHostList () {
+            getHostList (event) {
                 this.searchHost({
                     params: this.injectScope({
                         ...this.filter.condition,
@@ -523,6 +538,11 @@
                 }).then(data => {
                     this.table.pagination.count = data.count
                     this.table.list = data.info
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+
                     return data
                 }).catch(e => {
                     this.table.checked = []
@@ -552,17 +572,17 @@
                 }
                 return params
             },
-            search (business, condition, resetPage = false) {
+            search (business, condition, resetPage = false, event = false) {
                 this.filter.business = business
                 this.filter.condition = condition
                 if (resetPage) {
                     this.table.pagination.current = 1
                 }
-                this.getHostList()
+                this.getHostList(event)
             },
-            handlePageChange (current) {
+            handlePageChange (current, event) {
                 this.table.pagination.current = current
-                this.getHostList()
+                this.getHostList(event)
             },
             handleSizeChange (limit) {
                 this.table.pagination.limit = limit

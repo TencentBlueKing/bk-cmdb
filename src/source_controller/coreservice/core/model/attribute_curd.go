@@ -84,9 +84,16 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 	return id, err
 }
 
-func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objID, propertyID, propertyName string) error {
+func (m *modelAttribute) checkUnique(ctx core.ContextParams, isCreate bool, objID, propertyID, propertyName string, meta metadata.Metadata) error {
 	cond := mongo.NewCondition()
 	cond = cond.Element(mongo.Field(common.BKObjIDField).Eq(objID))
+
+	isExist, bizID := meta.Label.Get(common.BKAppIDField)
+	if isExist {
+		_, metaCond := cond.Embed(metadata.BKMetadata)
+		_, labelCond := metaCond.Embed(metadata.BKLabel)
+		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	}
 
 	nameFieldCond := mongo.Field(common.BKPropertyNameField).Eq(propertyName)
 	if isCreate {
@@ -180,8 +187,8 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
-		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeTime,
-			common.FieldTypeUser, common.FieldTypeSingleAsst, common.FieldTypeMultiAsst, common.FieldTypeForeignKey, common.FieldTypeTimeZone, common.FieldTypeBool:
+		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
+			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
 		default:
 			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
@@ -281,7 +288,7 @@ func (m *modelAttribute) saveCheck(ctx core.ContextParams, attribute metadata.At
 	}
 
 	// check name duplicate
-	if err := m.checkUnique(ctx, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName); err != nil {
+	if err := m.checkUnique(ctx, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName, attribute.Metadata); err != nil {
 		blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 		return err
 	}
@@ -351,7 +358,7 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	}
 
 	for _, dbAttribute := range dbAttributeArr {
-		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName)
+		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName, attribute.Metadata)
 		if err != nil {
 			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
 			return changeRow, err

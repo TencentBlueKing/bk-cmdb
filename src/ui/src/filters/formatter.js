@@ -104,9 +104,12 @@ const formatterMap = {
     enum: enumeration
 }
 
-export default function formatter (value, type, options) {
+export default function formatter (value, property, options) {
+    const isPropertyObject = typeof property === 'object'
+    const type = isPropertyObject ? property.bk_property_type : property
+    const propertyOptions = isPropertyObject ? property.option : options
     if (formatterMap.hasOwnProperty(type)) {
-        return formatterMap[type](value, options)
+        return formatterMap[type](value, propertyOptions)
     }
     return value
 }

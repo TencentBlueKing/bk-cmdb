@@ -147,6 +147,7 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/findmany/meta/hosts/modules/search", s.GetHostModulesIDs, nil)
 
 	s.addAction(http.MethodPost, "/findmany/hosts/list_hosts", s.ListHosts, nil)
+	s.addAction(http.MethodPut, "/updatemany/hosts/cloudarea_field", s.UpdateHostCloudAreaField, nil)
 }
 
 func (s *coreService) initCloudSync() {
@@ -188,23 +189,6 @@ func (s *coreService) label() {
 	s.addAction(http.MethodDelete, "/deletemany/labels", s.RemoveLabels, nil)
 }
 
-func (s *coreService) privilege() {
-	s.addAction(http.MethodPost, "/privilege/group/{bk_supplier_account}", s.CreateUserGroup, nil)
-	s.addAction(http.MethodPut, "/privilege/group/{bk_supplier_account}/{group_id}", s.UpdateUserGroup, nil)
-	s.addAction(http.MethodDelete, "/privilege/group/{bk_supplier_account}/{group_id}", s.DeleteUserGroup, nil)
-	s.addAction(http.MethodPost, "/privilege/group/{bk_supplier_account}/search", s.SearchUserGroup, nil)
-
-	s.addAction(http.MethodPost, "/privilege/group/detail/{bk_supplier_account}/{group_id}", s.CreateUserGroupPrivi, nil)
-	s.addAction(http.MethodPut, "/privilege/group/detail/{bk_supplier_account}/{group_id}", s.UpdateUserGroupPrivi, nil)
-	s.addAction(http.MethodGet, "/privilege/group/detail/{bk_supplier_account}/{group_id}", s.GetUserGroupPrivi, nil)
-
-	s.addAction(http.MethodPost, "/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.CreateRolePri, nil)
-	s.addAction(http.MethodGet, "/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.GetRolePri, nil)
-	s.addAction(http.MethodPut, "/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.UpdateRolePri, nil)
-
-	s.addAction(http.MethodGet, "/system/{flag}/{bk_supplier_account}", s.GetSystemFlag, nil)
-}
-
 func (s *coreService) topographics() {
 	s.addAction(http.MethodPost, "/topographics/search", s.SearchTopoGraphics, nil)
 	s.addAction(http.MethodPost, "/topographics/update", s.UpdateTopoGraphics, nil)
@@ -227,7 +211,6 @@ func (s *coreService) initService() {
 	s.initOperation()
 	s.initCloudSync()
 	s.label()
-	s.privilege()
 	s.topographics()
 	s.initSetTemplate()
 }

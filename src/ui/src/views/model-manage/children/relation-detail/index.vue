@@ -104,7 +104,7 @@
         </div>
         <div class="btn-group">
             <bk-button theme="primary" :disabled="isReadOnly" :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
-                {{$t('确定')}}
+                {{isEdit ? $t('保存') : $t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
                 {{$t('取消')}}
@@ -154,7 +154,8 @@
                     bk_asst_id: '',
                     mapping: ''
                 },
-                specialModel: ['process', 'plat']
+                specialModel: ['process', 'plat'],
+                originRelationInfo: {}
             }
         },
         computed: {
@@ -216,6 +217,15 @@
                     }
                 })
                 return asstList
+            },
+            changedValues () {
+                const changedValues = {}
+                for (const propertyId in this.relationInfo) {
+                    if (JSON.stringify(this.relationInfo[propertyId]) !== JSON.stringify(this.originRelationInfo[propertyId])) {
+                        changedValues[propertyId] = this.relationInfo[propertyId]
+                    }
+                }
+                return changedValues
             }
         },
         watch: {
@@ -232,6 +242,9 @@
         },
         created () {
             this.initData()
+            this.$nextTick(() => {
+                this.originRelationInfo = this.$tools.clone(this.relationInfo)
+            })
         },
         methods: {
             ...mapActions('objectAssociation', [

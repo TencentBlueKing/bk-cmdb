@@ -2,58 +2,65 @@
     <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
         <label class="create-label fl">{{$t('添加主机')}}</label>
         <div class="create-hosts">
-            <bk-button class="select-host-button" theme="default"
-                @click="hostSelectorVisible = true">
-                <i class="bk-icon icon-plus"></i>
-                {{$t('添加主机')}}
-            </bk-button>
+            <div>
+                <bk-button class="select-host-button" theme="default"
+                    @click="handleSelectHost">
+                    <i class="bk-icon icon-plus"></i>
+                    {{$t('添加主机')}}
+                </bk-button>
+                <i18n class="select-host-count" path="已选择N台主机" v-show="hosts.length">
+                    <span place="count" class="count-number">{{hosts.length}}</span>
+                </i18n>
+            </div>
             <div class="create-tables">
                 <service-instance-table class="service-instance-table"
-                    v-for="(host, index) in hosts"
+                    v-for="(item, index) in hosts"
                     ref="serviceInstanceTable"
                     deletable
                     expanded
-                    :key="index"
+                    :key="item.host.bk_host_id"
                     :index="index"
-                    :id="host.bk_host_id"
-                    :name="host.bk_host_innerip"
+                    :id="item.host.bk_host_id"
+                    :name="item.host.bk_host_innerip"
                     :source-processes="sourceProcesses"
                     :templates="templates"
-                    :show-tips="showTips"
+                    :addible="!withTemplate"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
-                <div class="buttons">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                            auth: [$OPERATION.C_SERVICE_INSTANCE]
-                        }">
-                        <bk-button theme="primary"
-                            :disabled="!hosts.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
-                            @click="handleConfirm">
-                            {{$t('确定')}}
-                        </bk-button>
-                    </span>
-                    <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
-                </div>
+            </div>
+            <div class="buttons">
+                <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        :disabled="!hosts.length || disabled"
+                        @click="handleConfirm">
+                        {{$t('确定')}}
+                    </bk-button>
+                </cmdb-auth>
+                <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
             </div>
         </div>
-        <host-selector
-            :visible.sync="hostSelectorVisible"
-            :module-instance="moduleInstance"
-            @host-selected="handleSelectHost">
-        </host-selector>
+        <cmdb-dialog v-model="dialog.show" v-bind="dialog.props">
+            <component
+                :is="dialog.component"
+                :confirm-text="$t('确定')"
+                v-bind="dialog.componentProps"
+                @confirm="handleDialogConfirm"
+                @cancel="handleDialogCancel">
+            </component>
+        </cmdb-dialog>
     </div>
 </template>
 
 <script>
-    import hostSelector from '@/components/ui/selector/host.vue'
+    import HostSelector from '@/views/business-topology/host/host-selector.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'create-service-instance',
         components: {
-            hostSelector,
+            [HostSelector.name]: HostSelector,
             serviceInstanceTable
         },
         data () {
@@ -63,10 +70,23 @@
                 moduleInstance: {},
                 hosts: [],
                 templates: [],
-                showTips: false
+                dialog: {
+                    show: false,
+                    props: {
+                        width: 850,
+                        height: 460,
+                        showCloseIcon: false
+                    },
+                    component: null,
+                    componentProps: {}
+                },
+                request: {
+                    hostInfo: Symbol('hostInfo')
+                }
             }
         },
         computed: {
+            ...mapGetters('businessHost', ['getDefaultSearchCondition']),
             business () {
                 return this.$store.getters['objectBiz/bizId']
             },
@@ -101,19 +121,20 @@
                 }
             }
         },
-        created () {
+        async created () {
             this.$store.commit('setBreadcrumbs', [{
                 label: this.$t('服务拓扑'),
                 route: {
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.$route.params.moduleId
+                        node: 'module-' + this.$route.params.moduleId
                     }
                 }
             }, {
                 label: this.$route.query.title
             }])
-            this.getModuleInstance()
+            await this.getModuleInstance()
+            this.initSelectedHost()
         },
         methods: {
             async getModuleInstance () {
@@ -142,15 +163,47 @@
                     console.error(e)
                 }
             },
+            async initSelectedHost () {
+                try {
+                    const resources = this.$route.query.resources
+                    if (resources) {
+                        const hostIds = resources.split(',').map(id => Number(id))
+                        const result = await this.getHostInfo(hostIds)
+                        this.hosts = result.info
+                    }
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            getHostInfo (hostIds) {
+                const params = {
+                    bk_biz_id: this.business,
+                    ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
+                    page: {},
+                    condition: this.getDefaultSearchCondition()
+                }
+                const hostCondition = params.condition.find(target => target.bk_obj_id === 'host')
+                hostCondition.condition.push({
+                    field: 'bk_host_id',
+                    operator: '$in',
+                    value: hostIds
+                })
+                return this.$store.dispatch('hostSearch/searchHost', {
+                    params,
+                    config: {
+                        requestId: this.request.hostInfo
+                    }
+                })
+            },
             async getTemplate () {
                 try {
                     const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
                         params: this.$injectMetadata({
-                            service_template_id: this.moduleInstance.service_template_id
+                            service_template_id: this.moduleInstance.service_template_id,
+                            page: { sort: 'id' }
                         }, { injectBizId: true }),
                         config: {
-                            requestId: 'getBatchProcessTemplate',
-                            cancelPrevious: true
+                            requestId: 'getBatchProcessTemplate'
                         }
                     })
                     this.templates = data.info
@@ -158,9 +211,17 @@
                     console.error(e)
                 }
             },
-            handleSelectHost (checked, hosts) {
-                this.hosts.push(...hosts)
-                this.hostSelectorVisible = false
+            handleSelectHost () {
+                this.dialog.componentProps.exist = this.hosts
+                this.dialog.component = HostSelector.name
+                this.dialog.show = true
+            },
+            handleDialogConfirm (selected) {
+                this.hosts = selected
+                this.dialog.show = false
+            },
+            handleDialogCancel () {
+                this.dialog.show = false
             },
             handleDeleteInstance (index) {
                 this.hosts.splice(index, 1)
@@ -168,10 +229,6 @@
             async handleConfirm () {
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
-                    if (serviceInstanceTables.some(table => !table.processList.length)) {
-                        this.showTips = true
-                        return
-                    }
                     if (this.withTemplate) {
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
                             params: this.$injectMetadata({
@@ -180,9 +237,10 @@
                                 instances: serviceInstanceTables.map(table => {
                                     return {
                                         bk_host_id: table.id,
-                                        processes: table.processList.map(item => {
+                                        processes: table.processList.map((item, index) => {
                                             return {
-                                                process_info: item
+                                                process_info: item,
+                                                process_template_id: table.templates[index].id
                                             }
                                         })
                                     }
@@ -215,9 +273,9 @@
             },
             handleBackToModule () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.moduleId
+                        node: 'module-' + this.moduleId
                     }
                 })
             }
@@ -263,15 +321,21 @@
             font-size: 14px;
         }
     }
-    .create-tables {
-        height: calc(100% - 54px);
-        margin: 22px 0 0 0;
-        @include scrollbar-y;
-        .buttons {
-            padding: 18px 0 0 0;
+    .select-host-count {
+        color: $textColor;
+        .count-number {
+            font-weight: bold;
         }
     }
-    .service-instance-table {
-        margin-bottom: 12px;
+    .create-tables {
+        max-height: calc(100% - 120px);
+        margin: 22px 0 0 0;
+        @include scrollbar-y;
+    }
+    .service-instance-table +  .service-instance-table {
+        margin-top: 12px;
+    }
+    .buttons {
+        padding: 20px 0;
     }
 </style>

@@ -23,6 +23,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(NewZkCommand())
+}
+
 type zkConf struct {
 	path string
 }
@@ -38,29 +42,31 @@ func NewZkCommand() *cobra.Command {
 		},
 	}
 
-	lsCmd := &cobra.Command{
+	subCmds := make([]*cobra.Command, 0)
+
+	subCmds = append(subCmds, &cobra.Command{
 		Use:   "ls",
 		Short: "list children of specified zookeeper node",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runZkLsCmd(conf)
 		},
-	}
+	})
 
-	getCmd := &cobra.Command{
+	subCmds = append(subCmds, &cobra.Command{
 		Use:   "get",
 		Short: "get value of specified zookeeper node",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runZkGetCmd(conf)
 		},
-	}
+	})
 
-	delCmd := &cobra.Command{
+	subCmds = append(subCmds, &cobra.Command{
 		Use:   "del",
 		Short: "delete specified zookeeper node",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runZkDelCmd(conf)
 		},
-	}
+	})
 
 	value := new(string)
 	setCmd := &cobra.Command{
@@ -72,11 +78,11 @@ func NewZkCommand() *cobra.Command {
 	}
 	setCmd.Flags().StringVar(value, "value", "", "the value to be set")
 	_ = setCmd.MarkFlagRequired("value")
+	subCmds = append(subCmds, setCmd)
 
-	cmd.AddCommand(lsCmd)
-	cmd.AddCommand(getCmd)
-	cmd.AddCommand(delCmd)
-	cmd.AddCommand(setCmd)
+	for _, subCmd := range subCmds {
+		cmd.AddCommand(subCmd)
+	}
 	conf.addFlags(cmd)
 
 	return cmd
@@ -95,7 +101,7 @@ func newZkService(zkaddr string, path string) (*zkService, error) {
 	if path == "" {
 		return nil, errors.New("zk-path must be set")
 	}
-	service, err := config.NewService(zkaddr, "")
+	service, err := config.NewZkService(zkaddr)
 	if err != nil {
 		return nil, err
 	}

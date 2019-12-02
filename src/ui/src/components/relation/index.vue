@@ -2,19 +2,17 @@
     <div class="relation-layout">
         <div class="relation-options clearfix">
             <div class="fl">
-                <span class="inline-block-middle"
-                    v-cursor="{
-                        active: !$isAuthorized(auth),
-                        auth: [auth]
-                    }">
-                    <bk-button class="options-button options-button-update" theme="primary"
-                        :disabled="!hasRelation || !$isAuthorized(auth)"
+                <cmdb-auth class="inline-block-middle" :auth="authResources">
+                    <bk-button slot-scope="{ disabled }"
+                        class="options-button options-button-update"
+                        theme="primary"
+                        :disabled="!hasRelation || disabled"
                         :class="{ active: activeComponent === 'cmdbRelationUpdate' }"
                         @click="handleShowUpdate">
                         {{$t('关联管理')}}
                         <i class="bk-icon icon-angle-down"></i>
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </div>
             <div class="fr">
                 <bk-button theme="default" class="options-full-screen"
@@ -81,6 +79,12 @@
                     'bk_inst_id': this.inst[idKey],
                     'bk_inst_name': this.inst[nameKey]
                 }
+            },
+            authResources () {
+                const auth = this.auth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
             }
         },
         created () {

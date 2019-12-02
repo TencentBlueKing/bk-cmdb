@@ -5,7 +5,6 @@ import request from './modules/request.js'
 import index from './modules/view/index.js'
 import hostDetails from './modules/view/host-details.js'
 import serviceProcess from './modules/view/service-process.js'
-import businessTopology from './modules/view/business-topology.js'
 import businessSync from './modules/view/business-sync.js'
 import hosts from './modules/view/hosts.js'
 import setFeatures from './modules/view/set-features.js'
@@ -53,6 +52,9 @@ import instanceLabel from './modules/api/instance-label.js'
 import fullTextSearch from './modules/api/full-text-search.js'
 import setSync from './modules/api/set-sync.js'
 import setTemplate from './modules/api/set-template.js'
+import cloudarea from './modules/api/cloudarea.js'
+
+import businessHost from './modules/view/business-host.js'
 
 Vue.use(Vuex)
 
@@ -62,7 +64,6 @@ export default new Vuex.Store({
         index,
         hostDetails,
         serviceProcess,
-        businessTopology,
         businessSync,
         hosts,
         setFeatures,
@@ -110,6 +111,8 @@ export default new Vuex.Store({
         instanceLabel,
         fullTextSearch,
         setSync,
-        setTemplate
+        setTemplate,
+        businessHost,
+        cloudarea
     }
 })

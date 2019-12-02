@@ -784,7 +784,7 @@ func (lgc *Logics) AddCloudHosts(ctx context.Context, newCloudHost []mapstr.MapS
 
 	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).Data()
 	cond[common.BKDefaultField] = common.DefaultResModuleFlag
-	moduleID, err := lgc.GetResoulePoolModuleID(ctx, cond)
+	moduleID, err := lgc.GetResourcePoolModuleID(ctx, cond)
 	if err != nil {
 		blog.Errorf("add host, but get module id failed, err: %s, rid: %s", err.Error(), lgc.rid)
 		return err

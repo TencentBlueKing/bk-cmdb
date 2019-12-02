@@ -198,14 +198,18 @@ const (
 	CCErrGetNoAuthSkipURLFailed  = 1199072
 
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
-	CCErrCommValExceedMaxFailed                              = 1199073
+	CCErrCommValExceedMaxFailed          = 1199073
 	CCErrCommGlobalCCErrorNotInitialized = 1199074
-	
+
 	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
-	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199076
+	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
+	CCErrCommModifyFieldForbidden                            = 1199077
+	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199078
 
+	CCErrParseAttrOptionListFailed = 1199080
 
-	CCErrCommModifyFieldForbidden = 1199077
+	// one argument: maxValue
+	CCErrExceedMaxOperationRecordsAtOnce = 1199077
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -386,14 +390,6 @@ const (
 	CCErrTopoMainlineDeleteFailed                             = 1101138
 	CCErrTopoMainlineSelectFailed                             = 1101139
 	CCErrTopoTopoSelectFailed                                 = 1101140
-	CCErrTopoUserGroupCreateFailed                            = 1101141
-	CCErrTopoUserGroupDeleteFailed                            = 1101142
-	CCErrTopoUserGroupUpdateFailed                            = 1101143
-	CCErrTopoUserGroupSelectFailed                            = 1101144
-	CCErrTopoUserGroupPrivilegeUpdateFailed                   = 1101145
-	CCErrTopoUserGroupPrivilegeSelectFailed                   = 1101146
-	CCErrTopoUserPrivilegeSelectFailed                        = 1101147
-	CCErrTopoRolePrivilegeCreateFailed                        = 1101148
 	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1101149
 	CCErrHostNotAllowedToMutiBiz                              = 1101150
 	CCErrTopoGraphicsSearchFailed                             = 1101151
@@ -438,13 +434,15 @@ const (
 	CCErrorTopoUpdateModuleFromTplServiceCategoryForbidden = 1101090
 	CCErrorTopoUpdateModuleFromTplNameForbidden            = 1101091
 	CCErrTopoCanNotAddRequiredAttributeForMainlineModel    = 1101092
-	CCErrorTopoObjectInstanceObjIDFieldConflictWithUrl     = 1101093
+	CCErrorTopoObjectInstanceObjIDFieldConflictWithURL     = 1101093
+	CCErrTopoImportMainlineForbidden                       = 1101094
 
-	CCErrorTopoModuleNameDuplicated    = 1101094
 	CCErrorTopoSyncModuleTaskFailed    = 1101095
 	CCErrorTopoSyncModuleTaskIsRunning = 1101096
 
 	CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate = 1101097
+	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
+	CCErrorTopoModuleNameDuplicated                             = 1101099
 
 	// object controller 1102XXX
 
@@ -580,6 +578,8 @@ const (
 
 	CCErrProcUnbindModuleServiceTemplateDisabled = 1108042
 	CCErrProcGetServiceCategoryFailed            = 1108043
+
+	CCErrHostTransferFinalModuleConflict = 1108044
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
@@ -755,27 +755,6 @@ const (
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
-
-	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
-	CCErrAPIServerV2APPNameLenErr = 1170001
-
-	// CCErrAPIServerV2DirectErr  display error
-	CCErrAPIServerV2DirectErr = 1170002
-
-	// CCErrAPIServerV2SetNameLenErr  set name must be < 24 len
-	CCErrAPIServerV2SetNameLenErr = 1170003
-
-	// CCErrAPIServerV2MultiModuleIDErr  single module id  is int
-	CCErrAPIServerV2MultiModuleIDErr = 1170004
-
-	// CCErrAPIServerV2MultiSetIDErr  single set id is int
-	CCErrAPIServerV2MultiSetIDErr = 1170005
-
-	// CCErrAPIServerV2OSTypeErr osType must be linux or windows
-	CCErrAPIServerV2OSTypeErr = 1170006
-
-	// CCErrAPIServerV2HostModuleContainDefaultModuleErr  translate host to multiple module not contain default module
-	CCErrAPIServerV2HostModuleContainDefaultModuleErr = 1170007
 
 	// synchronize_server 1114xxx
 

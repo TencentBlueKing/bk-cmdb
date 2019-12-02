@@ -1,51 +1,58 @@
 <template>
-    <div class="topology-tree-wrapper">
-        <bk-big-tree class="topology-tree"
-            ref="tree"
-            v-bkloading="{
-                isLoading: $loading(['getTopologyData', 'getMainLine'])
+    <section class="tree-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+        <bk-input class="tree-search"
+            clearable
+            right-icon="bk-icon icon-search"
+            :placeholder="$t('请输入关键词')"
+            v-model="filter">
+        </bk-input>
+        <bk-big-tree ref="tree" class="topology-tree"
+            selectable
+            :expand-on-click="false"
+            :style="{
+                height: $APP.height - 160 + 'px'
             }"
             :options="{
-                idKey: idGenerator,
+                idKey: getNodeId,
                 nameKey: 'bk_inst_name',
                 childrenKey: 'child'
             }"
-            :expand-on-click="false"
-            selectable
-            expand-icon="bk-icon icon-down-shape"
-            collapse-icon="bk-icon icon-right-shape"
             @select-change="handleSelectChange">
-            <div class="node-info clearfix" :class="{ 'is-selected': node.selected }" slot-scope="{ node, data }">
-                <i class="node-model-icon fl"
-                    :class="{
-                        'is-selected': node.selected,
-                        'is-template': isTemplate(node),
-                        'is-leaf-icon': node.isLeaf
-                    }">
-                    {{modelIconMap[data.bk_obj_id]}}
+            <div :class="['node-info clearfix', { 'is-selected': node.selected }]" slot-scope="{ node, data }">
+                <i class="internal-node-icon fl"
+                    v-if="data.default !== 0"
+                    :class="getInternalNodeClass(node, data)">
                 </i>
-                <span v-if="showCreate(node, data)"
+                <i v-else
+                    :class="['node-icon fl', { 'is-selected': node.selected, 'is-template': isTemplate(node) }]">
+                    {{data.bk_obj_name[0]}}
+                </i>
+                <cmdb-auth v-if="showCreate(node, data)"
                     class="info-create-trigger fr"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_TOPO),
-                        auth: [$OPERATION.C_TOPO]
-                    }">
-                    <i v-if="data.set_template_id"
-                        class="node-button set-template-button"
-                        v-bk-tooltips="{ content: $t('模板集群添加模块提示'), placement: 'top' }">
-                        {{$t('新建')}}
-                    </i>
-                    <bk-button v-else class="node-button"
-                        theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_TOPO)"
-                        @click.stop="showCreateDialog(node)">
-                        {{$t('新建')}}
-                    </bk-button>
+                    :auth="$authResources({ type: $OPERATION.C_TOPO })">
+                    <template slot-scope="{ disabled }">
+                        <i v-if="isBlueKing"
+                            class="node-button disabled-node-button"
+                            v-bk-tooltips="{ content: $t('蓝鲸业务拓扑节点提示'), placement: 'top' }">
+                            {{$t('新建')}}
+                        </i>
+                        <i v-else-if="data.set_template_id"
+                            class="node-button disabled-node-button"
+                            v-bk-tooltips="{ content: $t('模板集群添加模块提示'), placement: 'top' }">
+                            {{$t('新建')}}
+                        </i>
+                        <bk-button v-else class="node-button"
+                            theme="primary"
+                            :disabled="disabled"
+                            @click.stop="showCreateDialog(node)">
+                            {{$t('新建')}}
+                        </bk-button>
+                    </template>
+                </cmdb-auth>
+                <span :class="['node-count fr', { 'is-selected': node.selected }]">
+                    {{getNodeCount(data)}}
                 </span>
-                <span class="instance-num fr">{{data.service_instance_count}}</span>
-                <div class="info-content">
-                    <span class="node-name">{{data.bk_inst_name}}</span>
-                </div>
+                <span class="node-name">{{node.name}}</span>
             </div>
         </bk-big-tree>
         <bk-dialog class="bk-dialog-no-padding"
@@ -79,24 +86,44 @@
                 </create-node>
             </template>
         </bk-dialog>
-    </div>
+    </section>
 </template>
 
 <script>
     import { mapGetters } from 'vuex'
-    import createNode from './create-node.vue'
-    import createSet from './create-set.vue'
-    import createModule from './create-module.vue'
+    import debounce from 'lodash.debounce'
+    import CreateNode from './create-node.vue'
+    import CreateSet from './create-set.vue'
+    import CreateModule from './create-module.vue'
+    import Bus from '@/utils/bus'
     export default {
         components: {
-            createNode,
-            createSet,
-            createModule
+            CreateNode,
+            CreateSet,
+            CreateModule
+        },
+        props: {
+            active: {
+                type: String,
+                required: true
+            }
         },
         data () {
             return {
-                treeData: [],
-                mainLine: [],
+                isBlueKing: false,
+                filter: '',
+                handleFilter: () => ({}),
+                nodeCountType: 'host_count',
+                nodeIconMap: {
+                    1: 'icon-cc-host-free-pool',
+                    2: 'icon-cc-host-breakdown',
+                    default: 'icon-cc-host-free-pool'
+                },
+                request: {
+                    instance: Symbol('instance'),
+                    internal: Symbol('internal'),
+                    property: Symbol('property')
+                },
                 createInfo: {
                     show: false,
                     visible: false,
@@ -107,111 +134,126 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'isAdminView']),
-            business () {
-                return this.$store.state.objectBiz.bizId
+            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('businessHost', ['topologyModels', 'propertyMap'])
+        },
+        watch: {
+            filter (value) {
+                this.handleFilter()
             },
-            propertyMap () {
-                return this.$store.state.businessTopology.propertyMap
-            },
-            mainLineModels () {
-                const models = this.$store.getters['objectModelClassify/models']
-                return this.mainLine.map(data => models.find(model => model.bk_obj_id === data.bk_obj_id))
-            },
-            modelIconMap () {
-                const map = {}
-                this.mainLineModels.forEach(model => {
-                    map[model.bk_obj_id] = model.bk_obj_name[0]
-                })
-                return map
-            },
-            isBlueKing () {
-                return (this.treeData[0] || {}).bk_inst_name === '蓝鲸'
+            active (value) {
+                const map = {
+                    hostList: 'host_count',
+                    serviceInstance: 'service_instance_count'
+                }
+                if (Object.keys(map).includes(value)) {
+                    this.nodeCountType = map[value]
+                }
             }
         },
-        async created () {
-            const [data, mainLine] = await Promise.all([
-                this.getTopologyData(),
-                this.getMainLine()
-            ])
-            this.getTopologyInstanceNum()
-            this.treeData = data
-            this.mainLine = mainLine
-            this.$nextTick(() => {
-                this.setDefaultState(data)
-            })
+        created () {
+            Bus.$on('refresh-count', this.refreshCount)
+            this.handleFilter = debounce(() => {
+                this.$refs.tree.filter(this.filter)
+            }, 300)
+            this.initTopology()
+        },
+        beforeDestroy () {
+            Bus.$off('refresh-count', this.refreshCount)
         },
         methods: {
-            setDefaultState (data) {
-                this.$refs.tree.setData(data)
-                const businessData = data[0]
-                const businessNodeId = this.idGenerator(businessData)
-                const queryModule = parseInt(this.$route.query.module)
-                let defaultNodeId = businessNodeId
-                if (!isNaN(queryModule)) {
-                    const nodeId = `module_${queryModule}`
-                    const node = this.$refs.tree.getNodeById(nodeId)
-                    if (node) {
-                        defaultNodeId = nodeId
+            async initTopology () {
+                try {
+                    const [topology, internal] = await Promise.all([
+                        this.getInstanceTopology(),
+                        this.getInternalTopology()
+                    ])
+                    const root = topology[0] || {}
+                    const children = root.child || []
+                    const idlePool = {
+                        bk_obj_id: 'set',
+                        bk_inst_id: internal.bk_set_id,
+                        bk_inst_name: internal.bk_set_name,
+                        host_count: internal.host_count,
+                        service_instance_count: internal.service_instance_count,
+                        default: internal.default,
+                        is_idle_set: true,
+                        child: (internal.module || []).map(module => ({
+                            bk_obj_id: 'module',
+                            bk_inst_id: module.bk_module_id,
+                            bk_inst_name: module.bk_module_name,
+                            host_count: module.host_count,
+                            service_instance_count: module.service_instance_count,
+                            default: module.default
+                        }))
                     }
-                } else if (Array.isArray(businessData.child) && businessData.child.length) {
-                    defaultNodeId = this.idGenerator(businessData.child[0])
+                    children.unshift(idlePool)
+                    this.isBlueKing = root.bk_inst_name === '蓝鲸'
+                    this.$refs.tree.setData(topology)
+                    this.setDefaultState()
+                } catch (e) {
+                    console.error(e)
                 }
-                this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
+            },
+            setDefaultState () {
+                const businessNodeId = this.$refs.tree.nodes[0].id
+                const queryNodeId = this.$route.query.node
+                let defaultNodeId = businessNodeId
+                if (queryNodeId) {
+                    const node = this.$refs.tree.getNodeById(queryNodeId)
+                    defaultNodeId = node ? queryNodeId : businessNodeId
+                }
                 this.$refs.tree.setExpanded(defaultNodeId)
+                this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
             },
-            getTopologyData () {
-                return this.$store.dispatch('objectMainLineModule/getInstTopo', {
-                    bizId: this.business,
+            getInstanceTopology () {
+                return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
+                    bizId: this.bizId,
                     config: {
-                        requestId: 'getTopologyData'
+                        requestId: this.request.instance
                     }
                 })
             },
-            getMainLine () {
-                return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
+            getInternalTopology () {
+                return this.$store.dispatch('objectMainLineModule/getInternalTopo', {
+                    bizId: this.bizId,
                     config: {
-                        requestId: 'getMainLine'
+                        requestId: this.request.internal
                     }
                 })
             },
-            getTopologyInstanceNum () {
-                this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
-                    bizId: this.business,
-                    config: {
-                        requestId: 'getTopologyInstanceNum'
-                    }
-                }).then(data => {
-                    this.setNodeNum(data)
-                })
+            getNodeId (data) {
+                return `${data.bk_obj_id}-${data.bk_inst_id}`
             },
-            setNodeNum (data) {
-                data.forEach((datum, index) => {
-                    const id = this.idGenerator(datum)
-                    const node = this.$refs.tree.getNodeById(id)
-                    if (node) {
-                        const num = datum.service_instance_count
-                        datum.service_instance_count = num > 999 ? '999+' : num || 0
-                        node.data = datum
-                    }
-                    const child = datum.child
-                    if (Array.isArray(child) && child.length) {
-                        this.setNodeNum(child)
-                    }
-                })
+            getInternalNodeClass (node, data) {
+                const clazz = []
+                clazz.push(this.nodeIconMap[data.default] || this.nodeIconMap.default)
+                if (node.selected) {
+                    clazz.push('is-selected')
+                }
+                return clazz
             },
-            idGenerator (data) {
-                return `${data.bk_obj_id}_${data.bk_inst_id}`
+            getNodeCount (data) {
+                const count = data[this.nodeCountType]
+                if (typeof count === 'number') {
+                    return count > 999 ? '999+' : count
+                }
+                return 0
+            },
+            handleSelectChange (node) {
+                this.$store.commit('businessHost/setSelectedNode', node)
+                Bus.$emit('toggle-host-filter', false)
+                if (!node.expanded) {
+                    this.$refs.tree.setExpanded(node.id)
+                }
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                return !isModule && !this.isBlueKing
-            },
-            isTemplate (node) {
-                return node.data.service_template_id || node.data.set_template_id
+                const isIdleSet = data.is_idle_set
+                return !isModule && !isIdleSet
             },
             async showCreateDialog (node) {
-                const nodeModel = this.mainLine.find(data => data.bk_obj_id === node.data.bk_obj_id)
+                const nodeModel = this.topologyModels.find(data => data.bk_obj_id === node.data.bk_obj_id)
                 const nextModelId = nodeModel.bk_next_obj
                 this.createInfo.nextModelId = nextModelId
                 this.createInfo.parentNode = node
@@ -227,11 +269,11 @@
                             bk_supplier_account: this.$store.getters.supplierAccount
                         }),
                         config: {
-                            requestId: 'getNextModelProperties'
+                            requestId: this.request.property
                         }
                     })
                     if (!['set', 'module'].includes(nextModelId)) {
-                        this.$store.commit('businessTopology/setProperties', {
+                        this.$store.commit('businessHost/setProperties', {
                             id: nextModelId,
                             properties: properties
                         })
@@ -253,11 +295,11 @@
                     const parentNode = this.createInfo.parentNode
                     const formData = this.$injectMetadata({
                         ...value,
-                        'bk_biz_id': this.business,
+                        'bk_biz_id': this.bizId,
                         'bk_parent_id': parentNode.data.bk_inst_id
                     })
                     const nextModelId = this.createInfo.nextModelId
-                    const nextModel = this.mainLineModels.find(model => model.bk_obj_id === nextModelId)
+                    const nextModel = this.topologyModels.find(model => model.bk_obj_id === nextModelId)
                     const handlerMap = {
                         set: this.createSet,
                         module: this.createModule
@@ -268,13 +310,14 @@
                         child: [],
                         bk_obj_name: nextModel.bk_obj_name,
                         bk_obj_id: nextModel.bk_obj_id,
+                        host_count: 0,
                         service_instance_count: 0,
                         service_template_id: value.service_template_id,
                         ...data
                     }
-                    this.$refs.tree.addNode(nodeData, parentNode.id, 0)
+                    this.$refs.tree.addNode(nodeData, parentNode.id, parentNode.data.bk_obj_id === 'biz' ? 1 : 0)
                     this.$success(this.$t('新建成功'))
-                    this.handleCancelCreateNode()
+                    this.createInfo.show = false
                 } catch (e) {
                     console.error(e)
                 }
@@ -282,29 +325,31 @@
             async handleCreateSetNode (value) {
                 try {
                     const parentNode = this.createInfo.parentNode
-                    const nextModel = this.mainLineModels.find(model => model.bk_obj_id === 'set')
+                    const nextModel = this.topologyModels.find(model => model.bk_obj_id === 'set')
                     const formData = (value.sets || []).map(set => {
                         return this.$injectMetadata({
                             ...set,
-                            'bk_biz_id': this.business,
+                            'bk_biz_id': this.bizId,
                             'bk_parent_id': parentNode.data.bk_inst_id
                         })
                     })
                     const data = await this.createSet(formData)
-                    data && data.forEach(set => {
+                    const insertBasic = parentNode.data.bk_obj_id === 'biz' ? 1 : 0
+                    data && data.forEach((set, index) => {
                         if (set.data) {
                             const nodeData = {
                                 default: 0,
                                 child: [],
                                 bk_obj_name: nextModel.bk_obj_name,
                                 bk_obj_id: nextModel.bk_obj_id,
+                                host_count: 0,
                                 service_instance_count: 0,
                                 service_template_id: value.service_template_id,
                                 bk_inst_id: set.data.bk_set_id,
                                 bk_inst_name: set.data.bk_set_name,
                                 set_template_id: value.set_template_id
                             }
-                            this.$refs.tree.addNode(nodeData, parentNode.id, 0)
+                            this.$refs.tree.addNode(nodeData, parentNode.id, insertBasic + index)
                             if (value.set_template_id) {
                                 this.addModulesInSetTemplate(nodeData, set.data.bk_set_id)
                             }
@@ -313,28 +358,29 @@
                         }
                     })
                     this.$success(this.$t('新建成功'))
-                    this.handleCancelCreateNode()
+                    this.createInfo.show = false
                 } catch (e) {
                     console.error(e)
                 }
             },
             async addModulesInSetTemplate (parentNodeData, id) {
                 const modules = await this.$store.dispatch('objectModule/searchModule', {
-                    bizId: this.business,
+                    bizId: this.bizId,
                     setId: id,
                     params: this.$injectMetadata(),
                     config: {
                         requestId: 'searchModule'
                     }
                 })
-                const parentNodeId = this.idGenerator(parentNodeData)
-                const nextModel = this.mainLineModels.find(model => model.bk_obj_id === 'module')
+                const parentNodeId = this.getNodeId(parentNodeData)
+                const nextModel = this.topologyModels.find(model => model.bk_obj_id === 'module')
                 modules.info && modules.info.forEach(_module => {
                     const nodeData = {
                         default: 0,
                         child: [],
                         bk_obj_name: nextModel.bk_obj_name,
                         bk_obj_id: nextModel.bk_obj_id,
+                        host_count: 0,
                         service_instance_count: 0,
                         service_template_id: _module.service_template_id,
                         bk_inst_id: _module.bk_module_id,
@@ -345,7 +391,7 @@
             },
             async createSet (value) {
                 const data = await this.$store.dispatch('objectSet/createSetBatch', {
-                    bizId: this.business,
+                    bizId: this.bizId,
                     params: {
                         sets: value.map(set => {
                             return {
@@ -359,7 +405,7 @@
             },
             async createModule (value) {
                 const data = await this.$store.dispatch('objectModule/createModule', {
-                    bizId: this.business,
+                    bizId: this.bizId,
                     setId: this.createInfo.parentNode.data.bk_inst_id,
                     params: this.$injectMetadata({
                         ...value,
@@ -381,27 +427,97 @@
                     bk_inst_name: data.bk_inst_name
                 }
             },
-            handleSelectChange (node) {
-                this.$store.commit('businessTopology/setSelectedNode', node)
+            isTemplate (node) {
+                return node.data.service_template_id || node.data.set_template_id
+            },
+            refreshCount ({ type, hosts, target }) {
+                hosts.forEach(data => {
+                    data.module.forEach(module => {
+                        if (!target || target.data.bk_inst_id !== module.bk_module_id) {
+                            const node = this.$refs.tree.getNodeById(`module-${module.bk_module_id}`)
+                            const nodes = node ? [node, ...node.parents] : []
+                            nodes.forEach(exist => {
+                                exist.data[type]--
+                            })
+                        }
+                    })
+                })
+                if (target) {
+                    const targetNode = this.$refs.tree.getNodeById(`module-${target.data.bk_inst_id}`)
+                    if (targetNode) {
+                        [targetNode, ...targetNode.parents].forEach(exist => {
+                            exist.data[type] = exist.data[type] + hosts.length
+                        })
+                    }
+                }
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .topology-tree-wrapper {
-        height: 100%;
-        /deep/ .bk-big-tree-node {
-            .node-options {
-                .bk-icon {
-                    font-size: 16px;
-                    margin: 0;
-                    line-height: 38px;
-                    color: #c4c6cc;
-                }
+    .tree-layout {
+        overflow: hidden;
+    }
+    .tree-search {
+        display: block;
+        width: auto;
+        margin: 0 20px;
+    }
+    .topology-tree {
+        padding: 10px 0;
+        margin-right: 4px;
+        @include scrollbar-y(6px);
+        .node-icon {
+            display: block;
+            width: 20px;
+            height: 20px;
+            margin: 8px 4px 8px 0;
+            vertical-align: middle;
+            border-radius: 50%;
+            background-color: #C4C6CC;
+            line-height: 1.666667;
+            text-align: center;
+            font-size: 12px;
+            font-style: normal;
+            color: #FFF;
+            &.is-template {
+                background-color: #97aed6;
             }
-            &.is-selected .node-options .bk-icon{
-                color: #3a84ff;
+            &.is-selected {
+                background-color: #3A84FF;
+            }
+        }
+        .node-name {
+            display: block;
+            height: 36px;
+            line-height: 36px;
+            overflow: hidden;
+            @include ellipsis;
+        }
+        .node-count {
+            padding: 0 5px;
+            margin: 9px 20px 9px 4px;
+            height: 18px;
+            line-height: 17px;
+            border-radius: 2px;
+            background-color: #f0f1f5;
+            color: #979ba5;
+            font-size: 12px;
+            text-align: center;
+            &.is-selected {
+                background-color: #a2c5fd;
+                color: #fff;
+            }
+        }
+        .internal-node-icon{
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            margin: 8px 4px 8px 0;
+            &.is-selected {
+                color: #FFB400;
             }
         }
     }
@@ -410,30 +526,9 @@
         &.is-selected {
             .info-create-trigger {
                 display: inline-block;
-                & ~ .instance-num {
+                & ~ .node-count {
                     display: none;
                 }
-            }
-        }
-        .node-model-icon {
-            width: 22px;
-            height: 22px;
-            line-height: 21px;
-            text-align: center;
-            font-style: normal;
-            font-size: 12px;
-            margin: 8px 8px 0 6px;
-            border-radius: 50%;
-            background-color: #c4c6cc;
-            color: #fff;
-            &.is-template {
-                background-color: #97aed6;
-            }
-            &.is-selected {
-                background-color: #3a84ff;
-            }
-            &.is-leaf-icon {
-                margin-left: 2px;
             }
         }
         .info-create-trigger {
@@ -448,43 +543,14 @@
             border-radius: 4px;
             font-size: 12px;
             min-width: auto;
-            &.set-template-button {
+            &.disabled-node-button {
                 @include inlineBlock;
+                line-height: 24px;
                 font-style: normal;
                 background-color: #dcdee5;
                 color: #ffffff;
                 outline: none;
                 cursor: not-allowed;
-            }
-        }
-        .instance-num {
-            margin: 9px 20px 9px 5px;
-            padding: 0 5px;
-            height: 18px;
-            line-height: 17px;
-            border-radius: 2px;
-            background-color: #f0f1f5;
-            color: #979ba5;
-            font-size: 12px;
-            text-align: center;
-        }
-        .info-content {
-            display: flex;
-            align-items: center;
-            line-height: 36px;
-            font-size: 14px;
-            .node-name {
-                @include ellipsis;
-                margin-right: 8px;
-            }
-        }
-    }
-    .topology-tree {
-        height: 100%;
-        .bk-big-tree-node.is-selected {
-            .instance-num {
-                background-color: #a2c5fd;
-                color: #fff;
             }
         }
     }

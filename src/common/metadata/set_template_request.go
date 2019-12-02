@@ -122,6 +122,11 @@ func (sd *SetDiff) UpdateNeedSyncField() {
 	}
 }
 
+type SetTplDiffResult struct {
+	Difference      []SetDiff       `json:"difference"`
+	ModuleHostCount map[int64]int64 `json:"module_host_count"`
+}
+
 type SyncModuleTask struct {
 	Header      http.Header                `json:"header"`
 	Set         SetInst                    `json:"set"`
@@ -135,6 +140,11 @@ var (
 	ModuleDiffChanged   = "changed"
 	ModuleDiffUnchanged = "unchanged"
 )
+
+type DeleteSetTemplateSyncStatusOption struct {
+	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
+	BizID  int64   `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
+}
 
 type ListSetTemplateSyncStatusOption struct {
 	BizID         int64      `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`

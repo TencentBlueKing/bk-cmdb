@@ -1,22 +1,43 @@
 <template>
     <div class="template-layout">
+        <cmdb-tips v-if="featureTips"
+            class="tips-layout"
+            :tips-style="{
+                overflow: 'unset',
+                fontSize: '12px',
+                height: 'auto',
+                minHeight: '32px',
+                lineHeight: 'normal'
+            }"
+            :icon-style="{
+                color: '#3a84ff',
+                fontSize: '16px',
+                lineHeight: 'normal'
+            }">
+            <div class="tips-main">
+                <i18n path="集群模板功能提示" class="tips-text">
+                    <a class="tips-link" href="javascript:void(0)" @click="handleGoBusinessTopo" place="topo">{{$t('业务拓扑')}}</a>
+                    <a class="tips-link" href="javascript:void(0)" @click="handleGoServiceTemplate" place="template">{{$t('服务模板')}}</a>
+                </i18n>
+                <i class="icon-cc-tips-close fr" @click="handleCloseTips"></i>
+            </div>
+        </cmdb-tips>
         <div class="options clearfix">
             <div class="fl">
-                <span class="fl" v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_SET_TEMPLATE),
-                    auth: [$OPERATION.C_SET_TEMPLATE]
-                }">
-                    <bk-button
+                <cmdb-auth class="fl" :auth="$authResources({ type: $OPERATION.C_SET_TEMPLATE })">
+                    <bk-button slot-scope="{ disabled }"
                         theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_SET_TEMPLATE)"
+                        :disabled="disabled"
                         @click="handleCreate"
                     >
                         {{$t('新建')}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </div>
             <div class="fr">
-                <bk-input :placeholder="$t('模板名称搜索')"
+                <bk-input :style="{ width: '210px' }"
+                    :placeholder="$t('请输入xx', { name: $t('模板名称') })"
+                    clearable
                     right-icon="icon-search"
                     v-model="searchName"
                     @enter="handleFilterTemplate">
@@ -37,69 +58,68 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" width="180">
                 <template slot-scope="{ row }">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SET_TEMPLATE),
-                            auth: [$OPERATION.U_SET_TEMPLATE]
-                        }">
-                        <bk-button
+                    <cmdb-auth :auth="$authResources({
+                        resource_id: row.id,
+                        type: $OPERATION.U_SET_TEMPLATE
+                    })">
+                        <bk-button slot-scope="{ disabled }"
                             text
-                            :disabled="!$isAuthorized($OPERATION.U_SET_TEMPLATE)"
+                            :disabled="disabled"
                             @click="handleEdit(row)"
                         >
                             {{$t('编辑')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                     <span class="text-primary ml15"
                         style="color: #dcdee5 !important; cursor: not-allowed;"
-                        v-if="row.set_instance_count && $isAuthorized($OPERATION.D_SET_TEMPLATE)"
+                        v-if="row.set_instance_count"
                         v-bk-tooltips.top="$t('不可删除')">
                         {{$t('删除')}}
                     </span>
-                    <span v-else
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_SET_TEMPLATE),
-                            auth: [$OPERATION.D_SET_TEMPLATE]
-                        }">
-                        <bk-button text class="ml15"
-                            :disabled="!$isAuthorized($OPERATION.D_SET_TEMPLATE)"
+                    <cmdb-auth v-else
+                        :auth="$authResources({
+                            resource_id: row.id,
+                            type: $OPERATION.D_SET_TEMPLATE
+                        })">
+                        <bk-button slot-scope="{ disabled }"
+                            text
+                            class="ml15"
+                            :disabled="disabled"
                             @click="handleDelete(row)"
                         >
                             {{$t('删除')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
-            <template slot="empty">
-                <i class="bk-table-empty-icon bk-icon icon-empty"></i>
-                <i18n path="空集群模板提示" tag="div">
-                    <span
-                        place="link"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_SET_TEMPLATE),
-                            auth: [$OPERATION.C_SET_TEMPLATE]
-                        }">
-                        <bk-button
-                            text
-                            :disabled="!$isAuthorized($OPERATION.C_SET_TEMPLATE)"
-                            @click="handleCreate"
-                        >
-                            {{$t('立即创建')}}
-                        </bk-button>
-                    </span>
-                </i18n>
-            </template>
+            <cmdb-table-empty
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$authResources({ type: $OPERATION.C_SET_TEMPLATE })"
+                @create="handleCreate"
+            ></cmdb-table-empty>
         </bk-table>
     </div>
 </template>
 
 <script>
+    import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         data () {
+            const showSetTips = window.localStorage.getItem('showSetTips')
             return {
                 list: [],
                 originList: [],
-                searchName: ''
+                searchName: '',
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('集群模板')
+                        }
+                    }
+                },
+                featureTips: showSetTips === null
             }
         },
         computed: {
@@ -139,7 +159,8 @@
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'edit',
-                        templateId: row.id
+                        templateId: row.id,
+                        isApplied: !!row.set_instance_count
                     }
                 })
             },
@@ -168,6 +189,8 @@
                 this.list = this.searchName
                     ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
                     : originList
+
+                this.table.stuff.type = 'search'
             },
             handleSelectable (row) {
                 return !row.set_instance_count
@@ -180,9 +203,24 @@
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'view',
-                        templateId: row.id
+                        templateId: row.id,
+                        isApplied: !!row.set_instance_count
                     }
                 })
+            },
+            handleGoBusinessTopo () {
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                })
+            },
+            handleGoServiceTemplate () {
+                this.$router.push({
+                    name: MENU_BUSINESS_SERVICE_TEMPLATE
+                })
+            },
+            handleCloseTips () {
+                this.featureTips = false
+                window.localStorage.setItem('showSetTips', false)
             }
         }
     }
@@ -191,6 +229,37 @@
 <style lang="scss" scoped>
     .template-layout {
         padding: 0 20px;
+    }
+    .tips-layout {
+        padding: 6px 16px;
+        margin-bottom: 10px;
+        align-items: center;
+        /deep/ .tips-content {
+            width: 100%;
+            text-overflow: unset !important;
+            white-space: unset !important;
+        }
+    }
+    .tips-main {
+        display: flex;
+        align-items: center;
+        .tips-text {
+            flex: 1;
+        }
+        .icon-cc-tips-close {
+            font-size: 14px;
+            color: #979ba5;
+            cursor: pointer;
+            &:hover {
+                color: #7d8088;
+            }
+        }
+        .tips-link {
+            color: #3a84ff;
+            &:hover {
+                text-decoration: underline;
+            }
+        }
     }
     .options {
         font-size: 0;

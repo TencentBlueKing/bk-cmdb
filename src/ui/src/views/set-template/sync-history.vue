@@ -9,8 +9,9 @@
             <bk-input style="width: 240px;" class="fl ml10"
                 right-icon="icon-search"
                 v-model="searchName"
+                clearable
                 :placeholder="$t('集群名称')"
-                @enter="getData">
+                @enter="getData(true)">
             </bk-input>
         </div>
         <bk-table class="history-table"
@@ -58,6 +59,7 @@
                     <span>{{row.creator || '--'}}</span>
                 </template>
             </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
     </div>
 </template>
@@ -76,6 +78,14 @@
                     count: 0,
                     current: 1,
                     ...this.$tools.getDefaultPaginationConfig()
+                },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
                 listSort: 'last_time'
             }
@@ -160,13 +170,18 @@
                     if (setIndex > -1) {
                         topoPath.splice(setIndex, 1)
                     }
-                    const sortPath = topoPath.sort((prev, next) => prev.InstanceID - next.InstanceID)
-                    return sortPath.map(path => path.InstanceName).join(' / ')
+                    const sortPath = topoPath.sort((prev, next) => prev.bk_inst_id - next.bk_inst_id)
+                    return sortPath.map(path => path.bk_inst_name).join(' / ')
                 }
                 return '--'
             },
-            async getData () {
+            async getData (event) {
                 await this.getHistoryList()
+
+                if (event) {
+                    this.table.stuff.type = 'search'
+                }
+
                 this.setsId.length && this.getSetInstancesWithTopo()
             },
             async getSetTemplateInfo () {
@@ -236,7 +251,7 @@
                 this.searchDate = daterange.map((date, index) => {
                     return index === 0 ? (date + ' 00:00:00') : (date + ' 23:59:59')
                 })
-                this.getData()
+                this.getData(true)
             }
         }
     }

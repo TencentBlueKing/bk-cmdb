@@ -1,157 +1,191 @@
 <template>
-    <div class="info-layout">
-        <cmdb-resize-layout class="tree-layout fl"
+    <div class="layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+        <cmdb-resize-layout :class="['resize-layout fl', { 'is-collapse': layout.topologyCollapse }]"
             direction="right"
             :handler-offset="3"
             :min="200"
-            :max="480">
-            <cmdb-topology-tree ref="topologyTree"></cmdb-topology-tree>
+            :max="480"
+            :disabled="layout.topologyCollapse">
+            <topology-tree ref="topologyTree" :active="activeTab"></topology-tree>
+            <i class="topology-collapse-icon bk-icon icon-angle-left"
+                @click="layout.topologyCollapse = !layout.topologyCollapse">
+            </i>
         </cmdb-resize-layout>
         <div class="tab-layout">
-            <bk-tab :active="active" type="unborder-card" v-if="!isBusinessNode">
-                <bk-tab-panel name="serviceInstances"
-                    :label="$t('服务实例')"
-                    :visible="isModuleNode">
-                    <cmdb-service-instances></cmdb-service-instances>
+            <bk-tab class="topology-tab" type="unborder-card"
+                :active.sync="activeTab"
+                :validate-active="false"
+                :before-toggle="handleTabToggle">
+                <bk-tab-panel name="hostList" :label="$t('主机列表')">
+                    <host-list :active="activeTab === 'hostList'" ref="hostList"></host-list>
                 </bk-tab-panel>
-                <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
-                    <cmdb-service-node-info></cmdb-service-node-info>
+                <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" :disabled="!showServiceInstance">
+                    <span slot="label"
+                        v-bk-tooltips="{
+                            content: $t('请选择业务模块'),
+                            disabled: showServiceInstance
+                        }">
+                        {{$t('服务实例')}}
+                    </span>
+                    <service-instance ref="serviceInstance"></service-instance>
+                </bk-tab-panel>
+                <bk-tab-panel name="nodeInfo" :disabled="!showNodeInfo">
+                    <span slot="label"
+                        v-bk-tooltips="{
+                            content: $t('请选择非内置节点'),
+                            disabled: showNodeInfo
+                        }">
+                        {{$t('节点信息')}}
+                    </span>
+                    <service-node-info :active="activeTab === 'nodeInfo'" ref="nodeInfo"></service-node-info>
                 </bk-tab-panel>
             </bk-tab>
-            <div class="business-node-view" v-else>
-                <img class="node-view-img" src="../../assets/images/add-node.png" width="103"
-                    :style="{
-                        'margin-top': ($APP.height - 120) * 0.2 + 'px'
-                    }">
-                <i18n class="node-view-handler"
-                    v-if="!selectedNode.children.length"
-                    path="未添加节点提示">
-
-                    <a class="node-view-link" href="javascript:void(0)" place="link"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_TOPO),
-                            auth: [$OPERATION.C_TOPO]
-                        }"
-                        :class="{
-                            disabled: !$isAuthorized($OPERATION.C_TOPO)
-                        }"
-                        @click="handleAddNode">
-                        {{$t('添加节点')}}
-                    </a>
-                </i18n>
-                <i18n class="node-view-handler"
-                    v-else
-                    path="已添加节点提示">
-                    <a class="node-view-link" href="javascript:void(0)" place="link" style="margin-left: -2px"
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.C_TOPO),
-                            auth: [$OPERATION.C_TOPO]
-                        }"
-                        :class="{
-                            disabled: !$isAuthorized($OPERATION.C_TOPO)
-                        }"
-                        @click="handleAddNode">
-                        {{$t('添加节点')}}
-                    </a>
-                </i18n>
-            </div>
         </div>
     </div>
 </template>
 
 <script>
-    import cmdbTopologyTree from './children/topology-tree.vue'
-    import cmdbServiceInstances from './children/service-instances.vue'
-    import cmdbServiceNodeInfo from './children/service-node-info.vue'
+    import TopologyTree from './children/topology-tree.vue'
+    import HostList from './host/host-list.vue'
+    import ServiceInstance from './children/service-instances.vue'
+    import ServiceNodeInfo from './children/service-node-info.vue'
+    import { mapGetters } from 'vuex'
+    import Bus from '@/utils/bus.js'
     export default {
         components: {
-            cmdbTopologyTree,
-            cmdbServiceInstances,
-            cmdbServiceNodeInfo
+            TopologyTree,
+            HostList,
+            ServiceNodeInfo,
+            ServiceInstance
         },
         data () {
             return {
-                active: 'nodeInfo'
-            }
-        },
-        computed: {
-            selectedNode () {
-                return this.$store.state.businessTopology.selectedNode
-            },
-            isModuleNode () {
-                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
-            },
-            isBusinessNode () {
-                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'biz'
-            }
-        },
-        watch: {
-            isModuleNode (isModuleNode) {
-                if (isModuleNode) {
-                    this.active = 'serviceInstances'
-                } else {
-                    this.active = 'nodeInfo'
+                activeTab: this.$route.query.tab || 'hostList',
+                layout: {
+                    topologyCollapse: false
+                },
+                request: {
+                    mainline: Symbol('mainline'),
+                    properties: Symbol('properties')
                 }
             }
         },
+        computed: {
+            ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('businessHost', ['selectedNode']),
+            showServiceInstance () {
+                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module' && this.selectedNode.data.default === 0
+            },
+            showNodeInfo () {
+                return this.selectedNode && this.selectedNode.data.default === 0
+            }
+        },
+        watch: {
+            showServiceInstance (value) {
+                if (!value && this.activeTab === 'serviceInstance') {
+                    this.activeTab = 'hostList'
+                }
+            },
+            showNodeInfo (value) {
+                if (!value) {
+                    this.activeTab = 'hostList'
+                }
+            },
+            activeTab (tab) {
+                const refresh = this.$refs[tab].refresh
+                typeof refresh === 'function' && refresh(1)
+            }
+        },
+        async created () {
+            try {
+                const topologyModels = await this.getTopologyModels()
+                const properties = await this.getProperties(topologyModels)
+                this.$store.commit('businessHost/setTopologyModels', topologyModels)
+                this.$store.commit('businessHost/setPropertyMap', properties)
+                this.$store.commit('businessHost/resolveCommonRequest')
+            } catch (e) {
+                console.error(e)
+            }
+        },
         beforeDestroy () {
-            this.$store.commit('businessTopology/resetState')
+            this.$store.commit('businessHost/clear')
         },
         methods: {
-            handleAddNode () {
-                this.$refs.topologyTree.showCreateDialog(this.selectedNode)
+            handleTabToggle () {
+                Bus.$emit('toggle-host-filter', false)
+                return true
+            },
+            getTopologyModels () {
+                return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
+                    config: {
+                        requestId: this.request.mainline
+                    }
+                })
+            },
+            getProperties (models) {
+                return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
+                    params: this.$injectMetadata({
+                        bk_obj_id: {
+                            $in: models.map(model => model.bk_obj_id)
+                        },
+                        bk_supplier_account: this.supplierAccount
+                    }),
+                    config: {
+                        requestId: this.request.properties
+                    }
+                })
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .info-layout {
-        padding: 0;
+    .layout {
         border-top: 1px solid $cmdbLayoutBorderColor;
     }
-    .tree-layout {
-        width: 280px;
+    .resize-layout {
+        position: relative;
+        width: 286px;
         height: 100%;
-        padding: 10px 0;
-        border-right: 1px solid #dcdee5;
+        padding-top: 10px;
+        border-right: 1px solid $cmdbLayoutBorderColor;
+        &.is-collapse {
+            width: 0 !important;
+            border-right: none;
+            .topology-collapse-icon:before {
+                display: inline-block;
+                transform: rotate(180deg);
+            }
+        }
+        .topology-collapse-icon {
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            width: 16px;
+            height: 100px;
+            line-height: 100px;
+            background: $cmdbLayoutBorderColor;
+            border-radius: 0px 12px 12px 0px;
+            transform: translateY(-50%);
+            text-align: center;
+            font-size: 12px;
+            color: #fff;
+            cursor: pointer;
+            &:hover {
+                background: #699DF4;
+            }
+        }
     }
     .tab-layout {
         height: 100%;
-        @include scrollbar-x;
-        .bk-tab {
-            height: 100%;
-        }
-        .layout {
-            height: 100%;
-            padding: 0;
-        }
-        /deep/ {
-            .bk-tab-header {
-                margin: 0 20px;
-                padding: 0;
-            }
-            .bk-tab-section {
-                height: calc(100% - 42px);
-                padding-top: 14px;
-                min-width: 826px;
-            }
-            .bk-tab-content {
-                height: 100%;
-            }
-        }
-    }
-    .business-node-view {
-        text-align: center;
-        font-size: 14px;
-        .node-view-img {
-            display: block;
-            margin: 0 auto 5px;
-        }
-        .node-view-link {
-            color: #3A84FF;
-            &.disabled {
-                color: #dcdee5;
+        overflow: hidden;
+        .topology-tab {
+            /deep/ {
+                .bk-tab-header {
+                    padding: 0;
+                    margin: 0 20px;
+                }
             }
         }
     }
