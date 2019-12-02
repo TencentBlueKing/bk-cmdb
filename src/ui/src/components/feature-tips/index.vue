@@ -2,7 +2,9 @@
     <div class="feature-tips" v-if="showTips">
         <div class="main-box" :style="{ 'padding-right': featureName ? '30px' : 0 }">
             <i class="icon-cc-exclamation-tips"></i>
-            <span>{{desc}}</span>
+            <slot>
+                <span>{{desc}}</span>
+            </slot>
             <a v-if="moreHref" :href="moreHref" target="_blank">{{$t('更多详情')}} &gt;&gt;</a>
         </div>
         <span class="icon-cc-tips-close fr" v-if="featureName" @click="HandleCloseTips"></span>

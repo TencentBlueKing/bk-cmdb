@@ -44,7 +44,7 @@
                 :disabled="isReadOnly || !verificationInfo.selected.length"
                 :loading="$loading(['createObjectUniqueConstraints', 'updateObjectUniqueConstraints'])"
                 @click="saveVerification">
-                {{$t('确定')}}
+                {{isEdit ? $t('保存') : $t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
                 {{$t('取消')}}
@@ -81,7 +81,8 @@
                 attribute: {
                     isShow: false,
                     list: this.attributeList
-                }
+                },
+                originVerificationInfo: {}
             }
         },
         computed: {
@@ -111,12 +112,22 @@
                     })
                 })
                 return params
+            },
+            changedValues () {
+                const changedValues = {}
+                for (const propertyId in this.verificationInfo) {
+                    if (JSON.stringify(this.verificationInfo[propertyId]) !== JSON.stringify(this.originVerificationInfo[propertyId])) {
+                        changedValues[propertyId] = this.verificationInfo[propertyId]
+                    }
+                }
+                return changedValues
             }
         },
         created () {
             if (this.isEdit) {
                 this.initData()
             }
+            this.originVerificationInfo = this.$tools.clone(this.verificationInfo)
         },
         methods: {
             ...mapActions('objectUnique', [

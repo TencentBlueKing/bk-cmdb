@@ -55,7 +55,7 @@
                 :disabled="JSON.stringify(relationInfo) === relationInfoSnapshot"
                 @click="saveRelation"
             >
-                {{$t('确定')}}
+                {{$t('保存')}}
             </bk-button>
             <bk-button
                 theme="danger"

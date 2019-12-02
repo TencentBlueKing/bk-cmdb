@@ -1,5 +1,5 @@
 <template>
-    <div class="layout" v-bkloading="{ isLoading: $loading('getModuleServiceInstances') }">
+    <div class="service-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <template v-if="instances.length || inSearch">
             <div class="options">
                 <bk-checkbox class="options-checkall"
@@ -8,59 +8,52 @@
                     :title="$t('全选本页')"
                     @change="handleCheckALL">
                 </bk-checkbox>
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                        auth: [$OPERATION.C_SERVICE_INSTANCE]
-                    }">
-                    <bk-button v-if="withTemplate && !templates.length"
-                        class="options-button"
-                        theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
-                        @click="visible = true">
-                        {{$t('添加主机')}}
-                    </bk-button>
-                    <bk-button v-else class="options-button" theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                    <bk-button slot-scope="{ disabled }" class="options-button" theme="primary"
+                        :disabled="disabled"
                         @click="handleCreateServiceInstance">
-                        {{$t('添加服务实例')}}
+                        {{$t('新增')}}
                     </bk-button>
-                </span>
-                <bk-dropdown-menu trigger="click" font-size="large">
+                </cmdb-auth>
+                <bk-dropdown-menu trigger="click" font-size="medium">
                     <bk-button class="options-button clipboard-trigger" theme="default" slot="dropdown-trigger">
                         {{$t('更多')}}
                         <i class="bk-icon icon-angle-down"></i>
                     </bk-button>
                     <ul class="clipboard-list" slot="dropdown-content">
                         <li v-for="(item, index) in menuItem"
-                            :class="['clipboard-item', { 'is-disabled': item.disabled || (item.auth && !$isAuthorized($OPERATION[item.auth])) }]"
-                            :key="index"
-                            @click="item.handler(item.disabled, item.auth)">
-                            <span v-if="item.auth"
-                                v-cursor="{
-                                    active: !$isAuthorized($OPERATION[item.auth]),
-                                    auth: [$OPERATION[item.auth]]
-                                }">
+                            class="clipboard-item"
+                            :key="index">
+                            <cmdb-auth v-if="item.auth" :auth="$authResources({ type: $OPERATION[item.auth] })">
+                                <bk-button slot-scope="{ disabled }"
+                                    class="item-btn"
+                                    text
+                                    :disabled="item.disabled || disabled"
+                                    @click="item.handler(item.disabled)">
+                                    {{item.name}}
+                                </bk-button>
+                            </cmdb-auth>
+                            <bk-button v-else text
+                                class="item-btn"
+                                :disabled="item.disabled"
+                                @click="item.handler(item.disabled)">
                                 {{item.name}}
-                            </span>
-                            <span v-else>{{item.name}}</span>
+                            </bk-button>
                         </li>
                     </ul>
                 </bk-dropdown-menu>
-                <span class="options-button sync-template-link"
+                <cmdb-auth class="options-button sync-template-link"
                     v-show="withTemplate"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                        auth: [$OPERATION.U_SERVICE_INSTANCE]
-                    }">
-                    <bk-button class="topo-sync"
-                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE) || !topoStatus"
+                    :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="topo-sync"
+                        :disabled="disabled || !topoStatus"
                         @click="handleSyncTemplate">
                         <i class="bk-icon icon-refresh"></i>
                         {{$t('同步模板')}}
                         <span class="topo-status" v-show="topoStatus"></span>
                     </bk-button>
-                </span>
+                </cmdb-auth>
                 <div class="options-right fr">
                     <bk-checkbox class="options-checkbox"
                         :size="16"
@@ -72,7 +65,7 @@
                         <bk-search-select
                             ref="searchSelect"
                             :show-condition="false"
-                            :placeholder="$t('实例名称/标签')"
+                            :placeholder="$t('请输入实例名称或选择标签')"
                             :data="searchSelect"
                             v-model="searchSelectData"
                             @menu-child-condition-select="handleConditionSelect"
@@ -88,13 +81,14 @@
                     :key="instance.id"
                     :instance="instance"
                     :expanded="index === 0"
+                    :can-sync="topoStatus"
                     @create-process="handleCreateProcess"
                     @update-process="handleUpdateProcess"
                     @delete-instance="handleDeleteInstance"
                     @check-change="handleCheckChange">
                 </service-instance-table>
             </div>
-            <bk-pagination class="pagination"
+            <bk-pagination class="pagination" v-show="instances.length"
                 align="right"
                 size="small"
                 :current="pagination.current"
@@ -110,8 +104,7 @@
                 </div>
             </div>
         </template>
-        <service-instance-empty v-else
-            @create-instance-success="handleCreateInstanceSuccess">
+        <service-instance-empty v-else>
         </service-instance-empty>
         <bk-sideslider
             v-transfer-dom
@@ -165,12 +158,6 @@
                 <bk-button theme="default" class="ml5" @click.stop="handleCloseBatchLable">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
-
-        <host-selector
-            :visible.sync="visible"
-            :module-instance="currentModule || {}"
-            @host-selected="handleSelectHost">
-        </host-selector>
     </div>
 </template>
 
@@ -179,14 +166,12 @@
     import serviceInstanceEmpty from './service-instance-empty.vue'
     import batchEditLabel from './batch-edit-label.vue'
     import cmdbEditLabel from './edit-label.vue'
-    import hostSelector from '@/components/ui/selector/host.vue'
     export default {
         components: {
             serviceInstanceTable,
             serviceInstanceEmpty,
             batchEditLabel,
-            cmdbEditLabel,
-            hostSelector
+            cmdbEditLabel
         },
         data () {
             return {
@@ -241,13 +226,19 @@
                     visiable: false,
                     list: []
                 },
-                isCarryParams: false,
                 topoStatus: false,
                 historyLabels: {},
                 processBindIp: [],
                 bindIp: '',
-                visible: false,
-                templates: []
+                templates: [],
+                hasInitFilter: false,
+                needRefresh: false,
+                request: {
+                    property: Symbol('property'),
+                    propertyGroups: Symbol('propertyGroups'),
+                    instance: Symbol('instance'),
+                    label: Symbol('label')
+                }
             }
         },
         computed: {
@@ -258,23 +249,22 @@
                 return this.$store.getters['objectBiz/bizId']
             },
             currentNode () {
-                return this.$store.state.businessTopology.selectedNode
+                return this.$store.state.businessHost.selectedNode
             },
             isModuleNode () {
                 return this.currentNode && this.currentNode.data.bk_obj_id === 'module'
             },
             withTemplate () {
-                const nodeInstance = this.$store.state.businessTopology.selectedNodeInstance
-                return this.isModuleNode && nodeInstance && nodeInstance.service_template_id
+                return this.isModuleNode && this.currentNode && this.currentNode.data.service_template_id
             },
             currentModule () {
                 if (this.currentNode && this.currentNode.data.bk_obj_id === 'module') {
-                    return this.$store.state.businessTopology.selectedNodeInstance
+                    return this.$store.state.businessHost.selectedNodeInstance
                 }
                 return null
             },
             processTemplateMap () {
-                return this.$store.state.businessTopology.processTemplateMap
+                return this.$store.state.businessHost.processTemplateMap
             },
             menuItem () {
                 return [{
@@ -315,18 +305,7 @@
         watch: {
             async currentNode (node) {
                 if (node && node.data.bk_obj_id === 'module') {
-                    if (!this.isCarryParams) {
-                        this.searchSelectData = []
-                    }
-                    this.pagination.current = 1
-                    await this.getServiceInstances()
-                    this.getTemplate(node.data.service_template_id)
-                    const timer = setTimeout(() => {
-                        if (node.data.service_template_id && this.instances.length) {
-                            this.getServiceInstanceDifferences()
-                        }
-                        clearTimeout(timer)
-                    }, 0)
+                    this.getData()
                 }
             },
             bindIp (value) {
@@ -334,14 +313,15 @@
             },
             checked () {
                 this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
+            },
+            searchSelectData (searchSelectData) {
+                if (!searchSelectData.length && this.inSearch) this.inSearch = false
             }
         },
         async created () {
             await this.getHistoryLabel()
-            this.getProcessProperties()
-            this.getProcessPropertyGroups()
             if (this.targetInstanceName) {
-                this.isCarryParams = true
+                this.hasInitFilter = true
                 this.searchSelectData.push({
                     'name': '服务实例名',
                     'id': 0,
@@ -352,8 +332,29 @@
                 })
                 this.searchSelect.shift()
             }
+            this.getProcessProperties()
+            this.getProcessPropertyGroups()
         },
         methods: {
+            refresh () {
+                this.inSearch = false
+                this.getData()
+            },
+            async getData () {
+                this.needRefresh = false
+                const node = this.currentNode
+                if (!this.hasInitFilter) {
+                    this.searchSelectData = []
+                }
+                this.pagination.current = 1
+                await this.getServiceInstances()
+                if (this.withTemplate) {
+                    this.getTemplate(node.data.service_template_id)
+                }
+                if (this.instances.length) {
+                    this.getServiceInstanceDifferences()
+                }
+            },
             async getProcessProperties () {
                 try {
                     const action = 'objectModelProperty/searchObjectAttribute'
@@ -363,7 +364,7 @@
                             bk_supplier_account: this.$store.getters.supplierAccount
                         },
                         config: {
-                            requestId: 'get_service_process_properties',
+                            requestId: this.request.property,
                             fromCache: true
                         }
                     })
@@ -379,7 +380,7 @@
                         objId: 'process',
                         params: {},
                         config: {
-                            requestId: 'get_service_process_property_groups',
+                            requestId: this.request.propertyGroups,
                             fromCache: true
                         }
                     })
@@ -388,16 +389,16 @@
                     console.error(e)
                 }
             },
-            getServiceInstanceDifferences () {
+            async getServiceInstanceDifferences () {
                 try {
-                    this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
+                    const data = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
                         params: this.$injectMetadata({
-                            bk_module_id: this.currentNode.data.bk_inst_id,
+                            bk_module_ids: [this.currentNode.data.bk_inst_id],
                             service_template_id: this.withTemplate
                         }, { injectBizId: true })
-                    }).then(res => {
-                        this.topoStatus = res.has_difference
                     })
+                    const difference = data.find(difference => difference.bk_module_id === this.currentNode.data.bk_inst_id)
+                    this.topoStatus = !!difference && difference.has_difference
                 } catch (error) {
                     console.error(error)
                 }
@@ -420,7 +421,7 @@
                             selectors: this.getSelectorParams()
                         }, { injectBizId: true }),
                         config: {
-                            requestId: 'getModuleServiceInstances',
+                            requestId: this.request.instance,
                             cancelPrevious: true
                         }
                     })
@@ -428,7 +429,7 @@
                         this.pagination.current -= 1
                         this.getServiceInstances()
                     }
-                    this.isCarryParams = false
+                    this.hasInitFilter = false
                     this.checked = []
                     this.isCheckAll = false
                     this.isExpandAll = false
@@ -486,7 +487,7 @@
                     const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
                         params: this.$injectMetadata({}, { injectBizId: true }),
                         config: {
-                            requestId: 'getHistoryLabel',
+                            requestId: this.request.label,
                             cancelPrevious: true
                         }
                     })
@@ -602,7 +603,7 @@
             },
             async getInstanceIpByHost (hostId) {
                 try {
-                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    const instanceIpMap = this.$store.state.businessHost.instanceIpMap
                     let res = null
                     if (instanceIpMap.hasOwnProperty(hostId)) {
                         res = instanceIpMap[hostId]
@@ -613,7 +614,7 @@
                                 requestId: 'getInstanceIpByHost'
                             }
                         })
-                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                        this.$store.commit('businessHost/setInstanceIp', { hostId, res })
                     }
                     this.processBindIp = res.options.map(ip => {
                         return {
@@ -636,7 +637,7 @@
                         requestId: 'getProcessTemplate'
                     }
                 })
-                this.$store.commit('businessTopology/setProcessTemplate', {
+                this.$store.commit('businessHost/setProcessTemplate', {
                     id: processTemplateId,
                     template: data.property
                 })
@@ -726,12 +727,9 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        title: this.currentNode.name
+                        title: this.currentNode.data.bk_inst_name
                     }
                 })
-            },
-            handleCreateInstanceSuccess () {
-                this.getServiceInstances()
             },
             handleCheckALL (checked) {
                 this.searchSelectData = []
@@ -752,8 +750,8 @@
                     return false
                 }
             },
-            batchDelete (disabled, auth) {
-                if (disabled || !this.$isAuthorized(this.$OPERATION[auth])) {
+            batchDelete (disabled) {
+                if (disabled) {
                     return false
                 }
                 this.$bkInfo({
@@ -794,16 +792,18 @@
             },
             handleSyncTemplate () {
                 this.$router.push({
-                    name: 'synchronous',
+                    name: 'syncServiceFromModule',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id,
+                        setId: this.currentNode.parent.data.bk_inst_id
+                    },
+                    query: {
                         path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
                     }
                 })
             },
-            handleShowBatchLabel (disabled, auth) {
-                if (disabled || !this.$isAuthorized(this.$OPERATION[auth])) {
+            handleShowBatchLabel (disabled) {
+                if (disabled) {
                     return false
                 }
                 try {
@@ -919,49 +919,10 @@
                             service_template_id: id
                         }, { injectBizId: true }),
                         config: {
-                            requestId: 'getBatchProcessTemplate',
-                            cancelPrevious: true
+                            requestId: 'getBatchProcessTemplate'
                         }
                     })
                     this.templates = data.info
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            async handleSelectHost (checked) {
-                try {
-                    const addNum = checked.length
-                    await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
-                        params: this.$injectMetadata({
-                            name: this.currentModule.bk_module_name,
-                            bk_module_id: this.currentModule.bk_module_id,
-                            service_template_id: this.currentModule.service_template_id,
-                            instances: checked.map(hostId => {
-                                return {
-                                    bk_host_id: hostId,
-                                    processes: this.templates.map(template => {
-                                        const processInfo = {}
-                                        Object.keys(template.property).forEach(key => {
-                                            processInfo[key] = template.property[key].value
-                                        })
-                                        return {
-                                            process_template_id: template.id,
-                                            process_info: processInfo
-                                        }
-                                    })
-                                }
-                            })
-                        }, { injectBizId: true })
-                    })
-                    if (this.withTemplate) {
-                        this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count + addNum
-                        this.currentNode.parents.forEach(node => {
-                            node.data.service_instance_count = node.data.service_instance_count + addNum
-                        })
-                    }
-                    this.visible = false
-                    this.$success(this.$t('添加成功'))
-                    this.getServiceInstances()
                 } catch (e) {
                     console.error(e)
                 }
@@ -971,7 +932,8 @@
 </script>
 
 <style lang="scss" scoped>
-    .layout {
+    .service-layout {
+        height: 100%;
         padding: 14px 0 0 0;
     }
     .options {
@@ -979,7 +941,6 @@
     }
     .options-button {
         height: 32px;
-        padding: 0 8px;
         margin: 0 0 0 6px;
         line-height: 30px;
     }
@@ -1084,17 +1045,21 @@
         .clipboard-item{
             cursor: pointer;
             @include ellipsis;
-            span {
+            .item-btn {
                 display: block;
+                width: 100%;
                 padding: 0 15px;
-            }
-            &:not(.is-disabled):hover{
-                background-color: #ebf4ff;
-                color: #3c96ff;
-            }
-            &.is-disabled {
-                color: #c4c6cc;
-                cursor: not-allowed;
+                height: 40px;
+                line-height: 40px;
+                color: #737987;
+                text-align: left;
+                &:disabled {
+                    color: #dcdee5;
+                }
+                &:not(.is-disabled):hover {
+                    background-color: #ebf4ff;
+                    color: #3c96ff;
+                }
             }
         }
     }

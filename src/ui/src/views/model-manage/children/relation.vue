@@ -1,16 +1,15 @@
 <template>
     <div class="model-relation-wrapper">
         <div class="options">
-            <span v-cursor="{
-                active: !$isAuthorized($OPERATION.U_MODEL),
-                auth: [$OPERATION.U_MODEL]
-            }">
-                <bk-button class="create-btn" theme="primary"
-                    :disabled="isReadOnly || !updateAuth"
+            <cmdb-auth :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })" @update-auth="handleReceiveAuth">
+                <bk-button slot-scope="{ disabled }"
+                    class="create-btn"
+                    theme="primary"
+                    :disabled="isReadOnly || disabled"
                     @click="createRelation">
                     {{$t('新建关联')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
         </div>
         <bk-table
             class="relation-table"
@@ -65,13 +64,16 @@
                     </button>
                 </template>
             </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
             :width="450"
             :title="slider.title"
-            :is-show.sync="slider.isShow">
+            :is-show.sync="slider.isShow"
+            :before-close="handleSliderBeforeClose">
             <the-relation-detail
+                ref="relationForm"
                 slot="content"
                 v-if="slider.isShow"
                 :is-read-only="isReadOnly || slider.isReadOnly"
@@ -79,7 +81,7 @@
                 :relation="slider.relation"
                 :relation-list="relationList"
                 @save="saveRelation"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-relation-detail>
         </bk-sideslider>
     </div>
@@ -92,8 +94,15 @@
         components: {
             theRelationDetail
         },
+        props: {
+            modelId: {
+                type: Number,
+                default: null
+            }
+        },
         data () {
             return {
+                updateAuth: false,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -104,7 +113,13 @@
                 table: {
                     list: [],
                     defaultSort: '-op_time',
-                    sort: '-op_time'
+                    sort: '-op_time',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
                 mappingMap: {
                     '1:1': '1-1',
@@ -125,14 +140,6 @@
                     return this.activeModel['bk_ispaused']
                 }
                 return false
-            },
-            updateAuth () {
-                const cantEdit = ['process', 'plat']
-                if (cantEdit.includes(this.$route.params.modelId)) {
-                    return false
-                }
-                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         created () {
@@ -256,6 +263,30 @@
                 this.slider.relation = row
                 this.slider.title = this.$t('查看关联')
                 this.slider.isShow = true
+            },
+            handleReceiveAuth (auth) {
+                this.updateAuth = auth
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
             }
         }
     }

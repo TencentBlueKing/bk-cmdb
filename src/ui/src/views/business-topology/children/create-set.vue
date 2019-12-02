@@ -12,6 +12,7 @@
                 <bk-select style="width: 100%;"
                     :clearable="false"
                     :searchable="setTemplateList.length > 7"
+                    :placeholder="$t('请选择xx', { name: $t('集群模板') })"
                     v-model="setTemplate"
                     v-validate.disabled="'required'"
                     data-vv-name="setTemplate">
@@ -28,14 +29,11 @@
                 <span class="form-error" v-if="errors.has('setTemplate')">{{errors.first('setTemplate')}}</span>
             </div>
             <div class="form-item">
-                <label>
-                    {{$t('集群名称')}}
-                    <span>（{{$t('集群模板创建重命名提示')}}）</span>
-                </label>
+                <label>{{$t('集群名称')}}</label>
                 <bk-input class="form-textarea"
                     type="textarea"
                     data-vv-name="setName"
-                    v-validate="'required|singlechar|setNameMap|length:256'"
+                    v-validate="'required|singlechar|emptySetName|setNameMap|length:256'"
                     v-model="setName"
                     :rows="rows"
                     :placeholder="$t('集群多个创建提示')"
@@ -48,7 +46,7 @@
             <bk-button theme="primary" class="mr10"
                 :disabled="$loading() || errors.any()"
                 @click="handleCreateSet">
-                {{$t('确定')}}
+                {{$t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
@@ -82,7 +80,7 @@
                 return this.$store.getters['objectBiz/bizId']
             },
             setTemplateMap () {
-                return this.$store.state.businessTopology.setTemplateMap
+                return this.$store.state.businessHost.setTemplateMap
             }
         },
         watch: {
@@ -125,7 +123,7 @@
                         })
                         const list = (data.info || []).map(template => ({ ...template.set_template }))
                         this.setTemplateList = list
-                        this.$store.commit('businessTopology/setSetTemplate', {
+                        this.$store.commit('businessHost/setSetTemplate', {
                             id: this.business,
                             templates: list
                         })
@@ -138,7 +136,7 @@
             handleCreateSet () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
-                        const nameList = this.setName.split('\n').filter(name => name)
+                        const nameList = this.setName.split('\n').filter(name => name.trim().length).map(name => name.trim())
                         const sets = nameList.map(name => ({
                             set_template_id: this.setTemplate,
                             bk_set_name: name

@@ -49,13 +49,14 @@ func GetImportNetDevices(
 }
 
 func BuildNetDeviceExcelFromData(ctx context.Context, defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
-	productExcelHealer(ctx, fields, nil, sheet, defLang)
+	sortedFields := SortByIsRequired(fields)
+	productExcelHeader(ctx, sortedFields, nil, sheet, defLang)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 	for _, row := range data {
 		deviceData := row
 
-		setExcelRowDataByIndex(deviceData, sheet, rowIndex, fields)
+		setExcelRowDataByIndex(deviceData, sheet, rowIndex, sortedFields)
 		rowIndex++
 	}
 

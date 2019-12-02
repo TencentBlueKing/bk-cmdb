@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"github.com/robfig/cron"
 	"time"
 
 	"configcenter/src/common"
@@ -22,6 +21,8 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+
+	"github.com/robfig/cron"
 )
 
 func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
@@ -56,6 +57,11 @@ func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64
 
 func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
 	cond := &metadata.QueryCondition{}
+	condition := mapstr.MapStr{
+		"ispre":       false,
+		"bk_ispaused": false,
+	}
+	cond.Condition = condition
 	result, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("GetModelAndInstCount fail, search model fail , err: %v, rid: %v", err, kit.Rid)
@@ -65,7 +71,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCount
 	info := make([]metadata.IDStringCountInt64, 0)
 	info = append(info, metadata.IDStringCountInt64{
 		Id:    "model",
-		Count: result.Data.Count - 6, // 去除内置的模型(主机、集群等)
+		Count: result.Data.Count, // 去除内置的模型(主机、集群等)
 	})
 
 	opt := make(map[string]interface{})
@@ -100,44 +106,6 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 	return result.Data, nil
 }
 
-func (lgc *Logics) TimerFreshData(ctx context.Context) {
-	opt := mapstr.MapStr{}
-
-	// 检测cc_chartData集合是否存在
-	for {
-		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
-		if err != nil {
-			blog.Error("statistic chart data fail, err: %v, rid: %v", err)
-			return
-		}
-		if resp.Data {
-			blog.V(3).Info("collection cc_ChartData inited")
-			break
-		}
-		time.Sleep(30 * time.Second)
-		blog.V(3).Info("waiting collection cc_ChartData init")
-	}
-
-	c := cron.New()
-	spec := "0 0 2 * * ?" // 每天凌晨两点，更新定时统计图表数据
-	err := c.AddFunc(spec, func() {
-		// 主服务器跑定时
-		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
-		if isMaster {
-			if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
-				blog.Error("start statistic chart data timer fail, err: %v", err)
-			}
-		}
-	})
-
-	if err != nil {
-		blog.Error("start statistic chart data timer fail, err: %v", err)
-	}
-	c.Start()
-
-	select {}
-}
-
 func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {
 	switch chartInfo.ReportType {
 	case common.BizModuleHostChart:
@@ -160,4 +128,53 @@ func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig)
 		}
 		return result.Data, nil
 	}
+}
+
+func (lgc *Logics) TimerFreshData(ctx context.Context) {
+	lgc.CheckTableExist(ctx)
+
+	c := cron.New()
+	spec := lgc.timerSpec // 从配置文件读取的时间
+	_, err := c.AddFunc(spec, func() {
+		blog.V(3).Infof("begin statistic chart data, time: %v", time.Now())
+		// 主服务器跑定时
+		opt := mapstr.MapStr{}
+		isMaster := lgc.Engine.ServiceManageInterface.IsMaster()
+		if isMaster {
+			if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
+				blog.Error("statistic chart data fail, err: %v", err)
+			}
+		}
+	})
+
+	if err != nil {
+		blog.Errorf("new cron failed, please contact developer, err: %v", err)
+		return
+	}
+	c.Start()
+
+	select {
+	case <-ctx.Done():
+		return
+	}
+}
+
+// CheckTableExist 检测cc_chartData集合是否存在
+func (lgc *Logics) CheckTableExist(ctx context.Context) {
+	opt := mapstr.MapStr{}
+	for {
+		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
+		if err != nil {
+			blog.Error("statistic chart data fail, err: %v", err)
+			time.Sleep(10 * time.Second)
+			continue
+		}
+		if resp.Data {
+			blog.V(3).Info("collection cc_ChartData inited")
+			break
+		}
+		time.Sleep(10 * time.Second)
+		blog.V(3).Info("waiting collection cc_ChartData init")
+	}
+	return
 }

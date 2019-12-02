@@ -50,7 +50,7 @@
             },
             fontSize: {
                 type: [String, Number],
-                default: 12
+                default: 'medium'
             }
         },
         data () {
@@ -93,6 +93,8 @@
                     } else {
                         this.selected = this.value
                     }
+                } else {
+                    this.selected = this.value
                 }
             }
         }

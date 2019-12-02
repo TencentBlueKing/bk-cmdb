@@ -14,13 +14,16 @@
     "sync-magicbox": "node build/sync-magicbox.js"
   },
   "dependencies": {
+    "@icon-cool/bk-icon-cmdb": "0.0.9",
+    "@blueking/paas-login": "0.0.3",
     "axios": "0.18.0",
-    "bk-magic-vue": "2.1.6-beta.9",
+    "bk-magic-vue": "2.1.8-beta.7",
     "cytoscape": "3.10.0",
     "cytoscape-dagre": "2.2.2",
     "cytoscape-edgehandles": "3.6.0",
     "cytoscape-popper": "1.0.4",
     "date-fns": "1.29.0",
+    "deep-equal": "1.1.0",
     "echarts": "4.1.0",
     "get-value": "^3.0.1",
     "js-cookie": "2.2.0",

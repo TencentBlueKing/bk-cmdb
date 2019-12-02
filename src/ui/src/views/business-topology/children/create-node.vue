@@ -41,7 +41,7 @@
             <bk-button theme="primary"
                 :disabled="$loading() || errors.any()"
                 @click="handleSave">
-                {{$t('保存')}}
+                {{$t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
@@ -72,11 +72,9 @@
                 return nodePath.map(node => node.data.bk_inst_name).join('-')
             },
             sortedProperties () {
-                const sortedProperties = this.properties.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
-                sortedProperties.sort((propertyA, propertyB) => {
+                return this.properties.sort((propertyA, propertyB) => {
                     return propertyA['bk_property_index'] - propertyB['bk_property_index']
                 })
-                return sortedProperties
             },
             title () {
                 return this.nextModelId === 'set' ? this.$t('新建集群') : this.$t('新建节点')
@@ -98,35 +96,7 @@
                 this.values = this.$tools.getInstFormValues(this.properties, {})
             },
             getValidateRules (property) {
-                const rules = {}
-                const {
-                    bk_property_type: propertyType,
-                    option,
-                    isrequired
-                } = property
-                if (isrequired) {
-                    rules.required = true
-                }
-                if (option) {
-                    if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                            rules['min_value'] = option.min
-                        }
-                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                            rules['max_value'] = option.max
-                        }
-                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
-                    }
-                }
-                if (['singlechar', 'longchar'].includes(propertyType)) {
-                    rules[propertyType] = true
-                    rules.length = propertyType === 'singlechar' ? 256 : 2000
-                }
-                if (propertyType === 'int') {
-                    rules['numeric'] = true
-                }
-                return rules
+                return this.$tools.getValidateRules(property)
             },
             handleSave () {
                 this.$validator.validateAll().then(isValid => {

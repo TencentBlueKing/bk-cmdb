@@ -1,29 +1,25 @@
 <template>
     <div class="business-layout">
         <div class="business-options clearfix">
-            <span class="fl" v-if="isAdminView"
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_BUSINESS),
-                    auth: [$OPERATION.C_BUSINESS]
-                }">
-                <bk-button class="fl" theme="primary"
-                    :disabled="!$isAuthorized($OPERATION.C_BUSINESS)"
+            <cmdb-auth class="fl" :auth="$authResources({ type: $OPERATION.C_BUSINESS })">
+                <bk-button slot-scope="{ disabled }"
+                    class="fl"
+                    theme="primary"
+                    :disabled="disabled"
                     @click="handleCreate">
                     {{$t('新建')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <div class="options-button fr">
-                <span class="inline-block-middle" v-cursor="{
-                    active: !$isAuthorized($OPERATION.BUSINESS_ARCHIVE),
-                    auth: [$OPERATION.BUSINESS_ARCHIVE]
-                }">
-                    <icon-button class="mr10"
+                <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                    <icon-button slot-scope="{ disabled }"
+                        class="mr10"
                         icon="icon-cc-history"
                         v-bk-tooltips.top="$t('查看已归档业务')"
-                        :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
+                        :disabled="disabled"
                         @click="routeToHistory">
                     </icon-button>
-                </span>
+                </cmdb-auth>
                 <icon-button
                     icon="icon-cc-setting"
                     v-bk-tooltips.top="$t('列表显示属性配置')"
@@ -35,7 +31,7 @@
                     class="filter-selector fl"
                     v-model="filter.id"
                     searchable
-                    font-size="14"
+                    font-size="medium"
                     :clearable="false">
                     <bk-option v-for="(option, index) in filter.options"
                         :key="index"
@@ -49,26 +45,27 @@
                     :allow-clear="true"
                     :auto-select="false"
                     v-model="filter.value"
-                    font-size="14"
+                    font-size="medium"
                     @on-selected="handleFilterData">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
-                    font-size="large"
+                    clearable
+                    font-size="medium"
+                    right-icon="icon-search"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
-                    font-size="large"
+                    clearable
+                    font-size="medium"
+                    right-icon="icon-search"
                     :placeholder="$t('快速查询')"
                     @enter="handleFilterData">
                 </bk-input>
-                <i class="filter-search bk-icon icon-search"
-                    v-show="filter.type !== 'enum'"
-                    @click="handleFilterData"></i>
             </div>
         </div>
         <bk-table class="business-table"
@@ -90,6 +87,12 @@
                 :prop="column.id"
                 :label="column.name">
             </bk-table-column>
+            <cmdb-table-empty
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$authResources({ type: $OPERATION.C_BUSINESS })"
+                @create="handleCreate"
+            ></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -177,7 +180,13 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_biz_id',
-                    sort: 'bk_biz_id'
+                    sort: 'bk_biz_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('业务')
+                        }
+                    }
                 },
                 filter: {
                     id: '',
@@ -360,17 +369,29 @@
             handleFilterData () {
                 this.table.pagination.current = 1
                 this.filter.sendValue = this.filter.value
-                this.getTableData()
+                this.getTableData(true)
             },
-            getTableData () {
-                this.getBusinessList().then(data => {
+            getTableData (event) {
+                this.getBusinessList({ cancelPrevious: true, globalPermission: false }).then(data => {
                     if (data.count && !data.info.length) {
                         this.table.pagination.current -= 1
                         this.getTableData()
                     }
                     this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+
                     return data
+                }).catch(({ permission }) => {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 })
             },
             getSearchParams () {
@@ -511,7 +532,7 @@
         position: relative;
         margin-right: 10px;
         .filter-selector{
-            width: 115px;
+            width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
         }

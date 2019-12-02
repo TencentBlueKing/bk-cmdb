@@ -17,7 +17,6 @@ import (
 	"regexp"
 
 	"configcenter/src/auth/meta"
-	"configcenter/src/common/blog"
 )
 
 /*
@@ -29,60 +28,61 @@ import (
 */
 var OperationStatisticAuthConfigs = []AuthConfig{
 	{
-		Name:                  "CreateOperationStatisticRegex",
-		Description:           "创建创建运营统计",
-		Regex:                 regexp.MustCompile(`^/api/v3/create/operation/chart$`),
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: false,
-		ResourceType:          meta.OperationStatistic,
-		ResourceAction:        meta.Update,
+		Name:           "CreateOperationStatisticRegex",
+		Description:    "创建运营统计",
+		Regex:          regexp.MustCompile(`^/api/v3/create/operation/chart/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    nil,
+		ResourceType:   meta.OperationStatistic,
+		ResourceAction: meta.Update,
 	},
 	{
-		Name:                  "DeleteOperationStatisticRegex",
-		Description:           "删除运营统计",
-		Regex:                 regexp.MustCompile(`^/api/v3/delete/operation/chart/([0-9]+)$`),
-		HTTPMethod:            http.MethodDelete,
-		RequiredBizInMetadata: false,
-		ResourceType:          meta.OperationStatistic,
-		ResourceAction:        meta.Update,
+		Name:           "DeleteOperationStatisticRegex",
+		Description:    "删除运营统计",
+		Regex:          regexp.MustCompile(`^/api/v3/delete/operation/chart/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    nil,
+		ResourceType:   meta.OperationStatistic,
+		ResourceAction: meta.Update,
 	},
 	{
-		Name:                  "UpdateOperationStatisticRegex",
-		Description:           "更新运营统计",
-		Regex:                 regexp.MustCompile(`^/api/v3/update/operation/chart$`),
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: false,
-		ResourceType:          meta.OperationStatistic,
-		ResourceAction:        meta.Update,
+		Name:           "UpdateOperationStatisticRegex",
+		Description:    "更新运营统计",
+		Regex:          regexp.MustCompile(`^/api/v3/update/operation/chart/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    nil,
+		ResourceType:   meta.OperationStatistic,
+		ResourceAction: meta.Update,
 	},
 	{
-		Name:                  "UpdateOperationStatisticRegex",
-		Description:           "查看运营统计图表配置",
-		Regex:                 regexp.MustCompile(`^/api/v3/search/operation/chart$`),
-		HTTPMethod:            http.MethodGet,
-		RequiredBizInMetadata: false,
-		ResourceType:          meta.OperationStatistic,
-		ResourceAction:        meta.Find,
+		Name:           "SearchOperationStatisticChartRegex",
+		Description:    "查看运营统计图表配置",
+		Regex:          regexp.MustCompile(`^/api/v3/search/operation/chart/?$`),
+		HTTPMethod:     http.MethodGet,
+		BizIDGetter:    nil,
+		ResourceType:   meta.OperationStatistic,
+		ResourceAction: meta.Find,
 	},
 	{
-		Name:                  "UpdateOperationStatisticRegex",
-		Description:           "查看运营统计数据",
-		Regex:                 regexp.MustCompile(`^/api/v3/search/operation/chart/data$`),
-		HTTPMethod:            http.MethodPost,
-		RequiredBizInMetadata: false,
-		ResourceType:          meta.OperationStatistic,
-		ResourceAction:        meta.Find,
+		Name:           "SearchOperationStatisticDataRegex",
+		Description:    "查看运营统计数据",
+		Regex:          regexp.MustCompile(`^/api/v3/search/operation/chart/data/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    nil,
+		ResourceType:   meta.OperationStatistic,
+		ResourceAction: meta.Find,
+	},
+	{
+		Name:           "UpdateOperationStatisticPositionRegex",
+		Description:    "更新运营统计图表位置",
+		Regex:          regexp.MustCompile(`^/api/v3/update/operation/chart/position/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    nil,
+		ResourceType:   meta.OperationStatistic,
+		ResourceAction: meta.Update,
 	},
 }
 
-func (os *parseStream) OperationStatistic() *parseStream {
-	resources, err := MatchAndGenerateBizInURLIAMResource(OperationStatisticAuthConfigs, os.RequestCtx)
-	if err != nil {
-		os.err = err
-	}
-	if resources != nil {
-		os.Attribute.Resources = resources
-	}
-	blog.Infof("\n\n %s", resources)
-	return os
+func (ps *parseStream) OperationStatistic() *parseStream {
+	return ParseStreamWithFramework(ps, OperationStatisticAuthConfigs)
 }

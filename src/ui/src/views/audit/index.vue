@@ -4,7 +4,7 @@
             <div class="group-content" v-if="isAdminView">
                 <span class="title-name" :title="$t('业务')">{{$t('业务')}}</span>
                 <div class="selector-content">
-                    <bk-select v-model="filter.bizId" searchable font-size="14">
+                    <bk-select v-model="filter.bizId" searchable font-size="medium">
                         <bk-option v-for="business in authorizedBusiness"
                             :key="business.bk_biz_id"
                             :id="business.bk_biz_id"
@@ -17,7 +17,7 @@
                 <span class="title-name" title="IP">IP</span>
                 <div class="selector-content">
                     <bk-input class="cmdb-form-input" type="text"
-                        font-size="large"
+                        font-size="medium"
                         :placeholder="$t('使用逗号分隔')"
                         v-model.trim="filter.bkIP">
                     </bk-input>
@@ -26,7 +26,7 @@
             <div class="group-content">
                 <span class="title-name" :title="$t('模型')">{{$t('模型')}}</span>
                 <div class="selector-content">
-                    <bk-select v-model="filter.classify" searchable font-size="14">
+                    <bk-select v-model="filter.classify" searchable font-size="medium">
                         <bk-option-group v-for="group in filterClassifications"
                             :key="group.id"
                             :name="group.name">
@@ -43,7 +43,7 @@
                 <span class="title-name" :title="$t('类型')">{{$t('类型')}}</span>
                 <div class="selector-content">
                     <bk-select
-                        font-size="14"
+                        font-size="medium"
                         v-model="filter.bkOpType"
                         :clearable="false">
                         <bk-option v-for="option in operateTypeList"
@@ -60,13 +60,13 @@
                     <cmdb-form-date-range
                         class="date-range"
                         :clearable="false"
-                        font-size="14"
+                        font-size="medium"
                         v-model="filter.bkCreateTime">
                     </cmdb-form-date-range>
                 </div>
             </div>
             <div class="group-content button-group">
-                <bk-button theme="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1)">{{$t('查询')}}</bk-button>
+                <bk-button theme="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1, $event)">{{$t('查询')}}</bk-button>
             </div>
         </div>
         <bk-table
@@ -117,6 +117,7 @@
                 prop="op_time"
                 :label="$t('操作时间')">
             </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -170,7 +171,14 @@
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-op_time',
-                    sort: '-op_time'
+                    sort: '-op_time',
+                    stuff: {
+                        // 如果初始化时有查询参数，则认为处在查询模式
+                        type: Object.keys(this.$route.query).length ? 'search' : 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
                 details: {
                     isShow: false,
@@ -284,16 +292,32 @@
                 ]
                 this.getTableData()
             },
-            async getTableData () {
-                const res = await this.getOperationLog({
-                    params: this.params,
-                    config: {
-                        cancelPrevious: true,
-                        requestId: 'getOperationLog'
+            async getTableData (event) {
+                try {
+                    const res = await this.getOperationLog({
+                        params: this.params,
+                        config: {
+                            globalPermission: false,
+                            cancelPrevious: true,
+                            requestId: 'getOperationLog'
+                        }
+                    })
+                    this.initTableList(res.info)
+                    this.table.pagination.count = res.count
+                    // 有传入event参数时认为来自用户搜索
+                    if (event) {
+                        this.table.stuff.type = 'search'
                     }
-                })
-                this.initTableList(res.info)
-                this.table.pagination.count = res.count
+                } catch ({ permission }) {
+                    this.table.list = []
+                    // 从api调用层抛出的错误，仅当权限问题时会注入permission
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
+                }
             },
             initTableList (list) {
                 if (list) {
@@ -305,9 +329,9 @@
                     this.table.list = list
                 }
             },
-            handlePageChange (current) {
+            handlePageChange (current, event) {
                 this.table.pagination.current = current
-                this.getTableData()
+                this.getTableData(event)
             },
             handleSizeChange (size) {
                 this.table.pagination.limit = size

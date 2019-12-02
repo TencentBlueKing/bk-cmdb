@@ -1,18 +1,18 @@
 <template>
     <div class="verification-layout">
         <div class="options">
-            <span class="inline-block-middle"
+            <cmdb-auth class="inline-block-middle"
                 v-if="!isTopoModel"
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.U_MODEL),
-                    auth: [$OPERATION.U_MODEL]
-                }">
-                <bk-button class="create-btn" theme="primary"
-                    :disabled="isReadOnly || !updateAuth"
+                :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })"
+                @update-auth="handleReceiveAuth">
+                <bk-button slot-scope="{ disabled }"
+                    class="create-btn"
+                    theme="primary"
+                    :disabled="isReadOnly || disabled"
                     @click="createVerification">
                     {{$t('新建校验')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
         </div>
         <bk-table
             class="verification-table"
@@ -51,13 +51,16 @@
                     </button>
                 </template>
             </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
             :width="450"
             :title="slider.title"
-            :is-show.sync="slider.isShow">
+            :is-show.sync="slider.isShow"
+            :before-close="handleSliderBeforeClose">
             <the-verification-detail
+                ref="verificationForm"
                 slot="content"
                 v-if="slider.isShow"
                 :is-read-only="isReadOnly || slider.isReadOnly"
@@ -65,7 +68,7 @@
                 :verification="slider.verification"
                 :attribute-list="attributeList"
                 @save="saveVerification"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-verification-detail>
         </bk-sideslider>
     </div>
@@ -78,6 +81,12 @@
         components: {
             theVerificationDetail
         },
+        props: {
+            modelId: {
+                type: Number,
+                default: null
+            }
+        },
         data () {
             return {
                 slider: {
@@ -86,9 +95,16 @@
                     verification: {}
                 },
                 table: {
-                    list: []
+                    list: [],
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
                 },
-                attributeList: []
+                attributeList: [],
+                updateAuth: false
             }
         },
         computed: {
@@ -98,21 +114,13 @@
                 'isInjectable'
             ]),
             isTopoModel () {
-                return this.activeModel.bk_classification_id === 'bk_biz_topo'
+                return ['bk_biz_topo', 'bk_organization'].includes(this.activeModel.bk_classification_id)
             },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
                 }
                 return false
-            },
-            updateAuth () {
-                const cantEdit = ['process', 'plat']
-                if (cantEdit.includes(this.$route.params.modelId)) {
-                    return false
-                }
-                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         async created () {
@@ -212,6 +220,30 @@
                 this.slider.isEdit = true
                 this.slider.isReadOnly = true
                 this.slider.isShow = true
+            },
+            handleReceiveAuth (auth) {
+                this.updateAuth = auth
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.verificationForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
             }
         }
     }

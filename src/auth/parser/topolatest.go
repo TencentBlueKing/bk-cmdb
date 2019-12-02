@@ -523,6 +523,31 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
+		// 处理模型自关联的情况
+		if len(models) == 1 {
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.ModelInstance,
+						Action:     meta.Update,
+						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int(),
+					},
+					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
+					BusinessID: bizID,
+				},
+				{
+					Basic: meta.Basic{
+						Type:       meta.ModelInstance,
+						Action:     meta.Update,
+						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int(),
+					},
+					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
+					BusinessID: bizID,
+				},
+			}
+			return ps
+		}
+
 		for _, model := range models {
 			var instID int64
 			if model.ObjectID == asst[0].ObjectID {
@@ -569,6 +594,31 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		}}})
 		if err != nil {
 			ps.err = err
+			return ps
+		}
+
+		// 处理模型自关联的情况
+		if len(models) == 1 {
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.ModelInstance,
+						Action:     meta.Update,
+						InstanceID: asst.InstID,
+					},
+					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
+					BusinessID: bizID,
+				},
+				{
+					Basic: meta.Basic{
+						Type:       meta.ModelInstance,
+						Action:     meta.Update,
+						InstanceID: asst.AsstInstID,
+					},
+					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
+					BusinessID: bizID,
+				},
+			}
 			return ps
 		}
 
@@ -1395,6 +1445,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1719,6 +1770,7 @@ const (
 var (
 	deleteMainlineObjectLatestRegexp                       = regexp.MustCompile(`^/api/v3/delete/topomodelmainline/object/[^\s/]+/?$`)
 	findBusinessInstanceTopologyLatestRegexp               = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
+	findBusinessInstanceTopologyPathRegexp                 = regexp.MustCompile(`^/api/v3/find/topopath/biz/[0-9]+/?$`)
 	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
 	// TODO remove it, interface implementation not found
 	findMainlineSubInstanceTopoLatestRegexp = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
@@ -1841,6 +1893,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 	// find business instance topology operation.
 	// also is find mainline instance topology operation.
 	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) ||
+		ps.hitRegexp(findBusinessInstanceTopologyPathRegexp, http.MethodPost) ||
 		ps.hitRegexp(findBusinessInstanceTopologyWithStatisticsLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")

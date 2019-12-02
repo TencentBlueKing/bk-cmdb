@@ -53,7 +53,7 @@ type UserCustomQueryDetailResult struct {
 type HostInputType string
 
 const (
-	ExecelType  HostInputType = "excel"
+	ExcelType   HostInputType = "excel"
 	CollectType HostInputType = "collect"
 )
 
@@ -110,9 +110,10 @@ type HostCommonSearch struct {
 }
 
 type HostModuleFind struct {
-	ModuleIDS []int64  `json:"bk_module_ids"`
-	Metadata  Metadata `json:"metadata"`
-	Page      BasePage `json:"page"`
+	ModuleIDS []int64   `json:"bk_module_ids"`
+	Metadata  *Metadata `json:"metadata"`
+	AppID     int64     `json:"bk_biz_id"`
+	Page      BasePage  `json:"page"`
 }
 
 type ListHostsParameter struct {
@@ -125,6 +126,10 @@ type ListHostsParameter struct {
 type ListHostsWithNoBizParameter struct {
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
 	Page               BasePage                  `json:"page"`
+}
+
+type CountTopoNodeHostsOption struct {
+	Nodes []TopoNode `json:"topo_nodes" mapstructure:"topo_nodes"`
 }
 
 type TimeRange struct {
@@ -145,19 +150,24 @@ func (option ListHosts) Validate() (string, error) {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
-	if key, err := option.HostPropertyFilter.Validate(); err != nil {
-		return fmt.Sprintf("host_property_filter.%s", key), err
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
 	}
 
 	return "", nil
 }
 
 func (option ListHosts) GetHostPropertyFilter(ctx context.Context) (map[string]interface{}, error) {
-	mgoFilter, key, err := option.HostPropertyFilter.ToMgo()
-	if err != nil {
-		return nil, fmt.Errorf("invalid key:host_property_filter.%s, err: %s", key, err)
+	if option.HostPropertyFilter != nil {
+		mgoFilter, key, err := option.HostPropertyFilter.ToMgo()
+		if err != nil {
+			return nil, fmt.Errorf("invalid key:host_property_filter.%s, err: %s", key, err)
+		}
+		return mgoFilter, nil
 	}
-	return mgoFilter, nil
+	return make(map[string]interface{}), nil
 }
 
 // ip search info
@@ -182,6 +192,27 @@ type SearchHost struct {
 type ListHostResult struct {
 	Count int                      `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
+}
+
+type HostTopoResult struct {
+	Count int        `json:"count"`
+	Info  []HostTopo `json:"info"`
+}
+
+type HostTopo struct {
+	Host map[string]interface{} `json:"host"`
+	Topo []Topo                 `json:"topo"`
+}
+
+type Topo struct {
+	SetID   int64    `json:"bk_set_id"`
+	SetName string   `json:"bk_set_name"`
+	Module  []Module `json:"module"`
+}
+
+type Module struct {
+	ModuleID   int64  `json:"bk_module_id"`
+	ModuleName string `json:"bk_module_name"`
 }
 
 func (sh SearchHost) ExtractHostIDs() *[]int64 {
@@ -349,5 +380,75 @@ type DeleteHostFromBizParameter struct {
 
 // CloudAreaParameter search cloud area parameter
 type CloudAreaParameter struct {
-	Page BasePage `json:"page" bson:"page" field:"page"`
+	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
+	Page      BasePage      `json:"page" bson:"page" field:"page"`
+}
+
+type TopoNode struct {
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" mapstructure:"bk_obj_id"`
+	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id" mapstructure:"bk_inst_id"`
+}
+
+func (node TopoNode) String() string {
+	return fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+}
+
+type TopoNodeHostCount struct {
+	Node      TopoNode `field:"topo_node" json:"topo_node" mapstructure:"topo_node"`
+	HostCount int      `field:"host_count" json:"host_count" mapstructure:"host_count"`
+}
+
+type TransferHostWithAutoClearServiceInstanceOption struct {
+	RemoveFromNode *TopoNode `field:"remove_from_node" json:"remove_from_node"`
+	HostIDs        []int64   `field:"bk_host_ids" json:"bk_host_ids"`
+	AddToModules   []int64   `field:"add_to_modules" json:"add_to_modules"`
+	// 主机从 RemoveFromNode 移除后如果不再属于其它模块， 默认转移到空闲机模块
+	// DefaultInternalModule 支持调整这种模型行为，可设置成待回收模块或者故障机模块
+	DefaultInternalModule int64           `field:"default_internal_module" json:"default_internal_module"`
+	Options               TransferOptions `field:"options" json:"options"`
+}
+
+type TransferOptions struct {
+	ServiceInstanceOptions []CreateServiceInstanceOption `field:"service_instance_options" json:"service_instance_options"`
+}
+
+type HostTransferPlan struct {
+	HostID                  int64   `field:"bk_host_id" json:"bk_host_id"`
+	FinalModules            []int64 `field:"final_modules" json:"final_modules"`
+	ToRemoveFromModules     []int64 `field:"to_remove_from_modules" json:"to_remove_from_modules"`
+	ToAddToModules          []int64 `field:"to_add_to_modules" json:"to_add_to_modules"`
+	IsTransferToInnerModule bool    `field:"is_transfer_to_inner_module" json:"is_transfer_to_inner_module"`
+}
+
+type RemoveFromModuleInfo struct {
+	ModuleID         int64             `field:"bk_module_id" json:"bk_module_id"`
+	ServiceInstances []ServiceInstance `field:"service_instances" json:"service_instances"`
+}
+
+type AddToModuleInfo struct {
+	ModuleID        int64                  `field:"bk_module_id" json:"bk_module_id"`
+	ServiceTemplate *ServiceTemplateDetail `field:"service_template" json:"service_template"`
+}
+
+type HostTransferPreview struct {
+	HostID              int64                  `field:"bk_host_id" json:"bk_host_id"`
+	FinalModules        []int64                `field:"final_modules" json:"final_modules"`
+	ToRemoveFromModules []RemoveFromModuleInfo `field:"to_remove_from_modules" json:"to_remove_from_modules"`
+	ToAddToModules      []AddToModuleInfo      `field:"to_add_to_modules" json:"to_add_to_modules"`
+}
+
+type UpdateHostCloudAreaFieldOption struct {
+	BizID   int64   `field:"bk_biz_id" json:"bk_biz_id" mapstructure:"bk_biz_id"`
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" mapstructure:"bk_host_ids"`
+	CloudID int64   `field:"bk_cloud_id" json:"bk_cloud_id" mapstructure:"bk_cloud_id"`
+}
+
+// UpdateHostPropertyBatchParameter batch update host property parameter
+type UpdateHostPropertyBatchParameter struct {
+	Update []updateHostProperty `json:"update"`
+}
+
+type updateHostProperty struct {
+	HostID     int64                  `json:"bk_host_id"`
+	Properties map[string]interface{} `json:"properties"`
 }

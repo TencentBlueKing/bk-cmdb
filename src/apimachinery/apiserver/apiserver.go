@@ -28,12 +28,7 @@ import (
 
 type ApiServerClientInterface interface {
 	AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response, err error)
-	SearchDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error)
-	GetRolePrivilege(ctx context.Context, h http.Header, ownerID, objID, role string) (resp *metadata.RolePriResult, err error)
-	GetAppRole(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.RoleAppResult, err error)
-	GetUserPrivilegeApp(ctx context.Context, h http.Header, ownerID, userName string, params mapstr.MapStr) (resp *metadata.AppQueryResult, err error)
-	GetUserPrivilegeConfig(ctx context.Context, h http.Header, ownerID, userName string) (resp *metadata.UserPriviResult, err error)
-	GetAllMainLineObject(ctx context.Context, h http.Header, ownerID, userName string) (resp *metadata.MainLineResult, err error)
+	SearchDefaultApp(ctx context.Context, h http.Header, ownerID string) (resp *metadata.QueryInstResult, err error)
 	GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error)
 	GetInstDetail(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error)
 	CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error)

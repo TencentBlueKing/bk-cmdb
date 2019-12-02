@@ -25,7 +25,7 @@
                 <div class="item-left">
                     <span v-if="navData.model">{{ navData.model }}</span>
                     <span v-if="!navData.model">0</span>
-                    <span>{{$t('模型总数')}}</span>
+                    <span>{{$t('自定义模型总数')}}</span>
                 </div>
                 <div class="item-right item-right-left">
                     <i class="menu-icon icon-cc-model-total icon-size"></i>
@@ -49,83 +49,117 @@
                 </div>
             </div>
         </div>
-        <div class="operation-top">
-            <span class="operation-title">{{$t('主机统计')}}</span>
-            <i class="icon icon-cc-operate-add" @click="openNew('add', 'host')">
-                <div class="title-block">{{$t('添加主机图表')}}</div>
-            </i>
-        </div>
-        <div v-for="(item, key) in hostData.disList"
-            :key="item.report_type + item.config_id"
-            :style="{ width: item.width + '%' }"
-            class="operation-layout">
-            <div class="chart-child">
-                <div class="chart-title">
-                    <span>{{item.name}}</span>
-                    <div class="charts-options">
-                        <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
-                            @click="moveChart('host', 'up', key, hostData.disList)">
-                            <div class="title-block">{{$t('已置顶，无法上移')}}</div>
-                        </i>
-                        <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === hostData.disList.length - 1 }"
-                            @click="moveChart('host', 'down', key, hostData.disList)">
-                            <div class="title-block">{{$t('已置底，无法下移')}}</div>
-                        </i>
-                        <i class="icon icon-cc-edit-shape"
-                            @click="openNew('edit', 'host', item, key)"></i>
-                        <i class="icon icon-cc-tips-close"
-                            @click="deleteChart('host', key, hostData.disList, item)"></i>
+        <div class="main">
+            <div class="operation-top">
+                <span class="operation-title">{{$t('主机统计')}}</span>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_STATISTICAL_REPORT })" @update-auth="handleReceiveAuth">
+                    <bk-button slot-scope="{ disabled }"
+                        class="icon-btn"
+                        theme="primary"
+                        text
+                        v-bk-tooltips="$t('添加主机图表')"
+                        :disabled="disabled"
+                        @click="openNew('add', 'host')">
+                        <i class="icon icon-cc-add-line"></i>
+                    </bk-button>
+                </cmdb-auth>
+            </div>
+            <div v-for="(item, key) in hostData.disList"
+                :key="item.report_type + item.config_id"
+                :style="{ width: item.width + '%' }"
+                class="operation-layout">
+                <div class="chart-child">
+                    <div class="chart-title">
+                        <span>{{item.name}}</span>
+                        <div class="charts-options" v-if="updateAuth">
+                            <i class="bk-icon icon-arrows-up icon-weight icon-disable"
+                                v-if="key === 0"
+                                v-bk-tooltips="$t('已置顶，无法上移')">
+                            </i>
+                            <i class="bk-icon icon-arrows-up icon-weight" v-else
+                                @click="moveChart('host', 'up', key, hostData.disList)">
+                            </i>
+                            <i class="bk-icon icon-arrows-down icon-weight icon-disable"
+                                v-if="key === hostData.disList.length - 1"
+                                v-bk-tooltips="$t('已置底，无法下移')">
+                            </i>
+                            <i class="bk-icon icon-arrows-down icon-weight"
+                                v-else
+                                @click="moveChart('host', 'down', key, hostData.disList)">
+                            </i>
+                            <i class="icon icon-cc-edit-shape"
+                                @click="openNew('edit', 'host', item, key)"></i>
+                            <i class="icon icon-cc-tips-close"
+                                @click="deleteChart('host', key, hostData.disList, item)"></i>
+                        </div>
                     </div>
-                </div>
-                <div class="chart-bottom">
-                    <div class="operation-charts" :id="item.report_type + item.config_id"></div>
-                </div>
-                <div v-if="item.noData" class="null-data">
-                    <span>{{$t('暂无数据')}}</span>
-                </div>
-                <div class="chart-date" v-if="item.showDate">
-                    <bk-date-picker
-                        :options="options"
-                        @change="dateChange"
-                        class="options-filter"
-                        :type="'daterange'"
-                        v-model="dateRange">
-                    </bk-date-picker>
+                    <div class="chart-bottom">
+                        <div class="operation-charts" :id="item.report_type + item.config_id"></div>
+                    </div>
+                    <div v-if="item.noData" class="null-data">
+                        <span>{{$t('暂无数据')}}</span>
+                    </div>
+                    <div class="chart-date" v-if="item.showDate">
+                        <bk-date-picker
+                            :options="options"
+                            @change="dateChange"
+                            class="options-filter"
+                            :type="'daterange'"
+                            :clearable="false"
+                            v-model="dateRange">
+                        </bk-date-picker>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="operation-top">
-            <span class="operation-title">{{$t('实例统计')}}</span>
-            <i class="icon icon-cc-operate-add" @click="openNew('add', 'inst')">
-                <div class="title-block">{{$t('添加实例图表')}}</div>
-            </i>
-        </div>
-        <div v-for="(item, key) in instData.disList"
-            :key="item.report_type + item.config_id"
-            :style="{ width: item.width + '%' }"
-            class="operation-layout">
-            <div class="chart-child">
-                <div class="chart-title">
-                    <span>{{item.name}}</span>
-                    <div class="charts-options">
-                        <i class="bk-icon icon-arrows-up icon-weight" :class="{ 'icon-disable': key === 0 }"
-                            @click="moveChart('inst', 'up', key, instData.disList)">
-                            <div class="title-block">{{$t('已置顶，无法上移')}}</div>
-                        </i>
-                        <i class="bk-icon icon-arrows-down icon-weight" :class="{ 'icon-disable': key === instData.disList.length - 1 }"
-                            @click="moveChart('inst', 'down', key, instData.disList)">
-                            <div class="title-block">{{$t('已置底，无法下移')}}</div>
-                        </i>
-                        <i class="icon icon-cc-edit-shape" @click="openNew('edit', 'inst', item, key)"></i>
-                        <i class="icon icon-cc-tips-close"
-                            @click="deleteChart('inst', key, instData.disList, item)"></i>
+            <div class="operation-top">
+                <span class="operation-title">{{$t('实例统计')}}</span>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_STATISTICAL_REPORT })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="icon-btn"
+                        theme="primary"
+                        text
+                        v-bk-tooltips="$t('添加实例图表')"
+                        :disabled="disabled"
+                        @click="openNew('add', 'inst')">
+                        <i class="icon icon-cc-add-line"></i>
+                    </bk-button>
+                </cmdb-auth>
+            </div>
+            <div v-for="(item, key) in instData.disList"
+                :key="item.report_type + item.config_id"
+                :style="{ width: item.width + '%' }"
+                class="operation-layout">
+                <div class="chart-child">
+                    <div class="chart-title">
+                        <span>{{item.name}}</span>
+                        <div class="charts-options" v-if="updateAuth">
+                            <i class="bk-icon icon-arrows-up icon-weight icon-disable"
+                                v-if="key === 0"
+                                v-bk-tooltips="$t('已置顶，无法上移')">
+                            </i>
+                            <i class="bk-icon icon-arrows-up icon-weight"
+                                v-else
+                                @click="moveChart('inst', 'up', key, instData.disList)">
+                            </i>
+                            <i class="bk-icon icon-arrows-down icon-weight icon-disable"
+                                v-if="key === instData.disList.length - 1"
+                                v-bk-tooltips="$t('已置底，无法下移')">
+                            </i>
+                            <i class="bk-icon icon-arrows-down icon-weight"
+                                v-else
+                                @click="moveChart('inst', 'down', key, instData.disList)">
+                            </i>
+                            <i class="icon icon-cc-edit-shape" @click="openNew('edit', 'inst', item, key)"></i>
+                            <i class="icon icon-cc-tips-close"
+                                @click="deleteChart('inst', key, instData.disList, item)"></i>
+                        </div>
                     </div>
-                </div>
-                <div class="chart-bottom">
-                    <div class="operation-charts" :id="item.report_type + item.config_id"></div>
-                </div>
-                <div v-if="item.noData" class="null-data">
-                    <span>{{$t('暂无数据')}}</span>
+                    <div class="chart-bottom">
+                        <div class="operation-charts" :id="item.report_type + item.config_id"></div>
+                    </div>
+                    <div v-if="item.noData" class="null-data">
+                        <span>{{$t('暂无数据')}}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -133,6 +167,7 @@
             :open-type="editType.openType"
             :host-type="editType.hostType"
             :chart-data="newChart"
+            :existed-charts="existedCharts"
             @transData="saveData"
             @closeChart="cancelData">
         </v-detail>
@@ -140,7 +175,7 @@
 </template>
 
 <script>
-    import Plotly from 'plotly.js'
+    import moment from 'moment'
     import {
         MENU_RESOURCE_BUSINESS,
         MENU_RESOURCE_HOST,
@@ -148,12 +183,16 @@
     } from '@/dictionary/menu-symbol'
     import { mapActions } from 'vuex'
     import vDetail from './chart-detail'
+    let Plotly
+    let PlotlyCN
     export default {
         name: 'index',
         components: {
             vDetail
         },
         data () {
+            const startDate = this.$tools.formatTime(moment().subtract(6, 'days').toDate(), 'YYYY-MM-DD')
+            const endDate = this.$tools.formatTime(moment().toDate(), 'YYYY-MM-DD')
             return {
                 MENU_RESOURCE_BUSINESS,
                 MENU_RESOURCE_HOST,
@@ -179,19 +218,27 @@
                     inst: '',
                     model: ''
                 },
-                dateRange: [],
+                dateRange: [startDate, endDate],
                 dateChart: {},
                 maxRange: [],
                 options: {
                     disabledDate (date) {
                         const today = new Date()
-                        return today < date
+                        const lastYears = moment().subtract(1, 'years').toDate()
+                        return today < date || date < lastYears
                     }
-                }
+                },
+                existedCharts: [],
+                updateAuth: false
             }
         },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('统计报表'))
+        async created () {
+            const [plotly, plotlyCn] = await Promise.all([
+                import('plotly.js'),
+                import('plotly.js/lib/locales/zh-cn.js')
+            ])
+            Plotly = plotly
+            PlotlyCN = plotlyCn
             this.getChartList()
         },
         methods: {
@@ -286,7 +333,7 @@
                         if (item.count === 0) zeroList++
                         if (data.chart_type === 'pie') {
                             content.labels.push(item.id)
-                            content.values.push(item.count)
+                            if (item.count !== 0) content.values.push(item.count)
                         } else {
                             const color = '#3A84FF'
                             content.marker.color.push(color)
@@ -301,7 +348,7 @@
                     const barModel = {
                         chart: {
                             delete: {
-                                name: 'delete',
+                                name: this.$t('删除'),
                                 type: 'bar',
                                 y: [],
                                 color: '#3A84FF',
@@ -310,7 +357,7 @@
                                 hoverlabel: hoverlabel
                             },
                             update: {
-                                name: 'update',
+                                name: this.$t('更新'),
                                 type: 'bar',
                                 y: [],
                                 color: '#38C1E2',
@@ -319,7 +366,7 @@
                                 hoverlabel: hoverlabel
                             },
                             create: {
-                                name: 'create',
+                                name: this.$t('新建'),
                                 type: 'bar',
                                 y: [],
                                 color: '#59D178',
@@ -435,7 +482,8 @@
                         showgrid: false,
                         autorange: false,
                         tickformat: '%Y-%m-%d',
-                        fixedrange: layConfig.fixRange
+                        fixedrange: layConfig.fixRange,
+                        dtick: item.report_type === 'host_change_biz_chart' ? 24 * 60 * 60 * 1000 : ''
                     },
                     bargap: 0.1,
                     bargroupgap: 1.0044 - (0.0401 * item.x_axis_count),
@@ -448,6 +496,10 @@
                     displaylogo: false,
                     displayModeBar: false,
                     responsive: true
+                }
+                if (this.$i18n.locale === 'zh_CN') {
+                    Plotly.register(PlotlyCN)
+                    options.locale = 'zh-CN'
                 }
                 if (this.editType.openType === 'edit') {
                     Plotly.purge(myDiv)
@@ -535,6 +587,7 @@
                     this.newChart = this.$tools.clone(data)
                     this.newChart.title = data.name
                     this.newChart.bk_obj_id = data.bk_obj_id ? data.bk_obj_id : host
+                    this.existedCharts = []
                 } else {
                     this.newChart = {
                         report_type: 'custom',
@@ -546,6 +599,7 @@
                         width: '50',
                         x_axis_count: 10
                     }
+                    this.existedCharts = host === 'host' ? this.hostData.disList : this.instData.disList
                 }
                 this.isShow = true
             },
@@ -592,6 +646,9 @@
                 this.dateChart.data.minTime = date[0]
                 this.editType.openType = 'edit'
                 this.drawCharts(this.dateChart)
+            },
+            handleReceiveAuth (auth) {
+                this.updateAuth = auth
             }
         }
     }
@@ -643,22 +700,18 @@
             color: #313238;
             vertical-align: middle;
         }
-        i{
-            position: relative;
-            color: #3A84FF;
-            font-size: 22px;
-            cursor: pointer;
-            margin-left: 5px;
-            vertical-align: middle;
-        }
-        i:hover{
-            background:rgba(225,236,255,1);
-            .title-block {
-                display: block;
+        .icon-btn {
+            font-size: 0;
+            .icon {
+                font-size: 16px;
+                &:hover {
+                    background:rgba(225,236,255,1);
+                }
             }
         }
     }
     .operate-menus{
+        padding: 0 10px;
         height: 105px;
         display: flex;
         width: 100%;
@@ -744,6 +797,9 @@
                }
             }
         }
+    }
+    .main {
+        padding: 0 10px;
     }
     .operation-layout{
         display: inline-block;

@@ -7,8 +7,8 @@
         :width="350"
         :on-show="handleShow"
         :on-hide="handleHide"
+        :z-index="1001"
         :tippy-options="{
-            zIndex: 1001,
             interactive: true,
             hideOnClick: false,
             onShown: checkIsScrolling
@@ -23,7 +23,7 @@
         </icon-button>
         <section class="filter-content" slot="content"
             :style="{
-                height: $APP.height - 200 + 'px'
+                height: (sectionHeight ? sectionHeight : ($APP.height - 200)) + 'px'
             }">
             <h2 class="filter-title">
                 {{$t('高级筛选')}}
@@ -32,7 +32,7 @@
             <div class="filter-scroller" ref="scroller">
                 <div class="filter-group" style="padding: 0;">
                     <label class="filter-label">IP</label>
-                    <bk-input type="textarea" v-model="ip.text" :rows="4" :placeholder="$t('请输入IP')"></bk-input>
+                    <bk-input type="textarea" v-model="ip.text" :rows="4" :placeholder="$t('请输入IP，多个IP请使用换行分隔')"></bk-input>
                 </div>
                 <div class="filter-group checkbox-group">
                     <bk-checkbox class="filter-checkbox"
@@ -57,11 +57,12 @@
                             v-model="filterItem.operator"
                             :type="getOperatorType(filterItem)">
                         </filter-operator>
-                        <cmdb-form-enum class="filter-value"
-                            v-if="filterItem.bk_property_type === 'enum'"
+                        <component class="filter-value"
+                            v-if="['enum', 'list'].includes(filterItem.bk_property_type)"
+                            :is="`cmdb-form-${filterItem.bk_property_type}`"
                             :options="filterItem.option || []"
                             v-model="filterItem.value">
-                        </cmdb-form-enum>
+                        </component>
                         <cmdb-form-bool-input class="filter-value"
                             v-else-if="filterItem.bk_property_type === 'bool'"
                             v-model="filterItem.value">
@@ -74,6 +75,11 @@
                             v-else-if="['date', 'time'].includes(filterItem.bk_property_type)"
                             v-model="filterItem.value">
                         </cmdb-form-date-range>
+                        <cmdb-cloud-selector
+                            v-else-if="filterItem.bk_property_id === 'bk_cloud_id'"
+                            class="filter-value"
+                            v-model="filterItem.value">
+                        </cmdb-cloud-selector>
                         <component class="filter-value"
                             v-else
                             :is="`cmdb-form-${filterItem.bk_property_type}`"
@@ -105,8 +111,8 @@
                             theme="light"
                             trigger="manual"
                             :width="280"
+                            :z-index="1002"
                             :tippy-options="{
-                                zIndex: 1002,
                                 interactive: true,
                                 hideOnClick: false
                             }">
@@ -149,7 +155,8 @@
     import filterOperator from './_filter-field-operator.vue'
     import propertySelector from './filter-property-selector.vue'
     import { mapState, mapGetters } from 'vuex'
-    import { MENU_BUSINESS_HOST_MANAGEMENT } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import Bus from '@/utils/bus'
     export default {
         components: {
             filterOperator,
@@ -161,6 +168,10 @@
                 default () {
                     return {}
                 }
+            },
+            sectionHeight: {
+                type: Number,
+                default: null
             }
         },
         data () {
@@ -184,7 +195,7 @@
             }
         },
         computed: {
-            ...mapState('hosts', ['filterList', 'filterIP', 'collection']),
+            ...mapState('hosts', ['filterList', 'filterIP', 'collection', 'isHostSearch']),
             ...mapGetters('hosts', ['isCollection']),
             isFilterActive () {
                 const hasIP = !!this.ip.text.replace(/\n|;|；|,|，/g, '').length
@@ -197,7 +208,7 @@
                 return hasIP || hasField || this.isShow
             },
             isBusinessHost () {
-                return this.$route.name === MENU_BUSINESS_HOST_MANAGEMENT
+                return this.$route.name === MENU_BUSINESS_HOST_AND_SERVICE
             }
         },
         watch: {
@@ -215,23 +226,19 @@
             }
         },
         async created () {
+            Bus.$on('toggle-host-filter', this.handleToggleFilter)
             this.propertyPromise = new Promise((resolve, reject) => {
                 this.propertyResolver = () => {
                     this.propertyResolver = null
                     resolve()
                 }
             })
-            // const formFullTextSearch = Object.keys(this.$route.params).length
-            // if (formFullTextSearch) {
-            //     this.defaultIpConfig = Object.assign(this.defaultIpConfig, this.$route.params)
-            // }
             await this.initCustomFilterIP()
             await this.initCustomFilterList()
-            // if (formFullTextSearch) {
-            //     this.handleSearch()
-            // }
+            this.isHostSearch && this.handleSearch()
         },
         beforeDestroy () {
+            Bus.$off('toggle-host-filter', this.handleToggleFilter)
             this.$store.commit('hosts/clearFilter')
         },
         methods: {
@@ -245,15 +252,35 @@
             initCustomFilterList () {
                 const key = this.$route.meta.filterPropertyKey
                 const customData = this.$store.getters['userCustom/getCustomData'](key, [])
+                if (!customData.length && !this.isCollection) {
+                    customData.push(...[
+                        {
+                            bk_obj_id: 'host',
+                            bk_property_id: 'operator',
+                            operator: '',
+                            value: ''
+                        },
+                        {
+                            bk_obj_id: 'host',
+                            bk_property_id: 'bk_cloud_id',
+                            operator: '',
+                            value: ''
+                        }
+                    ])
+                }
                 this.$store.commit('hosts/setFilterList', customData)
             },
-            handleToggleFilter () {
+            handleToggleFilter (visible) {
                 const instance = this.$refs.filterPopper.instance
-                const state = instance.state
-                if (state.isVisible) {
-                    instance.hide()
+                if (typeof visible === 'boolean') {
+                    visible ? instance.show() : instance.hide(0)
                 } else {
-                    instance.show()
+                    const state = instance.state
+                    if (state.isVisible) {
+                        instance.hide()
+                    } else {
+                        instance.show()
+                    }
                 }
             },
             handleAddFilter () {
@@ -484,6 +511,12 @@
                     return 'char'
                 }
                 return 'common'
+            },
+            hide () {
+                try {
+                    const instance = this.$refs.filterPopper.instance
+                    instance.hide()
+                } catch (e) {}
             }
         }
     }

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -120,6 +121,12 @@ type ListServiceInstanceDetailRequest struct {
 }
 
 type DiffModuleWithTemplateOption struct {
+	Metadata  *Metadata `json:"metadata"`
+	BizID     int64     `json:"bk_biz_id"`
+	ModuleIDs []int64   `json:"bk_module_ids"`
+}
+
+type DiffOneModuleWithTemplateOption struct {
 	Metadata *Metadata `json:"metadata"`
 	BizID    int64     `json:"bk_biz_id"`
 	ModuleID int64     `json:"bk_module_id"`
@@ -176,6 +183,7 @@ type ProcessChangedAttribute struct {
 
 // ModuleDiffWithTemplateDetail 模块与服务模板间的差异
 type ModuleDiffWithTemplateDetail struct {
+	ModuleID          int64                       `json:"bk_module_id"`
 	Unchanged         []ServiceInstanceDifference `json:"unchanged"`
 	Changed           []ServiceInstanceDifference `json:"changed"`
 	Added             []ServiceInstanceDifference `json:"added"`
@@ -207,6 +215,19 @@ type ServiceDifferenceDetails struct {
 	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
 }
 
+type CreateServiceInstanceOption struct {
+	ModuleID int64 `json:"bk_module_id"`
+	HostID   int64 `json:"bk_host_id"`
+	// Processes parameter usable only when create instance with raw
+	Processes []ProcessCreateOrUpdateInfo `json:"processes"`
+}
+
+type ProcessCreateOrUpdateInfo struct {
+	// ProcessTemplateID indicate which process to update if service instance bound with a template
+	ProcessTemplateID int64                  `json:"process_template_id"`
+	ProcessInfo       map[string]interface{} `json:"process_info"`
+}
+
 type CreateServiceInstanceDetail struct {
 	HostID int64 `json:"bk_host_id"`
 	// Processes parameter usable only when create instance with raw
@@ -214,8 +235,9 @@ type CreateServiceInstanceDetail struct {
 }
 
 type ProcessInstanceDetail struct {
-	// ProcessTemplateID int64   `json:"process_template_id"`
-	ProcessInfo Process `json:"process_info"`
+	// ProcessTemplateID indicate which process to update if service instance bound with a template
+	ProcessTemplateID int64                  `json:"process_template_id"`
+	ProcessData       map[string]interface{} `json:"process_info"`
 }
 
 type ListProcessTemplateWithServiceTemplateInput struct {
@@ -227,6 +249,13 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 }
 
 type SyncServiceInstanceByTemplateOption struct {
+	Metadata  *Metadata `json:"metadata"`
+	BizID     int64     `json:"bk_biz_id"`
+	ModuleIDs []int64   `json:"bk_module_ids"`
+}
+
+// 用于同步单个模块的服务实例
+type SyncModuleServiceInstanceByTemplateOption struct {
 	Metadata *Metadata `json:"metadata"`
 	BizID    int64     `json:"bk_biz_id"`
 	ModuleID int64     `json:"bk_module_id"`
@@ -339,32 +368,32 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
-	ProcNum         *int64        `field:"proc_num" json:"proc_num" bson:"proc_num" structs:"proc_num"`
-	StopCmd         *string       `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd" structs:"stop_cmd"`
-	RestartCmd      *string       `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd" structs:"restart_cmd"`
-	ForceStopCmd    *string       `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd" structs:"face_stop_cmd"`
-	ProcessID       int64         `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id" structs:"bk_process_id"`
-	FuncName        *string       `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" structs:"bk_func_name"`
-	WorkPath        *string       `field:"work_path" json:"work_path" bson:"work_path" structs:"work_path"`
-	BindIP          *string       `field:"bind_ip" json:"bind_ip" bson:"bind_ip" structs:"bind_ip"`
-	Priority        *int64        `field:"priority" json:"priority" bson:"priority" structs:"priority"`
-	ReloadCmd       *string       `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd" structs:"reload_cmd"`
-	ProcessName     *string       `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" structs:"bk_process_name"`
-	Port            *string       `field:"port" json:"port" bson:"port" structs:"port"`
-	PidFile         *string       `field:"pid_file" json:"pid_file" bson:"pid_file" structs:"pid_file"`
-	AutoStart       *bool         `field:"auto_start" json:"auto_start" bson:"auto_start" structs:"auto_start"`
-	AutoTimeGap     *int64        `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" structs:"auto_time_gap"`
-	LastTime        time.Time     `field:"last_time" json:"last_time" bson:"last_time" structs:"last_time"`
-	CreateTime      time.Time     `field:"create_time" json:"create_time" bson:"create_time" structs:"create_time"`
-	BusinessID      int64         `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" structs:"bk_biz_id"`
-	StartCmd        *string       `field:"start_cmd" json:"start_cmd" bson:"start_cmd" structs:"start_cmd"`
-	FuncID          *string       `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id" structs:"bk_func_id"`
-	User            *string       `field:"user" json:"user" bson:"user" structs:"user"`
-	TimeoutSeconds  *int64        `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout"`
-	Protocol        *ProtocolType `field:"protocol" json:"protocol" bson:"protocol" structs:"protocol"`
-	Description     *string       `field:"description" json:"description" bson:"description" structs:"description"`
-	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account"`
-	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex"`
+	ProcNum         *int64        `field:"proc_num" json:"proc_num" bson:"proc_num" structs:"proc_num" mapstructure:"proc_num"`
+	StopCmd         *string       `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd" structs:"stop_cmd" mapstructure:"stop_cmd"`
+	RestartCmd      *string       `field:"restart_cmd" json:"restart_cmd" bson:"restart_cmd" structs:"restart_cmd" mapstructure:"restart_cmd"`
+	ForceStopCmd    *string       `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd" structs:"face_stop_cmd" mapstructure:"face_stop_cmd"`
+	ProcessID       int64         `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id" structs:"bk_process_id" mapstructure:"bk_process_id"`
+	FuncName        *string       `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" structs:"bk_func_name" mapstructure:"bk_func_name"`
+	WorkPath        *string       `field:"work_path" json:"work_path" bson:"work_path" structs:"work_path" mapstructure:"work_path"`
+	BindIP          *string       `field:"bind_ip" json:"bind_ip" bson:"bind_ip" structs:"bind_ip" mapstructure:"bind_ip"`
+	Priority        *int64        `field:"priority" json:"priority" bson:"priority" structs:"priority" mapstructure:"priority"`
+	ReloadCmd       *string       `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd" structs:"reload_cmd" mapstructure:"reload_cmd"`
+	ProcessName     *string       `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" structs:"bk_process_name" mapstructure:"bk_process_name"`
+	Port            *string       `field:"port" json:"port" bson:"port" structs:"port" mapstructure:"port"`
+	PidFile         *string       `field:"pid_file" json:"pid_file" bson:"pid_file" structs:"pid_file" mapstructure:"pid_file"`
+	AutoStart       *bool         `field:"auto_start" json:"auto_start" bson:"auto_start" structs:"auto_start" mapstructure:"auto_start"`
+	AutoTimeGap     *int64        `field:"auto_time_gap" json:"auto_time_gap" bson:"auto_time_gap" structs:"auto_time_gap" mapstructure:"auto_time_gap"`
+	LastTime        time.Time     `field:"last_time" json:"last_time" bson:"last_time" structs:"last_time" mapstructure:"last_time"`
+	CreateTime      time.Time     `field:"create_time" json:"create_time" bson:"create_time" structs:"create_time" mapstructure:"create_time"`
+	BusinessID      int64         `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" structs:"bk_biz_id" mapstructure:"bk_biz_id"`
+	StartCmd        *string       `field:"start_cmd" json:"start_cmd" bson:"start_cmd" structs:"start_cmd" mapstructure:"start_cmd"`
+	FuncID          *string       `field:"bk_func_id" json:"bk_func_id" bson:"bk_func_id" structs:"bk_func_id" mapstructure:"bk_func_id"`
+	User            *string       `field:"user" json:"user" bson:"user" structs:"user" mapstructure:"user"`
+	TimeoutSeconds  *int64        `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout" mapstructure:"timeout"`
+	Protocol        *ProtocolType `field:"protocol" json:"protocol" bson:"protocol" structs:"protocol" mapstructure:"protocol"`
+	Description     *string       `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
+	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
 }
 
 type ServiceCategory struct {
@@ -397,10 +426,15 @@ type ServiceCategoryWithStatistics struct {
 	UsageAmount     int64           `field:"usage_amount" json:"usage_amount" bson:"usage_amount"`
 }
 
-type ServiceTemplateDetail struct {
+type ServiceTemplateWithStatistics struct {
 	Template             ServiceTemplate `field:"template" json:"template" bson:"template"`
 	ServiceInstanceCount int64           `field:"service_instance_count" json:"service_instance_count" bson:"service_instance_count"`
 	ProcessInstanceCount int64           `field:"process_instance_count" json:"process_instance_count" bson:"process_instance_count"`
+}
+
+type ServiceTemplateDetail struct {
+	ServiceTemplate  ServiceTemplate   `field:"service_template" json:"service_template" bson:"service_template" mapstructure:"service_template"`
+	ProcessTemplates []ProcessTemplate `field:"process_templates" json:"process_templates" bson:"process_templates" mapstructure:"process_templates"`
 }
 
 type ServiceTemplate struct {
@@ -720,7 +754,7 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 			process["bind_ip"] = nil
 			changed = true
 		} else if t.BindIP.Value != nil && i.BindIP == nil {
-			process["bind_ip"] = *t.BindIP.Value
+			process["bind_ip"] = t.BindIP.Value.IP()
 			changed = true
 		} else if t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP {
 			process["bind_ip"] = t.BindIP.Value.IP()
@@ -1291,6 +1325,24 @@ type PropertyString struct {
 }
 
 func (ti *PropertyString) Validate() error {
+	if ti == nil {
+		return nil
+	}
+	if ti.Value != nil {
+		value := *ti.Value
+		if len(value) == 0 {
+			return nil
+		}
+		matched, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
+		if err != nil {
+			blog.Errorf("Validate failed, regex:[%s], value:[%s]", common.FieldTypeSingleCharRegexp, value)
+			return fmt.Errorf("value:[%s] doesn't match regex:[%s], err: %+v", value, common.FieldTypeSingleCharRegexp, err)
+		}
+		if matched == false {
+			return fmt.Errorf("value:[%s] doesn't match regex:[%s]", value, common.FieldTypeSingleCharRegexp)
+		}
+
+	}
 	return nil
 }
 

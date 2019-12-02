@@ -23,7 +23,7 @@
 }
 
 .bk-date-picker-transfer {
-    z-index: 2000 !important;
+    z-index: 2600 !important;
 }
 
 .bk-sideslider {
@@ -108,7 +108,7 @@
 }
 
 .bk-big-tree {
-    .bk-big-tree-node {
+    .bk-big-tree-node:not(.has-link-line) {
         height: 36px;
         line-height: 36px;
         &.is-leaf {
@@ -128,6 +128,9 @@
             }
         }
     }
+    .bk-big-tree-node.has-link-line.is-leaf {
+        padding-left: 12px;
+    }
 }
 
 .bk-tab {
@@ -140,6 +143,7 @@
             height: 58px;
             .bk-tab-label-item {
                 line-height: 58px;
+                min-width: auto;
                 &.active {
                     background-color: transparent;
                 }

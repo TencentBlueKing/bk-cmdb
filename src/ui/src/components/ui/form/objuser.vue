@@ -6,8 +6,8 @@
         @click="handleClick">
         <!--eslint-enable-->
         <div class="objuser-layout"
-            v-bkloading="{ isLoading: $loading('get_user_list') }"
             @contextmenu="handleContextmenu($event)">
+            <i class="objuser-loading" v-if="loading"></i>
             <div class="objuser-container"
                 ref="container"
                 :class="{
@@ -119,8 +119,11 @@
                 }
                 return []
             },
+            loading () {
+                return this.$loading('get_user_list')
+            },
             localDisabled () {
-                return this.disabled || this.exception
+                return this.disabled || this.exception || this.loading
             },
             localPlaceholder () {
                 if (this.exception) {
@@ -515,6 +518,15 @@
         .objuser-layout {
             position: relative;
             min-height: 100%;
+            .objuser-loading {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                width: 16px;
+                height: 16px;
+                background-image: url("../../../assets/images/icon/loading.svg");
+                z-index: 1;
+            }
             .objuser-container {
                 position: relative;
                 min-width: 100%;

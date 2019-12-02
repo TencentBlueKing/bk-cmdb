@@ -122,7 +122,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
-		data.Set(common.BKDefaultField, 0)
+		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
 
 	if err := m.validBizSetID(params, bizID, setID); err != nil {
@@ -213,6 +213,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		data[common.BKParentIDField] = parentID
 	}
 
+	data.Remove(common.MetadataField)
 	inst, createErr := m.inst.CreateInst(params, obj, data)
 	if createErr != nil {
 		moduleNameStr, exist := data[common.BKModuleNameField]
@@ -424,7 +425,11 @@ func (m *module) UpdateModule(params types.ContextParams, data mapstr.MapStr, ob
 
 	// module table don't have metadata field
 	params.MetaData = nil
+	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
+	data.Remove(common.BKModuleIDField)
+	data.Remove(common.BKParentIDField)
+	data.Remove(common.MetadataField)
 	updateErr := m.inst.UpdateInst(params, data, obj, innerCond, -1)
 	if updateErr != nil {
 		moduleNameStr, exist := data[common.BKModuleNameField]

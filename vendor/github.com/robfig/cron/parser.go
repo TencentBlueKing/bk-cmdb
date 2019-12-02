@@ -15,14 +15,15 @@ import (
 type ParseOption int
 
 const (
-	Second      ParseOption = 1 << iota // Seconds field, default 0
-	Minute                              // Minutes field, default 0
-	Hour                                // Hours field, default 0
-	Dom                                 // Day of month field, default *
-	Month                               // Month field, default *
-	Dow                                 // Day of week field, default *
-	DowOptional                         // Optional day of week field, default *
-	Descriptor                          // Allow descriptors such as @monthly, @weekly, etc.
+	Second         ParseOption = 1 << iota // Seconds field, default 0
+	SecondOptional                         // Optional seconds field, default 0
+	Minute                                 // Minutes field, default 0
+	Hour                                   // Hours field, default 0
+	Dom                                    // Day of month field, default *
+	Month                                  // Month field, default *
+	Dow                                    // Day of week field, default *
+	DowOptional                            // Optional day of week field, default *
+	Descriptor                             // Allow descriptors such as @monthly, @weekly, etc.
 )
 
 var places = []ParseOption{
@@ -45,11 +46,15 @@ var defaults = []string{
 
 // A custom Parser that can be configured.
 type Parser struct {
-	options   ParseOption
-	optionals int
+	options ParseOption
 }
 
-// Creates a custom Parser with custom options.
+// NewParser creates a Parser with custom options.
+//
+// It panics if more than one Optional is given, since it would be impossible to
+// correctly infer which optional is provided or missing in general.
+//
+// Examples
 //
 //  // Standard parser without descriptors
 //  specParser := NewParser(Minute | Hour | Dom | Month | Dow)
@@ -66,10 +71,15 @@ type Parser struct {
 func NewParser(options ParseOption) Parser {
 	optionals := 0
 	if options&DowOptional > 0 {
-		options |= Dow
 		optionals++
 	}
-	return Parser{options, optionals}
+	if options&SecondOptional > 0 {
+		optionals++
+	}
+	if optionals > 1 {
+		panic("multiple optionals may not be configured")
+	}
+	return Parser{options}
 }
 
 // Parse returns a new crontab schedule representing the given spec.
@@ -77,36 +87,39 @@ func NewParser(options ParseOption) Parser {
 // It accepts crontab specs and features configured by NewParser.
 func (p Parser) Parse(spec string) (Schedule, error) {
 	if len(spec) == 0 {
-		return nil, fmt.Errorf("Empty spec string")
-	}
-	if spec[0] == '@' && p.options&Descriptor > 0 {
-		return parseDescriptor(spec)
+		return nil, fmt.Errorf("empty spec string")
 	}
 
-	// Figure out how many fields we need
-	max := 0
-	for _, place := range places {
-		if p.options&place > 0 {
-			max++
+	// Extract timezone if present
+	var loc = time.Local
+	if strings.HasPrefix(spec, "TZ=") || strings.HasPrefix(spec, "CRON_TZ=") {
+		var err error
+		i := strings.Index(spec, " ")
+		eq := strings.Index(spec, "=")
+		if loc, err = time.LoadLocation(spec[eq+1 : i]); err != nil {
+			return nil, fmt.Errorf("provided bad location %s: %v", spec[eq+1:i], err)
 		}
+		spec = strings.TrimSpace(spec[i:])
 	}
-	min := max - p.optionals
 
-	// Split fields on whitespace
+	// Handle named schedules (descriptors), if configured
+	if strings.HasPrefix(spec, "@") {
+		if p.options&Descriptor == 0 {
+			return nil, fmt.Errorf("parser does not accept descriptors: %v", spec)
+		}
+		return parseDescriptor(spec, loc)
+	}
+
+	// Split on whitespace.
 	fields := strings.Fields(spec)
 
-	// Validate number of fields
-	if count := len(fields); count < min || count > max {
-		if min == max {
-			return nil, fmt.Errorf("Expected exactly %d fields, found %d: %s", min, count, spec)
-		}
-		return nil, fmt.Errorf("Expected %d to %d fields, found %d: %s", min, max, count, spec)
+	// Validate & fill in any omitted or optional fields
+	var err error
+	fields, err = normalizeFields(fields, p.options)
+	if err != nil {
+		return nil, err
 	}
 
-	// Fill in missing fields
-	fields = expandFields(fields, p.options)
-
-	var err error
 	field := func(field string, r bounds) uint64 {
 		if err != nil {
 			return 0
@@ -129,60 +142,92 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 	}
 
 	return &SpecSchedule{
-		Second: second,
-		Minute: minute,
-		Hour:   hour,
-		Dom:    dayofmonth,
-		Month:  month,
-		Dow:    dayofweek,
+		Second:   second,
+		Minute:   minute,
+		Hour:     hour,
+		Dom:      dayofmonth,
+		Month:    month,
+		Dow:      dayofweek,
+		Location: loc,
 	}, nil
 }
 
-func expandFields(fields []string, options ParseOption) []string {
-	n := 0
-	count := len(fields)
-	expFields := make([]string, len(places))
-	copy(expFields, defaults)
-	for i, place := range places {
+// normalizeFields takes a subset set of the time fields and returns the full set
+// with defaults (zeroes) populated for unset fields.
+//
+// As part of performing this function, it also validates that the provided
+// fields are compatible with the configured options.
+func normalizeFields(fields []string, options ParseOption) ([]string, error) {
+	// Validate optionals & add their field to options
+	optionals := 0
+	if options&SecondOptional > 0 {
+		options |= Second
+		optionals++
+	}
+	if options&DowOptional > 0 {
+		options |= Dow
+		optionals++
+	}
+	if optionals > 1 {
+		return nil, fmt.Errorf("multiple optionals may not be configured")
+	}
+
+	// Figure out how many fields we need
+	max := 0
+	for _, place := range places {
 		if options&place > 0 {
-			expFields[i] = fields[n]
-			n++
-		}
-		if n == count {
-			break
+			max++
 		}
 	}
-	return expFields
+	min := max - optionals
+
+	// Validate number of fields
+	if count := len(fields); count < min || count > max {
+		if min == max {
+			return nil, fmt.Errorf("expected exactly %d fields, found %d: %s", min, count, fields)
+		}
+		return nil, fmt.Errorf("expected %d to %d fields, found %d: %s", min, max, count, fields)
+	}
+
+	// Populate the optional field if not provided
+	if min < max && len(fields) == min {
+		switch {
+		case options&DowOptional > 0:
+			fields = append(fields, defaults[5]) // TODO: improve access to default
+		case options&SecondOptional > 0:
+			fields = append([]string{defaults[0]}, fields...)
+		default:
+			return nil, fmt.Errorf("unknown optional field")
+		}
+	}
+
+	// Populate all fields not part of options with their defaults
+	n := 0
+	expandedFields := make([]string, len(places))
+	copy(expandedFields, defaults)
+	for i, place := range places {
+		if options&place > 0 {
+			expandedFields[i] = fields[n]
+			n++
+		}
+	}
+	return expandedFields, nil
 }
 
 var standardParser = NewParser(
 	Minute | Hour | Dom | Month | Dow | Descriptor,
 )
 
-// ParseStandard returns a new crontab schedule representing the given standardSpec
-// (https://en.wikipedia.org/wiki/Cron). It differs from Parse requiring to always
-// pass 5 entries representing: minute, hour, day of month, month and day of week,
-// in that order. It returns a descriptive error if the spec is not valid.
+// ParseStandard returns a new crontab schedule representing the given
+// standardSpec (https://en.wikipedia.org/wiki/Cron). It requires 5 entries
+// representing: minute, hour, day of month, month and day of week, in that
+// order. It returns a descriptive error if the spec is not valid.
 //
 // It accepts
 //   - Standard crontab specs, e.g. "* * * * ?"
 //   - Descriptors, e.g. "@midnight", "@every 1h30m"
 func ParseStandard(standardSpec string) (Schedule, error) {
 	return standardParser.Parse(standardSpec)
-}
-
-var defaultParser = NewParser(
-	Second | Minute | Hour | Dom | Month | DowOptional | Descriptor,
-)
-
-// Parse returns a new crontab schedule representing the given spec.
-// It returns a descriptive error if the spec is not valid.
-//
-// It accepts
-//   - Full crontab specs, e.g. "* * * * * ?"
-//   - Descriptors, e.g. "@midnight", "@every 1h30m"
-func Parse(spec string) (Schedule, error) {
-	return defaultParser.Parse(spec)
 }
 
 // getField returns an Int with the bits set representing all of the times that
@@ -232,7 +277,7 @@ func getRange(expr string, r bounds) (uint64, error) {
 				return 0, err
 			}
 		default:
-			return 0, fmt.Errorf("Too many hyphens: %s", expr)
+			return 0, fmt.Errorf("too many hyphens: %s", expr)
 		}
 	}
 
@@ -249,21 +294,24 @@ func getRange(expr string, r bounds) (uint64, error) {
 		if singleDigit {
 			end = r.max
 		}
+		if step > 1 {
+			extra = 0
+		}
 	default:
-		return 0, fmt.Errorf("Too many slashes: %s", expr)
+		return 0, fmt.Errorf("too many slashes: %s", expr)
 	}
 
 	if start < r.min {
-		return 0, fmt.Errorf("Beginning of range (%d) below minimum (%d): %s", start, r.min, expr)
+		return 0, fmt.Errorf("beginning of range (%d) below minimum (%d): %s", start, r.min, expr)
 	}
 	if end > r.max {
-		return 0, fmt.Errorf("End of range (%d) above maximum (%d): %s", end, r.max, expr)
+		return 0, fmt.Errorf("end of range (%d) above maximum (%d): %s", end, r.max, expr)
 	}
 	if start > end {
-		return 0, fmt.Errorf("Beginning of range (%d) beyond end of range (%d): %s", start, end, expr)
+		return 0, fmt.Errorf("beginning of range (%d) beyond end of range (%d): %s", start, end, expr)
 	}
 	if step == 0 {
-		return 0, fmt.Errorf("Step of range should be a positive number: %s", expr)
+		return 0, fmt.Errorf("step of range should be a positive number: %s", expr)
 	}
 
 	return getBits(start, end, step) | extra, nil
@@ -283,10 +331,10 @@ func parseIntOrName(expr string, names map[string]uint) (uint, error) {
 func mustParseInt(expr string) (uint, error) {
 	num, err := strconv.Atoi(expr)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to parse int from %s: %s", expr, err)
+		return 0, fmt.Errorf("failed to parse int from %s: %s", expr, err)
 	}
 	if num < 0 {
-		return 0, fmt.Errorf("Negative number (%d) not allowed: %s", num, expr)
+		return 0, fmt.Errorf("negative number (%d) not allowed: %s", num, expr)
 	}
 
 	return uint(num), nil
@@ -314,67 +362,73 @@ func all(r bounds) uint64 {
 }
 
 // parseDescriptor returns a predefined schedule for the expression, or error if none matches.
-func parseDescriptor(descriptor string) (Schedule, error) {
+func parseDescriptor(descriptor string, loc *time.Location) (Schedule, error) {
 	switch descriptor {
 	case "@yearly", "@annually":
 		return &SpecSchedule{
-			Second: 1 << seconds.min,
-			Minute: 1 << minutes.min,
-			Hour:   1 << hours.min,
-			Dom:    1 << dom.min,
-			Month:  1 << months.min,
-			Dow:    all(dow),
+			Second:   1 << seconds.min,
+			Minute:   1 << minutes.min,
+			Hour:     1 << hours.min,
+			Dom:      1 << dom.min,
+			Month:    1 << months.min,
+			Dow:      all(dow),
+			Location: loc,
 		}, nil
 
 	case "@monthly":
 		return &SpecSchedule{
-			Second: 1 << seconds.min,
-			Minute: 1 << minutes.min,
-			Hour:   1 << hours.min,
-			Dom:    1 << dom.min,
-			Month:  all(months),
-			Dow:    all(dow),
+			Second:   1 << seconds.min,
+			Minute:   1 << minutes.min,
+			Hour:     1 << hours.min,
+			Dom:      1 << dom.min,
+			Month:    all(months),
+			Dow:      all(dow),
+			Location: loc,
 		}, nil
 
 	case "@weekly":
 		return &SpecSchedule{
-			Second: 1 << seconds.min,
-			Minute: 1 << minutes.min,
-			Hour:   1 << hours.min,
-			Dom:    all(dom),
-			Month:  all(months),
-			Dow:    1 << dow.min,
+			Second:   1 << seconds.min,
+			Minute:   1 << minutes.min,
+			Hour:     1 << hours.min,
+			Dom:      all(dom),
+			Month:    all(months),
+			Dow:      1 << dow.min,
+			Location: loc,
 		}, nil
 
 	case "@daily", "@midnight":
 		return &SpecSchedule{
-			Second: 1 << seconds.min,
-			Minute: 1 << minutes.min,
-			Hour:   1 << hours.min,
-			Dom:    all(dom),
-			Month:  all(months),
-			Dow:    all(dow),
+			Second:   1 << seconds.min,
+			Minute:   1 << minutes.min,
+			Hour:     1 << hours.min,
+			Dom:      all(dom),
+			Month:    all(months),
+			Dow:      all(dow),
+			Location: loc,
 		}, nil
 
 	case "@hourly":
 		return &SpecSchedule{
-			Second: 1 << seconds.min,
-			Minute: 1 << minutes.min,
-			Hour:   all(hours),
-			Dom:    all(dom),
-			Month:  all(months),
-			Dow:    all(dow),
+			Second:   1 << seconds.min,
+			Minute:   1 << minutes.min,
+			Hour:     all(hours),
+			Dom:      all(dom),
+			Month:    all(months),
+			Dow:      all(dow),
+			Location: loc,
 		}, nil
+
 	}
 
 	const every = "@every "
 	if strings.HasPrefix(descriptor, every) {
 		duration, err := time.ParseDuration(descriptor[len(every):])
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse duration %s: %s", descriptor, err)
+			return nil, fmt.Errorf("failed to parse duration %s: %s", descriptor, err)
 		}
 		return Every(duration), nil
 	}
 
-	return nil, fmt.Errorf("Unrecognized descriptor: %s", descriptor)
+	return nil, fmt.Errorf("unrecognized descriptor: %s", descriptor)
 }

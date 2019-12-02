@@ -81,7 +81,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 	data.Set(common.BKAppIDField, bizID)
 
 	if !data.Exists(common.BKDefaultField) {
-		data.Set(common.BKDefaultField, 0)
+		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	}
 
 	setTemplate := metadata.SetTemplate{}
@@ -107,6 +107,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 
 	// TODO: run in transaction
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
+	data.Remove(common.MetadataField)
 	setInstance, err := s.inst.CreateInst(params, obj, data)
 	if err != nil {
 		blog.Errorf("create set instance failed, object: %+v, data: %+v, err: %s, rid: %s", obj, data, err.Error(), params.ReqID)
@@ -142,7 +143,6 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 			common.BKParentIDField:          setID,
 			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
 			common.BKAppIDField:             bizID,
-			common.MetadataField:            metadata.NewMetadata(bizID),
 		}
 		_, err := s.module.CreateModule(params, moduleObj, bizID, setID, createModuleParam)
 		if err != nil {
@@ -188,6 +188,12 @@ func (s *set) DeleteSet(params types.ContextParams, setModel model.Object, bizID
 		return params.Err.New(common.CCErrTopoSetDeleteFailed, err.Error())
 	}
 
+	// clear set template sync status
+	if ccErr := s.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(params.Context, params.Header, bizID, setIDS); ccErr != nil {
+		blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDS, ccErr.Error(), params.ReqID)
+		return ccErr
+	}
+
 	// clear the sets
 	return s.inst.DeleteInst(params, setModel, setCond, false)
 }
@@ -202,6 +208,10 @@ func (s *set) UpdateSet(params types.ContextParams, data mapstr.MapStr, obj mode
 
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 	innerCond.Field(common.BKSetIDField).Eq(setID)
+
+	data.Remove(common.MetadataField)
+	data.Remove(common.BKAppIDField)
+	data.Remove(common.BKSetIDField)
 
 	return s.inst.UpdateInst(params, data, obj, innerCond, setID)
 }

@@ -17,8 +17,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // TransferToInnerModule  transfer host to inner module  eg:idle module and fault module
@@ -443,4 +445,27 @@ func (h *host) ListHosts(ctx context.Context, header http.Header, option metadat
 		return result.Data, errors.New(result.Code, result.ErrMsg)
 	}
 	return result.Data, nil
+}
+
+func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header, option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
+	rid := util.GetHTTPCCRequestID(header)
+
+	result := metadata.BaseResp{}
+	subPath := "/updatemany/hosts/cloudarea_field"
+
+	err := h.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&result)
+	if err != nil {
+		blog.Errorf("UpdateHostCloudAreaField failed, http request failed, err: %+v, rid: %s", err, rid)
+		return errors.CCHttpError
+	}
+	if result.Code > 0 || result.Result == false {
+		return errors.New(result.Code, result.ErrMsg)
+	}
+	return nil
 }

@@ -8,7 +8,10 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
 
 	"github.com/tidwall/gjson"
@@ -264,22 +267,33 @@ const (
 	moveHostsToBizFaultModulePattern          = "/api/v3/hosts/modules/fault"
 	moveHostsFromModuleToResPoolPattern       = "/api/v3/hosts/modules/resource"
 	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
+	moveHostsToBizRecycleModulePattern        = "/api/v3/hosts/modules/recycle"
 	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
 	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts/host/add/module"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
+	findHostTopoRelationPattern               = "/api/v3/host/topo/relation/read"
+	updateHostCloudAreaFieldPattern           = "/api/v3/updatemany/hosts/cloudarea_field"
+
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
 	findHostsWithConditionPattern     = "/api/v3/hosts/search"
 	findBizHostsWithoutAppPattern     = "/api/v3/hosts/list_hosts_without_app"
 	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
 	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
-	findHostsWithModulesPattern       = "/api/v3/hosts/findmany/modulehost"
+	updateHostPropertyBatchPattern    = "/api/v3/hosts/property/batch"
+	findHostsWithModulesPattern       = "/api/v3/findmany/modulehost"
 )
 
 var (
-	findBizHostsRegex = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts`)
+	findBizHostsRegex     = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts`)
+	findBizHostsTopoRegex = regexp.MustCompile(`/api/v3/hosts/app/\d+/list_hosts_topo`)
 	// find host instance's object properties info
 	findHostInstanceObjectPropertiesRegexp = regexp.MustCompile(`^/api/v3/hosts/[^\s/]+/[0-9]+/?$`)
+
+	transferHostWithAutoClearServiceInstanceRegex        = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/?$")
+	transferHostWithAutoClearServiceInstancePreviewRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview/?$")
+
+	countHostByTopoNodeRegexp = regexp.MustCompile(`^/api/v3/host/count_by_topo_node/bk_biz_id/[0-9]+$`)
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -300,13 +314,17 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
-			return ps
+		bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+		if bizID == 0 {
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
+				return ps
+			}
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
@@ -329,6 +347,28 @@ func (ps *parseStream) host() *parseStream {
 					Action: meta.SkipAction,
 				},
 			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateHostCloudAreaFieldPattern, http.MethodPut) {
+		input := metadata.UpdateHostCloudAreaFieldOption{}
+		if err := json.Unmarshal(ps.RequestCtx.Body, &input); err != nil {
+			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
+			return ps
+		}
+
+		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
+		for _, hostID := range input.HostIDs {
+			iamResource := meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.HostInstance,
+					Action:     meta.UpdateMany,
+					InstanceID: hostID,
+				},
+				BusinessID: input.BizID,
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources, iamResource)
 		}
 		return ps
 	}
@@ -426,6 +466,27 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
+	// move host to a business recycle module.
+	if ps.hitPattern(moveHostsToBizRecycleModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type: meta.HostInstance,
+					// auth this resource in scene layer, as is host server
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	// move hosts to a business idle module.
 	if ps.hitPattern(moveHostsToBizIdleModulePattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
@@ -504,6 +565,25 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
+	if ps.hitPattern(findHostTopoRelationPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	// synchronize hosts directly to a module in a business if this host does not exist.
 	// otherwise, this operation will only change host's attribute.
 	if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
@@ -518,6 +598,49 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostsToBusinessOrModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
+		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {
+		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
+		bizID, err := util.GetInt64ByInterface(match[1])
+		if err != nil {
+			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s", transferHostWithAutoClearServiceInstanceRegex, err, ps.RequestCtx.Rid)
+			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostsToBusinessOrModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(countHostByTopoNodeRegexp, http.MethodPost) {
+		match := BizIDRegex.FindStringSubmatch(ps.RequestCtx.URI)
+		bizID, err := util.GetInt64ByInterface(match[1])
+		if err != nil {
+			blog.Errorf("get business id from request path failed, name: %s, err: %v, rid: %s", countHostByTopoNodeRegexp, err, ps.RequestCtx.Rid)
+			ps.err = fmt.Errorf("parse biz id from url failed, err: %s", err.Error())
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
 				},
 			},
 		}
@@ -560,13 +683,33 @@ func (ps *parseStream) host() *parseStream {
 
 	// find hosts under business specified by path parameter
 	if ps.hitRegexp(findBizHostsRegex, http.MethodPost) {
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("list business's hosts, but got invalid business id: %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// find hosts under business specified by path parameter with their topology information
+	if ps.hitRegexp(findBizHostsTopoRegex, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("list business's hosts with topo, but got invalid business id: %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
@@ -601,6 +744,21 @@ func (ps *parseStream) host() *parseStream {
 	if ps.hitPattern(updateHostInfoBatchPattern, http.MethodPut) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type: meta.HostInstance,
+					// Action: meta.UpdateMany,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// update hosts property batch. but can not get the exactly host id.
+	if ps.hitPattern(updateHostPropertyBatchPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type: meta.HostInstance,
 					// Action: meta.UpdateMany,

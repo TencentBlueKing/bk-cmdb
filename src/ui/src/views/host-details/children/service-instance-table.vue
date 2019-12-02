@@ -15,21 +15,18 @@
                 <ul class="menu-list"
                     @mouseenter="handleShowDotMenu"
                     @mouseleave="handleHideDotMenu">
-                    <li :class="['menu-item', { 'is-disabled': !$isAuthorized($OPERATION[menu.auth]) }]"
+                    <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <span class="menu-span"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION[menu.auth]),
-                                auth: [$OPERATION[menu.auth]]
-                            }">
-                            <bk-button class="menu-button"
+                        <cmdb-auth class="menu-span" :auth="$authResources({ type: $OPERATION[menu.auth] })">
+                            <bk-button slot-scope="{ disabled }"
+                                class="menu-button"
                                 :text="true"
-                                :disabled="!$isAuthorized($OPERATION[menu.auth])"
+                                :disabled="disabled"
                                 @click="menu.handler">
                                 {{menu.name}}
                             </bk-button>
-                        </span>
+                        </cmdb-auth>
                     </li>
                 </ul>
             </cmdb-dot-menu>
@@ -81,7 +78,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         props: {
             instance: {
@@ -113,10 +110,6 @@
             }
         },
         computed: {
-            isModuleNode () {
-                const node = this.$store.state.businessTopology.selectedNode
-                return node && node.data.bk_obj_id === 'module'
-            },
             withTemplate () {
                 return this.isModuleNode && !!this.instance.service_template_id
             },
@@ -127,9 +120,6 @@
                     auth: 'D_SERVICE_INSTANCE'
                 }]
                 return menu
-            },
-            module () {
-                return this.$store.state.businessTopology.selectedNodeInstance
             },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list.map(data => data.property))
@@ -161,7 +151,7 @@
             },
             topologyPath () {
                 const pathArr = this.$tools.clone(this.instance.topo_path).reverse()
-                const path = pathArr.map(path => path.InstanceName).join(' / ')
+                const path = pathArr.map(path => path.bk_inst_name).join(' / ')
                 return path
             }
         },
@@ -254,9 +244,10 @@
             },
             goTopologyInstance () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.instance.bk_module_id,
+                        tab: 'serviceInstance',
+                        node: 'module-' + this.instance.bk_module_id,
                         instanceName: this.instance.name
                     }
                 })

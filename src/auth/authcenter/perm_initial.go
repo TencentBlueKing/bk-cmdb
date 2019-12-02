@@ -438,5 +438,15 @@ var bizOperatorRoleAuth = RoleWithAuthResources{
 			ResourceTypeID: BizSetTemplate,
 			ActionID:       Create,
 		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizSetTemplate,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizSetTemplate,
+			ActionID:       Delete,
+		},
 	},
 }

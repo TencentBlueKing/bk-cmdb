@@ -13,6 +13,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -38,16 +40,16 @@ func (ps *parseStream) topology() *parseStream {
 		objectInstanceAssociation().
 		objectInstance().
 		object().
-		ObjectClassification().
+		objectClassification().
 		objectAttributeGroup().
 		objectAttribute().
-		ObjectModule().
-		ObjectSet().
+		objectModule().
+		objectSet().
 		objectUnique().
 		audit().
 		instanceAudit().
-		privilege().
-		fullTextSearch()
+		fullTextSearch().
+		cloudArea()
 
 	return ps
 }
@@ -63,6 +65,7 @@ var (
 )
 
 const findReducedBusinessList = `/api/v3/biz/with_reduced`
+const findSimplifiedBusinessList = `/api/v3/biz/simplify`
 
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
@@ -71,6 +74,19 @@ func (ps *parseStream) business() *parseStream {
 
 	// find reduced business list for the user with any business resources
 	if ps.hitPattern(findReducedBusinessList, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find simplified business list with limited fields return
+	if ps.hitPattern(findSimplifiedBusinessList, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -644,6 +660,7 @@ const (
 
 var (
 	deleteObjectInstanceAssociationRegexp = regexp.MustCompile("/api/v3/inst/association/[0-9]+/action/delete")
+	importObjectInstanceAssociationRegexp = regexp.MustCompile("/api/v3/inst/association/action/\\w*/import")
 )
 
 func (ps *parseStream) objectInstanceAssociation() *parseStream {
@@ -720,6 +737,24 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 		return ps
 	}
 
+	// import object's instance association operation.
+	if ps.hitRegexp(importObjectInstanceAssociationRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("import object instance association, but got invalid url")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
 
@@ -734,7 +769,7 @@ var (
 	updateObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
 	deleteObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
 	deleteObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
-	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
+	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/search/topo/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
 	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
 	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
@@ -801,32 +836,51 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object instance, but got invalid instance id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
 
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[4]})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		var modelType = meta.ModelInstance
+		var bizID int64
+		bizID, err = metadata.BizIDFromMetadata(model.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		isMainline, err := ps.isMainlineModel(model.ObjectID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if isMainline {
+			// only works for mainline instance update.
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			modelType = meta.MainlineInstance
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:       meta.ModelInstance,
+					Type:       modelType,
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[4],
-					},
-				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -933,7 +987,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 	// find object instance topology operation
 	if ps.hitRegexp(findObjectInstanceSubTopologyRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 12 {
+		if len(ps.RequestCtx.Elements) != 11 {
 			ps.err = errors.New("find object instance topology, but got invalid url")
 			return ps
 		}
@@ -944,9 +998,9 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[11], 10, 64)
+		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[10], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s", ps.RequestCtx.Elements[11])
+			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s", ps.RequestCtx.Elements[10])
 			return ps
 		}
 
@@ -1357,7 +1411,7 @@ var (
 	findObjectsBelongsToClassificationRegexp = regexp.MustCompile(`^/api/v3/object/classification/[^\s/]+/objects$`)
 )
 
-func (ps *parseStream) ObjectClassification() *parseStream {
+func (ps *parseStream) objectClassification() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -1558,20 +1612,48 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 	}
 
 	if ps.hitPattern(updateObjectAttributeGroupPropertyPattern, http.MethodPut) {
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = fmt.Errorf("parse bizID from metadata failed, err: %s", err.Error())
+
+		if !gjson.GetBytes(ps.RequestCtx.Body, "data").Exists() {
+			ps.err = errors.New("invalid request format")
 			return ps
 		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
+
+		data := gjson.GetBytes(ps.RequestCtx.Body, "data").String()
+		groups := make([]metadata.PropertyGroupObjectAtt, 0)
+		if err := json.Unmarshal([]byte(data), &groups); err != nil {
+			ps.err = err
+			return ps
+		}
+
+		// TODO: confirm this later. especially with frontend.
+		// when biz's model auth is settled down, then revise this.
+		// bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		// if err != nil {
+		// 	ps.err = err
+		// 	return ps
+		// }
+
+		ps.Attribute.Resources = make([]meta.ResourceAttribute, 0)
+		for _, group := range groups {
+			model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: group.Condition.ObjectID})
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
+			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
 				},
-			},
+				// BusinessID: bizID,
+				Layers: []meta.Item{{
+					Type:       meta.Model,
+					InstanceID: model.ID,
+				}},
+			})
 		}
+
 		return ps
 	}
 
@@ -1650,6 +1732,12 @@ func (ps *parseStream) objectAttribute() *parseStream {
 
 	// create object's attribute operation.
 	if ps.hitPattern(createObjectAttributePattern, http.MethodPost) {
+		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			ps.err = fmt.Errorf("parse bizID from metadata failed, err: %s", err.Error())
@@ -1662,6 +1750,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1772,13 +1861,14 @@ func (ps *parseStream) objectAttribute() *parseStream {
 }
 
 var (
-	createModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
-	deleteModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
-	updateModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
-	findModuleRegexp   = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	createModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
+	deleteModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	updateModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	findModuleRegexp                  = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/(?P<bk_biz_id>[0-9]+)/service_template_id/(?P<service_template_id>[0-9]+)/?$`)
 )
 
-func (ps *parseStream) ObjectModule() *parseStream {
+func (ps *parseStream) objectModule() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -1946,6 +2036,39 @@ func (ps *parseStream) ObjectModule() *parseStream {
 		return ps
 	}
 
+	// find module by service template.
+	if ps.hitRegexp(findModuleByServiceTemplateRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("find module by service template id, but got invalid url")
+			return ps
+		}
+		var bizIDStr string
+		match := findModuleByServiceTemplateRegexp.FindStringSubmatch(ps.RequestCtx.URI)
+		for i, name := range findModuleByServiceTemplateRegexp.SubexpNames() {
+			if name == common.BKAppIDField {
+				bizIDStr = match[i]
+				break
+			}
+		}
+		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find module, but parse bk_biz_id failed, bizIDStr: %s, uri: %s, err: %+v", bizIDStr, ps.RequestCtx.URI, err)
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelModule,
+					Action: meta.FindMany,
+				},
+				Layers: []meta.Item{},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
 
@@ -1958,7 +2081,7 @@ var (
 	findSetRegexp        = regexp.MustCompile(`^/api/v3/set/search/[^\s/]+/[0-9]+/?$`)
 )
 
-func (ps *parseStream) ObjectSet() *parseStream {
+func (ps *parseStream) objectSet() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -2297,16 +2420,15 @@ func (ps *parseStream) instanceAudit() *parseStream {
 }
 
 var (
-	findPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
-	// postPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
+	fullTextSearchPattern = "/api/v3/find/full_text"
 )
 
-func (ps *parseStream) privilege() *parseStream {
+func (ps *parseStream) fullTextSearch() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
 
-	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitRegexp(findPrivilege, http.MethodPost) {
+	if ps.hitPattern(fullTextSearchPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -2320,21 +2442,74 @@ func (ps *parseStream) privilege() *parseStream {
 	return ps
 }
 
-var (
-	fullTextSearchPattern = "/api/v3/find/full_text"
+const (
+	findManyCloudAreaPattern = "/api/v3/findmany/cloudarea"
+	createCloudAreaPattern   = "/api/v3/create/cloudarea"
 )
 
-func (ps *parseStream) fullTextSearch() *parseStream {
+var (
+	updateCloudAreaRegexp = regexp.MustCompile(`^/api/v3/update/cloudarea/[0-9]+/?$`)
+	deleteCloudAreaRegexp = regexp.MustCompile(`^/api/v3/delete/cloudarea/[0-9]+/?$`)
+)
+
+func (ps *parseStream) cloudArea() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
 
-	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitPattern(fullTextSearchPattern, http.MethodPost) {
+	model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDPlat})
+	if err != nil {
+		ps.err = err
+		return ps
+	}
+
+	if ps.hitPattern(findManyCloudAreaPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Action: meta.SkipAction,
+					Type:   meta.ModelInstance,
+					Action: meta.FindMany,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(createCloudAreaPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updateCloudAreaRegexp, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.Update,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(deleteCloudAreaRegexp, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.Delete,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps

@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -27,12 +26,10 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/operation_server/app/options"
-	"configcenter/src/scene_server/operation_server/logics"
 	"configcenter/src/scene_server/operation_server/service"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		blog.Errorf("fail to new server information. err: %s", err.Error())
@@ -63,7 +60,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if false == configReady {
 		return fmt.Errorf("configuration item not found")
 	}
-	authConf, err := authcenter.ParseConfigFromKV("auth", operationSvr.ConfigMap)
+	authConf := operationSvr.Config.Auth
 	if err != nil {
 		return err
 	}
@@ -75,9 +72,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	operationSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
 	operationSvr.Engine = engine
-	operationSvr.Logic = &logics.Logic{
-		Engine: operationSvr.Engine,
-	}
 
 	go operationSvr.InitFunc()
 	if err := backbone.StartServer(ctx, cancel, engine, operationSvr.WebService(), true); err != nil {

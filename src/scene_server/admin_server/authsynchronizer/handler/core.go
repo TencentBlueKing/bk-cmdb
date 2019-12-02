@@ -17,17 +17,29 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"configcenter/src/auth/authcenter"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 )
 
 func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string) ([]authmeta.BackendResource, error) {
-	iamResources, err := ih.authManager.Authorize.ListResources(context.Background(), ra)
-	if err != nil {
-		blog.Errorf("synchronize failed, ListResources from iam failed, task: %s, err: %+v", taskName, err)
-		return nil, err
+	offset := int64(0)
+	iamResources := make([]authmeta.BackendResource, 0)
+	for {
+		iamResult, err := ih.authManager.Authorize.ListPageResources(context.Background(), ra, meta.IamPageLimit, offset)
+		if err != nil {
+			blog.Errorf("synchronize failed, ListResources from iam failed, task: %s, err: %+v", taskName, err)
+			return nil, err
+		}
+		iamResources = append(iamResources, iamResult.Results...)
+		offset += meta.IamPageLimit
+		if int64(offset) > iamResult.Count {
+			break
+		}
+		time.Sleep(meta.IamRequestIntervalMillisecond * time.Millisecond)
 	}
 
 	realResources := make([]authmeta.BackendResource, 0)
@@ -44,13 +56,23 @@ func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttr
 
 // diffAndSyncInstances only for instances
 func (ih *IAMHandler) diffAndSyncInstances(header http.Header, taskName string, searchCondition authcenter.SearchCondition, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
-	iamResources, err := ih.authManager.Authorize.RawListResources(context.Background(), header, searchCondition)
-	if err != nil {
-		blog.Errorf("synchronize failed, ListResources from iam failed, task: %s, err: %+v", taskName, err)
-		return err
+	offset := int64(0)
+	iamResources := make([]authmeta.BackendResource, 0)
+	for {
+		iamResult, err := ih.authManager.Authorize.RawPageListResources(context.Background(), header, searchCondition, meta.IamPageLimit, offset)
+		if err != nil {
+			blog.Errorf("synchronize failed, RawPageListResources from iam failed, task: %s, err: %+v", taskName, err)
+			return err
+		}
+		iamResources = append(iamResources, iamResult.Results...)
+		offset += meta.IamPageLimit
+		if int64(offset) > iamResult.Count {
+			break
+		}
+		time.Sleep(meta.IamRequestIntervalMillisecond * time.Millisecond)
 	}
 	if blog.V(5) {
-		blog.InfoJSON("ih.authManager.Authorize.ListResources, count: %d,  result: %v", len(iamResources), iamResources)
+		blog.InfoJSON("ih.authManager.Authorize.RawPageListResources, count: %d,  result: %v", len(iamResources), iamResources)
 	}
 	realResources := make([]authmeta.BackendResource, 0)
 	for _, iamResource := range iamResources {
@@ -64,7 +86,7 @@ func (ih *IAMHandler) diffAndSyncInstances(header http.Header, taskName string, 
 	if blog.V(5) {
 		blog.InfoJSON("task: %s, count: %d, iam realResources is: %v", taskName, len(realResources), realResources)
 	}
-	return ih.diffAndSyncCore(taskName, realResources, iamIDPrefix, resources, skipDeregister)
+	return ih.diffAndSyncCore(taskName, realResources, resources, skipDeregister)
 }
 
 func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
@@ -76,10 +98,10 @@ func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribut
 	if blog.V(5) {
 		blog.InfoJSON("getIamResources by %s result is: %s", ra, iamResources)
 	}
-	return ih.diffAndSyncCore(taskName, iamResources, iamIDPrefix, resources, skipDeregister)
+	return ih.diffAndSyncCore(taskName, iamResources, resources, skipDeregister)
 }
 
-func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.BackendResource, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
+func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.BackendResource, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
 	// check final resource type related with resourceID
 	dryRunResources, err := ih.authManager.Authorize.DryRunRegisterResource(context.Background(), resources...)
 	if err != nil {

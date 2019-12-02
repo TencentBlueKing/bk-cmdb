@@ -22,12 +22,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(NewShutdownCommand())
+}
+
 type shutdownConf struct {
 	showPids bool
 	pids     string
 }
 
-func NewExitCommand() *cobra.Command {
+func NewShutdownCommand() *cobra.Command {
 	conf := new(shutdownConf)
 
 	cmd := &cobra.Command{

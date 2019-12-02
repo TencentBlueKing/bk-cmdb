@@ -9,6 +9,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -27,8 +28,9 @@ var _ = Describe("no service template test", func() {
 					"name":              "test",
 				}
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp.Data)
 				data := metadata.ServiceCategory{}
 				json.Unmarshal(j, &data)
@@ -45,8 +47,9 @@ var _ = Describe("no service template test", func() {
 					"name":              "test1",
 				}
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp.Data)
 				data := metadata.ServiceCategory{}
 				json.Unmarshal(j, &data)
@@ -63,8 +66,9 @@ var _ = Describe("no service template test", func() {
 					"name":              "test2",
 				}
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp.Data)
 				data := metadata.ServiceCategory{}
 				json.Unmarshal(j, &data)
@@ -79,8 +83,9 @@ var _ = Describe("no service template test", func() {
 					common.BKAppIDField: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp)
 				Expect(j).To(ContainSubstring("\"name\":\"test\""))
 				Expect(j).To(ContainSubstring("\"name\":\"test1\""))
@@ -95,8 +100,9 @@ var _ = Describe("no service template test", func() {
 					"name":              "test3",
 				}
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 			})
 
 			It("create service category with empty name", func() {
@@ -106,8 +112,9 @@ var _ = Describe("no service template test", func() {
 					"name":              "",
 				}
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 			})
 
 			It("create service category with duplicate name", func() {
@@ -117,8 +124,9 @@ var _ = Describe("no service template test", func() {
 					"name":              "test",
 				}
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 			})
 
 			It("search service category", func() {
@@ -126,8 +134,9 @@ var _ = Describe("no service template test", func() {
 					common.BKAppIDField: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp)
 				Expect(j).To(Equal(resMap["service_category"]))
 			})
@@ -140,8 +149,9 @@ var _ = Describe("no service template test", func() {
 					"id":   categoryId3,
 				}
 				rsp, err := serviceClient.UpdateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp.Data)
 				data := metadata.ServiceCategory{}
 				json.Unmarshal(j, &data)
@@ -155,8 +165,9 @@ var _ = Describe("no service template test", func() {
 					common.BKAppIDField: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp)
 				Expect(j).NotTo(ContainSubstring("\"name\":\"test2\""))
 				Expect(j).To(ContainSubstring("\"name\":\"test3\""))
@@ -169,8 +180,9 @@ var _ = Describe("no service template test", func() {
 					"id":   categoryId3,
 				}
 				rsp, err := serviceClient.UpdateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 			})
 
 			It("create service category with same parent", func() {
@@ -180,8 +192,9 @@ var _ = Describe("no service template test", func() {
 					"name":              "test4",
 				}
 				rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp.Data)
 				data := metadata.ServiceCategory{}
 				json.Unmarshal(j, &data)
@@ -195,8 +208,9 @@ var _ = Describe("no service template test", func() {
 					common.BKAppIDField: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp)
 				Expect(j).To(ContainSubstring("\"name\":\"test4\""))
 				resMap["service_category"] = j
@@ -208,8 +222,9 @@ var _ = Describe("no service template test", func() {
 					"id":   categoryId3,
 				}
 				rsp, err := serviceClient.UpdateServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 			})
 
 			It("delete service category with children", func() {
@@ -218,8 +233,9 @@ var _ = Describe("no service template test", func() {
 					"id":                categoryId1,
 				}
 				rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 			})
 
 			It("create module without template using service category", func() {
@@ -230,8 +246,9 @@ var _ = Describe("no service template test", func() {
 					"service_template_id": 0,
 				}
 				rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				Expect(rsp.Data["bk_module_name"].(string)).To(Equal("test"))
 				Expect(int64(rsp.Data["bk_set_id"].(float64))).To(Equal(setId))
 				Expect(int64(rsp.Data["bk_parent_id"].(float64))).To(Equal(setId))
@@ -246,8 +263,9 @@ var _ = Describe("no service template test", func() {
 					},
 				}
 				rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp)
 				Expect(j).To(ContainSubstring("\"bk_module_name\":\"test\""))
 				Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_category_id\":%d", categoryId3)))
@@ -261,8 +279,9 @@ var _ = Describe("no service template test", func() {
 					"service_template_id": 0,
 				}
 				rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 			})
 
 			It("search module", func() {
@@ -273,8 +292,9 @@ var _ = Describe("no service template test", func() {
 					},
 				}
 				rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp)
 				Expect(j).NotTo(ContainSubstring("module1"))
 			})
@@ -285,8 +305,9 @@ var _ = Describe("no service template test", func() {
 					"id":                categoryId3,
 				}
 				rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
+				Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 			})
 
 			It("search service category", func() {
@@ -294,8 +315,9 @@ var _ = Describe("no service template test", func() {
 					common.BKAppIDField: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
+				util.RegisterResponse(rsp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
+				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				j, err := json.Marshal(rsp)
 				Expect(j).To(Equal(resMap["service_category"]))
 			})
@@ -323,8 +345,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			serviceId = int64(rsp.Data.([]interface{})[0].(float64))
 		})
 
@@ -335,8 +358,9 @@ var _ = Describe("no service template test", func() {
 				"with_name":         true,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId)))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"bk_host_id\":%d", hostId1)))
@@ -355,8 +379,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 		})
 
 		It("create service instance with invalid host", func() {
@@ -370,8 +395,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 		})
 
 		// TODO: ADD TRANSACTION TO FIX THIS
@@ -395,8 +421,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 		})
 
 		PIt("search service instance", func() {
@@ -405,8 +432,9 @@ var _ = Describe("no service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp)
 			Expect(j).To(Equal(resMap["service_instance"]))
 		})
@@ -431,8 +459,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			serviceId2 = int64(rsp.Data.([]interface{})[0].(float64))
 		})
 
@@ -456,8 +485,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			serviceId3 = int64(rsp.Data.([]interface{})[0].(float64))
 		})
 
@@ -472,8 +502,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			serviceId1 = int64(rsp.Data.([]interface{})[0].(float64))
 		})
 
@@ -483,8 +514,9 @@ var _ = Describe("no service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId1)))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId2)))
@@ -499,8 +531,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.DeleteServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 		})
 
 		It("search service instance", func() {
@@ -509,8 +542,9 @@ var _ = Describe("no service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp)
 			Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId1)))
 		})
@@ -532,8 +566,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			processId = int64(rsp.Data.([]interface{})[0].(float64))
 		})
 
@@ -543,8 +578,9 @@ var _ = Describe("no service template test", func() {
 				common.BKAppIDField:   bizId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp.Data)
 			data := []metadata.ProcessInstance{}
 			json.Unmarshal(j, &data)
@@ -574,8 +610,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 		})
 
 		It("create process instance with same bk_func_name and bk_start_param_regex", func() {
@@ -593,8 +630,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 		})
 
 		It("create process instance with empty name", func() {
@@ -610,8 +648,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 		})
 
 		It("search process instance", func() {
@@ -620,8 +659,9 @@ var _ = Describe("no service template test", func() {
 				common.BKAppIDField:   bizId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp.Data)
 			Expect(resMap["process_instance"]).To(Equal(j))
 		})
@@ -639,8 +679,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := processClient.UpdateProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 		})
 
 		It("search process instance", func() {
@@ -649,8 +690,9 @@ var _ = Describe("no service template test", func() {
 				common.BKAppIDField:   bizId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp.Data)
 			data := []metadata.ProcessInstance{}
 			json.Unmarshal(j, &data)
@@ -673,8 +715,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := processClient.UpdateProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 		})
 
 		It("update process instance with same bk_func_name and bk_start_param_regex", func() {
@@ -690,8 +733,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := processClient.UpdateProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 		})
 
 		It("udpate process instance with empty name", func() {
@@ -705,8 +749,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := processClient.UpdateProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
+			Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
 		})
 
 		It("search process instance", func() {
@@ -715,8 +760,9 @@ var _ = Describe("no service template test", func() {
 				"service_instance_id": serviceId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp.Data)
 			Expect(resMap["process_instance"]).To(Equal(j))
 		})
@@ -729,8 +775,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := processClient.DeleteProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 		})
 
 		It("search process instance", func() {
@@ -739,8 +786,9 @@ var _ = Describe("no service template test", func() {
 				common.BKAppIDField:   bizId,
 			}
 			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp.Data)
 			data := []metadata.ProcessInstance{}
 			json.Unmarshal(j, &data)
@@ -755,8 +803,9 @@ var _ = Describe("no service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.DeleteServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 		})
 
 		It("search service instance", func() {
@@ -765,8 +814,9 @@ var _ = Describe("no service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 			j, err := json.Marshal(rsp)
 			Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId)))
 		})

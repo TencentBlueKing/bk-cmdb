@@ -115,7 +115,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		}
 
 	case meta.HostFavorite:
-		return nil, errors.New("host favorite does not support auth now")
+		iamResourceType = BizHostInstance
 
 	case meta.Process:
 		iamResourceType = BizProcessInstance
@@ -343,6 +343,7 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostToBizFaultModule,
 		meta.MoveHostToBizIdleModule,
+		meta.MoveHostToBizRecycleModule,
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,

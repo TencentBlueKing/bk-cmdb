@@ -3,6 +3,7 @@ package elasticsearch
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -18,8 +19,6 @@ type EsSrv struct {
 }
 
 func NewEsClient(esAddr string, tlsConfig *tls.Config) (*elastic.Client, error) {
-	// Starting with elastic.v5, you must pass a context to execute each service
-	ctx := context.Background()
 
 	// Obtain a client and connect to the default Elasticsearch installation
 	// on 127.0.0.1:9200. Of course you can configure your client to connect
@@ -39,7 +38,7 @@ func NewEsClient(esAddr string, tlsConfig *tls.Config) (*elastic.Client, error) 
 			elastic.SetScheme("https"),
 			elastic.SetSniff(false))
 		if err != nil {
-			blog.Errorf("create new https es client error, err: %v", err)
+			blog.Errorf("create new es https es client error, err: %v", err)
 			return nil, err
 		}
 	} else {
@@ -52,17 +51,9 @@ func NewEsClient(esAddr string, tlsConfig *tls.Config) (*elastic.Client, error) 
 		}
 	}
 
-	// Ping the Elasticsearch server to get e.g. the version number
-	info, code, err := client.Ping(esAddr).Do(ctx)
-	if err != nil {
-		// Handle error
-		blog.Errorf("esClient connect ping error, err: %v", err)
-		return nil, err
-	}
-	blog.Debug("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
 	// it's amazing that we found new client result success with value nil once a time.
 	if client == nil {
-		blog.Errorf("Elasticsearch client create success, but result client is unexpected nil, rid: %s")
+		return nil, errors.New("create es client, but it's is nil")
 	}
 	return client, nil
 }
@@ -102,7 +93,7 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, types []string
 
 	if err != nil {
 		// Handle error
-		blog.Errorf("es search [%s] error, err: %v, rid: %s", query, err, rid)
+		blog.Errorf("es search cond[%v] failed, err: %v, rid: %s", query, err, rid)
 		return nil, err
 	}
 

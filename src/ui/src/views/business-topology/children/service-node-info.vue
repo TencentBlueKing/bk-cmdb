@@ -11,7 +11,7 @@
             ])
         }"
     >
-        <div class="template-info clearfix" v-if="( isSetNode || isModuleNode) && type === 'details'">
+        <div class="template-info mb10 clearfix" v-if="( isSetNode || isModuleNode) && type === 'details'">
             <template v-if="isModuleNode">
                 <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
                     <span class="name fl">{{$t('服务模板')}}</span>
@@ -39,11 +39,14 @@
                                 <span class="text link">{{templateInfo.setTemplateName}}</span>
                                 <i class="icon-cc-share"></i>
                             </div>
-                            <bk-button :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
-                                :disabled="!hasChange"
-                                @click="handleSyncSetTemplate">
-                                {{$t('同步集群')}}
-                            </bk-button>
+                            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                                <bk-button slot-scope="{ disabled }"
+                                    :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
+                                    :disabled="!hasChange || disabled"
+                                    @click="handleSyncSetTemplate">
+                                    {{$t('同步集群')}}
+                                </bk-button>
+                            </cmdb-auth>
                         </template>
                         <span class="text" v-else>{{templateInfo.setTemplateName}}</span>
                     </div>
@@ -57,29 +60,32 @@
             :inst="flattenedInstance"
             :show-options="modelId !== 'biz' && !isBlueking">
             <template slot="details-options">
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_TOPO),
-                        auth: [$OPERATION.U_TOPO]
-                    }">
-                    <bk-button class="button-edit"
-                        theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.U_TOPO)"
-                        @click="handleEdit">
-                        {{$t('编辑')}}
-                    </bk-button>
-                </span>
-                <span style="display: inline-block;"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_TOPO),
-                        auth: [$OPERATION.D_TOPO]
-                    }">
-                    <bk-button class="btn-delete"
-                        :disabled="!$isAuthorized($OPERATION.D_TOPO) || moduleFromSetTemplate"
-                        @click="handleDelete">
-                        {{$t('删除节点')}}
-                    </bk-button>
-                </span>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                    <template slot-scope="{ disabled }">
+                        <bk-button class="button-edit"
+                            theme="primary"
+                            :disabled="disabled"
+                            @click="handleEdit">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </template>
+                </cmdb-auth>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
+                    <template slot-scope="{ disabled }">
+                        <span class="inline-block-middle" v-if="moduleFromSetTemplate"
+                            v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
+                            <bk-button class="btn-delete" disabled>
+                                {{$t('删除节点')}}
+                            </bk-button>
+                        </span>
+                        <bk-button class="btn-delete" v-else
+                            theme="default"
+                            :disabled="disabled"
+                            @click="handleDelete">
+                            {{$t('删除节点')}}
+                        </bk-button>
+                    </template>
+                </cmdb-auth>
             </template>
         </cmdb-details>
         <template v-else-if="type === 'update'">
@@ -88,13 +94,17 @@
                 <div class="selector-item mt10 clearfix">
                     <cmdb-selector class="category-selector fl"
                         :list="firstCategories"
-                        v-model="first">
+                        v-model="first"
+                        @on-selected="handleChangeFirstCategory">
                     </cmdb-selector>
                     <cmdb-selector class="category-selector fl"
                         :list="secondCategories"
+                        name="secondCategory"
+                        v-validate="'required'"
                         v-model="second"
                         @on-selected="handleChangeCategory">
                     </cmdb-selector>
+                    <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
                 </div>
             </div>
             <cmdb-form class="topology-form"
@@ -112,7 +122,11 @@
 </template>
 
 <script>
+    import debounce from 'lodash.debounce'
     export default {
+        props: {
+            active: Boolean
+        },
         data () {
             return {
                 type: 'details',
@@ -127,7 +141,8 @@
                     serviceTemplateName: this.$t('无'),
                     serviceCategory: '',
                     setTemplateName: this.$t('无')
-                }
+                },
+                refresh: null
             }
         },
         computed: {
@@ -135,13 +150,13 @@
                 return this.$store.getters['objectBiz/bizId']
             },
             propertyMap () {
-                return this.$store.state.businessTopology.propertyMap
+                return this.$store.state.businessHost.propertyMap
             },
             propertyGroupMap () {
-                return this.$store.state.businessTopology.propertyGroupMap
+                return this.$store.state.businessHost.propertyGroupMap
             },
             categoryMap () {
-                return this.$store.state.businessTopology.categoryMap
+                return this.$store.state.businessHost.categoryMap
             },
             firstCategories () {
                 return this.categoryMap[this.business] || []
@@ -151,7 +166,7 @@
                 return firstCategory.secondCategory || []
             },
             selectedNode () {
-                return this.$store.state.businessTopology.selectedNode
+                return this.$store.state.businessHost.selectedNode
             },
             isModuleNode () {
                 return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
@@ -189,28 +204,37 @@
             modelId: {
                 immediate: true,
                 handler (modelId) {
-                    if (modelId) {
-                        this.type = 'details'
-                        this.init()
+                    if (modelId && this.active) {
+                        this.initProperties()
                     }
                 }
             },
             selectedNode: {
                 immediate: true,
-                async handler (node) {
-                    if (node) {
-                        this.type = 'details'
-                        await this.getInstance()
-                        if (this.withSetTemplate) {
-                            this.getDiffTemplateAndInstances()
-                        }
-                        this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
+                handler (node) {
+                    if (node && this.active) {
+                        this.getNodeDetails()
+                    }
+                }
+            },
+            active: {
+                immediate: true,
+                handler (active) {
+                    if (active) {
+                        this.refresh()
                     }
                 }
             }
         },
+        created () {
+            this.refresh = debounce(() => {
+                this.initProperties()
+                this.getNodeDetails()
+            }, 10)
+        },
         methods: {
-            async init () {
+            async initProperties () {
+                this.type = 'details'
                 try {
                     const [
                         properties,
@@ -226,6 +250,14 @@
                     this.properties = []
                     this.propertyGroups = []
                 }
+            },
+            async getNodeDetails () {
+                this.type = 'details'
+                await this.getInstance()
+                if (this.withSetTemplate) {
+                    this.getDiffTemplateAndInstances()
+                }
+                this.disabledProperties = this.selectedNode.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
             },
             async getProperties () {
                 let properties = []
@@ -243,7 +275,7 @@
                             requestId: 'getModelProperties'
                         }
                     })
-                    this.$store.commit('businessTopology/setProperties', {
+                    this.$store.commit('businessHost/setProperties', {
                         id: modelId,
                         properties: properties
                     })
@@ -264,7 +296,7 @@
                             requestId: 'getModelPropertyGroups'
                         }
                     })
-                    this.$store.commit('businessTopology/setPropertyGroups', {
+                    this.$store.commit('businessHost/setPropertyGroups', {
                         id: modelId,
                         groups: groups
                     })
@@ -280,7 +312,7 @@
                         module: this.getModuleInstance
                     }
                     this.instance = await (promiseMap[modelId] || this.getCustomInstance)()
-                    this.$store.commit('businessTopology/setSelectedNodeInstance', this.instance)
+                    this.$store.commit('businessHost/setSelectedNodeInstance', this.instance)
                 } catch (e) {
                     console.error(e)
                     this.instance = {}
@@ -371,7 +403,7 @@
                             params: this.$injectMetadata({}, { injectBizId: true })
                         })
                         const categories = this.collectServiceCategories(data.info)
-                        this.$store.commit('businessTopology/setCategories', {
+                        this.$store.commit('businessHost/setCategories', {
                             id: this.business,
                             categories: categories
                         })
@@ -428,10 +460,17 @@
                 }
                 this.type = 'update'
             },
+            handleChangeFirstCategory (id, category) {
+                if (!this.secondCategories.length) {
+                    this.second = ''
+                    this.$set(this.$refs.form.values, 'service_category_id', '')
+                }
+            },
             handleChangeCategory (id, category) {
                 this.$set(this.$refs.form.values, 'service_category_id', id)
             },
             async handleSubmit (value) {
+                if (!await this.$validator.validateAll()) return
                 const promiseMap = {
                     set: this.updateSetInstance,
                     module: this.updateModuleInstance
@@ -444,6 +483,7 @@
                     await (promiseMap[this.modelId] || this.updateCustomInstance)(this.$injectMetadata(value))
                     this.selectedNode.data.bk_inst_name = value[nameMap[this.modelId] || 'bk_inst_name']
                     this.instance = Object.assign({}, this.instance, value)
+                    this.getServiceInfo(this.instance)
                     this.type = 'details'
                     this.$success(this.$t('修改成功'))
                 } catch (e) {
@@ -472,8 +512,6 @@
                     config: {
                         requestId: 'updateNodeInstance'
                     }
-                }).then(async () => {
-                    this.getServiceInfo({ service_category_id: value.service_category_id || this.instance.service_category_id })
                 })
             },
             updateCustomInstance (value) {
@@ -684,9 +722,8 @@
     .template-info {
         font-size: 14px;
         color: #63656e;
-        padding: 10px 0 26px 36px;
-        margin: 10px 0 4px;
-        border-bottom: 1px solid #dcdee5;
+        padding: 20px 0 20px 36px;
+        border-bottom: 1px solid #F0F1F5;
         .info-item {
             width: 50%;
             max-width: 400px;
@@ -760,6 +797,7 @@
         padding: 20px 0 24px 36px;
         border-bottom: 1px solid #dcdee5;
         .selector-item {
+            position: relative;
             width: 50%;
             max-width: 554px;
             padding-right: 54px;
@@ -769,6 +807,17 @@
             & + .category-selector {
                 margin-left: 10px;
             }
+        }
+        .second-category-errors {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-left: calc(50% - 18px);
+            line-height: 14px;
+            font-size: 12px;
+            color: #ff5656;
+            max-width: 100%;
+            @include ellipsis;
         }
     }
     .topology-form {
@@ -787,11 +836,16 @@
             }
         }
     }
+    .button-edit {
+        min-width: 76px;
+        margin-right: 4px;
+    }
     .btn-delete{
         min-width: 76px;
         &:not(.is-disabled):hover {
-            color: #ff5656;
+            color: #ffffff;
             border-color: #ff5656;
+            background-color: #ff5656;
         }
     }
     .sync-set-btn {

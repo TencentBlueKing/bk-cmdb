@@ -1,15 +1,29 @@
 <template>
     <div class="classify-layout clearfix">
-        <div class="classify-waterfall fl"
-            v-for="col in classifyColumns.length"
-            :key="col">
-            <cmdb-classify-panel
-                v-for="classify in classifyColumns[col - 1]"
-                :key="classify['bk_classification_id']"
-                :classify="classify"
-                :collection="collection"
-                :instance-count="instanceCount">
-            </cmdb-classify-panel>
+        <div class="classify-filter">
+            <bk-input class="filter-input"
+                clearable
+                :placeholder="$t('请输入xx', { name: $t('关键字') })"
+                right-icon="icon-search"
+                v-model.trim="filter">
+            </bk-input>
+        </div>
+        <div v-show="!isEmpty">
+            <div class="classify-waterfall fl"
+                v-for="col in classifyColumns.length"
+                :key="col">
+                <cmdb-classify-panel
+                    v-for="classify in classifyColumns[col - 1]"
+                    :key="classify['bk_classification_id']"
+                    :classify="classify"
+                    :collection="collection"
+                    :instance-count="instanceCount">
+                </cmdb-classify-panel>
+            </div>
+        </div>
+        <div v-show="isEmpty" class="no-data">
+            <img src="../../assets/images/full-text-search.png" alt="no-data">
+            <p>{{$t('搜不到相关资源')}}</p>
         </div>
     </div>
 </template>
@@ -22,12 +36,16 @@
         MENU_RESOURCE_BUSINESS_COLLECTION
     } from '@/dictionary/menu-symbol'
     import cmdbClassifyPanel from './children/classify-panel'
+    import debounce from 'lodash.debounce'
     export default {
         components: {
             cmdbClassifyPanel
         },
         data () {
             return {
+                filter: '',
+                debounceFilter: null,
+                matchedModels: null,
                 instanceCount: []
             }
         },
@@ -58,7 +76,12 @@
                 const filterClassify = ['bk_biz_topo']
                 this.classifications.forEach(classification => {
                     if (!filterClassify.includes(classification.bk_classification_id)) {
-                        const models = classification.bk_objects.filter(model => !filterModels.includes(model.bk_obj_id) && !model.bk_ispaused)
+                        const models = classification.bk_objects.filter(model => {
+                            const isInvisible = filterModels.includes(model.bk_obj_id)
+                            const isPaused = model.bk_ispaused
+                            const isMatched = this.matchedModels ? this.matchedModels.includes(model.bk_obj_id) : true
+                            return !isInvisible && !isPaused && isMatched
+                        })
                         if (models.length) {
                             result.push({
                                 ...classification,
@@ -79,12 +102,28 @@
                     colHeight[rowIndex] = colHeight[rowIndex] + this.calcWaterfallHeight(classify)
                 })
                 return classifyColumns
+            },
+            isEmpty () {
+                return this.classifyColumns.every(column => !column.length)
+            }
+        },
+        watch: {
+            filter () {
+                this.debounceFilter()
             }
         },
         created () {
+            this.debounceFilter = debounce(this.filterModel, 300)
             this.getInstanceCount()
         },
         methods: {
+            filterModel () {
+                if (this.filter) {
+                    this.matchedModels = this.models.filter(model => model.bk_obj_name.indexOf(this.filter) > -1).map(model => model.bk_obj_id)
+                } else {
+                    this.matchedModels = null
+                }
+            },
             async getInstanceCount () {
                 try {
                     this.instanceCount = await this.$store.dispatch('objectCommonInst/getInstanceCount')
@@ -105,13 +144,30 @@
 
 <style lang="scss" scoped>
     .classify-layout{
-        padding: 0 23px 45px 20px;
+        padding: 0 20px 20px;
+    }
+    .classify-filter {
+        padding: 0 20px 20px 0;
+        .filter-input {
+            width: 240px;
+        }
     }
     .classify-waterfall{
-        width: calc((100% - 60px) / 4);
+        width: calc((100% - 80px) / 4);
         margin: 0 0 0 20px;
         &:first-child{
             margin: 0;
+        }
+    }
+    .no-data {
+        width: 90%;
+        margin: 0 auto;
+        padding-top: 240px;
+        text-align: center;
+        color: #63656E;
+        font-size: 16px;
+        img {
+            width: 104px;
         }
     }
 </style>

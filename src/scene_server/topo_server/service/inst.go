@@ -22,9 +22,14 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	paraparse "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/operation"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
+
+var whiteList = []string{
+	common.BKInnerObjIDHost,
+}
 
 // CreateInst create a new inst
 func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -48,25 +53,26 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		blog.Errorf("CreateInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, params.ReqID)
 		return nil, err
 	}
+
 	if isMainline == true {
-		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	if data.Exists("BatchInfo") {
 		/*
-		   BatchInfo data format:
-		    {
-		      "BatchInfo": {
-		        "4": { // excel line number
-		          "bk_inst_id": 1,
-		          "bk_inst_key": "a22",
-		          "bk_inst_name": "a11",
-		          "bk_version": "121",
-		          "import_from": "1"
-		        },
-		      "input_type": "excel"
-		    }
+			   BatchInfo data format:
+			    {
+			      "BatchInfo": {
+			        "4": { // excel line number
+			          "bk_inst_id": 1,
+			          "bk_inst_key": "a22",
+			          "bk_inst_name": "a11",
+			          "bk_version": "121",
+			          "import_from": "1"
+					}
+				  },
+			      "input_type": "excel"
+			    }
 		*/
 		batchInfo := new(operation.InstBatchInfo)
 		if err := data.MarshalJSONInto(batchInfo); err != nil {
@@ -89,7 +95,7 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		}
 
 		// auth update registered instances
-		if len(setInst.SuccessUpdated) == 0 {
+		if len(setInst.SuccessUpdated) != 0 {
 			if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, objID, setInst.SuccessUpdated...); err != nil {
 				blog.Errorf("update registered instances to iam failed, err: %+v, rid: %s", err, params.ReqID)
 				return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
@@ -122,7 +128,7 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
 
-	// forbidden create inner model instance with common api
+	// forbidden delete inner model instance with common api
 	if common.IsInnerModel(objID) == true {
 		blog.V(5).Infof("DeleteInsts failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
@@ -141,8 +147,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 		return nil, err
 	}
 	if isMainline == true {
-		blog.V(5).Infof("DeleteInsts failed, delete %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	deleteCondition := &operation.OpCondition{}
@@ -163,7 +168,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
 
-	// forbidden create inner model instance with common api
+	// forbidden delete inner model instance with common api
 	if common.IsInnerModel(objID) == true {
 		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
@@ -192,8 +197,7 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 	if isMainline == true {
-		blog.V(5).Infof("DeleteInst failed, delete %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	// auth: deregister resources
@@ -210,7 +214,7 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 	objID := pathParams("bk_obj_id")
 
 	// forbidden create inner model instance with common api
-	if common.IsInnerModel(objID) == true {
+	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
 		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
 	}
@@ -248,8 +252,7 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 		return nil, err
 	}
 	if isMainline == true {
-		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	instanceIDs := make([]int64, 0)
@@ -277,8 +280,8 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
 
-	// forbidden create inner model instance with common api
-	if common.IsInnerModel(objID) == true {
+	// forbidden update inner model instance with common api
+	if common.IsInnerModel(objID) == true && util.InArray(objID, whiteList) == false {
 		blog.V(5).Infof("CreateInst failed, create %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
 	}
@@ -306,8 +309,7 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 	if isMainline == true {
-		blog.V(5).Infof("UpdateInsts failed, update %s instance with common create api forbidden, rid: %s", objID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+		// TODO add custom mainline instance param validation
 	}
 
 	// this is a special logic for mainline object instance.
@@ -520,7 +522,7 @@ func (s *Service) SearchInstChildTopo(params types.ContextParams, pathParams, qu
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s, rid: %s", objID, err.Error(), params.ReqID)
 		return nil, err
 	}
 

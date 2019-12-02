@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -59,6 +60,9 @@ type HostClientInterface interface {
 
 	// search host
 	ListHosts(ctx context.Context, header http.Header, option metadata.ListHosts) (resp metadata.ListHostResult, err error)
+
+	// update host's cloud area field
+	UpdateHostCloudAreaField(ctx context.Context, header http.Header, option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
 }
 
 func NewHostClientInterface(client rest.ClientInterface) HostClientInterface {

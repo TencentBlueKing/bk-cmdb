@@ -13,13 +13,13 @@
 package mainline
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 	"fmt"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // SearchMainlineBusinessTopo get topo tree of mainline model
