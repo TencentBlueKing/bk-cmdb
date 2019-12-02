@@ -4,7 +4,7 @@
             :data="tableList"
             :pagination="pagination"
             :row-style="{ cursor: 'pointer' }"
-            :max-height="$APP.height - 240"
+            :max-height="maxHeight || ($APP.height - 240)"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @row-click="handleRowClick"
@@ -63,6 +63,10 @@
             },
             total: {
                 type: Number
+            },
+            maxHeight: {
+                type: Number,
+                default: 0
             }
         },
         data () {
