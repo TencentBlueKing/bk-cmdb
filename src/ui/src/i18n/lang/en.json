@@ -986,7 +986,7 @@
     "正在同步中请等待": "Being synced, please be patient...",
     "同步进度提示": "Synchronized {completedCount}, remaining {remainingCount}",
     "已选集群实例": "Selected instances: {count}",
-    "集群模板名称占位符": "Please input template name, 256 letters max",
+    "集群模板名称占位符": "Please input template name, 20 letters max",
     "模板配置": "Template config",
     "已应用集群": "Applied Set",
     "模板信息": "Template info",
