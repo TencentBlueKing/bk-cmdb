@@ -557,3 +557,106 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 	_ = resp.WriteEntity(result)
 	return
 }
+
+func (s *Service) ListHostRelatedApplyRule(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	rid := srvData.rid
+
+	bizIDStr := req.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("ListHostRelatedApplyRule failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
+	option := meta.ListHostRelatedApplyRuleOption{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&option); err != nil {
+		blog.Errorf("ListHostRelatedApplyRule failed, decode request body failed, err: %v,rid:%s", err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+	result, ccErr := s.listHostRelatedApplyRule(srvData, bizID, option)
+	if ccErr != nil {
+		blog.Errorf("ListHostRelatedApplyRule failed, decode request body failed, err: %v,rid:%s", err, rid)
+		result := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+	response := meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     result,
+	}
+	_ = resp.WriteEntity(response)
+}
+
+func (s *Service) listHostRelatedApplyRule(srvData *srvComm, bizID int64, option meta.ListHostRelatedApplyRuleOption) (map[int64][]meta.HostApplyRule, errors.CCErrorCoder) {
+	rid := srvData.rid
+
+	relationOption := &meta.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		HostIDArr:     option.HostIDs,
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	relationResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relationOption)
+	if err != nil {
+		blog.Errorf("listHostRelatedApplyRule failed, GetHostModuleRelation failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, relationOption, err, rid)
+		return nil, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if ccErr := relationResult.CCError(); ccErr != nil {
+		blog.Errorf("listHostRelatedApplyRule failed, GetHostModuleRelation failed, option: %s, result: %s, rid: %s", relationOption, relationResult, rid)
+		return nil, ccErr
+	}
+	hostModuleIDMap := make(map[int64][]int64)
+	moduleIDs := make([]int64, 0)
+	for _, item := range relationResult.Data.Info {
+		moduleIDs = append(moduleIDs, item.ModuleID)
+		if _, exist := hostModuleIDMap[item.HostID]; exist == false {
+			hostModuleIDMap[item.HostID] = make([]int64, 0)
+		}
+		hostModuleIDMap[item.HostID] = append(hostModuleIDMap[item.HostID], item.ModuleID)
+	}
+
+	ruleOption := meta.ListHostApplyRuleOption{
+		ModuleIDs: moduleIDs,
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	ruleResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(srvData.ctx, srvData.header, bizID, ruleOption)
+	if ccErr != nil {
+		blog.ErrorJSON("listHostRelatedApplyRule failed, ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, ccErr.Error(), rid)
+		return nil, ccErr
+	}
+	// moduleID -> []hostApplyRule
+	moduleRules := make(map[int64][]meta.HostApplyRule)
+	for _, item := range ruleResult.Info {
+		if _, exist := moduleRules[item.ModuleID]; exist == false {
+			moduleRules[item.ModuleID] = make([]meta.HostApplyRule, 0)
+		}
+		moduleRules[item.ModuleID] = append(moduleRules[item.ModuleID], item)
+	}
+
+	// hostID -> []moduleIDs
+	result := make(map[int64][]meta.HostApplyRule)
+	for _, hostID := range option.HostIDs {
+		if _, exist := result[hostID]; exist == false {
+			result[hostID] = make([]meta.HostApplyRule, 0)
+		}
+		moduleIDs, exist := hostModuleIDMap[hostID]
+		if exist == false {
+			continue
+		}
+		for _, moduleID := range moduleIDs {
+			rules, exist := moduleRules[moduleID]
+			if exist == true {
+				result[hostID] = append(result[hostID], rules...)
+			}
+		}
+	}
+	return result, nil
+}

@@ -58,6 +58,11 @@ type ListHostApplyRuleOption struct {
 	Page      BasePage `json:"page"`
 }
 
+type ListHostRelatedApplyRuleOption struct {
+	HostIDs []int64  `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids"`
+	Page    BasePage `json:"page"`
+}
+
 type DeleteHostApplyRuleOption struct {
 	RuleIDs []int64 `field:"host_apply_rule_ids" json:"host_apply_rule_ids" bson:"host_apply_rule_ids"`
 }
