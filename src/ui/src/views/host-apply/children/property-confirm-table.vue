@@ -10,7 +10,7 @@
             @row-click="handleRowClick"
         >
             <bk-table-column :label="$t('内网IP')" prop="expired_host.bk_host_innerip" class-name="is-highlight"></bk-table-column>
-            <bk-table-column :label="$t('云区域')" prop="expired_host.bk_cloud_id"></bk-table-column>
+            <bk-table-column :label="$t('云区域')" prop="cloud_area.bk_cloud_name"></bk-table-column>
             <bk-table-column :label="$t('固资编号')" prop="expired_host.bk_asset_id"></bk-table-column>
             <bk-table-column :label="$t('主机名称')" prop="expired_host.bk_host_name"></bk-table-column>
             <bk-table-column :label="$t('修改值')" width="430" class-name="table-cell-change-value">

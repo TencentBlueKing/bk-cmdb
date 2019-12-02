@@ -35,7 +35,7 @@
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
     import ConfirmStore from '@/components/ui/dialog/confirm-store.js'
 
     const LEAVE_CONFIRM_ID = 'singleModule'
@@ -62,6 +62,7 @@
         },
         computed: {
             ...mapGetters(['supplierAccount', 'isAdminView']),
+            ...mapState('hostApply', ['ruleDraft']),
             business () {
                 return this.$store.state.objectBiz.bizId
             },
@@ -106,8 +107,13 @@
         methods: {
             setDefaultState (data) {
                 this.$refs.tree.setData(data)
-                if (this.firstModule) {
-                    const defaultNodeId = this.idGenerator(this.firstModule)
+                let defaultNodeId
+                if (this.ruleDraft.moduleIds) {
+                    defaultNodeId = `module_${this.ruleDraft.moduleIds[0]}`
+                } else if (this.firstModule) {
+                    defaultNodeId = this.idGenerator(this.firstModule)
+                }
+                if (defaultNodeId) {
                     this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
                     this.$refs.tree.setExpanded(defaultNodeId)
                 }
@@ -143,7 +149,7 @@
                 if (this.isModule(node)) {
                     if (this.$parent.editing) {
                         const leaveConfirmResult = await ConfirmStore.popup(LEAVE_CONFIRM_ID)
-                        return !leaveConfirmResult
+                        return leaveConfirmResult
                     }
                     return true
                 } else {

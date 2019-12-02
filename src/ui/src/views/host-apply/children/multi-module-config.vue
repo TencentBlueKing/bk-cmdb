@@ -124,6 +124,7 @@
         },
         created () {
             this.initData()
+            this.leaveConfirm.active = !this.isDel
         },
         mounted () {
             this.setShowMoreLinkStatus()
@@ -224,11 +225,13 @@
                 })
 
                 this.leaveConfirm.active = false
-                this.$router.push({
-                    name: 'hostApplyConfirm',
-                    query: {
-                        batch: 1
-                    }
+                this.$nextTick(function () {
+                    this.$router.push({
+                        name: 'hostApplyConfirm',
+                        query: {
+                            batch: 1
+                        }
+                    })
                 })
             },
             handleDel () {
@@ -255,9 +258,13 @@
             handleCancel () {
                 // 删除离开不用确认
                 this.leaveConfirm.active = !this.isDel
-                // 回到入口页
-                this.$router.push({
-                    name: MENU_BUSINESS_HOST_APPLY
+                this.$store.commit('hostApply/clearRuleDraft')
+
+                this.$nextTick(function () {
+                    // 回到入口页
+                    this.$router.push({
+                        name: MENU_BUSINESS_HOST_APPLY
+                    })
                 })
             },
             handlePropertySelectionChange (value) {
