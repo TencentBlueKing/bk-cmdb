@@ -26,7 +26,7 @@ func init() {
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = updateFranceName(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x19.04.16.02] fixAssociationTypeName error  %s", err.Error())
+		blog.Errorf("[upgrade x19.04.16.02] updateFranceName error  %s", err.Error())
 		return err
 	}
 	return nil
