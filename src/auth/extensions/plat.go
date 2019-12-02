@@ -79,6 +79,18 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 	return plats, nil
 }
 
+func (am *AuthManager) MakeResourcesByPlatID(header http.Header, action meta.Action, platIDs ...int64) ([]meta.ResourceAttribute, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.GetHTTPCCRequestID(header)
+
+	plats, err := am.collectPlatByIDs(ctx, header, platIDs...)
+	if err != nil {
+		blog.Errorf("MakeResourcesByPlatID failed, collectPlatByIDs failed, err: %+v, rid: %s", err, rid)
+		return nil, fmt.Errorf("collectPlatByIDs failed, err: %+v", err)
+	}
+	return am.MakeResourcesByPlat(header, action, plats...)
+}
+
 // be careful: plat is registered as a common instance in iam
 func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) ([]meta.ResourceAttribute, error) {
 	ctx := util.NewContextFromHTTPHeader(header)
