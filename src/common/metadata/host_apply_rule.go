@@ -193,5 +193,6 @@ type SearchRuleRelatedModulesOption struct {
 }
 
 type UpdateModuleHostApplyEnableStatusOption struct {
-	Enable bool `json:"enable" mapstructure:"enable"`
+	Enable     bool `json:"enable" mapstructure:"enable"`
+	ClearRules bool `json:"clear_rules" mapstructure:"clear_rules"`
 }
