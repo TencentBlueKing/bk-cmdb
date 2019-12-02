@@ -8,11 +8,11 @@
                 <li class="property-item"
                     v-for="property in group.properties"
                     :key="property.id">
-                    <span class="property-name"
-                        :title="property.bk_property_name">
+                    <span class="property-name" v-overflow-tips>
                         {{property.bk_property_name}}
                     </span>
                     <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
+                        v-overflow-tips
                         v-show="property !== editState.property">
                         {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
                     </span>
