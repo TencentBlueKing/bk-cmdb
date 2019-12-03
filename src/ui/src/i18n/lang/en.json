@@ -1133,5 +1133,7 @@
     "应用完成": "Apply done",
     "应用结果": "Apply {success} host successfully, {fail} host failed.",
     "立即查看主机": "View Host",
-    "查看失败": "View Failure"
+    "查看失败": "View Failure",
+    "转移属性变化确认提示": "Because the target module is configured with host attribute auto-apply, the following host attributes will change",
+    "表格冲突处理提示": "The host belongs to multiple modules, and the automatic application configuration of the same attribute is different. If it is not processed, the attribute value before the host transfer is maintained."
 }
