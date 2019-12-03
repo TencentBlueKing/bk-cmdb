@@ -180,23 +180,26 @@ func (a *attribute) Create() error {
 
 	// create a new record
 	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
-	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(context.Background(), a.params.Header, a.attr.ObjectID, &input)
+	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(a.params.Context, a.params.Header, a.attr.ObjectID, &input)
 	if nil != err {
-		blog.Errorf("faield to request the object controller, the err: %s, rid: %s", err.Error(), a.params.ReqID)
-		return err
+		blog.ErrorJSON("failed to request coreService to create model attrs, the err: %s, ObjectID: %s, input: %s, rid: %s", err.Error(), a.attr.ObjectID, input, a.params.ReqID)
+		return a.params.Err.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		return err
+		blog.ErrorJSON("create model attrs failed, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.params.ReqID)
+		return rsp.CCError()
 	}
 
 	for _, exception := range rsp.Data.Exceptions {
 		return a.params.Err.New(int(exception.Code), exception.Message)
 	}
 
-	for _, id := range rsp.Data.Created {
-		a.attr.ID = int64(id.ID)
+	if len(rsp.Data.Created) != 1 {
+		blog.ErrorJSON("create model attrs created amount error, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.params.ReqID)
+		return a.params.Err.CCError(common.CCErrTopoObjectAttributeCreateFailed)
 	}
+	a.attr.ID = int64(rsp.Data.Created[0].ID)
 
 	return nil
 }
