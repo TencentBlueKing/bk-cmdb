@@ -1094,6 +1094,15 @@
     "按模块路径排序": "Sort by module path",
     "转移到空闲模块": "Transfer to idle module",
     "移除主机": "Remove host",
+    "已选择模块": "{num} modules have been selected",
+    "请勾选要删除的字段": "Please select the fields you want to delete.",
+    "当前值": "The current value",
+    "冲突值": "Conflict value",
+    "修改后": "After modification",
+    "确认删除自动应用字段": "Confirm delete auto apply field",
+    "自动应用字段删除提示": "After deletion, the configuration of the field in the corresponding module will be removed.",
+    "处理冲突": "Handling conflicts [{host}]",
+    "解决应用字段冲突提示": "Resolve conflicts: The attributes of the same host must be consistent under different modules.",
     "部分IP不正确或主机不存在": "Some IP is invalid or host not exist",
     "请选择业务模块": "Please select module",
     "请选择非内置节点": "Please select node that is not internal",
@@ -1124,5 +1133,7 @@
     "应用完成": "Apply done",
     "应用结果": "Apply {success} host successfully, {fail} host failed.",
     "立即查看主机": "View Host",
-    "查看失败": "View Failure"
+    "查看失败": "View Failure",
+    "转移属性变化确认提示": "Because the target module is configured with host attribute auto-apply, the following host attributes will change",
+    "表格冲突处理提示": "The host belongs to multiple modules, and the automatic application configuration of the same attribute is different. If it is not processed, the attribute value before the host transfer is maintained."
 }
