@@ -530,12 +530,8 @@ func (s *Service) RunHostApplyRule(req *restful.Request, resp *restful.Response)
 		if len(plan.UpdateFields) == 0 {
 			continue
 		}
-		updateData := make(map[string]interface{})
-		for _, field := range plan.UpdateFields {
-			updateData[field.PropertyID] = field.PropertyValue
-		}
 		updateOption := &metadata.UpdateOption{
-			Data: updateData,
+			Data: plan.GetUpdateData(),
 			Condition: map[string]interface{}{
 				common.BKHostIDField: plan.HostID,
 			},

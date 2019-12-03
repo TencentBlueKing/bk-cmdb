@@ -144,6 +144,14 @@ type OneHostApplyPlan struct {
 	UnresolvedConflictCount int64 `field:"unresolved_conflict_count" json:"unresolved_conflict_count" mapstructure:"unresolved_conflict_count"`
 }
 
+func (plan OneHostApplyPlan) GetUpdateData() map[string]interface{} {
+	updateData := map[string]interface{}{}
+	for _, field := range plan.UpdateFields {
+		updateData[field.PropertyID] = field.PropertyValue
+	}
+	return updateData
+}
+
 type HostApplyPlanResult struct {
 	Plans []OneHostApplyPlan `field:"plans" json:"plans" bson:"plans" mapstructure:"plans"`
 	// 未解决的冲突主机数
