@@ -37,6 +37,15 @@ const actions = {
     },
     deleteRules ({ commit, state, dispatch }, { bizId, params }) {
         return $http.delete(`deletemany/host_apply_rule/bk_biz_id/${bizId}`, params)
+    },
+    getProperties (context, config) {
+        return $http.post('find/objectattr/host', {}, config)
+    },
+    getHostRelatedRules (context, { bizId, params, config }) {
+        return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}/host_related_rules`, params, config)
+    },
+    searchNode (context, { bizId, params, config }) {
+        return $http.post(`module/bk_biz_id/${bizId}/host_apply_rule_related`, params, config)
     }
 }
 
