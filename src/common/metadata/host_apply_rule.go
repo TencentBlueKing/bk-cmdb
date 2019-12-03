@@ -49,22 +49,22 @@ type UpdateHostApplyRuleOption struct {
 }
 
 type MultipleHostApplyRuleResult struct {
-	Count int64           `json:"count"`
-	Info  []HostApplyRule `json:"info"`
+	Count int64           `json:"count" mapstructure:"count"`
+	Info  []HostApplyRule `json:"info" mapstructure:"info"`
 }
 
 type ListHostApplyRuleOption struct {
-	ModuleIDs []int64  `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids"`
-	Page      BasePage `json:"page"`
+	ModuleIDs []int64  `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+	Page      BasePage `json:"page" mapstructure:"page"`
 }
 
 type ListHostRelatedApplyRuleOption struct {
-	HostIDs []int64  `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids"`
-	Page    BasePage `json:"page"`
+	HostIDs []int64  `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids" mapstructure:"bk_host_ids"`
+	Page    BasePage `json:"page" mapstructure:"page"`
 }
 
 type DeleteHostApplyRuleOption struct {
-	RuleIDs []int64 `field:"host_apply_rule_ids" json:"host_apply_rule_ids" bson:"host_apply_rule_ids"`
+	RuleIDs []int64 `field:"host_apply_rule_ids" json:"host_apply_rule_ids" bson:"host_apply_rule_ids" mapstructure:"host_apply_rule_ids"`
 }
 
 type BatchCreateOrUpdateApplyRuleOption struct {
@@ -78,13 +78,13 @@ type CreateOrUpdateApplyRuleOption struct {
 }
 
 type BatchCreateOrUpdateHostApplyRuleResult struct {
-	Items []CreateOrUpdateHostApplyRuleResult `json:"items"`
+	Items []CreateOrUpdateHostApplyRuleResult `json:"items" mapstructure:"items"`
 }
 
 type CreateOrUpdateHostApplyRuleResult struct {
 	ErrorContainer `json:",inline"`
-	Index          int           `json:"index"`
-	Rule           HostApplyRule `json:"rule"`
+	Index          int           `json:"index" mapstructure:"index"`
+	Rule           HostApplyRule `json:"rule" mapstructure:"rule"`
 }
 
 // ConflictResolver 定义单个冲突的解决办法
