@@ -13,6 +13,7 @@
             }"
             selectable
             :before-select="beforeSelect"
+            :filter-method="filterMethod"
             @select-change="handleSelectChange"
             @check-change="handleCheckChange"
         >
@@ -37,7 +38,7 @@
 <script>
     import { mapGetters } from 'vuex'
     import ConfirmStore from '@/components/ui/dialog/confirm-store.js'
-
+    import Bus from '@/utils/bus'
     const LEAVE_CONFIRM_ID = 'singleModule'
 
     export default {
@@ -57,6 +58,9 @@
                     properties: [],
                     parentNode: null,
                     nextModelId: null
+                },
+                request: {
+                    searchNode: Symbol('searchNode')
                 }
             }
         },
@@ -93,6 +97,7 @@
             }
         },
         async created () {
+            Bus.$on('topology-search', this.handleSearch)
             const [data, mainLine] = await Promise.all([
                 this.getTopologyData(),
                 this.getMainLine()
@@ -103,11 +108,41 @@
                 this.setDefaultState(data)
             })
         },
+        beforeDestroy () {
+            Bus.$off('topology-search', this.handleSearch)
+        },
         methods: {
+            async handleSearch (values) {
+                try {
+                    if (Object.keys(values).length) {
+                        const data = await this.$store.dispatch('hostApply/searchNode', {
+                            bizId: this.business,
+                            params: values,
+                            config: {
+                                requestId: this.request.searchNode
+                            }
+                        })
+                        this.$refs.tree.filter(data)
+                    } else {
+                        this.$refs.tree.filter()
+                    }
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            filterMethod (remoteData, node) {
+                return node.data.bk_obj_id === 'module' && remoteData.some(datum => datum.bk_module_id === node.data.bk_inst_id)
+            },
             setDefaultState (data) {
                 this.$refs.tree.setData(data)
-                if (this.firstModule) {
-                    const defaultNodeId = this.idGenerator(this.firstModule)
+                const queryModule = parseInt(this.$route.query.module)
+                let defaultNodeId
+                if (!isNaN(queryModule)) {
+                    defaultNodeId = `module_${queryModule}`
+                } else if (this.firstModule) {
+                    defaultNodeId = this.idGenerator(this.firstModule)
+                }
+                if (defaultNodeId) {
                     this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
                     this.$refs.tree.setExpanded(defaultNodeId)
                 }
