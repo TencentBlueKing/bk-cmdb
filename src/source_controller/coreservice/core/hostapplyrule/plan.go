@@ -161,6 +161,8 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	attributes []metadata.Attribute,
 	resolvers []metadata.HostApplyConflictResolver,
 ) (metadata.OneHostApplyPlan, errors.CCErrorCoder) {
+	rid := util.ExtractRequestUserFromContext(ctx)
+
 	resolverMap := make(map[int64]interface{})
 	for _, item := range resolvers {
 		if item.HostID != hostID {
@@ -205,6 +207,8 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		}
 		attribute, exist := attributeMap[attributeID]
 		if exist == false {
+			blog.ErrorJSON("generateOneHostApplyPlan failed, attribute id filed not exist, "+
+				"attributeMap: %s, attributeID: %s, rid: %s", attributeMap, attributeID, rid)
 			err := ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAttributeIDField)
 			plan.ErrCode = err.GetCode()
 			plan.ErrMsg = err.Error()
@@ -245,6 +249,9 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		rawErr := attribute.Validate(ctx.Context, firstValue, propertyIDField)
 		if rawErr.ErrCode != 0 {
 			err := rawErr.ToCCError(ctx.Error)
+			blog.ErrorJSON("generateOneHostApplyPlan failed, Validate failed, "+
+				"attribute: %s, firstValue: %s, propertyIDField: %s, rawErr: %s, rid: %s",
+				attribute, firstValue, propertyIDField, rawErr, rid)
 			plan.ErrCode = err.GetCode()
 			plan.ErrMsg = err.Error()
 			break
