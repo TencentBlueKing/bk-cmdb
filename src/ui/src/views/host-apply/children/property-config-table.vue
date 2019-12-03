@@ -13,14 +13,24 @@
         </bk-table-column>
         <bk-table-column
             v-if="multiple"
+            :width="300"
             :label="$t('已配置的模块')"
             :render-header="(h, data) => renderTableHeader(h, data, '主机属于多个模块，但主机的属性值仅能有唯一值')"
             class-name="table-cell-module-path"
         >
             <template slot-scope="{ row }">
                 <template v-if="row.__extra__.moduleList.length">
-                    <div v-for="(item, index) in row.__extra__.moduleList" :key="index">
-                        {{$parent.getModulePath(item.bk_module_id)}}
+                    <template v-for="(item, index) in row.__extra__.moduleList">
+                        <div :key="index" v-show="showMore.expanded || index < showMore.max" class="path-item">
+                            {{$parent.getModulePath(item.bk_module_id)}}
+                        </div>
+                    </template>
+                    <div
+                        v-show="row.__extra__.moduleList.length > showMore.max"
+                        :class="['show-more', { expanded: showMore.expanded }]"
+                        @click="showMore.expanded = !showMore.expanded"
+                    >
+                        {{showMore.expanded ? '收起' : '展开更多'}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
                     </div>
                 </template>
                 <span v-else>--</span>
@@ -34,9 +44,12 @@
             <template slot-scope="{ row }">
                 <template v-if="multiple">
                     <template v-if="row.__extra__.moduleList.length">
-                        <div v-for="(item, index) in row.__extra__.moduleList" :key="index">
-                            {{item.bk_property_value | formatter(row) | unit(row.unit)}}
-                        </div>
+                        <template v-for="(item, index) in row.__extra__.moduleList">
+                            <div :key="index" v-show="showMore.expanded || index < showMore.max" class="value-item">
+                                {{item.bk_property_value | formatter(row) | unit(row.unit)}}
+                            </div>
+                        </template>
+                        <div v-show="row.__extra__.moduleList.length > showMore.max" class="show-more">&nbsp;</div>
                     </template>
                     <span v-else>--</span>
                 </template>
@@ -97,11 +110,15 @@
             return {
                 modulePropertyList: [],
                 removeRuleIds: [],
-                ignoreRuleIds: []
+                ignoreRuleIds: [],
+                showMore: {
+                    max: 10,
+                    expanded: false
+                }
             }
         },
         computed: {
-            ...mapGetters('hosts', ['configPropertyList']),
+            ...mapGetters('hostApply', ['configPropertyList']),
             ...mapState('hostApply', ['ruleDraft']),
             hasRuleDraft () {
                 return Object.keys(this.ruleDraft).length > 0
@@ -198,6 +215,24 @@
 <style lang="scss" scoped>
     .form-element-content {
         width: 80%;
+    }
+    .path-item,
+    .value-item {
+        padding: 1px 0;
+    }
+    .show-more {
+        color: #3a84ff;
+        margin-top: 2px;
+        cursor: pointer;
+        .bk-cc-icon {
+            font-size: 22px;
+            margin-top: -2px;
+        }
+        &.expanded {
+            .bk-cc-icon {
+                transform: rotate(180deg);
+            }
+        }
     }
 </style>
 <style lang="scss">

@@ -96,7 +96,7 @@
             </template>
         </div>
         <host-property-modal
-            :visiable.sync="propertyModalVisiable"
+            :visible.sync="propertyModalVisible"
             :checked-list.sync="checkedPropertyIdList"
         >
         </host-property-modal>
@@ -143,7 +143,7 @@
                 hasRule: false,
                 isEdit: this.editing,
                 nextButtonDisabled: true,
-                propertyModalVisiable: false,
+                propertyModalVisible: false,
                 clearRules: true,
                 leaveConfirm: {
                     id: 'singleModule',
@@ -153,7 +153,7 @@
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters('hosts', ['configPropertyList']),
+            ...mapGetters('hostApply', ['configPropertyList']),
             ...mapState('hostApply', ['ruleDraft']),
             moduleId () {
                 return this.module.bk_inst_id
@@ -249,10 +249,11 @@
                     }
                 })
             },
+            emptyRules () {
+                this.checkedPropertyIdList = []
+                this.hasRule = false
+            },
             async handleNextStep () {
-                // 使离开确认失活
-                this.leaveConfirm.active = false
-
                 const { modulePropertyList, removeRuleIds } = this.$refs.propertyConfigTable
                 const additionalRules = modulePropertyList.map(property => ({
                     bk_attribute_id: property.id,
@@ -275,7 +276,8 @@
                     rules: modulePropertyList
                 })
 
-                // 使leaveConfirmActive更新完成之后
+                // 使离开确认失活
+                this.leaveConfirm.active = false
                 this.$nextTick(function () {
                     this.$router.push({
                         name: 'hostApplyConfirm'
@@ -318,6 +320,10 @@
                                     clear_rules: this.clearRules
                                 }
                             })
+
+                            this.$success(this.$t('关闭成功'))
+                            this.emptyRules()
+                            this.$emit('after-close', this.moduleId)
                         } catch (e) {
                             console.log(e)
                         }
@@ -331,7 +337,7 @@
                 this.isEdit = true
             },
             handleChooseField () {
-                this.propertyModalVisiable = true
+                this.propertyModalVisible = true
             },
             async handleCancel (id) {
                 const leaveConfirmResult = await ConfirmStore.popup(this.leaveConfirm.id)

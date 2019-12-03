@@ -1,8 +1,8 @@
 <template>
     <div class="property-confirm-table">
         <bk-table
-            :data="tableList"
-            :pagination="pagination"
+            :data="table.list"
+            :pagination="table.pagination"
             :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 240"
             @page-change="handlePageChange"
@@ -19,6 +19,9 @@
                 </template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" class-name="is-highlight" :formatter="getOperationColumnText"></bk-table-column>
+            <cmdb-table-empty slot="empty">
+                <div>{{$t('暂无主机，新转入的主机将会自动应用模块的主机属性')}}</div>
+            </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -50,7 +53,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapState, mapActions } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
     import conflictResolve from './conflict-resolve.vue'
     export default {
         components: {
@@ -67,10 +70,13 @@
         },
         data () {
             return {
-                pagination: {
-                    current: 1,
-                    count: 0,
-                    ...this.$tools.getDefaultPaginationConfig()
+                table: {
+                    list: [],
+                    pagination: {
+                        current: 1,
+                        count: 0,
+                        ...this.$tools.getDefaultPaginationConfig()
+                    }
                 },
                 details: {
                     show: false,
@@ -86,16 +92,15 @@
                     title: this.$t('拓扑显示设置')
                 },
                 currentRow: {},
-                conflictResolveResult: {},
-                tableList: []
+                conflictResolveResult: {}
             }
         },
         computed: {
             ...mapGetters('objectModelClassify', [
                 'getModelById'
             ]),
-            ...mapGetters('hosts', ['configPropertyList']),
-            ...mapState('hosts', ['propertyList']),
+            ...mapGetters('hostApply', ['configPropertyList']),
+            ...mapState('hostApply', ['propertyList']),
             conflictResolveCache () {
                 const key = this.currentRow.bk_host_id
                 return this.conflictResolveResult[key] || []
@@ -106,7 +111,7 @@
                 this.setTableList()
             },
             total (value) {
-                this.pagination.count = value
+                this.table.pagination.count = value
             }
         },
         created () {
@@ -114,12 +119,9 @@
             this.setTableList()
         },
         methods: {
-            ...mapActions('objectModelProperty', [
-                'searchObjectAttribute'
-            ]),
             async getHostPropertyList () {
                 try {
-                    const data = await this.searchObjectAttribute({
+                    const data = await this.$store.dispatch('hostApply/getHostProperty', {
                         params: this.$injectMetadata({
                             bk_obj_id: 'host',
                             bk_supplier_account: this.supplierAccount
@@ -130,14 +132,14 @@
                         }
                     })
 
-                    this.$store.commit('hosts/setPropertyList', data)
+                    this.$store.commit('hostApply/setPropertyList', data)
                 } catch (e) {
                     console.error(e)
                 }
             },
             setTableList () {
-                const { start, limit } = this.$tools.getPageParams(this.pagination)
-                this.tableList = this.list.slice(start, start + limit)
+                const { start, limit } = this.$tools.getPageParams(this.table.pagination)
+                this.table.list = this.list.slice(start, start + limit)
             },
             getChangeValue (row) {
                 const { conflicts, update_fields: updateFields } = row
@@ -175,11 +177,11 @@
                 return text
             },
             handlePageChange (page) {
-                this.pagination.current = page
+                this.table.pagination.current = page
                 this.setTableList()
             },
             handleSizeChange (size) {
-                this.pagination.limit = size
+                this.table.pagination.limit = size
                 this.setTableList()
             },
             handleRowClick (row) {

@@ -37,9 +37,7 @@
 <script>
     import { mapGetters, mapState } from 'vuex'
     import ConfirmStore from '@/components/ui/dialog/confirm-store.js'
-
     const LEAVE_CONFIRM_ID = 'singleModule'
-
     export default {
         props: {
             treeOptions: {
