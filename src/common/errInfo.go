@@ -210,7 +210,7 @@ const (
 	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199079
 
 	CCErrCommUnexpectedFieldType   = 1199080
-	CCErrParseAttrOptionListFailed = 1199080
+	CCErrParseAttrOptionListFailed = 1199081
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
