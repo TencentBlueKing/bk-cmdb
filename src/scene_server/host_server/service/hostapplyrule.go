@@ -186,6 +186,13 @@ func (s *Service) ListHostApplyRule(req *restful.Request, resp *restful.Response
 		return
 	}
 
+	if len(option.ModuleIDs) == 0 {
+		blog.Errorf("ListHostApplyRule failed, parameter bk_module_ids empty, rid:%s", err, rid)
+		result := &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "bk_module_ids")}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
 	ruleResult, err := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(srvData.ctx, srvData.header, bizID, option)
 	if err != nil {
 		blog.ErrorJSON("ListHostApplyRule failed, core service ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
