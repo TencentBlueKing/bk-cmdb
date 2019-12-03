@@ -52,14 +52,17 @@
                     })
                     this.$bkInfo({
                         title: this.title,
-                        subTitle: this.content,
+                        subHeader: this.$createElement('div', {
+                            class: 'leave-confirm-content'
+                        }, this.content),
                         okText: this.okText || this.$t('确认'),
                         cancelText: this.cancelText || this.$t('取消'),
+                        closeIcon: false,
                         confirmFn: () => {
-                            this.confirmResolve(true)
+                            this.confirmResolve(false)
                         },
                         cancelFn: () => {
-                            this.confirmResolve(false)
+                            this.confirmResolve(true)
                         }
                     })
                 } else {
@@ -92,5 +95,6 @@
 <style lang="scss" scoped>
     .leave-confirm-content {
         text-align: center;
+        font-size: 14px;
     }
 </style>
