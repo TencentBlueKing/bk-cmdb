@@ -15,7 +15,8 @@
         <property-confirm-table
             ref="confirmTable"
             :list="info"
-            :max-height="600">
+            :max-height="600"
+            :render-icon="true">
         </property-confirm-table>
     </div>
 </template>

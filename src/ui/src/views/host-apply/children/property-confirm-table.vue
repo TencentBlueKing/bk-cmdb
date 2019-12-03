@@ -18,7 +18,11 @@
                     <div class="cell-change-value" v-html="getChangeValue(row)"></div>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')" class-name="is-highlight" :formatter="getOperationColumnText"></bk-table-column>
+            <bk-table-column :label="$t('操作')"
+                class-name="is-highlight"
+                :formatter="getOperationColumnText"
+                :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示')) : null">
+            </bk-table-column>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -67,6 +71,10 @@
             maxHeight: {
                 type: Number,
                 default: 0
+            },
+            renderIcon: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -121,6 +129,14 @@
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
             ]),
+            renderTableHeader (h, data, tips) {
+                const directive = {
+                    content: tips,
+                    placement: 'top-end',
+                    width: 275
+                }
+                return <span>{ data.column.label } <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={ directive }></i></span>
+            },
             async getHostPropertyList () {
                 try {
                     const data = await this.searchObjectAttribute({
