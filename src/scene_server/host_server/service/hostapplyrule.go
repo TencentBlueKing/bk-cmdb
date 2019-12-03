@@ -360,6 +360,9 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 	hostModuleMap := make(map[int64][]int64)
 	moduleIDs := make([]int64, 0)
 	for _, item := range hostRelations.Data.Info {
+		if util.InArray(item.HostID, hostIDs) == false {
+			continue
+		}
 		if _, exist := hostModuleMap[item.HostID]; exist == false {
 			hostModuleMap[item.HostID] = make([]int64, 0)
 		}
