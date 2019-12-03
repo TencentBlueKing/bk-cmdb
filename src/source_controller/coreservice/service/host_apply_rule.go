@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
@@ -30,7 +31,7 @@ func (s *coreService) CreateHostApplyRule(params core.ContextParams, pathParams,
 	}
 
 	option := metadata.CreateHostApplyRuleOption{}
-	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("CreateHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -57,7 +58,7 @@ func (s *coreService) UpdateHostApplyRule(params core.ContextParams, pathParams,
 	}
 
 	option := metadata.UpdateHostApplyRuleOption{}
-	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("UpdateHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -78,7 +79,7 @@ func (s *coreService) DeleteHostApplyRule(params core.ContextParams, pathParams,
 	}
 
 	option := metadata.DeleteHostApplyRuleOption{}
-	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("DeleteHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -119,7 +120,7 @@ func (s *coreService) ListHostApplyRule(params core.ContextParams, pathParams, q
 	}
 
 	option := metadata.ListHostApplyRuleOption{}
-	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("ListHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -140,7 +141,7 @@ func (s *coreService) GenerateApplyPlan(params core.ContextParams, pathParams, q
 	}
 
 	option := metadata.HostApplyPlanOption{}
-	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("GenerateApplyPlan failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -161,7 +162,7 @@ func (s *coreService) SearchRuleRelatedModules(params core.ContextParams, pathPa
 	}
 
 	option := metadata.SearchRuleRelatedModulesOption{}
-	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("SearchRuleRelatedModules failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -182,7 +183,7 @@ func (s *coreService) BatchUpdateHostApplyRule(params core.ContextParams, pathPa
 	}
 
 	option := metadata.BatchCreateOrUpdateApplyRuleOption{}
-	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
 		blog.Errorf("BatchUpdateHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
