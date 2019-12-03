@@ -421,7 +421,14 @@ info字段说明：
   	"result": true
   }
   ```
+* output字段说明
 
+| 名称  | 类型  | 说明 |Description|
+|---|---|---|---|
+| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+| data | null | 请求返回的数据 |the data response|
 
 
 ##### 查询录入历史
@@ -506,16 +513,15 @@ info字段说明：
   }
   ```
 
-- output字段说明：
+* output字段说明
 
-  | 名称        | 类型   | 说明                     | Description                                 |
-  | ----------- | ------ | ------------------------ | ------------------------------------------- |
-  | history_id  | int64  | 录入历史的唯一标识       | Unique ID for entry history                 |
-  | task_id     | int64  | 云同步任务的唯一标识     | Unique ID of the cloud synchronization task |
-  | operation   | string | 实例的操作（录入or更新） | Instance operation (entry or update)        |
-  | inst_name   | string | 实例名                   | instance name                               |
-  | create_time | time   | 创建时间                 | create time                                 |
-  | description | string | 录入详情                 | Entry details                               |
+| 名称  | 类型  | 说明 |Description|
+|---|---|---|---|
+| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+| data | null | 请求返回的数据 |the data response|
+
 
 
 #### 云账户
@@ -549,8 +555,6 @@ info字段说明：
   | secret_key | string | 是   | 无     | 云账户key                         | cloud account key  |
   | type       | string | 是   | 无     | 账户类型(可选 aws、tencent_cloud) | cloud account type |
 
-
-
 - output:
 
   ```
@@ -566,20 +570,21 @@ info字段说明：
   }
   ```
 
-- output字段说明：
-    | 名称  | 类型  | 说明 |Description|
-    |---|---|---|---|
-    | result | bool | 请求成功与否。true:请求成功；false请求失败 |request result|
-    | bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-    | bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-    | data | object| 请求返回的数据 |return data|
+* output字段说明
 
-    data字段说明：
+| 名称  | 类型  | 说明 |Description|
+|---|---|---|---|
+| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+| data | null | 请求返回的数据 |the data response|
 
-    | 名称      | 类型   | 说明               | Description                                         |
-    | --------- | ------ | ------------------ | --------------------------------------------------- |
-    | connected | bool   | 是否成功连接云账户 | Whether the cloud account is successfully connected |
-    | error_msg | string | 连接失败的错误信息 | Connection failed error message                     |
+data字段说明：
+
+| 名称      | 类型   | 说明               | Description                                         |
+| --------- | ------ | ------------------ | --------------------------------------------------- |
+| connected | bool   | 是否成功连接云账户 | Whether the cloud account is successfully connected |
+| error_msg | string | 连接失败的错误信息 | Connection failed error message                     |
 
 
 
@@ -634,19 +639,20 @@ info字段说明：
   }
   ```
 
- - output字段说明：
-    | 名称  | 类型  | 说明 |Description|
-    |---|---|---|---|
-    | result | bool | 请求成功与否。true:请求成功；false请求失败 |request result|
-    | bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-    | bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-    | data | object| 请求返回的数据 |return data|
+* output字段说明
 
-    data字段说明：
+| 名称  | 类型  | 说明 |Description|
+|---|---|---|---|
+| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+| data | null | 请求返回的数据 |the data response|
 
-    | 名称       | 类型  | 说明           | Description             |
-    | ---------- | ----- | -------------- | ----------------------- |
-    | account_id | int64 | 云账户唯一标识 | Cloud account unique id |
+data字段说明：
+
+| 名称       | 类型  | 说明           | Description             |
+| ---------- | ----- | -------------- | ----------------------- |
+| account_id | int64 | 云账户唯一标识 | Cloud account unique id |
 
 
 
@@ -736,28 +742,29 @@ info字段说明：
   }
   ```
 
-- output字段说明：
-    | 名称  | 类型  | 说明 |Description|
-    |---|---|---|---|
-    | result | bool | 请求成功与否。true:请求成功；false请求失败 |request result|
-    | bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-    | bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-    | data | object| 请求返回的数据 |return data|
+* output字段说明
 
-    data字段说明：
+| 名称  | 类型  | 说明 |Description|
+|---|---|---|---|
+| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+| data | null | 请求返回的数据 |the data response|
 
-    | 名称         | 类型   | 说明           | Description              |
-    | ------------ | ------ | -------------- | ------------------------ |
-    | name         | string | 云账户名称     | cloud account name       |
-    | account_type | string | 云账户类型     | cloud account type       |
-    | account_id   | string | 云账户唯一标识 | Cloud account unique id  |
-    | secret_id    | string | 云账号id       | cloud account id         |
-    | secret_key   | string | 云账号key      | cloud account key        |
-    | description  | string | 云账户备注     | Notes for cloud accounts |
-    | creator      | string | 创建者         | creator                  |
-    | create_time  | time   | 创建时间       | create time              |
-    | last_editor  | string | 最近编辑人     | last editor              |
-    | last_time    | time   | 最近编辑时间   | last edit time           |
+data字段说明：
+
+| 名称         | 类型   | 说明           | Description              |
+| ------------ | ------ | -------------- | ------------------------ |
+| name         | string | 云账户名称     | cloud account name       |
+| account_type | string | 云账户类型     | cloud account type       |
+| account_id   | string | 云账户唯一标识 | Cloud account unique id  |
+| secret_id    | string | 云账号id       | cloud account id         |
+| secret_key   | string | 云账号key      | cloud account key        |
+| description  | string | 云账户备注     | Notes for cloud accounts |
+| creator      | string | 创建者         | creator                  |
+| create_time  | string | 创建时间       | create time              |
+| last_editor  | string | 最近编辑人     | last editor              |
+| last_time    | string | 最近编辑时间   | last edit time           |
 
 
 
@@ -812,6 +819,15 @@ info字段说明：
   }
   ```
 
+* output字段说明
+
+| 名称  | 类型  | 说明 |Description|
+|---|---|---|---|
+| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+| data | null | 请求返回的数据 |the data response|
+
 
 
 ##### 删除云账户 （有发现任务在使用时，不可删除）
@@ -843,10 +859,11 @@ info字段说明：
   }
   ```
 
-- output字段说明：
-    | 名称  | 类型  | 说明 |Description|
-    |---|---|---|---|
-    | result | bool | 请求成功与否。true:请求成功；false请求失败 |request result|
-    | bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
-    | bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
-    | data | object| 请求返回的数据 |return data|
+* output字段说明
+
+| 名称  | 类型  | 说明 |Description|
+|---|---|---|---|
+| result | bool | 请求成功与否。true:请求成功；false请求失败 |request result true or false|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+| data | null | 请求返回的数据 |the data response|
