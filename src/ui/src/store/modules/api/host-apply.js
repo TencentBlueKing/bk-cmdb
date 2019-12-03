@@ -40,6 +40,9 @@ const actions = {
     },
     getProperties (context, config) {
         return $http.post('find/objectattr/host', {}, config)
+    },
+    getHostRelatedRules (context, { bizId, params, config }) {
+        return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}/host_related_rules`, params, config)
     }
 }
 

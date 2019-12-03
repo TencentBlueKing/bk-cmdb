@@ -106,8 +106,14 @@
         methods: {
             setDefaultState (data) {
                 this.$refs.tree.setData(data)
-                if (this.firstModule) {
-                    const defaultNodeId = this.idGenerator(this.firstModule)
+                const queryModule = parseInt(this.$route.query.module)
+                let defaultNodeId
+                if (!isNaN(queryModule)) {
+                    defaultNodeId = `module_${queryModule}`
+                } else if (this.firstModule) {
+                    defaultNodeId = this.idGenerator(this.findModule)
+                }
+                if (defaultNodeId) {
                     this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
                     this.$refs.tree.setExpanded(defaultNodeId)
                 }
