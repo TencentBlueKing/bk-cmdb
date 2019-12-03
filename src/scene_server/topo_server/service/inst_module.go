@@ -419,12 +419,14 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(params types.ContextParams, 
 		for _, item := range listRuleResult.Info {
 			ruleIDs = append(ruleIDs, item.ID)
 		}
-		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
-			RuleIDs: nil,
-		}
-		if ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(params.Context, params.Header, bizID, deleteRuleOption); ccErr != nil {
-			blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, params.ReqID)
-			return nil, ccErr
+		if len(ruleIDs) > 0 {
+			deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+				RuleIDs: nil,
+			}
+			if ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(params.Context, params.Header, bizID, deleteRuleOption); ccErr != nil {
+				blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, params.ReqID)
+				return nil, ccErr
+			}
 		}
 	}
 	return result.Data, nil
