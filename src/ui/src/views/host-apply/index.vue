@@ -9,18 +9,24 @@
         <cmdb-resize-layout class="tree-layout fl"
             direction="right"
             :handler-offset="3"
-            :min="200"
+            :min="280"
             :max="480"
         >
             <sidebar
+                ref="sidebar"
                 :action-mode.sync="actionMode"
-                :editing="editing"
+                :editing.sync="editing"
                 @module-selected="handleSelectModule"
             ></sidebar>
         </cmdb-resize-layout>
         <div class="main-layout">
             <template v-if="selectedModule.bk_inst_id">
-                <single-module-config :module="selectedModule" :editing.sync="editing"></single-module-config>
+                <single-module-config
+                    :module="selectedModule"
+                    :editing.sync="editing"
+                    @after-close="handleAfterCloseApply"
+                >
+                </single-module-config>
             </template>
             <div class="empty" v-else>
                 <i18n path="您还未XXX">
@@ -79,6 +85,9 @@
             handleSelectModule (data) {
                 this.editing = false
                 this.selectedModule = data
+            },
+            handleAfterCloseApply (moduleId) {
+                this.$refs.sidebar.setApplyClosed(moduleId)
             }
         }
     }

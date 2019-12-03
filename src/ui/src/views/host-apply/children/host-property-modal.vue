@@ -6,19 +6,28 @@
         :width="730"
         header-position="left"
         title="添加字段"
-        @value-change="handleVisiableChange"
+        @value-change="handleVisibleChange"
         @confirm="handleConfirm"
         @cancel="handleCancel"
     >
+        <bk-input v-if="configPropertyList.length"
+            class="search"
+            type="text"
+            :placeholder="$t('请输入字段名称搜索')"
+            clearable
+            right-icon="bk-icon icon-search"
+            v-model.trim="searchName"
+            @enter="hanldeFilterProperty">
+        </bk-input>
         <bk-checkbox-group v-model="localChecked">
             <ul class="property-list">
-                <li class="property-item" v-for="property in configPropertyList" :key="property.bk_property_id">
+                <li class="property-item" v-for="property in propertyList" :key="property.bk_property_id" v-show="property.__extra__.visible">
                     <bk-checkbox
-                        :disabled="property.__extra__.disabled"
+                        :disabled="!property.host_apply_enabled"
                         :value="property.id"
                     >
                         <div
-                            v-if="property.__extra__.disabled"
+                            v-if="!property.host_apply_enabled"
                             v-bk-tooltips.top-start="'该字段不支持配置'"
                             style="outline:none"
                         >
@@ -35,10 +44,10 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters } from 'vuex'
     export default {
         props: {
-            visiable: {
+            visible: {
                 type: Boolean,
                 default: false
             },
@@ -49,15 +58,17 @@
         },
         data () {
             return {
-                show: this.visiable,
-                localChecked: []
+                show: this.visible,
+                localChecked: [],
+                searchName: '',
+                propertyList: []
             }
         },
         computed: {
-            ...mapGetters('hosts', ['configPropertyList'])
+            ...mapGetters('hostApply', ['configPropertyList'])
         },
         watch: {
-            visiable (val) {
+            visible (val) {
                 this.show = val
             },
             checkedList: {
@@ -67,16 +78,14 @@
                 immediate: true
             }
         },
-        created () {
-            this.getHostPropertyList()
+        async created () {
+            await this.getHostPropertyList()
+            this.propertyList = this.configPropertyList
         },
         methods: {
-            ...mapActions('objectModelProperty', [
-                'searchObjectAttribute'
-            ]),
             async getHostPropertyList () {
                 try {
-                    const data = await this.searchObjectAttribute({
+                    const data = await this.$store.dispatch('hostApply/getHostProperty', {
                         params: this.$injectMetadata({
                             bk_obj_id: 'host',
                             bk_supplier_account: this.supplierAccount
@@ -87,25 +96,36 @@
                         }
                     })
 
-                    this.$store.commit('hosts/setPropertyList', data)
+                    this.$store.commit('hostApply/setPropertyList', data)
                 } catch (e) {
                     console.error(e)
                 }
             },
-            handleVisiableChange (val) {
-                this.$emit('update:visiable', val)
+            handleVisibleChange (val) {
+                this.$emit('update:visible', val)
             },
             handleConfirm () {
                 this.$emit('update:checkedList', this.localChecked)
             },
             handleCancel () {
                 this.localChecked = this.checkedList
+            },
+            hanldeFilterProperty () {
+                // 使用visible方式是为了兼容checkbox-group组件
+                this.propertyList.forEach(property => {
+                    property.__extra__.visible = property.bk_property_name.indexOf(this.searchName) > -1
+                })
+                this.propertyList = [...this.propertyList]
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .search {
+        width: 240px;
+        margin-bottom: 10px;
+    }
     .property-list {
         display: flex;
         flex-wrap: wrap;

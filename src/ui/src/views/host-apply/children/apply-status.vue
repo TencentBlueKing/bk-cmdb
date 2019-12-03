@@ -8,7 +8,7 @@
             <span class="status-icon bk-icon icon-close"></span>
             <p class="status-title">{{$t('应用异常')}}</p>
         </div>
-        <div class="status status-result" v-else-if="success.length && !fail.length">
+        <div class="status status-result" v-else-if="success.length >= 0 && fail.length === 0">
             <p class="result-title">{{$t('应用成功')}}</p>
             <i18n class="result-subtitle" tag="p" path="应用结果">
                 <span class="result-count" place="success">{{success.length}}</span>

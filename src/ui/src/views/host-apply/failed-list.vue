@@ -135,7 +135,6 @@
                     const { info, count } = await this.$store.dispatch('hostSearch/searchHost', {
                         params: this.getSearchHostParams()
                     })
-                    console.log(info)
                     this.table.list = info
                     this.table.pagination.count = count
                 } catch (e) {
