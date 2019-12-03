@@ -226,6 +226,8 @@ func (s *Service) createOrUpdateServiceInstance(srvData *srvComm, bizID int64, h
 }
 
 func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan metadata.HostTransferPlan) errors.CCErrorCoder {
+	rid := srvData.rid
+
 	// step1 compute to be delete service instances
 	listServiceInstanceOption := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
@@ -237,7 +239,7 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 	}
 	serviceInstances, ccErr := s.CoreAPI.CoreService().Process().ListServiceInstance(srvData.ctx, srvData.header, listServiceInstanceOption)
 	if ccErr != nil {
-		blog.ErrorJSON("runTransferPlans failed, ListServiceInstance failed, option: %s, err: %s, rid: %s", listServiceInstanceOption, ccErr.Error(), srvData.rid)
+		blog.ErrorJSON("runTransferPlans failed, ListServiceInstance failed, option: %s, err: %s, rid: %s", listServiceInstanceOption, ccErr.Error(), rid)
 		return ccErr
 	}
 	serviceInstanceIDs := make([]int64, 0)
@@ -257,7 +259,7 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 		}
 		relationResult, ccErr := s.CoreAPI.CoreService().Process().ListProcessInstanceRelation(srvData.ctx, srvData.header, listRelationOption)
 		if ccErr != nil {
-			blog.ErrorJSON("runTransferPlans failed, ListProcessInstanceRelation failed, option: %s, err: %s, rid: %s", listRelationOption, ccErr.Error(), srvData.rid)
+			blog.ErrorJSON("runTransferPlans failed, ListProcessInstanceRelation failed, option: %s, err: %s, rid: %s", listRelationOption, ccErr.Error(), rid)
 			return ccErr
 		}
 		processIDs := make([]int64, 0)
@@ -272,7 +274,7 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 			}
 			ccErr = s.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(srvData.ctx, srvData.header, deleteRelationOption)
 			if ccErr != nil {
-				blog.ErrorJSON("runTransferPlans failed, DeleteProcessInstanceRelation failed, option: %s, err: %s, rid: %s", deleteRelationOption, ccErr.Error(), srvData.rid)
+				blog.ErrorJSON("runTransferPlans failed, DeleteProcessInstanceRelation failed, option: %s, err: %s, rid: %s", deleteRelationOption, ccErr.Error(), rid)
 				return ccErr
 			}
 
@@ -286,11 +288,11 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 			}
 			deleteProcessResult, err := s.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, processDeleteOption)
 			if err != nil {
-				blog.ErrorJSON("runTransferPlans failed, DeleteInstance of process failed, option: %s, err: %s, rid: %s", processDeleteOption, err.Error(), srvData.rid)
+				blog.ErrorJSON("runTransferPlans failed, DeleteInstance of process failed, option: %s, err: %s, rid: %s", processDeleteOption, err.Error(), rid)
 				return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 			}
 			if deleteProcessResult.Result == false {
-				blog.ErrorJSON("runTransferPlans failed, DeleteInstance of process failed, option: %s, result: %s, rid: %s", processDeleteOption, deleteProcessResult, srvData.rid)
+				blog.ErrorJSON("runTransferPlans failed, DeleteInstance of process failed, option: %s, result: %s, rid: %s", processDeleteOption, deleteProcessResult, rid)
 				return errors.New(deleteProcessResult.Code, deleteProcessResult.ErrMsg)
 			}
 		}
@@ -302,7 +304,7 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 		}
 		ccErr = s.CoreAPI.CoreService().Process().DeleteServiceInstance(srvData.ctx, srvData.header, deleteServiceInstanceOption)
 		if ccErr != nil {
-			blog.ErrorJSON("runTransferPlans failed, DeleteServiceInstance failed, option: %s, err: %s, rid: %s", deleteServiceInstanceOption, ccErr.Error(), srvData.rid)
+			blog.ErrorJSON("runTransferPlans failed, DeleteServiceInstance failed, option: %s, err: %s, rid: %s", deleteServiceInstanceOption, ccErr.Error(), rid)
 			return ccErr
 		}
 	}
@@ -330,13 +332,34 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 		transferHostResult, err = s.CoreAPI.CoreService().Host().TransferToNormalModule(srvData.ctx, srvData.header, transferOption)
 	}
 	if err != nil {
-		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, err: %s, rid: %s", option, err.Error(), srvData.rid)
+		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
 		return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if transferHostResult.Result == false {
-		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, result: %s, rid: %s", option, transferHostResult, srvData.rid)
+		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, result: %s, rid: %s", option, transferHostResult, rid)
 		return errors.New(transferHostResult.Code, transferHostResult.ErrMsg)
 	}
+
+	// update host by host apply rule
+	applyPlan := transferPlan.HostApplyPlan
+	if len(applyPlan.UpdateFields) > 0 {
+		updateOption := &metadata.UpdateOption{
+			Data: applyPlan.GetUpdateData(),
+			Condition: map[string]interface{}{
+				common.BKHostIDField: applyPlan.HostID,
+			},
+		}
+		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
+		if err != nil {
+			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
+			return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if ccErr := updateResult.CCError(); ccErr != nil {
+			blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
+			return ccErr
+		}
+	}
+
 	return nil
 }
 
