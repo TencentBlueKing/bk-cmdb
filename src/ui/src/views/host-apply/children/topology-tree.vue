@@ -123,6 +123,8 @@
                             }
                         })
                         this.$refs.tree.filter(data)
+                    } else {
+                        this.$refs.tree.filter()
                     }
                 } catch (e) {
                     console.error(e)
