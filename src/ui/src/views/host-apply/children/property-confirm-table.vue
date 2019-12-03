@@ -4,7 +4,7 @@
             :data="table.list"
             :pagination="table.pagination"
             :row-style="{ cursor: 'pointer' }"
-            :max-height="$APP.height - 240"
+            :max-height="maxHeight || ($APP.height - 240)"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @row-click="handleRowClick"
@@ -18,7 +18,11 @@
                     <div class="cell-change-value" v-html="getChangeValue(row)"></div>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')" class-name="is-highlight" :formatter="getOperationColumnText"></bk-table-column>
+            <bk-table-column :label="$t('操作')"
+                class-name="is-highlight"
+                :formatter="getOperationColumnText"
+                :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示')) : null">
+            </bk-table-column>
             <cmdb-table-empty slot="empty">
                 <div>{{$t('暂无主机，新转入的主机将会自动应用模块的主机属性')}}</div>
             </cmdb-table-empty>
@@ -66,6 +70,14 @@
             },
             total: {
                 type: Number
+            },
+            maxHeight: {
+                type: Number,
+                default: 0
+            },
+            renderIcon: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -121,15 +133,9 @@
         methods: {
             async getHostPropertyList () {
                 try {
-                    const data = await this.$store.dispatch('hostApply/getHostProperty', {
-                        params: this.$injectMetadata({
-                            bk_obj_id: 'host',
-                            bk_supplier_account: this.supplierAccount
-                        }),
-                        config: {
-                            requestId: 'getHostPropertyList',
-                            fromCache: true
-                        }
+                    const data = await this.$store.dispatch('hostApply/getProperties', {
+                        requestId: 'getHostPropertyList',
+                        fromCache: true
                     })
 
                     this.$store.commit('hostApply/setPropertyList', data)
@@ -175,6 +181,14 @@
                     text = row.unresolved_conflict_count > 0 ? '处理冲突' : '已处理'
                 }
                 return text
+            },
+            renderTableHeader (h, data, tips) {
+                const directive = {
+                    content: tips,
+                    placement: 'top-end',
+                    width: 275
+                }
+                return <span>{ data.column.label } <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={ directive }></i></span>
             },
             handlePageChange (page) {
                 this.table.pagination.current = page
@@ -247,7 +261,7 @@
         .cell {
             -webkit-line-clamp: 3;
             .conflict {
-                color: red;
+                color: #ea3536;
             }
         }
     }

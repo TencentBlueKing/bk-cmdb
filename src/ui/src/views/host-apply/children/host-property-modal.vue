@@ -85,17 +85,10 @@
         methods: {
             async getHostPropertyList () {
                 try {
-                    const data = await this.$store.dispatch('hostApply/getHostProperty', {
-                        params: this.$injectMetadata({
-                            bk_obj_id: 'host',
-                            bk_supplier_account: this.supplierAccount
-                        }),
-                        config: {
-                            requestId: 'getHostPropertyList',
-                            fromCache: true
-                        }
+                    const data = await this.$store.dispatch('hostApply/getProperties', {
+                        requestId: 'getHostPropertyList',
+                        fromCache: true
                     })
-
                     this.$store.commit('hostApply/setPropertyList', data)
                 } catch (e) {
                     console.error(e)
