@@ -130,13 +130,18 @@ func (s *Statistic) CalculateMetrics() Metrics {
 	// sort the data.
 	sort.Float64s(s.Values)
 
-	// The median of an even number of values is the average of the middle two.
-	if (s.TotalSucceed & 0x01) == 0 {
-		m.MedianDuration = (s.Values[s.TotalSucceed/2-1] + s.Values[s.TotalSucceed/2]) / 2 / float64(time.Millisecond)
+	if s.TotalSucceed == 0 {
+		m.MedianDuration = 0
+		m.AverageDuration = 0
 	} else {
-		m.MedianDuration = s.Values[s.TotalSucceed/2]
+		// The median of an even number of values is the average of the middle two.
+		if (s.TotalSucceed & 0x01) == 0 {
+			m.MedianDuration = (s.Values[s.TotalSucceed/2-1] + s.Values[s.TotalSucceed/2]) / 2 / float64(time.Millisecond)
+		} else {
+			m.MedianDuration = s.Values[s.TotalSucceed/2]
+		}
+		m.AverageDuration = s.TotalCostDuration / float64(s.TotalSucceed)
 	}
-	m.AverageDuration = s.TotalCostDuration / float64(s.TotalSucceed)
 	m.Percent85Duration = s.percent(0.85)
 	m.Percent95Duration = s.percent(0.95)
 
