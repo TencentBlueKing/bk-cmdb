@@ -59,7 +59,7 @@ export default new Vue({
                 })
                 for (const instance of updateList) {
                     const nameList = instance.user.split(',')
-                    const userInfo = nameList.map(name => this.userMap[name])
+                    const userInfo = nameList.map(name => this.userMap[name] || name)
                     const user = userInfo.join(',')
                     if (instance.node instanceof Vue) {
                         instance.node.updateUserText(user)
