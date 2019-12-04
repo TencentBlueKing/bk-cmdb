@@ -10,14 +10,14 @@
         @confirm="handleConfirm"
         @cancel="handleCancel"
     >
-        <bk-input v-if="configPropertyList.length"
+        <bk-input v-if="propertyList.length"
             class="search"
             type="text"
             :placeholder="$t('请输入字段名称搜索')"
             clearable
             right-icon="bk-icon icon-search"
             v-model.trim="searchName"
-            @enter="hanldeFilterProperty">
+            @input="hanldeFilterProperty">
         </bk-input>
         <bk-checkbox-group v-model="localChecked">
             <ul class="property-list">
@@ -80,7 +80,7 @@
         },
         async created () {
             await this.getHostPropertyList()
-            this.propertyList = this.configPropertyList
+            this.propertyList = this.configPropertyList.filter(property => property.host_apply_enabled)
         },
         methods: {
             async getHostPropertyList () {
@@ -123,6 +123,7 @@
         display: flex;
         flex-wrap: wrap;
         max-height: 360px;
+        min-height: 150px;
         @include scrollbar-y;
 
         .property-item {

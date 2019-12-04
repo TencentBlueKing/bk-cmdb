@@ -1,6 +1,7 @@
 <template>
     <bk-table
         header-cell-class-name="header-cell"
+        ext-cls="property-config-table"
         :data="modulePropertyList"
         @selection-change="handleSelectionChange"
     >
@@ -13,7 +14,6 @@
         </bk-table-column>
         <bk-table-column
             v-if="multiple"
-            :width="300"
             :label="$t('已配置的模块')"
             :render-header="(h, data) => renderTableHeader(h, data, '主机属于多个模块，但主机的属性值仅能有唯一值')"
             class-name="table-cell-module-path"
@@ -58,7 +58,11 @@
                 </template>
             </template>
         </bk-table-column>
-        <bk-table-column v-if="!readonly" :label="$t(multiple ? '修改后' : '值')" class-name="table-cell-form-element">
+        <bk-table-column
+            v-if="!readonly"
+            :label="$t(multiple ? '修改后' : '值')"
+            class-name="table-cell-form-element"
+        >
             <template slot-scope="{ row }">
                 <div class="form-element-content">
                     <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
@@ -67,7 +71,7 @@
         </bk-table-column>
         <bk-table-column
             v-if="!readonly"
-            width="200"
+            width="180"
             :label="$t('操作')"
             :render-header="multiple ? (h, data) => renderTableHeader(h, data, '删除操作不影响原有配置') : null"
         >
@@ -86,6 +90,10 @@
         },
         props: {
             checkedPropertyIdList: {
+                type: Array,
+                default: () => ([])
+            },
+            moduleIdList: {
                 type: Array,
                 default: () => ([])
             },
@@ -236,22 +244,32 @@
     }
 </style>
 <style lang="scss">
-    .table-cell-module-path:not(.header-cell) {
-        .cell {
-            padding-top: 8px;
-            padding-bottom: 8px;
-        }
-    }
-    .table-cell-form-element {
-        .cell {
+    .property-config-table {
+        overflow: unset;
+        .bk-table-body-wrapper {
             overflow: unset;
-            display: block;
         }
-        .search-input-wrapper {
-            position: relative;
+
+        .table-cell-module-path:not(.header-cell) {
+            .cell {
+                padding-top: 8px;
+                padding-bottom: 8px;
+                overflow: unset;
+                display: block;
+            }
         }
-        .form-objuser .suggestion-list {
-            z-index: 1000;
+
+        .table-cell-form-element {
+            .cell {
+                overflow: unset;
+                display: block;
+            }
+            .search-input-wrapper {
+                position: relative;
+            }
+            .form-objuser .suggestion-list {
+                z-index: 1000;
+            }
         }
     }
 </style>

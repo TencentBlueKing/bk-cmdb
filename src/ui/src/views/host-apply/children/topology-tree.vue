@@ -44,12 +44,17 @@
         props: {
             treeOptions: {
                 type: Object,
-                default: () => {}
+                default: () => ({})
+            },
+            action: {
+                type: String,
+                default: 'batch-edit'
             }
         },
         data () {
             return {
                 treeData: [],
+                treeStat: {},
                 mainLine: [],
                 createInfo: {
                     show: false,
@@ -82,18 +87,11 @@
                     map[model.bk_obj_id] = model.bk_obj_name[0]
                 })
                 return map
-            },
-            firstModule () {
-                const findModule = function (data) {
-                    for (const item of data) {
-                        if (item.bk_obj_id === 'module') {
-                            return item
-                        } else if (item.child) {
-                            return findModule(item.child)
-                        }
-                    }
-                }
-                return findModule(this.treeData)
+            }
+        },
+        watch: {
+            action (value) {
+                this.setNodeDisabled(value)
             }
         },
         async created () {
@@ -104,6 +102,7 @@
             ])
             this.treeData = data
             this.mainLine = mainLine
+            this.treeStat = this.getTreeStat()
             this.$nextTick(() => {
                 this.setDefaultState(data)
             })
@@ -137,17 +136,58 @@
                 this.$refs.tree.setData(data)
                 let defaultNodeId
                 const queryModule = parseInt(this.$route.query.module)
+                const firstModule = this.treeStat.firstModule
                 if (!isNaN(queryModule)) {
                     defaultNodeId = `module_${queryModule}`
                 } else if (this.ruleDraft.moduleIds) {
                     defaultNodeId = `module_${this.ruleDraft.moduleIds[0]}`
-                } else if (this.firstModule) {
-                    defaultNodeId = this.idGenerator(this.firstModule)
+                } else if (firstModule) {
+                    defaultNodeId = this.idGenerator(firstModule)
                 }
                 if (defaultNodeId) {
                     this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
                     this.$refs.tree.setExpanded(defaultNodeId)
                 }
+            },
+            getTreeStat () {
+                const stat = {
+                    firstModule: null,
+                    levels: {},
+                    noRuleIds: []
+                }
+                const findModule = function (data, parent) {
+                    for (const item of data) {
+                        stat.levels[item.bk_inst_id] = parent ? (stat.levels[parent.bk_inst_id] + 1) : 0
+                        if (item.bk_obj_id === 'module') {
+                            if (item.host_apply_rule_count === 0) {
+                                stat.noRuleIds.push(item.bk_inst_id)
+                            }
+                            if (!stat.firstModule) {
+                                stat.firstModule = item
+                            }
+                        } else if (item.child.length) {
+                            const match = findModule(item.child, item)
+                            if (match && !stat.firstModule) {
+                                stat.firstModule = item
+                            }
+                        }
+                    }
+                }
+                findModule(this.treeData)
+                return stat
+            },
+            setNodeDisabled (action) {
+                const nodeIds = this.treeStat.noRuleIds.map(id => `module_${id}`)
+                const disabled = action === 'batch-del'
+                this.$refs.tree.setDisabled(nodeIds, { emitEvent: true, disabled })
+            },
+            updateNodeStatus (id, isClear) {
+                const nodeData = this.$refs.tree.getNodeById(`module_${id}`).data
+                nodeData.host_apply_enabled = false
+                if (isClear) {
+                    nodeData.host_apply_rule_count = 0
+                }
+                this.treeStat = this.getTreeStat()
             },
             getTopologyData () {
                 return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
@@ -242,7 +282,9 @@
             }
         }
         .config-icon {
-            margin: 6px 20px 6px 5px;
+            position: relative;
+            top: 6px;
+            right: 20px;
             padding: 0 5px;
             height: 18px;
             line-height: 17px;

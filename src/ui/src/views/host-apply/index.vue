@@ -86,8 +86,8 @@
                 this.editing = false
                 this.selectedModule = data
             },
-            handleAfterCloseApply (moduleId) {
-                this.$refs.sidebar.setApplyClosed(moduleId)
+            handleAfterCloseApply (moduleId, isClear) {
+                this.$refs.sidebar.setApplyClosed(moduleId, isClear)
             }
         }
     }

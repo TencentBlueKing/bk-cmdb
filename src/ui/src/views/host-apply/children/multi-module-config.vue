@@ -36,6 +36,7 @@
                             :deletable="isDel"
                             :checked-property-id-list="checkedPropertyIdList"
                             :rule-list="initRuleList"
+                            :module-id-list="moduleIds"
                             @property-value-change="handlePropertyValueChange"
                             @selection-change="handlePropertySelectionChange"
                         >
@@ -57,7 +58,7 @@
         </host-property-modal>
         <leave-confirm
             v-bind="leaveConfirm"
-            title="是否放弃配置？"
+            title="是否放弃？"
             content="启用步骤未完成，是否放弃当前配置"
             ok-text="留在当前页"
             cancel-text="确认放弃"
