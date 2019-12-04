@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -342,7 +343,7 @@ func (s *Service) SearchModule(params types.ContextParams, pathParams, queryPara
 	return result, nil
 }
 
-func (s *Service) SearchRuleRelatedModules(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchRuleRelatedTopoNodes(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
 		blog.Errorf("SearchRuleRelatedModules failed, parse bk_biz_id failed, err: %s, rid: %s", err.Error(), params.ReqID)
@@ -368,7 +369,42 @@ func (s *Service) SearchRuleRelatedModules(params types.ContextParams, pathParam
 		blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	return modules, nil
+
+	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(params.Context, params.Header, bizID, false)
+	if err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, SearchMainlineInstanceTopo failed, bizID: %d, err: %s, rid: %s", bizID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	matchNodes := make([]metadata.TopoNode, 0)
+	for _, module := range modules {
+		matchNodes = append(matchNodes, metadata.TopoNode{
+			ObjectID:   common.BKInnerObjIDModule,
+			InstanceID: module.ModuleID,
+		})
+	}
+	topoRoot.DeepFirstTraversal(func(node *metadata.TopoInstanceNode) {
+		matched := requestBody.QueryFilter.Match(func(r querybuilder.AtomRule) bool {
+			if r.Field != "keyword" {
+				return false
+			}
+			valueStr, ok := r.Value.(string)
+			if ok == false {
+				return false
+			}
+			if strings.Contains(node.InstanceName, valueStr) {
+				return true
+			}
+			return false
+		})
+		if matched {
+			matchNodes = append(matchNodes, metadata.TopoNode{
+				ObjectID:   node.ObjectID,
+				InstanceID: node.InstanceID,
+			})
+		}
+	})
+
+	return matchNodes, nil
 }
 
 func (s *Service) UpdateModuleHostApplyEnableStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
