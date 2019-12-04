@@ -39,6 +39,14 @@
             cancel-text="确认放弃"
         >
         </leave-confirm>
+        <apply-status-modal
+            ref="applyStatusModal"
+            :request="applyRequest"
+            @return="handleStatusModalBack"
+            @view-host="handleViewHost"
+            @view-failed="handleViewFailed"
+        >
+        </apply-status-modal>
     </div>
 </template>
 
@@ -47,10 +55,12 @@
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import featureTips from '@/components/feature-tips/index'
     import propertyConfirmTable from './children/property-confirm-table'
-    import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import applyStatusModal from './children/apply-status'
+    import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
     export default {
         components: {
             leaveConfirm,
+            applyStatusModal,
             featureTips,
             propertyConfirmTable
         },
@@ -65,7 +75,8 @@
                 leaveConfirm: {
                     id: 'propertyConfirm',
                     active: true
-                }
+                },
+                applyRequest: null
             }
         },
         computed: {
@@ -77,12 +88,16 @@
             }
         },
         watch: {
-
         },
-        beforeDestroy () {
-            // this.$store.commit('hostApply/clearRuleDraft')
+        beforeRouteLeave (to, from, next) {
+            const prevRouteName = this.isBatch ? 'hostApplyBatchEdit' : MENU_BUSINESS_HOST_APPLY
+            if (to.name !== prevRouteName) {
+                this.$store.commit('hostApply/clearRuleDraft')
+            }
+            next()
         },
         created () {
+            // 无配置数据时强制跳转至入口页
             if (!Object.keys(this.propertyConfig).length) {
                 this.leaveConfirm.active = false
                 this.$router.push({
@@ -142,33 +157,52 @@
                 })
 
                 // 合入冲突结果数据
-                const propertyConfig = { ...this.propertyConfig, ...{ conflict_resolvers: conflictResolvers } }
+                let propertyConfig = { ...this.propertyConfig, ...{ conflict_resolvers: conflictResolvers } }
 
-                try {
-                    const result = await this.runApply({
-                        bizId: this.bizId,
-                        params: propertyConfig,
-                        config: {
-                            requestId: 'runHostApply'
-                        }
-                    })
+                this.applyRequest = this.runApply({
+                    bizId: this.bizId,
+                    params: propertyConfig,
+                    config: {
+                        requestId: 'runHostApply'
+                    }
+                })
+                this.$refs.applyStatusModal.show()
 
+                this.applyRequest.then(() => {
+                    // 应用请求完成则不需要离开确认
+                    this.leaveConfirm.active = false
+
+                    const failHostIds = this.$refs.applyStatusModal.fail.map(item => item.bk_host_id)
+                    propertyConfig = { ...propertyConfig, ...{ bk_host_ids: failHostIds } }
                     // 更新属性配置
                     this.$store.commit('hostApply/setPropertyConfig', propertyConfig)
-                    console.log(result)
-                } catch (e) {
-                    console.error(e)
-                }
+                })
             },
-            handleCancel () {
-                // 回到入口页
+            goBack () {
+                this.$store.commit('hostApply/clearRuleDraft')
                 this.$router.push({
                     name: MENU_BUSINESS_HOST_APPLY
                 })
             },
+            handleCancel () {
+                this.goBack()
+            },
             handlePrevStep () {
                 this.leaveConfirm.active = false
-                this.$router.back({ query: { a: 111 } })
+                this.$router.back()
+            },
+            handleStatusModalBack () {
+                this.goBack()
+            },
+            handleViewHost () {
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                })
+            },
+            handleViewFailed () {
+                this.$router.push({
+                    name: 'hostApplyFailed'
+                })
             }
         }
     }
