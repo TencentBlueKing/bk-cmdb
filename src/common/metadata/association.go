@@ -405,6 +405,7 @@ type TopoInst struct {
 	ServiceTemplateID    int64  `json:"service_template_id,omitempty"`
 	SetTemplateID        int64  `json:"set_template_id,omitempty"`
 	HostApplyEnabled     *bool  `json:"host_apply_enabled,omitempty"`
+	HostApplyRuleCount   *int64 `json:"host_apply_rule_count,omitempty"`
 }
 
 // TopoInstRst 拓扑实例
