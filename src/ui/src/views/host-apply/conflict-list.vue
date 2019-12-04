@@ -18,17 +18,27 @@
                 <bk-button theme="default" @click="handleBack">返回</bk-button>
             </div>
         </div>
+        <apply-status-modal
+            ref="applyStatusModal"
+            :request="applyRequest"
+            @return="handleStatusModalBack"
+            @view-host="handleViewHost"
+            @view-failed="handleViewFailed"
+        >
+        </apply-status-modal>
     </div>
 </template>
 
 <script>
-    import { mapGetters, mapState, mapActions } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
     import propertyConfirmTable from './children/property-confirm-table'
-    import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import applyStatusModal from './children/apply-status'
+    import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
     export default {
         components: {
             featureTips,
+            applyStatusModal,
             propertyConfirmTable
         },
         data () {
@@ -38,13 +48,21 @@
                 table: {
                     list: [],
                     total: 0
-                }
+                },
+                applyRequest: null
             }
         },
         computed: {
-            ...mapState('hostApply', ['propertyConfig']),
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters(['featureTipsParams', 'supplierAccount'])
+            ...mapGetters(['featureTipsParams', 'supplierAccount']),
+            moduleIds () {
+                const mid = this.$route.query.mid
+                let moduleIds = []
+                if (mid) {
+                    moduleIds = String(mid).split(',').map(id => Number(id))
+                }
+                return moduleIds
+            }
         },
         watch: {
         },
@@ -62,7 +80,7 @@
                 try {
                     const previewData = await this.getApplyPreview({
                         bizId: this.bizId,
-                        params: this.propertyConfig,
+                        params: { bk_module_ids: this.moduleIds },
                         config: {
                             requestId: 'getHostApplyPreview'
                         }
@@ -85,6 +103,11 @@
                     label: this.$t('冲突列表')
                 }])
             },
+            goBack () {
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_APPLY
+                })
+            },
             async handleApply () {
                 const conflictResolveResult = this.$refs.propertyConfirmTable.conflictResolveResult
                 const conflictResolvers = []
@@ -99,27 +122,33 @@
                     })
                 })
 
-                // 合入冲突结果数据
-                const propertyConfig = { ...this.propertyConfig, ...{ conflict_resolvers: conflictResolvers } }
-
-                try {
-                    const result = await this.runApply({
-                        bizId: this.bizId,
-                        params: propertyConfig,
-                        config: {
-                            requestId: 'runHostApply'
-                        }
-                    })
-
-                    // 更新属性配置
-                    this.$store.commit('hostApply/setPropertyConfig', propertyConfig)
-                    console.log(result)
-                } catch (e) {
-                    console.error(e)
-                }
+                this.applyRequest = this.runApply({
+                    bizId: this.bizId,
+                    params: {
+                        bk_module_ids: this.moduleIds,
+                        conflict_resolvers: conflictResolvers
+                    },
+                    config: {
+                        requestId: 'runHostApply'
+                    }
+                })
+                this.$refs.applyStatusModal.show()
             },
             handleBack () {
                 this.$router.back()
+            },
+            handleStatusModalBack () {
+                this.goBack()
+            },
+            handleViewHost () {
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                })
+            },
+            handleViewFailed () {
+                this.$router.push({
+                    name: 'hostApplyFailed'
+                })
             }
         }
     }

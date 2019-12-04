@@ -12,11 +12,24 @@ import $http from '@/api'
 
 const state = {
     propertyConfig: {},
-    ruleDraft: {}
+    ruleDraft: {},
+    propertyList: []
 }
 
 const getters = {
-
+    configPropertyList: state => {
+        state.propertyList.forEach(property => {
+            // 兼容通用方法
+            property.options = property.option
+            // 自定义字段空间
+            property['__extra__'] = {
+                visible: true
+            }
+        })
+        const enabledList = state.propertyList.filter(item => item.host_apply_enabled)
+        const disabledList = state.propertyList.filter(item => !item.host_apply_enabled)
+        return [...enabledList, ...disabledList]
+    }
 }
 
 const actions = {
@@ -37,6 +50,15 @@ const actions = {
     },
     deleteRules ({ commit, state, dispatch }, { bizId, params }) {
         return $http.delete(`deletemany/host_apply_rule/bk_biz_id/${bizId}`, params)
+    },
+    getProperties (context, config) {
+        return $http.post('find/objectattr/host', {}, config)
+    },
+    getHostRelatedRules (context, { bizId, params, config }) {
+        return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}/host_related_rules`, params, config)
+    },
+    searchNode (context, { bizId, params, config }) {
+        return $http.post(`module/bk_biz_id/${bizId}/host_apply_rule_related`, params, config)
     }
 }
 
@@ -49,6 +71,9 @@ const mutations = {
     },
     clearRuleDraft (state) {
         state.ruleDraft = {}
+    },
+    setPropertyList (state, list) {
+        state.propertyList = list
     }
 }
 

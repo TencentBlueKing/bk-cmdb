@@ -11,8 +11,8 @@
                             <i class="bk-cc-icon icon-cc-menu"></i>
                         </div>
                         <ul class="bk-dropdown-list" slot="dropdown-content">
-                            <li><a href="javascript:;" @click="handleBatchEdit">批量编辑</a></li>
-                            <li><a href="javascript:;" @click="handleBatchDel">批量删除</a></li>
+                            <li><a href="javascript:;" @click="handleBatchAction('batch-edit')">批量编辑</a></li>
+                            <li><a href="javascript:;" @click="handleBatchAction('batch-del')">批量删除</a></li>
                         </ul>
                     </bk-dropdown-menu>
                 </div>
@@ -58,6 +58,8 @@
 <script>
     import searchSelectMix from './search-select-mix'
     import topologyTree from './topology-tree'
+    import ConfirmStore from '@/components/ui/dialog/confirm-store.js'
+    const LEAVE_CONFIRM_ID = 'singleModule'
     export default {
         components: {
             searchSelectMix,
@@ -84,18 +86,20 @@
             }
         },
         methods: {
+            setApplyClosed (moduleId) {
+                const tree = this.topologyTree.$refs.tree
+                tree.getNodeById(`module_${moduleId}`).data.host_apply_enabled = false
+            },
             removeChecked () {
                 const tree = this.topologyTree.$refs.tree
                 tree.removeChecked({ emitEvent: true })
             },
-            handleBatchEdit () {
-                this.actionMode = 'batch-edit'
-                this.showCheckedPanel = true
-                this.treeOptions.showCheckbox = true
-                this.$emit('update:actionMode', this.actionMode)
-            },
-            handleBatchDel () {
-                this.actionMode = 'batch-del'
+            async handleBatchAction (actionMode) {
+                if (this.editing && !await ConfirmStore.popup(LEAVE_CONFIRM_ID)) {
+                    return
+                }
+                this.$emit('update:editing', false)
+                this.actionMode = actionMode
                 this.showCheckedPanel = true
                 this.treeOptions.showCheckbox = true
                 this.$emit('update:actionMode', this.actionMode)

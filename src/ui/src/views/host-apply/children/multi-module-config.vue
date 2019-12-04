@@ -51,7 +51,7 @@
         </div>
 
         <host-property-modal
-            :visiable.sync="propertyModalVisiable"
+            :visible.sync="propertyModalVisible"
             :checked-list.sync="checkedPropertyIdList"
         >
         </host-property-modal>
@@ -99,7 +99,7 @@
                     linkLeft: 0
                 },
                 selectedPropertyRow: [],
-                propertyModalVisiable: false,
+                propertyModalVisible: false,
                 nextButtonDisabled: false,
                 delButtonDisabled: true,
                 leaveConfirm: {
@@ -110,7 +110,6 @@
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters('hosts', ['configPropertyList']),
             isDel () {
                 return this.action === 'batch-del'
             }
@@ -124,6 +123,7 @@
         },
         created () {
             this.initData()
+            this.leaveConfirm.active = !this.isDel
         },
         mounted () {
             this.setShowMoreLinkStatus()
@@ -196,6 +196,16 @@
                 const modulePropertyList = this.$refs.configEditTable.modulePropertyList
                 this.nextButtonDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
             },
+            goBack () {
+                // 删除离开不用确认
+                this.leaveConfirm.active = !this.isDel
+                this.$nextTick(function () {
+                    // 回到入口页
+                    this.$router.push({
+                        name: MENU_BUSINESS_HOST_APPLY
+                    })
+                })
+            },
             handleNextStep () {
                 const { modulePropertyList, ignoreRuleIds } = this.$refs.configEditTable
                 const additionalRules = []
@@ -224,11 +234,13 @@
                 })
 
                 this.leaveConfirm.active = false
-                this.$router.push({
-                    name: 'hostApplyConfirm',
-                    query: {
-                        batch: 1
-                    }
+                this.$nextTick(function () {
+                    this.$router.push({
+                        name: 'hostApplyConfirm',
+                        query: {
+                            batch: 1
+                        }
+                    })
                 })
             },
             handleDel () {
@@ -246,6 +258,8 @@
                                     }
                                 }
                             })
+
+                            this.goBack()
                         } catch (e) {
                             console.log(e)
                         }
@@ -253,12 +267,8 @@
                 })
             },
             handleCancel () {
-                // 删除离开不用确认
-                this.leaveConfirm.active = !this.isDel
-                // 回到入口页
-                this.$router.push({
-                    name: MENU_BUSINESS_HOST_APPLY
-                })
+                this.$store.commit('hostApply/clearRuleDraft')
+                this.goBack()
             },
             handlePropertySelectionChange (value) {
                 this.selectedPropertyRow = value
@@ -268,7 +278,7 @@
                 this.toggleNexButtonDisabled()
             },
             handleChooseField () {
-                this.propertyModalVisiable = true
+                this.propertyModalVisible = true
             },
             handleShowMore () {
                 this.showMore.isMoreModuleShowed = !this.showMore.isMoreModuleShowed
