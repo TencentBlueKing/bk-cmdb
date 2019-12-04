@@ -12,7 +12,7 @@ export default [{
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '主机自动应用',
+            i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST
         }
     })
@@ -23,7 +23,7 @@ export default [{
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '主机自动应用',
+            i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
         }
     })
@@ -34,7 +34,7 @@ export default [{
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '主机自动应用',
+            i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
         }
     })
@@ -45,7 +45,7 @@ export default [{
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '主机自动应用',
+            i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
         }
     })
@@ -56,7 +56,7 @@ export default [{
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
-            i18n: '主机自动应用',
+            i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
         }
     })

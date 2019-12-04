@@ -26,14 +26,14 @@
         </property-confirm-table>
         <div class="bottom-actionbar">
             <div class="actionbar-inner">
-                <bk-button theme="primary" @click="handleApply">应用</bk-button>
                 <bk-button theme="default" @click="handlePrevStep">上一步</bk-button>
+                <bk-button theme="primary" @click="handleApply">保存并应用</bk-button>
                 <bk-button theme="default" @click="handleCancel">取消</bk-button>
             </div>
         </div>
         <leave-confirm
             v-bind="leaveConfirm"
-            title="是否放弃配置？"
+            title="是否放弃？"
             content="启用步骤未完成，是否放弃当前配置"
             ok-text="留在当前页"
             cancel-text="确认放弃"
