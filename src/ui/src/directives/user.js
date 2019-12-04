@@ -1,4 +1,4 @@
-import userQueue from '@/setup/user-queue.js'
+import userQueue from '@/components/ui/user/user-queue.js'
 
 const setTextContent = (el, binding) => {
     const user = binding.value
