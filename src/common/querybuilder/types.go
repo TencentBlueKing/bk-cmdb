@@ -24,6 +24,7 @@ type Rule interface {
 	GetDeep() int
 	Validate() (string, error)
 	ToMgo() (mgoFilter map[string]interface{}, errKey string, err error)
+	Match(matcher Matcher) bool
 }
 
 // *************** define condition ************************
@@ -161,9 +162,15 @@ func (r AtomRule) Validate() (string, error) {
 	return "", nil
 }
 
+type Matcher func(r AtomRule) bool
+
+func (r AtomRule) Match(matcher Matcher) bool {
+	return matcher(r)
+}
+
 var (
 	// TODO: should we support dot field separator here?
-	ValidFieldPattern = regexp.MustCompile(`^[a-zA-Z][\d\w\-_.]*$`)
+	ValidFieldPattern = regexp.MustCompile(`^[a-zA-Z0-9][\d\w\-_.]*$`)
 )
 
 func (r AtomRule) validateField() error {
@@ -390,4 +397,29 @@ func (r CombinedRule) ToMgo() (mgoFilter map[string]interface{}, key string, err
 		mgoOperator: filters,
 	}
 	return mgoFilter, "", nil
+}
+
+func (r CombinedRule) Match(matcher Matcher) bool {
+	if len(r.Rules) == 0 {
+		return true
+	}
+
+	switch r.Condition {
+	case ConditionAnd:
+		for _, rule := range r.Rules {
+			if rule.Match(matcher) == false {
+				return false
+			}
+		}
+		return true
+	case ConditionOr:
+		for _, rule := range r.Rules {
+			if rule.Match(matcher) == true {
+				return true
+			}
+		}
+		return false
+	default:
+		panic(fmt.Sprintf("unexpected condition %s", r.Condition))
+	}
 }

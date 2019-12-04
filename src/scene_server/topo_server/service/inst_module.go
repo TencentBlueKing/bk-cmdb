@@ -354,9 +354,13 @@ func (s *Service) SearchRuleRelatedModules(params types.ContextParams, pathParam
 		blog.Errorf("SearchRuleRelatedModules failed, parse request body failed, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
-	if len(requestBody.Keyword) == 0 {
-		blog.V(3).Info("SearchRuleRelatedModules failed, search keyword should'nt be empty, rid: %s", params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "keyword")
+	if requestBody.QueryFilter == nil {
+		blog.V(3).Info("SearchRuleRelatedModules failed, search query_filter should'nt be empty, rid: %s", params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "query_filter")
+	}
+	if key, err := requestBody.QueryFilter.Validate(); err != nil {
+		blog.V(3).Info("SearchRuleRelatedModules failed, search query_filter.%s validate failed, err: %+v, rid: %s", key, err, params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "query_filter."+key)
 	}
 
 	modules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().SearchRuleRelatedModules(params.Context, params.Header, bizID, requestBody)
