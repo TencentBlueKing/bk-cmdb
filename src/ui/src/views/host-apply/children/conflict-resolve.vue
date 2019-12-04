@@ -82,7 +82,7 @@
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters('hosts', ['configPropertyList']),
+            ...mapGetters('hostApply', ['configPropertyList']),
             moduleIds () {
                 return this.dataRow.bk_module_ids
             }
