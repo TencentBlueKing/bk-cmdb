@@ -79,7 +79,8 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 		},
 	}
 	if err := p.dbProxy.Table(common.BKTableNameBasePlat).Find(cloudFilter).All(ctx.Context, &clouds); err != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, read cloud failed, filter: %s, err: %s, rid: %s", cloudFilter, err.Error(), rid)
+		blog.ErrorJSON("GenerateApplyPlan failed, read cloud failed, filter: %s, err: %s, rid: %s",
+			cloudFilter, err.Error(), rid)
 		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	cloudMap := make(map[int64]metadata.CloudInst)
@@ -94,7 +95,8 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	}
 	attributes, err := p.listHostAttributes(ctx, bizID, attributeIDs...)
 	if err != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, listHostAttributes failed, attributeIDs: %s, err: %s, rid: %s", attributeIDs, err.Error(), rid)
+		blog.ErrorJSON("GenerateApplyPlan failed, listHostAttributes failed, attributeIDs: %s, err: %s, rid: %s",
+			attributeIDs, err.Error(), rid)
 		return result, err
 	}
 
