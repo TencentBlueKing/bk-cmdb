@@ -123,9 +123,43 @@ type ListHostsParameter struct {
 	Page               BasePage                  `json:"page"`
 }
 
+func (option ListHostsParameter) Validate() (string, error) {
+	if key, err := option.Page.Validate(); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		}
+	}
+
+	return "", nil
+}
+
 type ListHostsWithNoBizParameter struct {
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
 	Page               BasePage                  `json:"page"`
+}
+
+func (option ListHostsWithNoBizParameter) Validate() (string, error) {
+	if key, err := option.Page.Validate(); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		}
+	}
+
+	return "", nil
 }
 
 type TimeRange struct {
@@ -149,6 +183,9 @@ func (option ListHosts) Validate() (string, error) {
 	if option.HostPropertyFilter != nil {
 		if key, err := option.HostPropertyFilter.Validate(); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
 		}
 	}
 
