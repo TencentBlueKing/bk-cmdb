@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"configcenter/src/common/errors"
+	"configcenter/src/common/querybuilder"
 )
 
 // HostApplyRule represent one rule of host property auto apply
@@ -197,7 +198,8 @@ func (container *ErrorContainer) GetError() errors.CCErrorCoder {
 }
 
 type SearchRuleRelatedModulesOption struct {
-	Keyword string `json:"keyword" field:"keyword" mapstructure:"keyword"`
+	Keyword     string                    `json:"keyword" field:"keyword" mapstructure:"keyword"`
+	QueryFilter *querybuilder.QueryFilter `json:"query_filter" field:"query_filter" mapstructure:"query_filter"`
 }
 
 type UpdateModuleHostApplyEnableStatusOption struct {

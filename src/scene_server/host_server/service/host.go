@@ -1114,7 +1114,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "DstIP")})
 		return
 	}
-	// checkout destion host exist
+	// check whether destination host exist
 	if dstHostID == 0 {
 		blog.Errorf("host not found. params:%s,rid:%s", input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.CCErrorf(common.CCErrHostNotFound)})

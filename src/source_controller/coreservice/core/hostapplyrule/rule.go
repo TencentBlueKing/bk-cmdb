@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -352,9 +353,11 @@ func (p *hostApplyRule) SearchRuleRelatedModules(ctx core.ContextParams, bizID i
 		attributeMap[attribute.ID] = attribute
 	}
 
+	resultModuleMap := make(map[int64]bool)
 	resultModules := make([]metadata.Module, 0)
 	for _, module := range modules {
 		if matchModule(ctx, module, option) {
+			resultModuleMap[module.ModuleID] = true
 			resultModules = append(resultModules, module)
 			continue
 		}
@@ -370,6 +373,10 @@ func (p *hostApplyRule) SearchRuleRelatedModules(ctx core.ContextParams, bizID i
 			if exist == false {
 				continue
 			}
+			// avoid repeat
+			if _, exist := resultModuleMap[module.ModuleID]; exist == true {
+				continue
+			}
 			resultModules = append(resultModules, module)
 		}
 	}
@@ -377,18 +384,26 @@ func (p *hostApplyRule) SearchRuleRelatedModules(ctx core.ContextParams, bizID i
 }
 
 func matchModule(ctx context.Context, module metadata.Module, option metadata.SearchRuleRelatedModulesOption) bool {
-	if strings.Contains(module.ModuleName, option.Keyword) {
+	if option.QueryFilter == nil {
 		return true
 	}
-	return false
+	return option.QueryFilter.Match(func(r querybuilder.AtomRule) bool {
+		if r.Field != "keyword" {
+			return false
+		}
+		strValue, ok := r.Value.(string)
+		if ok == false {
+			return false
+		}
+		if strings.Contains(module.ModuleName, strValue) {
+			return true
+		}
+		return false
+	})
 }
 
 func matchRule(ctx context.Context, rule metadata.HostApplyRule, attribute metadata.Attribute, option metadata.SearchRuleRelatedModulesOption) bool {
 	rid := util.ExtractRequestIDFromContext(ctx)
-
-	if strings.Contains(attribute.PropertyName, option.Keyword) {
-		return true
-	}
 
 	prettyValue, err := attribute.PrettyValue(ctx, rule.PropertyValue)
 	if err != nil {
@@ -396,11 +411,19 @@ func matchRule(ctx context.Context, rule metadata.HostApplyRule, attribute metad
 		return false
 	}
 
-	if strings.Contains(prettyValue, option.Keyword) {
-		return true
-	}
-
-	return false
+	return option.QueryFilter.Match(func(r querybuilder.AtomRule) bool {
+		if r.Field != strconv.FormatInt(attribute.ID, 10) {
+			return false
+		}
+		strValue, ok := r.Value.(string)
+		if ok == false {
+			return false
+		}
+		if strings.Contains(prettyValue, strValue) {
+			return true
+		}
+		return false
+	})
 }
 
 func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx core.ContextParams, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder) {
