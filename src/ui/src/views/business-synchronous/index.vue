@@ -79,7 +79,7 @@
                         <div class="instances-box">
                             <div class="title">
                                 <h3>{{$t('涉及实例')}}</h3>
-                                <span>（{{process['service_instances'].length}}）</span>
+                                <span>（{{pagination.count}}）</span>
                             </div>
                             <div class="service-instances">
                                 <div class="instances-item"
