@@ -145,6 +145,16 @@ func (attribute *Attribute) Validate(ctx context.Context, val interface{}, key s
 		rawError = attribute.validTimeZone(ctx, val, key)
 	case common.FieldTypeBool:
 		rawError = attribute.validBool(ctx, val, key)
+	case common.FieldTypeUser:
+		rawError = attribute.validChar(ctx, val, key)
+	case common.FieldTypeList:
+		rawError = attribute.validList(ctx, val, key)
+	// TODO implement validate for types below
+	// common.FieldTypeSingleLenChar
+	// common.FieldTypeLongLenChar
+	// common.FieldTypeStrictCharRegexp
+	// common.FieldTypeSingleCharRegexp
+	// common.FieldTypeLongCharRegexp
 	default:
 		rawError = errors.RawErrorInfo{
 			ErrCode: common.CCErrCommUnexpectedFieldType,
@@ -583,6 +593,61 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 		}
 	}
 
+	return errors.RawErrorInfo{}
+}
+
+func (attribute *Attribute) validList(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+	rid := util.ExtractRequestUserFromContext(ctx)
+
+	if nil == val {
+		if attribute.IsRequired {
+			blog.Error("params can not be null, list field key: %s, rid: %s", key, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	strVal, ok := val.(string)
+	if !ok {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+
+	listOption, ok := attribute.Option.([]interface{})
+	if false == ok {
+		blog.Errorf("option %v invalid, not string type list option", attribute.Option)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+	match := false
+	for _, inVal := range listOption {
+		inValStr, ok := inVal.(string)
+		if !ok {
+			blog.Errorf("inner list option convert to string  failed, params %s not valid , list field value: %#v", key, val)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrParseAttrOptionListFailed,
+				Args:    []interface{}{key},
+			}
+		}
+		if strVal == inValStr {
+			match = true
+			break
+		}
+	}
+	if !match {
+		blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, attribute, val)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
 	return errors.RawErrorInfo{}
 }
 
