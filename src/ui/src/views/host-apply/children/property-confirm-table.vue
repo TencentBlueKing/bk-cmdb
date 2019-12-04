@@ -1,8 +1,8 @@
 <template>
     <div class="property-confirm-table">
         <bk-table
-            :data="tableList"
-            :pagination="pagination"
+            :data="table.list"
+            :pagination="table.pagination"
             :row-style="{ cursor: 'pointer' }"
             :max-height="maxHeight || ($APP.height - 240)"
             @page-change="handlePageChange"
@@ -10,7 +10,7 @@
             @row-click="handleRowClick"
         >
             <bk-table-column :label="$t('内网IP')" prop="expired_host.bk_host_innerip" class-name="is-highlight"></bk-table-column>
-            <bk-table-column :label="$t('云区域')" prop="expired_host.bk_cloud_id"></bk-table-column>
+            <bk-table-column :label="$t('云区域')" prop="cloud_area.bk_cloud_name"></bk-table-column>
             <bk-table-column :label="$t('固资编号')" prop="expired_host.bk_asset_id"></bk-table-column>
             <bk-table-column :label="$t('主机名称')" prop="expired_host.bk_host_name"></bk-table-column>
             <bk-table-column :label="$t('修改值')" width="430" class-name="table-cell-change-value">
@@ -23,6 +23,9 @@
                 :formatter="getOperationColumnText"
                 :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示')) : null">
             </bk-table-column>
+            <cmdb-table-empty slot="empty">
+                <div>{{$t('暂无主机，新转入的主机将会自动应用模块的主机属性')}}</div>
+            </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -54,7 +57,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapState, mapActions } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
     import conflictResolve from './conflict-resolve.vue'
     export default {
         components: {
@@ -79,10 +82,13 @@
         },
         data () {
             return {
-                pagination: {
-                    current: 1,
-                    count: 0,
-                    ...this.$tools.getDefaultPaginationConfig()
+                table: {
+                    list: [],
+                    pagination: {
+                        current: 1,
+                        count: 0,
+                        ...this.$tools.getDefaultPaginationConfig()
+                    }
                 },
                 details: {
                     show: false,
@@ -98,16 +104,15 @@
                     title: this.$t('拓扑显示设置')
                 },
                 currentRow: {},
-                conflictResolveResult: {},
-                tableList: []
+                conflictResolveResult: {}
             }
         },
         computed: {
             ...mapGetters('objectModelClassify', [
                 'getModelById'
             ]),
-            ...mapGetters('hosts', ['configPropertyList']),
-            ...mapState('hosts', ['propertyList']),
+            ...mapGetters('hostApply', ['configPropertyList']),
+            ...mapState('hostApply', ['propertyList']),
             conflictResolveCache () {
                 const key = this.currentRow.bk_host_id
                 return this.conflictResolveResult[key] || []
@@ -118,7 +123,7 @@
                 this.setTableList()
             },
             total (value) {
-                this.pagination.count = value
+                this.table.pagination.count = value
             }
         },
         created () {
@@ -126,38 +131,21 @@
             this.setTableList()
         },
         methods: {
-            ...mapActions('objectModelProperty', [
-                'searchObjectAttribute'
-            ]),
-            renderTableHeader (h, data, tips) {
-                const directive = {
-                    content: tips,
-                    placement: 'top-end',
-                    width: 275
-                }
-                return <span>{ data.column.label } <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={ directive }></i></span>
-            },
             async getHostPropertyList () {
                 try {
-                    const data = await this.searchObjectAttribute({
-                        params: this.$injectMetadata({
-                            bk_obj_id: 'host',
-                            bk_supplier_account: this.supplierAccount
-                        }),
-                        config: {
-                            requestId: 'getHostPropertyList',
-                            fromCache: true
-                        }
+                    const data = await this.$store.dispatch('hostApply/getProperties', {
+                        requestId: 'getHostPropertyList',
+                        fromCache: true
                     })
 
-                    this.$store.commit('hosts/setPropertyList', data)
+                    this.$store.commit('hostApply/setPropertyList', data)
                 } catch (e) {
                     console.error(e)
                 }
             },
             setTableList () {
-                const { start, limit } = this.$tools.getPageParams(this.pagination)
-                this.tableList = this.list.slice(start, start + limit)
+                const { start, limit } = this.$tools.getPageParams(this.table.pagination)
+                this.table.list = this.list.slice(start, start + limit)
             },
             getChangeValue (row) {
                 const { conflicts, update_fields: updateFields } = row
@@ -194,12 +182,20 @@
                 }
                 return text
             },
+            renderTableHeader (h, data, tips) {
+                const directive = {
+                    content: tips,
+                    placement: 'top-end',
+                    width: 275
+                }
+                return <span>{ data.column.label } <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={ directive }></i></span>
+            },
             handlePageChange (page) {
-                this.pagination.current = page
+                this.table.pagination.current = page
                 this.setTableList()
             },
             handleSizeChange (size) {
-                this.pagination.limit = size
+                this.table.pagination.limit = size
                 this.setTableList()
             },
             handleRowClick (row) {
@@ -265,7 +261,7 @@
         .cell {
             -webkit-line-clamp: 3;
             .conflict {
-                color: red;
+                color: #ea3536;
             }
         }
     }

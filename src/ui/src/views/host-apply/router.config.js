@@ -49,4 +49,15 @@ export default [{
             parent: MENU_BUSINESS_HOST_APPLY
         }
     })
+}, {
+    name: 'hostApplyFailed',
+    path: 'host-apply/failed',
+    component: () => import('./failed-list'),
+    meta: new Meta({
+        owner: MENU_BUSINESS,
+        menu: {
+            i18n: '主机自动应用',
+            parent: MENU_BUSINESS_HOST_APPLY
+        }
+    })
 }]

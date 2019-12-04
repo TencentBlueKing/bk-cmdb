@@ -36,11 +36,10 @@
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
     import ConfirmStore from '@/components/ui/dialog/confirm-store.js'
     import Bus from '@/utils/bus'
     const LEAVE_CONFIRM_ID = 'singleModule'
-
     export default {
         props: {
             treeOptions: {
@@ -66,6 +65,7 @@
         },
         computed: {
             ...mapGetters(['supplierAccount', 'isAdminView']),
+            ...mapState('hostApply', ['ruleDraft']),
             business () {
                 return this.$store.state.objectBiz.bizId
             },
@@ -135,10 +135,12 @@
             },
             setDefaultState (data) {
                 this.$refs.tree.setData(data)
-                const queryModule = parseInt(this.$route.query.module)
                 let defaultNodeId
+                const queryModule = parseInt(this.$route.query.module)
                 if (!isNaN(queryModule)) {
                     defaultNodeId = `module_${queryModule}`
+                } else if (this.ruleDraft.moduleIds) {
+                    defaultNodeId = `module_${this.ruleDraft.moduleIds[0]}`
                 } else if (this.firstModule) {
                     defaultNodeId = this.idGenerator(this.firstModule)
                 }
@@ -178,7 +180,7 @@
                 if (this.isModule(node)) {
                     if (this.$parent.editing) {
                         const leaveConfirmResult = await ConfirmStore.popup(LEAVE_CONFIRM_ID)
-                        return !leaveConfirmResult
+                        return leaveConfirmResult
                     }
                     return true
                 } else {
