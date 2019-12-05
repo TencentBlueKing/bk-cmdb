@@ -74,8 +74,8 @@ export default new Vue({
                     if (instance.node instanceof Vue) {
                         instance.node.updateUserText(user)
                     } else {
-                        instance.node.textContent = user || instance.user || '--'
-                        instance.options.title && (instance.node.title = user || instance.user || '--')
+                        instance.node.textContent = user || '--'
+                        instance.options.title && (instance.node.title = user || '--')
                     }
                 }
             }
