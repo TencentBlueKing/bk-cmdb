@@ -387,7 +387,7 @@ func matchModule(ctx context.Context, module metadata.Module, option metadata.Se
 		return true
 	}
 	return option.QueryFilter.Match(func(r querybuilder.AtomRule) bool {
-		if r.Field != "keyword" {
+		if r.Field != metadata.TopoNodeKeyword {
 			return false
 		}
 		strValue, ok := r.Value.(string)

@@ -18,6 +18,10 @@ import (
 	"configcenter/src/common/querybuilder"
 )
 
+const (
+	TopoNodeKeyword = "keyword"
+)
+
 // HostApplyRule represent one rule of host property auto apply
 type HostApplyRule struct {
 	ID       int64 `field:"id" json:"id" bson:"id" mapstructure:"id"`
