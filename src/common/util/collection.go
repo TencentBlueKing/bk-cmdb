@@ -12,6 +12,8 @@
 
 package util
 
+import "strings"
+
 func CalSliceDiff(oldSlice, newSlice []string) (subs, plugs []string) {
 	subs = make([]string, 0)
 	plugs = make([]string, 0)
@@ -26,6 +28,10 @@ func CalSliceDiff(oldSlice, newSlice []string) (subs, plugs []string) {
 		}
 	}
 	return
+}
+
+func CaseInsensitiveContains(s string, substr string) bool {
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
 
 // Contains if string target in array
