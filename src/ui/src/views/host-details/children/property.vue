@@ -71,8 +71,7 @@
                                     :placeholder="$t('请输入xx', { name: property.bk_property_name })"
                                     :auto-check="false"
                                     v-validate="$tools.getValidateRules(property)"
-                                    v-model.trim="editState.value"
-                                    @enter="confirm">
+                                    v-model.trim="editState.value">
                                 </component>
                                 <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                                 <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
@@ -420,6 +419,7 @@
             display: inline-block;
             vertical-align: middle;
             width: 270px;
+            height: 32px;
             margin: 0 4px 0 0;
             &.bool {
                 width: 42px;
