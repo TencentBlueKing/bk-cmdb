@@ -5,6 +5,8 @@
                 v-model="localValue"
                 :rows="rows"
                 :placeholder="placeholder || $t('请输入关键词')"
+                :disabled="disabled"
+                :maxlength="maxlength"
                 @focus="handleFocus"
                 @blur="handleBlur"
                 @input="setValue"
@@ -33,6 +35,14 @@
             placeholder: {
                 type: String,
                 default: ''
+            },
+            disabled: {
+                type: Boolean,
+                default: false
+            },
+            maxlength: {
+                type: Number,
+                default: 2000
             }
         },
         data () {
@@ -57,6 +67,7 @@
             setLocalValue () {
                 if (this.localValue !== this.value) {
                     this.localValue = this.value
+                    this.$emit('on-change', this.localValue)
                 }
             },
             setValue () {
@@ -89,6 +100,7 @@
             },
             handleEnter () {
                 this.rows = Math.min(this.rows + 1, 5)
+                this.$emit('enter', this.localValue)
             },
             handleDelete () {
                 this.$nextTick(() => {
