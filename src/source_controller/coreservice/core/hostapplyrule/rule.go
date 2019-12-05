@@ -15,7 +15,6 @@ package hostapplyrule
 import (
 	"context"
 	"strconv"
-	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -395,7 +394,7 @@ func matchModule(ctx context.Context, module metadata.Module, option metadata.Se
 		if ok == false {
 			return false
 		}
-		if strings.Contains(module.ModuleName, strValue) {
+		if util.CaseInsensitiveContains(module.ModuleName, strValue) {
 			return true
 		}
 		return false
@@ -419,7 +418,7 @@ func matchRule(ctx context.Context, rule metadata.HostApplyRule, attribute metad
 		if ok == false {
 			return false
 		}
-		if strings.Contains(prettyValue, strValue) {
+		if util.CaseInsensitiveContains(prettyValue, strValue) {
 			return true
 		}
 		return false

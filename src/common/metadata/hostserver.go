@@ -422,6 +422,10 @@ type TopoNode struct {
 	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id" mapstructure:"bk_inst_id"`
 }
 
+func (node TopoNode) Key() string {
+	return fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+}
+
 type TransferHostWithAutoClearServiceInstanceOption struct {
 	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids"`
 

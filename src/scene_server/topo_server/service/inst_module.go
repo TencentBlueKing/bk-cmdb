@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
 	"configcenter/src/common/querybuilder"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -391,7 +392,8 @@ func (s *Service) SearchRuleRelatedTopoNodes(params types.ContextParams, pathPar
 			if ok == false {
 				return false
 			}
-			if strings.Contains(node.InstanceName, valueStr) {
+			// case-insensitive contains
+			if util.CaseInsensitiveContains(node.InstanceName, valueStr) {
 				return true
 			}
 			return false
@@ -404,7 +406,18 @@ func (s *Service) SearchRuleRelatedTopoNodes(params types.ContextParams, pathPar
 		}
 	})
 
-	return matchNodes, nil
+	// unique result
+	finalNodes := make([]metadata.TopoNode, 0)
+	existMap := make(map[string]bool)
+	for _, item := range matchNodes {
+		if _, exist := existMap[item.Key()]; exist == true {
+			continue
+		}
+		existMap[item.Key()] = true
+		finalNodes = append(finalNodes, item)
+	}
+
+	return finalNodes, nil
 }
 
 func (s *Service) UpdateModuleHostApplyEnableStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
