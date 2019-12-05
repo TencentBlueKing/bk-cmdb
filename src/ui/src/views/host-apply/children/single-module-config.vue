@@ -181,12 +181,12 @@
                 this.isEdit = value
             },
             checkedPropertyIdList () {
-                this.toggleNexButtonDisabled()
+                this.toggleNextButtonDisabled()
             },
             isEdit (value) {
                 this.$emit('update:editing', value)
                 this.leaveConfirm.active = value
-                this.toggleNexButtonDisabled()
+                this.toggleNextButtonDisabled()
             }
         },
         created () {
@@ -239,11 +239,21 @@
                     }
                 })
             },
-            toggleNexButtonDisabled () {
+            toggleNextButtonDisabled () {
                 this.$nextTick(() => {
                     if (this.$refs.propertyConfigTable) {
                         const { modulePropertyList } = this.$refs.propertyConfigTable
-                        this.nextButtonDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
+                        const everyTruthy = modulePropertyList.every(property => {
+                            const validTruthy = property.__extra__.valid !== false
+                            let valueTruthy = property.__extra__.value
+                            if (property.bk_property_type === 'bool') {
+                                valueTruthy = true
+                            } else if (property.bk_property_type === 'int') {
+                                valueTruthy = valueTruthy !== null && String(valueTruthy)
+                            }
+                            return valueTruthy && validTruthy
+                        })
+                        this.nextButtonDisabled = !this.checkedPropertyIdList.length || !everyTruthy
                     }
                 })
             },
@@ -331,7 +341,7 @@
                 })
             },
             handlePropertyValueChange () {
-                this.toggleNexButtonDisabled()
+                this.toggleNextButtonDisabled()
             },
             handleEdit () {
                 this.isEdit = true
