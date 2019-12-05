@@ -3,7 +3,7 @@
 </template>
 
 <script>
-    import userQueue from '@/setup/user-queue.js'
+    import userQueue from './user-queue.js'
     export default {
         name: 'cmdb-user',
         props: {
