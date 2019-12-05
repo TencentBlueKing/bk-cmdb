@@ -112,12 +112,12 @@
             Bus.$off('topology-search', this.handleSearch)
         },
         methods: {
-            async handleSearch (values) {
+            async handleSearch (params) {
                 try {
-                    if (Object.keys(values).length) {
+                    if (params.query_filter.rules.length) {
                         const data = await this.$store.dispatch('hostApply/searchNode', {
                             bizId: this.business,
-                            params: values,
+                            params: params,
                             config: {
                                 requestId: this.request.searchNode
                             }
@@ -131,7 +131,7 @@
                 }
             },
             filterMethod (remoteData, node) {
-                return node.data.bk_obj_id === 'module' && remoteData.some(datum => datum.bk_module_id === node.data.bk_inst_id)
+                return remoteData.some(datum => datum.bk_inst_id === node.data.bk_inst_id && datum.bk_obj_id === node.data.bk_obj_id)
             },
             setDefaultState (data) {
                 this.$refs.tree.setData(data)
