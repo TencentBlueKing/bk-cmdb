@@ -22,10 +22,10 @@ import (
 
 // BaseResp common result struct
 type BaseResp struct {
-	Result      bool         `json:"result"`
-	Code        int          `json:"bk_error_code"`
-	ErrMsg      string       `json:"bk_error_msg"`
-	Permissions []Permission `json:"permission"`
+	Result      bool         `json:"result" mapstructure:"result"`
+	Code        int          `json:"bk_error_code" mapstructure:"bk_error_code"`
+	ErrMsg      string       `json:"bk_error_msg" mapstructure:"bk_error_msg"`
+	Permissions []Permission `json:"permission" mapstructure:"permission"`
 }
 
 // CCError 根据response返回的信息产生错误

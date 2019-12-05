@@ -335,6 +335,9 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 		common.BKAppIDField: bizID,
 	}
 	moduleQueryCondition := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
 		Condition: mapstr.MapStr(moduleFilter),
 	}
 	modules, e := assoc.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, moduleQueryCondition)
@@ -345,15 +348,19 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	moduleServiceTemplateIDMap := make(map[int64]int64)
 	moduleSetTemplateIDMap := make(map[int64]int64)
 	setSetTemplateIDMap := make(map[int64]int64)
+	hostApplyEnabledMap := make(map[int64]bool)
+	moduleIDs := make([]int64, 0)
 	for _, module := range modules.Data.Info {
 		moduleStruct := &metadata.ModuleInst{}
 		if err := module.ToStructByTag(moduleStruct, "field"); err != nil {
 			blog.Errorf("fillStatistics failed, parse module data to struct failed, module: %+v, err: %s, rid: %s", module, e.Error(), params.ReqID)
 			return err
 		}
+		moduleIDs = append(moduleIDs, moduleStruct.ModuleID)
 		moduleServiceTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.ServiceTemplateID
 		moduleSetTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.SetTemplateID
 		setSetTemplateIDMap[moduleStruct.ParentID] = moduleStruct.SetTemplateID
+		hostApplyEnabledMap[moduleStruct.ModuleID] = moduleStruct.HostApplyEnabled
 	}
 
 	exactNodes := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule}
@@ -377,6 +384,10 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 				}
 				if id, exist := moduleSetTemplateIDMap[node.InstID]; exist == true {
 					node.SetTemplateID = id
+				}
+				node.HostApplyEnabled = new(bool)
+				if enabled, exist := hostApplyEnabledMap[node.InstID]; exist == true {
+					*node.HostApplyEnabled = enabled
 				}
 			}
 			if node.ObjID == common.BKInnerObjIDSet {
@@ -419,6 +430,35 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 			node.HostCount = int64(len(hostCount[customLevel][node.InstID]))
 		})
 	}
+
+	// fill host apply rules
+	listApplyRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: moduleIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostApplyRules, err := assoc.clientSet.CoreService().HostApplyRule().ListHostApplyRule(params.Context, params.Header, bizID, listApplyRuleOption)
+	if err != nil {
+		blog.Errorf("fillStatistics failed, ListHostApplyRule failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, listApplyRuleOption, err, params.ReqID)
+		return err
+	}
+	moduleRuleCount := make(map[int64]int64)
+	for _, item := range hostApplyRules.Info {
+		if _, exist := moduleRuleCount[item.ModuleID]; exist == false {
+			moduleRuleCount[item.ModuleID] = 0
+		}
+		moduleRuleCount[item.ModuleID] += 1
+	}
+	for _, tir := range parentInsts {
+		tir.DeepFirstTraverse(func(node *metadata.TopoInstRst) {
+			if node.ObjID == common.BKInnerObjIDModule {
+				node.HostApplyRuleCount = new(int64)
+				*node.HostApplyRuleCount, _ = moduleRuleCount[node.InstID]
+			}
+		})
+	}
+
 	return nil
 }
 

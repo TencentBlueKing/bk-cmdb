@@ -45,6 +45,7 @@ type ModuleInst struct {
 	ParentID          int64  `bson:"bk_parent_id" json:"bk_parent_id" field:"bk_parent_id" mapstructure:"bk_parent_id"`
 	SetTemplateID     int64  `bson:"set_template_id" json:"set_template_id" field:"set_template_id" mapstructure:"set_template_id"`
 	Default           int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
+	HostApplyEnabled  bool   `bson:"host_apply_enabled" json:"host_apply_enabled" field:"host_apply_enabled" mapstructure:"host_apply_enabled"`
 }
 
 type BizInst struct {
@@ -60,8 +61,8 @@ type BizBasicInfo struct {
 }
 
 type CloudInst struct {
-	CloudID   int64  `bson:"bk_cloud_id"`
-	CloudName string `bson:"bk_cloud_name"`
+	CloudID   int64  `bson:"bk_cloud_id" json:"bk_cloud_id"`
+	CloudName string `bson:"bk_cloud_name" json:"bk_cloud_name"`
 }
 
 type ProcessInst struct {
