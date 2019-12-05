@@ -211,9 +211,7 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 			return err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			f.tm.SaveSession(sess)
-		}()
+		defer f.tm.SaveSession(sess)
 	} else if f.sess != nil {
 		ctx = se.ContextWithSession(ctx, f.sess)
 	}
@@ -258,9 +256,7 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 			return err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			f.tm.SaveSession(sess)
-		}()
+		defer f.tm.SaveSession(sess)
 	} else if f.sess != nil {
 		ctx = se.ContextWithSession(ctx, f.sess)
 	}
@@ -309,9 +305,7 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 			return uint64(0), err
 		}
 		ctx = se.ContextWithSession(ctx, sess)
-		defer func() {
-			f.tm.SaveSession(sess)
-		}()
+		defer f.tm.SaveSession(sess)
 	} else if f.sess != nil {
 		ctx = se.ContextWithSession(ctx, f.sess)
 	}
