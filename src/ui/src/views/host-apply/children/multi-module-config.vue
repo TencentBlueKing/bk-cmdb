@@ -118,7 +118,7 @@
         watch: {
             checkedPropertyIdList () {
                 this.$nextTick(() => {
-                    this.toggleNexButtonDisabled()
+                    this.toggleNextButtonDisabled()
                 })
             }
         },
@@ -193,9 +193,19 @@
                 this.showMore.showLink = rowCount > this.showMore.moduleListMaxRow
                 this.showMore.linkLeft = moduleItemWidth * (maxCountInRow - 1)
             },
-            toggleNexButtonDisabled () {
+            toggleNextButtonDisabled () {
                 const modulePropertyList = this.$refs.configEditTable.modulePropertyList
-                this.nextButtonDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
+                const everyTruthy = modulePropertyList.every(property => {
+                    const validTruthy = property.__extra__.valid !== false
+                    let valueTruthy = property.__extra__.value
+                    if (property.bk_property_type === 'bool') {
+                        valueTruthy = true
+                    } else if (property.bk_property_type === 'int') {
+                        valueTruthy = valueTruthy !== null && String(valueTruthy)
+                    }
+                    return valueTruthy && validTruthy
+                })
+                this.nextButtonDisabled = !this.checkedPropertyIdList.length || !everyTruthy
             },
             goBack () {
                 // 删除离开不用确认
@@ -249,7 +259,7 @@
                     title: this.$t('确认删除自动应用字段？'),
                     subTitle: this.$t('删除后，将会移除字段在对应模块中的配置'),
                     confirmFn: async () => {
-                        const ruleIds = this.selectedPropertyRow.reduce((acc, cur) => acc.concat(cur.__extra__.moduleList.map(item => item.id)), [])
+                        const ruleIds = this.selectedPropertyRow.reduce((acc, cur) => acc.concat(cur.__extra__.ruleList.map(item => item.id)), [])
                         try {
                             await this.$store.dispatch('hostApply/deleteRules', {
                                 bizId: this.bizId,
@@ -276,7 +286,7 @@
                 this.delButtonDisabled = this.selectedPropertyRow.length <= 0
             },
             handlePropertyValueChange () {
-                this.toggleNexButtonDisabled()
+                this.toggleNextButtonDisabled()
             },
             handleChooseField () {
                 this.propertyModalVisible = true
