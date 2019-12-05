@@ -2,9 +2,7 @@
     <div class="single-module-config">
         <div class="config-head">
             <h2 class="config-title">
-                <i18n path="配置XXX模块主机属性">
-                    <span class="module-name" place="module">{{module.bk_inst_name}}</span>
-                </i18n>
+                <span class="module-name">{{module.bk_inst_name}}</span>
                 <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}：{{ruleLastEditTime}} )</small>
             </h2>
         </div>
@@ -61,7 +59,7 @@
                 <div class="empty" v-if="!hasRule">
                     <div class="desc">
                         <i class="bk-cc-icon icon-cc-tips"></i>
-                        <span>{{$t('尚未配置模块的属性自动应用')}}</span>
+                        <span>{{$t('当前模块未启用自动应用策略')}}</span>
                     </div>
                     <div class="action">
                         <bk-button theme="primary" :outline="true" @click="handleEdit">立即启用</bk-button>
@@ -103,7 +101,7 @@
         <leave-confirm
             :id="leaveConfirm.id"
             :active="leaveConfirm.active"
-            title="是否放弃配置？"
+            title="是否放弃？"
             content="启用步骤未完成，是否放弃当前配置"
             ok-text="留在当前页"
             cancel-text="确认放弃"
@@ -144,7 +142,7 @@
                 isEdit: this.editing,
                 nextButtonDisabled: true,
                 propertyModalVisible: false,
-                clearRules: true,
+                clearRules: false,
                 leaveConfirm: {
                     id: 'singleModule',
                     active: false
@@ -183,12 +181,12 @@
                 this.isEdit = value
             },
             checkedPropertyIdList () {
-                this.toggleNexButtonDisabled()
+                this.toggleNextButtonDisabled()
             },
             isEdit (value) {
                 this.$emit('update:editing', value)
                 this.leaveConfirm.active = value
-                this.toggleNexButtonDisabled()
+                this.toggleNextButtonDisabled()
             }
         },
         created () {
@@ -241,11 +239,21 @@
                     }
                 })
             },
-            toggleNexButtonDisabled () {
+            toggleNextButtonDisabled () {
                 this.$nextTick(() => {
                     if (this.$refs.propertyConfigTable) {
                         const { modulePropertyList } = this.$refs.propertyConfigTable
-                        this.nextButtonDisabled = !this.checkedPropertyIdList.length || !modulePropertyList.every(property => property.__extra__.value)
+                        const everyTruthy = modulePropertyList.every(property => {
+                            const validTruthy = property.__extra__.valid !== false
+                            let valueTruthy = property.__extra__.value
+                            if (property.bk_property_type === 'bool') {
+                                valueTruthy = true
+                            } else if (property.bk_property_type === 'int') {
+                                valueTruthy = valueTruthy !== null && String(valueTruthy)
+                            }
+                            return valueTruthy && validTruthy
+                        })
+                        this.nextButtonDisabled = !this.checkedPropertyIdList.length || !everyTruthy
                     }
                 })
             },
@@ -295,10 +303,10 @@
             handleCloseApply () {
                 const h = this.$createElement
                 this.$bkInfo({
-                    title: this.$t('确认关闭自动应用？'),
+                    title: this.$t('确认关闭？'),
                     extCls: 'close-apply-confirm-modal',
                     subHeader: h('div', { class: 'content' }, [
-                        h('p', { class: 'tips' }, this.$t('关闭后，新转入的主机将不会自动应用模块的主机属性')),
+                        h('p', { class: 'tips' }, this.$t('关闭后转入模块的主机属性不再自动被应用')),
                         h('bk-checkbox', {
                             props: {
                                 checked: true,
@@ -306,9 +314,9 @@
                                 falseFalue: false
                             },
                             on: {
-                                change: (value) => (this.clearRules = value)
+                                change: (value) => (this.clearRules = !value)
                             }
-                        }, '清空配置历史')
+                        }, '保留当前自动应用策略')
                     ]),
                     confirmFn: async () => {
                         try {
@@ -322,8 +330,10 @@
                             })
 
                             this.$success(this.$t('关闭成功'))
-                            this.emptyRules()
-                            this.$emit('after-close', this.moduleId)
+                            if (this.clearRules) {
+                                this.emptyRules()
+                            }
+                            this.$emit('after-close', this.moduleId, this.clearRules)
                         } catch (e) {
                             console.log(e)
                         }
@@ -331,7 +341,7 @@
                 })
             },
             handlePropertyValueChange () {
-                this.toggleNexButtonDisabled()
+                this.toggleNextButtonDisabled()
             },
             handleEdit () {
                 this.isEdit = true
@@ -371,13 +381,11 @@
         color: #313238;
         font-weight: 700;
 
-        .module-name {
-            padding: 0 .2em;
-        }
         .last-edit-time {
             font-size: 12px;
             font-weight: 400;
             color: #979ba5;
+            margin-left: .2em;
         }
     }
     .empty {

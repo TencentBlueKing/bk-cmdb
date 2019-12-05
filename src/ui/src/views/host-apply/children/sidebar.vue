@@ -20,6 +20,7 @@
             <topology-tree
                 ref="topologyTree"
                 :tree-options="treeOptions"
+                :action="actionMode"
                 @selected="handleTreeSelected"
                 @checked="handleTreeChecked"
             ></topology-tree>
@@ -86,9 +87,8 @@
             }
         },
         methods: {
-            setApplyClosed (moduleId) {
-                const tree = this.topologyTree.$refs.tree
-                tree.getNodeById(`module_${moduleId}`).data.host_apply_enabled = false
+            setApplyClosed (moduleId, isClear) {
+                this.topologyTree.updateNodeStatus(moduleId, isClear)
             },
             removeChecked () {
                 const tree = this.topologyTree.$refs.tree
@@ -98,10 +98,10 @@
                 if (this.editing && !await ConfirmStore.popup(LEAVE_CONFIRM_ID)) {
                     return
                 }
-                this.$emit('update:editing', false)
                 this.actionMode = actionMode
                 this.showCheckedPanel = true
                 this.treeOptions.showCheckbox = true
+                this.$emit('update:editing', false)
                 this.$emit('update:actionMode', this.actionMode)
             },
             handleTreeSelected (node) {
@@ -182,6 +182,7 @@
                 height: 32px;
                 text-align: center;
                 line-height: 32px;
+                cursor: pointer;
                 .icon-cc-menu {
                     color: #c4c6cc;
                     font-size: 20px;

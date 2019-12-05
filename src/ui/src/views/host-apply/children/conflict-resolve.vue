@@ -12,7 +12,7 @@
         <div class="conflict-table" ref="conflictTable">
             <bk-table :data="conflictPropertyList">
                 <bk-table-column :label="$t('字段名称')" width="160" :resizable="false" prop="bk_property_name"></bk-table-column>
-                <bk-table-column :label="$t('所属模块')" :render-header="hanldeColumnRender" :resizable="false">
+                <bk-table-column :label="$t('所属模块')" :render-header="renderColumnHeader" :resizable="false">
                     <template slot-scope="{ row }">
                         <div class="conflict-modules">
                             <div
@@ -32,26 +32,17 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('修改后')"
                     width="230"
-                    class-name="conflict-custom-column"
-                    :resizable="false">
+                    class-name="table-cell-form-element"
+                    :resizable="false"
+                >
                     <template slot-scope="{ row }">
-                        <component class="property-component"
-                            :is="`cmdb-form-${row.bk_property_type}`"
-                            :class="[row.bk_property_type, { error: errors.has(row.bk_property_id) }]"
-                            :options="row.option || []"
-                            :data-vv-name="row.bk_property_id"
-                            :data-vv-as="row.bk_property_name"
-                            :placeholder="$t('请输入xx', { name: row.bk_property_name })"
-                            v-validate="$tools.getValidateRules(row)"
-                            v-model.trim="row.__extra__.value"
-                        >
-                        </component>
+                        <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
                     </template>
                 </bk-table-column>
             </bk-table>
         </div>
         <div :class="['footer-btns', { 'sticky': scrollbar }]">
-            <bk-button theme="primary" class="mr10" @click="handleConfirm">{{$t('确定')}}</bk-button>
+            <bk-button theme="primary" class="mr10" :disabled="confirmButtonDisabled" @click="handleConfirm">{{$t('确定')}}</bk-button>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
@@ -60,7 +51,11 @@
 <script>
     import { mapGetters } from 'vuex'
     import RESIZE_EVENTS from '@/utils/resize-events'
+    import propertyFormElement from './property-form-element'
     export default {
+        components: {
+            propertyFormElement
+        },
         props: {
             dataRow: {
                 type: Object,
@@ -76,8 +71,9 @@
                 conflictPropertyList: [],
                 conflictPropertyListSnapshot: [],
                 result: {},
+                moduleMap: {},
                 scrollbar: false,
-                moduleMap: {}
+                confirmButtonDisabled: false
             }
         },
         computed: {
@@ -158,7 +154,7 @@
                 const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
                 return target.bk_inst_name
             },
-            hanldeColumnRender (h, { column, $index }) {
+            renderColumnHeader (h, { column, $index }) {
                 const style = {
                     width: '50%',
                     display: 'inline-block'
@@ -172,12 +168,20 @@
                     ]
                 )
             },
-            handlePickValue (row, index, value) {
-                row.__extra__.conflictList.forEach((item, i) => (item.selected = index === i))
-                row.__extra__.value = value
+            checkScrollbar () {
+                const $layout = this.$el
+                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             restoreConflictPropertyList () {
                 this.conflictPropertyList = this.$tools.clone(this.conflictPropertyListSnapshot)
+            },
+            toggleConfirmButtonDisabled () {
+                const everyValidTruthy = this.conflictPropertyList.every(property => property.__extra__.valid !== false)
+                this.confirmButtonDisabled = !everyValidTruthy
+            },
+            handlePickValue (row, index, value) {
+                row.__extra__.conflictList.forEach((item, i) => (item.selected = index === i))
+                row.__extra__.value = value
             },
             handleConfirm () {
                 this.conflictPropertyListSnapshot = this.$tools.clone(this.conflictPropertyList)
@@ -188,9 +192,8 @@
                 this.restoreConflictPropertyList()
                 this.$emit('cancel')
             },
-            checkScrollbar () {
-                const $layout = this.$el
-                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
+            handlePropertyValueChange () {
+                this.toggleConfirmButtonDisabled()
             }
         }
     }
@@ -260,9 +263,32 @@
 </style>
 
 <style lang="scss">
-    .conflict-custom-column {
-        .cell {
+    .conflict-table {
+        overflow: unset;
+        .bk-table-body-wrapper {
             overflow: unset;
+        }
+
+        .table-cell-module-path:not(.header-cell) {
+            .cell {
+                padding-top: 8px;
+                padding-bottom: 8px;
+                overflow: unset;
+                display: block;
+            }
+        }
+
+        .table-cell-form-element {
+            .cell {
+                overflow: unset;
+                display: block;
+            }
+            .search-input-wrapper {
+                position: relative;
+            }
+            .form-objuser .suggestion-list {
+                z-index: 1000;
+            }
         }
     }
 </style>

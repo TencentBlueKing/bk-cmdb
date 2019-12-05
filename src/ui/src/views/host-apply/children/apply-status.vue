@@ -10,7 +10,8 @@
         </div>
         <div class="status status-result" v-else-if="success.length >= 0 && fail.length === 0">
             <p class="result-title">{{$t('应用成功')}}</p>
-            <i18n class="result-subtitle" tag="p" path="应用结果">
+            <p class="result-subtitle">{{$t('保存策略并应用到当前模块下主机成功')}}</p>
+            <i18n class="result-stat" tag="p" path="应用结果">
                 <span class="result-count" place="success">{{success.length}}</span>
                 <span class="result-count" place="fail">0</span>
             </i18n>
@@ -21,7 +22,7 @@
         </div>
         <div class="status status-result" v-else>
             <p class="result-title">{{$t('应用完成')}}</p>
-            <i18n class="result-subtitle" tag="p" path="应用结果">
+            <i18n class="result-stat" tag="p" path="应用结果">
                 <span class="result-count" place="success">{{success.length}}</span>
                 <span class="result-count fail" place="fail">{{fail.length}}</span>
             </i18n>
@@ -129,6 +130,14 @@
             color: #313238;
         }
         .result-subtitle {
+            font-size: 14px;
+            color: $textColor;
+            margin: 12px auto 0;
+            & + .result-stat {
+                margin-top: 4px;
+            }
+        }
+        .result-stat {
             margin: 30px auto 0;
             font-size: 14px;
             color: $textColor;
