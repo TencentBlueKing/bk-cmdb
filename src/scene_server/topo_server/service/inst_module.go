@@ -385,7 +385,7 @@ func (s *Service) SearchRuleRelatedTopoNodes(params types.ContextParams, pathPar
 	}
 	topoRoot.DeepFirstTraversal(func(node *metadata.TopoInstanceNode) {
 		matched := requestBody.QueryFilter.Match(func(r querybuilder.AtomRule) bool {
-			if r.Field != "keyword" {
+			if r.Field != metadata.TopoNodeKeyword {
 				return false
 			}
 			valueStr, ok := r.Value.(string)
