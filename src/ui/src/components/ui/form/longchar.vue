@@ -1,18 +1,21 @@
 <template>
-    <bk-input type="text"
-        :placeholder="placeholder || $t('请输入长字符')"
-        :maxlength="maxlength"
-        :value="value"
+    <search-input :value="value"
         :disabled="disabled"
+        :maxlength="maxlength"
+        :placeholder="placeholder || $t('请输入长字符')"
         @input="handleInput"
-        @change="handleChange"
-        @enter="handleEnter">
-    </bk-input>
+        @enter="handleEnter"
+        @on-change="handleChange">
+    </search-input>
 </template>
 
 <script>
+    import searchInput from './search-input.vue'
     export default {
         name: 'cmdb-form-longchar',
+        components: {
+            searchInput
+        },
         props: {
             value: {
                 type: [String, Number],
