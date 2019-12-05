@@ -9,39 +9,25 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package x19_04_16_02
+package y3_7_201911141719
 
 import (
 	"context"
 
-	"configcenter/src/common"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	cond := condition.CreateCondition()
-	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
-	cond.Field(common.BKPropertyIDField).Eq("bk_state_name")
-	state := metadata.Attribute{}
-	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &state)
+func init() {
+	upgrader.RegistUpgrader("y3.7.201911141719", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = InitHostPropertyApplyDataModel(ctx, db, conf)
 	if err != nil {
+		blog.Errorf("[upgrade y3.7.201911141719] InitHostPropertyApplyDataModel error  %s", err.Error())
 		return err
 	}
-
-	enums, err := metadata.ParseEnumOption(ctx, state.Option)
-	if err != nil {
-		return err
-	}
-	for index := range enums {
-		if enums[index].ID == "FR" {
-			enums[index].Name = "法国"
-		}
-	}
-
-	return db.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), mapstr.MapStr{common.BKOptionField: enums})
+	return
 }

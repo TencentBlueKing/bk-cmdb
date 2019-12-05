@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
-	validator "configcenter/src/source_controller/coreservice/core/instances"
 )
 
 // default group
@@ -38,8 +38,8 @@ func AppRow() []*Attribute {
 
 	groupAppRole := mCommon.AppRole
 
-	lifeCycleOption := []validator.EnumVal{{ID: "1", Name: "测试中", Type: "text"}, {ID: "2", Name: "已上线", Type: "text", IsDefault: true}, {ID: "3", Name: "停运", Type: "text"}}
-	languageOption := []validator.EnumVal{{ID: "1", Name: "中文", Type: "text", IsDefault: true}, {ID: "2", Name: "English", Type: "text"}}
+	lifeCycleOption := []metadata.EnumVal{{ID: "1", Name: "测试中", Type: "text"}, {ID: "2", Name: "已上线", Type: "text", IsDefault: true}, {ID: "3", Name: "停运", Type: "text"}}
+	languageOption := []metadata.EnumVal{{ID: "1", Name: "中文", Type: "text", IsDefault: true}, {ID: "2", Name: "English", Type: "text"}}
 	dataRows := []*Attribute{
 		&Attribute{ObjectID: objID, PropertyID: "bk_biz_name", PropertyName: "业务名", IsRequired: true, IsOnly: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "life_cycle", PropertyName: "生命周期", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: lifeCycleOption},
@@ -63,19 +63,19 @@ func AppRow() []*Attribute {
 // SetRow set structure
 func SetRow() []*Attribute {
 	objID := common.BKInnerObjIDSet
-	serviceStatusOption := []validator.EnumVal{{ID: "1", Name: "开放", Type: "text", IsDefault: true}, {ID: "2", Name: "关闭", Type: "text"}}
+	serviceStatusOption := []metadata.EnumVal{{ID: "1", Name: "开放", Type: "text", IsDefault: true}, {ID: "2", Name: "关闭", Type: "text"}}
 
 	dataRows := []*Attribute{
-		&Attribute{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: false, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: validator.IntOption{}},
+		&Attribute{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: false, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{}},
 		&Attribute{ObjectID: objID, PropertyID: "bk_set_name", PropertyName: "集群名字", IsRequired: true, IsOnly: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_set_desc", PropertyName: "集群描述", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "bk_set_env", PropertyName: "环境类型", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "测试", Type: "text"}, {ID: "2", Name: "体验", Type: "text"}, {ID: "3", Name: "正式", Type: "text", IsDefault: true}}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_set_env", PropertyName: "环境类型", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "测试", Type: "text"}, {ID: "2", Name: "体验", Type: "text"}, {ID: "3", Name: "正式", Type: "text", IsDefault: true}}},
 		&Attribute{ObjectID: objID, PropertyID: "bk_service_status", PropertyName: "服务状态", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: serviceStatusOption},
 		&Attribute{ObjectID: objID, PropertyID: "description", PropertyName: "备注", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "bk_capacity", PropertyName: "设计容量", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: validator.IntOption{Min: "1", Max: "999999999"}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_capacity", PropertyName: "设计容量", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{Min: "1", Max: "999999999"}},
 
 		&Attribute{ObjectID: objID, PropertyID: common.BKChildStr, PropertyName: "", IsRequired: false, IsOnly: false, IsSystem: true, PropertyType: "", Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: common.BKInstParentStr, PropertyName: "", IsSystem: true, IsRequired: true, IsOnly: true, PropertyType: common.FieldTypeInt, Option: validator.IntOption{}},
+		&Attribute{ObjectID: objID, PropertyID: common.BKInstParentStr, PropertyName: "", IsSystem: true, IsRequired: true, IsOnly: true, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{}},
 	}
 	return dataRows
 }
@@ -83,11 +83,11 @@ func SetRow() []*Attribute {
 // ModuleRow module structure
 func ModuleRow() []*Attribute {
 	objID := common.BKInnerObjIDModule
-	moduleTypeOption := []validator.EnumVal{{ID: "1", Name: "普通", Type: "text", IsDefault: true}, {ID: "2", Name: "数据库", Type: "text"}}
+	moduleTypeOption := []metadata.EnumVal{{ID: "1", Name: "普通", Type: "text", IsDefault: true}, {ID: "2", Name: "数据库", Type: "text"}}
 
 	dataRows := []*Attribute{
-		&Attribute{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: false, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: validator.IntOption{}},
-		&Attribute{ObjectID: objID, PropertyID: common.BKSetIDField, PropertyName: "集群ID", IsAPI: true, IsRequired: false, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: validator.IntOption{}},
+		&Attribute{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: false, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{}},
+		&Attribute{ObjectID: objID, PropertyID: common.BKSetIDField, PropertyName: "集群ID", IsAPI: true, IsRequired: false, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{}},
 		&Attribute{ObjectID: objID, PropertyID: common.BKModuleNameField, PropertyName: "模块名", IsRequired: true, IsOnly: true, IsEditable: true, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: common.BKChildStr, PropertyName: "", IsRequired: false, IsOnly: false, IsSystem: true, PropertyType: "", Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_module_type", PropertyName: "模块类型", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: moduleTypeOption},
@@ -120,8 +120,8 @@ func HostRow() []*Attribute {
 		&Attribute{ObjectID: objID, PropertyID: "bk_asset_id", PropertyName: "固资编号", IsRequired: false, IsOnly: false, IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_sn", PropertyName: "设备SN", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_comment", PropertyName: "备注", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "bk_service_term", PropertyName: "质保年限", IsRequired: false, IsOnly: false, IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: validator.IntOption{Min: "1", Max: "10"}},
-		&Attribute{ObjectID: objID, PropertyID: "bk_sla", PropertyName: "SLA级别", IsRequired: false, IsOnly: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "L1", Type: "text"}, {ID: "2", Name: "L2", Type: "text"}, {ID: "3", Name: "L3", Type: "text"}}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_service_term", PropertyName: "质保年限", IsRequired: false, IsOnly: false, IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{Min: "1", Max: "10"}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_sla", PropertyName: "SLA级别", IsRequired: false, IsOnly: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "L1", Type: "text"}, {ID: "2", Name: "L2", Type: "text"}, {ID: "3", Name: "L3", Type: "text"}}},
 		&Attribute{ObjectID: objID, PropertyID: common.BKCloudIDField, PropertyName: "云区域", IsRequired: false, IsOnly: true, IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: "singleasst", Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_state_name", PropertyName: "所在国家", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: stateEnum},
 		&Attribute{ObjectID: objID, PropertyID: "bk_province_name", PropertyName: "所在省份", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: provincesEnum},
@@ -129,20 +129,20 @@ func HostRow() []*Attribute {
 
 		//自动发现分组
 		&Attribute{ObjectID: objID, PropertyID: "bk_host_name", PropertyName: "主机名称", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeSingleChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: common.BKOSTypeField, PropertyName: "操作系统类型", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "Linux", Type: "text"}, {ID: "2", Name: "Windows", Type: "text"}}},
+		&Attribute{ObjectID: objID, PropertyID: common.BKOSTypeField, PropertyName: "操作系统类型", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "Linux", Type: "text"}, {ID: "2", Name: "Windows", Type: "text"}}},
 		&Attribute{ObjectID: objID, PropertyID: common.BKOSNameField, PropertyName: "操作系统名称", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_os_version", PropertyName: "操作系统版本", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_os_bit", PropertyName: "操作系统位数", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeSingleChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "bk_cpu", PropertyName: "CPU逻辑核心数", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeInt, Option: validator.IntOption{Min: "1", Max: "1000000"}},
-		&Attribute{ObjectID: objID, PropertyID: "bk_cpu_mhz", PropertyName: "CPU频率", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeInt, Unit: "Hz", Option: validator.IntOption{Min: "1", Max: "100000000"}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_cpu", PropertyName: "CPU逻辑核心数", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{Min: "1", Max: "1000000"}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_cpu_mhz", PropertyName: "CPU频率", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeInt, Unit: "Hz", Option: metadata.IntOption{Min: "1", Max: "100000000"}},
 		&Attribute{ObjectID: objID, PropertyID: "bk_cpu_module", PropertyName: "CPU型号", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeSingleChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "bk_mem", PropertyName: "内存容量", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeInt, Unit: "MB", Option: validator.IntOption{Min: "1", Max: "100000000"}},
-		&Attribute{ObjectID: objID, PropertyID: "bk_disk", PropertyName: "磁盘容量", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeInt, Unit: "GB", Option: validator.IntOption{Min: "1", Max: "100000000"}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_mem", PropertyName: "内存容量", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeInt, Unit: "MB", Option: metadata.IntOption{Min: "1", Max: "100000000"}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_disk", PropertyName: "磁盘容量", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeInt, Unit: "GB", Option: metadata.IntOption{Min: "1", Max: "100000000"}},
 		&Attribute{ObjectID: objID, PropertyID: "bk_mac", PropertyName: "内网MAC地址", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_outer_mac", PropertyName: "外网MAC", IsRequired: false, IsOnly: false, PropertyGroup: groupAgent, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		//agent 没有分组
 		&Attribute{ObjectID: objID, PropertyID: common.CreateTimeField, PropertyName: "录入时间", IsRequired: false, IsOnly: false, IsEditable: false, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeTime, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "import_from", PropertyName: "录入方式", IsRequired: false, IsOnly: false, IsEditable: false, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "excel", Type: "text"}, {ID: "2", Name: "agent", Type: "text"}, {ID: "3", Name: "api", Type: "text"}}},
+		&Attribute{ObjectID: objID, PropertyID: "import_from", PropertyName: "录入方式", IsRequired: false, IsOnly: false, IsEditable: false, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "excel", Type: "text"}, {ID: "2", Name: "agent", Type: "text"}, {ID: "3", Name: "api", Type: "text"}}},
 	}
 
 	return dataRows
@@ -157,23 +157,23 @@ func ProcRow() []*Attribute {
 	dataRows := []*Attribute{
 		//base info
 		//&Attribute{ObjectID: objID, PropertyID: "bk_process_id", PropertyName: "进程ID", IsSystem: true, IsRequired: true, IsOnly: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: "{}"},
-		&Attribute{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: true, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: validator.IntOption{}},
+		&Attribute{ObjectID: objID, PropertyID: common.BKAppIDField, PropertyName: "业务ID", IsAPI: true, IsRequired: true, IsOnly: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{}},
 		&Attribute{ObjectID: objID, PropertyID: common.BKProcessNameField, PropertyName: "进程名称", IsRequired: true, IsOnly: true, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "description", PropertyName: "进程描述", IsRequired: false, IsOnly: false, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 
 		//监听端口分组
-		&Attribute{ObjectID: objID, PropertyID: "bind_ip", PropertyName: "绑定IP", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupPort, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "127.0.0.1", Type: "text"}, {ID: "2", Name: "0.0.0.0", Type: "text"}, {ID: "3", Name: "第一内网IP", Type: "text"}, {ID: "4", Name: "第一外网IP", Type: "text"}}},
+		&Attribute{ObjectID: objID, PropertyID: "bind_ip", PropertyName: "绑定IP", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupPort, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "127.0.0.1", Type: "text"}, {ID: "2", Name: "0.0.0.0", Type: "text"}, {ID: "3", Name: "第一内网IP", Type: "text"}, {ID: "4", Name: "第一外网IP", Type: "text"}}},
 		&Attribute{ObjectID: objID, PropertyID: "port", PropertyName: "端口", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupPort, PropertyType: common.FieldTypeSingleChar, Option: common.PatternMultiplePortRange, Placeholder: `单个端口：8080 </br>多个连续端口：8080-8089 </br>多个不连续端口：8080-8089,8199`},
-		&Attribute{ObjectID: objID, PropertyID: "protocol", PropertyName: "协议", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupPort, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "TCP", Type: "text"}, {ID: "2", Name: "UDP", Type: "text"}}},
+		&Attribute{ObjectID: objID, PropertyID: "protocol", PropertyName: "协议", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupPort, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "TCP", Type: "text"}, {ID: "2", Name: "UDP", Type: "text"}}},
 
 		//gsekit 基础信息
 		&Attribute{ObjectID: objID, PropertyID: "bk_func_id", PropertyName: "功能ID", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_func_name", PropertyName: "功能名称", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "work_path", PropertyName: "工作路径", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeLongChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "user", PropertyName: "启动用户", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeSingleChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "proc_num", PropertyName: "启动数量", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeInt, Option: validator.IntOption{Min: "1", Max: "1000000"}},
-		&Attribute{ObjectID: objID, PropertyID: "priority", PropertyName: "启动优先级", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeInt, Option: validator.IntOption{Min: "1", Max: "100"}},
-		&Attribute{ObjectID: objID, PropertyID: "timeout", PropertyName: "操作超时时长", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeInt, Option: validator.IntOption{Min: "1", Max: "1000000"}},
+		&Attribute{ObjectID: objID, PropertyID: "proc_num", PropertyName: "启动数量", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{Min: "1", Max: "1000000"}},
+		&Attribute{ObjectID: objID, PropertyID: "priority", PropertyName: "启动优先级", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{Min: "1", Max: "100"}},
+		&Attribute{ObjectID: objID, PropertyID: "timeout", PropertyName: "操作超时时长", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{Min: "1", Max: "1000000"}},
 
 		//gsekit 进程信息
 		&Attribute{ObjectID: objID, PropertyID: "start_cmd", PropertyName: "启动命令", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeLongChar, Option: ""},
@@ -183,7 +183,7 @@ func ProcRow() []*Attribute {
 		&Attribute{ObjectID: objID, PropertyID: "reload_cmd", PropertyName: "进程重载命令", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeLongChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "pid_file", PropertyName: "PID文件路径", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeLongChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "auto_start", PropertyName: "是否自动拉起", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeBool, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "auto_time_gap", PropertyName: "拉起间隔", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeInt, Option: validator.IntOption{Min: "1", Max: "1000000"}},
+		&Attribute{ObjectID: objID, PropertyID: "auto_time_gap", PropertyName: "拉起间隔", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: mCommon.GroupNone, PropertyType: common.FieldTypeInt, Option: metadata.IntOption{Min: "1", Max: "1000000"}},
 	}
 	return dataRows
 }
@@ -202,7 +202,7 @@ func SwitchRow() []*Attribute {
 		&Attribute{ObjectID: objID, PropertyID: "bk_operator", PropertyName: "维护人", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_os_detail", PropertyName: "操作系统详情", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_detail", PropertyName: "详细描述", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "bk_biz_status", PropertyName: "运营状态", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "待运营", Type: "text"}, {ID: "2", Name: "运营中", Type: "text"}, {ID: "3", Name: "已下架", Type: "text"}}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_biz_status", PropertyName: "运营状态", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "待运营", Type: "text"}, {ID: "2", Name: "运营中", Type: "text"}, {ID: "3", Name: "已下架", Type: "text"}}},
 	}
 	return dataRows
 }
@@ -221,7 +221,7 @@ func RouterRow() []*Attribute {
 		&Attribute{ObjectID: objID, PropertyID: "bk_operator", PropertyName: "维护人", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_os_detail", PropertyName: "操作系统详情", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_detail", PropertyName: "详细描述", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "bk_biz_status", PropertyName: "运营状态", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "待运营", Type: "text"}, {ID: "2", Name: "运营中", Type: "text"}, {ID: "3", Name: "已下架", Type: "text"}}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_biz_status", PropertyName: "运营状态", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "待运营", Type: "text"}, {ID: "2", Name: "运营中", Type: "text"}, {ID: "3", Name: "已下架", Type: "text"}}},
 	}
 	return dataRows
 }
@@ -240,7 +240,7 @@ func LoadBalanceRow() []*Attribute {
 		&Attribute{ObjectID: objID, PropertyID: "bk_operator", PropertyName: "维护人", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_os_detail", PropertyName: "操作系统详情", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_detail", PropertyName: "详细描述", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "bk_biz_status", PropertyName: "运营状态", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "待运营", Type: "text"}, {ID: "2", Name: "运营中", Type: "text"}, {ID: "3", Name: "已下架", Type: "text"}}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_biz_status", PropertyName: "运营状态", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "待运营", Type: "text"}, {ID: "2", Name: "运营中", Type: "text"}, {ID: "3", Name: "已下架", Type: "text"}}},
 	}
 	return dataRows
 }
@@ -259,12 +259,12 @@ func FirewallRow() []*Attribute {
 		&Attribute{ObjectID: objID, PropertyID: "bk_operator", PropertyName: "维护人", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_os_detail", PropertyName: "操作系统详情", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		&Attribute{ObjectID: objID, PropertyID: "bk_detail", PropertyName: "详细描述", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeLongChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: "bk_biz_status", PropertyName: "运营状态", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []validator.EnumVal{{ID: "1", Name: "待运营", Type: "text"}, {ID: "2", Name: "运营中", Type: "text"}, {ID: "3", Name: "已下架", Type: "text"}}},
+		&Attribute{ObjectID: objID, PropertyID: "bk_biz_status", PropertyName: "运营状态", IsRequired: false, IsOnly: false, IsPre: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: []metadata.EnumVal{{ID: "1", Name: "待运营", Type: "text"}, {ID: "2", Name: "运营中", Type: "text"}, {ID: "3", Name: "已下架", Type: "text"}}},
 	}
 	return dataRows
 }
 
-var stateEnum = []validator.EnumVal{
+var stateEnum = []metadata.EnumVal{
 	{ID: "AR", Name: "阿根廷", Type: "text"},
 	{ID: "AD", Name: "安道尔", Type: "text"},
 	{ID: "AE", Name: "阿联酋", Type: "text"},
@@ -513,7 +513,7 @@ var stateEnum = []validator.EnumVal{
 	{ID: "ZW", Name: "津巴布韦", Type: "text"},
 }
 
-var provincesEnum = []validator.EnumVal{
+var provincesEnum = []metadata.EnumVal{
 	{ID: "110000", Name: "北京市", Type: "text"},
 	{ID: "120000", Name: "天津市", Type: "text"},
 	{ID: "130000", Name: "河北省", Type: "text"},
@@ -550,7 +550,7 @@ var provincesEnum = []validator.EnumVal{
 	{ID: "820000", Name: "澳门特别行政区", Type: "text"},
 }
 
-var ispNameEnum = []validator.EnumVal{
+var ispNameEnum = []metadata.EnumVal{
 	{ID: "0", Name: "其他", Type: "text"},
 	{ID: "1", Name: "电信", Type: "text"}, {ID: "2", Name: "联通", Type: "text"}, {ID: "3", Name: "移动", Type: "text"},
 }
