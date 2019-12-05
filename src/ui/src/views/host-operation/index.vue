@@ -117,14 +117,6 @@
                     props: {}
                 },
                 tabList: [{
-                    id: 'hostAttrsAutoApply',
-                    label: this.$t('属性自动应用'),
-                    confirmed: false,
-                    component: HostAttrsAutoApply.name,
-                    props: {
-                        info: []
-                    }
-                }, {
                     id: 'createServiceInstance',
                     label: this.$t('新增服务实例'),
                     confirmed: false,
@@ -145,6 +137,14 @@
                     label: this.$t('移动到空闲机的主机'),
                     confirmed: false,
                     component: MoveToIdleHost.name,
+                    props: {
+                        info: []
+                    }
+                }, {
+                    id: 'hostAttrsAutoApply',
+                    label: this.$t('属性自动应用'),
+                    confirmed: false,
+                    component: HostAttrsAutoApply.name,
                     props: {
                         info: []
                     }
@@ -182,7 +182,7 @@
                 const map = {
                     remove: ['deletedServiceInstance', 'moveToIdleHost'],
                     idle: ['deletedServiceInstance'],
-                    business: ['hostAttrsAutoApply', 'createServiceInstance', 'deletedServiceInstance']
+                    business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply']
                 }
                 const available = map[this.type]
                 return this.tabList.filter(tab => available.includes(tab.id) && tab.props.info.length > 0)
