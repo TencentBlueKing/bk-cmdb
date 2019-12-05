@@ -94,7 +94,7 @@ const menus = [{
         route: getMenuRoute(businessViews, MENU_BUSINESS_SERVICE_CATEGORY, 'business')
     }, {
         id: MENU_BUSINESS_HOST_APPLY,
-        i18n: '主机属性自动应用',
+        i18n: '主机自动应用',
         icon: 'icon-cc-nav-service-topo',
         route: getMenuRoute(businessViews, MENU_BUSINESS_HOST_APPLY, 'business')
     }, {

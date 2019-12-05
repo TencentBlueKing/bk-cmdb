@@ -1,6 +1,7 @@
 <template>
     <bk-table
         header-cell-class-name="header-cell"
+        ext-cls="property-config-table"
         :data="modulePropertyList"
         @selection-change="handleSelectionChange"
     >
@@ -13,27 +14,23 @@
         </bk-table-column>
         <bk-table-column
             v-if="multiple"
-            :width="300"
             :label="$t('已配置的模块')"
-            :render-header="(h, data) => renderTableHeader(h, data, '主机属于多个模块，但主机的属性值仅能有唯一值')"
+            :render-header="(h, data) => renderColumnHeader(h, data, '主机属于多个模块，但主机的属性值仅能有唯一值')"
             class-name="table-cell-module-path"
         >
             <template slot-scope="{ row }">
-                <template v-if="row.__extra__.moduleList.length">
-                    <template v-for="(item, index) in row.__extra__.moduleList">
-                        <div :key="index" v-show="showMore.expanded || index < showMore.max" class="path-item">
-                            {{$parent.getModulePath(item.bk_module_id)}}
-                        </div>
-                    </template>
-                    <div
-                        v-show="row.__extra__.moduleList.length > showMore.max"
-                        :class="['show-more', { expanded: showMore.expanded }]"
-                        @click="showMore.expanded = !showMore.expanded"
-                    >
-                        {{showMore.expanded ? '收起' : '展开更多'}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
+                <template v-for="(id, index) in moduleIdList">
+                    <div :key="index" v-show="showMore.expanded[row.id] || index < showMore.max" class="path-item">
+                        {{$parent.getModulePath(id)}}
                     </div>
                 </template>
-                <span v-else>--</span>
+                <div
+                    v-show="moduleIdList.length > showMore.max"
+                    :class="['show-more', { expanded: showMore.expanded[row.id] }]"
+                    @click="handleToggleExpanded(row.id)"
+                >
+                    {{showMore.expanded[row.id] ? '收起' : '展开更多'}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
+                </div>
             </template>
         </bk-table-column>
         <bk-table-column
@@ -43,22 +40,23 @@
         >
             <template slot-scope="{ row }">
                 <template v-if="multiple">
-                    <template v-if="row.__extra__.moduleList.length">
-                        <template v-for="(item, index) in row.__extra__.moduleList">
-                            <div :key="index" v-show="showMore.expanded || index < showMore.max" class="value-item">
-                                {{item.bk_property_value | formatter(row) | unit(row.unit)}}
-                            </div>
-                        </template>
-                        <div v-show="row.__extra__.moduleList.length > showMore.max" class="show-more">&nbsp;</div>
+                    <template v-for="(id, index) in moduleIdList">
+                        <div :key="index" v-show="showMore.expanded[row.id] || index < showMore.max" class="value-item">
+                            {{getRuleValue(row.id, id) | formatter(row) | unit(row.unit)}}
+                        </div>
                     </template>
-                    <span v-else>--</span>
+                    <div v-show="moduleIdList.length > showMore.max" class="show-more">&nbsp;</div>
                 </template>
                 <template v-else>
                     {{row.__extra__.value | formatter(row) | unit(row.unit)}}
                 </template>
             </template>
         </bk-table-column>
-        <bk-table-column v-if="!readonly" :label="$t(multiple ? '修改后' : '值')" class-name="table-cell-form-element">
+        <bk-table-column
+            v-if="!readonly"
+            :label="$t(multiple ? '修改后' : '值')"
+            class-name="table-cell-form-element"
+        >
             <template slot-scope="{ row }">
                 <div class="form-element-content">
                     <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
@@ -67,9 +65,9 @@
         </bk-table-column>
         <bk-table-column
             v-if="!readonly"
-            width="200"
+            width="180"
             :label="$t('操作')"
-            :render-header="multiple ? (h, data) => renderTableHeader(h, data, '删除操作不影响原有配置') : null"
+            :render-header="multiple ? (h, data) => renderColumnHeader(h, data, '删除操作不影响原有配置') : null"
         >
             <template slot-scope="{ row }">
                 <bk-button theme="primary" text @click="handlePropertyRowDel(row)">删除</bk-button>
@@ -86,6 +84,10 @@
         },
         props: {
             checkedPropertyIdList: {
+                type: Array,
+                default: () => ([])
+            },
+            moduleIdList: {
                 type: Array,
                 default: () => ([])
             },
@@ -113,7 +115,7 @@
                 ignoreRuleIds: [],
                 showMore: {
                     max: 10,
-                    expanded: false
+                    expanded: {}
                 }
             }
         },
@@ -156,7 +158,9 @@
                             const property = this.$tools.clone(findProperty)
                             // 初始化值
                             if (this.multiple) {
-                                property.__extra__.moduleList = this.ruleList.filter(item => item.bk_attribute_id === property.id)
+                                property.__extra__.ruleList = this.ruleList.filter(item => item.bk_attribute_id === property.id)
+                                // 默认值设定为空串
+                                property.__extra__.value = ''
                             } else {
                                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
                                 property.__extra__.ruleId = rule.id
@@ -186,17 +190,23 @@
                     }
                 })
             },
+            getRuleValue (attrId, moduleId) {
+                return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.bk_module_id === moduleId) || {}).bk_property_value || ''
+            },
             reset () {
                 if (!this.hasRuleDraft) {
                     this.modulePropertyList = []
                 }
             },
-            renderTableHeader (h, data, tips) {
+            renderColumnHeader (h, data, tips) {
                 const directive = {
                     content: tips,
                     placement: 'bottom-start'
                 }
                 return <span>{ data.column.label } <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={ directive }></i></span>
+            },
+            handleToggleExpanded (id) {
+                this.showMore.expanded = { ...this.showMore.expanded, ...{ [id]: !this.showMore.expanded[id] } }
             },
             handleSelectionChange (value) {
                 this.$emit('selection-change', value)
@@ -204,6 +214,9 @@
             handlePropertyRowDel (property) {
                 const checkedIndex = this.checkedPropertyIdList.findIndex(id => id === property.id)
                 this.checkedPropertyIdList.splice(checkedIndex, 1)
+
+                // 清理展开状态
+                delete this.showMore.expanded[property.id]
             },
             handlePropertyValueChange (value) {
                 this.$emit('property-value-change', value)
@@ -215,6 +228,8 @@
 <style lang="scss" scoped>
     .form-element-content {
         width: 80%;
+        padding-top: 8px;
+        padding-bottom: 8px;
     }
     .path-item,
     .value-item {
@@ -236,22 +251,32 @@
     }
 </style>
 <style lang="scss">
-    .table-cell-module-path:not(.header-cell) {
-        .cell {
-            padding-top: 8px;
-            padding-bottom: 8px;
-        }
-    }
-    .table-cell-form-element {
-        .cell {
+    .property-config-table {
+        overflow: unset;
+        .bk-table-body-wrapper {
             overflow: unset;
-            display: block;
         }
-        .search-input-wrapper {
-            position: relative;
+
+        .table-cell-module-path:not(.header-cell) {
+            .cell {
+                padding-top: 8px;
+                padding-bottom: 8px;
+                overflow: unset;
+                display: block;
+            }
         }
-        .form-objuser .suggestion-list {
-            z-index: 1000;
+
+        .table-cell-form-element {
+            .cell {
+                overflow: unset;
+                display: block;
+            }
+            .search-input-wrapper {
+                position: relative;
+            }
+            .form-objuser .suggestion-list {
+                z-index: 1000;
+            }
         }
     }
 </style>
