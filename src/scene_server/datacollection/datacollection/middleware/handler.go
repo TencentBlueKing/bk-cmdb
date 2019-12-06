@@ -15,6 +15,7 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/auth/extensions"
@@ -58,6 +59,15 @@ func (d *Discover) parseOwnerId(msg string) string {
 	return ownerId
 }
 
+func (d *Discover) CreateInstKey(objID string, ownerID string, val []string) string {
+	return fmt.Sprintf("cc:v3:inst[%s:%s:%s:%s]",
+		common.CCSystemCollectorUserName,
+		ownerID,
+		objID,
+		strings.Join(val, ":"),
+	)
+}
+
 func (d *Discover) GetInstFromRedis(instKey string) (map[string]interface{}, error) {
 
 	val, err := d.redisCli.Get(instKey).Result()
@@ -94,7 +104,7 @@ func (d *Discover) TryUnsetRedis(key string) {
 	}
 }
 
-func (d *Discover) GetInst(ownerID, objID string, instKey string) (map[string]interface{}, error) {
+func (d *Discover) GetInst(ownerID, objID string, instKey string, cond map[string]interface{}) (map[string]interface{}, error) {
 	rid := util.GetHTTPCCRequestID(d.httpHeader)
 	instData, err := d.GetInstFromRedis(instKey)
 	if err == nil {
@@ -102,11 +112,6 @@ func (d *Discover) GetInst(ownerID, objID string, instKey string) (map[string]in
 		return instData, nil
 	} else {
 		blog.Errorf("get inst from redis error: %s", err)
-	}
-
-	cond := map[string]interface{}{
-		common.BKInstKeyField: instKey,
-		common.BKObjIDField:   objID,
 	}
 
 	resp, err := d.CoreAPI.CoreService().Instance().ReadInstance(d.ctx, d.httpHeader, objID, &metadata.QueryCondition{Condition: cond})
@@ -138,18 +143,73 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 
 	objID := d.parseObjID(msg)
 
+	// get must check unique to judge if the instance exists
+	cond := map[string]interface{}{
+		common.BKObjIDField:   objID,
+		common.BKOwnerIDField: ownerID,
+		"must_check":          true,
+	}
+	uniqueResp, err := d.CoreAPI.CoreService().Model().ReadModelAttrUnique(d.ctx, d.httpHeader, metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		blog.Errorf("search model unique failed, cond: %s, error: %s, rid: %s", cond, err.Error(), rid)
+		return fmt.Errorf("search model unique failed: %s", err.Error())
+	}
+	if !uniqueResp.Result {
+		blog.Errorf("search model unique failed, cond: %s, error message: %s, rid: %s", cond, uniqueResp.ErrMsg, rid)
+		return fmt.Errorf("search model unique failed: %s", uniqueResp.ErrMsg)
+	}
+	if uniqueResp.Data.Count != 1 {
+		return fmt.Errorf("model %s has wrong must check unique num", objID)
+	}
+	keyIDs := make([]int64, 0)
+	for _, key := range uniqueResp.Data.Info[0].Keys {
+		keyIDs = append(keyIDs, int64(key.ID))
+	}
+	keys := make([]string, 0)
+	cond = map[string]interface{}{
+		common.BKObjIDField:   objID,
+		common.BKOwnerIDField: ownerID,
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: keyIDs,
+		},
+	}
+	attrResp, err := d.CoreAPI.CoreService().Model().ReadModelAttr(d.ctx, d.httpHeader, objID, &metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		blog.Errorf("search model attribute failed, cond: %s, error: %s, rid: %s", cond, err.Error(), rid)
+		return fmt.Errorf("search model attribute failed: %s", err.Error())
+	}
+	if !attrResp.Result {
+		blog.Errorf("search model attribute failed, cond: %s, error message: %s, rid: %s", cond, attrResp.ErrMsg, rid)
+		return fmt.Errorf("search model attribute failed: %s", attrResp.ErrMsg)
+	}
+	if attrResp.Data.Count <= 0 {
+		blog.Errorf("unique model attribute count illegal, cond: %s, rid: %s", cond, rid)
+		return fmt.Errorf("search model attribute failed: %s", attrResp.ErrMsg)
+	}
+	for _, attr := range attrResp.Data.Info {
+		keys = append(keys, attr.PropertyID)
+	}
+
 	bodyData, err := d.parseData(msg)
 	if err != nil {
 		return fmt.Errorf("parse data error: %s", err)
 	}
 
-	instKey := bodyData[common.BKInstKeyField]
-	instKeyStr, ok := instKey.(string)
-	if !ok || instKeyStr == "" {
-		return fmt.Errorf("skip inst because of empty collect_key: %s", instKeyStr)
+	cond = map[string]interface{}{
+		common.BKObjIDField:   objID,
+		common.BKOwnerIDField: ownerID,
 	}
-
-	inst, err := d.GetInst(ownerID, objID, instKeyStr)
+	valArr := make([]string, 0)
+	for _, key := range keys {
+		val := util.GetStrByInterface(bodyData[key])
+		if val == "" {
+			return fmt.Errorf("skip inst because of empty unique key %s value", key)
+		}
+		valArr = append(valArr, val)
+		cond[key] = bodyData[key]
+	}
+	instKeyStr := d.CreateInstKey(objID, ownerID, valArr)
+	inst, err := d.GetInst(ownerID, objID, instKeyStr, cond)
 	if nil != err {
 		return fmt.Errorf("get inst error: %s", err)
 	}
