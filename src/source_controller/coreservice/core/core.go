@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
 	"context"
+	"net/http"
 )
 
 // ModelAttributeGroup model attribute group methods definitions
@@ -131,8 +132,8 @@ type DataSynchronizeOperation interface {
 
 // TopoOperation methods
 type TopoOperation interface {
-	SearchMainlineModelTopo(ctx context.Context, withDetail bool) (*metadata.TopoModelNode, error)
-	SearchMainlineInstanceTopo(ctx context.Context, objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
+	SearchMainlineModelTopo(ctx context.Context, header http.Header, withDetail bool) (*metadata.TopoModelNode, error)
+	SearchMainlineInstanceTopo(ctx context.Context, header http.Header, objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
 }
 
 // HostOperation methods

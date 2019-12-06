@@ -198,5 +198,13 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	}
 	blog.Infof("jobs: count: %d", len(jobs))
 
+	// finalJobs := make([]meta.WorkRequest, 0)
+	// for _, job := range jobs {
+	// 	if job.ResourceType == meta.PlatResource {
+	// 		finalJobs = append(finalJobs, job)
+	// 	}
+	// }
+	// return &finalJobs
+
 	return &jobs
 }
