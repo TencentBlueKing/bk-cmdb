@@ -14,13 +14,12 @@ package core
 
 import (
 	"context"
+    "net/http"
 
-	"configcenter/src/common/errors"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/selector"
-	"context"
-	"net/http"
+    "configcenter/src/common/errors"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    "configcenter/src/common/selector"
 )
 
 // ModelAttributeGroup model attribute group methods definitions
