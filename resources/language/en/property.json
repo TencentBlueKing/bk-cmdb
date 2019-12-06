@@ -30,6 +30,8 @@
     "module_property_bk_bak_operator": "backup operator",
     "module_property_service_category_id": "service category id",
     "module_property_service_template_id": "service template id",
+    "module_property_set_template_id": "set template id",
+    "module_property_apply_host_property_enabled": "auto apply host property",
 
     "plat_property_bk_cloud_name": "cloud area",
     "plat_property_bk_supplier_account": "supplier",

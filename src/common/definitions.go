@@ -304,6 +304,8 @@ const (
 	// BKModuleNameField the module name field
 	BKModuleNameField = "bk_module_name"
 
+	HostApplyEnabledField = "host_apply_enabled"
+
 	// BKSubscriptionIDField the subscription id field
 	BKSubscriptionIDField = "subscription_id"
 	// BKSubscriptionNameField the subscription name field
@@ -470,6 +472,8 @@ const (
 
 	BKSetTemplateIDField = "set_template_id"
 
+	HostApplyRuleIDField = "host_apply_rule_id"
+
 	BKParentIDField = "bk_parent_id"
 	BKRootIDField   = "bk_root_id"
 
@@ -594,6 +598,8 @@ const (
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
 	BKGroupField               = "group"
+
+	BKAttributeIDField = "bk_attribute_id"
 )
 
 const (
