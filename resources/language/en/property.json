@@ -130,7 +130,7 @@
     
     "bk_firewall_property_bk_asset_id":"asset id",
     "bk_firewall_property_bk_sn":"SN",
-  "bk_firewall_property_bk_inst_name": "name",
+    "bk_firewall_property_bk_inst_name": "name",
     "bk_firewall_property_bk_func":"purpose",
     "bk_firewall_property_bk_vendor":"vendor",
     "bk_firewall_property_bk_model":"model",
@@ -139,9 +139,9 @@
     "bk_firewall_property_bk_os_detail":"os detail",
     "bk_firewall_property_bk_detail":"detail",
     "bk_firewall_property_bk_biz_status":"business status",
-  
-    "bk_weblogic_property_bk_inst_name": "middleware",
-    "bk_weblogic_property_bk_inst_key": "name",
+
+    "bk_weblogic_property_bk_inst_name": "name",
+    "bk_weblogic_property_bk_inst_key": "middleware",
     "bk_weblogic_property_bk_version":"version",
     "bk_weblogic_property_bk_patch_version":"patch version",
     "bk_weblogic_property_bk_main_path":"main path",
@@ -154,9 +154,9 @@
     "bk_weblogic_property_bk_jvm_free_mem":"JVM max free memory",
     "bk_weblogic_property_bk_jvm_capacity":"JVM heap capacity",
     "bk_weblogic_property_bk_jvm_used_mem":"JVM heap available",
-    
-    "bk_tomcat_property_bk_inst_name":"middleware",
-    "bk_tomcat_property_bk_inst_key": "name",
+
+    "bk_tomcat_property_bk_inst_name":"name",
+    "bk_tomcat_property_bk_inst_key": "middleware",
     "bk_tomcat_property_bk_version":"version",
     "bk_tomcat_property_bk_patch_version":"patch version",
     "bk_tomcat_property_bk_main_path":"main path",
@@ -167,8 +167,8 @@
     "bk_tomcat_property_bk_detail":"detail",
     "bk_tomcat_property_bk_jdk_version":"JDK version",
 
-    "bk_apache_property_bk_inst_name":"middleware",
-    "bk_apache_property_bk_inst_key": "name",
+    "bk_apache_property_bk_inst_name":"name",
+    "bk_apache_property_bk_inst_key": "middleware",
     "bk_apache_property_bk_version":"version",
     "bk_apache_property_bk_patch_version":"patch version",
     "bk_apache_property_bk_main_path":"main path",

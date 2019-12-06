@@ -123,7 +123,7 @@
     
     "bk_firewall_property_bk_asset_id":"固资编号",
     "bk_firewall_property_bk_sn":"SN",
-  "bk_firewall_property_bk_inst_name": "名称",
+    "bk_firewall_property_bk_inst_name": "名称",
     "bk_firewall_property_bk_func":"用途",
     "bk_firewall_property_bk_vendor":"厂商",
     "bk_firewall_property_bk_model":"设备型号",
@@ -132,8 +132,8 @@
     "bk_firewall_property_bk_os_detail":"操作系统详情",
     "bk_firewall_property_bk_detail":"详细描述",
     "bk_firewall_property_bk_biz_status":"运营状态",
-  "bk_weblogic_property_bk_inst_name": "中间件标识",
-  "bk_weblogic_property_bk_inst_key": "名称",
+    "bk_weblogic_property_bk_inst_name": "名称",
+    "bk_weblogic_property_bk_inst_key": "中间件标识",
     "bk_weblogic_property_bk_version":"版本",
     "bk_weblogic_property_bk_patch_version":"补丁版本",
     "bk_weblogic_property_bk_main_path":"主目录",
@@ -148,6 +148,7 @@
     "bk_weblogic_property_bk_jvm_used_mem":"JVM堆的当前可用的内存",
     
     "bk_tomcat_property_bk_name":"名称",
+    "bk_tomcat_property_bk_inst_key":"中间件标识",
     "bk_tomcat_property_bk_version":"版本",
     "bk_tomcat_property_bk_patch_version":"补丁版本",
     "bk_tomcat_property_bk_main_path":"主目录",
@@ -159,6 +160,7 @@
     "bk_tomcat_property_bk_jdk_version":"JDK版本",
 
     "bk_apache_property_bk_name":"名称",
+    "bk_apache_property_bk_inst_key":"中间件标识",
     "bk_apache_property_bk_version":"版本",
     "bk_apache_property_bk_patch_version":"补丁版本",
     "bk_apache_property_bk_main_path":"主目录",
