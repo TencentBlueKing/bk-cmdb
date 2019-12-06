@@ -57,7 +57,7 @@
         >
         </host-property-modal>
         <leave-confirm
-            v-bind="leaveConfirm"
+            v-bind="leaveConfirmConfig"
             title="是否放弃？"
             content="启用步骤未完成，是否放弃当前配置"
             ok-text="留在当前页"
@@ -73,6 +73,7 @@
     import propertyConfigTable from './property-config-table'
     import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
     export default {
+        name: 'multi-module-config',
         components: {
             leaveConfirm,
             hostPropertyModal,
@@ -103,7 +104,7 @@
                 propertyModalVisible: false,
                 nextButtonDisabled: false,
                 delButtonDisabled: true,
-                leaveConfirm: {
+                leaveConfirmConfig: {
                     id: 'multiModule',
                     active: true
                 }
@@ -124,7 +125,7 @@
         },
         created () {
             this.initData()
-            this.leaveConfirm.active = !this.isDel
+            this.leaveConfirmConfig.active = !this.isDel
         },
         mounted () {
             this.setShowMoreLinkStatus()
@@ -209,7 +210,7 @@
             },
             goBack () {
                 // 删除离开不用确认
-                this.leaveConfirm.active = !this.isDel
+                this.leaveConfirmConfig.active = !this.isDel
                 this.$nextTick(function () {
                     // 回到入口页
                     this.$router.push({
@@ -244,7 +245,7 @@
                     rules: modulePropertyList
                 })
 
-                this.leaveConfirm.active = false
+                this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
                     this.$router.push({
                         name: 'hostApplyConfirm',

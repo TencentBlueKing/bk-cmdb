@@ -28,9 +28,9 @@ export default [{
         }
     })
 }, {
-    name: 'hostApplyBatchEdit',
-    path: 'host-apply/batch-edit',
-    component: () => import('./batch-edit'),
+    name: 'hostApplyEdit',
+    path: 'host-apply/edit',
+    component: () => import('./edit'),
     meta: new Meta({
         owner: MENU_BUSINESS,
         menu: {
