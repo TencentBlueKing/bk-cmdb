@@ -16,13 +16,17 @@ import (
 	"encoding/json"
 
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 
 	"github.com/mitchellh/mapstructure"
 )
 
 func Decode2Struct(m map[string]interface{}, st interface{}) error {
 	config := &mapstructure.DecoderConfig{
-		DecodeHook:       metadata.StringToTimeDurationHookFunc(),
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			metadata.StringToTimeDurationHookFunc(),
+			querybuilder.MapToQueryFilterHookFunc(),
+		),
 		WeaklyTypedInput: true,
 		Result:           &st,
 	}
