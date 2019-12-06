@@ -26,7 +26,7 @@
                 immediate: true,
                 handler (value, oldValue) {
                     if (value === oldValue) return
-                    else if ([undefined, null, '', '--'].includes(value)) {
+                    if ([undefined, null, '', '--'].includes(value)) {
                         this.localText = '--'
                         return
                     }
