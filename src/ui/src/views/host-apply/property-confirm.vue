@@ -32,7 +32,7 @@
             </div>
         </div>
         <leave-confirm
-            v-bind="leaveConfirm"
+            v-bind="leaveConfirmConfig"
             title="是否放弃？"
             content="启用步骤未完成，是否放弃当前配置"
             ok-text="留在当前页"
@@ -72,7 +72,7 @@
                     total: 0
                 },
                 conflictNum: 0,
-                leaveConfirm: {
+                leaveConfirmConfig: {
                     id: 'propertyConfirm',
                     active: true
                 },
@@ -90,7 +90,7 @@
         watch: {
         },
         beforeRouteLeave (to, from, next) {
-            const prevRouteName = this.isBatch ? 'hostApplyBatchEdit' : MENU_BUSINESS_HOST_APPLY
+            const prevRouteName = this.isBatch ? 'hostApplyEdit' : MENU_BUSINESS_HOST_APPLY
             if (to.name !== prevRouteName) {
                 this.$store.commit('hostApply/clearRuleDraft')
             }
@@ -99,14 +99,15 @@
         created () {
             // 无配置数据时强制跳转至入口页
             if (!Object.keys(this.propertyConfig).length) {
-                this.leaveConfirm.active = false
+                this.leaveConfirmConfig.active = false
                 this.$router.push({
                     name: MENU_BUSINESS_HOST_APPLY
                 })
+            } else {
+                this.showFeatureTips = this.featureTipsParams['hostApplyConfirm']
+                this.setBreadcrumbs()
+                this.initData()
             }
-            this.showFeatureTips = this.featureTipsParams['hostApplyConfirm']
-            this.setBreadcrumbs()
-            this.initData()
         },
         methods: {
             ...mapActions('hostApply', [
@@ -170,7 +171,7 @@
 
                 this.applyRequest.then(() => {
                     // 应用请求完成则不需要离开确认
-                    this.leaveConfirm.active = false
+                    this.leaveConfirmConfig.active = false
 
                     const failHostIds = this.$refs.applyStatusModal.fail.map(item => item.bk_host_id)
                     propertyConfig = { ...propertyConfig, ...{ bk_host_ids: failHostIds } }
@@ -188,7 +189,7 @@
                 this.goBack()
             },
             handlePrevStep () {
-                this.leaveConfirm.active = false
+                this.leaveConfirmConfig.active = false
                 this.$router.back()
             },
             handleStatusModalBack () {

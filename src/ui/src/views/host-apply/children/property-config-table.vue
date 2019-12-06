@@ -252,24 +252,24 @@
 </style>
 <style lang="scss">
     .property-config-table {
-        overflow: unset;
+        overflow: unset !important;
         .bk-table-body-wrapper {
-            overflow: unset;
+            overflow: unset !important;
         }
 
         .table-cell-module-path:not(.header-cell) {
             .cell {
                 padding-top: 8px;
                 padding-bottom: 8px;
-                overflow: unset;
-                display: block;
+                overflow: unset !important;
+                display: block !important;
             }
         }
 
         .table-cell-form-element {
             .cell {
-                overflow: unset;
-                display: block;
+                overflow: unset !important;
+                display: block !important;
             }
             .search-input-wrapper {
                 position: relative;
