@@ -115,7 +115,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		}
 
 	case meta.HostFavorite:
-	    iamResourceType = BizHostInstance
+		iamResourceType = BizHostInstance
 
 	case meta.Process:
 		iamResourceType = BizProcessInstance

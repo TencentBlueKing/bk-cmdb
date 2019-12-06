@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -23,10 +24,10 @@ import (
 )
 
 // SearchMainlineBusinessTopo get topo tree of mainline model
-func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, bkBizID int64, withDetail bool) (*metadata.TopoInstanceNode, error) {
+func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, header http.Header, bkBizID int64, withDetail bool) (*metadata.TopoInstanceNode, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	bizTopoNode, err := m.SearchMainlineModelTopo(ctx, false)
+	bizTopoNode, err := m.SearchMainlineModelTopo(ctx, header, false)
 	if err != nil {
 		blog.Errorf("get mainline model topo info failed, %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get mainline model topo info failed, %+v", err)
@@ -42,22 +43,22 @@ func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, bkBizID in
 	im.SetModelTree(ctx, bizTopoNode)
 	im.LoadModelParentMap(ctx)
 
-	if err := im.LoadSetInstances(ctx); err != nil {
+	if err := im.LoadSetInstances(ctx, header); err != nil {
 		blog.Errorf("get set instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)
 		return nil, fmt.Errorf("get set instances by business:%d failed, %+v", bkBizID, err)
 	}
 
-	if err := im.LoadModuleInstances(ctx); err != nil {
+	if err := im.LoadModuleInstances(ctx, header); err != nil {
 		blog.Errorf("get module instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)
 		return nil, fmt.Errorf("get module instances by business:%d failed, %+v", bkBizID, err)
 	}
 
-	if err := im.LoadMainlineInstances(ctx); err != nil {
+	if err := im.LoadMainlineInstances(ctx, header); err != nil {
 		blog.Errorf("get other mainline instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)
 		return nil, fmt.Errorf("get other mainline instances by business:%d failed, %+v", bkBizID, err)
 	}
 
-	if err := im.ConstructBizTopoInstance(ctx, withDetail); err != nil {
+	if err := im.ConstructBizTopoInstance(ctx, header, withDetail); err != nil {
 		blog.Errorf("construct business:%d detail as topo instance failed, %+v, rid: %s", bkBizID, err, rid)
 		return nil, fmt.Errorf("construct business:%d detail as topo instance failed, %+v", bkBizID, err)
 	}
@@ -86,7 +87,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, bkBizID in
 	}
 	blog.V(3).Infof("instanceMap before check is: %s, rid: %s", instanceMapStr, rid)
 
-	if err := im.CheckAndFillingMissingModels(ctx, withDetail); err != nil {
+	if err := im.CheckAndFillingMissingModels(ctx, header, withDetail); err != nil {
 		blog.Errorf("check and filling missing models failed, business:%d %+v, rid: %s", bkBizID, err, rid)
 		return nil, fmt.Errorf("check and filling missing models failed, business:%d %+v", bkBizID, err)
 	}
@@ -98,7 +99,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, bkBizID in
 	}
 	blog.V(3).Infof("instanceMap after check: %s, rid: %s", instanceMapStr, rid)
 
-	if err := im.ConstructInstanceTopoTree(ctx, withDetail); err != nil {
+	if err := im.ConstructInstanceTopoTree(ctx, header, withDetail); err != nil {
 		blog.Errorf("get other mainline instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)
 		return nil, fmt.Errorf("get other mainline instances by business:%d failed, %+v", bkBizID, err)
 	}
