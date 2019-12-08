@@ -59,6 +59,7 @@ const (
 	ResourceSync             ResourceType = "resourceSync" // 云资源发现
 	UserCustom               ResourceType = "usercustom"   // 用户自定义
 	SystemBase               ResourceType = "systemBase"
+	InstallBK                ResourceType = "installBK"
 )
 
 const (
