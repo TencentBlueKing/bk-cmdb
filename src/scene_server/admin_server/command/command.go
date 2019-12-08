@@ -34,10 +34,6 @@ const (
 // Parse run app command
 func Parse(args []string) error {
 	ctx := context.Background()
-	if len(args) <= 1 || args[1] != bkbizCmdName {
-		return nil
-	}
-
 	var (
 		exportFlag     bool
 		importFlag     bool
@@ -60,6 +56,7 @@ func Parse(args []string) error {
 	cmdFlags.StringVar(&configPosition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
 	cmdFlags.StringVar(&bizName, "biz_name", "蓝鲸", "export/import the specified business topo")
 	err := cmdFlags.Parse(args[1:])
+
 	if err != nil {
 		return err
 	}
@@ -95,7 +92,7 @@ func Parse(args []string) error {
 		}
 		fmt.Printf("exporting %s business to %s in \033[34m%s\033[0m mode\n", bizName, filePath, mode)
 		if err := export(ctx, db, opt); err != nil {
-			fmt.Printf("export error: %s", err.Error())
+			fmt.Printf("export error: %s\n", err.Error())
 			os.Exit(2)
 		}
 		fmt.Printf("blueking %s has been export to %s\n", bizName, filePath)
@@ -108,14 +105,14 @@ func Parse(args []string) error {
 		opt.mini = false
 		opt.scope = scopeAll
 		if err := importBKBiz(ctx, db, opt); err != nil {
-			fmt.Printf("import error: %s", err.Error())
+			fmt.Printf("import error: %s\n", err.Error())
 			os.Exit(2)
 		}
 		if !dryRunFlag {
 			fmt.Printf("%s business has been import from %s\n", bizName, filePath)
 		}
 	} else {
-		fmt.Printf("invalide argument")
+		fmt.Printf("invalide argument\n")
 	}
 
 	os.Exit(0)
