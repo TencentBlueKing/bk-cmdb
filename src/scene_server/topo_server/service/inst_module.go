@@ -393,8 +393,10 @@ func (s *Service) SearchRuleRelatedTopoNodes(params types.ContextParams, pathPar
 				return false
 			}
 			// case-insensitive contains
-			if util.CaseInsensitiveContains(node.InstanceName, valueStr) {
-				return true
+			if r.Operator == querybuilder.OperatorContains {
+				if util.CaseInsensitiveContains(node.InstanceName, valueStr) {
+					return true
+				}
 			}
 			return false
 		})
