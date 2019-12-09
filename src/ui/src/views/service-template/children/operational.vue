@@ -10,14 +10,17 @@
                         <span class="color-danger">*</span>
                     </label>
                     <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
-                        <bk-input type="text" class="cmdb-form-input" id="templateName"
-                            name="templateName"
-                            :placeholder="$t('请输入模板名称')"
-                            :disabled="!isCreateMode"
-                            v-model.trim="formData.templateName"
-                            v-validate="'required|singlechar|length:256'">
-                        </bk-input>
-                        <p class="form-error">{{errors.first('templateName')}}</p>
+                        <template v-if="isCreateMode">
+                            <bk-input type="text" class="cmdb-form-input" id="templateName"
+                                name="templateName"
+                                :placeholder="$t('请输入模板名称')"
+                                :disabled="!isCreateMode"
+                                v-model.trim="formData.templateName"
+                                v-validate="'required|singlechar|length:256'">
+                            </bk-input>
+                            <p class="form-error">{{errors.first('templateName')}}</p>
+                        </template>
+                        <span v-else class="template-name" :title="formData.templateName">{{formData.templateName}}</span>
                     </div>
                 </div>
                 <div class="form-info clearfix">
@@ -235,6 +238,9 @@
             },
             setActive () {
                 return this.$route.params.active
+            },
+            isEdit () {
+                return this.$route.params.isEdit
             }
         },
         created () {
@@ -278,6 +284,9 @@
                     if (this.setActive) {
                         Bus.$emit('active-change', 'instance')
                         this.$route.params.active = null
+                    }
+                    if (this.isEdit) {
+                        this.insideMode = 'edit'
                     }
                 } catch (e) {
                     console.error(e)
@@ -640,6 +649,12 @@
                 }
                 .cmdb-form-item {
                     width: 520px;
+                }
+                .template-name {
+                    @include inlineBlock;
+                    @include ellipsis;
+                    width: 100%;
+                    line-height: 36px;
                 }
                 .bk-select {
                     width: 254px;
