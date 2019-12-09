@@ -112,7 +112,7 @@ func Parse(args []string) error {
 			fmt.Printf("%s business has been import from %s\n", bizName, filePath)
 		}
 	} else {
-		fmt.Printf("invalide argument\n")
+		return nil
 	}
 
 	os.Exit(0)
