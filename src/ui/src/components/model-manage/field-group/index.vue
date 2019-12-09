@@ -518,9 +518,6 @@
             },
             setPropertIndex (properties) {
                 properties.sort((propertyA, propertyB) => propertyA['bk_property_index'] - propertyB['bk_property_index'])
-                properties.forEach((property, index) => {
-                    property['bk_property_index'] = index
-                })
                 return properties
             },
             handleCancelAddProperty () {
@@ -728,24 +725,18 @@
                 }
             },
             updatePropertyIndex () {
-                const properties = []
-                let propertyIndex = 0
-                this.groupedProperties.forEach(group => {
-                    group.properties.forEach(property => {
-                        if (property['bk_property_index'] !== propertyIndex || property['bk_property_group'] !== group.info['bk_group_id']) {
-                            property['bk_property_index'] = propertyIndex
-                            property['bk_property_group'] = group.info['bk_group_id']
-                            properties.push(property)
-                        }
-                        propertyIndex++
-                    })
+                const updateProperties = []
+                const flatProperties = this.groupedProperties.reduce((acc, group) => acc.concat(group.properties), [])
+                flatProperties.forEach((property, index) => {
+                    if (property['bk_property_index'] !== index) {
+                        property['bk_property_index'] = index
+                        updateProperties.push(property)
+                    }
                 })
-                if (!properties.length) {
-                    return false
-                }
+                if (!updateProperties.length) return
                 this.updatePropertyGroup({
                     params: this.$injectMetadata({
-                        data: properties.map(property => {
+                        data: updateProperties.map(property => {
                             return {
                                 condition: {
                                     'bk_obj_id': this.objId,
