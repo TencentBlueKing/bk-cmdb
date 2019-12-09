@@ -88,6 +88,7 @@
                         fromCache: true
                     }
                 })
+                this.filter.name = this.$route.params.bizName
                 this.setTableHeader()
                 this.getTableData()
             } catch (e) {
