@@ -185,6 +185,11 @@ type HostApplyResult struct {
 	HostID         int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
 }
 
+type MultipleHostApplyResult struct {
+	ErrorContainer `json:",inline"`
+	HostResults    []HostApplyResult `field:"host_results" json:"host_results" bson:"host_results" mapstructure:"host_results"`
+}
+
 type ErrorContainer struct {
 	ErrCode int    `json:"error_code" json:"error_code" bson:"error_code" mapstructure:"error_code"`
 	ErrMsg  string `json:"error_message" json:"error_message" bson:"error_message" mapstructure:"error_message"`
