@@ -205,6 +205,10 @@ const (
 
 	// one argument: maxValue
 	CCErrExceedMaxOperationRecordsAtOnce = 1199077
+	// CCErrTopoModuleNotFoundError module [%s] does not exist in the business topology
+	CCErrCommTopoModuleNotFoundError = 1199078
+	// CCErrBizNotFoundError business [%s] does not exist
+	CCErrCommBizNotFoundError = 1199079
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
