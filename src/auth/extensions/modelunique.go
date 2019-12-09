@@ -14,6 +14,7 @@ package extensions
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -34,8 +35,8 @@ func (am *AuthManager) collectUniqueByUniqueIDs(ctx context.Context, header http
 
 	// get model by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(uniqueIDs)
-	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjUnique, queryCond)
+	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
+	resp, err := am.clientSet.CoreService().Model().ReadModelAttrUnique(ctx, header, queryCond)
 	// resp, err := am.clientSet.CoreService().Model().ReadModelAttrUnique(ctx, header, queryCond)
 	if err != nil {
 		return nil, fmt.Errorf("get model unique by id: %+v failed, err: %+v", uniqueIDs, err)
@@ -50,12 +51,17 @@ func (am *AuthManager) collectUniqueByUniqueIDs(ctx context.Context, header http
 	uniques := make([]ModelUniqueSimplify, 0)
 	for _, item := range resp.Data.Info {
 		unique := ModelUniqueSimplify{}
-		u, err := unique.Parse(item)
+		data, err := json.Marshal(item)
 		if err != nil {
-			blog.Errorf("collectUniqueByUniqueIDs %+v failed, parse unique %+v failed, err: %+v, rid: %s", uniqueIDs, item, err, rid)
-			return nil, fmt.Errorf("parse unique from db data failed, err: %+v", err)
+			blog.ErrorJSON("get model unique by id %s failed, parse unique %s failed, err: %s, rid: %s", uniqueIDs, item, err, rid)
+			return nil, fmt.Errorf("get model unique marshel json %+v failed, err: %+v", item, err)
 		}
-		uniques = append(uniques, *u)
+		err = json.Unmarshal(data, &unique)
+		if err != nil {
+			blog.ErrorJSON("get model unique by id %s failed, parse unique %s failed, err: %s, rid: %s", uniqueIDs, string(data), err, rid)
+			return nil, fmt.Errorf("get user api unmarshel json %s failed, err: %+v", string(data), err)
+		}
+		uniques = append(uniques, unique)
 	}
 	blog.V(5).Infof("collectUniqueByUniqueIDs result: %+v", uniques)
 	return uniques, nil
