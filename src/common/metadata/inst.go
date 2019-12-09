@@ -24,6 +24,7 @@ type SetInst struct {
 	SetName   string `bson:"bk_set_name"`
 	SetStatus string `bson:"bk_service_status"`
 	SetEnv    string `bson:"bk_set_env"`
+	ParentID  int64  `bson:"bk_parent_id"`
 }
 
 type ModuleInst struct {
@@ -116,6 +117,21 @@ type HostIdentModule struct {
 	ModuleName string `json:"bk_module_name"`    // 所属模块(bk_module_name)：			字符串（最大长度25）
 	SetStatus  string `json:"bk_service_status"` // 集群服务状态（bk_set_status）			数字
 	SetEnv     string `json:"bk_set_env"`        // 环境类型（bk_set_type）					数字
+	Layer      *Layer `json:"layer"`             // 自定义层级
+}
+
+type Layer struct {
+	InstID   int64  `json:"bk_inst_id"`
+	InstName string `json:"bk_inst_name"`
+	ObjID    string `json:"bk_obj_id"`
+	Child    *Layer `json:"child"`
+}
+
+type MainlineInstInfo struct {
+	InstID   int64  `json:"bk_inst_id" bson:"bk_inst_id"`
+	InstName string `json:"bk_inst_name" bson:"bk_inst_name"`
+	ObjID    string `json:"bk_obj_id" bson:"bk_obj_id"`
+	ParentID int64  `json:"bk_parent_id" bson:"bk_parent_id"`
 }
 
 // SearchIdentifierParam defines the param
