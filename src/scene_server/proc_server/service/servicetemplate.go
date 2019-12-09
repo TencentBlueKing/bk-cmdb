@@ -147,7 +147,7 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		}
 	}
 
-	if input.Page.Limit >= common.BKMaxPageLimit {
+	if input.Page.Limit > common.BKMaxPageSize {
 		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
 		return
 	}
@@ -205,7 +205,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		}
 	}
 
-	if input.Page.Limit >= common.BKMaxPageLimit {
+	if input.Page.Limit > common.BKMaxPageSize {
 		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
 		return
 	}

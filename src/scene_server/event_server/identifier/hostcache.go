@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 )
 
@@ -68,9 +69,10 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 		asstMap := make(map[string]string)
 		asstArr := make([]metadata.Association, 0)
 		cond := condition.CreateCondition().Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
-		err = db.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(ctx, &asstArr)
+		condMap := util.SetQueryOwner(cond.ToMapStr().ToMapInterface(), identifier.SupplierAccount)
+		err = db.Table(common.BKTableNameObjAsst).Find(condMap).All(ctx, &asstArr)
 		if err != nil {
-			blog.ErrorJSON("findHostLayerInfo query mainline association info error. condition:%s", cond.ToMapStr())
+			blog.ErrorJSON("findHostLayerInfo query mainline association info error. condition:%s", condMap)
 			return nil, err
 		}
 		for _, asst := range asstArr {
