@@ -59,7 +59,7 @@ func (s *Service) BKSystemInstall(req *restful.Request, resp *restful.Response) 
 	err := srvData.lgc.NewSpecial().BkSystemInstall(srvData.ctx, common.BKAppName, input)
 	if err != nil {
 		blog.Errorf("BkSystemInstall decode handle err: %v, rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
