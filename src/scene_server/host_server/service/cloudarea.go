@@ -147,6 +147,16 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteHeaderAndJson(http.StatusInternalServerError, res, "application/json")
 		return
 	}
+
+	// register plat to iam
+	platID := int64(res.Data.Created.ID)
+	if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platID); err != nil {
+		blog.Errorf("CreatePlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
+		ccErr := srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     res.Data,
@@ -202,6 +212,15 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	iamResource, err := s.AuthManager.MakeResourcesByPlatID(srvData.header, authmeta.Delete, platID)
+	if err != nil {
+		blog.Errorf("DelPlat failed, MakeResourcesByPlatID failed, err: %v, input:%d, rid:%s", err, platID, srvData.rid)
+		result := &meta.RespError{
+			Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed),
+		}
+		_ = resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
 	delCond := &meta.DeleteOption{
 		Condition: mapstr.MapStr{common.BKCloudIDField: platID},
 	}
@@ -218,12 +237,20 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
 		return
 
-	} else {
-		_ = resp.WriteEntity(meta.Response{
-			BaseResp: meta.SuccessBaseResp,
-			Data:     "",
-		})
 	}
+
+	// deregister plat
+	if err := s.AuthManager.Authorize.DeregisterResource(srvData.ctx, iamResource...); err != nil {
+		blog.Errorf("DelPlat success, but DeregisterResource from iam failed, platID: %d, err: %+v,rid:%s", platID, err, srvData.rid)
+		ccErr := srvData.ccErr.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	_ = resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     "",
+	})
 }
 
 func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
