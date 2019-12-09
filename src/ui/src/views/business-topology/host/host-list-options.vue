@@ -86,8 +86,10 @@
                     :key="collection.id"
                     :id="collection.id"
                     :name="collection.name">
-                    <span class="collection-name" :title="collection.name">{{collection.name}}</span>
-                    <i class="bk-icon icon-close" @click.stop="handleDeleteCollection(collection)"></i>
+                    <div class="collection-item">
+                        <span class="collection-name" :title="collection.name">{{collection.name}}</span>
+                        <i class="bk-icon icon-close" @click.stop="handleDeleteCollection(collection)"></i>
+                    </div>
                 </bk-option>
                 <div slot="extension">
                     <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
@@ -494,6 +496,24 @@
             }
         }
     }
-    .clipboard-list {
+    /deep/ {
+        .collection-item {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            &:hover {
+                .icon-close {
+                    display: block;
+                }
+            }
+            .collection-name {
+                @include ellipsis;
+            }
+            .icon-close {
+                display: none;
+                color: #979BA5;
+            }
+        }
     }
 </style>
