@@ -387,9 +387,10 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 			return 0, nil, params.Err.CCError(common.CCErrCommParseDBFailed)
 		}
 		result.Module = append(result.Module, metadata.InnerModule{
-			ModuleID:   module.ModuleID,
-			ModuleName: module.ModuleName,
-			Default:    module.Default,
+			ModuleID:         module.ModuleID,
+			ModuleName:       module.ModuleName,
+			Default:          module.Default,
+			HostApplyEnabled: module.HostApplyEnabled,
 		})
 	}
 

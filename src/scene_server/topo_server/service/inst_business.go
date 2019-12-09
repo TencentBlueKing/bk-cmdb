@@ -507,6 +507,28 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 	for _, item := range innerAppTopo.Module {
 		moduleIDArr = append(moduleIDArr, item.ModuleID)
 	}
+
+	// count host apply rules
+	listApplyRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: moduleIDArr,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostApplyRules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(params.Context, params.Header, bizID, listApplyRuleOption)
+	if err != nil {
+		blog.Errorf("fillStatistics failed, ListHostApplyRule failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, listApplyRuleOption, err, params.ReqID)
+		return nil, err
+	}
+	moduleRuleCount := make(map[int64]int64)
+	for _, item := range hostApplyRules.Info {
+		if _, exist := moduleRuleCount[item.ModuleID]; exist == false {
+			moduleRuleCount[item.ModuleID] = 0
+		}
+		moduleRuleCount[item.ModuleID] += 1
+	}
+
+	// count hosts
 	listHostOption := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		SetIDArr:      []int64{innerAppTopo.SetID},
@@ -542,9 +564,14 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 		if hostIDs, ok := moduleHostIDs[module.ModuleID]; ok == true {
 			moduleItem["host_count"] = len(util.IntArrayUnique(hostIDs))
 		}
+		moduleItem["host_apply_rule_count"] = 0
+		if ruleCount, ok := moduleRuleCount[module.ModuleID]; ok == true {
+			moduleItem["host_apply_rule_count"] = ruleCount
+		}
 		modules = append(modules, moduleItem)
 	}
 	set["module"] = modules
+
 	return set, nil
 }
 
@@ -557,12 +584,12 @@ func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams
 	}
 
 	query := &metadata.QueryBusinessRequest{
-        Fields:    fields,
-        Page:      metadata.BasePage{},
-        Condition: mapstr.MapStr{
-            common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
-        },
-    }
+		Fields: fields,
+		Page:   metadata.BasePage{},
+		Condition: mapstr.MapStr{
+			common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
+		},
+	}
 	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, query)
 	if nil != err {
 		blog.Errorf("ListAllBusinessSimplify failed, FindBusiness failed, err: %s, rid: %s", err.Error(), params.ReqID)

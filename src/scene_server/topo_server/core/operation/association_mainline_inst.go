@@ -218,7 +218,7 @@ func (assoc *association) SetMainlineInstAssociation(params types.ContextParams,
 	return nil
 }
 
-func (assoc *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64, withStatistics bool) ([]*metadata.TopoInstRst, error) {
+func (assoc *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64, withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, error) {
 
 	cond := &metadata.QueryInput{}
 	cond.Condition = mapstr.MapStr{
@@ -254,7 +254,7 @@ func (assoc *association) SearchMainlineAssociationInstTopo(params types.Context
 		results = append(results, tmp)
 	}
 
-	if err = assoc.fillMainlineChildInst(params, obj, results); err != nil {
+	if err = assoc.fillMainlineChildInst(params, obj, results, withDefault); err != nil {
 		blog.Errorf("[SearchMainlineAssociationInstTopo] fillMainlineChildInst for %+v failed: %v, rid: %s", results, err, params.ReqID)
 		return nil, err
 	}
@@ -462,7 +462,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	return nil
 }
 
-func (assoc *association) fillMainlineChildInst(params types.ContextParams, object model.Object, parentInsts []*metadata.TopoInstRst) error {
+func (assoc *association) fillMainlineChildInst(params types.ContextParams, object model.Object, parentInsts []*metadata.TopoInstRst, withDefault bool) error {
 	childObj, err := object.GetMainlineChildObject()
 	if err == io.EOF {
 		return nil
@@ -481,8 +481,13 @@ func (assoc *association) fillMainlineChildInst(params types.ContextParams, obje
 	cond.Field(common.BKInstParentStr).In(parentIDs)
 	if childObj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(childObj.Object().ObjectID)
-	} else if childObj.Object().ObjectID == common.BKInnerObjIDSet {
-		cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
+	}
+
+	// 不包含内置节点时
+	if withDefault == false {
+		if childObj.Object().ObjectID == common.BKInnerObjIDSet {
+			cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
+		}
 	}
 
 	_, childInsts, err := assoc.inst.FindInst(params, childObj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
@@ -526,5 +531,5 @@ func (assoc *association) fillMainlineChildInst(params types.ContextParams, obje
 		parentInst.Child = append(parentInst.Child, childInstMap[parentInst.InstID]...)
 	}
 
-	return assoc.fillMainlineChildInst(params, childObj, childTopoInsts)
+	return assoc.fillMainlineChildInst(params, childObj, childTopoInsts, withDefault)
 }
