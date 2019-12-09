@@ -1138,5 +1138,7 @@
     "表格冲突处理提示": "The host belongs to multiple modules, and the automatic application configuration of the same attribute is different. If it is not processed, the attribute value before the host transfer is maintained.",
     "已配置属性自动应用提示": "Configured with host attribute auto-apply, can't edit. {link}",
     "点击跳转查看配置详情": "View config.",
-    "系统限定不可修改": "System limited, unable to edit."
+    "系统限定不可修改": "System limited, unable to edit.",
+    "主机当前值": "Host current value",
+    "选定": "Selected"
 }
