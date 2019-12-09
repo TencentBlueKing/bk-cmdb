@@ -624,8 +624,7 @@ func (s *Service) listHostRelatedApplyRule(srvData *srvComm, bizID int64, option
 	rid := srvData.rid
 
 	relationOption := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		HostIDArr:     option.HostIDs,
+		HostIDArr: option.HostIDs,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},

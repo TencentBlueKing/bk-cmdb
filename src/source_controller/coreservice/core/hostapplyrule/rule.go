@@ -265,7 +265,9 @@ func (p *hostApplyRule) ListHostApplyRule(ctx core.ContextParams, bizID int64, o
 
 	filter := map[string]interface{}{
 		common.BkSupplierAccount: ctx.SupplierAccount,
-		common.BKAppIDField:      bizID,
+	}
+	if bizID != 0 {
+		filter[common.BKAppIDField] = bizID
 	}
 	if option.ModuleIDs != nil {
 		filter[common.BKModuleIDField] = map[string]interface{}{
