@@ -548,22 +548,110 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		logPreContents[hostID] = audit.AuditLog(srvData.ctx, hostID)
 	}
 
-	opt := &meta.UpdateOption{
-		Condition: mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDArr}},
-		Data:      mapstr.NewFromMap(data),
+	// filter fields locked by host apply rule
+	listRuleOption := meta.ListHostRelatedApplyRuleOption{
+		HostIDs: hostIDArr,
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
 	}
-	result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
-	if err != nil {
-		blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+	hostRules, ccErr := s.listHostRelatedApplyRule(srvData, 0, listRuleOption)
+	if ccErr != nil {
+		blog.Errorf("update host batch, listHostRelatedApplyRule failed, option: %+v, err: %v, rid: %s", listRuleOption, ccErr, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
 		return
 	}
-	if !result.Result {
-		blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-		return
+	attributeIDs := make([]int64, 0)
+	for _, rules := range hostRules {
+		for _, rule := range rules {
+			attributeIDs = append(attributeIDs, rule.AttributeID)
+		}
 	}
+	// get host attributes
+	if len(attributeIDs) > 0 {
+		hostAttributesFilter := &meta.QueryCondition{
+			Fields: []string{common.BKPropertyIDField, common.BKFieldID},
+			Limit: meta.SearchLimit{
+				Limit: common.BKNoLimit,
+			},
+			Condition: map[string]interface{}{
+				common.BKFieldID: map[string]interface{}{
+					common.BKDBIN: attributeIDs,
+				},
+			},
+		}
+		attributeResult, err := s.CoreAPI.CoreService().Model().ReadModelAttr(srvData.ctx, srvData.header, common.BKInnerObjIDHost, hostAttributesFilter)
+		if err != nil {
+			blog.Errorf("UpdateHostBatch failed, ReadModelAttr failed, param: %+v, err: %+v, rid:%s", hostAttributesFilter, err, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)})
+			return
+		}
+		if ccErr := attributeResult.CCError(); ccErr != nil {
+			blog.Errorf("UpdateHostBatch failed, ReadModelAttr failed, param: %+v, output: %+v, rid:%s", hostAttributesFilter, attributeResult, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+			return
+		}
+		attributeMap := make(map[int64]meta.Attribute)
+		for _, item := range attributeResult.Data.Info {
+			attributeMap[item.ID] = item
+		}
+		hostProperties := make(map[int64][]string)
+		for hostID, rules := range hostRules {
+			if _, exist := hostProperties[hostID]; exist == false {
+				hostProperties[hostID] = make([]string, 0)
+			}
+			for _, rule := range rules {
+				attribute, ok := attributeMap[rule.AttributeID]
+				if ok == false {
+					continue
+				}
+				hostProperties[hostID] = append(hostProperties[hostID], attribute.PropertyID)
+			}
+		}
 
+		for _, hostID := range hostIDArr {
+			updateData := make(map[string]interface{})
+			for key, value := range data {
+				properties, ok := hostProperties[hostID]
+				if ok == true && util.InStrArr(properties, key) {
+					continue
+				}
+				updateData[key] = value
+			}
+			opt := &meta.UpdateOption{
+				Condition: mapstr.MapStr{common.BKHostIDField: hostID},
+				Data:      mapstr.NewFromMap(updateData),
+			}
+			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
+			if err != nil {
+				blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, srvData.rid)
+				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+				return
+			}
+			if !result.Result {
+				blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
+				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+				return
+			}
+		}
+	} else {
+		// 退化到批量编辑
+		opt := &meta.UpdateOption{
+			Condition: mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDArr}},
+			Data:      mapstr.NewFromMap(data),
+		}
+		result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
+		if err != nil {
+			blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+			return
+		}
+		if !result.Result {
+			blog.ErrorJSON("UpdateHostBatch failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+			return
+		}
+	}
 	logLastContents := make([]meta.SaveAuditLogParams, 0)
 	for _, hostID := range hostIDArr {
 		audit := srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
