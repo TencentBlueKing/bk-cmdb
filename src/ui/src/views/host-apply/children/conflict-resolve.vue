@@ -214,9 +214,11 @@
         }
         .conflict-modules {
             height: 100%;
+            padding: 6px 0;
             .module-item {
                 display: flex;
                 line-height: 22px;
+                padding-left: 6px;
                 span {
                     width: 50%;
                     padding-right: 10px;
@@ -235,6 +237,9 @@
                 &.selected {
                     color: #3A84FF;
                     background-color: #E1ECFF;
+                    span:nth-child(2) {
+                        max-width: 50%;
+                    }
                 }
                 &:not(.selected):hover {
                     .check-model-value {
