@@ -727,6 +727,10 @@ func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) 
 		}
 
 	}
+
+	if field, err := processProperty.Validate(); err != nil {
+		return nil, fmt.Errorf("process illegal. field:%s, err:%s", field, err.Error())
+	}
 	return processProperty, nil
 
 }
