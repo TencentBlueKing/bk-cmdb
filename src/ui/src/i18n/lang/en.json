@@ -1130,5 +1130,8 @@
     "确认转移主机信息": "Do you want to assign the selected {num} hosts to the idle module of {name}?",
     "新建业务字段": "New Business Field",
     "所属服务分类": "Service category",
-    "关键字": "keywords"
+    "关键字": "keywords",
+    "从模板新建": "Create from template",
+    "直接新建": "Create directly",
+    "新建模块": "Create Module"
 }
