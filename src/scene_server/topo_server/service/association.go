@@ -65,6 +65,7 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 					blog.Errorf("AbortTransaction err: %+v", err)
 				}
 			}
+			sess.EndSession(params.Context)
 		}()
 	}
 
@@ -133,6 +134,7 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 					blog.Errorf("AbortTransaction err: %+v", err)
 				}
 			}
+			sess.EndSession(params.Context)
 		}()
 	}
 

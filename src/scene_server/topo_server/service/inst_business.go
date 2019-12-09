@@ -72,6 +72,7 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 					blog.Errorf("AbortTransaction err: %+v", err)
 				}
 			}
+			sess.EndSession(params.Context)
 		}()
 	}
 
