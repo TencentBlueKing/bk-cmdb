@@ -61,6 +61,7 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string, input *me
 		blog.ErrorJSON("BkSystemInstall convert name to cc id error. err:%s, input:%s, rid:%s", err, input, s.lgc.rid)
 		return err
 	}
+	// TODO auth logic
 	// 这里后续需要加鉴权方式
 	// 先鉴权后操作
 
