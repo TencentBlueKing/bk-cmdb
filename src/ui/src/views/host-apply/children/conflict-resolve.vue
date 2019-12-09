@@ -20,12 +20,12 @@
                                 :class="['module-item', { 'selected': item.selected }]"
                                 :key="index"
                             >
-                                <span v-if="item.is_current">主机当前值</span>
+                                <span v-if="item.is_current">{{$t('主机当前值')}}</span>
                                 <span v-else :title="getModulePath(item.bk_module_id)">{{getModulePath(item.bk_module_id)}}</span>
                                 <span :title="item.bk_property_value | formatter(row.bk_property_type, row.option)">
                                     {{item.bk_property_value | formatter(row.bk_property_type, row.option)}}
                                 </span>
-                                <i class="check-model-value" @click="handlePickValue(row, index, item.bk_property_value)">选定</i>
+                                <i class="check-model-value" @click="handlePickValue(row, index, item.bk_property_value)">{{$t('选定')}}</i>
                             </div>
                         </div>
                     </template>
@@ -218,11 +218,12 @@
                 display: flex;
                 line-height: 22px;
                 span {
-                    max-width: 50%;
+                    width: 50%;
                     padding-right: 10px;
                     @include ellipsis;
-                    &:first-child {
-                        width: calc(50% - 30px);
+                    &:nth-child(2) {
+                        width: auto;
+                        max-width: calc(50% - 30px);
                     }
                 }
                 .check-model-value {
