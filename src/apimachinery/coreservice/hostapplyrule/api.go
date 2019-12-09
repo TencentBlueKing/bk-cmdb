@@ -230,3 +230,31 @@ func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header htt
 
 	return ret.Data, nil
 }
+
+func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) ([]metadata.HostApplyResult, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data []metadata.HostApplyResult `json:"data"`
+	}{
+		BaseResp: metadata.BaseResp{},
+		Data:     make([]metadata.HostApplyResult, 0),
+	}
+	subPath := fmt.Sprintf("/updatemany/host/bk_biz_id/%d/update_by_host_apply", bizID)
+
+	err := p.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("RunHostApplyOnHosts failed, http request failed, err: %+v", err)
+		return ret.Data, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return ret.Data, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+	return ret.Data, nil
+}

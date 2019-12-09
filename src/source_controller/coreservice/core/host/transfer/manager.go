@@ -13,8 +13,6 @@
 package transfer
 
 import (
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -24,25 +22,33 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
+
+	"gopkg.in/redis.v5"
 )
 
 type TransferManager struct {
-	dbProxy    dal.RDB
-	eventCli   eventclient.Client
-	cache      *redis.Client
-	dependence OperationDependence
+	dbProxy             dal.RDB
+	eventCli            eventclient.Client
+	cache               *redis.Client
+	dependence          OperationDependence
+	hostApplyDependence HostApplyRuleDependence
 }
 
 type OperationDependence interface {
 	AutoCreateServiceInstanceModuleHost(ctx core.ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
 }
 
-func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence OperationDependence) *TransferManager {
+type HostApplyRuleDependence interface {
+	RunHostApplyOnHosts(ctx core.ContextParams, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) ([]metadata.HostApplyResult, errors.CCErrorCoder)
+}
+
+func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence OperationDependence, hostApplyDependence HostApplyRuleDependence) *TransferManager {
 	return &TransferManager{
-		dbProxy:    db,
-		cache:      cache,
-		eventCli:   ec,
-		dependence: dependence,
+		dbProxy:             db,
+		cache:               cache,
+		eventCli:            ec,
+		dependence:          dependence,
+		hostApplyDependence: hostApplyDependence,
 	}
 }
 
@@ -93,6 +99,12 @@ func (manager *TransferManager) TransferToInnerModule(ctx core.ContextParams, in
 				OriginIndex: hostID,
 			})
 		}
+	}
+	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
+		HostIDs: input.HostID,
+	}
+	if _, err := manager.hostApplyDependence.RunHostApplyOnHosts(ctx, input.ApplicationID, updateHostOption); err != nil {
+		blog.Warnf("TransferHostToInnerModule success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, ctx.ReqID)
 	}
 	if len(exceptionArr) > 0 {
 		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
@@ -197,6 +209,12 @@ func (manager *TransferManager) TransferToNormalModule(ctx core.ContextParams, i
 				OriginIndex: hostID,
 			})
 		}
+	}
+	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
+		HostIDs: input.HostID,
+	}
+	if _, err := manager.hostApplyDependence.RunHostApplyOnHosts(ctx, input.ApplicationID, updateHostOption); err != nil {
+		blog.Warnf("TransferToNormalModule success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, err: %+v, rid: %s", input.ApplicationID, updateHostOption, err, ctx.ReqID)
 	}
 	if len(exceptionArr) > 0 {
 		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
@@ -334,6 +352,13 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 				OriginIndex: hostID,
 			})
 		}
+	}
+
+	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
+		HostIDs: input.HostIDArr,
+	}
+	if _, err := manager.hostApplyDependence.RunHostApplyOnHosts(ctx, input.DstApplicationID, updateHostOption); err != nil {
+		blog.Warnf("TransferToAnotherBusiness success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, err: %+v, rid: %s", input.DstApplicationID, updateHostOption, err, ctx.ReqID)
 	}
 	if len(exceptionArr) > 0 {
 		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
