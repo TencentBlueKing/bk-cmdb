@@ -670,6 +670,12 @@ const (
 
 	// DefaultFaultModuleFlag the default fault module flag
 	DefaultFaultModuleFlag int = 2
+
+	// NormalModuleFlag create module by user , default =0
+	NormalModuleFlag int = 0
+
+	// NormalSetDefaultFlag user create set default field value
+	NormalSetDefaultFlag int64 = 0
 )
 const (
 	// FieldTypeSingleChar the single char filed type
