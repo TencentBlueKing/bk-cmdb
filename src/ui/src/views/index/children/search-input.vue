@@ -206,7 +206,7 @@
                 return this.isFullTextSearch ? this.$t('请输入关键字，点击或回车搜索') : this.$t('请输入IP开始搜索')
             },
             params () {
-                const keywords = this.keywords
+                const keywords = this.keywords.length > 32 ? this.keywords.slice(0, 32) : this.keywords
                 const notZhCn = keywords.replace(/\w\.?/g, '').length === 0
                 const singleSpecial = /[!"#$%&'()\*,-\./:;<=>?@\[\\\]^_`{}\|~]{1}/
                 const queryString = keywords.length === 1 ? keywords.replace(singleSpecial, '') : keywords
