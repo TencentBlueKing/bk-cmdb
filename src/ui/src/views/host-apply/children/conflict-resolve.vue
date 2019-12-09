@@ -1,14 +1,13 @@
 <template>
     <div class="conflict-layout">
-        <cmdb-tips class="resolve-tips"
-            :tips-style="{
-                height: '32px',
-                'line-height': '32px',
-                'font-size': '12px'
-            }"
-            :icon-style="{ 'font-size': '16px' }">
-            {{$t('解决应用字段冲突提示')}}
-        </cmdb-tips>
+        <feature-tips
+            class-name="resolve-tips"
+            feature-name="hostApply"
+            :show-tips="showFeatureTips"
+            :desc="$t('因为主机复用模块的自动应用策略不一致，导致策略失效，需要手动维护不一致的属性。要彻底解决此问题，可以修改复用模块的策略为一致或移除模块的策略配置')"
+            @close-tips="showFeatureTips = false"
+        >
+        </feature-tips>
         <div class="conflict-table" ref="conflictTable">
             <bk-table :data="conflictPropertyList">
                 <bk-table-column :label="$t('字段名称')" width="160" :resizable="false" prop="bk_property_name"></bk-table-column>
@@ -50,10 +49,12 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import featureTips from '@/components/feature-tips/index'
     import RESIZE_EVENTS from '@/utils/resize-events'
     import propertyFormElement from './property-form-element'
     export default {
         components: {
+            featureTips,
             propertyFormElement
         },
         props: {
@@ -73,12 +74,14 @@
                 result: {},
                 moduleMap: {},
                 scrollbar: false,
-                confirmButtonDisabled: false
+                confirmButtonDisabled: false,
+                showFeatureTips: false
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('hostApply', ['configPropertyList']),
+            ...mapGetters(['featureTipsParams']),
             moduleIds () {
                 return this.dataRow.bk_module_ids
             }
@@ -89,6 +92,7 @@
             }
         },
         created () {
+            this.showFeatureTips = this.featureTipsParams['hostApplyConfirm']
             this.getData()
         },
         mounted () {
@@ -266,22 +270,22 @@
     .conflict-table {
         overflow: unset;
         .bk-table-body-wrapper {
-            overflow: unset;
+            overflow: unset !important;
         }
 
         .table-cell-module-path:not(.header-cell) {
             .cell {
                 padding-top: 8px;
                 padding-bottom: 8px;
-                overflow: unset;
-                display: block;
+                overflow: unset !important;
+                display: block !important;
             }
         }
 
         .table-cell-form-element {
             .cell {
-                overflow: unset;
-                display: block;
+                overflow: unset !important;
+                display: block !important;
             }
             .search-input-wrapper {
                 position: relative;

@@ -45,11 +45,11 @@
                                     <div class="view-ft">
                                         <bk-button theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
                                         <bk-button theme="default" :disabled="!hasConflict" @click="handleViewConflict">
-                                            <span v-bk-tooltips="{ content: $t('无冲突需处理') }" v-if="!hasConflict">
-                                                {{$t('查看冲突')}}<em class="conflict-num">{{conflictNum}}</em>
+                                            <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
+                                                {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
                                             </span>
                                             <span v-else>
-                                                {{$t('查看冲突')}}<em class="conflict-num">{{conflictNum}}</em>
+                                                {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
                                             </span>
                                         </bk-button>
                                         <bk-button theme="default" @click="handleCloseApply">{{$t('关闭自动应用')}}</bk-button>
@@ -366,11 +366,6 @@
         .view-field {
             .field-list {
                 position: relative;
-                &:hover {
-                    .closed-mask {
-                        display: block;
-                    }
-                }
 
                 .field-list-table {
                     &.disabled {
@@ -384,7 +379,6 @@
                     min-height: 210px;
                     left: 0;
                     top: 0;
-                    display: none;
                 }
             }
             .view-bd,

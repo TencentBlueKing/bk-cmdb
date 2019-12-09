@@ -1,11 +1,5 @@
 <template>
     <div class="host-apply-confirm">
-        <feature-tips
-            :feature-name="'hostApply'"
-            :show-tips="showFeatureTips"
-            :desc="$t('冲突的属性若不解决，在应用时将被忽略，确定应用后，新转入该模块的主机将自动应用配置的属性')"
-            @close-tips="showFeatureTips = false">
-        </feature-tips>
         <div class="caption">
             <div class="title">请确认以下主机应用信息：</div>
             <div class="stat">
@@ -27,7 +21,7 @@
         <div class="bottom-actionbar">
             <div class="actionbar-inner">
                 <bk-button theme="default" @click="handlePrevStep">上一步</bk-button>
-                <bk-button theme="primary" @click="handleApply">保存并应用</bk-button>
+                <bk-button theme="primary" :disabled="applyButtonDisabled" @click="handleApply">保存并应用</bk-button>
                 <bk-button theme="default" @click="handleCancel">取消</bk-button>
             </div>
         </div>
@@ -53,7 +47,6 @@
 <script>
     import { mapGetters, mapState, mapActions } from 'vuex'
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
-    import featureTips from '@/components/feature-tips/index'
     import propertyConfirmTable from './children/property-confirm-table'
     import applyStatusModal from './children/apply-status'
     import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
@@ -61,12 +54,10 @@
         components: {
             leaveConfirm,
             applyStatusModal,
-            featureTips,
             propertyConfirmTable
         },
         data () {
             return {
-                showFeatureTips: false,
                 table: {
                     list: [],
                     total: 0
@@ -76,13 +67,14 @@
                     id: 'propertyConfirm',
                     active: true
                 },
-                applyRequest: null
+                applyRequest: null,
+                applyButtonDisabled: false
             }
         },
         computed: {
             ...mapState('hostApply', ['propertyConfig']),
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters(['featureTipsParams', 'supplierAccount']),
+            ...mapGetters(['supplierAccount']),
             isBatch () {
                 return this.$route.query.batch === 1
             }
@@ -104,7 +96,6 @@
                     name: MENU_BUSINESS_HOST_APPLY
                 })
             } else {
-                this.showFeatureTips = this.featureTipsParams['hostApplyConfirm']
                 this.setBreadcrumbs()
                 this.initData()
             }
@@ -128,6 +119,7 @@
                     this.table.total = previewData.count
                     this.conflictNum = previewData.unresolved_conflict_count
                 } catch (e) {
+                    this.applyButtonDisabled = true
                     console.error(e)
                 }
             },
@@ -143,8 +135,14 @@
                     label: this.$t(title)
                 }])
             },
-            async handleApply () {
-                const conflictResolveResult = this.$refs.propertyConfirmTable.conflictResolveResult
+            goBack () {
+                this.$store.commit('hostApply/clearRuleDraft')
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_APPLY
+                })
+            },
+            saveAndApply () {
+                const { conflictResolveResult } = this.$refs.propertyConfirmTable
                 const conflictResolvers = []
                 Object.keys(conflictResolveResult).forEach(key => {
                     const propertyList = conflictResolveResult[key]
@@ -179,11 +177,19 @@
                     this.$store.commit('hostApply/setPropertyConfig', propertyConfig)
                 })
             },
-            goBack () {
-                this.$store.commit('hostApply/clearRuleDraft')
-                this.$router.push({
-                    name: MENU_BUSINESS_HOST_APPLY
-                })
+            async handleApply () {
+                const allResolved = this.$refs.propertyConfirmTable.list.every(item => item.unresolved_conflict_count === 0)
+                if (allResolved) {
+                    this.saveAndApply()
+                } else {
+                    this.$bkInfo({
+                        title: this.$t('确认应用'),
+                        subTitle: this.$t('您还有无法自动应用的主机属性需确认，是要保留主机原有属性值不做修改吗？'),
+                        confirmFn: () => {
+                            this.saveAndApply()
+                        }
+                    })
+                }
             },
             handleCancel () {
                 this.goBack()

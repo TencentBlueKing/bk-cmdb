@@ -1,10 +1,5 @@
 <template>
     <div class="single-module-config">
-        <div class="config-head">
-            <h2 class="config-title">
-                <span class="module-name">{{getModuleName(moduleId)}}</span>
-            </h2>
-        </div>
         <div class="config-body">
             <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]">
                 <div class="choose-hd">
@@ -66,8 +61,6 @@
             return {
                 initRuleList: [],
                 checkedPropertyIdList: [],
-                moduleMap: {},
-                hasRule: false,
                 nextButtonDisabled: true,
                 propertyModalVisible: false,
                 leaveConfirmConfig: {
@@ -97,23 +90,8 @@
         methods: {
             async initData () {
                 try {
-                    const [ruleData, topopath] = await Promise.all([
-                        this.getRules(),
-                        this.getTopopath()
-                    ])
-                    const moduleMap = {}
-                    topopath.nodes.forEach(node => {
-                        moduleMap[node.topo_node.bk_inst_id] = node.topo_path
-                    })
-                    this.moduleMap = Object.freeze(moduleMap)
-
-                    // 重置配置表格数据
-                    if (this.$refs.propertyConfigTable) {
-                        this.$refs.propertyConfigTable.reset()
-                    }
-
+                    const ruleData = await this.getRules()
                     this.initRuleList = ruleData.info || []
-                    this.hasRule = ruleData.count > 0
                     const checkedPropertyIdList = this.initRuleList.map(item => item.bk_attribute_id)
                     this.checkedPropertyIdList = this.hasRuleDraft ? [...this.checkedPropertyIdList, ...checkedPropertyIdList] : checkedPropertyIdList
                 } catch (e) {
@@ -130,19 +108,6 @@
                         requestId: `getHostApplyRules`
                     }
                 })
-            },
-            getTopopath () {
-                return this.$store.dispatch('hostApply/getTopopath', {
-                    bizId: this.bizId,
-                    params: {
-                        topo_nodes: this.moduleIds.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
-                    }
-                })
-            },
-            getModuleName (id) {
-                const topoInfo = this.moduleMap[id] || []
-                const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
-                return target.bk_inst_name
             },
             toggleNextButtonDisabled () {
                 this.$nextTick(() => {
@@ -215,6 +180,7 @@
     .single-module-config {
         display: flex;
         flex-direction: column;
+        width: 1066px;
         height: 100%;
 
         .config-head,

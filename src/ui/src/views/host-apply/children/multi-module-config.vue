@@ -7,7 +7,7 @@
                     <div :class="['module-list', { 'show-more': showMore.isMoreModuleShowed }]" ref="moduleList">
                         <div class="module-item" :title="getModulePath(id)" v-for="(id, index) in moduleIds" :key="index">
                             <span class="module-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
-                            {{getModuleName(id)}}
+                            {{$parent.getModuleName(id)}}
                         </div>
                         <div
                             :class="['module-item', 'more', { 'opened': showMore.isMoreModuleShowed }]"
@@ -91,7 +91,6 @@
         },
         data () {
             return {
-                moduleMap: {},
                 initRuleList: [],
                 checkedPropertyIdList: [],
                 showMore: {
@@ -137,19 +136,10 @@
         methods: {
             async initData () {
                 try {
-                    const [ruleData, topopath] = await Promise.all([
-                        this.getRules(),
-                        this.getTopopath()
-                    ])
-                    const moduleMap = {}
-                    topopath.nodes.forEach(node => {
-                        moduleMap[node.topo_node.bk_inst_id] = node.topo_path
-                    })
-                    this.moduleMap = Object.freeze(moduleMap)
+                    const ruleData = await this.getRules()
                     this.initRuleList = ruleData.info
                     const attrIds = this.initRuleList.map(item => item.bk_attribute_id)
                     this.checkedPropertyIdList = [...new Set(attrIds)]
-                    this.checkedPropertyIdListCopy = [...this.checkedPropertyIdList]
                 } catch (e) {
                     console.log(e)
                 }
@@ -165,23 +155,8 @@
                     }
                 })
             },
-            getTopopath () {
-                return this.$store.dispatch('hostApply/getTopopath', {
-                    bizId: this.bizId,
-                    params: {
-                        topo_nodes: this.moduleIds.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
-                    }
-                })
-            },
             getModulePath (id) {
-                const info = this.moduleMap[id] || []
-                const path = info.map(node => node.bk_inst_name).reverse().join(' / ')
-                return path
-            },
-            getModuleName (id) {
-                const topoInfo = this.moduleMap[id] || []
-                const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
-                return target.bk_inst_name
+                return this.$parent.getModulePath(id)
             },
             setShowMoreLinkStatus () {
                 const moduleList = this.$refs.moduleList
@@ -300,6 +275,7 @@
 </script>
 <style lang="scss" scoped>
     .multi-module-config {
+        // width: 1066px;
         --labelWidth: 180px;
         .config-item {
             display: flex;
