@@ -394,8 +394,10 @@ func matchModule(ctx context.Context, module metadata.Module, option metadata.Se
 		if ok == false {
 			return false
 		}
-		if util.CaseInsensitiveContains(module.ModuleName, strValue) {
-			return true
+		if r.Operator == querybuilder.OperatorContains {
+			if util.CaseInsensitiveContains(module.ModuleName, strValue) {
+				return true
+			}
 		}
 		return false
 	})
@@ -414,12 +416,17 @@ func matchRule(ctx context.Context, rule metadata.HostApplyRule, attribute metad
 		if r.Field != strconv.FormatInt(attribute.ID, 10) {
 			return false
 		}
+		if r.Operator == querybuilder.OperatorExist {
+			return true
+		}
 		strValue, ok := r.Value.(string)
 		if ok == false {
 			return false
 		}
-		if util.CaseInsensitiveContains(prettyValue, strValue) {
-			return true
+		if r.Operator == querybuilder.OperatorContains {
+			if util.CaseInsensitiveContains(prettyValue, strValue) {
+				return true
+			}
 		}
 		return false
 	})
