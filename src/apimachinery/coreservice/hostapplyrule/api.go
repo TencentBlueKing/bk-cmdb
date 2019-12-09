@@ -231,14 +231,11 @@ func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header htt
 	return ret.Data, nil
 }
 
-func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) ([]metadata.HostApplyResult, errors.CCErrorCoder) {
+func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
-		Data []metadata.HostApplyResult `json:"data"`
-	}{
-		BaseResp: metadata.BaseResp{},
-		Data:     make([]metadata.HostApplyResult, 0),
-	}
+		Data metadata.MultipleHostApplyResult `json:"data"`
+	}{}
 	subPath := fmt.Sprintf("/updatemany/host/bk_biz_id/%d/update_by_host_apply", bizID)
 
 	err := p.client.Put().
