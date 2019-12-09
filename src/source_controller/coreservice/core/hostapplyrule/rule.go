@@ -28,12 +28,18 @@ import (
 )
 
 type hostApplyRule struct {
-	dbProxy dal.RDB
+	dbProxy    dal.RDB
+	dependence HostApplyDependence
 }
 
-func New(dbProxy dal.RDB) core.HostApplyRuleOperation {
+type HostApplyDependence interface {
+	UpdateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+}
+
+func New(dbProxy dal.RDB, dependence HostApplyDependence) core.HostApplyRuleOperation {
 	rule := &hostApplyRule{
-		dbProxy: dbProxy,
+		dbProxy:    dbProxy,
+		dependence: dependence,
 	}
 	return rule
 }

@@ -340,26 +340,6 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 		return errors.New(transferHostResult.Code, transferHostResult.ErrMsg)
 	}
 
-	// update host by host apply rule
-	applyPlan := transferPlan.HostApplyPlan
-	if len(applyPlan.UpdateFields) > 0 {
-		updateOption := &metadata.UpdateOption{
-			Data: applyPlan.GetUpdateData(),
-			Condition: map[string]interface{}{
-				common.BKHostIDField: applyPlan.HostID,
-			},
-		}
-		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
-		if err != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
-			return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := updateResult.CCError(); ccErr != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
-			return ccErr
-		}
-	}
-
 	return nil
 }
 

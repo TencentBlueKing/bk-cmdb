@@ -112,19 +112,21 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	s.cahce = cache
 
 	// connect the remote mongodb
+	instance := instances.New(db, s, cache)
+	hostApplyRuleCore := hostapplyrule.New(db, instance)
 	s.core = core.New(
 		model.New(db, s),
-		instances.New(db, s, cache),
+		instance,
 		association.New(db, s),
 		datasynchronize.New(db, s),
 		mainline.New(db),
-		host.New(db, cache, s),
+		host.New(db, cache, s, hostApplyRuleCore),
 		auditlog.New(db),
 		process.New(db, s),
 		label.New(db),
 		settemplate.New(db),
 		operation.New(db),
-		hostapplyrule.New(db),
+		hostApplyRuleCore,
 	)
 	return nil
 }
