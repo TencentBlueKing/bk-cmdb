@@ -146,7 +146,7 @@ type ListHosts struct {
 }
 
 func (option ListHosts) Validate() (string, error) {
-	if key, err := option.Page.Validate(); err != nil {
+	if key, err := option.Page.Validate(true); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
