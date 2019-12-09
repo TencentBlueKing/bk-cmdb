@@ -17,7 +17,6 @@ import (
 
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/pflag"
 )
@@ -46,7 +45,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 // Config transaction server config structure
 type Config struct {
 	MongoDB     mongo.Config
-	Redis       redis.Config
 	Transaction TransactionConfig
 }
 
