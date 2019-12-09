@@ -281,7 +281,7 @@ const (
 	findHostsWithModulesPattern       = "/api/v3/findmany/modulehost"
 
 	// 特殊接口，给蓝鲸业务使用
-	hostInstallPattern = "/api/v3/host/install"
+	hostInstallPattern = "/api/v3/host/install/bk"
 )
 
 var (

@@ -160,7 +160,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
 
 	// first install use api
-	api.Route(api.POST("/host/install").To(s.BKSystemInstall))
+	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
 
 	container.Add(api)
 
