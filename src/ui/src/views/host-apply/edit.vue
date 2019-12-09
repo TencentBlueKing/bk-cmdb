@@ -10,6 +10,7 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import multiModuleConfig from './children/multi-module-config'
     import singleModuleConfig from './children/single-module-config'
     import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
@@ -20,10 +21,12 @@
         },
         data () {
             return {
-                currentView: ''
+                currentView: '',
+                moduleMap: {}
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             moduleIds () {
                 const mid = this.$route.query.mid
                 let moduleIds = []
@@ -39,28 +42,62 @@
                 return this.$route.query.action
             },
             title () {
-                let title = '编辑'
+                let title
                 if (this.isBatch) {
-                    title = this.action === 'batch-del' ? '批量删除' : '批量编辑'
+                    title = this.$t(this.action === 'batch-del' ? '批量删除' : '批量编辑')
+                } else {
+                    title = `${this.$t('编辑')}${this.getModuleName(this.moduleIds[0])}`
                 }
                 return title
             }
         },
         created () {
-            this.setBreadcrumbs()
+            this.initData()
             this.currentView = this.isBatch ? multiModuleConfig.name : singleModuleConfig.name
         },
         methods: {
+            async initData () {
+                try {
+                    const topopath = await this.getTopopath()
+                    const moduleMap = {}
+                    topopath.nodes.forEach(node => {
+                        moduleMap[node.topo_node.bk_inst_id] = node.topo_path
+                    })
+                    this.moduleMap = Object.freeze(moduleMap)
+
+                    this.setBreadcrumbs()
+                } catch (e) {
+                    console.log(e)
+                }
+            },
             setBreadcrumbs () {
-                this.$store.commit('setTitle', this.$t(this.title))
+                this.$store.commit('setTitle', this.title)
                 this.$store.commit('setBreadcrumbs', [{
                     label: this.$t('主机属性自动应用'),
                     route: {
                         name: MENU_BUSINESS_HOST_APPLY
                     }
                 }, {
-                    label: this.$t(this.title)
+                    label: this.title
                 }])
+            },
+            getTopopath () {
+                return this.$store.dispatch('hostApply/getTopopath', {
+                    bizId: this.bizId,
+                    params: {
+                        topo_nodes: this.moduleIds.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
+                    }
+                })
+            },
+            getModulePath (id) {
+                const info = this.moduleMap[id] || []
+                const path = info.map(node => node.bk_inst_name).reverse().join(' / ')
+                return path
+            },
+            getModuleName (id) {
+                const topoInfo = this.moduleMap[id] || []
+                const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
+                return target.bk_inst_name
             }
         }
     }
