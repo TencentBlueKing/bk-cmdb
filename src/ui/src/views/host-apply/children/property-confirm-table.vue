@@ -18,7 +18,7 @@
                     <div class="cell-change-value" v-html="getChangeValue(row)"></div>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')"
+            <bk-table-column :label="$t('操作')" v-if="showOperation"
                 class-name="is-highlight"
                 :formatter="getOperationColumnText"
                 :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示')) : null">
@@ -78,6 +78,10 @@
             renderIcon: {
                 type: Boolean,
                 default: false
+            },
+            showOperation: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
