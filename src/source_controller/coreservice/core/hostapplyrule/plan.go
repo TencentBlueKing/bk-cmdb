@@ -278,9 +278,11 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	return plan, nil
 }
 
-func (p *hostApplyRule) RunHostApplyOnHosts(ctx core.ContextParams, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) ([]metadata.HostApplyResult, errors.CCErrorCoder) {
+func (p *hostApplyRule) RunHostApplyOnHosts(ctx core.ContextParams, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
 	rid := ctx.ReqID
-	result := make([]metadata.HostApplyResult, 0)
+	result := metadata.MultipleHostApplyResult{
+		HostResults: make([]metadata.HostApplyResult, 0),
+	}
 	relationFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
 			common.BKDBIN: option.HostIDs,
@@ -343,11 +345,10 @@ func (p *hostApplyRule) RunHostApplyOnHosts(ctx core.ContextParams, bizID int64,
 		}
 		updateData := plan.GetUpdateData()
 		if len(updateData) == 0 {
-			result = append(result, applyResult)
+			result.HostResults = append(result.HostResults, applyResult)
 			continue
 		}
 
-		result = append(result, applyResult)
 		updateOption := metadata.UpdateOption{
 			Condition: map[string]interface{}{
 				common.BKHostIDField: plan.HostID,
@@ -365,7 +366,13 @@ func (p *hostApplyRule) RunHostApplyOnHosts(ctx core.ContextParams, bizID int64,
 				applyResult.SetError(ccErr)
 			}
 		}
-		result = append(result, applyResult)
+		result.HostResults = append(result.HostResults, applyResult)
 	}
-	return result, nil
+
+	for _, hostResult := range result.HostResults {
+		if ccErr := hostResult.GetError(); ccErr != nil {
+			result.SetError(ccErr)
+		}
+	}
+	return result, result.GetError()
 }

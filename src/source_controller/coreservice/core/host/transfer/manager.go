@@ -39,7 +39,7 @@ type OperationDependence interface {
 }
 
 type HostApplyRuleDependence interface {
-	RunHostApplyOnHosts(ctx core.ContextParams, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) ([]metadata.HostApplyResult, errors.CCErrorCoder)
+	RunHostApplyOnHosts(ctx core.ContextParams, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
 func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence OperationDependence, hostApplyDependence HostApplyRuleDependence) *TransferManager {
@@ -357,8 +357,8 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 	updateHostOption := metadata.UpdateHostByHostApplyRuleOption{
 		HostIDs: input.HostIDArr,
 	}
-	if _, err := manager.hostApplyDependence.RunHostApplyOnHosts(ctx, input.DstApplicationID, updateHostOption); err != nil {
-		blog.Warnf("TransferToAnotherBusiness success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, err: %+v, rid: %s", input.DstApplicationID, updateHostOption, err, ctx.ReqID)
+	if hostApplyResult, err := manager.hostApplyDependence.RunHostApplyOnHosts(ctx, input.DstApplicationID, updateHostOption); err != nil {
+		blog.Warnf("TransferToAnotherBusiness success, but RunHostApplyOnHosts failed, bizID: %d, option: %+v, hostApplyResult: %+v, err: %+v, rid: %s", input.DstApplicationID, updateHostOption, hostApplyResult, err, ctx.ReqID)
 	}
 	if len(exceptionArr) > 0 {
 		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
