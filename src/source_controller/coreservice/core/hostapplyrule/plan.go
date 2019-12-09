@@ -267,5 +267,13 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		})
 	}
 
+	sort.SliceStable(plan.UpdateFields, func(i, j int) bool {
+		return plan.UpdateFields[i].PropertyID < plan.UpdateFields[j].PropertyID
+	})
+
+	sort.SliceStable(plan.ConflictFields, func(i, j int) bool {
+		return plan.ConflictFields[i].PropertyID < plan.ConflictFields[j].PropertyID
+	})
+
 	return plan, nil
 }
