@@ -82,7 +82,7 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string, input *me
 		}
 		if !ok {
 			blog.Errorf("BkSystemInstall Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, hostID, s.lgc.rid)
-			return s.lgc.ccErr.CCErrorf(common.CCErrHostNotINAPPFail, hostID)
+			return s.lgc.ccErr.CCErrorf(common.CCErrHostNotINAPP, hostID)
 		}
 
 		updateInput := &metadata.UpdateOption{
