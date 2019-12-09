@@ -82,9 +82,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	var redisErr error
 	if 0 == len(webSvr.Config.Session.Address) {
-		// address 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数不
-		address := webSvr.Config.Session.Host + ":" + webSvr.Config.Session.Port
-		service.Session, redisErr = sessions.NewRedisStore(10, "tcp", address, webSvr.Config.Session.Secret, []byte("secret"))
+		// address 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
+		service.Session, redisErr = sessions.NewRedisStore(10, "tcp", redisAddress, webSvr.Config.Session.Secret, []byte("secret"))
 		if redisErr != nil {
 			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
 		}

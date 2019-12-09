@@ -118,6 +118,7 @@ type HostModuleFind struct {
 
 type ListHostsParameter struct {
 	SetIDs             []int64                   `json:"bk_set_ids"`
+	SetCond            []ConditionItem           `json:"set_cond"`
 	ModuleIDs          []int64                   `json:"bk_module_ids"`
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
 	Page               BasePage                  `json:"page"`
