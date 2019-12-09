@@ -291,11 +291,35 @@ func (p *hostApplyRule) RunHostApplyOnHosts(ctx core.ContextParams, bizID int64,
 		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, relationFilter, err.Error(), rid)
 		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
+	moduleIDs := make([]int64, 0)
+	for _, item := range relations {
+		moduleIDs = append(moduleIDs, item.ModuleID)
+	}
+	modules := make([]metadata.ModuleInst, 0)
+	moduleFilter := map[string]interface{}{
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: moduleIDs,
+		},
+		common.HostApplyEnabledField: true,
+	}
+	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(ctx.Context, &modules); err != nil {
+		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule, moduleFilter, err.Error(), rid)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	enableModuleMap := make(map[int64]bool)
+	for _, module := range modules {
+		enableModuleMap[module.ModuleID] = true
+	}
 	host2Modules := make(map[int64][]int64)
 	for _, relation := range relations {
 		if _, exist := host2Modules[relation.HostID]; exist == false {
 			host2Modules[relation.HostID] = make([]int64, 0)
 		}
+		if _, exist := enableModuleMap[relation.ModuleID]; exist == false {
+			continue
+		}
+		// checkout host apply enabled status on module
+		host2Modules[relation.HostID] = append(host2Modules[relation.HostID], relation.ModuleID)
 	}
 	hostModules := make([]metadata.Host2Modules, 0)
 	for hostID, moduleIDs := range host2Modules {
