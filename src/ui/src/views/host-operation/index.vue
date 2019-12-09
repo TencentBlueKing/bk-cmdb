@@ -334,8 +334,7 @@
                 return path
             },
             setHostAttrsAutoApply (data) {
-                const conflictList = (data || []).filter(item => item.host_apply_plan && item.host_apply_plan.unresolved_conflict_count > 0)
-                const conflictInfo = conflictList.map(item => item.host_apply_plan)
+                const conflictInfo = (data || []).map(item => item.host_apply_plan)
                 const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
                 tab.props.info = Object.freeze(conflictInfo)
             },
@@ -490,7 +489,7 @@
                                     bk_module_id: instance.bk_module_id,
                                     bk_host_id: instance.bk_host_id,
                                     processes: component.processList.map((process, listIndex) => ({
-                                        process_template_id: component.templates[listIndex].id,
+                                        process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
                                         process_info: process
                                     }))
                                 }
