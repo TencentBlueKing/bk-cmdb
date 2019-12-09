@@ -273,7 +273,7 @@
             }
         },
         created () {
-            this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+            this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name')
         },
         mounted () {
             this.initDate()

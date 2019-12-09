@@ -25,8 +25,8 @@ const getters = {
 }
 
 const actions = {
-    getAuthorizedBusiness ({ commit }, config = {}) {
-        return $http.get('biz/with_reduced', config).then(data => {
+    getAuthorizedBusiness ({ commit }, sort, config = {}) {
+        return $http.get(`biz/with_reduced${sort ? '?sort=' + sort : ''}`, config).then(data => {
             commit('setAuthorizedBusiness', data.info)
             return data.info
         })

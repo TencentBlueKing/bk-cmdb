@@ -206,7 +206,7 @@
             },
             async getFullAmountBusiness () {
                 try {
-                    const data = await this.$store.dispatch('objectBiz/getFullAmountBusiness')
+                    const data = await this.$http.get('biz/simplify?sort=bk_biz_name')
                     this.businessList = data.info || []
                 } catch (e) {
                     console.error(e)
