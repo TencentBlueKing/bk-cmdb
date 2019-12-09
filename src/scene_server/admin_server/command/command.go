@@ -45,6 +45,10 @@ func Parse(args []string) error {
 		scope          string
 	)
 
+	if len(args) <= 1 || args[1] != bkbizCmdName {
+		return nil
+	}
+
 	// set flags
 	cmdFlags := pflag.NewFlagSet(bkbizCmdName, pflag.ExitOnError)
 	cmdFlags.BoolVar(&dryRunFlag, "dryrun", false, "dryrun flag, if this flag seted, we will just print what we will do but not execute to db")
@@ -112,7 +116,7 @@ func Parse(args []string) error {
 			fmt.Printf("%s business has been import from %s\n", bizName, filePath)
 		}
 	} else {
-		return nil
+		fmt.Printf("invalide argument")
 	}
 
 	os.Exit(0)
