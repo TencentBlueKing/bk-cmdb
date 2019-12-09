@@ -43,6 +43,18 @@ func (s *Service) BKSystemInstall(req *restful.Request, resp *restful.Response) 
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	if input.SetName == "" {
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKSetNameField)})
+		return
+	}
+	if input.ModuleName == "" {
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKModuleNameField)})
+		return
+	}
+	if input.InnerIP == "" {
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKHostInnerIPField)})
+		return
+	}
 
 	err := srvData.lgc.NewSpecial().BkSystemInstall(srvData.ctx, common.BKAppName, input)
 	if err != nil {
