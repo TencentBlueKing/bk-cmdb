@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -79,7 +81,34 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 	return plats, nil
 }
 
-func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByPlatID(header http.Header, action meta.Action, platIDs ...int64) ([]meta.ResourceAttribute, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.GetHTTPCCRequestID(header)
+
+	plats, err := am.collectPlatByIDs(ctx, header, platIDs...)
+	if err != nil {
+		blog.Errorf("MakeResourcesByPlatID failed, collectPlatByIDs failed, err: %+v, rid: %s", err, rid)
+		return nil, fmt.Errorf("collectPlatByIDs failed, err: %+v", err)
+	}
+	return am.MakeResourcesByPlat(header, action, plats...)
+}
+
+// be careful: plat is registered as a common instance in iam
+func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) ([]meta.ResourceAttribute, error) {
+	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.GetHTTPCCRequestID(header)
+
+	platModels, err := am.collectObjectsByObjectIDs(ctx, header, 0, common.BKInnerObjIDPlat)
+	if err != nil {
+		blog.Errorf("get plat model failed, err: %+v, rid: %s", err, rid)
+		return nil, fmt.Errorf("get plat model failed, err: %+v", err)
+	}
+	if len(platModels) == 0 {
+		blog.Errorf("get plat model failed, not found, rid: %s", rid)
+		return nil, fmt.Errorf("get plat model failed, not found")
+	}
+	platModel := platModels[0]
+
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, plat := range plats {
 		resource := meta.ResourceAttribute{
@@ -90,11 +119,18 @@ func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Actio
 				InstanceID: plat.BKCloudIDField,
 			},
 			SupplierAccount: util.GetOwnerID(header),
+			Layers: []meta.Item{
+				{
+					Type:       meta.Model,
+					Name:       platModel.ObjectName,
+					InstanceID: platModel.ID,
+				},
+			},
 		}
 
 		resources = append(resources, resource)
 	}
-	return resources
+	return resources, nil
 }
 
 func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, action meta.Action, plats ...PlatSimplify) error {
@@ -102,8 +138,14 @@ func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, 
 		return nil
 	}
 
+	rid := util.GetHTTPCCRequestID(header)
+
 	// make auth resources
-	resources := am.MakeResourcesByPlat(header, action, plats...)
+	resources, err := am.MakeResourcesByPlat(header, action, plats...)
+	if err != nil {
+		blog.Errorf("AuthorizeByPlat failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 
 	return am.authorize(ctx, header, 0, resources...)
 }
@@ -129,8 +171,14 @@ func (am *AuthManager) UpdateRegisteredPlat(ctx context.Context, header http.Hea
 		return nil
 	}
 
+	rid := util.GetHTTPCCRequestID(header)
+
 	// make auth resources
-	resources := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	resources, err := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	if err != nil {
+		blog.Errorf("UpdateRegisteredPlat failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -198,8 +246,14 @@ func (am *AuthManager) RegisterPlat(ctx context.Context, header http.Header, pla
 		return nil
 	}
 
+	rid := util.GetHTTPCCRequestID(header)
+
 	// make auth resources
-	resources := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	resources, err := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	if err != nil {
+		blog.Errorf("RegisterPlat failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -229,8 +283,14 @@ func (am *AuthManager) DeregisterPlat(ctx context.Context, header http.Header, p
 		return nil
 	}
 
+	rid := util.GetHTTPCCRequestID(header)
+
 	// make auth resources
-	resources := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	resources, err := am.MakeResourcesByPlat(header, meta.EmptyAction, plats...)
+	if err != nil {
+		blog.Errorf("DeregisterPlat failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
@@ -249,4 +309,31 @@ func (am *AuthManager) DeregisterPlatByID(ctx context.Context, header http.Heade
 		return fmt.Errorf("get plats by id failed, err: %+v", err)
 	}
 	return am.DeregisterPlat(ctx, header, plats...)
+}
+
+func (am *AuthManager) ListAuthorizedPlatIDs(ctx context.Context, username string) ([]int64, error) {
+	authorizedResources, err := am.Authorize.ListAuthorizedResources(ctx, username, 0, meta.Plat, meta.FindMany)
+	if err != nil {
+		return nil, err
+	}
+
+	authorizedPlatIDs := make([]int64, 0)
+	for _, iamResource := range authorizedResources {
+		if len(iamResource) == 0 {
+			continue
+		}
+		resource := iamResource[len(iamResource)-1]
+		if strings.HasPrefix(resource.ResourceID, "plat:") {
+			parts := strings.Split(resource.ResourceID, ":")
+			if len(parts) < 2 {
+				return nil, fmt.Errorf("parse platID from iamResource failed,  iamResourceID: %s, format error", resource.ResourceID)
+			}
+			platID, err := strconv.ParseInt(parts[1], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("parse platID from iamResource failed, iamResourceID: %s, err: %+v", resource.ResourceID, err)
+			}
+			authorizedPlatIDs = append(authorizedPlatIDs, platID)
+		}
+	}
+	return authorizedPlatIDs, nil
 }

@@ -90,6 +90,32 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
 	}
 
+	workerCount := int64(1)
+	workerCountStr, exist := configmap[prefix+".syncWorkers"]
+	if exist {
+		workerCount, err = strconv.ParseInt(workerCountStr, 10, 64)
+		if err != nil {
+			return cfg, fmt.Errorf(`"syncWorkers" configuration should be integer for auth center, value: %s`, workerCountStr)
+		}
+	}
+	if workerCount < 1 {
+		workerCount = 1
+	}
+	cfg.SyncWorkerCount = int(workerCount)
+
+	syncIntervalMinutes := int64(45)
+	syncIntervalMinutesStr, exist := configmap[prefix+".syncIntervalMinutes"]
+	if exist {
+		syncIntervalMinutes, err = strconv.ParseInt(syncIntervalMinutesStr, 10, 64)
+		if err != nil {
+			return cfg, fmt.Errorf(`"syncIntervalMinutes" configuration should be integer for auth center, value: %s`, syncIntervalMinutesStr)
+		}
+	}
+	if syncIntervalMinutes < 45 {
+		syncIntervalMinutes = 45
+	}
+	cfg.SyncIntervalMinutes = int(syncIntervalMinutes)
+
 	cfg.SystemID = SystemIDCMDB
 
 	return cfg, nil
@@ -432,6 +458,139 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 	return decisions, nil
 }
+func convertAction(resourceType meta.ResourceType, action meta.Action) (ActionID, error) {
+	defaultActionMap := map[meta.Action]ActionID{
+		meta.Create:                      Create,
+		meta.CreateMany:                  Create,
+		meta.Find:                        Get,
+		meta.FindMany:                    Get,
+		meta.Delete:                      Delete,
+		meta.DeleteMany:                  Delete,
+		meta.Update:                      Edit,
+		meta.UpdateMany:                  Edit,
+		meta.MoveHostToBizFaultModule:    Edit,
+		meta.MoveHostToBizIdleModule:     Edit,
+		meta.MoveHostToBizRecycleModule:  Edit,
+		meta.MoveHostToAnotherBizModule:  Edit,
+		meta.CleanHostInSetOrModule:      Edit,
+		meta.TransferHost:                Edit,
+		meta.MoveBizHostToModule:         Edit,
+		meta.MoveHostFromModuleToResPool: Delete,
+		meta.MoveHostsToBusinessOrModule: Edit,
+		meta.ModelTopologyView:           ModelTopologyView,
+		meta.ModelTopologyOperation:      ModelTopologyOperation,
+		meta.AdminEntrance:               AdminEntrance,
+	}
+	resourceSpecifiedActionMap := map[meta.ResourceType]map[meta.Action]ActionID{
+		meta.ModelInstance: {
+			meta.MoveResPoolHostToBizIdleModule: Edit,
+		},
+		meta.Host: {
+			meta.MoveResPoolHostToBizIdleModule: Edit,
+		},
+		meta.ModelAttributeGroup: {
+			meta.Delete: Edit,
+			meta.Update: Edit,
+			meta.Create: Edit,
+		},
+		meta.ModelUnique: {
+			meta.Delete: Edit,
+			meta.Update: Edit,
+			meta.Create: Edit,
+		},
+		meta.ModelAttribute: {
+			meta.Delete: Edit,
+			meta.Update: Edit,
+			meta.Create: Edit,
+		},
+		meta.Business: {
+			meta.Archive: Archive,
+			meta.Create:  Create,
+			meta.Update:  Edit,
+		},
+		meta.DynamicGrouping: {
+			meta.Execute: Get,
+		},
+		meta.MainlineModel: {
+			meta.Find:   ModelTopologyOperation,
+			meta.Create: ModelTopologyOperation,
+			meta.Delete: ModelTopologyOperation,
+		},
+		meta.ModelTopology: {
+			meta.Find:   ModelTopologyView,
+			meta.Update: ModelTopologyView,
+		},
+		meta.MainlineModelTopology: {
+			meta.Find:   ModelTopologyOperation,
+			meta.Update: ModelTopologyOperation,
+		},
+		meta.Process: {
+			meta.BoundModuleToProcess:   Edit,
+			meta.UnboundModuleToProcess: Edit,
+		},
+		meta.HostInstance: {
+			meta.MoveResPoolHostToBizIdleModule: Edit,
+			meta.AddHostToResourcePool:          Create,
+		},
+	}
+	if _, exist := resourceSpecifiedActionMap[resourceType]; exist == true {
+		actionID, ok := resourceSpecifiedActionMap[resourceType][action]
+		if ok == true {
+			return actionID, nil
+		}
+	}
+	actionID, ok := defaultActionMap[action]
+	if ok == true {
+		return actionID, nil
+	}
+
+	return Unknown, fmt.Errorf("unsupported action: %s", action)
+}
+
+func (ac *AuthCenter) ListAuthorizedResources(ctx context.Context, username string, bizID int64, resourceType meta.ResourceType, action meta.Action) ([]IamResource, error) {
+	iamResourceType, err := ConvertResourceType(resourceType, 0)
+	if err != nil {
+		return nil, fmt.Errorf("ConvertResourceType failed, err: %+v", err)
+	}
+	iamActionID, err := convertAction(resourceType, action)
+	if err != nil {
+		return nil, fmt.Errorf("convertAction failed, err: %+v", err)
+	}
+	var scopeInfo ScopeInfo
+	if bizID > 0 {
+		scopeInfo.ScopeType = ScopeTypeIDBiz
+		scopeInfo.ScopeID = strconv.FormatInt(bizID, 10)
+	} else {
+		scopeInfo.ScopeType = ScopeTypeIDSystem
+		scopeInfo.ScopeID = SystemIDCMDB
+	}
+	info := ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   username,
+		},
+		ScopeInfo: scopeInfo,
+		TypeActions: []TypeAction{
+			{
+				ActionID:     iamActionID,
+				ResourceType: *iamResourceType,
+			},
+		},
+		DataType: "array",
+		Exact:    true,
+	}
+	authorizedResources, err := ac.authClient.GetAuthorizedResources(ctx, &info)
+	if err != nil {
+		return nil, err
+	}
+	iamResources := make([]IamResource, 0)
+	for _, sameTypeResources := range authorizedResources {
+		for _, iamResource := range sameTypeResources.ResourceIDs {
+			iamResources = append(iamResources, iamResource)
+		}
+	}
+	return iamResources, nil
+}
 
 func (ac *AuthCenter) GetAnyAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
 	if !auth.IsAuthed() {
@@ -647,12 +806,15 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 		if err != nil {
 			return nil, fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
-		entity := ResourceEntity{}
-		entity.ScopeInfo.ScopeID = scope.ScopeID
-		entity.ScopeInfo.ScopeType = scope.ScopeType
-		entity.ResourceType = rscInfo.ResourceType
-		entity.ResourceID = rscInfo.ResourceID
-		entity.ResourceName = rscInfo.ResourceName
+		entity := ResourceEntity{
+			ResourceType: rscInfo.ResourceType,
+			ScopeInfo: ScopeInfo{
+				ScopeType: scope.ScopeType,
+				ScopeID:   scope.ScopeID,
+			},
+			ResourceName: rscInfo.ResourceName,
+			ResourceID:   rscInfo.ResourceID,
+		}
 
 		// TODO replace register with batch create or update interface, currently is register one by one.
 		info.Resources = append(info.Resources, entity)
@@ -756,6 +918,37 @@ func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
 }
 
+func (ac *AuthCenter) ListPageResources(ctx context.Context, r *meta.ResourceAttribute, limit, offset int64) (PageBackendResource, error) {
+	pagedResources := PageBackendResource{}
+	if !auth.IsAuthed() {
+		return pagedResources, nil
+	}
+
+	scopeInfo, err := ac.getScopeInfo(r)
+	if err != nil {
+		return pagedResources, err
+	}
+	resourceType, err := ConvertResourceType(r.Type, r.BusinessID)
+	if err != nil {
+		return pagedResources, err
+	}
+	header := http.Header{}
+	resourceID, err := GenerateResourceID(*resourceType, r)
+	if err != nil {
+		return pagedResources, err
+	}
+	blog.V(5).Infof("GenerateResourceID result: %+v", resourceID)
+	searchCondition := SearchCondition{
+		ScopeInfo:    *scopeInfo,
+		ResourceType: *resourceType,
+	}
+	if resourceID != nil && len(resourceID) > 0 {
+		searchCondition.ParentResources = resourceID[:len(resourceID)-1]
+	}
+	result, err := ac.authClient.ListPageResources(ctx, header, searchCondition, limit, offset)
+	return result, err
+}
+
 func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error) {
 	if !auth.IsAuthed() {
 		return nil, nil
@@ -784,6 +977,10 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	}
 	result, err := ac.authClient.ListResources(ctx, header, searchCondition)
 	return result, err
+}
+
+func (ac *AuthCenter) RawPageListResources(ctx context.Context, header http.Header, searchCondition SearchCondition, limit, offset int64) (PageBackendResource, error) {
+	return ac.authClient.ListPageResources(ctx, header, searchCondition, limit, offset)
 }
 
 // list iam resource with convert level

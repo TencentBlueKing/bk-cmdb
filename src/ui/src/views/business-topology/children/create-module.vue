@@ -67,7 +67,7 @@
                 <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
             </div>
             <div class="form-item clearfix" v-if="!withTemplate">
-                <label>{{$t('服务实例分类')}}<font color="red">*</font></label>
+                <label>{{$t('所属服务分类')}}<font color="red">*</font></label>
                 <cmdb-selector class="service-class fl"
                     v-model="firstClass"
                     v-validate.disabled="'required'"

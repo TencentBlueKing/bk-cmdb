@@ -843,8 +843,9 @@
     .btn-delete{
         min-width: 76px;
         &:not(.is-disabled):hover {
-            color: #ff5656;
+            color: #ffffff;
             border-color: #ff5656;
+            background-color: #ff5656;
         }
     }
     .sync-set-btn {

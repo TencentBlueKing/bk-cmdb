@@ -15,7 +15,13 @@
                     <i class="node-icon fl">{{moduleName[0]}}</i>
                     <span class="child-options fr" v-if="mode !== 'view'">
                         <i class="options-view icon icon-cc-show" @click="handleViewService(service)"></i>
-                        <i class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>
+                        <bk-popover v-if="serviceExistHost(service.id)">
+                            <i class="options-delete icon icon-cc-tips-close disabled"></i>
+                            <i18n path="该模块下有主机不可删除" tag="p" class="service-tips" slot="content">
+                                <span place="link" @click="handleGoTopoBusiness">{{$t('跳转查看')}}</span>
+                            </i18n>
+                        </bk-popover>
+                        <i v-else class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>
                     </span>
                     <span class="child-name">{{service.name}}</span>
                 </li>
@@ -39,6 +45,7 @@
             <component
                 ref="dialogComponent"
                 :is="dialog.component"
+                :services-host="servicesHost"
                 v-bind="dialog.props">
             </component>
             <template slot="footer" v-if="dialog.useCustomFooter">
@@ -49,6 +56,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import serviceTemplateSelector from './service-template-selector.vue'
     import serviceTemplateInfo from './service-template-info.vue'
     export default {
@@ -71,7 +79,8 @@
                     title: '',
                     useCustomFooter: false,
                     props: {}
-                }
+                },
+                servicesHost: []
             }
         },
         computed: {
@@ -99,6 +108,14 @@
                 return [...this.services].sort((A, B) => {
                     return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' })
                 })
+            },
+            topoNodes () {
+                return this.originalServices.map(service => {
+                    return {
+                        bk_obj_id: 'module',
+                        bk_inst_id: service.id
+                    }
+                })
             }
         },
         watch: {
@@ -124,16 +141,31 @@
         methods: {
             async getSetTemplateServices () {
                 try {
-                    this.services = await this.$store.dispatch('setTemplate/getSetTemplateServices', {
+                    const data = await this.$store.dispatch('setTemplate/getSetTemplateServicesStatistics', {
                         bizId: this.$store.getters['objectBiz/bizId'],
                         setTemplateId: this.templateId
+                    })
+                    this.services = data.map(item => item.service_template)
+                    this.servicesHost = data.map(item => {
+                        return {
+                            service_id: item.service_template.id,
+                            host_count: item.host_count
+                        }
                     })
                     this.originalServices = [...this.services]
                 } catch (e) {
                     console.error(e)
                     this.services = []
                     this.originalServices = []
+                    this.servicesHost = []
                 }
+            },
+            serviceExistHost (id) {
+                const service = this.servicesHost.find(service => service.service_id === id)
+                if (service) {
+                    return service.host_count > 0
+                }
+                return false
             },
             initMonitorTemplateName () {
                 this.unwatch = this.$watch(() => {
@@ -189,6 +221,11 @@
             },
             recoveryService () {
                 this.services = [...this.originalServices]
+            },
+            handleGoTopoBusiness () {
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                })
             }
         }
     }
@@ -198,6 +235,7 @@
     $iconColor: #C4C6CC;
     $fontColor: #63656E;
     $highlightColor: #3A84FF;
+    $iconDisabledColor: #D8D8D8;
     .template-tree {
         padding: 10px 0 10px 20px;
         border: 1px solid #C4C6CC;
@@ -321,8 +359,18 @@
                     &:hover {
                         color: $highlightColor;
                     }
+                    &.disabled:hover {
+                        color: $iconDisabledColor;
+                        cursor: not-allowed;
+                    }
                 }
             }
+        }
+    }
+    .service-tips {
+        span {
+            color: $highlightColor;
+            cursor: pointer;
         }
     }
 </style>
