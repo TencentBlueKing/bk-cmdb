@@ -29,7 +29,7 @@ import (
 var OperationStatisticAuthConfigs = []AuthConfig{
 	{
 		Name:           "CreateOperationStatisticRegex",
-		Description:    "创建创建运营统计",
+		Description:    "创建运营统计",
 		Regex:          regexp.MustCompile(`^/api/v3/create/operation/chart/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    nil,
@@ -55,7 +55,7 @@ var OperationStatisticAuthConfigs = []AuthConfig{
 		ResourceAction: meta.Update,
 	},
 	{
-		Name:           "UpdateOperationStatisticRegex",
+		Name:           "SearchOperationStatisticChartRegex",
 		Description:    "查看运营统计图表配置",
 		Regex:          regexp.MustCompile(`^/api/v3/search/operation/chart/?$`),
 		HTTPMethod:     http.MethodGet,
@@ -64,13 +64,22 @@ var OperationStatisticAuthConfigs = []AuthConfig{
 		ResourceAction: meta.Find,
 	},
 	{
-		Name:           "UpdateOperationStatisticRegex",
+		Name:           "SearchOperationStatisticDataRegex",
 		Description:    "查看运营统计数据",
 		Regex:          regexp.MustCompile(`^/api/v3/search/operation/chart/data/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    nil,
 		ResourceType:   meta.OperationStatistic,
 		ResourceAction: meta.Find,
+	},
+	{
+		Name:           "UpdateOperationStatisticPositionRegex",
+		Description:    "更新运营统计图表位置",
+		Regex:          regexp.MustCompile(`^/api/v3/update/operation/chart/position/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    nil,
+		ResourceType:   meta.OperationStatistic,
+		ResourceAction: meta.Update,
 	},
 }
 

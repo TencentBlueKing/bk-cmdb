@@ -30,6 +30,7 @@
 </template>
 
 <script>
+    import { translateAuth } from '@/setup/permission'
     export default {
         name: 'cmdb-business-selector',
         props: {
@@ -106,7 +107,13 @@
             },
             async handleApplyPermission () {
                 try {
-                    const url = await this.$store.dispatch('auth/getSkipUrl', { params: [{}] })
+                    const permission = []
+                    const operation = this.$tools.getValue(this.$route.meta, 'auth.operation', {})
+                    if (Object.keys(operation).length) {
+                        const translated = await translateAuth(Object.values(operation))
+                        permission.push(...translated)
+                    }
+                    const url = await this.$store.dispatch('auth/getSkipUrl', { params: permission })
                     window.open(url)
                 } catch (e) {
                     console.error(e)

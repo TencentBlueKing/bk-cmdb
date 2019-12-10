@@ -25,7 +25,7 @@ func (m *modelAttribute) isExists(ctx core.ContextParams, objID, propertyID stri
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldPropertyID, Val: propertyID})
-	cond.Element(&mongo.Eq{Key: common.BKOIDField, Val: objID})
+	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 
 	// ATTENTION: Currently only business dimension isolation is done,
 	//           and there may be isolation requirements for other dimensions in the future.

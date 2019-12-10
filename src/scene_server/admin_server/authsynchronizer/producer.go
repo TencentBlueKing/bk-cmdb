@@ -29,24 +29,27 @@ import (
 
 // Producer producer WorkRequest and enqueue it
 type Producer struct {
-	clientSet   apimachinery.ClientSetInterface
-	authManager *extensions.AuthManager
-	ID          int
-	WorkerQueue chan meta.WorkRequest
-	QuitChan    chan bool
-	Engine      *backbone.Engine
+	clientSet           apimachinery.ClientSetInterface
+	authManager         *extensions.AuthManager
+	ID                  int
+	WorkerQueue         chan meta.WorkRequest
+	QuitChan            chan bool
+	Engine              *backbone.Engine
+	SyncIntervalMinutes int
 }
 
 // NewProducer make a producer
-func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager, workerQueue chan meta.WorkRequest, engine *backbone.Engine) *Producer {
+func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager,
+	workerQueue chan meta.WorkRequest, engine *backbone.Engine, syncIntervalMinutes int) *Producer {
 	// Create, and return the producer.
 	producer := Producer{
-		clientSet:   clientSet,
-		authManager: authManager,
-		ID:          0,
-		WorkerQueue: workerQueue,
-		QuitChan:    make(chan bool),
-		Engine:      engine,
+		clientSet:           clientSet,
+		authManager:         authManager,
+		ID:                  0,
+		WorkerQueue:         workerQueue,
+		QuitChan:            make(chan bool),
+		Engine:              engine,
+		SyncIntervalMinutes: syncIntervalMinutes,
 	}
 
 	return &producer
@@ -55,15 +58,25 @@ func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensi
 // Start do main loop
 func (p *Producer) Start() {
 	// then tick and loop
-	ticker := time.NewTicker(45 * time.Minute)
+	if p.SyncIntervalMinutes < meta.MinSyncIntervalMinutes {
+		blog.Warnf("SyncIntervalMinutes min value is: %d, config is: %d", meta.MinSyncIntervalMinutes, p.SyncIntervalMinutes)
+		p.SyncIntervalMinutes = meta.MinSyncIntervalMinutes
+	}
+	blog.Infof("start producer with SyncIntervalMinutes value: %d", p.SyncIntervalMinutes)
+	duration := time.Duration(p.SyncIntervalMinutes) * time.Minute
+	ticker := time.NewTicker(duration)
 	go func(producer *Producer) {
-		time.Sleep(5 * time.Minute)
 		// loop immediately at first.
+		time.Sleep(1 * time.Minute)
 		p.loop()
 
 		for {
 			select {
 			case <-ticker.C:
+				if len(p.WorkerQueue) > 0 {
+					blog.Infof("workerQueue not empty, skip generate new job, current length: %d", len(p.WorkerQueue))
+					continue
+				}
 				p.loop()
 			case <-p.QuitChan:
 				ticker.Stop()
@@ -78,8 +91,12 @@ func (p *Producer) loop() {
 		blog.Info("not master, don't generate iam sync job")
 		return
 	}
+
 	// get jobs
 	jobs := p.generateJobs()
+
+	blog.Infof("generate auth synchronize jobs, count: %d", len(*jobs))
+
 	for _, job := range *jobs {
 		p.WorkerQueue <- job
 	}

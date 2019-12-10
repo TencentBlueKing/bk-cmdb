@@ -9,11 +9,11 @@
                     v-for="property in group.properties"
                     :key="property.id"
                     :id="`property-item-${property.id}`">
-                    <span class="property-name"
-                        :title="property.bk_property_name">
+                    <span class="property-name" v-overflow-tips>
                         {{property.bk_property_name}}
                     </span>
                     <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
+                        v-overflow-tips
                         v-show="property !== editState.property">
                         {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
                     </span>
@@ -68,7 +68,7 @@
                                     :options="property.option || []"
                                     :data-vv-name="property.bk_property_id"
                                     :data-vv-as="property.bk_property_name"
-                                    :placeholder="$t('请输入xx', { name: property.bk_property_name })"
+                                    :placeholder="getPlaceholder(property)"
                                     :auto-check="false"
                                     v-validate="$tools.getValidateRules(property)"
                                     v-model.trim="editState.value">
@@ -181,6 +181,10 @@
                     this.hostRelatedRules = []
                     console.error(e)
                 }
+            },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             isPropertyEditable (property) {
                 return property.editable && !property.bk_isapi
@@ -418,8 +422,8 @@
         .form-component {
             display: inline-block;
             vertical-align: middle;
-            width: 270px;
             height: 32px;
+            width: 260px;
             margin: 0 4px 0 0;
             &.bool {
                 width: 42px;

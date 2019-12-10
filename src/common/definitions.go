@@ -33,8 +33,7 @@ const (
 	// BKNoLimit no limit definition
 	BKNoLimit = 999999999
 	// max limit of a page
-	BKMaxPageLimit = 2000
-	BKMaxPageSize  = 500
+	BKMaxPageSize  = 1000
 
 	// 一次最大操作记录数
 	BKMaxRecordsAtOnce = 2000
@@ -683,6 +682,12 @@ const (
 
 	// DefaultFaultModuleFlag the default fault module flag
 	DefaultFaultModuleFlag int = 2
+
+	// NormalModuleFlag create module by user , default =0
+	NormalModuleFlag int = 0
+
+	// NormalSetDefaultFlag user create set default field value
+	NormalSetDefaultFlag int64 = 0
 
 	// default recycle module flat
 	DefaultRecycleModuleFlag int = 3
