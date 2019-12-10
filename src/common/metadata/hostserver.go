@@ -118,6 +118,7 @@ type HostModuleFind struct {
 
 type ListHostsParameter struct {
 	SetIDs             []int64                   `json:"bk_set_ids"`
+	SetCond            []ConditionItem           `json:"set_cond"`
 	ModuleIDs          []int64                   `json:"bk_module_ids"`
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
 	Page               BasePage                  `json:"page"`
@@ -160,6 +161,10 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 	}
 
 	return "", nil
+}
+
+type CountTopoNodeHostsOption struct {
+	Nodes []TopoNode `json:"topo_nodes" mapstructure:"topo_nodes"`
 }
 
 type TimeRange struct {
@@ -424,6 +429,15 @@ type TopoNode struct {
 
 func (node TopoNode) Key() string {
 	return fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+}
+
+func (node TopoNode) String() string {
+	return fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+}
+
+type TopoNodeHostCount struct {
+	Node      TopoNode `field:"topo_node" json:"topo_node" mapstructure:"topo_node"`
+	HostCount int      `field:"host_count" json:"host_count" mapstructure:"host_count"`
 }
 
 type TransferHostWithAutoClearServiceInstanceOption struct {

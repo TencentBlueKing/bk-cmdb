@@ -74,7 +74,7 @@ type coreService struct {
 	cfg      options.Config
 	core     core.Core
 	db       dal.RDB
-	cahce    *redis.Client
+	cache    *redis.Client
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
@@ -109,7 +109,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 
 	s.db = db
-	s.cahce = cache
+	s.cache = cache
 
 	// connect the remote mongodb
 	s.core = core.New(
@@ -120,7 +120,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		mainline.New(db),
 		host.New(db, cache, s),
 		auditlog.New(db),
-		process.New(db, s),
+		process.New(db, s, cache),
 		label.New(db),
 		settemplate.New(db),
 		operation.New(db),

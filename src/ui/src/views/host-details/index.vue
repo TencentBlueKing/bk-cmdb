@@ -97,7 +97,10 @@
                 this.$store.commit('setBreadcrumbs', [{
                     label: isFromBusiness ? this.$t('业务主机') : this.$t('主机'),
                     route: {
-                        name: isFromBusiness ? MENU_BUSINESS_HOST_AND_SERVICE : MENU_RESOURCE_HOST
+                        name: isFromBusiness ? MENU_BUSINESS_HOST_AND_SERVICE : MENU_RESOURCE_HOST,
+                        query: {
+                            node: isFromBusiness ? this.$route.query.node : undefined
+                        }
                     }
                 }, {
                     label: ip

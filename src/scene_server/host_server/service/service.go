@@ -141,6 +141,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/lock").To(s.LockHost))
 	api.Route(api.DELETE("/host/lock").To(s.UnlockHost))
 	api.Route(api.POST("/host/lock/search").To(s.QueryHostLock))
+	api.Route(api.POST("/host/count_by_topo_node/bk_biz_id/{bk_biz_id}").To(s.CountTopoNodeHosts))
 
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
 
@@ -161,6 +162,9 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
+
+	// first install use api
+	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
 
 	// 主机属性自动应用
 	api.Route(api.POST("/create/host_apply_rule/bk_biz_id/{bk_biz_id}").To(s.CreateHostApplyRule))

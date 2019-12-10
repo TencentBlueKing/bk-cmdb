@@ -249,11 +249,126 @@ func (s *Service) ListSetTplRelatedSvcTpl(params types.ContextParams, pathParams
 
 	serviceTemplates, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(params.Context, params.Header, bizID, setTemplateID)
 	if err != nil {
-		blog.Errorf("ListSetTemplateRelatedServiceTemplate failed, do core service list failed, bizID: %d, setTemplateID: %+v, err: %+v, rid: %s", bizID, setTemplateID, err, params.ReqID)
+		blog.Errorf("ListSetTemplateRelatedServiceTemplate failed, ListSetTplRelatedSvcTpl failed, bizID: %d, setTemplateID: %+v, err: %+v, rid: %s", bizID, setTemplateID, err, params.ReqID)
 		return nil, err
 	}
 
 	return serviceTemplates, nil
+}
+
+func (s *Service) ListSetTplRelatedSvcTplWithStatistics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	serviceTemplates, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(params.Context, params.Header, bizID, setTemplateID)
+	if err != nil {
+		blog.Errorf("ListSetTplRelatedSvcTplWithStatistics failed, do core service list failed, bizID: %d, setTemplateID: %+v, err: %+v, rid: %s", bizID, setTemplateID, err, params.ReqID)
+		return nil, err
+	}
+
+	serviceTemplateIDs := make([]int64, 0)
+	for _, item := range serviceTemplates {
+		serviceTemplateIDs = append(serviceTemplateIDs, item.ID)
+	}
+	moduleFilter := metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKServiceTemplateIDField: map[string]interface{}{
+				common.BKDBIN: serviceTemplateIDs,
+			},
+		},
+	}
+	moduleResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, &moduleFilter)
+	if err != nil {
+		blog.ErrorJSON("ListSetTplRelatedSvcTplWithStatistics failed, ReadInstance of module http failed, option: %s, err: %s, rid: %s", moduleFilter, err.Error(), params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if ccErr := moduleResult.CCError(); ccErr != nil {
+		blog.Errorf("ListSetTplRelatedSvcTplWithStatistics failed, ReadInstance of module failed, filter: %s, result: %s, rid: %s", moduleFilter, moduleResult, params.ReqID)
+		return nil, ccErr
+	}
+	module := metadata.ModuleInst{}
+	moduleIDs := make([]int64, 0)
+	svcTpl2Modules := make(map[int64][]metadata.ModuleInst)
+	for _, item := range moduleResult.Data.Info {
+		if err := mapstruct.Decode2Struct(item, &module); err != nil {
+			blog.Errorf("ListSetTplRelatedSvcTplWithStatistics failed, parse module failed, module: %+v, err: %+v, rid: %s", item, err, params.ReqID)
+			return nil, params.Err.CCError(common.CCErrCommParseDBFailed)
+		}
+		if _, exist := svcTpl2Modules[module.ServiceTemplateID]; exist == false {
+			svcTpl2Modules[module.ServiceTemplateID] = make([]metadata.ModuleInst, 0)
+		}
+		svcTpl2Modules[module.ServiceTemplateID] = append(svcTpl2Modules[module.ServiceTemplateID], module)
+		moduleIDs = append(moduleIDs, module.ModuleID)
+	}
+
+	// host module relations
+	relationOption := metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		ModuleIDArr:   moduleIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	relationResult, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, &relationOption)
+	if err != nil {
+		blog.Errorf("ListSetTplRelatedSvcTplWithStatistics failed, GetHostModuleRelation http failed, option: %s, err: %s, rid: %s", relationOption, err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if ccErr := relationResult.CCError(); ccErr != nil {
+		blog.Errorf("ListSetTplRelatedSvcTplWithStatistics failed, GetHostModuleRelation failed, option: %s, result: %s, rid: %s", relationOption, relationResult, params.ReqID)
+		return nil, ccErr
+	}
+
+	// module hosts
+	moduleHostIDs := make(map[int64][]int64)
+	for _, item := range relationResult.Data.Info {
+		if _, exist := moduleHostIDs[item.ModuleID]; exist == false {
+			moduleHostIDs[item.ModuleID] = make([]int64, 0)
+		}
+		moduleHostIDs[item.ModuleID] = append(moduleHostIDs[item.ModuleID], item.HostID)
+	}
+
+	type ServiceTemplateWithModuleInfo struct {
+		ServiceTemplate metadata.ServiceTemplate `json:"service_template"`
+		HostCount       int                      `json:"host_count"`
+		Modules         []metadata.ModuleInst    `json:"modules"`
+	}
+	result := make([]ServiceTemplateWithModuleInfo, 0)
+	for _, svcTpl := range serviceTemplates {
+		info := ServiceTemplateWithModuleInfo{
+			ServiceTemplate: svcTpl,
+		}
+		modules, ok := svcTpl2Modules[svcTpl.ID]
+		if ok == false {
+			result = append(result, info)
+			continue
+		}
+		info.Modules = modules
+		hostIDs := make([]int64, 0)
+		for _, moduleInst := range modules {
+			ids, ok := moduleHostIDs[moduleInst.ModuleID]
+			if ok == false {
+				continue
+			}
+			hostIDs = append(hostIDs, ids...)
+		}
+		info.HostCount = len(util.IntArrayUnique(hostIDs))
+		result = append(result, info)
+	}
+
+	return result, nil
 }
 
 // ListSetTplRelatedSets get SetTemplate related sets

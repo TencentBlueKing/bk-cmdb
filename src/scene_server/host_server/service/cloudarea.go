@@ -33,20 +33,21 @@ import (
 // FindManyCloudArea  find cloud area list
 func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
+	rid := srvData.rid
 	input := new(metadata.CloudAreaParameter)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); nil != err {
-		blog.Errorf("FindManyCloudArea , but decode body failed, err: %s,rid:%s", err.Error(), srvData.rid)
+		blog.Errorf("FindManyCloudArea , but decode body failed, err: %s,rid:%s", err.Error(), rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	// set default limit
 	if input.Page.Limit == 0 {
-		input.Page.Limit = common.BKDefaultLimit
+		input.Page.Limit = common.BKMaxPageSize
 	}
 
 	if input.Page.IsIllegal() {
-		blog.Errorf("FindManyCloudArea failed, parse plat page illegal, input:%#v,rid:%s", input, srvData.rid)
+		blog.Errorf("FindManyCloudArea failed, parse plat page illegal, input:%#v,rid:%s", input, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommPageLimitIsExceeded)})
 		return
 	}
@@ -61,8 +62,26 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		}
 	}
 
+	// auth: get authorized resources
+	authorizedPlatIDs, err := s.AuthManager.ListAuthorizedPlatIDs(srvData.ctx, srvData.user)
+	if err != nil {
+		blog.Errorf("FindManyCloudArea failed, ListAuthorizedPlatIDs failed, err: %+v, rid: %s", srvData.user, rid)
+		_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommListAuthorizedResourceFromIAMFailed)})
+		return
+	}
+
+	filter := map[string]interface{}{
+		common.BKDBAND: []map[string]interface{}{
+			input.Condition,
+			{
+				common.BKCloudIDField: map[string]interface{}{
+					common.BKDBIN: authorizedPlatIDs,
+				},
+			},
+		},
+	}
 	query := &metadata.QueryCondition{
-		Condition: input.Condition,
+		Condition: filter,
 		Limit: metadata.SearchLimit{
 			Limit:  int64(input.Page.Limit),
 			Offset: int64(input.Page.Start),
@@ -72,31 +91,15 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 
 	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, query)
 	if nil != err {
-		blog.Errorf("FindManyCloudArea htt do error: %v query:%#v,rid:%s", err, query, srvData.rid)
+		blog.Errorf("FindManyCloudArea htt do error: %v query:%#v,rid:%s", err, query, rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}
 	if false == res.Result {
-		blog.Errorf("FindManyCloudArea http reply error.  query:%#v, err code:%d, err msg:%s,rid:%s", query, res.Code, res.ErrMsg, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
+		blog.Errorf("FindManyCloudArea http reply error.  query:%#v, err code:%d, err msg:%s, rid:%s", query, res.Code, res.ErrMsg, rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
 		return
 
-	}
-	platIDArr := make([]int64, 0)
-	for _, item := range res.Data.Info {
-		platID, err := util.GetInt64ByInterface(item[common.BKCloudIDField])
-		if err != nil {
-			blog.Errorf("FindManyCloudArea failed, parse plat id field failed, input:%+v,rid:%s", err.Error(), res.Data, srvData.rid)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
-			return
-		}
-		platIDArr = append(platIDArr, platID)
-	}
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByPlatIDs(srvData.ctx, srvData.header, authmeta.Find, platIDArr...); err != nil {
-		blog.Errorf("check plats authorization failed, plats: %+v, err: %v", platIDArr, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
 	}
 
 	retData := map[string]interface{}{
@@ -104,7 +107,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		"count": res.Data.Count,
 	}
 
-	resp.WriteEntity(metadata.Response{
+	_ = resp.WriteEntity(metadata.Response{
 		BaseResp: metadata.SuccessBaseResp,
 		Data:     retData,
 	})
@@ -147,6 +150,16 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteHeaderAndJson(http.StatusInternalServerError, res, "application/json")
 		return
 	}
+
+	// register plat to iam
+	platID := int64(res.Data.Created.ID)
+	if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platID); err != nil {
+		blog.Errorf("CreatePlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
+		ccErr := srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     res.Data,
@@ -202,6 +215,15 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	iamResource, err := s.AuthManager.MakeResourcesByPlatID(srvData.header, authmeta.Delete, platID)
+	if err != nil {
+		blog.Errorf("DelPlat failed, MakeResourcesByPlatID failed, err: %v, input:%d, rid:%s", err, platID, srvData.rid)
+		result := &meta.RespError{
+			Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed),
+		}
+		_ = resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
 	delCond := &meta.DeleteOption{
 		Condition: mapstr.MapStr{common.BKCloudIDField: platID},
 	}
@@ -218,12 +240,20 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
 		return
 
-	} else {
-		_ = resp.WriteEntity(meta.Response{
-			BaseResp: meta.SuccessBaseResp,
-			Data:     "",
-		})
 	}
+
+	// deregister plat
+	if err := s.AuthManager.Authorize.DeregisterResource(srvData.ctx, iamResource...); err != nil {
+		blog.Errorf("DelPlat success, but DeregisterResource from iam failed, platID: %d, err: %+v,rid:%s", platID, err, srvData.rid)
+		ccErr := srvData.ccErr.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	_ = resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     "",
+	})
 }
 
 func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
