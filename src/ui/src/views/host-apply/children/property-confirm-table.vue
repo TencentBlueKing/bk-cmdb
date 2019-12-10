@@ -3,7 +3,7 @@
         <bk-table
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="maxHeight || ($APP.height - 240)"
+            :max-height="maxHeight || ($APP.height - 220)"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
         >
@@ -216,7 +216,10 @@
                 this.slider.title = `属性详情【${row.expired_host.bk_host_innerip}】`
                 this.slider.content = 'detail'
                 const properties = this.propertyList
-                const inst = row
+                const inst = row.expired_host
+                // 云区域数据
+                row.cloud_area['bk_inst_name'] = row.cloud_area['bk_cloud_name']
+                inst['bk_cloud_id'] = [row.cloud_area]
                 try {
                     const propertyGroups = await this.getPropertyGroups()
                     this.details.inst = this.$tools.flattenItem(properties, inst)

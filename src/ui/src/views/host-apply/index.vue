@@ -17,7 +17,7 @@
             >
                 <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
             </cmdb-resize-layout>
-            <div class="main-layout">
+            <div class="main-content">
                 <template v-if="moduleId">
                     <div class="config-panel" v-show="!batchAction">
                         <div class="config-head">
@@ -57,7 +57,7 @@
                                 </div>
                             </template>
                             <template v-else>
-                                <div class="rule-empty" v-if="!hasRule">
+                                <div class="empty" v-if="!hasRule">
                                     <div class="desc">
                                         <i class="bk-cc-icon icon-cc-tips"></i>
                                         <span>{{$t('当前模块未启用自动应用策略')}}</span>
@@ -79,7 +79,7 @@
                                                 </property-config-table>
                                             </div>
                                             <div class="closed-mask">
-                                                <div class="rule-empty">
+                                                <div class="empty">
                                                     <div class="desc">
                                                         <i class="bk-cc-icon icon-cc-tips"></i>
                                                         <span>{{$t('该模块已关闭属性自动应用')}}</span>
@@ -97,20 +97,19 @@
                     </div>
                 </template>
                 <div class="empty" v-else>
-                    <i18n path="您还未XXX">
-                        <span place="action">{{$t('创建')}}</span>
-                        <span place="resource">{{$t('模块')}}</span>
-                        <span place="link">
-                            <bk-button class="text-btn"
-                                text
-                                place="link"
-                                theme="primary"
-                                @click="$router.push({ name: hostAndServiceRouteName })"
-                            >
-                                {{`立即${$t('创建')}`}}
-                            </bk-button>
-                        </span>
-                    </i18n>
+                    <div class="desc">
+                        <i class="bk-cc-icon icon-cc-tips"></i>
+                        <span>{{$t('暂无业务模块，无法启用属性自动应用，可跳转业务拓扑创建')}}</span>
+                    </div>
+                    <div class="action">
+                        <bk-button
+                            outline
+                            theme="primary"
+                            @click="$router.push({ name: hostAndServiceRouteName })"
+                        >
+                            {{$t('跳转创建')}}
+                        </bk-button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -160,17 +159,9 @@
                 return this.conflictNum > 0
             }
         },
-        watch: {
-        },
         created () {
             this.showFeatureTips = this.featureTipsParams['hostApply']
-            this.getHostProperties()
-        },
-        beforeRouteLeave (to, from, next) {
-            if (to.name !== 'hostApplyConfirm') {
-                this.$store.commit('hostApply/clearRuleDraft')
-            }
-            next()
+            this.getHostPropertyList()
         },
         methods: {
             async getData () {
@@ -216,10 +207,10 @@
                     }
                 })
             },
-            async getHostProperties () {
+            async getHostPropertyList () {
                 try {
                     const properties = await this.$store.dispatch('hostApply/getProperties', {
-                        requestId: 'getHostProperties',
+                        requestId: 'getHostPropertyList',
                         fromCache: true
                     })
                     this.$store.commit('hostApply/setPropertyList', properties)
@@ -320,18 +311,25 @@
         height: 100%;
         border-right: 1px solid $cmdbLayoutBorderColor;
     }
-    .main-layout {
-        @include scrollbar-x;
+    .main-content {
+        @include scrollbar-y;
         height: 100%;
-        padding: 10px 18px;
+        padding: 0 20px;
 
         .empty {
             display: flex;
-            width: 100%;
-            height: 100%;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            height: 80%;
+
+            .desc {
+                font-size: 14px;
+                color: #63656e;
+            }
+            .action {
+                margin-top: 18px;
+            }
         }
     }
 
@@ -383,7 +381,7 @@
             }
             .view-bd,
             .view-ft {
-                margin-top: 20px;
+                margin: 20px 0;
                 .bk-button {
                     min-width: 86px;
                 }
@@ -399,22 +397,6 @@
             padding: 0px 4px;
             font-family: arial;
             margin-left: 4px;
-        }
-
-        .rule-empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 80%;
-
-            .desc {
-                font-size: 14px;
-                color: #63656e;
-            }
-            .action {
-                margin-top: 18px;
-            }
         }
     }
 

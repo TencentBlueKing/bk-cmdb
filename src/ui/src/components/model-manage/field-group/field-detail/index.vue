@@ -277,6 +277,7 @@
                         }
                     }).then(() => {
                         this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+                        this.$http.cancelCache('getHostPropertyList')
                     })
                 } else {
                     const groupId = (this.isPublicModel && !this.isAdminView) ? 'bizdefault' : 'default'
@@ -299,6 +300,7 @@
                         }
                     }).then(() => {
                         this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+                        this.$http.cancelCache('getHostPropertyList')
                     })
                 }
                 this.$emit('save')
