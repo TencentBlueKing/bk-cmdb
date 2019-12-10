@@ -14,56 +14,12 @@ package command
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 )
 
 func export(ctx context.Context, db dal.RDB, opt *option) error {
-	file, err := os.Create(opt.position)
-	if nil != err {
-		return err
-	}
-	defer file.Close()
-	defer file.Sync()
 
-	topo, err := getBKTopo(ctx, db, opt)
-	if nil != err {
-		return err
-	}
-
-	err = topo.BizTopo.walk(func(node *Node) error {
-		node.Data = util.CopyMap(node.Data, nil,
-			[]string{
-				common.BKInstParentStr,
-				common.BKChildStr,
-				common.BKAppIDField,
-				common.BKSetIDField,
-				common.BKModuleIDField,
-				common.BKInstIDField,
-				common.BKOwnerIDField,
-				common.BKSupplierIDField,
-				common.CreateTimeField,
-				common.LastTimeField,
-				"_id",
-			},
-		)
-		return nil
-	})
-	if err != nil {
-		blog.Errorf("walk biz topo failed, err: %+v", err)
-	}
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "    ")
-	err = encoder.Encode(topo)
-	if nil != err {
-		return fmt.Errorf("encode topo error: %s", err.Error())
-	}
-
-	return nil
+	return fmt.Errorf("unrealized")
 }

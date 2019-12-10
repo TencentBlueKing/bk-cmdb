@@ -796,7 +796,11 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(req *restful.R
 			}
 			serviceInstances, exist := moduleServiceInstanceMap[moduleID]
 			if exist {
-				removeInfo.ServiceInstances = serviceInstances
+				for _, serviceInstance := range serviceInstances {
+					if serviceInstance.HostID == preview.HostID {
+						removeInfo.ServiceInstances = append(removeInfo.ServiceInstances, serviceInstance)
+					}
+				}
 			}
 			preview.ToRemoveFromModules = append(preview.ToRemoveFromModules, removeInfo)
 		}

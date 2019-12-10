@@ -45,10 +45,10 @@ func (s *coreService) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// redis status
 	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
-	if s.cahce == nil {
+	if s.cache == nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = "not connected"
-	} else if err := s.cahce.Ping().Err(); err != nil {
+	} else if err := s.cache.Ping().Err(); err != nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = err.Error()
 	}

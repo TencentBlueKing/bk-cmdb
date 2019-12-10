@@ -1,5 +1,5 @@
 <template>
-    <div class="group-layout" v-bkloading="{ isLoading: $loading() }">
+    <div class="group-layout" v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }">
         <div class="layout-header">
             <bk-button @click="previewShow = true" :disabled="!preview.properties.length">{{$t('字段预览')}}</bk-button>
         </div>
@@ -13,7 +13,7 @@
                         <div class="header-title fl">
                             <div class="group-name">
                                 {{group.info['bk_group_name']}}
-                                <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('内置组不支持修改，排序')}}）</span>
+                                <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('全局配置不可以在业务内调整')}}）</span>
                             </div>
                             <div class="title-icon-btn" v-if="!(!isAdminView && isBuiltInGroup(group.info))" @click.stop>
                                 <cmdb-auth class="ml10" :auth="authResources" @update-auth="handleReceiveAuth">
@@ -29,7 +29,7 @@
                                     <bk-button slot-scope="{ disabled }"
                                         class="icon-btn"
                                         :text="true"
-                                        :disabled="disabled || !isEditable(group.info) || ['default'].includes(group.info['bk_group_id'])"
+                                        :disabled="disabled || !isEditable(group.info) || group.info['bk_isdefault']"
                                         @click.stop="handleDeleteGroup(group, index)">
                                         <i class="title-icon bk-icon icon-cc-delete"></i>
                                     </bk-button>
@@ -99,7 +99,7 @@
                                             class="property-icon-btn"
                                             :text="true"
                                             :disabled="disabled || !isFieldEditable(property)"
-                                            @click.stop="handleDeleteField({ property, index, _index })">
+                                            @click.stop="handleDeleteField({ property, index, fieldIndex })">
                                             <i class="property-icon bk-icon icon-cc-delete"></i>
                                         </bk-button>
                                     </cmdb-auth>
@@ -113,7 +113,7 @@
                                         :disabled="disabled"
                                         @click.stop="handleAddField(group)">
                                         <i class="bk-icon icon-plus"></i>
-                                        {{$t('添加')}}
+                                        {{customObjId ? $t('新建业务字段') : $t('添加')}}
                                     </bk-button>
                                 </cmdb-auth>
                             </li>
@@ -129,7 +129,7 @@
                             :disabled="disabled || activeModel['bk_ispaused']"
                             @click.stop="handleAddGroup">
                             <i class="bk-icon icon-plus-circle"></i>
-                            {{$t('添加分组')}}
+                            {{customObjId ? $t('新建业务分组') : $t('添加分组')}}
                         </bk-button>
                     </cmdb-auth>
                 </div>
@@ -177,6 +177,7 @@
                     <span class="color-danger">*</span>
                     <div class="cmdb-form-item" :class="{ 'is-error': errors.has('groupName') }">
                         <bk-input v-model.trim="groupForm.groupName"
+                            :placeholder="$t('请输入xx', { name: $t('分组名称') })"
                             name="groupName"
                             v-validate="'required'">
                         </bk-input>
@@ -508,9 +509,6 @@
             },
             setPropertIndex (properties) {
                 properties.sort((propertyA, propertyB) => propertyA['bk_property_index'] - propertyB['bk_property_index'])
-                properties.forEach((property, index) => {
-                    property['bk_property_index'] = index
-                })
                 return properties
             },
             handleCancelAddProperty () {
@@ -718,24 +716,18 @@
                 }
             },
             updatePropertyIndex () {
-                const properties = []
-                let propertyIndex = 0
-                this.groupedProperties.forEach(group => {
-                    group.properties.forEach(property => {
-                        if (property['bk_property_index'] !== propertyIndex || property['bk_property_group'] !== group.info['bk_group_id']) {
-                            property['bk_property_index'] = propertyIndex
-                            property['bk_property_group'] = group.info['bk_group_id']
-                            properties.push(property)
-                        }
-                        propertyIndex++
-                    })
+                const updateProperties = []
+                const flatProperties = this.groupedProperties.reduce((acc, group) => acc.concat(group.properties), [])
+                flatProperties.forEach((property, index) => {
+                    if (property['bk_property_index'] !== index) {
+                        property['bk_property_index'] = index
+                        updateProperties.push(property)
+                    }
                 })
-                if (!properties.length) {
-                    return false
-                }
+                if (!updateProperties.length) return
                 this.updatePropertyGroup({
                     params: this.$injectMetadata({
-                        data: properties.map(property => {
+                        data: updateProperties.map(property => {
                             return {
                                 condition: {
                                     'bk_obj_id': this.objId,
@@ -934,6 +926,9 @@
         &.disabled {
             .property-item {
                 cursor: pointer;
+                &::before {
+                    display: none !important;
+                }
             }
         }
         .property-item {
@@ -962,7 +957,7 @@
                 .property-icon-btn {
                     display: inline-block;
                 }
-                &:not(.only-ready)::before {
+                &::before {
                     display: block;
                 }
             }
@@ -1072,7 +1067,7 @@
             color: #3a84ff;
             font-size: 16px;
             &.is-disabled {
-                color: #000000;
+                color: #C4C6cc;
                 .icon {
                     color: #63656E;
                 }
@@ -1151,5 +1146,11 @@
                 }
             }
         }
+    }
+</style>
+
+<style lang="scss">
+    .field-loading {
+        position: sticky !important;
     }
 </style>

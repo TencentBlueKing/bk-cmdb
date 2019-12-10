@@ -95,7 +95,7 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		}
 		if len(iamResources.Resources) == 0 {
 			if blog.V(5) {
-				blog.InfoJSON("no cmdb resource found, skip sync for safe, %s", resources)
+				blog.InfoJSON("HandleInstanceSync failed, no cmdb resource found, skip sync for safe, %s", resources)
 			}
 			return nil
 		}
@@ -113,7 +113,8 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		iamIDPrefix := ""
 		skipDeregister := false
 		if err := ih.diffAndSyncInstances(header, taskName, searchCondition, iamIDPrefix, resources, skipDeregister); err != nil {
-			blog.Errorf("diffAndSyncInstances failed, err: %+v", err)
+			blog.Errorf("HandleInstanceSync failed, diffAndSyncInstances failed, err: %+v, rid: %s", err, rid)
+			return fmt.Errorf("diffAndSyncInstances failed, err: %+v, rid: %s", err, rid)
 		}
 	}
 	return nil

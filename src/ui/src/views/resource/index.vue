@@ -262,7 +262,7 @@
                     })
                 } else {
                     this.$bkInfo({
-                        title: this.$t('请确认是否转移'),
+                        title: this.$t('确认分配到业务'),
                         subHeader: this.getConfirmContent(business),
                         confirmFn: () => {
                             this.assignHosts(business)
@@ -296,31 +296,20 @@
             },
             getConfirmContent (business) {
                 const render = this.$createElement
-                let content
-                if (this.$i18n.locale === 'en') {
-                    content = render('p', [
-                        render('span', 'Selected '),
-                        render('span', {
-                            style: { color: '#3c96ff' }
-                        }, this.table.checked.length),
-                        render('span', ' Hosts Transfer to Idle machine under '),
-                        render('span', {
-                            style: { color: '#3c96ff' }
-                        }, business['bk_biz_name'])
-                    ])
-                } else {
-                    content = render('p', [
-                        render('span', '选中的 '),
-                        render('span', {
-                            style: { color: '#3c96ff' }
-                        }, this.table.checked.length),
-                        render('span', ' 个主机转移到 '),
-                        render('span', {
-                            style: { color: '#3c96ff' }
-                        }, business['bk_biz_name']),
-                        render('span', ' 下的空闲机模块')
-                    ])
-                }
+                const content = render('i18n', {
+                    props: {
+                        path: '确认转移主机信息'
+                    }
+                }, [
+                    render('span', {
+                        attrs: { place: 'num' },
+                        style: { color: '#3c96ff' }
+                    }, this.table.checked.length),
+                    render('span', {
+                        attrs: { place: 'name' },
+                        style: { color: '#3c96ff' }
+                    }, business['bk_biz_name'])
+                ])
                 return content
             },
             handleChecked (checked) {

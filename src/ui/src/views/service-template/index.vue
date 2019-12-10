@@ -5,7 +5,7 @@
             :show-tips="showFeatureTips"
             @close-tips="showFeatureTips = false">
             <i18n path="服务模板功能提示">
-                <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick" place="link">{{$t('创建集群模板')}}</a>
+                <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick" place="link">{{$t('业务拓扑')}}</a>
             </i18n>
         </feature-tips>
         <div class="template-filter clearfix">
@@ -41,7 +41,7 @@
                 </cmdb-selector>
                 <bk-input type="text"
                     class="filter-search fl"
-                    :placeholder="$t('模板名称搜索')"
+                    :placeholder="$t('请输入xx', { name: $t('模板名称') })"
                     :right-icon="'bk-icon icon-search'"
                     clearable
                     font-size="medium"
@@ -118,7 +118,7 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
-    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         components: {
             featureTips
@@ -305,7 +305,7 @@
             },
             handleTipsLinkClick () {
                 this.$router.push({
-                    name: MENU_BUSINESS_SET_TEMPLATE
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             }
         }

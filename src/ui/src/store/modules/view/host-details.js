@@ -22,6 +22,7 @@ const getters = {
         state.propertyGroups.forEach(group => {
             const properties = state.properties.filter(property => property.bk_property_group === group.bk_group_id)
             if (properties.length) {
+                properties.sort((prev, next) => prev.bk_property_index - next.bk_property_index)
                 groupedProperties.push({
                     ...group,
                     properties
