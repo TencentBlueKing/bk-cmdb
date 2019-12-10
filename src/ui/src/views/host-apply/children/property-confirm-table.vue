@@ -21,6 +21,7 @@
                 </template>
             </bk-table-column>
             <bk-table-column
+                v-if="showOperation"
                 :label="$t('操作')"
                 :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示')) : null"
             >
@@ -91,6 +92,10 @@
             renderIcon: {
                 type: Boolean,
                 default: false
+            },
+            showOperation: {
+                type: Boolean,
+                default: true
             }
         },
         data () {

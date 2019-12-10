@@ -12,19 +12,19 @@
             <bk-table :data="conflictPropertyList">
                 <bk-table-column :label="$t('字段名称')" width="160" :resizable="false" prop="bk_property_name"></bk-table-column>
                 <bk-table-column :label="$t('所属模块')" :render-header="renderColumnHeader" :resizable="false">
-                    <template slot-scope="{ row }">
+                    <template slot-scope="{ row, $index }">
                         <div class="conflict-modules">
                             <div
                                 v-for="(item, index) in row.__extra__.conflictList"
                                 :class="['module-item', { 'selected': item.selected }]"
                                 :key="index"
                             >
-                                <span v-if="item.is_current">主机当前值</span>
+                                <span v-if="item.is_current">{{$t('主机当前值')}}</span>
                                 <span v-else :title="getModulePath(item.bk_module_id)">{{getModulePath(item.bk_module_id)}}</span>
                                 <span :title="item.bk_property_value | formatter(row.bk_property_type, row.option)">
                                     {{item.bk_property_value | formatter(row.bk_property_type, row.option)}}
                                 </span>
-                                <i class="check-model-value" @click="handlePickValue(row, index, item.bk_property_value)">选定</i>
+                                <i class="check-model-value" @click="handlePickValue(row, index, item.bk_property_value, $index)">{{$t('选定')}}</i>
                             </div>
                         </div>
                     </template>
@@ -183,8 +183,10 @@
                 const everyValidTruthy = this.conflictPropertyList.every(property => property.__extra__.valid !== false)
                 this.confirmButtonDisabled = !everyValidTruthy
             },
-            handlePickValue (row, index, value) {
-                row.__extra__.conflictList.forEach((item, i) => (item.selected = index === i))
+            handlePickValue (row, index, value, $index) {
+                row.__extra__.conflictList.forEach((item, i) => {
+                    this.$set(this.conflictPropertyList[$index].__extra__.conflictList[i], 'selected', index === i)
+                })
                 row.__extra__.value = value
             },
             handleConfirm () {
@@ -218,15 +220,18 @@
         }
         .conflict-modules {
             height: 100%;
+            padding: 6px 0;
             .module-item {
                 display: flex;
                 line-height: 22px;
+                padding-left: 6px;
                 span {
-                    max-width: 50%;
+                    width: 50%;
                     padding-right: 10px;
                     @include ellipsis;
-                    &:first-child {
-                        width: calc(50% - 30px);
+                    &:nth-child(2) {
+                        width: auto;
+                        max-width: calc(50% - 30px);
                     }
                 }
                 .check-model-value {
@@ -238,6 +243,9 @@
                 &.selected {
                     color: #3A84FF;
                     background-color: #E1ECFF;
+                    span:nth-child(2) {
+                        max-width: 50%;
+                    }
                 }
                 &:not(.selected):hover {
                     .check-model-value {
