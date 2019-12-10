@@ -145,9 +145,10 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizTopology
 	case meta.SetTemplate:
 		iamResourceType = BizSetTemplate
-
 	case meta.OperationStatistic:
 		iamResourceType = SysOperationStatistic
+	case meta.HostApply:
+		iamResourceType = BizHostApply
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -187,6 +188,7 @@ const (
 	BizProcessServiceCategory ResourceTypeID = "biz_process_service_category"
 	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
 	BizSetTemplate            ResourceTypeID = "biz_set_template"
+	BizHostApply              ResourceTypeID = "biz_host_apply"
 )
 
 const (
@@ -218,6 +220,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizProcessServiceInstance: "服务实例",
 	BizSetTemplate:            "集群模板",
 	SysOperationStatistic:     "运营统计",
+	BizHostApply:              "主机属性自动应用",
 }
 
 type ActionID string

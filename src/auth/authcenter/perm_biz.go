@@ -265,4 +265,17 @@ var expectBizResourceType = []ResourceType{
 			},
 		},
 	},
+	{
+		ResourceTypeID:       BizHostApply,
+		ResourceTypeName:     "主机属性自动应用",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+		},
+	},
 }

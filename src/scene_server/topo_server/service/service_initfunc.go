@@ -154,7 +154,6 @@ func (s *Service) initObject() {
 	s.addAction(http.MethodPost, "/object", s.CreateObject, nil)
 	s.addAction(http.MethodPost, "/objects", s.SearchObject, nil)
 	s.addAction(http.MethodPost, "/objects/topo", s.SearchObjectTopo, nil)
-	s.addAction(http.MethodPost, "/objects/topo/bk_biz_id/{bk_biz_id}/host_apply_rule_related", s.SearchRuleRelatedTopoNodes, nil)
 	s.addAction(http.MethodPut, "/object/{id}", s.UpdateObject, nil)
 	s.addAction(http.MethodDelete, "/object/{id}", s.DeleteObject, nil)
 	s.addAction(http.MethodGet, "/object/statistics", s.GetModelStatistics, nil)

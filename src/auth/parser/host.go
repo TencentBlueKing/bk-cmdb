@@ -28,8 +28,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		hostFavorite().
 		cloudResourceSync().
 		hostSnapshot().
-		findObjectIdentifier()
-
+		findObjectIdentifier().
+		HostApply()
 	return ps
 }
 
