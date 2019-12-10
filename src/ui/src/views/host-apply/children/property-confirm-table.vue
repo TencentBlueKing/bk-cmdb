@@ -3,13 +3,15 @@
         <bk-table
             :data="table.list"
             :pagination="table.pagination"
-            :row-style="{ cursor: 'pointer' }"
-            :max-height="maxHeight || ($APP.height - 240)"
+            :max-height="maxHeight || ($APP.height - 220)"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
-            @row-click="handleRowClick"
         >
-            <bk-table-column :label="$t('内网IP')" prop="expired_host.bk_host_innerip" class-name="is-highlight"></bk-table-column>
+            <bk-table-column :label="$t('内网IP')">
+                <template slot-scope="{ row }">
+                    <bk-button theme="primary" text @click="handleShowDetails(row)">{{row.expired_host.bk_host_innerip}}</bk-button>
+                </template>
+            </bk-table-column>
             <bk-table-column :label="$t('云区域')" prop="cloud_area.bk_cloud_name"></bk-table-column>
             <bk-table-column :label="$t('固资编号')" prop="expired_host.bk_asset_id"></bk-table-column>
             <bk-table-column :label="$t('主机名称')" prop="expired_host.bk_host_name"></bk-table-column>
@@ -18,10 +20,22 @@
                     <div class="cell-change-value" v-html="getChangeValue(row)"></div>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')" v-if="showOperation"
-                class-name="is-highlight"
-                :formatter="getOperationColumnText"
-                :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示')) : null">
+            <bk-table-column
+                v-if="showOperation"
+                :label="$t('操作')"
+                :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示')) : null"
+            >
+                <template slot-scope="{ row }">
+                    <bk-button
+                        v-if="row.conflicts.length > 0"
+                        theme="primary"
+                        text
+                        @click="handleShowConflict(row)"
+                    >
+                        {{row.unresolved_conflict_count > 0 ? '手动修改' : '已修改'}}
+                    </bk-button>
+                    <span v-else>--</span>
+                </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty">
                 <div>{{$t('暂无主机，新转入的主机将会自动应用模块的主机属性')}}</div>
@@ -182,7 +196,7 @@
             getOperationColumnText (row) {
                 let text = '--'
                 if (row.conflicts.length > 0) {
-                    text = row.unresolved_conflict_count > 0 ? '处理冲突' : '已处理'
+                    text = row.unresolved_conflict_count > 0 ? '手动修改' : '已修改'
                 }
                 return text
             },
@@ -202,20 +216,15 @@
                 this.table.pagination.limit = size
                 this.setTableList()
             },
-            handleRowClick (row) {
-                this.currentRow = row
-                const conflictExist = row.unresolved_conflict_count > 0
-                if (conflictExist) {
-                    this.handleShowConflict(row)
-                } else {
-                    this.handleShowDetails(row)
-                }
-            },
             async handleShowDetails (row) {
+                this.currentRow = row
                 this.slider.title = `属性详情【${row.expired_host.bk_host_innerip}】`
                 this.slider.content = 'detail'
                 const properties = this.propertyList
-                const inst = row
+                const inst = row.expired_host
+                // 云区域数据
+                row.cloud_area['bk_inst_name'] = row.cloud_area['bk_cloud_name']
+                inst['bk_cloud_id'] = [row.cloud_area]
                 try {
                     const propertyGroups = await this.getPropertyGroups()
                     this.details.inst = this.$tools.flattenItem(properties, inst)
@@ -231,6 +240,7 @@
                 }
             },
             handleShowConflict (row) {
+                this.currentRow = row
                 this.slider.title = `处理冲突【${row.expired_host.bk_host_innerip}】`
                 this.slider.content = 'conflict'
                 this.slider.isShow = true

@@ -7,7 +7,7 @@
                     <div :class="['module-list', { 'show-more': showMore.isMoreModuleShowed }]" ref="moduleList">
                         <div class="module-item" :title="getModulePath(id)" v-for="(id, index) in moduleIds" :key="index">
                             <span class="module-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
-                            {{getModuleName(id)}}
+                            {{$parent.getModuleName(id)}}
                         </div>
                         <div
                             :class="['module-item', 'more', { 'opened': showMore.isMoreModuleShowed }]"
@@ -34,7 +34,7 @@
                             :multiple="true"
                             :readonly="isDel"
                             :deletable="isDel"
-                            :checked-property-id-list="checkedPropertyIdList"
+                            :checked-property-id-list.sync="checkedPropertyIdList"
                             :rule-list="initRuleList"
                             :module-id-list="moduleIds"
                             @property-value-change="handlePropertyValueChange"
@@ -57,7 +57,7 @@
         >
         </host-property-modal>
         <leave-confirm
-            v-bind="leaveConfirm"
+            v-bind="leaveConfirmConfig"
             title="是否放弃？"
             content="启用步骤未完成，是否放弃当前配置"
             ok-text="留在当前页"
@@ -67,12 +67,13 @@
     </div>
 </template>
 <script>
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import hostPropertyModal from './host-property-modal'
     import propertyConfigTable from './property-config-table'
     import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
     export default {
+        name: 'multi-module-config',
         components: {
             leaveConfirm,
             hostPropertyModal,
@@ -90,7 +91,6 @@
         },
         data () {
             return {
-                moduleMap: {},
                 initRuleList: [],
                 checkedPropertyIdList: [],
                 showMore: {
@@ -103,7 +103,7 @@
                 propertyModalVisible: false,
                 nextButtonDisabled: false,
                 delButtonDisabled: true,
-                leaveConfirm: {
+                leaveConfirmConfig: {
                     id: 'multiModule',
                     active: true
                 }
@@ -111,12 +111,16 @@
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
+            ...mapState('hostApply', ['ruleDraft']),
             isDel () {
                 return this.action === 'batch-del'
+            },
+            hasRuleDraft () {
+                return Object.keys(this.ruleDraft).length > 0
             }
         },
         watch: {
-            checkedPropertyIdList () {
+            checkedPropertyIdList (val) {
                 this.$nextTick(() => {
                     this.toggleNextButtonDisabled()
                 })
@@ -124,7 +128,7 @@
         },
         created () {
             this.initData()
-            this.leaveConfirm.active = !this.isDel
+            this.leaveConfirmConfig.active = !this.isDel
         },
         mounted () {
             this.setShowMoreLinkStatus()
@@ -136,19 +140,11 @@
         methods: {
             async initData () {
                 try {
-                    const [ruleData, topopath] = await Promise.all([
-                        this.getRules(),
-                        this.getTopopath()
-                    ])
-                    const moduleMap = {}
-                    topopath.nodes.forEach(node => {
-                        moduleMap[node.topo_node.bk_inst_id] = node.topo_path
-                    })
-                    this.moduleMap = Object.freeze(moduleMap)
+                    const ruleData = await this.getRules()
                     this.initRuleList = ruleData.info
                     const attrIds = this.initRuleList.map(item => item.bk_attribute_id)
-                    this.checkedPropertyIdList = [...new Set(attrIds)]
-                    this.checkedPropertyIdListCopy = [...this.checkedPropertyIdList]
+                    const checkedPropertyIdList = [...new Set(attrIds)]
+                    this.checkedPropertyIdList = this.hasRuleDraft ? [...new Set([...this.checkedPropertyIdList])] : checkedPropertyIdList
                 } catch (e) {
                     console.log(e)
                 }
@@ -164,23 +160,8 @@
                     }
                 })
             },
-            getTopopath () {
-                return this.$store.dispatch('hostApply/getTopopath', {
-                    bizId: this.bizId,
-                    params: {
-                        topo_nodes: this.moduleIds.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
-                    }
-                })
-            },
             getModulePath (id) {
-                const info = this.moduleMap[id] || []
-                const path = info.map(node => node.bk_inst_name).reverse().join(' / ')
-                return path
-            },
-            getModuleName (id) {
-                const topoInfo = this.moduleMap[id] || []
-                const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
-                return target.bk_inst_name
+                return this.$parent.getModulePath(id)
             },
             setShowMoreLinkStatus () {
                 const moduleList = this.$refs.moduleList
@@ -209,7 +190,7 @@
             },
             goBack () {
                 // 删除离开不用确认
-                this.leaveConfirm.active = !this.isDel
+                this.leaveConfirmConfig.active = !this.isDel
                 this.$nextTick(function () {
                     // 回到入口页
                     this.$router.push({
@@ -244,7 +225,7 @@
                     rules: modulePropertyList
                 })
 
-                this.leaveConfirm.active = false
+                this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
                     this.$router.push({
                         name: 'hostApplyConfirm',
@@ -299,6 +280,7 @@
 </script>
 <style lang="scss" scoped>
     .multi-module-config {
+        // width: 1066px;
         --labelWidth: 180px;
         .config-item {
             display: flex;
@@ -329,8 +311,7 @@
             }
         }
         .config-ft {
-            margin-left: calc(var(--labelWidth) + 12px);
-            margin-top: 20px;
+            margin: 20px 0 20px calc(var(--labelWidth) + 12px);
             .bk-button {
                 min-width: 86px;
             }

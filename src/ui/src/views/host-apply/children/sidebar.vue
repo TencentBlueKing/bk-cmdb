@@ -59,17 +59,12 @@
 <script>
     import searchSelectMix from './search-select-mix'
     import topologyTree from './topology-tree'
-    import ConfirmStore from '@/components/ui/dialog/confirm-store.js'
-    const LEAVE_CONFIRM_ID = 'singleModule'
     export default {
         components: {
             searchSelectMix,
             topologyTree
         },
         props: {
-            editing: {
-                type: Boolean
-            }
         },
         data () {
             return {
@@ -86,6 +81,11 @@
                 return this.$refs.topologyTree
             }
         },
+        watch: {
+            actionMode (value) {
+                this.$emit('action-change', value)
+            }
+        },
         methods: {
             setApplyClosed (moduleId, isClear) {
                 this.topologyTree.updateNodeStatus(moduleId, isClear)
@@ -95,14 +95,9 @@
                 tree.removeChecked({ emitEvent: true })
             },
             async handleBatchAction (actionMode) {
-                if (this.editing && !await ConfirmStore.popup(LEAVE_CONFIRM_ID)) {
-                    return
-                }
                 this.actionMode = actionMode
                 this.showCheckedPanel = true
                 this.treeOptions.showCheckbox = true
-                this.$emit('update:editing', false)
-                this.$emit('update:actionMode', this.actionMode)
             },
             handleTreeSelected (node) {
                 this.$emit('module-selected', node.data)
@@ -137,9 +132,10 @@
             handleGoEdit () {
                 const checkedIds = this.checkedList.map(item => item.bk_inst_id)
                 this.$router.push({
-                    name: 'hostApplyBatchEdit',
+                    name: 'hostApplyEdit',
                     query: {
                         mid: checkedIds.join(','),
+                        batch: 1,
                         action: this.actionMode
                     }
                 })
@@ -183,6 +179,14 @@
                 text-align: center;
                 line-height: 32px;
                 cursor: pointer;
+                &:hover {
+                    border-color: #979ba5;
+                    color: #63656e;
+                }
+                &:active {
+                    border-color: #3a84ff;
+                    color: #3a84ff;
+                }
                 .icon-cc-menu {
                     color: #c4c6cc;
                     font-size: 20px;

@@ -6,6 +6,9 @@
             v-bkloading="{
                 isLoading: $loading(['getTopologyData', 'getMainLine'])
             }"
+            :style="{
+                height: treeHeight
+            }"
             :options="{
                 idKey: idGenerator,
                 nameKey: 'bk_inst_name',
@@ -17,7 +20,12 @@
             @select-change="handleSelectChange"
             @check-change="handleCheckChange"
         >
-            <div class="node-info clearfix" :class="{ 'is-selected': node.selected }" slot-scope="{ node, data }">
+            <div
+                class="node-info clearfix"
+                :title="(data.host_apply_rule_count === 0 && isDel) ? '暂无规则' : ''"
+                :class="{ 'is-selected': node.selected }"
+                slot-scope="{ node, data }"
+            >
                 <i class="node-model-icon fl"
                     :class="{
                         'is-selected': node.selected,
@@ -37,9 +45,7 @@
 
 <script>
     import { mapGetters, mapState } from 'vuex'
-    import ConfirmStore from '@/components/ui/dialog/confirm-store.js'
     import Bus from '@/utils/bus'
-    const LEAVE_CONFIRM_ID = 'singleModule'
     export default {
         props: {
             treeOptions: {
@@ -70,6 +76,7 @@
         },
         computed: {
             ...mapGetters(['supplierAccount', 'isAdminView']),
+            ...mapGetters(['featureTipsParams']),
             ...mapState('hostApply', ['ruleDraft']),
             business () {
                 return this.$store.state.objectBiz.bizId
@@ -87,11 +94,18 @@
                     map[model.bk_obj_id] = model.bk_obj_name[0]
                 })
                 return map
+            },
+            isDel () {
+                return this.action === 'batch-del'
+            },
+            treeHeight () {
+                const showFeatureTips = this.featureTipsParams['hostApply']
+                return this.$APP.height - 160 - (showFeatureTips ? 42 : 0) + 'px'
             }
         },
         watch: {
-            action (value) {
-                this.setNodeDisabled(value)
+            action () {
+                this.setNodeDisabled()
             }
         },
         async created () {
@@ -176,10 +190,9 @@
                 findModule(this.treeData)
                 return stat
             },
-            setNodeDisabled (action) {
+            setNodeDisabled () {
                 const nodeIds = this.treeStat.noRuleIds.map(id => `module_${id}`)
-                const disabled = action === 'batch-del'
-                this.$refs.tree.setDisabled(nodeIds, { emitEvent: true, disabled })
+                this.$refs.tree.setDisabled(nodeIds, { emitEvent: true, disabled: this.isDel })
             },
             updateNodeStatus (id, isClear) {
                 const nodeData = this.$refs.tree.getNodeById(`module_${id}`).data
@@ -217,15 +230,7 @@
                 return node.data.bk_obj_id === 'module'
             },
             async beforeSelect (node) {
-                if (this.isModule(node)) {
-                    if (this.$parent.editing) {
-                        const leaveConfirmResult = await ConfirmStore.popup(LEAVE_CONFIRM_ID)
-                        return leaveConfirmResult
-                    }
-                    return true
-                } else {
-                    return false
-                }
+                return this.isModule(node)
             },
             handleSelectChange (node) {
                 this.$emit('selected', node)
@@ -238,69 +243,71 @@
 </script>
 
 <style lang="scss" scoped>
-    .topology-tree-wrapper {
-        height: calc(100% - 32px);
-        @include scrollbar-y;
-    }
-    .node-info {
-        .node-model-icon {
-            width: 22px;
-            height: 22px;
-            line-height: 21px;
-            text-align: center;
-            font-style: normal;
-            font-size: 12px;
-            margin: 8px 8px 0 6px;
-            border-radius: 50%;
-            background-color: #c4c6cc;
-            color: #fff;
-            &.is-template {
-                background-color: #97aed6;
-            }
-            &.is-selected {
-                background-color: #3a84ff;
-            }
-            &.is-leaf-icon {
-                margin-left: 2px;
-            }
-        }
-        .node-button {
-            height: 24px;
-            padding: 0 6px;
-            margin: 0 20px 0 4px;
-            line-height: 22px;
-            border-radius: 4px;
-            font-size: 12px;
-            min-width: auto;
-            &.set-template-button {
-                @include inlineBlock;
+    .topology-tree {
+        padding: 10px 0;
+        margin-right: 4px;
+        @include scrollbar-y(6px);
+
+        .node-info {
+            .node-model-icon {
+                width: 22px;
+                height: 22px;
+                line-height: 21px;
+                text-align: center;
                 font-style: normal;
-                background-color: #dcdee5;
-                color: #ffffff;
-                outline: none;
-                cursor: not-allowed;
+                font-size: 12px;
+                margin: 8px 8px 0 6px;
+                border-radius: 50%;
+                background-color: #c4c6cc;
+                color: #fff;
+                &.is-template {
+                    background-color: #97aed6;
+                }
+                &.is-selected {
+                    background-color: #3a84ff;
+                }
+                &.is-leaf-icon {
+                    margin-left: 2px;
+                }
             }
-        }
-        .config-icon {
-            position: relative;
-            top: 6px;
-            right: 20px;
-            padding: 0 5px;
-            height: 18px;
-            line-height: 17px;
-            color: #979ba5;
-            font-size: 26px;
-            text-align: center;
-            color: #2dcb56;
-        }
-        .info-content {
-            display: flex;
-            align-items: center;
-            line-height: 36px;
-            font-size: 14px;
-            .node-name {
-                @include ellipsis;
-                margin-right: 8px;
+            .node-button {
+                height: 24px;
+                padding: 0 6px;
+                margin: 0 20px 0 4px;
+                line-height: 22px;
+                border-radius: 4px;
+                font-size: 12px;
+                min-width: auto;
+                &.set-template-button {
+                    @include inlineBlock;
+                    font-style: normal;
+                    background-color: #dcdee5;
+                    color: #ffffff;
+                    outline: none;
+                    cursor: not-allowed;
+                }
+            }
+            .config-icon {
+                position: relative;
+                top: 6px;
+                right: 20px;
+                padding: 0 5px;
+                height: 18px;
+                line-height: 17px;
+                color: #979ba5;
+                font-size: 26px;
+                text-align: center;
+                color: #2dcb56;
+            }
+            .info-content {
+                display: flex;
+                align-items: center;
+                line-height: 36px;
+                font-size: 14px;
+                .node-name {
+                    @include ellipsis;
+                    margin-right: 8px;
+                }
             }
         }
     }
