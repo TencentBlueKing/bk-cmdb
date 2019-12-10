@@ -23,6 +23,16 @@ export default [{
         menu: {
             relative: MENU_RESOURCE_MANAGEMENT
         },
+        layout: {
+            previous () {
+                return {
+                    name: MENU_RESOURCE_INSTANCE,
+                    params: {
+                        objId: window.CMDB_APP.$route.params.objId
+                    }
+                }
+            }
+        },
         checkAvailable: (to, from, app) => {
             const modelId = to.params.objId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)

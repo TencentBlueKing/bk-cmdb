@@ -38,11 +38,6 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import moment from 'moment'
-    import {
-        MENU_RESOURCE_HOST,
-        MENU_RESOURCE_INSTANCE,
-        MENU_RESOURCE_MANAGEMENT
-    } from '@/dictionary/menu-symbol'
     export default {
         data () {
             const startDate = moment().subtract(1, 'month').toDate()
@@ -166,22 +161,6 @@
             ...mapActions('operationAudit', ['getOperationLog']),
             setBreadcrumbs () {
                 this.$store.commit('setTitle', this.$t('删除历史'))
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('资源目录'),
-                    route: {
-                        name: MENU_RESOURCE_MANAGEMENT
-                    }
-                }, {
-                    label: this.model.bk_obj_name,
-                    route: {
-                        name: this.objId === 'host' ? MENU_RESOURCE_HOST : MENU_RESOURCE_INSTANCE,
-                        params: {
-                            objId: this.objId
-                        }
-                    }
-                }, {
-                    label: this.$t('删除历史')
-                }])
             },
             back () {
                 this.$router.go(-1)

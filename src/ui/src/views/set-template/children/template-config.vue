@@ -151,14 +151,6 @@
         },
         methods: {
             setBreadcrumbs () {
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('集群模板'),
-                    route: {
-                        name: MENU_BUSINESS_SET_TEMPLATE
-                    }
-                }, {
-                    label: this.mode === 'create' ? this.$t('创建') : this.templateName
-                }])
                 if (this.mode !== 'create') {
                     this.$store.commit('setTitle', this.templateName)
                 }

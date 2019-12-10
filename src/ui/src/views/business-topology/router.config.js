@@ -53,6 +53,9 @@ export default [{
         owner: MENU_BUSINESS,
         menu: {
             relative: MENU_BUSINESS_HOST_AND_SERVICE
+        },
+        layout: {
+            previous: { name: MENU_BUSINESS_HOST_AND_SERVICE }
         }
     })
 }, {
@@ -64,6 +67,9 @@ export default [{
         menu: {
             i18n: '主机详情',
             relative: MENU_BUSINESS_HOST_AND_SERVICE
+        },
+        layout: {
+            previous: { name: MENU_BUSINESS_HOST_AND_SERVICE }
         },
         checkAvailable: (to, from, app) => {
             return parseInt(to.params.business) === app.$store.getters['objectBiz/bizId']

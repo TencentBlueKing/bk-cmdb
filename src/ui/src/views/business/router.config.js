@@ -34,6 +34,9 @@ export default [{
             operation: {
                 BUSINESS_ARCHIVE
             }
+        },
+        layout: {
+            previous: { name: MENU_RESOURCE_BUSINESS }
         }
     })
 }]

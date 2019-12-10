@@ -46,6 +46,11 @@ export default [{
                 D_SERVICE_TEMPLATE,
                 R_SERVICE_TEMPLATE
             }
+        },
+        layout: {
+            previous: {
+                name: MENU_BUSINESS_SERVICE_TEMPLATE
+            }
         }
     })
 }]
