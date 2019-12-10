@@ -18,6 +18,11 @@ export default [{
     meta: new Meta({
         menu: {
             relative: MENU_RESOURCE_MANAGEMENT
+        },
+        layout: {
+            previous: {
+                name: MENU_RESOURCE_HOST
+            }
         }
     })
 }]

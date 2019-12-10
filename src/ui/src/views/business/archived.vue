@@ -41,7 +41,6 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import { MENU_RESOURCE_BUSINESS, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -77,7 +76,6 @@
         },
         async created () {
             try {
-                this.setDynamicBreadcrumbs()
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: 'biz',
@@ -97,21 +95,6 @@
         methods: {
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('objectBiz', ['searchBusiness', 'recoveryBusiness']),
-            setDynamicBreadcrumbs () {
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('资源目录'),
-                    route: {
-                        name: MENU_RESOURCE_MANAGEMENT
-                    }
-                }, {
-                    label: this.$t('业务'),
-                    route: {
-                        name: MENU_RESOURCE_BUSINESS
-                    }
-                }, {
-                    label: this.$t('已归档业务')
-                }])
-            },
             back () {
                 this.$router.go(-1)
             },

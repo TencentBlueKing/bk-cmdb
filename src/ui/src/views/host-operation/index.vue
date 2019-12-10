@@ -258,14 +258,6 @@
                     remove: this.$t('移除主机')
                 }
                 this.$store.commit('setTitle', titleMap[this.type])
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('业务拓扑'),
-                    route: {
-                        name: MENU_BUSINESS_HOST_AND_SERVICE
-                    }
-                }, {
-                    label: titleMap[this.type]
-                }])
             },
             async getTopologyModels () {
                 try {

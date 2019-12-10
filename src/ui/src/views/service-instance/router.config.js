@@ -24,6 +24,11 @@ export default [{
                 D_SERVICE_INSTANCE,
                 R_SERVICE_INSTANCE
             }
+        },
+        layout: {
+            previous: {
+                name: MENU_BUSINESS_HOST_AND_SERVICE
+            }
         }
     })
 }, {
@@ -43,6 +48,11 @@ export default [{
                 U_SERVICE_INSTANCE,
                 D_SERVICE_INSTANCE,
                 R_SERVICE_INSTANCE
+            }
+        },
+        layout: {
+            previous: {
+                name: MENU_BUSINESS_HOST_AND_SERVICE
             }
         }
     })

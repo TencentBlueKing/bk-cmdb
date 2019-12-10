@@ -179,7 +179,6 @@ router.afterEach((to, from) => {
             afterload(router.app, to, from)
         }
         router.app.$store.commit('setTitle', '')
-        router.app.$store.commit('setBreadcrumbs', [])
     } catch (e) {
         console.error(e)
     } finally {
