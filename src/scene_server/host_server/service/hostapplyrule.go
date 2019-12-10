@@ -122,6 +122,13 @@ func (s *Service) DeleteHostApplyRule(req *restful.Request, resp *restful.Respon
 		return
 	}
 
+	if len(option.RuleIDs) == 0 {
+		blog.Errorf("DeleteHostApplyRule failed, decode request body failed, err: %v,rid:%s", err, rid)
+		result := &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "host_apply_rule_ids")}
+		_ = resp.WriteError(http.StatusBadRequest, result)
+		return
+	}
+
 	if err := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(srvData.ctx, srvData.header, bizID, option); err != nil {
 		blog.ErrorJSON("DeleteHostApplyRule failed, core service DeleteHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
 		result := &metadata.RespError{Msg: err}
