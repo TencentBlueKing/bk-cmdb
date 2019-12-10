@@ -19,7 +19,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 )
 
@@ -62,6 +64,62 @@ func fillIdentifier(identifier *metadata.HostIdentifier, ctx context.Context, ca
 			return nil, err
 		}
 		hostIdentModule.ModuleName = getString(module.data[common.BKModuleNameField])
+
+		// fill host layer info
+		asstMap := make(map[string]string)
+		asstArr := make([]metadata.Association, 0)
+		cond := condition.CreateCondition().Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
+		condMap := util.SetQueryOwner(cond.ToMapStr().ToMapInterface(), identifier.SupplierAccount)
+		err = db.Table(common.BKTableNameObjAsst).Find(condMap).All(ctx, &asstArr)
+		if err != nil {
+			blog.ErrorJSON("findHostLayerInfo query mainline association info error. condition:%s", condMap)
+			return nil, err
+		}
+		for _, asst := range asstArr {
+			asstMap[asst.ObjectID] = asst.AsstObjID
+		}
+
+		parentID, err := getInt(set.data, common.BKParentIDField)
+		if err != nil {
+			blog.Errorf("identifier: convert set bk_parent_id failed, the raw is %+v", set.data[common.BKParentIDField])
+			return nil, err
+		}
+
+		curObj, ok := asstMap[common.BKInnerObjIDSet]
+		if !ok {
+			continue
+		}
+
+		var layer *metadata.Layer
+		for curObj != "" && curObj != common.BKInnerObjIDApp {
+			// TODO: add event for layer to use cache, right now data are obtained from db
+			objLayer, err := getCache(ctx, cache, db, curObj, parentID, true)
+			if err != nil {
+				blog.Errorf("identifier: getCache for %s %d error %s", curObj, parentID, err.Error())
+				return nil, err
+			}
+
+			instID, err := getInt(objLayer.data, common.BKInstIDField)
+			if err != nil {
+				blog.Errorf("identifier: convert %s bk_inst_id failed, the raw is %+v", curObj, objLayer.data[common.BKInstIDField])
+				return nil, err
+			}
+
+			layer = &metadata.Layer{
+				InstID:   instID,
+				InstName: getString(objLayer.data[common.BKInstNameField]),
+				ObjID:    curObj,
+				Child:    layer,
+			}
+
+			curObj = asstMap[curObj]
+			parentID, err = getInt(objLayer.data, common.BKParentIDField)
+			if err != nil {
+				blog.Errorf("identifier: convert set bk_parent_id failed, the raw is %+v", set.data[common.BKParentIDField])
+				return nil, err
+			}
+		}
+		hostIdentModule.Layer = layer
 	}
 
 	// fill process

@@ -31,7 +31,9 @@ type AuthConfig struct {
 	// the system id that cmdb used in auth center.
 	SystemID string
 	// enable sync auth data to iam
-	EnableSync bool
+	EnableSync          bool
+	SyncWorkerCount     int
+	SyncIntervalMinutes int
 }
 
 type RegisterInfo struct {
@@ -191,6 +193,17 @@ type SearchResult struct {
 	Data      []meta.BackendResource `json:"data"`
 }
 
+type PageBackendResource struct {
+	Count   int64                  `json:"count"`
+	Results []meta.BackendResource `json:"results"`
+}
+
+type SearchPageResult struct {
+	BaseResponse
+	RequestID string              `json:"request_id"`
+	Data      PageBackendResource `json:"data"`
+}
+
 func (br BaseResponse) ErrorString() string {
 	return fmt.Sprintf("request id: %s, error code: %d, message: %s", br.RequestID, br.Code, br.Message)
 }
@@ -220,10 +233,12 @@ type ListAuthorizedScopeResult struct {
 }
 
 type AuthorizedResource struct {
-	ActionID     ActionID         `json:"action_id"`
-	ResourceType ResourceTypeID   `json:"resource_type"`
-	ResourceIDs  [][]RscTypeAndID `json:"resource_ids"`
+	ActionID     ActionID       `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceIDs  []IamResource  `json:"resource_ids"`
 }
+
+type IamResource []RscTypeAndID
 
 type RoleWithAuthResources struct {
 	RoleTemplateName string       `json:"perm_template_name"`

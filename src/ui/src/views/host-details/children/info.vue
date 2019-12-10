@@ -231,7 +231,7 @@
                 opacity: 0;
                 font-size: 12px;
                 cursor: pointer;
-                margin: 1px 0 0 10px;
+                margin: 0 0 0 10px;
                 color: $textColor;
                 &:hover {
                     color: $primaryColor;

@@ -286,12 +286,13 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 		case reflect.String:
 			targetStr := j.(string)
 			if util.InStrArr(userFieldArr, i) {
-				d := make(map[string]interface{})
-				// field type is user, use regex
-				userName := gparams.SpecialCharChange(targetStr)
-				// search with exactly the user's name with regexp
-				d[common.BKDBLIKE] = strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", userName, -1)
-				output[i] = d
+				exactOr := make([]map[string]interface{}, 0)
+				for _, user := range strings.Split(strings.Trim(targetStr, ","), ",") {
+					// search with exactly the user's name with regexp
+					like := strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", gparams.SpecialCharChange(user), -1)
+					exactOr = append(exactOr, mapstr.MapStr{i: mapstr.MapStr{common.BKDBLIKE: like}})
+				}
+				output[common.BKDBOR] = exactOr
 			} else {
 				output[i] = targetStr
 			}
