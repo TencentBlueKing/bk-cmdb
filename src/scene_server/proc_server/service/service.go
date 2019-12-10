@@ -32,12 +32,10 @@ import (
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
-	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 type srvComm struct {
@@ -57,7 +55,6 @@ type ProcServer struct {
 	EsbConfigChn       chan esbutil.EsbConfig
 	Config             *options.Config
 	EsbSrv             esbserver.EsbClientInterface
-	Cache              *redis.Client
 	procHostInstConfig logics.ProcHostInstConfig
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
@@ -81,7 +78,7 @@ func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(ps.Engine, header, ps.Cache, ps.EsbSrv, &ps.procHostInstConfig),
+		lgc:           logics.NewLogics(ps.Engine, header, ps.EsbSrv, &ps.procHostInstConfig),
 	}
 }
 
@@ -219,10 +216,7 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}()
 	}
 
-	cfg := ccRedis.ParseConfigFromKV("redis", current.ConfigMap)
-	ps.Config = &options.Config{
-		Redis: &cfg,
-	}
+	ps.Config = &options.Config{}
 
 	hostInstPrefix := "host instance"
 	procHostInstConfig := &ps.procHostInstConfig
