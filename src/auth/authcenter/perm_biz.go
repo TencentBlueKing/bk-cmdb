@@ -274,7 +274,7 @@ var expectBizResourceType = []ResourceType{
 			{
 				ActionID:          Edit,
 				ActionName:        "编辑",
-				IsRelatedResource: true,
+				IsRelatedResource: false,
 			},
 		},
 	},
