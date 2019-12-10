@@ -95,7 +95,7 @@ const menus = [{
     }, {
         id: MENU_BUSINESS_HOST_APPLY,
         i18n: '主机自动应用',
-        icon: 'icon-cc-nav-service-topo',
+        icon: 'icon-cc-host-apply',
         route: getMenuRoute(businessViews, MENU_BUSINESS_HOST_APPLY, 'business')
     }, {
         id: MENU_BUSINESS_CUSTOM_QUERY,
