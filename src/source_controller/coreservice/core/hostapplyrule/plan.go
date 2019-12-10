@@ -209,11 +209,8 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		}
 		attribute, exist := attributeMap[attributeID]
 		if exist == false {
-			blog.ErrorJSON("generateOneHostApplyPlan failed, attribute id filed not exist, "+
-				"attributeMap: %s, attributeID: %s, rid: %s", attributeMap, attributeID, rid)
-			err := ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAttributeIDField)
-			plan.ErrCode = err.GetCode()
-			plan.ErrMsg = err.Error()
+			blog.Infof("generateOneHostApplyPlan attribute id filed not exist, attributeID: %s, rid: %s", attributeID, rid)
+			continue
 		}
 		propertyIDField := attribute.PropertyID
 		originalValue, ok := host[propertyIDField]
