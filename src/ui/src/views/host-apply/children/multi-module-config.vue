@@ -34,7 +34,7 @@
                             :multiple="true"
                             :readonly="isDel"
                             :deletable="isDel"
-                            :checked-property-id-list="checkedPropertyIdList"
+                            :checked-property-id-list.sync="checkedPropertyIdList"
                             :rule-list="initRuleList"
                             :module-id-list="moduleIds"
                             @property-value-change="handlePropertyValueChange"
@@ -67,7 +67,7 @@
     </div>
 </template>
 <script>
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import hostPropertyModal from './host-property-modal'
     import propertyConfigTable from './property-config-table'
@@ -111,12 +111,16 @@
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
+            ...mapState('hostApply', ['ruleDraft']),
             isDel () {
                 return this.action === 'batch-del'
+            },
+            hasRuleDraft () {
+                return Object.keys(this.ruleDraft).length > 0
             }
         },
         watch: {
-            checkedPropertyIdList () {
+            checkedPropertyIdList (val) {
                 this.$nextTick(() => {
                     this.toggleNextButtonDisabled()
                 })
@@ -139,7 +143,8 @@
                     const ruleData = await this.getRules()
                     this.initRuleList = ruleData.info
                     const attrIds = this.initRuleList.map(item => item.bk_attribute_id)
-                    this.checkedPropertyIdList = [...new Set(attrIds)]
+                    const checkedPropertyIdList = [...new Set(attrIds)]
+                    this.checkedPropertyIdList = this.hasRuleDraft ? [...new Set([...this.checkedPropertyIdList])] : checkedPropertyIdList
                 } catch (e) {
                     console.log(e)
                 }
@@ -306,8 +311,7 @@
             }
         }
         .config-ft {
-            margin-left: calc(var(--labelWidth) + 12px);
-            margin-top: 20px;
+            margin: 20px 0 20px calc(var(--labelWidth) + 12px);
             .bk-button {
                 min-width: 86px;
             }

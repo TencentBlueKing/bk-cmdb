@@ -46,7 +46,7 @@
                 if (this.isBatch) {
                     title = this.$t(this.action === 'batch-del' ? '批量删除' : '批量编辑')
                 } else {
-                    title = `${this.$t('编辑')}${this.getModuleName(this.moduleIds[0])}`
+                    title = `${this.$t('编辑')} ${this.getModuleName(this.moduleIds[0])}`
                 }
                 return title
             }
@@ -54,6 +54,12 @@
         created () {
             this.initData()
             this.currentView = this.isBatch ? multiModuleConfig.name : singleModuleConfig.name
+        },
+        beforeRouteLeave (to, from, next) {
+            if (to.name !== 'hostApplyConfirm') {
+                this.$store.commit('hostApply/clearRuleDraft')
+            }
+            next()
         },
         methods: {
             async initData () {

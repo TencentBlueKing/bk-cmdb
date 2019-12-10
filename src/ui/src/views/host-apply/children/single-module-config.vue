@@ -93,7 +93,7 @@
                     const ruleData = await this.getRules()
                     this.initRuleList = ruleData.info || []
                     const checkedPropertyIdList = this.initRuleList.map(item => item.bk_attribute_id)
-                    this.checkedPropertyIdList = this.hasRuleDraft ? [...this.checkedPropertyIdList, ...checkedPropertyIdList] : checkedPropertyIdList
+                    this.checkedPropertyIdList = this.hasRuleDraft ? [...this.checkedPropertyIdList] : checkedPropertyIdList
                 } catch (e) {
                     console.log(e)
                 }
