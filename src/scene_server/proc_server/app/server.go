@@ -29,7 +29,6 @@ import (
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/service"
-	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
@@ -86,12 +85,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}
 
-	cacheDB, err := redis.NewFromConfig(*procSvr.Config.Redis)
-	if err != nil {
-		blog.Errorf("new redis client failed, err: %s", err.Error())
-		return fmt.Errorf("new redis client failed, err: %s", err)
-	}
-
 	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn, nil, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
@@ -99,7 +92,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
 	procSvr.Engine = engine
 	procSvr.EsbSrv = esbSrv
-	procSvr.Cache = cacheDB
 	procSvr.Logic = &logics.Logic{
 		Engine: procSvr.Engine,
 	}

@@ -163,6 +163,9 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
 
+	// first install use api
+	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
+
 	container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
