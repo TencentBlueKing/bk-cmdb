@@ -30,6 +30,10 @@ func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	state := metadata.Attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &state)
 	if err != nil {
+		// bk_state_name already delete
+		if err == dal.ErrDocumentNotFound {
+			return nil
+		}
 		return err
 	}
 

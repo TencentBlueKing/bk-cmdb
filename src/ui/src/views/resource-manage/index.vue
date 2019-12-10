@@ -3,7 +3,7 @@
         <div class="classify-filter">
             <bk-input class="filter-input"
                 clearable
-                :placeholder="$t('名称')"
+                :placeholder="$t('请输入xx', { name: $t('关键字') })"
                 right-icon="icon-search"
                 v-model.trim="filter">
             </bk-input>

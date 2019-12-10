@@ -5,7 +5,7 @@
                 <div class="fr">
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
                         clearable
-                        :placeholder="$t('请输入拓扑路径关键词')"
+                        :placeholder="$t('请输入拓扑路径')"
                         v-model.trim="table.filter"
                         @change="handleFilter">
                     </bk-input>
@@ -24,9 +24,17 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')">
                     <template slot-scope="{ row }">
-                        <bk-button text :disabled="isSyncDisabled(row)" @click="handleSync(row)">{{$t('去同步')}}</bk-button>
+                        <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="$t('已经是最新，无需同步')">{{$t('去同步')}}</span>
+                        <bk-button v-else text :disabled="isSyncDisabled(row)" @click="handleSync(row)">{{$t('去同步')}}</bk-button>
                     </template>
                 </bk-table-column>
+                <cmdb-table-empty slot="empty" :stuff="table.stuff">
+                    <div>
+                        <i18n path="空服务模板实例提示" tag="div">
+                            <bk-button style="font-size: 14px;" text @click="handleToCreatedInstance" place="link">{{$t('创建服务实例')}}</bk-button>
+                        </i18n>
+                    </div>
+                </cmdb-table-empty>
             </bk-table>
         </div>
     </div>
@@ -37,6 +45,7 @@
     import { time } from '@/filters/formatter'
     import debounce from 'lodash.debounce'
     import Bus from '@/utils/bus'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         filters: {
             time
@@ -51,7 +60,11 @@
                     filtering: false,
                     data: [],
                     backup: [],
-                    syncStatus: []
+                    syncStatus: [],
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 request: {
                     instance: Symbol('instance'),
@@ -149,7 +162,9 @@
                         setId: row.bk_set_id
                     },
                     query: {
-                        path: row._path_
+                        path: row._path_,
+                        form: 'operationalTemplate',
+                        templateId: this.serviceTemplateId
                     }
                 })
             },
@@ -161,6 +176,7 @@
                     } else {
                         this.table.data = [...this.table.backup]
                     }
+                    this.table.stuff.type = this.table.filter ? 'search' : 'default'
                     this.table.filtering = false
                 })
             },
@@ -171,6 +187,9 @@
                 const timeA = (new Date(rowA.last_time)).getTime()
                 const timeB = (new Date(rowB.last_time)).getTime()
                 return timeA - timeB
+            },
+            handleToCreatedInstance () {
+                this.$router.push({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             }
         }
     }
@@ -191,6 +210,11 @@
             .icon-cc-updating {
                 color: #C4C6CC;
             }
+        }
+        .latest-sync {
+            font-size: 12px;
+            cursor: not-allowed;
+            color: #DCDEE5;
         }
     }
 </style>
