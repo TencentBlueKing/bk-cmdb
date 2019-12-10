@@ -532,7 +532,7 @@
         position: relative;
         margin-right: 10px;
         .filter-selector{
-            width: 115px;
+            width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
         }

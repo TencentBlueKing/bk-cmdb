@@ -4,7 +4,7 @@
             <bk-input class="search-input"
                 ref="searchInput"
                 type="textarea"
-                :placeholder="$t('请输入IP，多个值换行分隔，点击搜索')"
+                :placeholder="$t('请输入IP，多个IP请使用换行分隔')"
                 :rows="rows"
                 v-model="searchContent"
                 @focus="handleFocus"

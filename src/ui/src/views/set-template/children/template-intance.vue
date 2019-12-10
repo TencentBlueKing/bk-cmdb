@@ -25,8 +25,10 @@
                     </bk-select>
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
                         clearable
+                        v-model="filterName"
                         :placeholder="$t('请输入集群名称搜索')"
-                        @enter="handleSearch">
+                        @enter="handleSearch"
+                        @clear="handleSearch">
                     </bk-input>
                     <icon-button class="ml10"
                         v-bk-tooltips="$t('同步历史')"
@@ -112,7 +114,7 @@
                 <cmdb-table-empty slot="empty" :stuff="table.stuff">
                     <div>
                         <i18n path="空集群模板实例提示" tag="div">
-                            <bk-button text @click="handleLinkServiceTopo" place="link">{{$t('服务拓扑')}}</bk-button>
+                            <bk-button style="font-size: 14px;" text @click="handleLinkServiceTopo" place="link">{{$t('业务拓扑')}}</bk-button>
                         </i18n>
                     </div>
                 </cmdb-table-empty>
@@ -359,9 +361,8 @@
                 this.pagination.current = current
                 await this.getData()
 
-                if (event) {
-                    this.table.stuff.type = 'search'
-                }
+                const searchStatus = this.statusFilter !== 'all' || !!this.filterName
+                this.table.stuff.type = event && searchStatus ? 'search' : 'default'
 
                 if (this.list.length) {
                     this.getSetInstancesWithTopo()

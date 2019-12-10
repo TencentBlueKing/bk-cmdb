@@ -16,14 +16,18 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
+
+	"gopkg.in/redis.v5"
 )
 
 type processOperation struct {
 	dbProxy    dal.RDB
 	dependence OperationDependence
+	eventCli   eventclient.Client
 }
 
 // OperationDependence methods definition
@@ -33,10 +37,11 @@ type OperationDependence interface {
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB, dependence OperationDependence) core.ProcessOperation {
+func New(dbProxy dal.RDB, dependence OperationDependence, cache *redis.Client) core.ProcessOperation {
 	processOps := &processOperation{
 		dbProxy:    dbProxy,
 		dependence: dependence,
+		eventCli:   eventclient.NewClientViaRedis(cache, dbProxy),
 	}
 	return processOps
 }

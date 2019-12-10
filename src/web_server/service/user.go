@@ -194,7 +194,6 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 
 // UserDetail 用户信息查询接口（根据用户名查询用户的详细信息，比如中文名，电话之类的）
 // Note: 该接口仅用于前端页面将用户英文名转成中文名，因此，任何出错的情况均直接忽略错误，并返回空
-// f.e. https://paas-dev.bk.com/o/bk_user_manage/api/v2/profiles/?fuzzy_lookups=1234&lookup_field=password&fields=username,password
 func (s *Service) UserDetail(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 

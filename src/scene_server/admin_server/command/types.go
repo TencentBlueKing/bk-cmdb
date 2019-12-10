@@ -138,6 +138,37 @@ func (n *Node) getNodeKey(parentKey string, keys []string) (nodeKey string) {
 	return nodeKey
 }
 
+// BKTopo 蓝鲸安装拓扑的的结构
+type BKTopo struct {
+	// map[process name]map[key]value
+	Proc               []map[string]interface{} `json:"proc"`
+	ServiceTemplateArr []BKServiceTemplate      `json:"service_template"`
+	Topo               BKBizTopo                `json:"topo"`
+}
+
+// BKServiceTemplate 服务模版与进程关系
+type BKServiceTemplate struct {
+	Name string `json:"name"`
+	// 只能有前面两个有效, 没有内容的时候，使用Default
+	ServiceCategoryName []string `json:"service_category_name"`
+	// ServiceCategoryName,服务分类转换成分类ID
+	ServiceCategoryID int64    `json:"-"`
+	BindProcess       []string `json:"bind_proc"`
+}
+
+// BKBizTopo business set,module
+type BKBizTopo struct {
+	SetArr    []map[string]interface{} `json:"set"`
+	ModuleArr []BKBizModule            `json:"module"`
+}
+
+// BKBizModule business module info
+type BKBizModule struct {
+	SetName         string                 `json:"bk_set_name"`
+	ServiceTemplate string                 `json:"service_template"`
+	Info            map[string]interface{} `json:"info"`
+}
+
 // Topo define
 type Topo struct {
 	Mainline  []string     `json:"mainline,omitempty"`
