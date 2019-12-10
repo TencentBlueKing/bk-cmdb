@@ -10,16 +10,13 @@
  * limitations under the License.
  */
 
-package command
+package metadata
 
-import (
-	"context"
-	"fmt"
-
-	"configcenter/src/storage/dal"
-)
-
-func export(ctx context.Context, db dal.RDB, opt *option) error {
-
-	return fmt.Errorf("unrealized")
+type BkSystemInstallRequest struct {
+	SetName    string                            `json:"bk_set_name"`
+	ModuleName string                            `json:"bk_module_name"`
+	InnerIP    string                            `json:"bk_host_innerip"`
+	CloudID    int64                             `json:"bk_cloud_id"`
+	HostInfo   map[string]interface{}            `json:"host_info"`
+	ProcInfo   map[string]map[string]interface{} `json:"proc_info"`
 }
