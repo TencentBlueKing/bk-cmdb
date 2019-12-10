@@ -79,7 +79,7 @@
                             theme="primary"
                             :disabled="disabled"
                             :text="true"
-                            @click.stop="operationTemplate(row['id'])">
+                            @click.stop="operationTemplate(row['id'], 'edit')">
                             {{$t('编辑')}}
                         </bk-button>
                     </cmdb-auth>
@@ -255,11 +255,12 @@
                 this.categoryId = id
                 this.getTableData(true)
             },
-            operationTemplate (id) {
+            operationTemplate (id, type) {
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        templateId: id
+                        templateId: id,
+                        isEdit: type === 'edit'
                     }
                 })
             },
