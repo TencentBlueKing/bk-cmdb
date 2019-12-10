@@ -1,5 +1,5 @@
 <template>
-    <div class="feature-tips" v-if="showTips">
+    <div :class="['feature-tips', className]" v-if="showTips">
         <div class="main-box" :style="{ 'padding-right': featureName ? '30px' : 0 }">
             <i class="icon-cc-exclamation-tips"></i>
             <slot>
@@ -27,6 +27,10 @@
                 default: ''
             },
             moreHref: {
+                type: String,
+                default: ''
+            },
+            className: {
                 type: String,
                 default: ''
             }

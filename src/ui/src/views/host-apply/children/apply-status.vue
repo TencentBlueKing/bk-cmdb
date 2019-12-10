@@ -1,33 +1,32 @@
 <template>
-    <cmdb-dialog v-model="visible" :width="400" @close="handleEvent('return')">
+    <cmdb-dialog v-model="visible" :width="490" @close="handleEvent('return')">
         <div class="status status-loading" v-if="loading">
-            <img class="status-icon" src="../../../assets/images/icon/loading.svg">
-            <p class="status-title">{{$t('正在应用中')}}</p>
+            <div class="status-inner">
+                <img class="status-icon" src="../../../assets/images/icon/loading.svg">
+                <p class="status-title">{{$t('正在应用中')}}</p>
+            </div>
         </div>
         <div class="status status-loading" v-else-if="error">
-            <span class="status-icon bk-icon icon-close"></span>
-            <p class="status-title">{{$t('应用异常')}}</p>
-        </div>
-        <div class="status status-result" v-else-if="success.length >= 0 && fail.length === 0">
-            <p class="result-title">{{$t('应用成功')}}</p>
-            <p class="result-subtitle">{{$t('保存策略并应用到当前模块下主机成功')}}</p>
-            <i18n class="result-stat" tag="p" path="应用结果">
-                <span class="result-count" place="success">{{success.length}}</span>
-                <span class="result-count" place="fail">0</span>
-            </i18n>
-            <div class="result-options">
-                <bk-button class="mr10" theme="primary" @click="handleEvent('view-host')">{{$t('立即查看主机')}}</bk-button>
-                <bk-button @click="handleEvent('return')">{{$t('返回')}}</bk-button>
+            <div class="status-inner">
+                <span class="status-icon bk-icon icon-close icon-error"></span>
+                <p class="status-title">{{$t('应用异常')}}</p>
             </div>
         </div>
         <div class="status status-result" v-else>
-            <p class="result-title">{{$t('应用完成')}}</p>
+            <div class="result-icon">
+                <span class="status-icon bk-icon icon-check-1 icon-success" v-if="fail.length === 0"></span>
+                <span class="status-icon bk-icon icon-exclamation icon-abnormal" v-else-if="fail.length > 0"></span>
+                <span class="status-icon bk-icon icon-close icon-fail" v-else-if="success.length === 0"></span>
+            </div>
+            <p class="result-title">{{$t('应用成功')}}</p>
+            <p class="result-subtitle" v-if="fail.length === 0">{{$t('保存策略并应用到当前模块下主机成功')}}</p>
             <i18n class="result-stat" tag="p" path="应用结果">
                 <span class="result-count" place="success">{{success.length}}</span>
-                <span class="result-count fail" place="fail">{{fail.length}}</span>
+                <span :class="['result-count', { fail: fail.length > 0 }]" place="fail">{{fail.length}}</span>
             </i18n>
             <div class="result-options">
-                <bk-button class="mr10" theme="primary" @click="handleEvent('view-failed')">{{$t('查看失败')}}</bk-button>
+                <bk-button class="mr10" theme="primary" @click="handleEvent('view-host')" v-if="fail.length === 0">{{$t('立即查看主机')}}</bk-button>
+                <bk-button class="mr10" theme="primary" @click="handleEvent('view-failed')" v-else>{{$t('查看失败')}}</bk-button>
                 <bk-button @click="handleEvent('return')">{{$t('返回')}}</bk-button>
             </div>
         </div>
@@ -97,23 +96,40 @@
     .status {
         overflow: hidden;
         text-align: center;
-        height: 220px;
-    }
-    .status-loading {
-        padding: 40px 0;
+        height: 300px;
+
         .status-icon {
             display: block;
-            width: 58px;
-            height: 58px;
+            width: 54px;
+            height: 54px;
             margin: 0 auto;
             &:not(img) {
-                line-height: 58px;
+                line-height: 54px;
                 border-radius: 50%;
                 color: #FFF;
                 font-size: 30px;
+            }
+
+            &.icon-error {
                 background-color: $dangerColor;
             }
+            &.icon-success {
+                background-color: #2dcb56;
+            }
+            &.icon-fail {
+                background-color: #ff5656;
+            }
+            &.icon-abnormal {
+                background-color: #ffb848;
+            }
         }
+    }
+
+    .status-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
 
         .status-title {
             margin: 30px 0 0;
@@ -123,8 +139,11 @@
     }
 
     .status-result {
+        .result-icon {
+            margin: 30px auto 0;
+        }
         .result-title {
-            margin: 50px auto 0;
+            margin: 20px auto 0;
             line-height: 30px;
             font-size: 24px;
             color: #313238;
@@ -138,7 +157,7 @@
             }
         }
         .result-stat {
-            margin: 30px auto 0;
+            margin: 28px auto 0;
             font-size: 14px;
             color: $textColor;
             .result-count {
@@ -151,7 +170,11 @@
         }
         .result-options {
             font-size: 0;
-            margin-top: 28px;
+            margin-top: 24px;
+
+            .bk-button {
+                min-width: 90px;
+            }
         }
     }
 </style>
