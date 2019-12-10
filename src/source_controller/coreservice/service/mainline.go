@@ -31,7 +31,7 @@ func (s *coreService) SearchMainlineModelTopo(params core.ContextParams, pathPar
 		return nil, fmt.Errorf("decode body %+v failed, err: %v", data, err)
 	}
 
-	result, err := s.core.TopoOperation().SearchMainlineModelTopo(params.Context, detail.WithDetail)
+	result, err := s.core.TopoOperation().SearchMainlineModelTopo(params.Context, params.Header, detail.WithDetail)
 	if err != nil {
 		blog.Errorf("search mainline model topo failed, %+v, rid: %s", err, params.ReqID)
 		return nil, fmt.Errorf("search mainline model topo failed, %+v", err)
@@ -60,7 +60,7 @@ func (s *coreService) SearchMainlineInstanceTopo(params core.ContextParams, path
 	}
 	blog.V(2).Infof("decode result: %+v, rid: %s", detail, params.ReqID)
 
-	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(params.Context, bizID, detail.WithDetail)
+	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(params.Context, params.Header, bizID, detail.WithDetail)
 	if err != nil {
 		blog.Errorf("search mainline instance topo by business:%d failed, %+v, rid: %s", bizID, err, params.ReqID)
 		return nil, fmt.Errorf("search mainline instance topo by business:%d failed, %+v", bizID, err)

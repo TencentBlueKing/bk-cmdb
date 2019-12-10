@@ -107,7 +107,7 @@ const formatterMap = {
 export default function formatter (value, property, options) {
     const isPropertyObject = typeof property === 'object'
     const type = isPropertyObject ? property.bk_property_type : property
-    const propertyOptions = isPropertyObject ? property.options : options
+    const propertyOptions = isPropertyObject ? property.option : options
     if (formatterMap.hasOwnProperty(type)) {
         return formatterMap[type](value, propertyOptions)
     }

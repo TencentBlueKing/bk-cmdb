@@ -1,8 +1,8 @@
 <template>
     <div class="layout clearfix"
         v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-        <div class="wrapper">
-            <div class="wrapper-column wrapper-left">
+        <div class="wrapper clearfix">
+            <div class="wrapper-column wrapper-left fl">
                 <h2 class="title">{{$t('选择主机')}}</h2>
                 <bk-select class="selector-type" v-model="type" :clearable="false">
                     <bk-option id="topology" :name="$t('业务拓扑')"></bk-option>
@@ -12,7 +12,7 @@
                     <component :is="activeComponent" class="selector-component" ref="dynamic"></component>
                 </keep-alive>
             </div>
-            <div class="wrapper-column wrapper-right">
+            <div class="wrapper-column wrapper-right fl">
                 <div class="selected-count">
                     <i18n path="已选择N台主机">
                         <span class="count" place="count">{{selected.length}}</span>
@@ -23,7 +23,7 @@
                     :outer-border="false"
                     :header-border="false"
                     :header-cell-style="{ background: '#fff' }"
-                    :height="Math.max($APP.height * 0.45 - 92, 208)">
+                    :height="369">
                     <bk-table-column :label="$t('内网IP')">
                         <template slot-scope="{ row }">
                             {{row.host.bk_host_innerip}}
@@ -41,7 +41,7 @@
         </div>
         <div class="layout-footer">
             <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <bk-button theme="primary" :disabled="!selected.length" @click="handleNextStep">{{$t('下一步')}}</bk-button>
+            <bk-button theme="primary" :disabled="!selected.length" @click="handleNextStep">{{confirmText || $t('下一步')}}</bk-button>
         </div>
     </div>
 </template>
@@ -67,6 +67,10 @@
             exclude: {
                 type: Array,
                 default: () => ([])
+            },
+            confirmText: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -177,10 +181,9 @@
         }
     }
     .wrapper {
-        display: flex;
         height: 100%;
         .wrapper-left {
-            flex: 340px 0 0;
+            width: 340px;
             height: 100%;
             border-right: 1px solid $borderColor;
             .title {
@@ -201,7 +204,7 @@
             }
         }
         .wrapper-right {
-            flex: 1;
+            width: 510px;
             height: 100%;
             .selected-count {
                 height: 42px;

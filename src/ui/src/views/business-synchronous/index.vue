@@ -80,7 +80,7 @@
                         <cmdb-collapse class="instances-box" collapse>
                             <div class="title" slot="title">
                                 <h3>{{$t('涉及实例')}}</h3>
-                                <span>（{{process['service_instances'].length}}）</span>
+                                <span>（{{pagination.count}}）</span>
                             </div>
                             <div class="service-instances">
                                 <div class="instances-item"
@@ -499,8 +499,13 @@
                 })
             },
             handleGoBackModule () {
+                const query = this.$route.query
                 this.$router.replace({
-                    name: this.$route.meta.menu.relative,
+                    name: query.form ? query.form : this.$route.meta.menu.relative,
+                    params: {
+                        templateId: query.templateId,
+                        active: 'instance'
+                    },
                     query: {
                         node: 'module-' + this.routerParams.moduleId
                     }

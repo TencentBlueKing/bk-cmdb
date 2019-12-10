@@ -136,7 +136,9 @@ const customRules = {
 const dictionary = {
     'zh_CN': {
         messages: {
-            regex: () => '请输入符合自定义正则的内容',
+            regex: (field) => {
+                return `请输入合法的${field}`
+            },
             longchar: () => '请输入正确的长字符内容',
             singlechar: () => '请输入正确的短字符内容',
             length: (field, [maxLength]) => {
@@ -175,7 +177,9 @@ const dictionary = {
     },
     en: {
         messages: {
-            regex: () => 'Please enter the correct content that conform custom regex',
+            regex: (field) => {
+                return `Please enter a valid $ {field}`
+            },
             longchar: () => 'Please enter the correct content',
             singlechar: () => 'Please enter the correct content',
             length: (field, [maxLength]) => {

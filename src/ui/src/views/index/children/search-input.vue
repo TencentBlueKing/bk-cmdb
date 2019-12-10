@@ -82,9 +82,9 @@
 
                 <transition name="slide">
                     <div class="history selectTips" :style="{ top: result.isShow ? '76px' : '47px' }" v-show="showHistory">
-                        <div class="history-title">
-                            <span>{{$t('搜索历史')}}</span>
-                            <bk-button :text="true" class="clear-btn" @click="handlClearHistory">
+                        <div class="history-title clearfix" @click.stop>
+                            <span class="fl">{{$t('搜索历史')}}</span>
+                            <bk-button :text="true" class="clear-btn fr" @click="handlClearHistory">
                                 <i class="bk-icon icon-cc-delete"></i>
                                 {{$t('清空')}}
                             </bk-button>
@@ -409,6 +409,7 @@
             },
             handlClearHistory () {
                 this.$store.commit('fullTextSearch/clearSearchHistory')
+                this.handleHideLenovo()
             },
             resetIndex () {
                 // this.$refs.searchInput.$refs.input.focus()
@@ -679,10 +680,13 @@
                 font-size: 14px;
                 line-height: 36px;
                 color: #C4C6CC;
-                margin: 5px 20px 0;
-                border-bottom: 1px solid #F0F1F5;
-                display: flex;
-                justify-content: space-between;
+                padding: 5px 20px 0;
+                &::after {
+                    content: '';
+                    display: block;
+                    height: 1px;
+                    background-color: #F0F1F5;
+                }
                 .clear-btn {
                     color: #C4C6CC;
                     &:hover {
