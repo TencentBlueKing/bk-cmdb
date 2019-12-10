@@ -494,52 +494,30 @@ func (assoc *association) UpdateAssociation(params types.ContextParams, data map
 
 // CheckAssociation and return error if the instance exist association
 func (assoc *association) CheckAssociation(params types.ContextParams, obj model.Object, objectID string, instID int64) error {
-	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKAsstObjIDField).Eq(objectID)
-	innerCond.Field(common.BKAsstInstIDField).Eq(instID)
-	beAsst, err := assoc.SearchInstAssociation(params, &metadata.QueryInput{Condition: innerCond.ToMapStr()})
-	if nil != err {
-		return err
-	}
-
-	if len(beAsst) > 0 {
-		beAsstObject := make([]string, 0)
-		for _, asst := range beAsst {
-			ok, err := assoc.CheckAssociationInstExist(params, asst.ObjectID, asst.InstID)
-			if err != nil {
-				return err
-			}
-			if ok {
-				continue
-			}
-			beAsstObject = append(beAsstObject, asst.ObjectID)
-		}
-		if len(beAsstObject) > 0 {
-			return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
-		}
-	}
-
 	cond := condition.CreateCondition()
-	cond.Field(common.BKObjIDField).Eq(objectID)
-	cond.Field(common.BKInstIDField).Eq(instID)
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{common.BKObjIDField: objectID, common.BKInstIDField: instID})
+	or.Item(mapstr.MapStr{common.BKAsstObjIDField: objectID, common.BKAsstInstIDField: instID})
 	asst, err := assoc.SearchInstAssociation(params, &metadata.QueryInput{Condition: cond.ToMapStr()})
 	if nil != err {
 		return err
 	}
-	if len(asst) > 0 {
-		beAsstObject := make([]string, 0)
-		for _, asst := range asst {
-			ok, err := assoc.CheckAssociationInstExist(params, asst.AsstObjectID, asst.AsstInstID)
-			if err != nil {
-				return err
-			}
-			if ok {
-				continue
-			}
-			beAsstObject = append(beAsstObject, asst.AsstObjectID)
+	if len(asst) == 0 {
+		return nil
+	}
+	for _, asst := range asst {
+		var errCheck error
+		isInstExist := false
+		if asst.ObjectID == objectID {
+			isInstExist, errCheck = assoc.CheckAssociationInstExist(params, asst.AsstObjectID, asst.AsstInstID)
+		} else {
+			isInstExist, errCheck = assoc.CheckAssociationInstExist(params, asst.ObjectID, asst.InstID)
 		}
-		if len(beAsstObject) > 0 {
-			return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		if errCheck != nil {
+			return err
+		}
+		if isInstExist {
+			return params.Err.Error(1101036)
 		}
 	}
 
@@ -556,25 +534,22 @@ func (assoc *association) CheckAssociationInstExist(params types.ContextParams, 
 	if !instRsp.Result {
 		return false, params.Err.New(instRsp.Code, instRsp.ErrMsg)
 	}
-	if len(instRsp.Data.Info) <= 0 {
-		err := assoc.DeleteAssociationDirtyData(params, objectID, instID)
-		if err != nil {
-			return false, err
-		}
-		return true, err
+	if len(instRsp.Data.Info) > 0 {
+		return true, nil
 	}
-
+	// 实例不存在，删除实例的关联关系
+	if err := assoc.DeleteAssociationDirtyData(params, objectID, instID); err != nil {
+		return false, err
+	}
 	return false, nil
 }
 
 func (assoc *association) DeleteAssociationDirtyData(params types.ContextParams, objectID string, instID int64) error {
-	if delErr := assoc.DeleteInstAssociation(params, condition.CreateCondition().
-		Field(common.BKObjIDField).Eq(objectID).Field(common.BKInstIDField).Eq(instID)); delErr != nil {
-		return delErr
-	}
-
-	if delErr := assoc.DeleteInstAssociation(params, condition.CreateCondition().
-		Field(common.BKAsstObjIDField).Eq(objectID).Field(common.BKAsstInstIDField).Eq(instID)); delErr != nil {
+	cond := condition.CreateCondition()
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{common.BKObjIDField: objectID, common.BKInstIDField: instID})
+	or.Item(mapstr.MapStr{common.BKAsstObjIDField: objectID, common.BKAsstInstIDField: instID})
+	if delErr := assoc.DeleteInstAssociation(params, cond); delErr != nil {
 		return delErr
 	}
 
