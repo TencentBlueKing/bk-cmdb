@@ -154,6 +154,7 @@
 
 <script>
     import cmdbEditLabel from './edit-label.vue'
+    import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         components: { cmdbEditLabel },
         props: {
@@ -349,29 +350,11 @@
                 })
             },
             handleDeleteInstance () {
-                this.$bkInfo({
-                    title: this.$t('确认删除实例'),
-                    subTitle: this.$t('即将删除实例', { name: this.instance.name }),
-                    extCls: 'bk-dialog-sub-header-center',
-                    confirmFn: async () => {
-                        try {
-                            await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
-                                config: {
-                                    data: this.$injectMetadata({
-                                        service_instance_ids: [this.instance.id]
-                                    }, { injectBizId: true }),
-                                    requestId: this.requestId.deleteProcess
-                                }
-                            })
-                            this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count - 1
-                            this.currentNode.parents.forEach(node => {
-                                node.data.service_instance_count = node.data.service_instance_count - 1
-                            })
-                            this.$success(this.$t('删除成功'))
-                            this.$emit('delete-instance', this.instance.id)
-                        } catch (e) {
-                            console.error(e)
-                        }
+                this.$router.push({
+                    name: MENU_BUSINESS_DELETE_SERVICE,
+                    params: {
+                        ids: this.instance.id,
+                        moduleId: this.currentNode.data.bk_inst_id
                     }
                 })
             },

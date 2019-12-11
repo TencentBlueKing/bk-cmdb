@@ -78,7 +78,10 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_DELETE_SERVICE
+    } from '@/dictionary/menu-symbol'
     export default {
         props: {
             instance: {
@@ -221,23 +224,16 @@
                 this.header = header
             },
             handleDeleteInstance () {
-                this.$bkInfo({
-                    title: this.$t('确认删除实例'),
-                    subTitle: this.$t('即将删除实例', { name: this.instance.name }),
-                    confirmFn: async () => {
-                        try {
-                            await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
-                                config: {
-                                    data: this.$injectMetadata({
-                                        service_instance_ids: [this.instance.id]
-                                    }, { injectBizId: true }),
-                                    requestId: this.requestId.deleteProcess
-                                }
-                            })
-                            this.$success(this.$t('删除成功'))
-                            this.$emit('delete-instance', this.instance.id)
-                        } catch (e) {
-                            console.error(e)
+                this.$router.push({
+                    name: MENU_BUSINESS_DELETE_SERVICE,
+                    params: {
+                        ids: this.instance.id
+                    },
+                    query: {
+                        from: this.$route.path,
+                        query: {
+                            ...this.$route.query,
+                            tab: 'service'
                         }
                     }
                 })
