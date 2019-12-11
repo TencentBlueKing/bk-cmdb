@@ -516,7 +516,9 @@
                 } else {
                     if (!this.processList.length) {
                         this.$bkInfo({
-                            title: this.$t('服务模板创建没进程提示'),
+                            title: this.$t('确认提交'),
+                            subTitle: this.$t('服务模板创建没进程提示'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCreateTemplate()
                             }
