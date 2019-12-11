@@ -20,20 +20,6 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('关联描述')}}
-            </span>
-            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                <bk-input type="text" class="cmdb-form-input"
-                    name="asstName"
-                    :disabled="relationInfo.ispre || !isEdit"
-                    v-model.trim="relationInfo['bk_obj_asst_name']"
-                    v-validate="'singlechar|length:256'">
-                </bk-input>
-                <p class="form-error">{{errors.first('asstName')}}</p>
-            </div>
-        </label>
-        <label class="form-label">
-            <span class="label-text">
                 {{$t('源-目标约束')}}
                 <span class="color-danger">*</span>
             </span>
@@ -46,6 +32,20 @@
                     v-model="relationInfo.mapping"
                 ></cmdb-selector>
                 <p class="form-error">{{errors.first('asstId')}}</p>
+            </div>
+        </label>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('关联描述')}}
+            </span>
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
+                <bk-input type="text" class="cmdb-form-input"
+                    name="asstName"
+                    :disabled="relationInfo.ispre || !isEdit"
+                    v-model.trim="relationInfo['bk_obj_asst_name']"
+                    v-validate="'singlechar|length:256'">
+                </bk-input>
+                <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
         </label>
         <div class="btn-group" v-if="isEdit && relationInfo.bk_asst_id !== 'bk_mainline'">
