@@ -201,16 +201,19 @@ func (p *hostApplyRule) UpdateHostApplyRule(ctx core.ContextParams, bizID int64,
 	return rule, nil
 }
 
+// DeleteHostApplyRule delete host apply rule by condition, bizID maybe 0
 func (p *hostApplyRule) DeleteHostApplyRule(ctx core.ContextParams, bizID int64, ruleIDs ...int64) errors.CCErrorCoder {
 	if len(ruleIDs) == 0 {
 		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "host_apply_rule_ids")
 	}
 	filter := map[string]interface{}{
 		common.BKOwnerIDField: ctx.SupplierAccount,
-		common.BKAppIDField:   bizID,
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBIN: ruleIDs,
 		},
+	}
+	if bizID != 0 {
+		filter[common.BKAppIDField] = bizID
 	}
 	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Delete(ctx.Context, filter); err != nil {
 		blog.Errorf("DeleteHostApplyRule failed, db remove failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
@@ -257,6 +260,7 @@ func (p *hostApplyRule) GetHostApplyRuleByAttributeID(ctx core.ContextParams, bi
 	return rule, nil
 }
 
+// ListHostApplyRule by condition, bizID maybe 0
 func (p *hostApplyRule) ListHostApplyRule(ctx core.ContextParams, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
 	result := metadata.MultipleHostApplyRuleResult{}
 	if option.Page.Limit > common.BKMaxPageSize && option.Page.Limit != common.BKNoLimit {
@@ -272,6 +276,11 @@ func (p *hostApplyRule) ListHostApplyRule(ctx core.ContextParams, bizID int64, o
 	if option.ModuleIDs != nil {
 		filter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,
+		}
+	}
+	if len(option.AttributeIDs) != 0 {
+		filter[common.BKAttributeIDField] = map[string]interface{}{
+			common.BKDBIN: option.AttributeIDs,
 		}
 	}
 	query := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(filter)
