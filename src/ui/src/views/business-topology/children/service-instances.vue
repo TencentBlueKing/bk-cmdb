@@ -67,6 +67,7 @@
                             :show-condition="false"
                             :placeholder="$t('请输入实例名称或选择标签')"
                             :data="searchSelect"
+                            :max-width="280"
                             v-model="searchSelectData"
                             @menu-child-condition-select="handleConditionSelect"
                             @change="handleSearch">
@@ -982,6 +983,10 @@
         max-width: 280px;
         height: 34px;
         z-index: 99;
+        white-space: normal;
+        /deep/ .search-input {
+            padding-right: 10px;
+        }
         .bk-search-select {
             position: absolute;
             top: 0;

@@ -271,6 +271,8 @@
                     this.setTableHeader(),
                     this.setFilterOptions()
                 ])
+                
+                // 配合全文检索过滤列表
                 if (this.$route.params.bizName) {
                     this.filter.sendValue = this.$route.params.bizName
                     this.filter.value = this.$route.params.bizName

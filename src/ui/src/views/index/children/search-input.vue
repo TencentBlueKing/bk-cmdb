@@ -74,6 +74,7 @@
                                     @click="handleGoBusiness(item.source)">
                                     <span class="lenovo-name">{{item.source.bk_biz_name}}</span>
                                     <span>({{$t('业务')}})</span>
+                                    <i class="disabled-mark" v-if="item.source.bk_data_status === 'disabled'">{{$t('已归档')}}</i>
                                 </li>
                             </template>
                         </ul>
@@ -141,7 +142,12 @@
     import searchResult from './full-text-search'
     import hostSearch from './host-search'
     import { mapGetters } from 'vuex'
-    import { MENU_INDEX, MENU_RESOURCE_INSTANCE, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
+    import {
+        MENU_INDEX, MENU_RESOURCE_INSTANCE,
+        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_HOST_DETAILS,
+        MENU_RESOURCE_BUSINESS_HISTORY
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             searchResult,
@@ -206,7 +212,7 @@
                 return this.isFullTextSearch ? this.$t('请输入关键字，点击或回车搜索') : this.$t('请输入IP开始搜索')
             },
             params () {
-                const keywords = this.keywords
+                const keywords = this.keywords.length > 32 ? this.keywords.slice(0, 32) : this.keywords
                 const notZhCn = keywords.replace(/\w\.?/g, '').length === 0
                 const singleSpecial = /[!"#$%&'()\*,-\./:;<=>?@\[\\\]^_`{}\|~]{1}/
                 const queryString = keywords.length === 1 ? keywords.replace(singleSpecial, '') : keywords
@@ -488,8 +494,9 @@
                 })
             },
             handleGoBusiness (source) {
+                const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS
                 this.$router.push({
-                    name: MENU_RESOURCE_BUSINESS,
+                    name: name,
                     params: {
                         bizName: source['bk_biz_name']
                     }
@@ -667,6 +674,7 @@
             }
             .lenovo-result li{
                 display: flex;
+                align-items: center;
                 .lenovo-name {
                     max-width: 86%;
                     @include ellipsis;
@@ -674,6 +682,18 @@
                 span:not(.lenovo-name) {
                     padding-left: 10px;
                     color: #C4C6CC;
+                }
+                .disabled-mark {
+                    height: 18px;
+                    line-height: 16px;
+                    padding: 0 4px;
+                    font-style: normal;
+                    font-size: 12px;
+                    color: #979BA5;
+                    border: 1px solid #C4C6CC;
+                    background-color: #FAFBFD;
+                    border-radius: 2px;
+                    margin-left: 4px;
                 }
             }
             .history-title {
