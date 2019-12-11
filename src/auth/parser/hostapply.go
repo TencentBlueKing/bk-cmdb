@@ -50,16 +50,16 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/find/host_apply_rule/([0-9]+)/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodGet,
 		BizIDGetter:    BizIDFromURLGetter,
-		ResourceType:   meta.BizTopology,
-		ResourceAction: meta.Find,
+		ResourceType:   meta.MainlineInstanceTopology,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "ListHostApplyRuleRegex",
 		Description:    "列表查询主机属性自动应用规则",
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/host_apply_rule/bk_biz_id/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
-		ResourceType:   meta.BizTopology,
-		ResourceAction: meta.Find,
+		ResourceType:   meta.MainlineInstanceTopology,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "BatchUpdateOrCreateHostApplyRuleRegex",
 		Description:    "批量创建/更新主机属性自动应用规则",
@@ -74,8 +74,8 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/createmany/host_apply_plan/bk_biz_id/([0-9]+)/preview/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
-		ResourceType:   meta.BizTopology,
-		ResourceAction: meta.Find,
+		ResourceType:   meta.MainlineInstanceTopology,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "RunHostApplyRuleRegex",
 		Description:    "执行主机属性自动应用",
@@ -90,8 +90,8 @@ var HostApplyAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/host_apply_rule/bk_biz_id/([0-9]+)/host_related_rules/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
-		ResourceType:   meta.BizTopology,
-		ResourceAction: meta.Find,
+		ResourceType:   meta.MainlineInstanceTopology,
+		ResourceAction: meta.SkipAction,
 	},
 }
 

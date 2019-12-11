@@ -553,10 +553,6 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 		moduleHostIDs[relation.ModuleID] = append(moduleHostIDs[relation.ModuleID], relation.HostID)
 	}
 	set := mapstr.NewFromStruct(innerAppTopo, "field")
-	if err != nil {
-		blog.Errorf("GetInternalModuleWithStatistics failed, convert innerAppTopo to map failed, innerAppTopo: %+v, err: %s, rid: %s", innerAppTopo, e.Error(), params.ReqID)
-		return nil, e
-	}
 	set["host_count"] = len(util.IntArrayUnique(setHostIDs))
 	modules := make([]mapstr.MapStr, 0)
 	for _, module := range innerAppTopo.Module {
