@@ -124,7 +124,16 @@ export function flattenHostItem (properties, item) {
  * @param {Object} inst - 原始实例
  * @return {Object} 实例真实值
  */
-export function getInstFormValues (properties, inst = {}) {
+
+function getDefaultOptionValue (property) {
+    const defaultOption = (property.option || []).find(option => option.is_default)
+    if (defaultOption) {
+        return defaultOption.id
+    }
+    return ''
+}
+
+export function getInstFormValues (properties, inst = {}, autoSelect = true) {
     const values = {}
     properties.forEach(property => {
         const propertyId = property['bk_property_id']
@@ -140,7 +149,9 @@ export function getInstFormValues (properties, inst = {}) {
         } else if (['bool'].includes(propertyType)) {
             values[propertyId] = !!inst[propertyId]
         } else if (['enum'].includes(propertyType)) {
-            values[propertyId] = [null].includes(inst[propertyId]) ? '' : inst[propertyId]
+            values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
+        } else if (['timezone'].includes(propertyType)) {
+            values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
         } else {
             values[propertyId] = inst.hasOwnProperty(propertyId) ? inst[propertyId] : ''
         }
