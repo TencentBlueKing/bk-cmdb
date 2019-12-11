@@ -9,6 +9,11 @@ export default [{
         menu: {
             i18n: '主机'
         },
+        layout: {
+            previous: {
+                name: MENU_RESOURCE_MANAGEMENT
+            }
+        },
         filterPropertyKey: 'resource_host_filter_properties'
     })
 }, {

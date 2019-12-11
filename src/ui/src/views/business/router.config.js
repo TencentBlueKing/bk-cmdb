@@ -18,6 +18,11 @@ export default [{
         menu: {
             i18n: '业务',
             relative: MENU_RESOURCE_MANAGEMENT
+        },
+        layout: {
+            previous: {
+                name: MENU_RESOURCE_MANAGEMENT
+            }
         }
     })
 }, {
