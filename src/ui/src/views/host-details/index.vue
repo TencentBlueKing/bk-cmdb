@@ -48,7 +48,7 @@
         },
         data () {
             return {
-                active: 'property',
+                active: this.$route.query.tab || 'property',
                 infoHeight: '81px'
             }
         },

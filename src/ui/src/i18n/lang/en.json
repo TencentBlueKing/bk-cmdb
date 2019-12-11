@@ -1133,5 +1133,8 @@
     "模块相同提示": "Selected modules are same with hosts source modules",
     "从模板新建": "Create from template",
     "直接新建": "Create directly",
-    "新建模块": "Create Module"
+    "新建模块": "Create Module",
+    "已选实例": "Service Selected",
+    "N个": "{ count }",
+    "仅移除服务实例，主机无变更": "Only remove service instances, no host change"
 }
