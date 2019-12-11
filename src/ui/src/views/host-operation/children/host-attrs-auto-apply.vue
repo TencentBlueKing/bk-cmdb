@@ -14,9 +14,10 @@
         </cmdb-tips>
         <property-confirm-table
             ref="confirmTable"
-            :list="info"
+            :list="list"
             :max-height="600"
-            :render-icon="true">
+            :render-icon="true"
+            :show-operation="!!conflictList.length">
         </property-confirm-table>
     </div>
 </template>
@@ -33,10 +34,14 @@
                 type: Array,
                 required: true
             }
+        },
+        computed: {
+            conflictList () {
+                return this.info.filter(item => item.unresolved_conflict_count > 0)
+            },
+            list () {
+                return this.conflictList.length ? this.conflictList : this.info
+            }
         }
     }
 </script>
-
-<style lang="scss" scoped>
-
-</style>

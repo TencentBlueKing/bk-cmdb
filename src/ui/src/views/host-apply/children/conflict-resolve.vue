@@ -1,31 +1,30 @@
 <template>
     <div class="conflict-layout">
-        <cmdb-tips class="resolve-tips"
-            :tips-style="{
-                height: '32px',
-                'line-height': '32px',
-                'font-size': '12px'
-            }"
-            :icon-style="{ 'font-size': '16px' }">
-            {{$t('解决应用字段冲突提示')}}
-        </cmdb-tips>
+        <feature-tips
+            class-name="resolve-tips"
+            feature-name="hostApply"
+            :show-tips="showFeatureTips"
+            :desc="$t('因为主机复用模块的自动应用策略不一致，导致策略失效，需要手动维护不一致的属性。要彻底解决此问题，可以修改复用模块的策略为一致或移除模块的策略配置')"
+            @close-tips="showFeatureTips = false"
+        >
+        </feature-tips>
         <div class="conflict-table" ref="conflictTable">
             <bk-table :data="conflictPropertyList">
                 <bk-table-column :label="$t('字段名称')" width="160" :resizable="false" prop="bk_property_name"></bk-table-column>
                 <bk-table-column :label="$t('所属模块')" :render-header="renderColumnHeader" :resizable="false">
-                    <template slot-scope="{ row }">
+                    <template slot-scope="{ row, $index }">
                         <div class="conflict-modules">
                             <div
                                 v-for="(item, index) in row.__extra__.conflictList"
                                 :class="['module-item', { 'selected': item.selected }]"
                                 :key="index"
                             >
-                                <span v-if="item.is_current">主机当前值</span>
+                                <span v-if="item.is_current">{{$t('主机当前值')}}</span>
                                 <span v-else :title="getModulePath(item.bk_module_id)">{{getModulePath(item.bk_module_id)}}</span>
                                 <span :title="item.bk_property_value | formatter(row.bk_property_type, row.option)">
                                     {{item.bk_property_value | formatter(row.bk_property_type, row.option)}}
                                 </span>
-                                <i class="check-model-value" @click="handlePickValue(row, index, item.bk_property_value)">选定</i>
+                                <i class="check-model-value" @click="handlePickValue(row, index, item.bk_property_value, $index)">{{$t('选定')}}</i>
                             </div>
                         </div>
                     </template>
@@ -50,10 +49,12 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import featureTips from '@/components/feature-tips/index'
     import RESIZE_EVENTS from '@/utils/resize-events'
     import propertyFormElement from './property-form-element'
     export default {
         components: {
+            featureTips,
             propertyFormElement
         },
         props: {
@@ -73,12 +74,14 @@
                 result: {},
                 moduleMap: {},
                 scrollbar: false,
-                confirmButtonDisabled: false
+                confirmButtonDisabled: false,
+                showFeatureTips: false
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('hostApply', ['configPropertyList']),
+            ...mapGetters(['featureTipsParams']),
             moduleIds () {
                 return this.dataRow.bk_module_ids
             }
@@ -89,6 +92,7 @@
             }
         },
         created () {
+            this.showFeatureTips = this.featureTipsParams['hostApplyConfirm']
             this.getData()
         },
         mounted () {
@@ -179,8 +183,10 @@
                 const everyValidTruthy = this.conflictPropertyList.every(property => property.__extra__.valid !== false)
                 this.confirmButtonDisabled = !everyValidTruthy
             },
-            handlePickValue (row, index, value) {
-                row.__extra__.conflictList.forEach((item, i) => (item.selected = index === i))
+            handlePickValue (row, index, value, $index) {
+                row.__extra__.conflictList.forEach((item, i) => {
+                    this.$set(this.conflictPropertyList[$index].__extra__.conflictList[i], 'selected', index === i)
+                })
                 row.__extra__.value = value
             },
             handleConfirm () {
@@ -214,15 +220,18 @@
         }
         .conflict-modules {
             height: 100%;
+            padding: 6px 0;
             .module-item {
                 display: flex;
                 line-height: 22px;
+                padding-left: 6px;
                 span {
-                    max-width: 50%;
+                    width: 50%;
                     padding-right: 10px;
                     @include ellipsis;
-                    &:first-child {
-                        width: calc(50% - 30px);
+                    &:nth-child(2) {
+                        width: auto;
+                        max-width: calc(50% - 30px);
                     }
                 }
                 .check-model-value {
@@ -234,6 +243,9 @@
                 &.selected {
                     color: #3A84FF;
                     background-color: #E1ECFF;
+                    span:nth-child(2) {
+                        max-width: 50%;
+                    }
                 }
                 &:not(.selected):hover {
                     .check-model-value {
@@ -266,22 +278,22 @@
     .conflict-table {
         overflow: unset;
         .bk-table-body-wrapper {
-            overflow: unset;
+            overflow: unset !important;
         }
 
         .table-cell-module-path:not(.header-cell) {
             .cell {
                 padding-top: 8px;
                 padding-bottom: 8px;
-                overflow: unset;
-                display: block;
+                overflow: unset !important;
+                display: block !important;
             }
         }
 
         .table-cell-form-element {
             .cell {
-                overflow: unset;
-                display: block;
+                overflow: unset !important;
+                display: block !important;
             }
             .search-input-wrapper {
                 position: relative;

@@ -3,7 +3,7 @@
         <feature-tips
             :feature-name="'hostApply'"
             :show-tips="showFeatureTips"
-            :desc="$t('主机属于多个模块，且同一属性的自动应用配置有差异，若不处理，将维持主机转移前的该项属性值')"
+            :desc="$t('因为以下主机复用模块的自动应用策略不一致，导致策略失效，需要手动维护不一致的属性。要彻底解决此问题，可以修改复用模块的策略为一致或移除模块的策略配置')"
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <property-confirm-table
@@ -14,7 +14,7 @@
         </property-confirm-table>
         <div class="bottom-actionbar">
             <div class="actionbar-inner">
-                <bk-button theme="primary" @click="handleApply">应用</bk-button>
+                <bk-button theme="primary" :disabled="applyButtonDisabled" @click="handleApply">应用</bk-button>
                 <bk-button theme="default" @click="handleBack">返回</bk-button>
             </div>
         </div>
@@ -44,12 +44,12 @@
         data () {
             return {
                 showFeatureTips: false,
-                applyButtonDisabled: true,
                 table: {
                     list: [],
                     total: 0
                 },
-                applyRequest: null
+                applyRequest: null,
+                applyButtonDisabled: false
             }
         },
         computed: {
@@ -89,18 +89,19 @@
                     this.table.list = conflictList
                     this.table.total = previewData.unresolved_conflict_count
                 } catch (e) {
+                    this.applyButtonDisabled = true
                     console.error(e)
                 }
             },
             setBreadcrumbs () {
-                this.$store.commit('setTitle', this.$t('冲突列表'))
+                this.$store.commit('setTitle', this.$t('策略失效列表'))
                 this.$store.commit('setBreadcrumbs', [{
                     label: this.$t('主机属性自动应用'),
                     route: {
                         name: MENU_BUSINESS_HOST_APPLY
                     }
                 }, {
-                    label: this.$t('冲突列表')
+                    label: this.$t('策略失效列表')
                 }])
             },
             goBack () {
@@ -108,7 +109,7 @@
                     name: MENU_BUSINESS_HOST_APPLY
                 })
             },
-            async handleApply () {
+            postApply () {
                 const conflictResolveResult = this.$refs.propertyConfirmTable.conflictResolveResult
                 const conflictResolvers = []
                 Object.keys(conflictResolveResult).forEach(key => {
@@ -133,6 +134,20 @@
                     }
                 })
                 this.$refs.applyStatusModal.show()
+            },
+            async handleApply () {
+                const allResolved = this.$refs.propertyConfirmTable.list.every(item => item.unresolved_conflict_count === 0)
+                if (allResolved) {
+                    this.postApply()
+                } else {
+                    this.$bkInfo({
+                        title: this.$t('确认应用'),
+                        subTitle: this.$t('您还有无法自动应用的主机属性需确认，是要保留主机原有属性值不做修改吗？'),
+                        confirmFn: () => {
+                            this.postApply()
+                        }
+                    })
+                }
             },
             handleBack () {
                 this.$router.back()
