@@ -14,7 +14,7 @@
                 nameKey: 'bk_inst_name',
                 childrenKey: 'child'
             }"
-            selectable
+            :check-on-click="true"
             :before-select="beforeSelect"
             :filter-method="filterMethod"
             @select-change="handleSelectChange"
@@ -22,7 +22,7 @@
         >
             <div
                 class="node-info clearfix"
-                :title="(data.host_apply_rule_count === 0 && isDel) ? '暂无规则' : ''"
+                :title="(data.host_apply_rule_count === 0 && isDel) ? '暂无策略' : ''"
                 :class="{ 'is-selected': node.selected }"
                 slot-scope="{ node, data }"
             >
@@ -290,7 +290,7 @@
             .config-icon {
                 position: relative;
                 top: 6px;
-                right: 20px;
+                right: 4px;
                 padding: 0 5px;
                 height: 18px;
                 line-height: 17px;
