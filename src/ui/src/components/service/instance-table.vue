@@ -38,7 +38,7 @@
                 </button>
             </template>
         </bk-table>
-        <div class="add-process-options" v-if="addible && !sourceProcesses.length && processList.length">
+        <div class="add-process-options" v-if="localExpanded && addible && !sourceProcesses.length && processList.length">
             <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
                 <span>{{$t('添加进程')}}</span>
