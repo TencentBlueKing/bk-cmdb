@@ -1730,8 +1730,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 	}
 
 	// get object's attribute operation.
-	if ps.hitPattern(findObjectAttributeLatestPattern, http.MethodPost) ||
-		ps.hitPattern(findHostObjectAttributeLatestPattern, http.MethodPost) {
+	if ps.hitPattern(findObjectAttributeLatestPattern, http.MethodPost) {
 		// 注意：业务ID是否为0表示两种不同的操作
 		// case 0: 读取模型的公有属性
 		// case ~0: 读取业务私有属性+公有属性
@@ -1742,6 +1741,35 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 		modelCond := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
 		models, err := ps.searchModels(mapstr.MapStr{common.BKObjIDField: modelCond})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		for _, model := range models {
+
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:   meta.ModelAttribute,
+						Action: meta.FindMany,
+					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+				})
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findHostObjectAttributeLatestPattern, http.MethodPost) {
+		// 注意：业务ID是否为0表示两种不同的操作
+		// case 0: 读取模型的公有属性
+		// case ~0: 读取业务私有属性+公有属性
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.V(5).Infof("get business id in metadata failed, err: %v", err)
+		}
+
+		models, err := ps.searchModels(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDHost})
 		if err != nil {
 			ps.err = err
 			return ps
