@@ -13,6 +13,11 @@ export default [{
             const modelId = to.params.objId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return model && !model.bk_ispaused
+        },
+        layout: {
+            previous: {
+                name: MENU_RESOURCE_MANAGEMENT
+            }
         }
     })
 }, {
