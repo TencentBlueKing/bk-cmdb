@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	dcUtil "configcenter/src/scene_server/datacollection/datacollection/middleware"
 	"configcenter/src/storage/dal"
@@ -92,12 +93,11 @@ func (h *HostSnap) Analyze(mesg string) error {
 		blog.Errorf("[data-collection][hostsnap] save snapshot %s to redis failed: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
 	}
 
-	condition := map[string]interface{}{common.BKHostIDField: hostID}
-	preUpdatedData := make(map[string]interface{})
-	if err := h.db.Table(common.BKTableNameBaseHost).Find(condition).One(h.ctx, &preUpdatedData); err != nil {
+	preData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostid)
+	if err != nil {
+		blog.Errorf("[data-collection][hostsnap] get host failed, fail to create audit log, err: %v", err)
 		return fmt.Errorf("get host error: %v", err)
 	}
-
 	innerip, ok := host.get(common.BKHostInnerIPField).(string)
 	if !ok {
 		blog.Infof("[data-collection][hostsnap] innerip is empty, continue, %s", val.String())
@@ -109,45 +109,61 @@ func (h *HostSnap) Analyze(mesg string) error {
 	}
 	setter := parseSetter(&val, innerip, outip)
 	if needToUpdate(setter, host) {
-		blog.Infof("[data-collection][hostsnap] update host by %v, to %v", condition, setter)
-		if err := h.db.Table(common.BKTableNameBaseHost).Update(h.ctx, condition, setter); err != nil {
-			return fmt.Errorf("update host error: %v", err)
+		opt := &metadata.UpdateOption{
+			Condition: mapstr.MapStr{common.BKHostIDField: hostid},
+			Data:      mapstr.NewFromMap(setter),
+		}
+		_, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.httpHeader, common.BKInnerObjIDHost, opt)
+		if err != nil {
+			blog.Errorf("Update host http do error, err: %v,input:%+v,param:%+v", err, data, opt)
+			return err
 		}
 		copyVal(setter, host)
 	}
 
 	// add auditLog
-	curData := make(map[string]interface{})
-	if err := h.db.Table(common.BKTableNameBaseHost).Find(condition).One(h.ctx, &curData); err != nil {
-		return fmt.Errorf("get host error: %v", err)
-	}
-	moduleHost := new(metadata.ModuleHost)
-	if err := h.db.Table(common.BKTableNameModuleHostConfig).Find(condition).One(h.ctx, &moduleHost); err != nil {
-		return fmt.Errorf("get module host config error: %v", err)
-	}
-
 	hostIdInt64, ok := hostID.(int64)
 	if !ok {
 		blog.Errorf("host id convert from interface to int64 failed, fail to create auditLog, hostId:%d", hostIdInt64)
 		return nil
 	}
+	curData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostid)
+	if err != nil {
+		blog.Errorf("[data-collection][hostsnap] get host failed, fail to create audit log, err: %v", err)
+		return fmt.Errorf("get host failed, fail to create audit log error: %v", err)
+	}
+	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostIdInt64}}
+	moduleHost, err := h.CoreAPI.CoreService().Host().GetHostModuleRelation(h.ctx, h.httpHeader, input)
+	if err != nil {
+		blog.Errorf("[data-collection][hostsnap] GetConfigByCond http do error, err:%s, input:%+v", err.Error(), input)
+		return err
+	}
+	if !moduleHost.Result {
+		blog.Errorf("GetConfigByCond http response error, err code:%d, err msg:%s, input:%+v", moduleHost.Code, moduleHost.ErrMsg, input)
+		return fmt.Errorf("[data-collection][hostsnap] get moduleHostConfig failed, fail to create auditLog")
+	}
+
 	auditHeader, err := dcUtil.GetAuditLogHeader(h.CoreAPI, h.httpHeader, common.BKInnerObjIDHost)
 	if err != nil {
-		blog.Errorf("GetAuditLogHeader failed, objID: %s, err: %s", common.BKInnerObjIDHost, err.Error())
+		blog.Errorf("GetAuditLogHeader failed, fail to create auditLog, objID: %s, err: %s", common.BKInnerObjIDHost, err.Error())
 		return err
+	}
+	var bizID int64
+	if len(moduleHost.Data.Info) > 0 {
+		bizID = moduleHost.Data.Info[0].AppID
 	}
 	auditLog := metadata.SaveAuditLogParams{
 		ID:    hostIdInt64,
 		Model: common.BKInnerObjIDHost,
 		Content: metadata.Content{
 			CurData: curData,
-			PreData: preUpdatedData,
+			PreData: preData,
 			Headers: auditHeader,
 		},
 		OpDesc: "update " + common.BKInnerObjIDHost,
 		OpType: auditoplog.AuditOpTypeModify,
 		ExtKey: "",
-		BizID:  moduleHost.AppID,
+		BizID:  bizID,
 	}
 	result, err := h.CoreAPI.CoreService().Audit().SaveAuditLog(h.ctx, h.httpHeader, auditLog)
 	if err != nil {
