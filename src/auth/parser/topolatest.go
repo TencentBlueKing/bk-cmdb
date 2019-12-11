@@ -500,10 +500,16 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 		// 处理模型自关联的情况
 		if len(models) == 1 {
+			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
 			ps.Attribute.Resources = []meta.ResourceAttribute{
 				{
 					Basic: meta.Basic{
-						Type:       meta.ModelInstance,
+						Type:       instanceType,
 						Action:     meta.Update,
 						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int(),
 					},
@@ -512,7 +518,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 				},
 				{
 					Basic: meta.Basic{
-						Type:       meta.ModelInstance,
+						Type:       instanceType,
 						Action:     meta.Update,
 						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int(),
 					},
@@ -530,11 +536,16 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int()
 			}
+			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
 
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
 					Basic: meta.Basic{
-						Type:       meta.ModelInstance,
+						Type:       instanceType,
 						Action:     meta.Update,
 						InstanceID: instID,
 					},
@@ -574,10 +585,16 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 		// 处理模型自关联的情况
 		if len(models) == 1 {
+			instanceType, err := ps.getInstanceTypeByObject(models[0].ObjectID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
 			ps.Attribute.Resources = []meta.ResourceAttribute{
 				{
 					Basic: meta.Basic{
-						Type:       meta.ModelInstance,
+						Type:       instanceType,
 						Action:     meta.Update,
 						InstanceID: asst.InstID,
 					},
@@ -586,7 +603,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 				},
 				{
 					Basic: meta.Basic{
-						Type:       meta.ModelInstance,
+						Type:       instanceType,
 						Action:     meta.Update,
 						InstanceID: asst.AsstInstID,
 					},
@@ -604,11 +621,16 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			} else {
 				instID = asst.AsstInstID
 			}
+			instanceType, err := ps.getInstanceTypeByObject(model.ObjectID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
 
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
 					Basic: meta.Basic{
-						Type:       meta.ModelInstance,
+						Type:       instanceType,
 						Action:     meta.Update,
 						InstanceID: instID,
 					},

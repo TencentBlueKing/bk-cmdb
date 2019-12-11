@@ -428,7 +428,7 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 		rsc.ResourceType = string(*rscType)
 		rsc.ResourceTypeName = ResourceTypeIDMap[*rscType]
 		if len(rscIDs) != 0 {
-			rsc.ResourceID = rscIDs[0].ResourceID
+			rsc.ResourceID = rscIDs[len(rscIDs)-1].ResourceID
 		}
 		rsc.ResourceName = r.Basic.Name
 		p.Resources = [][]metadata.Resource{{rsc}}
