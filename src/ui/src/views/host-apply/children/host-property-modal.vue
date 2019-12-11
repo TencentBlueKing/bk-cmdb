@@ -122,8 +122,8 @@
     .property-list {
         display: flex;
         flex-wrap: wrap;
-        max-height: 360px;
-        min-height: 150px;
+        align-content: flex-start;
+        height: 264px;
         @include scrollbar-y;
 
         .property-item {
