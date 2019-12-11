@@ -59,8 +59,9 @@ type MultipleHostApplyRuleResult struct {
 }
 
 type ListHostApplyRuleOption struct {
-	ModuleIDs []int64  `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
-	Page      BasePage `json:"page" mapstructure:"page"`
+	ModuleIDs    []int64  `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+	AttributeIDs []int64  `field:"bk_attribute_ids" json:"bk_attribute_ids" bson:"bk_attribute_ids" mapstructure:"bk_attribute_ids"`
+	Page         BasePage `field:"page" json:"page" bson:"page" mapstructure:"page"`
 }
 
 type ListHostRelatedApplyRuleOption struct {

@@ -72,8 +72,6 @@ func (s *Service) initBusinessAssociation() {
 	s.addAction(http.MethodPost, "/find/topoinst/biz/{bk_biz_id}", s.SearchBusinessTopo, nil)
 	s.addAction(http.MethodPost, "/find/topoinst_with_statistics/biz/{bk_biz_id}", s.SearchBusinessTopoWithStatistics, nil)
 	s.addAction(http.MethodPost, "/find/topoinst/bk_biz_id/{bk_biz_id}/host_apply_rule_related", s.SearchRuleRelatedTopoNodes, nil)
-	// TODO remove me
-	s.addAction(http.MethodPost, "/objects/topo/bk_biz_id/{bk_biz_id}/host_apply_rule_related", s.SearchRuleRelatedTopoNodes, nil)
 	s.addAction(http.MethodPost, "/find/topopath/biz/{bk_biz_id}", s.SearchTopoPath, nil)
 
 	// association type methods ,NOT SUPPORT BUSINESS
