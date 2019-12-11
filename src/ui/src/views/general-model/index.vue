@@ -606,6 +606,7 @@
                         })
                     }
                 } else if (this.$route.params.instId) {
+                    // 配合全文检索过滤列表
                     params.condition[this.objId].push({
                         field: 'bk_inst_id',
                         operator: '$in',

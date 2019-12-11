@@ -75,7 +75,7 @@
                                 v-for="(property, fieldIndex) in group.properties"
                                 :class="{ 'only-ready': !updateAuth || !isFieldEditable(property) }"
                                 :key="fieldIndex"
-                                @click="handleFieldDetailsView(!updateAuth || !isFieldEditable(property), property)">
+                                @click="handleFieldDetailsView({ group, index, fieldIndex, property })">
                                 <span class="drag-logo"></span>
                                 <div class="drag-content">
                                     <div class="field-name">
@@ -203,11 +203,22 @@
             :width="540"
             :title="slider.title"
             :is-show.sync="slider.isShow"
-            :before-close="handleSliderBeforeClose">
-            <the-field-detail
+            :before-close="slider.beforeClose"
+            @hidden="handleSliderHidden">
+            <field-details-view v-if="slider.isShow && slider.view === 'details'"
+                slot="content"
+                :field="slider.curField"
+                :can-edit="updateAuth && isFieldEditable(slider.curField)"
+                @on-edit="handleEditField(slider.curGroup, slider.curField)"
+                @on-delete="handleDeleteField({
+                    property: slider.curField,
+                    index: slider.index,
+                    fieldIndex: slider.fieldIndex
+                })">
+            </field-details-view>
+            <the-field-detail v-else-if="slider.isShow && slider.view === 'operation'"
                 ref="fieldForm"
                 slot="content"
-                v-if="slider.isShow"
                 :is-main-line-model="isMainLineModel"
                 :is-read-only="isReadOnly"
                 :is-edit-field="slider.isEditField"
@@ -229,18 +240,6 @@
                 :properties="preview.properties"
                 :property-groups="preview.groups">
             </preview-field>
-        </bk-sideslider>
-
-        <bk-sideslider
-            v-transfer-dom
-            :width="540"
-            :title="$t('字段详情')"
-            :is-show.sync="fieldDetailsDialog.isShow"
-            @hidden="handleHideFieldDetailsView">
-            <field-details-view v-if="fieldDetailsDialog.isShow"
-                slot="content"
-                :field="fieldDetailsDialog.field">
-            </field-details-view>
         </bk-sideslider>
     </div>
 </template>
@@ -301,20 +300,22 @@
                     isCollapse: false
                 },
                 slider: {
+                    view: 'details',
                     isShow: false,
                     title: this.$t('新建字段'),
                     isEditField: false,
                     curField: {},
                     curGroup: {},
-                    propertyIndex: 0
+                    group: {},
+                    propertyIndex: 0,
+                    beforeClose: null,
+                    index: null,
+                    fieldIndex: null,
+                    backView: ''
                 },
                 preview: {
                     properties: [],
                     groups: []
-                },
-                fieldDetailsDialog: {
-                    isShow: false,
-                    field: {}
                 }
             }
         },
@@ -432,8 +433,16 @@
                 this.resortGroups()
                 this.updatePropertyIndex()
             },
-            async resetData () {
+            async resetData (filedId) {
                 const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
+                if (filedId && this.slider.isShow) {
+                    const field = properties.find(property => property.bk_property_id === filedId)
+                    if (field) {
+                        this.slider.curField = field
+                    } else {
+                        this.handleSliderHidden()
+                    }
+                }
                 this.preview.properties = properties
                 this.preview.groups = groups
                 this.init(properties, groups)
@@ -509,9 +518,6 @@
             },
             setPropertIndex (properties) {
                 properties.sort((propertyA, propertyB) => propertyA['bk_property_index'] - propertyB['bk_property_index'])
-                properties.forEach((property, index) => {
-                    property['bk_property_index'] = index
-                })
                 return properties
             },
             handleCancelAddProperty () {
@@ -719,24 +725,18 @@
                 }
             },
             updatePropertyIndex () {
-                const properties = []
-                let propertyIndex = 0
-                this.groupedProperties.forEach(group => {
-                    group.properties.forEach(property => {
-                        if (property['bk_property_index'] !== propertyIndex || property['bk_property_group'] !== group.info['bk_group_id']) {
-                            property['bk_property_index'] = propertyIndex
-                            property['bk_property_group'] = group.info['bk_group_id']
-                            properties.push(property)
-                        }
-                        propertyIndex++
-                    })
+                const updateProperties = []
+                const flatProperties = this.groupedProperties.reduce((acc, group) => acc.concat(group.properties), [])
+                flatProperties.forEach((property, index) => {
+                    if (property['bk_property_index'] !== index) {
+                        property['bk_property_index'] = index
+                        updateProperties.push(property)
+                    }
                 })
-                if (!properties.length) {
-                    return false
-                }
+                if (!updateProperties.length) return
                 this.updatePropertyGroup({
                     params: this.$injectMetadata({
-                        data: properties.map(property => {
+                        data: updateProperties.map(property => {
                             return {
                                 condition: {
                                     'bk_obj_id': this.objId,
@@ -763,6 +763,8 @@
                 this.slider.propertyIndex = group.properties.length
                 this.slider.title = this.$t('新建字段')
                 this.slider.isShow = true
+                this.slider.beforeClose = this.handleSliderBeforeClose
+                this.slider.view = 'operation'
             },
             handleEditField (group, property) {
                 this.slider.isEditField = true
@@ -770,12 +772,12 @@
                 this.slider.curGroup = group.info
                 this.slider.title = this.$t('编辑字段')
                 this.slider.isShow = true
+                this.slider.beforeClose = this.handleSliderBeforeClose
+                this.slider.view = 'operation'
             },
-            handleFieldSave () {
-                this.resetData()
-                this.slider.isShow = false
-                this.slider.curField = {}
-                this.slider.curGroup = {}
+            handleFieldSave (filedId) {
+                this.handleBackView()
+                this.resetData(filedId)
             },
             handleDeleteField ({ property: field, index, fieldIndex }) {
                 this.$bkInfo({
@@ -794,10 +796,23 @@
                             this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                             if (res.data.bk_error_msg === 'success' && res.data.bk_error_code === 0) {
                                 this.groupedProperties[index].properties.splice(fieldIndex, 1)
+                                this.handleSliderHidden()
                             }
                         })
                     }
                 })
+            },
+            handleBackView () {
+                if (this.slider.backView === 'details') {
+                    this.handleFieldDetailsView({
+                        group: this.slider.group,
+                        index: this.slider.index,
+                        fieldIndex: this.slider.fieldIndex,
+                        property: this.slider.curField
+                    })
+                } else {
+                    this.handleSliderHidden()
+                }
             },
             handleSliderBeforeClose () {
                 const hasChanged = Object.keys(this.$refs.fieldForm.changedValues).length
@@ -808,7 +823,7 @@
                             subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
-                                this.slider.isShow = false
+                                this.handleBackView()
                                 resolve(true)
                             },
                             cancelFn: () => {
@@ -817,17 +832,26 @@
                         })
                     })
                 }
-                this.slider.isShow = false
+                this.handleBackView()
                 return true
             },
-            handleFieldDetailsView (show, field) {
-                if (!show) return
-                this.fieldDetailsDialog.isShow = true
-                this.fieldDetailsDialog.field = field
+            handleSliderHidden () {
+                this.slider.isShow = false
+                this.slider.curField = {}
+                this.slider.beforeClose = null
+                this.slider.backView = ''
             },
-            handleHideFieldDetailsView () {
-                this.fieldDetailsDialog.isShow = false
-                this.fieldDetailsDialog.field = {}
+            handleFieldDetailsView ({ group, index, fieldIndex, property }) {
+                this.slider.isShow = true
+                this.slider.curField = property
+                this.slider.curGroup = group.info
+                this.slider.group = group
+                this.slider.view = 'details'
+                this.slider.backView = 'details'
+                this.slider.title = this.$t('字段详情')
+                this.slider.index = index
+                this.slider.fieldIndex = fieldIndex
+                this.slider.beforeClose = null
             },
             handleReceiveAuth (auth) {
                 this.updateAuth = auth
@@ -1076,7 +1100,7 @@
             color: #3a84ff;
             font-size: 16px;
             &.is-disabled {
-                color: #C4C6cc;
+                color: #C4C6CC;
                 .icon {
                     color: #63656E;
                 }

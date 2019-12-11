@@ -203,15 +203,18 @@ const (
 
 	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
 	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
-	CCErrCommModifyFieldForbidden                            = 1199077
-	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199078
-
-	CCErrParseAttrOptionListFailed = 1199080
-
-	// one argument: maxValue
-	CCErrExceedMaxOperationRecordsAtOnce = 1199081
+	
+	// CCErrTopoModuleNotFoundError module [%s] does not exist in the business topology
+    CCErrCommTopoModuleNotFoundError = 1199078
+    // CCErrBizNotFoundError business [%s] does not exist
+    CCErrCommBizNotFoundError = 1199079
+    CCErrParseAttrOptionListFailed = 1199080
+    // one argument: maxValue
+    CCErrExceedMaxOperationRecordsAtOnce = 1199081
 
 	CCErrCommListAuthorizedResourceFromIAMFailed = 1199082
+    CCErrCommModifyFieldForbidden                            = 1199083
+    CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998

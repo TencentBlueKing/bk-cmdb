@@ -86,6 +86,8 @@
                         fromCache: true
                     }
                 })
+                // 配合全文检索过滤列表
+                this.filter.name = this.$route.params.bizName
                 this.setTableHeader()
                 this.getTableData()
             } catch (e) {
