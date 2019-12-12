@@ -193,7 +193,13 @@
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (result) {
-                        this.$emit('on-submit', { ...this.values }, { ...this.changedValues }, this.inst, this.type)
+                        this.$emit(
+                            'on-submit',
+                            this.$tools.formatValues(this.values, this.properties),
+                            this.$tools.formatValues(this.changedValues, this.properties),
+                            this.inst,
+                            this.type
+                        )
                     } else {
                         this.uncollapseGroup()
                     }

@@ -587,7 +587,7 @@
                 this.processForm.instance = processInstance.property
                 this.processForm.show = true
                 this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.processForm.properties, processInstance.property)['bind_ip']
+                    this.bindIp = this.$tools.getInstFormValues(this.processForm.properties, processInstance.property, false)['bind_ip']
                 })
 
                 const processTemplateId = processInstance.relation.process_template_id

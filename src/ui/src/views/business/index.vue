@@ -86,6 +86,7 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <cmdb-table-empty
                 slot="empty"
@@ -329,7 +330,8 @@
                 this.table.header = properties.map(property => {
                     return {
                         id: property['bk_property_id'],
-                        name: property['bk_property_name']
+                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        property
                     }
                 })
             },
@@ -368,7 +370,7 @@
                         this.table.pagination.current -= 1
                         this.getTableData()
                     }
-                    this.table.list = this.$tools.flattenList(this.properties, data.info)
+                    this.table.list = data.info
                     this.table.pagination.count = data.count
 
                     if (event) {
@@ -410,9 +412,7 @@
                 }
                 return params
             },
-            async handleEdit (flattenItem) {
-                const list = await this.getBusinessList({ fromCache: true })
-                const inst = list.info.find(item => item['bk_biz_id'] === flattenItem['bk_biz_id'])
+            async handleEdit (inst) {
                 const bizNameProperty = this.$tools.getProperty(this.properties, 'bk_biz_name')
                 bizNameProperty.isreadonly = inst['bk_biz_name'] === '蓝鲸'
                 this.attribute.inst.edit = inst
@@ -443,10 +443,8 @@
                         bizId: originalValues['bk_biz_id'],
                         params: values
                     }).then(() => {
+                        this.attribute.inst.details = Object.assign({}, originalValues, values)
                         this.getTableData()
-                        this.searchBusinessById({ bizId: originalValues['bk_biz_id'] }).then(item => {
-                            this.attribute.inst.details = this.$tools.flattenItem(this.properties, item)
-                        })
                         this.handleCancel()
                         this.$success(this.$t('修改成功'))
                         this.$http.cancel('post_searchBusiness_$ne_disabled')

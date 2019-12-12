@@ -16,10 +16,15 @@
             :max-height="$APP.height - 190"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
+            <bk-table-column prop="bk_biz_id" label="ID"></bk-table-column>
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+            </bk-table-column>
+            <bk-table-column prop="last_time" :label="$t('更新时间')">
+                <template slot-scope="{ row }">{{$tools.formatTime(row.last_time)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
@@ -102,18 +107,13 @@
             },
             setTableHeader () {
                 const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, ['bk_biz_name'])
-                this.header = [{
-                    id: 'bk_biz_id',
-                    name: 'ID'
-                }].concat(headerProperties.map(property => {
+                this.header = headerProperties.map(property => {
                     return {
                         id: property['bk_property_id'],
-                        name: property['bk_property_name']
+                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        property
                     }
-                })).concat([{
-                    id: 'last_time',
-                    name: this.$t('更新时间')
-                }])
+                })
             },
             getTableData (event) {
                 this.searchBusiness({
@@ -129,10 +129,7 @@
                         this.getTableData()
                     }
                     this.pagination.count = business.count
-                    this.list = this.$tools.flattenList(this.properties, business.info.map(biz => {
-                        biz['last_time'] = this.$tools.formatTime(biz['last_time'], 'YYYY-MM-DD HH:mm:ss')
-                        return biz
-                    }))
+                    this.list = business.info
 
                     if (event) {
                         this.table.stuff.type = 'search'

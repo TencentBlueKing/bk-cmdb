@@ -64,7 +64,7 @@
         <bk-table
             v-show="localExpanded"
             v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
-            :data="flattenList"
+            :data="list"
             :row-style="{ cursor: 'pointer' }"
             @row-click="showProcessDetails">
             <bk-table-column v-for="(column, index) in header"
@@ -72,6 +72,7 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{(row.property || {})[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
         </bk-table>
     </div>
@@ -123,9 +124,6 @@
                     auth: 'D_SERVICE_INSTANCE'
                 }]
                 return menu
-            },
-            flattenList () {
-                return this.$tools.flattenList(this.properties, this.list.map(data => data.property))
             },
             requestId () {
                 return {
@@ -218,7 +216,8 @@
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
-                        name: property.bk_property_name
+                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        property
                     }
                 })
                 this.header = header

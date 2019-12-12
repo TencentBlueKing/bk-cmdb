@@ -123,7 +123,7 @@
                 :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
                 :fixed="column.id === 'bk_inst_name'">
                 <template slot-scope="{ row }">
-                    <span>{{row[column.id] | addUnit(getPropertyUnit(column.id))}}</span>
+                    <span>{{row[column.id] | formatter(column.property)}}</span>
                 </template>
             </bk-table-column>
             <cmdb-table-empty
@@ -249,7 +249,6 @@
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         count: 0,
                         current: 1,
@@ -410,7 +409,6 @@
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         count: 0,
                         current: 1,
@@ -459,19 +457,13 @@
             },
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {
+                    const name = property.bk_property_name
                     return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name']
+                        id: property.bk_property_id,
+                        name: property.unit ? `${name}(${property.unit})` : name,
+                        property
                     }
                 })
-            },
-            async handleCheckAll (type) {
-                if (type === 'current') {
-                    this.table.checked = this.table.list.map(inst => inst['bk_inst_id'])
-                } else {
-                    const allData = await this.getAllInstList()
-                    this.table.checked = allData.info.map(inst => inst['bk_inst_id'])
-                }
             },
             handleRowClick (item) {
                 this.slider.show = true
@@ -501,43 +493,14 @@
                     config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
                 })
             },
-            getAllInstList () {
-                return this.searchInst({
-                    objId: this.objId,
-                    params: this.$injectMetadata({
-                        ...this.getSearchParams(),
-                        page: {}
-                    }, { inject: !this.isPublicModel }),
-                    config: {
-                        requestId: `${this.objId}AllList`,
-                        cancelPrevious: true
-                    }
-                }).then(data => {
-                    this.table.allList = data.info
-                    return data
-                })
-            },
-            setAllHostList (list) {
-                const newList = []
-                list.forEach(item => {
-                    const existItem = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
-                    if (existItem) {
-                        Object.assign(existItem, item)
-                    } else {
-                        newList.push(item)
-                    }
-                })
-                this.table.allList = [...this.table.allList, ...newList]
-            },
             getTableData (event) {
                 this.getInstList({ cancelPrevious: true, globalPermission: false }).then(data => {
                     if (data.count && !data.info.length) {
                         this.table.pagination.current -= 1
                         this.getTableData()
                     }
-                    this.table.list = this.$tools.flattenList(this.properties, data.info)
+                    this.table.list = data.info
                     this.table.pagination.count = data.count
-                    this.setAllHostList(data.info)
 
                     if (event) {
                         this.table.stuff.type = 'search'
@@ -616,10 +579,8 @@
                 }
                 return params
             },
-            async handleEdit (flattenItem) {
-                const list = await this.getInstList({ fromCache: true })
-                const inst = list.info.find(item => item['bk_inst_id'] === flattenItem['bk_inst_id'])
-                this.attribute.inst.edit = inst
+            async handleEdit (item) {
+                this.attribute.inst.edit = item
                 this.attribute.type = 'update'
             },
             handleCreate () {
@@ -654,13 +615,7 @@
                         params: this.$injectMetadata(values, { inject: !this.isPublicModel })
                     }).then(() => {
                         this.getTableData()
-                        this.searchInstById({
-                            objId: this.objId,
-                            instId: originalValues['bk_inst_id'],
-                            params: this.$injectMetadata({}, { inject: !this.isPublicModel })
-                        }).then(item => {
-                            this.attribute.inst.details = this.$tools.flattenItem(this.properties, item)
-                        })
+                        this.attribute.inst.details = Object.assign({}, originalValues, values)
                         this.handleCancel()
                         this.$success(this.$t('修改成功'))
                     })

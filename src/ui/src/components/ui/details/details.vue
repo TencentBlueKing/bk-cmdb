@@ -60,6 +60,7 @@
 <script>
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
+    import Formatter from '@/filters/formatter.js'
     export default {
         name: 'cmdb-details',
         mixins: [formMixins],
@@ -135,8 +136,7 @@
                 return `${property['bk_property_name']}: ${inst[property['bk_property_id']] || '--'} ${property.unit}`
             },
             getValue (property) {
-                const value = this.inst[property['bk_property_id']]
-                return String(value).length ? value : '--'
+                return Formatter(this.inst[property.bk_property_id], property)
             },
             handleEdit () {
                 this.$emit('on-edit', this.inst)
