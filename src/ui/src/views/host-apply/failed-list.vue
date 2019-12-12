@@ -29,7 +29,16 @@
         </bk-table>
         <div class="bottom-actionbar">
             <div class="actionbar-inner">
-                <bk-button theme="primary" @click="handleRetry">重试</bk-button>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                    <bk-button
+                        theme="primary"
+                        slot-scope="{ disabled }"
+                        :disabled="disabled"
+                        @click="handleRetry"
+                    >
+                        {{$t('重试')}}
+                    </bk-button>
+                </cmdb-auth>
                 <bk-button theme="default" @click="handleCopyIp">复制IP</bk-button>
                 <bk-button theme="default" @click="handleCancel">取消</bk-button>
             </div>
@@ -64,7 +73,11 @@
 <script>
     import { mapGetters, mapState, mapActions } from 'vuex'
     import applyStatusModal from './children/apply-status'
-    import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_HOST_APPLY,
+        MENU_BUSINESS_HOST_APPLY_FAILED
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             applyStatusModal
@@ -103,11 +116,15 @@
                 return this.propertyConfig.bk_host_ids || []
             }
         },
-        watch: {
-        },
         created () {
-            this.setBreadcrumbs()
-            this.getData()
+            if (!Object.keys(this.propertyConfig).length) {
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_APPLY
+                })
+            } else {
+                this.setBreadcrumbs()
+                this.getData()
+            }
         },
         methods: {
             ...mapGetters('objectModelClassify', [
@@ -259,7 +276,7 @@
             },
             handleViewFailed () {
                 this.$router.push({
-                    name: 'hostApplyFailed'
+                    name: MENU_BUSINESS_HOST_APPLY_FAILED
                 })
             },
             handleCopyIp () {

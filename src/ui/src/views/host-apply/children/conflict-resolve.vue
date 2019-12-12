@@ -9,7 +9,10 @@
         >
         </feature-tips>
         <div class="conflict-table" ref="conflictTable">
-            <bk-table :data="conflictPropertyList">
+            <bk-table
+                :data="conflictPropertyList"
+                :cell-style="{ background: '#fff' }"
+            >
                 <bk-table-column :label="$t('字段名称')" width="160" :resizable="false" prop="bk_property_name"></bk-table-column>
                 <bk-table-column :label="$t('所属模块')" :render-header="renderColumnHeader" :resizable="false">
                     <template slot-scope="{ row, $index }">
@@ -18,13 +21,13 @@
                                 v-for="(item, index) in row.__extra__.conflictList"
                                 :class="['module-item', { 'selected': item.selected }]"
                                 :key="index"
+                                @click="handlePickValue(row, index, item.bk_property_value, $index)"
                             >
                                 <span v-if="item.is_current">{{$t('主机当前值')}}</span>
                                 <span v-else :title="getModulePath(item.bk_module_id)">{{getModulePath(item.bk_module_id)}}</span>
                                 <span :title="item.bk_property_value | formatter(row.bk_property_type, row.option)">
                                     {{item.bk_property_value | formatter(row.bk_property_type, row.option)}}
                                 </span>
-                                <i class="check-model-value" @click="handlePickValue(row, index, item.bk_property_value, $index)">{{$t('选定')}}</i>
                             </div>
                         </div>
                     </template>
@@ -34,8 +37,8 @@
                     class-name="table-cell-form-element"
                     :resizable="false"
                 >
-                    <template slot-scope="{ row }">
-                        <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
+                    <template slot-scope="{ row, $index }">
+                        <property-form-element :property="row" @value-change="value => handlePropertyValueChange(value, row, $index)"></property-form-element>
                     </template>
                 </bk-table-column>
             </bk-table>
@@ -198,7 +201,10 @@
                 this.restoreConflictPropertyList()
                 this.$emit('cancel')
             },
-            handlePropertyValueChange () {
+            handlePropertyValueChange (value, row, $index) {
+                row.__extra__.conflictList.forEach((item, i) => {
+                    this.$set(this.conflictPropertyList[$index].__extra__.conflictList[i], 'selected', item.bk_property_value === value)
+                })
                 this.toggleConfirmButtonDisabled()
             }
         }
@@ -225,6 +231,7 @@
                 display: flex;
                 line-height: 22px;
                 padding-left: 6px;
+                cursor: pointer;
                 span {
                     width: 50%;
                     padding-right: 10px;
@@ -234,22 +241,15 @@
                         max-width: calc(50% - 30px);
                     }
                 }
-                .check-model-value {
-                    display: none;
-                    font-style: normal;
-                    cursor: pointer;
-                    color: #3A84FF;
+                &:hover {
+                    color: #3a84ff;
+                    background-color: #e1ecff;
                 }
                 &.selected {
-                    color: #3A84FF;
-                    background-color: #E1ECFF;
+                    color: #3a84ff;
+                    background-color: #f0f1f5;
                     span:nth-child(2) {
                         max-width: 50%;
-                    }
-                }
-                &:not(.selected):hover {
-                    .check-model-value {
-                        display: inline-block;
                     }
                 }
             }
@@ -279,15 +279,6 @@
         overflow: unset;
         .bk-table-body-wrapper {
             overflow: unset !important;
-        }
-
-        .table-cell-module-path:not(.header-cell) {
-            .cell {
-                padding-top: 8px;
-                padding-bottom: 8px;
-                overflow: unset !important;
-                display: block !important;
-            }
         }
 
         .table-cell-form-element {
