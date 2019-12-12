@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
 )
 
@@ -31,10 +30,14 @@ func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	state := metadata.Attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &state)
 	if err != nil {
+		// bk_state_name already delete
+		if err == dal.ErrDocumentNotFound {
+			return nil
+		}
 		return err
 	}
 
-	enums, err := instances.ParseEnumOption(ctx, state.Option)
+	enums, err := metadata.ParseEnumOption(ctx, state.Option)
 	if err != nil {
 		return err
 	}

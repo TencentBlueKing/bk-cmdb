@@ -19,8 +19,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	validator "configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
 )
 
@@ -123,10 +123,10 @@ func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 			data[fieldName] = nil
 		case common.FieldTypeEnum:
 			// parse enum option failure. not set default value
-			enumOptions, _ := validator.ParseEnumOption(context.Background(), option)
+			enumOptions, _ := metadata.ParseEnumOption(context.Background(), option)
 			v := ""
 			if len(enumOptions) > 0 {
-				var defaultOption *validator.EnumVal
+				var defaultOption *metadata.EnumVal
 				for _, k := range enumOptions {
 					if k.IsDefault {
 						defaultOption = &k

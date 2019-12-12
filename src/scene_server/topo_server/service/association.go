@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common/mapstruct"
 	"context"
 	"sort"
 	"strconv"
@@ -21,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )

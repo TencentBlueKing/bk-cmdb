@@ -103,3 +103,41 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 
 	return nil, err
 }
+
+// ListHostModelAttribute list host model's attributes
+func (s *Service) ListHostModelAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	cond := condition.CreateCondition()
+	data.Remove(metadata.PageName)
+	if err := cond.Parse(data); nil != err {
+		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
+	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
+	attributes, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
+	if err != nil {
+		return nil, err
+	}
+	hostAttributes := make([]metadata.HostObjAttDes, 0)
+	for _, item := range attributes {
+		if item == nil {
+			continue
+		}
+		hostApplyEnabled := false
+		enabled, exist := metadata.HostApplyFieldMap[item.PropertyID]
+		if exist {
+			hostApplyEnabled = enabled
+		}
+		if item.IsPre == false {
+			hostApplyEnabled = true
+		}
+		hostAttribute := metadata.HostObjAttDes{
+			ObjAttDes:        *item,
+			HostApplyEnabled: hostApplyEnabled,
+		}
+		hostAttributes = append(hostAttributes, hostAttribute)
+	}
+	return hostAttributes, nil
+}

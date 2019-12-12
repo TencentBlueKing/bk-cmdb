@@ -15,12 +15,12 @@ import "configcenter/src/common/mapstr"
 
 // UpdateOption common update options
 type UpdateOption struct {
-	Data      mapstr.MapStr `json:"data"`
-	Condition mapstr.MapStr `json:"condition"`
+	Data      mapstr.MapStr `json:"data" mapstructure:"data"`
+	Condition mapstr.MapStr `json:"condition" mapstructure:"condition"`
 }
 
 // UpdatedOptionResult common update result
 type UpdatedOptionResult struct {
 	BaseResp `json:",inline"`
-	Data     UpdatedCount `json:"data"`
+	Data     UpdatedCount `json:"data" mapstructure:"data"`
 }

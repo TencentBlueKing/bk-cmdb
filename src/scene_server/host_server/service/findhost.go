@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/errors"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -59,31 +60,53 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 
 	parameter := &meta.ListHostsParameter{}
 	if err := json.NewDecoder(req.Request.Body).Decode(parameter); err != nil {
-		blog.Errorf("ListHostByTopoNode failed, decode body failed, err: %#v, rid:%s", err, srvData.rid)
+		blog.Errorf("ListBizHosts failed, decode body failed, err: %#v, rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	if key, err := parameter.Validate(); err != nil {
+		blog.ErrorJSON("ListBizHosts failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter, err, srvData.rid)
+		ccErr := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, key)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
 	bizID, err := util.GetInt64ByInterface(req.PathParameter("appid"))
 	if err != nil {
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_app_id")})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
 		return
 	}
 	if bizID == 0 {
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_app_id")})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
 		return
 	}
 
-	if parameter.Page.Limit == 0 {
-		parameter.Page.Limit = common.BKMaxPageSize
-	}
-	if parameter.Page.Limit > common.BKMaxPageLimit {
-		blog.Errorf("ListBizHosts failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommPageLimitIsExceeded)})
+	if parameter.Page.IsIllegal() {
+		blog.Errorf("ListBizHosts failed, page limit %d illegal, rid:%s", parameter.Page.Limit, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "page.limit")})
 		return
 	}
+
+	if parameter.SetIDs != nil && len(parameter.SetIDs) != 0 && parameter.SetCond != nil && len(parameter.SetCond) != 0 {
+		blog.Errorf("ListBizHosts failed, bk_set_ids and set_cond can't both be set, rid:%s", srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, "bk_set_ids and set_cond can't both be set")})
+		return
+	}
+
+	var setIDs []int64
+	if parameter.SetIDs != nil {
+		setIDs = parameter.SetIDs
+	} else {
+		setIDs, err = srvData.lgc.GetSetIDByCond(srvData.ctx, parameter.SetCond)
+		if err != nil {
+			blog.ErrorJSON("ListBizHosts failed, GetSetIDByCond %s failed, error: %s, rid:%s", parameter.SetCond, err.Error(), srvData.rid)
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPDoRequestFailed, err.Error())})
+			return
+		}
+	}
+
 	option := meta.ListHosts{
 		BizID:              bizID,
-		SetIDs:             parameter.SetIDs,
+		SetIDs:             setIDs,
 		ModuleIDs:          parameter.ModuleIDs,
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,
@@ -113,15 +136,14 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
-	if parameter.Page.Limit == 0 {
-		parameter.Page.Limit = common.BKMaxPageSize
-	}
-	if parameter.Page.Limit > common.BKMaxPageLimit {
-		blog.Errorf("ListHostsWithNoBiz failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommPageLimitIsExceeded)})
+	if key, err := parameter.Validate(); err != nil {
+		blog.ErrorJSON("ListHostsWithNoBiz failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter, err, srvData.rid)
+		ccErr := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, key)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
+
+	parameter.Page.Limit = common.BKMaxPageSize
 	option := meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,
@@ -151,6 +173,12 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	if key, err := parameter.Validate(); err != nil {
+		blog.ErrorJSON("ListHostByTopoNode failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter, err, srvData.rid)
+		ccErr := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, key)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
 	bizID, err := util.GetInt64ByInterface(req.PathParameter("bk_biz_id"))
 	if err != nil {
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_app_id")})
@@ -161,12 +189,9 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	if parameter.Page.Limit == 0 {
-		parameter.Page.Limit = common.BKMaxPageSize
-	}
-	if parameter.Page.Limit > common.BKMaxPageLimit {
-		blog.Errorf("ListBizHosts failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommPageLimitIsExceeded)})
+	if parameter.Page.IsIllegal() {
+		blog.Errorf("ListHostByTopoNode failed, page limit %d illegal, rid:%s", parameter.Page.Limit, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "page.limit")})
 		return
 	}
 

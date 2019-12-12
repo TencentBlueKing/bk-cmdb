@@ -37,6 +37,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/auditlog"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
+	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
@@ -73,7 +74,7 @@ type coreService struct {
 	cfg      options.Config
 	core     core.Core
 	db       dal.RDB
-	cahce    *redis.Client
+	cache    *redis.Client
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
@@ -108,7 +109,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 
 	s.db = db
-	s.cahce = cache
+	s.cache = cache
 
 	// connect the remote mongodb
 	s.core = core.New(
@@ -123,6 +124,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		label.New(db),
 		settemplate.New(db),
 		operation.New(db),
+		hostapplyrule.New(db),
 	)
 	return nil
 }
