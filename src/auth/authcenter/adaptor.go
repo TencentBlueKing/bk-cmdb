@@ -191,7 +191,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	SysBusinessInstance: "业务",
 	SysHostInstance:     "主机",
 	SysEventPushing:     "事件推送",
-	SysModelGroup:       "模型分级",
+	SysModelGroup:       "模型分组",
 	SysModel:            "模型",
 	SysInstance:         "实例",
 	SysAssociationType:  "关联类型",
