@@ -490,7 +490,11 @@ func (assoc *association) fillMainlineChildInst(params types.ContextParams, obje
 		}
 	}
 
-	_, childInsts, err := assoc.inst.FindInst(params, childObj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
+	filter := &metadata.QueryInput{
+		Condition: cond.ToMapStr(),
+		Sort:      "default:1",
+	}
+	_, childInsts, err := assoc.inst.FindInst(params, childObj, filter, false)
 	if err != nil {
 		blog.Errorf("[fillMainlineChildInst] FindInst for %+v failed: %v, rid: %s", cond.ToMapStr(), err, params.ReqID)
 		return err
@@ -515,16 +519,37 @@ func (assoc *association) fillMainlineChildInst(params types.ContextParams, obje
 			blog.Errorf("[fillMainlineChildInst] GetParentID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
 			return err
 		}
+		defaultValue := int64(0)
+		defaultFieldValue, exist := childInst.GetValues()[common.BKDefaultField]
+		if exist == true {
+			defaultValue, err = util.GetInt64ByInterface(defaultFieldValue)
+			if err != nil {
+				blog.Errorf("[fillMainlineChildInst] GetParentID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
+				return err
+			}
+		}
 
 		object := childInst.GetObject().Object()
-		tmp := &metadata.TopoInstRst{Child: []*metadata.TopoInstRst{}}
-		tmp.InstID = childInstID
-		tmp.InstName = childInstName
-		tmp.ObjID = object.ObjectID
-		tmp.ObjName = object.ObjectName
 
-		childInstMap[parentID] = append(childInstMap[parentID], tmp)
-		childTopoInsts = append(childTopoInsts, tmp)
+		childInst := &metadata.TopoInstRst{
+			TopoInst: metadata.TopoInst{
+				InstID:               childInstID,
+				InstName:             childInstName,
+				ObjID:                object.ObjectID,
+				ObjName:              object.ObjectName,
+				Default:              int(defaultValue),
+				HostCount:            0,
+				ServiceInstanceCount: 0,
+				ServiceTemplateID:    0,
+				SetTemplateID:        0,
+				HostApplyEnabled:     nil,
+				HostApplyRuleCount:   nil,
+			},
+			Child: []*metadata.TopoInstRst{},
+		}
+
+		childInstMap[parentID] = append(childInstMap[parentID], childInst)
+		childTopoInsts = append(childTopoInsts, childInst)
 	}
 
 	for _, parentInst := range parentInsts {

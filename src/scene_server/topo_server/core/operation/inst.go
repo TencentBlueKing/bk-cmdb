@@ -1022,14 +1022,13 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
 	switch obj.Object().ObjectID {
 	case common.BKInnerObjIDHost:
-		rsp, err := c.clientSet.CoreService().Host().GetHosts(context.Background(), params.Header, cond)
+		rsp, err := c.clientSet.CoreService().Host().GetHosts(params.Context, params.Header, cond)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-
 			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
@@ -1043,7 +1042,7 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 		input.Limit.Limit = int64(cond.Limit)
 		input.Fields = strings.Split(cond.Fields, ",")
 		input.SortArr = metadata.NewSearchSortParse().String(cond.Sort).ToSearchSortArr()
-		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), input)
+		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, obj.GetObjectID(), input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
