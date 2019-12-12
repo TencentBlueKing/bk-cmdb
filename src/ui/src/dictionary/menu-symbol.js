@@ -13,6 +13,9 @@ export const MENU_BUSINESS_ADVANCED = 'menu_business_advanced'
 export const MENU_BUSINESS_HOST_AND_SERVICE = 'menu_business_host_and_service'
 export const MENU_BUSINESS_SERVICE_TEMPLATE = 'menu_business_service_template'
 export const MENU_BUSINESS_SET_TEMPLATE = 'menu_business_set_template'
+
+export const MENU_BUSINESS_HOST_APPLY = 'menu_business_host_apply'
+
 export const MENU_BUSINESS_SERVICE_CATEGORY = 'menu_business_service_category'
 export const MENU_BUSINESS_CUSTOM_QUERY = 'menu_business_custom_query'
 export const MENU_BUSINESS_CUSTOM_FIELDS = 'menu_business_custom_fields'

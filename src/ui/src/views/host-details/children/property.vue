@@ -7,17 +7,50 @@
             <ul class="property-list">
                 <li class="property-item"
                     v-for="property in group.properties"
-                    :key="property.id">
-                    <span class="property-name"
-                        :title="property.bk_property_name">
+                    :key="property.id"
+                    :id="`property-item-${property.id}`">
+                    <span class="property-name" v-overflow-tips>
                         {{property.bk_property_name}}
                     </span>
                     <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
+                        v-overflow-tips
                         v-show="property !== editState.property">
                         {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
                     </span>
                     <template v-if="!loadingState.includes(property)">
-                        <template v-if="isPropertyEditable(property)">
+                        <template v-if="hasRelatedRules(property)">
+                            <i18n path="已配置属性自动应用提示" :id="`rule-${property.id}`">
+                                <bk-button text place="link" @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+                            </i18n>
+                            <i class="is-related property-edit icon-cc-edit"
+                                v-bk-tooltips="{
+                                    allowHtml: true,
+                                    content: `#rule-${property.id}`,
+                                    placement: 'top',
+                                    onShow: () => {
+                                        setFocus(`#property-item-${property.id}`, true)
+                                    },
+                                    onHide: () => {
+                                        setFocus(`#property-item-${property.id}`, false)
+                                    }
+                                }">
+                            </i>
+                        </template>
+                        <template v-else-if="!isPropertyEditable(property)">
+                            <i class="is-related property-edit icon-cc-edit"
+                                v-bk-tooltips="{
+                                    content: $t('系统限定不可修改'),
+                                    placement: 'top',
+                                    onShow: () => {
+                                        setFocus(`#property-item-${property.id}`, true)
+                                    },
+                                    onHide: () => {
+                                        setFocus(`#property-item-${property.id}`, false)
+                                    }
+                                }">
+                            </i>
+                        </template>
+                        <template v-else>
                             <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;" :auth="updateAuthResources" v-show="property !== editState.property">
                                 <bk-button slot-scope="{ disabled }"
                                     text
@@ -38,8 +71,7 @@
                                     :placeholder="getPlaceholder(property)"
                                     :auto-check="false"
                                     v-validate="$tools.getValidateRules(property)"
-                                    v-model.trim="editState.value"
-                                    @enter="confirm">
+                                    v-model.trim="editState.value">
                                 </component>
                                 <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                                 <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
@@ -70,7 +102,7 @@
 
 <script>
     import { mapGetters, mapState } from 'vuex'
-    import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
+    import { MENU_RESOURCE_HOST_DETAILS, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
     export default {
         name: 'cmdb-host-property',
         filters: {
@@ -85,7 +117,11 @@
                     value: null
                 },
                 loadingState: [],
-                showCopyTips: false
+                showCopyTips: false,
+                hostRelatedRules: [],
+                request: {
+                    rules: Symbol('rules')
+                }
             }
         },
         computed: {
@@ -102,7 +138,50 @@
                 return this.$authResources({ type: this.$OPERATION.U_HOST })
             }
         },
+        watch: {
+            host () {
+                this.getHostRelatedRules()
+            }
+        },
         methods: {
+            setFocus (id, focus) {
+                const item = this.$el.querySelector(id)
+                focus ? item.classList.add('focus') : item.classList.remove('focus')
+            },
+            handleViewRules (property) {
+                const rule = this.hostRelatedRules.find(rule => rule.bk_attribute_id === property.id) || {}
+                this.$router.push({
+                    name: MENU_BUSINESS_HOST_APPLY,
+                    query: {
+                        module: rule.bk_module_id
+                    }
+                })
+            },
+            hasRelatedRules (property) {
+                return this.hostRelatedRules.some(rule => rule.bk_attribute_id === property.id)
+            },
+            async getHostRelatedRules () {
+                try {
+                    const defaultType = this.$tools.getValue(this.info, 'biz.0.default')
+                    if (defaultType) { // 为0时非业务模块，不存在属性自动应用
+                        this.hostRelatedRules = []
+                    } else {
+                        const data = await this.$store.dispatch('hostApply/getHostRelatedRules', {
+                            bizId: this.$tools.getValue(this.info, 'biz.0.bk_biz_id'),
+                            params: {
+                                bk_host_ids: [this.host.bk_host_id]
+                            },
+                            config: {
+                                requestId: this.request.rules
+                            }
+                        })
+                        this.hostRelatedRules = data[this.host.bk_host_id] || []
+                    }
+                } catch (e) {
+                    this.hostRelatedRules = []
+                    console.error(e)
+                }
+            },
             getPlaceholder (property) {
                 const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
@@ -196,7 +275,8 @@
             max-width: 50%;
             padding-bottom: 8px;
             display: flex;
-            &:hover {
+            &:hover,
+            &.focus {
                 .property-edit {
                     opacity: 1;
                 }
@@ -248,6 +328,14 @@
             .property-edit {
                 font-size: 16px;
                 opacity: 0;
+                &.is-related {
+                    display: inline-block;
+                    vertical-align: middle;
+                    width: 16px;
+                    height: 16px;
+                    margin: 8px 0 0 8px;
+                    line-height: 1;
+                }
                 &:hover {
                     opacity: .8;
                 }
@@ -334,6 +422,7 @@
         .form-component {
             display: inline-block;
             vertical-align: middle;
+            height: 32px;
             width: 260px;
             margin: 0 4px 0 0;
             &.bool {

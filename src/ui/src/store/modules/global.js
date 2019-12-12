@@ -35,7 +35,10 @@ const state = {
         serviceTemplate: true,
         category: true,
         hostServiceInstanceCheckView: true,
-        customFields: true
+        customFields: true,
+        hostApply: true,
+        hostApplyConfirm: true,
+        hostApplyConflict: true
     },
     permission: [],
     appHeight: window.innerHeight,

@@ -33,8 +33,7 @@ const (
 	// BKNoLimit no limit definition
 	BKNoLimit = 999999999
 	// max limit of a page
-	BKMaxPageLimit = 2000
-	BKMaxPageSize  = 500
+	BKMaxPageSize  = 1000
 
 	// 一次最大操作记录数
 	BKMaxRecordsAtOnce = 2000
@@ -304,6 +303,8 @@ const (
 	// BKModuleNameField the module name field
 	BKModuleNameField = "bk_module_name"
 
+	HostApplyEnabledField = "host_apply_enabled"
+
 	// BKSubscriptionIDField the subscription id field
 	BKSubscriptionIDField = "subscription_id"
 	// BKSubscriptionNameField the subscription name field
@@ -470,6 +471,8 @@ const (
 
 	BKSetTemplateIDField = "set_template_id"
 
+	HostApplyRuleIDField = "host_apply_rule_id"
+
 	BKParentIDField = "bk_parent_id"
 	BKRootIDField   = "bk_root_id"
 
@@ -594,6 +597,8 @@ const (
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
 	BKGroupField               = "group"
+
+	BKAttributeIDField = "bk_attribute_id"
 )
 
 const (
@@ -677,6 +682,12 @@ const (
 
 	// DefaultFaultModuleFlag the default fault module flag
 	DefaultFaultModuleFlag int = 2
+
+	// NormalModuleFlag create module by user , default =0
+	NormalModuleFlag int = 0
+
+	// NormalSetDefaultFlag user create set default field value
+	NormalSetDefaultFlag int64 = 0
 
 	// default recycle module flat
 	DefaultRecycleModuleFlag int = 3

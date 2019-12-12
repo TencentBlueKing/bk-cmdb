@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	validator "configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
 )
 
@@ -55,7 +54,7 @@ func fixesProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err e
 		common.BKPropertyIDField: map[string]interface{}{"$in": []string{"priority", "proc_num", "auto_time_gap", "timeout"}},
 	}
 	data := map[string]interface{}{
-		"option": validator.IntOption{Min: "1", Max: "10000"},
+		"option": metadata.IntOption{Min: "1", Max: "10000"},
 	}
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, condition, data)
 	if nil != err {

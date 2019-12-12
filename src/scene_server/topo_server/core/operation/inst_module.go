@@ -196,6 +196,7 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	}
 	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
 	data.Set(common.BKServiceTemplateIDField, serviceTemplateID)
+	data.Set(common.HostApplyEnabledField, false)
 
 	// set default set template
 	_, exist := data[common.BKSetTemplateIDField]

@@ -207,14 +207,14 @@ func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys 
 			case common.FieldTypeInt:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeEnum:
-				enumOptions, err := ParseEnumOption(ctx, field.Option)
+				enumOptions, err := metadata.ParseEnumOption(ctx, field.Option)
 				if err != nil {
 					blog.Warnf("ParseEnumOption failed: %v, rid: %s", err, rid)
 					valData[field.PropertyID] = nil
 					continue
 				}
 				if len(enumOptions) > 0 {
-					var defaultOption *EnumVal
+					var defaultOption *metadata.EnumVal
 					for _, k := range enumOptions {
 						if k.IsDefault {
 							defaultOption = &k

@@ -91,6 +91,7 @@
     import DeletedServiceInstance from './children/deleted-service-instance.vue'
     import MoveToIdleHost from './children/move-to-idle-host.vue'
     import ModuleSelector from '@/views/business-topology/host/module-selector.vue'
+    import HostAttrsAutoApply from './children/host-attrs-auto-apply.vue'
     import {
         MENU_BUSINESS_TRANSFER_HOST,
         MENU_BUSINESS_HOST_AND_SERVICE
@@ -102,7 +103,8 @@
             [CreateServiceInstance.name]: CreateServiceInstance,
             [DeletedServiceInstance.name]: DeletedServiceInstance,
             [MoveToIdleHost.name]: MoveToIdleHost,
-            [ModuleSelector.name]: ModuleSelector
+            [ModuleSelector.name]: ModuleSelector,
+            [HostAttrsAutoApply.name]: HostAttrsAutoApply
         },
         data () {
             return {
@@ -142,6 +144,14 @@
                     props: {
                         info: []
                     }
+                }, {
+                    id: 'hostAttrsAutoApply',
+                    label: this.$t('属性自动应用'),
+                    confirmed: false,
+                    component: HostAttrsAutoApply.name,
+                    props: {
+                        info: []
+                    }
                 }],
                 request: {
                     preview: Symbol('review'),
@@ -178,7 +188,7 @@
                 const map = {
                     remove: ['deletedServiceInstance', 'moveToIdleHost'],
                     idle: ['deletedServiceInstance'],
-                    business: ['createServiceInstance', 'deletedServiceInstance']
+                    business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply']
                 }
                 const available = map[this.type]
                 return this.tabList.filter(tab => available.includes(tab.id) && tab.props.info.length > 0)
@@ -196,6 +206,7 @@
                 })
             },
             activeTab (tab) {
+                if (!tab) return
                 tab.confirmed = true
             }
         },
@@ -291,6 +302,7 @@
                     )
                     this.setConfirmState(data)
                     this.setModulePathInfo(data)
+                    this.setHostAttrsAutoApply(data)
                     this.setCreateServiceInstance(data)
                     this.setDeletedServiceInstance(data)
                     if (this.type === 'remove') {
@@ -339,6 +351,11 @@
                 const info = this.moduleMap[id] || []
                 const path = info.map(node => node.bk_inst_name).reverse().join(' / ')
                 return path
+            },
+            setHostAttrsAutoApply (data) {
+                const conflictInfo = (data || []).map(item => item.host_apply_plan)
+                const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
+                tab.props.info = Object.freeze(conflictInfo)
             },
             setCreateServiceInstance (data) {
                 const instanceInfo = []
@@ -481,19 +498,36 @@
                 try {
                     const params = { ...this.confirmParams }
                     const createComponent = this.$refs.createServiceInstance && this.$refs.createServiceInstance[0]
-                    if (createComponent) {
-                        params.options = {
-                            service_instance_options: createComponent.$refs.serviceInstance.map((component, index) => {
+                    const hostAttrsComponent = this.$refs.hostAttrsAutoApply && this.$refs.hostAttrsAutoApply[0]
+                    if (createComponent || hostAttrsComponent) {
+                        params.options = {}
+                        if (createComponent) {
+                            params.options.service_instance_options = createComponent.$refs.serviceInstance.map((component, index) => {
                                 const instance = createComponent.instances[index]
                                 return {
                                     bk_module_id: instance.bk_module_id,
                                     bk_host_id: instance.bk_host_id,
                                     processes: component.processList.map((process, listIndex) => ({
-                                        process_template_id: component.templates[listIndex].id,
+                                        process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
                                         process_info: process
                                     }))
                                 }
                             })
+                        }
+                        if (hostAttrsComponent) {
+                            const conflictResolveResult = hostAttrsComponent.$refs.confirmTable.conflictResolveResult
+                            const conflictResolvers = []
+                            Object.keys(conflictResolveResult).forEach(key => {
+                                const propertyList = conflictResolveResult[key]
+                                propertyList.forEach(property => {
+                                    conflictResolvers.push({
+                                        bk_host_id: Number(key),
+                                        bk_attribute_id: property.id,
+                                        bk_property_value: property.__extra__.value
+                                    })
+                                })
+                            })
+                            params.options.host_apply_conflict_resolvers = conflictResolvers
                         }
                     }
                     await this.$http.post(
