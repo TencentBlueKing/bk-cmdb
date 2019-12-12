@@ -8,8 +8,9 @@
             @close-tips="showFeatureTips = false"
         >
         </feature-tips>
-        <div class="conflict-table" ref="conflictTable">
+        <div class="conflict-table-wrapper" ref="conflictTable">
             <bk-table
+                ext-cls="conflict-table"
                 :data="conflictPropertyList"
                 :cell-style="{ background: '#fff' }"
             >
@@ -202,8 +203,11 @@
                 this.$emit('cancel')
             },
             handlePropertyValueChange (value, row, $index) {
+                let hasSelected = false
                 row.__extra__.conflictList.forEach((item, i) => {
-                    this.$set(this.conflictPropertyList[$index].__extra__.conflictList[i], 'selected', item.bk_property_value === value)
+                    const selected = item.bk_property_value === value
+                    this.$set(this.conflictPropertyList[$index].__extra__.conflictList[i], 'selected', selected && !hasSelected)
+                    hasSelected = selected
                 })
                 this.toggleConfirmButtonDisabled()
             }
@@ -219,7 +223,7 @@
     .resolve-tips {
         margin: 12px 20px;
     }
-    .conflict-table {
+    .conflict-table-wrapper {
         padding: 0 20px;
         .conflict-name {
             font-weight: bold;
