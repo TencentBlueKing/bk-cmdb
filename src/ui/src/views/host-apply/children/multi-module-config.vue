@@ -24,9 +24,18 @@
                     {{$t(isDel ? '请勾选要删除的字段：' : '已配置的字段：')}}
                 </div>
                 <div class="item-content">
-                    <div class="choose-toolbar">
-                        <bk-button theme="default" icon="plus" @click="handleChooseField" v-if="!isDel">选择字段</bk-button>
-                        <span class="tips"><i class="bk-cc-icon icon-cc-tips"></i><span>此功能可以批量设置字段的自动应用，不需要批量变更的字段需点击“删除”从列表中移除</span></span>
+                    <div class="choose-toolbar" v-if="!isDel">
+                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                            <bk-button
+                                icon="plus"
+                                slot-scope="{ disabled }"
+                                :disabled="disabled"
+                                @click="handleChooseField"
+                            >
+                                {{$t('选择字段')}}
+                            </bk-button>
+                        </cmdb-auth>
+                        <span class="tips"><i class="bk-cc-icon icon-cc-tips"></i>此功能可以批量设置字段的自动应用，不需要批量变更的字段需点击“删除”从列表中移除</span>
                     </div>
                     <div class="config-table" v-show="checkedPropertyIdList.length">
                         <property-config-table
@@ -46,8 +55,26 @@
             </div>
         </div>
         <div class="config-ft">
-            <bk-button theme="primary" :disabled="nextButtonDisabled" @click="handleNextStep" v-if="!isDel">下一步</bk-button>
-            <bk-button theme="primary" :disabled="delButtonDisabled" @click="handleDel" v-else>确定删除</bk-button>
+            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })" v-if="!isDel">
+                <bk-button
+                    theme="primary"
+                    slot-scope="{ disabled }"
+                    :disabled="nextButtonDisabled || disabled"
+                    @click="handleNextStep"
+                >
+                    {{$t('下一步')}}
+                </bk-button>
+            </cmdb-auth>
+            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })" v-else>
+                <bk-button
+                    theme="primary"
+                    slot-scope="{ disabled }"
+                    :disabled="delButtonDisabled || disabled"
+                    @click="handleDel"
+                >
+                    {{$t('确定删除')}}
+                </bk-button>
+            </cmdb-auth>
             <bk-button theme="default" @click="handleCancel">取消</bk-button>
         </div>
 
@@ -71,7 +98,10 @@
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import hostPropertyModal from './host-property-modal'
     import propertyConfigTable from './property-config-table'
-    import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_APPLY,
+        MENU_BUSINESS_HOST_APPLY_CONFIRM
+    } from '@/dictionary/menu-symbol'
     export default {
         name: 'multi-module-config',
         components: {
@@ -228,7 +258,7 @@
                 this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
                     this.$router.push({
-                        name: 'hostApplyConfirm',
+                        name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
                         query: {
                             batch: 1
                         }
@@ -238,7 +268,7 @@
             handleDel () {
                 this.$bkInfo({
                     title: this.$t('确认删除自动应用字段？'),
-                    subTitle: this.$t('删除后，将会移除字段在对应模块中的配置'),
+                    subTitle: this.$t('删除后将会移除字段在对应模块中的配置'),
                     confirmFn: async () => {
                         const ruleIds = this.selectedPropertyRow.reduce((acc, cur) => acc.concat(cur.__extra__.ruleList.map(item => item.id)), [])
                         try {
@@ -306,6 +336,8 @@
                     margin-left: 8px;
                     .icon-cc-tips {
                         margin-right: 8px;
+                        margin-top: -2px;
+                        font-size: 14px;
                     }
                 }
             }

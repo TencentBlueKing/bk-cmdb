@@ -4,7 +4,16 @@
             <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]">
                 <div class="choose-hd">
                     <span class="label">{{$t('自动应用字段：')}}</span>
-                    <bk-button theme="default" icon="plus" @click="handleChooseField">选择字段</bk-button>
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                        <bk-button
+                            icon="plus"
+                            slot-scope="{ disabled }"
+                            :disabled="disabled"
+                            @click="handleChooseField"
+                        >
+                            {{$t('选择字段')}}
+                        </bk-button>
+                    </cmdb-auth>
                 </div>
                 <div class="choose-bd" v-show="checkedPropertyIdList.length">
                     <property-config-table
@@ -16,8 +25,17 @@
                     </property-config-table>
                 </div>
                 <div class="choose-ft">
-                    <bk-button theme="primary" :disabled="nextButtonDisabled" @click="handleNextStep">下一步</bk-button>
-                    <bk-button theme="default" @click="handleCancel">取消</bk-button>
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                        <bk-button
+                            theme="primary"
+                            slot-scope="{ disabled }"
+                            :disabled="nextButtonDisabled || disabled"
+                            @click="handleNextStep"
+                        >
+                            {{$t('下一步')}}
+                        </bk-button>
+                    </cmdb-auth>
+                    <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
@@ -43,7 +61,10 @@
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import hostPropertyModal from './host-property-modal'
     import propertyConfigTable from './property-config-table'
-    import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_APPLY,
+        MENU_BUSINESS_HOST_APPLY_CONFIRM
+    } from '@/dictionary/menu-symbol'
     export default {
         name: 'single-module-config',
         components: {
@@ -154,7 +175,7 @@
                 this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
                     this.$router.push({
-                        name: 'hostApplyConfirm'
+                        name: MENU_BUSINESS_HOST_APPLY_CONFIRM
                     })
                 })
             },

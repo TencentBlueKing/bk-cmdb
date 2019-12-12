@@ -20,7 +20,11 @@
         >
             <template slot-scope="{ row }">
                 <template v-for="(id, index) in moduleIdList">
-                    <div :key="index" v-show="showMore.expanded[row.id] || index < showMore.max" class="path-item">
+                    <div
+                        class="path-item"
+                        :key="index" v-show="showMore.expanded[row.id] || index < showMore.max"
+                        :title="$parent.getModulePath(id)"
+                    >
                         {{$parent.getModulePath(id)}}
                     </div>
                 </template>
@@ -41,7 +45,11 @@
             <template slot-scope="{ row }">
                 <template v-if="multiple">
                     <template v-for="(id, index) in moduleIdList">
-                        <div :key="index" v-show="showMore.expanded[row.id] || index < showMore.max" class="value-item">
+                        <div
+                            class="value-item"
+                            :key="index" v-show="showMore.expanded[row.id] || index < showMore.max"
+                            :title="getRuleValue(row.id, id) | formatter(row) | unit(row.unit)"
+                        >
                             {{getRuleValue(row.id, id) | formatter(row) | unit(row.unit)}}
                         </div>
                     </template>
@@ -234,6 +242,7 @@
     .path-item,
     .value-item {
         padding: 1px 0;
+        @include ellipsis;
     }
     .show-more {
         color: #3a84ff;
@@ -249,6 +258,7 @@
             }
         }
     }
+
 </style>
 <style lang="scss">
     .property-config-table {
@@ -257,12 +267,16 @@
             overflow: unset !important;
         }
 
+        .cell {
+            .icon-cc-tips {
+                margin-top: -2px;
+            }
+        }
+
         .table-cell-module-path:not(.header-cell) {
             .cell {
                 padding-top: 8px;
                 padding-bottom: 8px;
-                overflow: unset !important;
-                display: block !important;
             }
         }
 
