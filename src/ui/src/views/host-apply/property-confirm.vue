@@ -20,9 +20,18 @@
         </property-confirm-table>
         <div :class="['bottom-actionbar', { 'is-sticky': hasScrollbar }]">
             <div class="actionbar-inner">
-                <bk-button theme="default" @click="handlePrevStep">上一步</bk-button>
-                <bk-button theme="primary" :disabled="applyButtonDisabled" @click="handleApply">保存并应用</bk-button>
-                <bk-button theme="default" @click="handleCancel">取消</bk-button>
+                <bk-button theme="default" @click="handlePrevStep">{{$t('上一步')}}</bk-button>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                    <bk-button
+                        theme="primary"
+                        slot-scope="{ disabled }"
+                        :disabled="applyButtonDisabled || disabled"
+                        @click="handleApply"
+                    >
+                        {{$t('保存并应用')}}
+                    </bk-button>
+                </cmdb-auth>
+                <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
             </div>
         </div>
         <leave-confirm
@@ -49,7 +58,12 @@
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import propertyConfirmTable from './children/property-confirm-table'
     import applyStatusModal from './children/apply-status'
-    import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_HOST_APPLY,
+        MENU_BUSINESS_HOST_APPLY_EDIT,
+        MENU_BUSINESS_HOST_APPLY_FAILED
+    } from '@/dictionary/menu-symbol'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         components: {
@@ -88,7 +102,7 @@
             removeResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
         },
         beforeRouteLeave (to, from, next) {
-            if (to.name !== 'hostApplyEdit') {
+            if (to.name !== MENU_BUSINESS_HOST_APPLY_EDIT) {
                 this.$store.commit('hostApply/clearRuleDraft')
             }
             next()
@@ -219,7 +233,7 @@
             },
             handleViewFailed () {
                 this.$router.push({
-                    name: 'hostApplyFailed'
+                    name: MENU_BUSINESS_HOST_APPLY_FAILED
                 })
             }
         }
@@ -275,6 +289,7 @@
         .actionbar-inner {
             padding: 20px 0 0 0;
             .bk-button {
+                margin-right: 4px;
                 min-width: 86px;
             }
         }

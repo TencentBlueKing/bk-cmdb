@@ -43,16 +43,39 @@
                                         </div>
                                     </div>
                                     <div class="view-ft">
-                                        <bk-button theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
-                                        <bk-button theme="default" :disabled="!hasConflict" @click="handleViewConflict">
-                                            <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
-                                                {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
-                                            </span>
-                                            <span v-else>
-                                                {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
-                                            </span>
-                                        </bk-button>
-                                        <bk-button theme="default" @click="handleCloseApply">{{$t('关闭自动应用')}}</bk-button>
+                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                            <bk-button
+                                                slot-scope="{ disabled }"
+                                                theme="primary"
+                                                :disabled="disabled"
+                                                @click="handleEdit"
+                                            >
+                                                {{$t('编辑')}}
+                                            </bk-button>
+                                        </cmdb-auth>
+                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                            <bk-button
+                                                slot-scope="{ disabled }"
+                                                :disabled="!hasConflict || disabled"
+                                                @click="handleViewConflict"
+                                            >
+                                                <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
+                                                    {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
+                                                </span>
+                                                <span v-else>
+                                                    {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
+                                                </span>
+                                            </bk-button>
+                                        </cmdb-auth>
+                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                            <bk-button
+                                                slot-scope="{ disabled }"
+                                                :disabled="disabled"
+                                                @click="handleCloseApply"
+                                            >
+                                                {{$t('关闭自动应用')}}
+                                            </bk-button>
+                                        </cmdb-auth>
                                     </div>
                                 </div>
                             </template>
@@ -63,7 +86,17 @@
                                         <span>{{$t('当前模块未启用自动应用策略')}}</span>
                                     </div>
                                     <div class="action">
-                                        <bk-button theme="primary" :outline="true" @click="handleEdit">立即启用</bk-button>
+                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                            <bk-button
+                                                outline
+                                                theme="primary"
+                                                slot-scope="{ disabled }"
+                                                :disabled="disabled"
+                                                @click="handleEdit"
+                                            >
+                                                {{$t('立即启用')}}
+                                            </bk-button>
+                                        </cmdb-auth>
                                     </div>
                                 </div>
                                 <div class="view-field" v-else>
@@ -85,7 +118,17 @@
                                                         <span>{{$t('该模块已关闭属性自动应用')}}</span>
                                                     </div>
                                                     <div class="action">
-                                                        <bk-button theme="primary" :outline="true" @click="handleEdit">{{$t('重新启用')}}</bk-button>
+                                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                                            <bk-button
+                                                                outline
+                                                                theme="primary"
+                                                                slot-scope="{ disabled }"
+                                                                :disabled="disabled"
+                                                                @click="handleEdit"
+                                                            >
+                                                                {{$t('重新启用')}}
+                                                            </bk-button>
+                                                        </cmdb-auth>
                                                     </div>
                                                 </div>
                                             </div>
@@ -121,7 +164,11 @@
     import featureTips from '@/components/feature-tips/index'
     import sidebar from './children/sidebar.vue'
     import propertyConfigTable from './children/property-config-table'
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_HOST_APPLY_EDIT,
+        MENU_BUSINESS_HOST_APPLY_CONFLICT
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             sidebar,
@@ -264,7 +311,7 @@
             },
             handleViewConflict () {
                 this.$router.push({
-                    name: 'hostApplyConflict',
+                    name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
                     query: {
                         mid: this.moduleId
                     }
@@ -272,7 +319,7 @@
             },
             handleEdit () {
                 this.$router.push({
-                    name: 'hostApplyEdit',
+                    name: MENU_BUSINESS_HOST_APPLY_EDIT,
                     query: {
                         mid: this.moduleId
                     }
@@ -326,6 +373,10 @@
             .desc {
                 font-size: 14px;
                 color: #63656e;
+
+                .icon-cc-tips {
+                    margin-top: -2px;
+                }
             }
             .action {
                 margin-top: 18px;
@@ -383,6 +434,7 @@
             .view-ft {
                 margin: 20px 0;
                 .bk-button {
+                    margin-right: 4px;
                     min-width: 86px;
                 }
             }

@@ -241,7 +241,7 @@
             },
             handleShowConflict (row) {
                 this.currentRow = row
-                this.slider.title = `处理冲突【${row.expired_host.bk_host_innerip}】`
+                this.slider.title = `手动修改【${row.expired_host.bk_host_innerip}】`
                 this.slider.content = 'conflict'
                 this.slider.isShow = true
             },
