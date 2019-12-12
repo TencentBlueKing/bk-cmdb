@@ -66,12 +66,14 @@
         <bk-table
             v-show="localExpanded"
             v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
-            :data="flattenList">
+            :data="list">
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
-                <div slot-scope="{ row }" :title="row[column.id]">{{row[column.id]}}</div>
+                <div slot-scope="{ row }" :title="(row.property || {})[column.id] | formatter(column.property)">
+                    {{(row.property || {})[column.id] | formatter(column.property)}}
+                </div>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
@@ -218,9 +220,6 @@
                 }
                 return menu
             },
-            flattenList () {
-                return this.$tools.flattenList(this.properties, this.list.map(data => data.property || {}))
-            },
             requestId () {
                 return {
                     processList: `get_service_instance_${this.instance.id}_processes`,
@@ -307,7 +306,8 @@
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
-                        name: property.bk_property_name
+                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        property
                     }
                 })
                 this.header = header
@@ -316,8 +316,7 @@
                 this.$emit('create-process', this)
             },
             async handleEditProcess (item) {
-                const processInstance = this.list.find(data => data.relation.bk_process_id === item.bk_process_id)
-                this.$emit('update-process', processInstance, this)
+                this.$emit('update-process', item, this)
             },
             async handleDeleteProcess (item) {
                 try {

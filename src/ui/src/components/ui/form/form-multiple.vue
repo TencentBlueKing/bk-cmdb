@@ -203,7 +203,7 @@
                         multipleValues[propertyId] = this.values[propertyId]
                     }
                 }
-                return multipleValues
+                return this.$tools.formatValues(multipleValues, this.properties)
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {

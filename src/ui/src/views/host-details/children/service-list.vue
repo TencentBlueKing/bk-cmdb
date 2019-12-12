@@ -423,9 +423,9 @@
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             },
-            handleShowProcessDetails (inst) {
+            handleShowProcessDetails ({ property }) {
                 this.showDetails = true
-                this.processInst = inst
+                this.processInst = property
             }
         }
     }
