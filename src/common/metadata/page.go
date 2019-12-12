@@ -29,9 +29,9 @@ const (
 
 // BasePage for paging query
 type BasePage struct {
-	Sort  string `json:"sort,omitempty"`
-	Limit int    `json:"limit,omitempty"`
-	Start int    `json:"start"`
+	Sort  string `json:"sort,omitempty" mapstructure:"sort"`
+	Limit int    `json:"limit,omitempty" mapstructure:"limit"`
+	Start int    `json:"start" mapstructure:"start"`
 }
 
 func (page BasePage) Validate() (string, error) {

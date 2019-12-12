@@ -194,7 +194,7 @@
         <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
-                :properties="properties"
+                :properties="columnProperties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
                 @on-apply="handleApplyColumnsConfig"
@@ -330,6 +330,15 @@
                     resource_id: this.model.id,
                     resource_type: 'model'
                 }]
+            },
+            columnProperties () {
+                const instId = {
+                    bk_property_id: 'bk_inst_id',
+                    bk_property_name: 'ID'
+                }
+                const properties = this.properties
+                properties.push(instId)
+                return properties
             }
         },
         watch: {
@@ -450,7 +459,7 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customColumns, this.columnsConfig.disabledColumns)
+                    const headerProperties = this.$tools.getHeaderProperties(this.columnProperties, this.customColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.updateTableHeader(properties)

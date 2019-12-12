@@ -13,11 +13,23 @@ const state = {
     },
     collection: null,
     collectionList: [],
+    propertyList: [],
     isHostSearch: null
 }
 
 const getters = {
-    isCollection: state => !!state.collection
+    isCollection: state => !!state.collection,
+    configPropertyList: state => {
+        const disableList = ['bk_cpu']
+        state.propertyList.forEach(property => {
+            property.options = property.option
+            property['__extra__'] = {
+                disabled: disableList.includes(property.bk_property_id)
+            }
+        })
+
+        return state.propertyList
+    }
 }
 
 const mutations = {
@@ -56,6 +68,9 @@ const mutations = {
         }
         state.collection = null
         state.isHostSearch = false
+    },
+    setPropertyList (state, list) {
+        state.propertyList = list
     }
 }
 

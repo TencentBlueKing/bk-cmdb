@@ -474,20 +474,43 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, appID int64, srcHostID
 		moduleIDArr = append(moduleIDArr, relation.ModuleID)
 	}
 
-	// destion host new module relation
-	dstModuleHostRelation := &metadata.HostsModuleRelation{
-		ApplicationID: appID,
-		HostID:        []int64{dstHostID},
-		ModuleID:      moduleIDArr,
-		IsIncrement:   false,
-	}
-	relationRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, lgc.header, dstModuleHostRelation)
-	if doErr != nil {
-		blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", doErr, relationRet, lgc.rid)
-		return lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := relationRet.CCError(); err != nil {
+	exist, err := lgc.ExistInnerModule(ctx, moduleIDArr)
+	if err != nil {
 		return err
+	}
+	if exist {
+		if len(moduleIDArr) != 1 {
+			return lgc.ccErr.CCErrorf(common.CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed)
+		}
+		dstModuleHostRelation := &metadata.TransferHostToInnerModule{
+			ApplicationID: appID,
+			HostID:        []int64{dstHostID},
+			ModuleID:      moduleIDArr[0],
+		}
+		relationRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToInnerModule(ctx, lgc.header, dstModuleHostRelation)
+		if doErr != nil {
+			blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", doErr, relationRet, lgc.rid)
+			return lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if err := relationRet.CCError(); err != nil {
+			return err
+		}
+	} else {
+		// destination host new module relation
+		dstModuleHostRelation := &metadata.HostsModuleRelation{
+			ApplicationID: appID,
+			HostID:        []int64{dstHostID},
+			ModuleID:      moduleIDArr,
+			IsIncrement:   false,
+		}
+		relationRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, lgc.header, dstModuleHostRelation)
+		if doErr != nil {
+			blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", doErr, relationRet, lgc.rid)
+			return lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if err := relationRet.CCError(); err != nil {
+			return err
+		}
 	}
 
 	input := &metadata.UpdateOption{

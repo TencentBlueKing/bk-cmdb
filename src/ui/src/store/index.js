@@ -53,6 +53,7 @@ import fullTextSearch from './modules/api/full-text-search.js'
 import setSync from './modules/api/set-sync.js'
 import setTemplate from './modules/api/set-template.js'
 import cloudarea from './modules/api/cloudarea.js'
+import hostApply from './modules/api/host-apply'
 
 import businessHost from './modules/view/business-host.js'
 
@@ -113,6 +114,7 @@ export default new Vuex.Store({
         setSync,
         setTemplate,
         businessHost,
-        cloudarea
+        cloudarea,
+        hostApply
     }
 })

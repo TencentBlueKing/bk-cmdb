@@ -23,6 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
@@ -33,6 +34,7 @@ import (
 
 var delayTime = time.Second * 30
 
+// TODO: add event for layer
 var hostIndentDiffFields = map[string][]string{
 	common.BKInnerObjIDApp: {
 		common.BKAppNameField,
@@ -576,9 +578,6 @@ func (ih *IdentifierHandler) Run() error {
 	blog.Infof("identifier: handle identifiers started")
 	go func() {
 		ih.fetchHostCache()
-		for range time.Tick(time.Minute * 10) {
-			ih.fetchHostCache()
-		}
 	}()
 	go func() {
 		if err := ih.handleEventLoop(); err != nil {
@@ -638,6 +637,17 @@ func (ih *IdentifierHandler) fetchHostCache() {
 	rid := util.ExtractRequestIDFromContext(ih.ctx)
 
 	objs := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDPlat, common.BKInnerObjIDProc}
+	asstArr := make([]metadata.Association, 0)
+	cond := condition.CreateCondition().Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
+	err := ih.db.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(ih.ctx, &asstArr)
+	if err != nil {
+		blog.ErrorJSON("[identifier][fetchHostCache] get cc_ObjAsst error: %s, condition:%s, rid: %s", err, cond.ToMapStr(), rid)
+		return
+	}
+	for _, asst := range asstArr {
+		objs = append(objs, asst.ObjectID)
+	}
+	objs = util.StrArrayUnique(objs)
 	for _, objID := range objs {
 		caches := make([]map[string]interface{}, 0)
 		if err := ih.db.Table(common.GetInstTableName(objID)).Find(map[string]interface{}{}).All(ih.ctx, &caches); err != nil {
@@ -665,7 +675,7 @@ func (ih *IdentifierHandler) fetchHostCache() {
 	hosts := make([]*metadata.HostIdentifier, 0)
 	hostIDs := make([]int64, 0)
 
-	err := ih.db.Table(common.BKTableNameModuleHostConfig).Find(map[string]interface{}{}).All(ih.ctx, &relations)
+	err = ih.db.Table(common.BKTableNameModuleHostConfig).Find(map[string]interface{}{}).All(ih.ctx, &relations)
 	if err != nil {
 		blog.Errorf("[identifier][fetchHostCache] get cc_ModuleHostConfig error: %v, rid: %s", err, rid)
 		return

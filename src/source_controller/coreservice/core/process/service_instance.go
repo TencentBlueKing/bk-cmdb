@@ -648,7 +648,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 	}
 
 	if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
-		blog.Warnf("AutoCreateServiceInstanceModuleHost failed, ServiceTemplateID is %d, rid: %s", common.ServiceTemplateIDNotSet, ctx.ReqID)
+		blog.Infof("AutoCreateServiceInstanceModuleHost do nothing, ServiceTemplateID is %d, rid: %s", common.ServiceTemplateIDNotSet, ctx.ReqID)
 		return nil, nil
 	}
 

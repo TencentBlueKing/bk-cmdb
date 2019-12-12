@@ -179,3 +179,10 @@
 .bk-button {
     min-width: auto;
 }
+
+.bk-search-select,
+.bk-button {
+    .bk-icon {
+        vertical-align: unset;
+    }
+}
