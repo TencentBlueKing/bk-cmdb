@@ -10,11 +10,11 @@
         placeholder="关键字/字段值"
         @change="handleChange"
         @menu-select="handleMenuSelect"
+        @key-enter="handleKeyEnter"
         @input-focus="handleFocus"
         @input-click-outside="handleBlur">
         <template slot="nextfix">
             <i class="bk-icon icon-close-circle-shape" v-show="showClear && searchValue.length" @click.stop="handleClear"></i>
-            <i class="bk-icon icon-search" @click.stop="handleSearch"></i>
         </template>
     </bk-search-select>
 </template>
@@ -22,9 +22,7 @@
     import TIMEZONE from '@/components/ui/form/timezone.json'
     import Bus from '@/utils/bus'
     export default {
-        components: {
-
-        },
+        components: {},
         data () {
             return {
                 showClear: false,
@@ -37,8 +35,9 @@
         },
         watch: {
             searchValue (searchValue) {
-                this.searchOptions = this.fullOptions.filter(option => {
-                    return !searchValue.some(value => value.id === option.id && value.name === option.name && value.type === option.type)
+                this.searchOptions.forEach(option => {
+                    const selected = searchValue.some(value => value.id === option.id && value.name === option.name && value.type === option.type)
+                    option.disabled = selected
                 })
                 this.handleSearch()
             }
@@ -54,7 +53,7 @@
                     const availableProperties = properties.filter(property => property.host_apply_enabled && !unsupportType.includes(property.bk_property_type))
                     this.searchOptions = availableProperties.map(property => {
                         const type = property.bk_property_type
-                        const data = { id: property.id, name: property.bk_property_name, type }
+                        const data = { id: property.id, name: property.bk_property_name, type, disabled: false }
                         if (type === 'enum') {
                             data.children = (property.option || []).map(option => ({ id: option.id, name: option.name, disabled: false }))
                             data.multiable = true
@@ -82,6 +81,8 @@
                     keywords.pop()
                     this.searchValue = values.filter(value => !keywords.includes(value))
                 }
+            },
+            handleKeyEnter () {
                 this.currentMenu = null
             },
             handleFocus () {
