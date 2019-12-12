@@ -11,7 +11,7 @@
                 <bk-input class="row-content"
                     data-vv-name="name"
                     font-size="medium"
-                    v-validate="'required|singlechar|length:256'"
+                    v-validate="'required|singlechar|length:20'"
                     v-model.trim="templateName"
                     :placeholder="$t('集群模板名称占位符')">
                 </bk-input>

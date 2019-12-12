@@ -13,8 +13,12 @@
 package handler
 
 import (
+	"fmt"
+
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
@@ -26,33 +30,59 @@ func (ih *IAMHandler) HandlePlatSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 	ctx := util.NewContextFromHTTPHeader(*header)
+	rid := util.GetHTTPCCRequestID(*header)
 
 	// step1 get instances by business from core service
 	plats, err := ih.authManager.CollectAllPlats(ctx, *header)
 	if err != nil {
-		blog.Errorf("collect plat by business id failed, err: %+v", err)
-		return err
+		blog.Errorf("HandlePlatSync failed, collect plat by business id failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("CollectAllPlats failed, err: %s", err.Error())
 	}
 	if len(plats) == 0 {
 		blog.Info("no plat found")
 		return nil
 	}
-	resources := ih.authManager.MakeResourcesByPlat(*header, authmeta.EmptyAction, plats...)
+
+	resources, err := ih.authManager.MakeResourcesByPlat(*header, authmeta.EmptyAction, plats...)
+	if err != nil {
+		blog.Errorf("HandlePlatSync failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
+	}
 	if len(resources) == 0 && len(plats) > 0 {
-		blog.Errorf("make iam resource for plat %+v return empty", plats)
+		blog.Errorf("make iam resource for plat %+v return empty, rid: %s", plats, rid)
 		return nil
 	}
-
-	// step2 get all plat from iam
-	rs := &authmeta.ResourceAttribute{
-		Basic: authmeta.Basic{
-			Type: authmeta.Plat,
+	iamResources, err := ih.authManager.Authorize.DryRunRegisterResource(ctx, resources...)
+	if err != nil {
+		blog.Errorf("HandleInstanceSync failed, DryRunRegisterResource failed, object: %s, instances: %+v, err: %+v, rid: %s", common.BKInnerObjIDPlat, plats, err, rid)
+		return nil
+	}
+	if len(iamResources.Resources) == 0 {
+		if blog.V(5) {
+			blog.InfoJSON("HandlePlatSync failed, no cmdb resource found, skip sync for safe, resource: %s, rid: %s", resources, rid)
+		}
+		return nil
+	}
+	first := iamResources.Resources[0]
+	if len(first.ResourceID) < 2 {
+		blog.ErrorJSON("HandlePlatSync failed, DryRunRegisterResource result unexpected, iamResources: %s, rid: %s", iamResources, rid)
+		return fmt.Errorf("DryRunRegisterResource result unexpected, layer not enough, iamResources: %+v", iamResources)
+	}
+	searchCondition := authcenter.SearchCondition{
+		ScopeInfo: authcenter.ScopeInfo{
+			ScopeType: first.ScopeType,
+			ScopeID:   first.ScopeID,
 		},
-		SupplierAccount: util.GetOwnerID(*header),
+		ResourceType:    first.ResourceType,
+		ParentResources: first.ResourceID[0 : len(first.ResourceID)-1],
 	}
 
 	taskName := "sync all plat"
 	iamIDPrefix := "plat:"
 	skipDeregister := false
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
+	if err := ih.diffAndSyncInstances(*header, taskName, searchCondition, iamIDPrefix, resources, skipDeregister); err != nil {
+		blog.Errorf("HandlePlatSync failed, diffAndSyncInstances failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("diffAndSyncInstances failed, err: %+v, rid: %s", err, rid)
+	}
+	return nil
 }
