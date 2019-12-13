@@ -144,7 +144,7 @@
 
 <style lang="scss" scoped>
     .classify-layout{
-        padding: 0 20px 20px;
+        padding: 15px 20px 20px;
     }
     .classify-filter {
         padding: 0 20px 20px 0;

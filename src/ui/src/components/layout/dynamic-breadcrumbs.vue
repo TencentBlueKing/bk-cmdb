@@ -29,7 +29,8 @@
 <style lang="scss" scoped>
     .breadcrumbs-layout {
         padding: 14px 20px;
-        height: 52px;
+        height: 53px;
+        border-bottom: 1px solid $borderColor;
         .icon-cc-arrow {
             display: block;
             width: 24px;
