@@ -21,6 +21,9 @@ const actions = {
     },
     getInstanceIpByHost (context, { hostId, config }) {
         return $http.get(`${window.API_HOST}hosts/${hostId}/listen_ip_options`, config)
+    },
+    previewDeleteServiceInstances (context, { params, config }) {
+        return $http.post('deletemany/proc/service_instance/preview', params, config)
     }
 }
 

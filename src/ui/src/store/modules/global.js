@@ -40,7 +40,6 @@ const state = {
     permission: [],
     appHeight: window.innerHeight,
     isAdminView: true,
-    breadcrumbs: [],
     title: null,
     businessSelectorVisible: false,
     businessSelectorPromise,
@@ -71,7 +70,6 @@ const getters = {
     headerTitle: state => state.headerTitle,
     featureTipsParams: state => state.featureTipsParams,
     permission: state => state.permission,
-    breadcrumbs: state => state.breadcrumbs,
     title: state => state.title,
     businessSelectorVisible: state => state.businessSelectorVisible,
     scrollerState: state => state.scrollerState
@@ -128,9 +126,6 @@ const mutations = {
     },
     setAppHeight (state, height) {
         state.appHeight = height
-    },
-    setBreadcrumbs (state, breadcrumbs) {
-        state.breadcrumbs = breadcrumbs
     },
     setTitle (state, title) {
         state.title = title

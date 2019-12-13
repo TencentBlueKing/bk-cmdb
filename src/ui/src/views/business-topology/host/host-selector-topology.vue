@@ -157,7 +157,7 @@
                 return `${data.bk_obj_id}-${data.bk_inst_id}`
             },
             shouldShowCheckbox (data) {
-                return data.bk_obj_id === 'host'
+                return data.bk_obj_id === 'host' || (data.bk_obj_id === 'module' && data.child && data.child.length > 0)
             },
             async loadHost (node) {
                 try {

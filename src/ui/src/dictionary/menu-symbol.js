@@ -46,3 +46,6 @@ export const MENU_BUSINESS_HOST_DETAILS = 'menu_business_host_details'
 
 // 转移主机
 export const MENU_BUSINESS_TRANSFER_HOST = 'menu_business_transfer_host'
+
+// 删除服务实例
+export const MENU_BUSINESS_DELETE_SERVICE = 'menu_business_delete_service'

@@ -237,7 +237,7 @@
                         }
                     })
                 }
-                const formValues = this.$tools.getInstFormValues(this.properties, inst)
+                const formValues = this.$tools.getInstFormValues(this.properties, inst, this.type === 'create')
                 Object.keys(formValues).forEach(key => {
                     this.$set(this.values, key, {
                         value: formValues[key],
