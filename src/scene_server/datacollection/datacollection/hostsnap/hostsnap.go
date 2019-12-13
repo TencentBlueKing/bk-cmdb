@@ -173,7 +173,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 		},
 		OpDesc: "update " + common.BKInnerObjIDHost,
 		OpType: auditoplog.AuditOpTypeModify,
-		ExtKey: "",
+		ExtKey: innerIp,
 		BizID:  bizID,
 	}
 	result, err := h.CoreAPI.CoreService().Audit().SaveAuditLog(h.ctx, h.httpHeader, auditLog)
