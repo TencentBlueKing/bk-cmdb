@@ -102,8 +102,9 @@
             async getModulePathInfo () {
                 try {
                     const modules = this.info.module || []
+                    const biz = this.info.biz || []
                     const result = await this.$store.dispatch('objectMainLineModule/getTopoPath', {
-                        bizId: this.$store.getters['objectBiz/bizId'],
+                        bizId: biz[0].bk_biz_id,
                         params: {
                             topo_nodes: modules.map(module => ({ bk_obj_id: 'module', bk_inst_id: module.bk_module_id }))
                         }
