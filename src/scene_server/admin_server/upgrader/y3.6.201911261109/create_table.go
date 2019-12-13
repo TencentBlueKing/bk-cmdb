@@ -30,14 +30,14 @@ var CreateTableOptions = []struct {
 	{
 		TableName: common.BKTableNameChartConfig,
 		TableIndex: []dal.Index{
-			{Keys: map[string]int32{"id": 1}, Name: common.BKFieldID, Unique: true, Background: true},
+			{Keys: map[string]int32{"config_id": 1}, Name: "config_id", Unique: true, Background: true},
 			{Name: common.BKObjIDField, Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
 		},
 	},
 	{
 		TableName: common.BKTableNameChartPosition,
 		TableIndex: []dal.Index{
-			{Name: "config_id", Keys: map[string]int32{"config_id": 1}, Background: true},
+			{Name: "bk_biz_id", Keys: map[string]int32{"bk_biz_id": 1}, Background: true},
 		},
 	},
 	{
