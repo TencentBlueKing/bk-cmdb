@@ -261,7 +261,7 @@
 
 <style lang="scss" scoped>
     .history-layout{
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .history-options{
         font-size: 0px;
@@ -272,7 +272,7 @@
         }
     }
     .history-table{
-        margin-top: 20px;
+        margin-top: 15px;
     }
 
 </style>
