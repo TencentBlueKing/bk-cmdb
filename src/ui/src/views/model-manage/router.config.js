@@ -18,6 +18,9 @@ export default [{
         menu: {
             i18n: '模型详情'
         },
+        layout: {
+            previous: { name: MENU_MODEL_MANAGEMENT }
+        },
         checkAvailable: (to, from, app) => {
             const modelId = to.params.modelId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)

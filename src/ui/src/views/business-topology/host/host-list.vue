@@ -224,10 +224,25 @@
             },
             handleTransfer (type) {
                 if (['idle', 'business'].includes(type)) {
-                    this.dialog.props = {
-                        moduleType: type,
-                        title: type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块')
+                    const props = {
+                        moduleType: type
                     }
+                    if (type === 'idle') {
+                        props.title = this.$t('转移主机到空闲模块')
+                    } else {
+                        props.title = this.$t('转移主机到业务模块')
+                        const selection = this.table.selection
+                        const firstSelectionModules = selection[0].module.map(module => module.bk_module_id).sort()
+                        const firstSelectionModulesStr = firstSelectionModules.join(',')
+                        const allSame = selection.slice(1).every(item => {
+                            const modules = item.module.map(module => module.bk_module_id).sort().join(',')
+                            return modules === firstSelectionModulesStr
+                        })
+                        if (allSame) {
+                            props.previousModules = firstSelectionModules
+                        }
+                    }
+                    this.dialog.props = props
                     this.dialog.width = 720
                     this.dialog.height = 460
                     this.dialog.component = ModuleSelector.name

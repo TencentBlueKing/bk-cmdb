@@ -45,6 +45,9 @@
             },
             handleIconClick () {
                 this.$emit('icon-click', this.localValue)
+            },
+            focus () {
+                this.$el.querySelector('input').focus()
             }
         }
     }

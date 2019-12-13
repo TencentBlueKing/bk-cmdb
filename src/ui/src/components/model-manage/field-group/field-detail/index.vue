@@ -1,90 +1,92 @@
 <template>
     <div class="model-slider-content">
-        <label class="form-label">
-            <span class="label-text">
-                {{$t('唯一标识')}}
-                <span class="color-danger">*</span>
-            </span>
-            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
-                <bk-input type="text" class="cmdb-form-input"
-                    name="fieldId"
-                    v-model.trim="fieldInfo['bk_property_id']"
-                    :placeholder="$t('请输入唯一标识')"
-                    :disabled="isEditField"
-                    v-validate="'required|fieldId'">
-                </bk-input>
-                <p class="form-error">{{$t('唯一标识必须为英文字母、数字和下划线组成')}}</p>
+        <div class="slider-main" ref="sliderMain">
+            <label class="form-label">
+                <span class="label-text">
+                    {{$t('唯一标识')}}
+                    <span class="color-danger">*</span>
+                </span>
+                <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
+                    <bk-input type="text" class="cmdb-form-input"
+                        name="fieldId"
+                        v-model.trim="fieldInfo['bk_property_id']"
+                        :placeholder="$t('请输入唯一标识')"
+                        :disabled="isEditField"
+                        v-validate="'required|fieldId'">
+                    </bk-input>
+                    <p class="form-error">{{$t('唯一标识必须为英文字母、数字和下划线组成')}}</p>
+                </div>
+                <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('下划线/数字/字母')"></i>
+            </label>
+            <label class="form-label">
+                <span class="label-text">
+                    {{$t('名称')}}
+                    <span class="color-danger">*</span>
+                </span>
+                <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldName') }">
+                    <bk-input type="text" class="cmdb-form-input"
+                        name="fieldName"
+                        :placeholder="$t('请输入字段名称')"
+                        v-model.trim="fieldInfo['bk_property_name']"
+                        :disabled="isReadOnly"
+                        v-validate="'required|enumName'">
+                    </bk-input>
+                    <p class="form-error">{{errors.first('fieldName')}}</p>
+                </div>
+            </label>
+            <div class="form-label">
+                <span class="label-text">
+                    {{$t('字段类型')}}
+                    <span class="color-danger">*</span>
+                </span>
+                <div class="cmdb-form-item">
+                    <bk-select
+                        class="bk-select-full-width"
+                        :clearable="false"
+                        v-model="fieldInfo.bk_property_type"
+                        :disabled="isEditField">
+                        <bk-option v-for="(option, index) in fieldTypeList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
+                </div>
             </div>
-            <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('下划线/数字/字母')"></i>
-        </label>
-        <label class="form-label">
-            <span class="label-text">
-                {{$t('名称')}}
-                <span class="color-danger">*</span>
-            </span>
-            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldName') }">
-                <bk-input type="text" class="cmdb-form-input"
-                    name="fieldName"
-                    :placeholder="$t('请输入字段名称')"
-                    v-model.trim="fieldInfo['bk_property_name']"
-                    :disabled="isReadOnly"
-                    v-validate="'required|enumName'">
-                </bk-input>
-                <p class="form-error">{{errors.first('fieldName')}}</p>
+            <div class="field-detail">
+                <the-config
+                    :type="fieldInfo['bk_property_type']"
+                    :is-read-only="isReadOnly"
+                    :is-main-line-model="isMainLineModel"
+                    :editable.sync="fieldInfo['editable']"
+                    :isrequired.sync="fieldInfo['isrequired']"
+                ></the-config>
+                <component
+                    v-if="isComponentShow"
+                    :is-read-only="isReadOnly"
+                    :is="`the-field-${fieldType}`"
+                    v-model="fieldInfo.option"
+                    ref="component"
+                ></component>
             </div>
-        </label>
-        <div class="form-label">
-            <span class="label-text">
-                {{$t('字段类型')}}
-                <span class="color-danger">*</span>
-            </span>
-            <div class="cmdb-form-item">
-                <bk-select
-                    class="bk-select-full-width"
-                    :clearable="false"
-                    v-model="fieldInfo.bk_property_type"
-                    :disabled="isEditField">
-                    <bk-option v-for="(option, index) in fieldTypeList"
-                        :key="index"
-                        :id="option.id"
-                        :name="option.name">
-                    </bk-option>
-                </bk-select>
+            <label class="form-label" v-show="['int', 'float'].includes(fieldType)">
+                <span class="label-text">
+                    {{$t('单位')}}
+                </span>
+                <div class="cmdb-form-item">
+                    <bk-input type="text" class="cmdb-form-input"
+                        v-model.trim="fieldInfo['unit']"
+                        :disabled="isReadOnly"
+                        :placeholder="$t('请输入单位')">
+                    </bk-input>
+                </div>
+            </label>
+            <div class="form-label">
+                <span class="label-text">{{$t('用户提示')}}</span>
+                <textarea style="width: 94%;" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
             </div>
         </div>
-        <div class="field-detail">
-            <the-config
-                :type="fieldInfo['bk_property_type']"
-                :is-read-only="isReadOnly"
-                :is-main-line-model="isMainLineModel"
-                :editable.sync="fieldInfo['editable']"
-                :isrequired.sync="fieldInfo['isrequired']"
-            ></the-config>
-            <component
-                v-if="isComponentShow"
-                :is-read-only="isReadOnly"
-                :is="`the-field-${fieldType}`"
-                v-model="fieldInfo.option"
-                ref="component"
-            ></component>
-        </div>
-        <label class="form-label" v-show="['int', 'float'].includes(fieldType)">
-            <span class="label-text">
-                {{$t('单位')}}
-            </span>
-            <div class="cmdb-form-item">
-                <bk-input type="text" class="cmdb-form-input"
-                    v-model.trim="fieldInfo['unit']"
-                    :disabled="isReadOnly"
-                    :placeholder="$t('请输入单位')">
-                </bk-input>
-            </div>
-        </label>
-        <div class="form-label">
-            <span class="label-text">{{$t('用户提示')}}</span>
-            <textarea style="width: 94%;" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
-        </div>
-        <div class="btn-group">
+        <div class="btn-group" :class="{ 'sticky-layout': scrollbar }">
             <bk-button theme="primary"
                 :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
                 @click="saveField">
@@ -98,6 +100,7 @@
 </template>
 
 <script>
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import theFieldChar from './char'
     import theFieldInt from './int'
     import theFieldFloat from './float'
@@ -185,7 +188,8 @@
                     option: ''
                 },
                 originalFieldInfo: {},
-                charMap: ['singlechar', 'longchar']
+                charMap: ['singlechar', 'longchar'],
+                scrollbar: false
             }
         },
         computed: {
@@ -240,11 +244,21 @@
                 this.initData()
             }
         },
+        mounted () {
+            addResizeListener(this.$refs.sliderMain, this.handleScrollbar)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.sliderMain, this.handleScrollbar)
+        },
         methods: {
             ...mapActions('objectModelProperty', [
                 'createObjectAttribute',
                 'updateObjectAttribute'
             ]),
+            handleScrollbar () {
+                const el = this.$refs.sliderMain
+                this.scrollbar = el.scrollHeight !== el.offsetHeight
+            },
             initData () {
                 for (const key in this.fieldInfo) {
                     this.fieldInfo[key] = this.$tools.clone(this.field[key])
@@ -266,6 +280,7 @@
                 if (!await this.validateValue()) {
                     return
                 }
+                let fieldId = null
                 if (this.isEditField) {
                     await this.updateObjectAttribute({
                         id: this.field.id,
@@ -276,6 +291,7 @@
                             requestId: 'updateObjectAttribute'
                         }
                     }).then(() => {
+                        fieldId = this.fieldInfo.bk_property_id
                         this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                         this.$http.cancelCache('getHostPropertyList')
                     })
@@ -303,7 +319,7 @@
                         this.$http.cancelCache('getHostPropertyList')
                     })
                 }
-                this.$emit('save')
+                this.$emit('save', fieldId)
             },
             cancel () {
                 this.$emit('cancel')
@@ -313,6 +329,16 @@
 </script>
 
 <style lang="scss" scoped>
+    .model-slider-content {
+        height: 100%;
+        padding: 0;
+        overflow: hidden;
+    }
+    .slider-main {
+        max-height: calc(100% - 52px);
+        @include scrollbar-y;
+        padding: 20px 20px 0;
+    }
     .slider-content {
         /deep/ textarea[disabled] {
             background-color: #fafbfd!important;
@@ -348,5 +374,11 @@
         font-size: 18px;
         color: #979ba5;
         margin-left: 10px;
+    }
+    .btn-group {
+        padding: 10px 20px;
+        &.sticky-layout {
+            border-top: 1px solid #dcdee5;
+        }
     }
 </style>

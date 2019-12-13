@@ -363,8 +363,8 @@ $color: #63656E;
 
 .business-wrapper {
     position: relative;
-    padding: 13px 0;
-    height: 59px;
+    padding: 10px 0;
+    height: 53px;
     border-bottom: 1px solid #DCDEE5;
     overflow: hidden;
     .business-selector {
