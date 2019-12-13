@@ -80,7 +80,7 @@
                         <cmdb-collapse class="instances-box" collapse>
                             <div class="title" slot="title">
                                 <h3>{{$t('涉及实例')}}</h3>
-                                <span>（{{pagination.count}}）</span>
+                                <span>（{{process['service_instance_count'] || 0}}）</span>
                             </div>
                             <div class="service-instances">
                                 <div class="instances-item"
