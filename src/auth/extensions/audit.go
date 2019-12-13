@@ -264,8 +264,8 @@ func (am *AuthManager) GenAuthorizeAuditReadNoPermissionsResponse(ctx context.Co
 			}},
 		}
 	}
-    p.ResourceType = p.Resources[0][0].ResourceType
-    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
 }
