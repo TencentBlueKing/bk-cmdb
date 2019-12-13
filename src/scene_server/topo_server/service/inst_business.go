@@ -291,12 +291,14 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 				d[common.BKDBLIKE] = strings.Replace(exactUserRegexp, "USER_PLACEHOLDER", userName, -1)
 				output[i] = d
 			} else {
-				output[i] = targetStr
+				attrVal := gparams.SpecialCharChange(targetStr)
+				output[i] = map[string]interface{}{"$regex": attrVal, "$options": "i"}
 			}
 		default:
 			output[i] = j
 		}
 	}
+
 	return output
 }
 
