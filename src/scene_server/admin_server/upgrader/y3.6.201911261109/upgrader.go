@@ -14,6 +14,7 @@ package y3_6_201911261109
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
@@ -22,85 +23,65 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-func addChartConfigTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableName := common.BKTableNameChartConfig
-	exists, err := db.HasTable(tableName)
-
-	if err != nil {
-		return err
-	}
-	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
-			return err
-		}
-	}
-
-	indexs := []dal.Index{
-		dal.Index{
-			Keys:       map[string]int32{"id": 1},
-			Name:       common.BKFieldID,
-			Unique:     true,
-			Background: true,
+var CreateTableOptions = []struct {
+	TableName  string
+	TableIndex []dal.Index
+}{
+	{
+		TableName: common.BKTableNameChartConfig,
+		TableIndex: []dal.Index{
+			{Keys: map[string]int32{"id": 1}, Name: common.BKFieldID, Unique: true, Background: true},
+			{Name: common.BKObjIDField, Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
 		},
-		dal.Index{Name: common.BKObjIDField, Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
+	},
+	{
+		TableName: common.BKTableNameChartPosition,
+		TableIndex: []dal.Index{
+			{Name: "config_id", Keys: map[string]int32{"config_id": 1}, Background: true},
+		},
+	},
+	{
+		TableName:  common.BKTableNameChartData,
+		TableIndex: []dal.Index{},
+	},
+}
+
+func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableName string, indices []dal.Index) error {
+	exists, err := db.HasTable(tableName)
+	if err != nil {
+		return fmt.Errorf("check HasTable failed, tableName: %s, err: %+v", tableName, err)
+	}
+	if exists == false {
+		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+			return fmt.Errorf("CreateTable failed, tableName: %s, err: %+v", tableName, err)
+		}
 	}
 
-	for _, index := range indexs {
+	existIndices, err := db.Table(tableName).Indexes(ctx)
+	if err != nil {
+		return fmt.Errorf("upsertTable failed, Indexes failed, tableName: %s, err:%+v", tableName, err)
+	}
+	existIdxMap := make(map[string]bool)
+	for _, idx := range existIndices {
+		existIdxMap[idx.Name] = true
+	}
+	for _, index := range indices {
+		if _, ok := existIdxMap[index.Name]; ok == true {
+			continue
+		}
 		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
-			return err
+			return fmt.Errorf("CreateIndex failed, tableName: %s, err:%+v", tableName, err)
 		}
 	}
 	return nil
 }
 
-func addChartPositionTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableName := common.BKTableNameChartPosition
-	exists, err := db.HasTable(tableName)
-
-	if err != nil {
-		return err
-	}
-	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
-			return err
-		}
-	}
-
-	indexs := []dal.Index{
-		dal.Index{Name: "config_id", Keys: map[string]int32{"config_id": 1}, Background: true},
-	}
-
-	for _, index := range indexs {
-		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
-			return err
+func CreateTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	for _, item := range CreateTableOptions {
+		err := upsertTable(ctx, db, conf, item.TableName, item.TableIndex)
+		if err != nil {
+			return fmt.Errorf("upsertTable failed, err: %s", err.Error())
 		}
 	}
 	return nil
-
-}
-
-func addChartDataTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableName := common.BKTableNameChartData
-	exists, err := db.HasTable(tableName)
-
-	if err != nil {
-		return err
-	}
-	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
-			return err
-		}
-	}
-
-	indexs := []dal.Index{
-		dal.Index{Name: "config_id", Keys: map[string]int32{"config_id": 1}, Background: true},
-	}
-
-	for _, index := range indexs {
-		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
-			return err
-		}
-	}
-	return nil
-
 }
