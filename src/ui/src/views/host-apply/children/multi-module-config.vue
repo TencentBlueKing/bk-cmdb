@@ -5,7 +5,11 @@
                 <div class="item-label">已选择 {{moduleIds.length}} 个模块：</div>
                 <div class="item-content">
                     <div :class="['module-list', { 'show-more': showMore.isMoreModuleShowed }]" ref="moduleList">
-                        <div class="module-item" :title="getModulePath(id)" v-for="(id, index) in moduleIds" :key="index">
+                        <div
+                            v-for="(id, index) in moduleIds" :key="index"
+                            class="module-item"
+                            v-bk-tooltips="getModulePath(id)"
+                        >
                             <span class="module-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
                             {{$parent.getModuleName(id)}}
                         </div>
@@ -375,6 +379,15 @@
         font-size: 12px;
         cursor: default;
         @include ellipsis;
+
+        &:hover {
+            border-color: $primaryColor;
+            color: $primaryColor;
+            .module-icon {
+                background-color: $primaryColor;
+            }
+        }
+
         .module-icon {
             position: absolute;
             left: 2px;
@@ -399,8 +412,9 @@
             cursor: pointer;
             color: #3a84ff;
             font-size: 14px;
-            text-align: center;
-            padding: 0;
+            text-align: left;
+            padding: 0 0 0 .1em;
+            line-height: 26px;
             .bk-cc-icon {
                 font-size: 22px;
             }
