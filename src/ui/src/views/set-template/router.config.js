@@ -47,6 +47,11 @@ export default [{
                 D_SET_TEMPLATE,
                 U_TOPO
             }
+        },
+        layout: {
+            previous: {
+                name: MENU_BUSINESS_SET_TEMPLATE
+            }
         }
     })
 }, {
@@ -58,6 +63,17 @@ export default [{
         menu: {
             i18n: '同步历史',
             relative: MENU_BUSINESS_SET_TEMPLATE
+        },
+        layout: {
+            previous () {
+                return {
+                    name: 'setTemplateConfig',
+                    params: {
+                        mode: 'view',
+                        templateId: window.CMDB_APP.$route.params.templateId
+                    }
+                }
+            }
         }
     })
 }]

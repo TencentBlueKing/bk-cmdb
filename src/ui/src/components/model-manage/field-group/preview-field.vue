@@ -110,11 +110,8 @@
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
-                this.values = this.$tools.getInstFormValues(this.properties, this.inst)
-                const timer = setTimeout(() => {
-                    this.refrenceValues = this.$tools.clone(this.values)
-                    clearTimeout(timer)
-                })
+                this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
+                this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
                 const availabelProperties = properties.filter(property => {

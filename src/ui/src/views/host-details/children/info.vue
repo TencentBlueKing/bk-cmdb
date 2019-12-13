@@ -3,6 +3,7 @@
         <div class="info-basic">
             <i :class="['info-icon', model.bk_obj_icon]"></i>
             <span class="info-ip">{{hostIp}}</span>
+            <span class="info-area">（{{cloudArea}}）</span>
         </div>
         <div class="info-topology clearfix">
             <div class="topology-label fl">{{$t('业务拓扑')}}：</div>
@@ -65,6 +66,13 @@
                 } else {
                     return ''
                 }
+            },
+            cloudArea () {
+                return (this.host.bk_cloud_id || []).map(cloud => {
+                    // 下面用了一个全角的空格
+                    /* eslint-disable-next-line */
+                    return `ID：${cloud.bk_inst_id}　${cloud.bk_inst_name}`
+                }).join('\n')
             },
             topology () {
                 const topology = []
@@ -156,7 +164,14 @@
             vertical-align: middle;
             line-height: 38px;
             font-size: 16px;
+            font-weight: bold;
             color: #333948;
+        }
+        .info-area {
+            display: inline-block;
+            vertical-align: middle;
+            font-size: 12px;
+            color: $textColor;
         }
     }
     .info-topology {

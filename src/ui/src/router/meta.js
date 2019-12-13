@@ -19,7 +19,8 @@ export default class Meta {
         }, data.auth)
 
         this.layout = Object.assign({
-            breadcrumbs: true
+            breadcrumbs: true,
+            previous: null
         }, data.layout)
 
         this.view = 'default'
