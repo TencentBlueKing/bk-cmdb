@@ -76,7 +76,7 @@ func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableNa
 	return nil
 }
 
-func CreateTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func CreateTables(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	for _, item := range CreateTableOptions {
 		err := upsertTable(ctx, db, conf, item.TableName, item.TableIndex)
 		if err != nil {
