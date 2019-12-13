@@ -38,6 +38,7 @@
             line-height: 24px;
             font-size: 14px;
             text-align: center;
+            margin-right: 3px;
             color: $primaryColor;
             cursor: pointer;
             &:hover {
