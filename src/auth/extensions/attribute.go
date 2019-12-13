@@ -14,6 +14,7 @@ package extensions
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -34,7 +35,7 @@ func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, head
 	// get model by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(attributeIDs)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjAttDes, queryCond)
+	resp, err := am.clientSet.CoreService().Model().ReadModelAttrByCondition(ctx, header, queryCond)
 	if err != nil {
 		return nil, fmt.Errorf("get attribute by id: %+v failed, err: %+v", attributeIDs, err)
 	}
@@ -48,10 +49,15 @@ func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, head
 	attributes := make([]metadata.Attribute, 0)
 	for _, item := range resp.Data.Info {
 		attribute := metadata.Attribute{}
-		_, err := attribute.Parse(item)
+		data, err := json.Marshal(item)
 		if err != nil {
-			blog.Errorf("collectAttributesByAttributeIDs %+v failed, parse attribute %+v failed, err: %+v, rid: %s", attributeIDs, item, err, rid)
-			return nil, fmt.Errorf("parse attribute from db data failed, err: %+v", err)
+			blog.ErrorJSON("collectAttributesByAttributeIDs %s failed, parse attribute %s failed, err: %s, rid: %s", attributeIDs, item, err, rid)
+			return nil, fmt.Errorf("collectAttributesByAttributeIDs marshel json %+v failed, err: %+v", item, err)
+		}
+		err = json.Unmarshal(data, &attribute)
+		if err != nil {
+			blog.Errorf("collectAttributesByAttributeIDs %+v failed, parse attribute %s failed, err: %s, rid: %s", attributeIDs, string(data), err, rid)
+			return nil, fmt.Errorf("collectAttributesByAttributeIDs unmarshel json %s failed, err: %+v", string(data), err)
 		}
 		attributes = append(attributes, attribute)
 	}
