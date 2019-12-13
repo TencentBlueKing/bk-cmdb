@@ -122,17 +122,6 @@
             }
         },
         async created () {
-            this.$store.commit('setBreadcrumbs', [{
-                label: this.$t('服务拓扑'),
-                route: {
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    query: {
-                        node: 'module-' + this.$route.params.moduleId
-                    }
-                }
-            }, {
-                label: this.$route.query.title
-            }])
             await this.getModuleInstance()
             this.initSelectedHost()
         },

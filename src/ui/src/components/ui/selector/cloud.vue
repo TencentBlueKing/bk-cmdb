@@ -2,7 +2,7 @@
     <bk-select
         class="cloud-selector"
         v-model="selected"
-        :searchable="searchable"
+        :searchable="true"
         :clearable="allowClear"
         :disabled="disabled"
         :popover-options="popoverOptions"
@@ -49,11 +49,6 @@
             return {
                 data: [],
                 selected: ''
-            }
-        },
-        computed: {
-            searchable () {
-                return this.data.length > 7
             }
         },
         watch: {

@@ -11,10 +11,10 @@
             <div class="objuser-container"
                 ref="container"
                 :class="{
-                    focus,
+                    focus: isFocus,
                     ellipsis,
                     disabled: localDisabled,
-                    placeholder: !localValue.length && !focus
+                    placeholder: !localValue.length && !isFocus
                 }"
                 :data-placeholder="localPlaceholder">
                 <span class="objuser-selected"
@@ -29,7 +29,7 @@
                 <span ref="input" class="objuser-input"
                     spellcheck="false"
                     contenteditable
-                    v-show="focus"
+                    v-show="isFocus"
                     @click.stop
                     @input="handleInput"
                     @blur="handleBlur"
@@ -38,7 +38,7 @@
                 </span>
             </div>
             <ul class="suggestion-list" ref="suggestionList"
-                v-show="focus && matchedUsers.length"
+                v-show="isFocus && matchedUsers.length"
                 :class="suggestionListPostion">
                 <li class="suggestion-item"
                     v-for="(user, index) in matchedUsers"
@@ -93,7 +93,7 @@
                 inputIndex: 0,
                 highlightIndex: -1,
                 shouldUpdate: true,
-                focus: false,
+                isFocus: false,
                 ellipsis: false,
                 contextmenu: false,
                 exception: false,
@@ -135,8 +135,8 @@
             }
         },
         watch: {
-            focus (focus) {
-                if (this.focus) {
+            isFocus (isFocus) {
+                if (this.isFocus) {
                     this.ellipsis = false
                 } else {
                     this.reset()
@@ -273,7 +273,7 @@
                 if (option.reset) {
                     this.reset()
                 }
-                this.focus = true
+                this.isFocus = true
                 this.shouldUpdate = true
                 this.$nextTick(() => {
                     const $input = this.$refs.input
@@ -368,7 +368,7 @@
                 if (!this.shouldUpdate) {
                     return true
                 }
-                this.focus = false
+                this.isFocus = false
                 if (this.inputValue) {
                     if (!this.exclude) {
                         if (!this.localValue.includes(this.inputValue)) {
@@ -405,7 +405,7 @@
                 })
             },
             handleContextmenu (event) {
-                this.focus = false
+                this.isFocus = false
                 if (!this.localValue.length) {
                     return false
                 }
@@ -505,6 +505,9 @@
                 this.highlightIndex = -1
                 this.inputValue = ''
                 this.$refs.input.innerHTML = ''
+            },
+            focus () {
+                this.handleClick()
             }
         }
     }
