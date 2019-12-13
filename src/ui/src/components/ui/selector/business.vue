@@ -142,6 +142,7 @@
         .bk-icon {
             font-size: 18px;
             color: #979BA5;
+            vertical-align: text-top;
         }
     }
 </style>
