@@ -9,12 +9,12 @@
         >
             <bk-table-column :label="$t('内网IP')">
                 <template slot-scope="{ row }">
-                    <bk-button theme="primary" text @click="handleShowDetails(row)">{{row.expired_host.bk_host_innerip}}</bk-button>
+                    <bk-button theme="primary" text @click="handleShowDetails(row)">{{row.expect_host.bk_host_innerip}}</bk-button>
                 </template>
             </bk-table-column>
             <bk-table-column :label="$t('云区域')" prop="cloud_area.bk_cloud_name"></bk-table-column>
-            <bk-table-column :label="$t('固资编号')" prop="expired_host.bk_asset_id"></bk-table-column>
-            <bk-table-column :label="$t('主机名称')" prop="expired_host.bk_host_name"></bk-table-column>
+            <bk-table-column :label="$t('固资编号')" prop="expect_host.bk_asset_id"></bk-table-column>
+            <bk-table-column :label="$t('主机名称')" prop="expect_host.bk_host_name"></bk-table-column>
             <bk-table-column :label="$t('修改值')" width="430" class-name="table-cell-change-value">
                 <template slot-scope="{ row }">
                     <div class="cell-change-value" v-html="getChangeValue(row)"></div>
@@ -218,10 +218,10 @@
             },
             async handleShowDetails (row) {
                 this.currentRow = row
-                this.slider.title = `属性详情【${row.expired_host.bk_host_innerip}】`
+                this.slider.title = `属性详情【${row.expect_host.bk_host_innerip}】`
                 this.slider.content = 'detail'
                 const properties = this.propertyList
-                const inst = row.expired_host
+                const inst = row.expect_host
                 // 云区域数据
                 row.cloud_area['bk_inst_name'] = row.cloud_area['bk_cloud_name']
                 inst['bk_cloud_id'] = [row.cloud_area]
@@ -241,7 +241,7 @@
             },
             handleShowConflict (row) {
                 this.currentRow = row
-                this.slider.title = `处理冲突【${row.expired_host.bk_host_innerip}】`
+                this.slider.title = `处理冲突【${row.expect_host.bk_host_innerip}】`
                 this.slider.content = 'conflict'
                 this.slider.isShow = true
             },

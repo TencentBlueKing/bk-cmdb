@@ -20,6 +20,8 @@ import (
 
 const (
 	TopoNodeKeyword = "keyword"
+	// 主机更新时是否剔除绑定了主机属性自动应用的字段
+	HostUpdateWithoutHostApplyFiled = true
 )
 
 // HostApplyRule represent one rule of host property auto apply
@@ -147,7 +149,7 @@ type OneHostApplyPlan struct {
 	CloudInfo      CloudInst `field:"cloud_area" json:"cloud_area" bson:"cloud_area" mapstructure:"cloud_area"`
 	ModuleIDs      []int64   `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
 	// 预计执行后端主机信息
-	ExpiredHost    map[string]interface{}   `field:"expired_host" json:"expired_host" bson:"expired_host" mapstructure:"expired_host"`
+	ExpectHost     map[string]interface{}   `field:"expect_host" json:"expect_host" bson:"expect_host" mapstructure:"expect_host"`
 	UpdateFields   []HostApplyUpdateField   `field:"update_fields" json:"update_fields" bson:"update_fields" mapstructure:"update_fields"`
 	ConflictFields []HostApplyConflictField `field:"conflicts" json:"conflicts" bson:"conflicts" mapstructure:"conflicts"`
 	// 未解决的冲突字段数
