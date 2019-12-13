@@ -57,10 +57,15 @@ type Cache struct {
 }
 
 func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, authManager extensions.AuthManager) *HostSnap {
+	header := http.Header{}
+	header.Add(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
+	header.Add(common.BKHTTPHeaderUser, common.CCSystemCollectorUserName)
+
 	h := &HostSnap{
-		redisCli: redisCli,
-		ctx:      ctx,
-		db:       db,
+		redisCli:   redisCli,
+		ctx:        ctx,
+		db:         db,
+		httpHeader: header,
 		cache: &Cache{
 			cache: map[bool]*HostCache{},
 			flag:  false,
@@ -83,34 +88,38 @@ func (h *HostSnap) Analyze(mesg string) error {
 		return nil
 	}
 	hostID := host.get(common.BKHostIDField)
-	hostid := fmt.Sprint(hostID)
-	if hostid == "" {
+	hostIdStr, ok := hostID.(string)
+	if !ok {
+		blog.Errorf("[data-collection][hostsnap] host id convert to string failed, continue, %s", val.String())
+		return nil
+	}
+	if hostIdStr == "" {
 		blog.Warnf("[data-collection][hostsnap] host id not found, continue, %s", val.String())
 		return nil
 	}
 
-	if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostid, data, time.Minute*10).Err(); err != nil {
-		blog.Errorf("[data-collection][hostsnap] save snapshot %s to redis failed: %s", common.RedisSnapKeyPrefix+hostid, err.Error())
+	if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostIdStr, data, time.Minute*10).Err(); err != nil {
+		blog.Errorf("[data-collection][hostsnap] save snapshot %s to redis failed: %s", common.RedisSnapKeyPrefix+hostIdStr, err.Error())
 	}
 
-	preData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostid)
+	preData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostIdStr)
 	if err != nil {
 		blog.Errorf("[data-collection][hostsnap] get host failed, fail to create audit log, err: %v", err)
 		return fmt.Errorf("get host error: %v", err)
 	}
-	innerip, ok := host.get(common.BKHostInnerIPField).(string)
+	innerIp, ok := host.get(common.BKHostInnerIPField).(string)
 	if !ok {
 		blog.Infof("[data-collection][hostsnap] innerip is empty, continue, %s", val.String())
-		return nil
+		return fmt.Errorf("get host innerIp failed")
 	}
-	outip, ok := host.get(common.BKHostOuterIPField).(string)
+	outIp, ok := host.get(common.BKHostOuterIPField).(string)
 	if !ok {
 		blog.Warnf("[data-collection][hostsnap] outerip is not string, %s", val.String())
 	}
-	setter := parseSetter(&val, innerip, outip)
+	setter := parseSetter(&val, innerIp, outIp)
 	if needToUpdate(setter, host) {
 		opt := &metadata.UpdateOption{
-			Condition: mapstr.MapStr{common.BKHostIDField: hostid},
+			Condition: mapstr.MapStr{common.BKHostIDField: hostIdStr},
 			Data:      mapstr.NewFromMap(setter),
 		}
 		_, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.httpHeader, common.BKInnerObjIDHost, opt)
@@ -127,7 +136,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 		blog.Errorf("host id convert from interface to int64 failed, fail to create auditLog, hostId:%d", hostIdInt64)
 		return nil
 	}
-	curData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostid)
+	curData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostIdStr)
 	if err != nil {
 		blog.Errorf("[data-collection][hostsnap] get host failed, fail to create audit log, err: %v", err)
 		return fmt.Errorf("get host failed, fail to create audit log error: %v", err)
