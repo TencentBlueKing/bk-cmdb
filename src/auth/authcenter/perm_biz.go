@@ -269,7 +269,7 @@ var expectBizResourceType = []ResourceType{
 		ResourceTypeID:       BizHostApply,
 		ResourceTypeName:     "主机属性自动应用",
 		ParentResourceTypeID: "",
-		Share:                true,
+		Share:                false,
 		Actions: []Action{
 			{
 				ActionID:          Edit,

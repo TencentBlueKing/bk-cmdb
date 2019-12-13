@@ -110,7 +110,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 			err := errors.New(common.CCErrCommNotFound, fmt.Sprintf("host[%d] not found", hostModule.HostID))
 			hostApplyPlan = metadata.OneHostApplyPlan{
 				HostID:         hostModule.HostID,
-				ExpiredHost:    host,
+				ExpectHost:     host,
 				ConflictFields: nil,
 			}
 			hostApplyPlan.SetError(err)
@@ -176,7 +176,7 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	plan := metadata.OneHostApplyPlan{
 		HostID:                  hostID,
 		ModuleIDs:               moduleIDs,
-		ExpiredHost:             host,
+		ExpectHost:              host,
 		ConflictFields:          make([]metadata.HostApplyConflictField, 0),
 		UpdateFields:            make([]metadata.HostApplyUpdateField, 0),
 		UnresolvedConflictCount: 0,
@@ -256,7 +256,7 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			break
 		}
 
-		plan.ExpiredHost[propertyIDField] = firstValue
+		plan.ExpectHost[propertyIDField] = firstValue
 		plan.UpdateFields = append(plan.UpdateFields, metadata.HostApplyUpdateField{
 			AttributeID:   attributeID,
 			PropertyID:    propertyIDField,

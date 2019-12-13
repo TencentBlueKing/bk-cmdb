@@ -114,6 +114,14 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	indexes := []dal.Index{
 		{
 			Keys: map[string]int32{
+				common.BKAppIDField: 1,
+			},
+			Name:       common.BKAppIDField,
+			Unique:     false,
+			Background: false,
+		},
+		{
+			Keys: map[string]int32{
 				common.BKFieldID: 1,
 			},
 			Name:       common.BKFieldID,
