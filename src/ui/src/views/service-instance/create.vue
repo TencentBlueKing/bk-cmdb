@@ -274,7 +274,7 @@
 
 <style lang="scss" scoped>
     .create-layout {
-        padding: 0 23px 0;
+        padding: 15px 23px 0;
         font-size: 14px;
         color: #63656E;
     }
