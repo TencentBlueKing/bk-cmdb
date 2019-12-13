@@ -1,21 +1,23 @@
 <template>
     <div class="conflict-list">
-        <feature-tips
-            :feature-name="'hostApply'"
-            :show-tips="showFeatureTips"
-            :desc="$t('因为以下主机复用模块的自动应用策略不一致，导致策略失效，需要手动维护不一致的属性。要彻底解决此问题，可以修改复用模块的策略为一致或移除模块的策略配置')"
-            @close-tips="showFeatureTips = false">
-        </feature-tips>
         <property-confirm-table
             ref="propertyConfirmTable"
             :list="table.list"
             :total="table.total"
         >
         </property-confirm-table>
-        <div class="bottom-actionbar">
+        <div :class="['bottom-actionbar', { 'is-sticky': hasScrollbar }]">
             <div class="actionbar-inner">
-                <bk-button theme="primary" :disabled="applyButtonDisabled" @click="handleApply">应用</bk-button>
-                <bk-button theme="default" @click="handleBack">返回</bk-button>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                    <bk-button
+                        theme="primary"
+                        slot-scope="{ disabled }"
+                        :disabled="applyButtonDisabled || disabled"
+                        @click="handleApply"
+                    >
+                        {{$t('应用')}}
+                    </bk-button>
+                </cmdb-auth>
             </div>
         </div>
         <apply-status-modal
@@ -31,30 +33,32 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import featureTips from '@/components/feature-tips/index'
     import propertyConfirmTable from './children/property-confirm-table'
     import applyStatusModal from './children/apply-status'
-    import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_HOST_APPLY,
+        MENU_BUSINESS_HOST_APPLY_FAILED
+    } from '@/dictionary/menu-symbol'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         components: {
-            featureTips,
             applyStatusModal,
             propertyConfirmTable
         },
         data () {
             return {
-                showFeatureTips: false,
                 table: {
                     list: [],
                     total: 0
                 },
                 applyRequest: null,
-                applyButtonDisabled: false
+                applyButtonDisabled: false,
+                hasScrollbar: false
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters(['featureTipsParams', 'supplierAccount']),
             moduleIds () {
                 const mid = this.$route.query.mid
                 let moduleIds = []
@@ -64,10 +68,13 @@
                 return moduleIds
             }
         },
-        watch: {
+        mounted () {
+            addResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
         },
         created () {
-            this.showFeatureTips = this.featureTipsParams['hostApplyConflict']
             this.setBreadcrumbs()
             this.initData()
         },
@@ -107,6 +114,12 @@
             goBack () {
                 this.$router.push({
                     name: MENU_BUSINESS_HOST_APPLY
+                })
+            },
+            resizeHandler (a, b, c) {
+                this.$nextTick(() => {
+                    const scroller = this.$refs.propertyConfirmTable.$el.querySelector('.bk-table-body-wrapper')
+                    this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
                 })
             },
             postApply () {
@@ -149,9 +162,6 @@
                     })
                 }
             },
-            handleBack () {
-                this.$router.back()
-            },
             handleStatusModalBack () {
                 this.goBack()
             },
@@ -162,7 +172,7 @@
             },
             handleViewFailed () {
                 this.$router.push({
-                    name: 'hostApplyFailed'
+                    name: MENU_BUSINESS_HOST_APPLY_FAILED
                 })
             }
         }
@@ -175,18 +185,26 @@
     }
 
     .bottom-actionbar {
-        position: absolute;
         width: 100%;
         height: 50px;
-        border-top: 1px solid #dcdee5;
         bottom: 0;
         left: 0;
+        z-index: 100;
 
         .actionbar-inner {
-            padding: 8px 0 0 20px;
-
+            padding: 20px 0 0 0;
             .bk-button {
                 min-width: 86px;
+            }
+        }
+
+        &.is-sticky {
+            position: absolute;
+            background: #fff;
+            border-top: 1px solid #dcdee5;
+
+            .actionbar-inner {
+                padding: 8px 0 0 20px;
             }
         }
     }

@@ -2,7 +2,11 @@ import Meta from '@/router/meta'
 import {
     MENU_BUSINESS,
     MENU_BUSINESS_HOST,
-    MENU_BUSINESS_HOST_APPLY
+    MENU_BUSINESS_HOST_APPLY,
+    MENU_BUSINESS_HOST_APPLY_EDIT,
+    MENU_BUSINESS_HOST_APPLY_CONFIRM,
+    MENU_BUSINESS_HOST_APPLY_CONFLICT,
+    MENU_BUSINESS_HOST_APPLY_FAILED
 } from '@/dictionary/menu-symbol'
 
 export default [{
@@ -17,7 +21,7 @@ export default [{
         }
     })
 }, {
-    name: 'hostApplyConfirm',
+    name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
     path: 'host-apply/confirm',
     component: () => import('./property-confirm'),
     meta: new Meta({
@@ -28,7 +32,7 @@ export default [{
         }
     })
 }, {
-    name: 'hostApplyEdit',
+    name: MENU_BUSINESS_HOST_APPLY_EDIT,
     path: 'host-apply/edit',
     component: () => import('./edit'),
     meta: new Meta({
@@ -39,7 +43,7 @@ export default [{
         }
     })
 }, {
-    name: 'hostApplyConflict',
+    name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
     path: 'host-apply/conflict',
     component: () => import('./conflict-list'),
     meta: new Meta({
@@ -50,7 +54,7 @@ export default [{
         }
     })
 }, {
-    name: 'hostApplyFailed',
+    name: MENU_BUSINESS_HOST_APPLY_FAILED,
     path: 'host-apply/failed',
     component: () => import('./failed-list'),
     meta: new Meta({
