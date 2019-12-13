@@ -29,7 +29,8 @@
 <style lang="scss" scoped>
     .breadcrumbs-layout {
         padding: 14px 20px;
-        height: 52px;
+        height: 53px;
+        border-bottom: 1px solid $borderColor;
         .icon-cc-arrow {
             display: block;
             width: 24px;
@@ -37,6 +38,7 @@
             line-height: 24px;
             font-size: 14px;
             text-align: center;
+            margin-right: 3px;
             color: $primaryColor;
             cursor: pointer;
             &:hover {

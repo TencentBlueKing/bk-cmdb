@@ -526,7 +526,7 @@
     .synchronous-wrapper {
         position: relative;
         color: #63656e;
-        padding: 0 20px;
+        padding: 15px 20px 0;
         .no-content {
             position: absolute;
             top: 50%;

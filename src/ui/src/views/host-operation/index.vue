@@ -533,6 +533,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .layout {
+        padding: 15px 0 0 0;
+    }
     .info {
         .info-label {
             width: 128px;

@@ -500,7 +500,6 @@
         background: #ebf4ff;
         font-size: 14px;
         border-bottom: 1px solid #dcdee5;
-        border-top: 1px solid #dcdee5;
         .choose-icon-wrapper {
             position: relative;
             float: left;

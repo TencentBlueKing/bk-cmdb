@@ -72,7 +72,7 @@
             v-bkloading="{ isLoading: $loading('post_searchBusiness_list') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 190"
+            :max-height="$APP.height - 200"
             :row-style="{ cursor: 'pointer' }"
             @row-click="handleRowClick"
             @sort-change="handleSortChange"
@@ -515,7 +515,7 @@
 
 <style lang="scss" scoped>
     .business-layout {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .options-filter{
         position: relative;

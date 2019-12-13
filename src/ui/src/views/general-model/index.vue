@@ -762,7 +762,7 @@
 
 <style lang="scss" scoped>
     .models-layout {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .options-filter{
         position: relative;
