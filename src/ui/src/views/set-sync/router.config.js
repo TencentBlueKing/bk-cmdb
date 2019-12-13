@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import { MENU_BUSINESS, MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
 import { U_TOPO } from '@/dictionary/auth'
 export default [{
     name: 'setSync',
@@ -13,6 +13,11 @@ export default [{
         auth: {
             operation: {
                 U_TOPO
+            }
+        },
+        layout: {
+            previous: {
+                name: MENU_BUSINESS_SET_TEMPLATE
             }
         }
     })

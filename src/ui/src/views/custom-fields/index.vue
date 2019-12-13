@@ -1,5 +1,5 @@
 <template>
-    <div class="custom-fields-layout">
+    <div class="custom-fields-layout" :style="{ padding: showFeatureTips ? '15px 0 0 0' : 0 }">
         <feature-tips class="ml20 mr20"
             :feature-name="'customFields'"
             :show-tips="showFeatureTips"
@@ -70,9 +70,6 @@
 </script>
 
 <style lang="scss" scoped>
-    .custom-fields-layout {
-        padding: 0;
-    }
     .tab-layout {
         height: calc(100% - var(--subHeight));
         /deep/ {

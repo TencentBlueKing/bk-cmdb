@@ -31,6 +31,7 @@
                                             :data-vv-name="property['bk_property_id']"
                                             :data-vv-as="property['bk_property_name']"
                                             :placeholder="getPlaceholder(property)"
+                                            :auto-select="false"
                                             v-validate="getValidateRules(property)"
                                             v-model.trim="values[property['bk_property_id']]">
                                         </component>
@@ -54,7 +55,8 @@
                     <bk-button slot-scope="{ disabled }"
                         class="button-save"
                         theme="primary"
-                        :disabled="disabled || !hasChange || $loading()"
+                        :loading="$loading()"
+                        :disabled="disabled || (type !== 'create' && !hasChange)"
                         @click="handleSave">
                         {{type === 'create' ? $t('提交') : $t('保存')}}
                     </bk-button>
@@ -153,7 +155,7 @@
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
-                this.values = this.$tools.getInstFormValues(this.properties, this.inst)
+                this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
                 this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
@@ -191,7 +193,13 @@
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (result) {
-                        this.$emit('on-submit', { ...this.values }, { ...this.changedValues }, this.inst, this.type)
+                        this.$emit(
+                            'on-submit',
+                            this.$tools.formatValues(this.values, this.properties),
+                            this.$tools.formatValues(this.changedValues, this.properties),
+                            this.inst,
+                            this.type
+                        )
                     } else {
                         this.uncollapseGroup()
                     }

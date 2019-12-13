@@ -66,12 +66,14 @@
         <bk-table
             v-show="localExpanded"
             v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
-            :data="flattenList">
+            :data="list">
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
-                <div slot-scope="{ row }" :title="row[column.id]">{{row[column.id]}}</div>
+                <div slot-scope="{ row }" :title="(row.property || {})[column.id] | formatter(column.property)">
+                    {{(row.property || {})[column.id] | formatter(column.property)}}
+                </div>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
@@ -154,6 +156,7 @@
 
 <script>
     import cmdbEditLabel from './edit-label.vue'
+    import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         components: { cmdbEditLabel },
         props: {
@@ -216,9 +219,6 @@
                     })
                 }
                 return menu
-            },
-            flattenList () {
-                return this.$tools.flattenList(this.properties, this.list.map(data => data.property || {}))
             },
             requestId () {
                 return {
@@ -306,7 +306,8 @@
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
-                        name: property.bk_property_name
+                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        property
                     }
                 })
                 this.header = header
@@ -315,8 +316,7 @@
                 this.$emit('create-process', this)
             },
             async handleEditProcess (item) {
-                const processInstance = this.list.find(data => data.relation.bk_process_id === item.bk_process_id)
-                this.$emit('update-process', processInstance, this)
+                this.$emit('update-process', item, this)
             },
             async handleDeleteProcess (item) {
                 try {
@@ -349,29 +349,11 @@
                 })
             },
             handleDeleteInstance () {
-                this.$bkInfo({
-                    title: this.$t('确认删除实例'),
-                    subTitle: this.$t('即将删除实例', { name: this.instance.name }),
-                    extCls: 'bk-dialog-sub-header-center',
-                    confirmFn: async () => {
-                        try {
-                            await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
-                                config: {
-                                    data: this.$injectMetadata({
-                                        service_instance_ids: [this.instance.id]
-                                    }, { injectBizId: true }),
-                                    requestId: this.requestId.deleteProcess
-                                }
-                            })
-                            this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count - 1
-                            this.currentNode.parents.forEach(node => {
-                                node.data.service_instance_count = node.data.service_instance_count - 1
-                            })
-                            this.$success(this.$t('删除成功'))
-                            this.$emit('delete-instance', this.instance.id)
-                        } catch (e) {
-                            console.error(e)
-                        }
+                this.$router.push({
+                    name: MENU_BUSINESS_DELETE_SERVICE,
+                    params: {
+                        ids: this.instance.id,
+                        moduleId: this.currentNode.data.bk_inst_id
                     }
                 })
             },
