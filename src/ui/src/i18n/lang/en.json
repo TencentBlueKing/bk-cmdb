@@ -987,7 +987,6 @@
     "正在同步中请等待": "Being synced, please be patient...",
     "同步进度提示": "Synchronized {completedCount}, remaining {remainingCount}",
     "已选集群实例": "Selected instances: {count}",
-    "集群模板名称占位符": "Please input template name, 20 letters max",
     "模板配置": "Template config",
     "已应用集群": "Applied Set",
     "模板信息": "Template info",
@@ -1006,7 +1005,7 @@
     "集群拓扑": "Set topology",
     "模板集群名称": "Template set name",
     "无服务模板提示": "There are no service templates, {link}",
-    "跳转添加": "Click to create",
+    "去添加服务模板": "Add service template",
     "确认删除xx集群模板": "Confirm to delete set template \"{name}\" ?",
     "确认删除选中的集群模板": "Confirm to delete selected set template(s)",
     "添加服务模板": "Add service template",
@@ -1216,5 +1215,12 @@
     "请输入字段名称搜索": "Please enter field name to search",
     "该字段不支持配置": "This field does not support configuration",
     "策略失效提示语": "The host reuse module's automatic application policy is inconsistent, which causes the policy to fail. Manually maintain inconsistent attributes.To completely solve this problem, you can modify the policy of the reuse module to be consistent or remove the policy configuration of the module",
-    "保存策略并应用到当前模块下主机成功": "Save policy and apply to host under current module successfully"
+    "保存策略并应用到当前模块下主机成功": "Save policy and apply to host under current module successfully",
+    "模块相同提示": "Selected modules are same with hosts source modules",
+    "从模板新建": "Create from template",
+    "直接新建": "Create directly",
+    "新建模块": "Create Module",
+    "已选实例": "Service Selected",
+    "N个": "{ count }",
+    "仅移除服务实例，主机无变更": "Only remove service instances, no host change"
 }

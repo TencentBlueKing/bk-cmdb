@@ -82,7 +82,7 @@ export function enumeration (value, options) {
 
 export function foreignkey (value) {
     if (Array.isArray(value)) {
-        return value.map(inst => inst.bk_inst_name).join(',')
+        return value.map(inst => `${inst.bk_inst_name}[${inst.bk_inst_id}]`).join(',')
     }
     if (String(value).length) {
         return value

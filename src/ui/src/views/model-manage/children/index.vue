@@ -336,30 +336,10 @@
                 const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
                 if (model) {
                     this.$store.commit('objectModel/setActiveModel', model)
-                    this.setBreadcrumbs(model)
                     this.initModelInfo()
                 } else {
                     this.$router.replace({ name: 'status404' })
                 }
-            },
-            setBreadcrumbs (model) {
-                const breadcrumbs = [{
-                    label: this.$t('模型管理'),
-                    route: {
-                        name: MENU_MODEL_MANAGEMENT
-                    }
-                }, {
-                    label: model.bk_obj_name
-                }]
-                if (this.$route.query.from === 'business') {
-                    breadcrumbs.splice(0, 1, {
-                        label: this.$t('业务层级'),
-                        route: {
-                            name: MENU_MODEL_BUSINESS_TOPOLOGY
-                        }
-                    })
-                }
-                this.$store.commit('setBreadcrumbs', breadcrumbs)
             },
             async getModelStatistics () {
                 const modelStatisticsSet = {}
@@ -520,7 +500,6 @@
         background: #ebf4ff;
         font-size: 14px;
         border-bottom: 1px solid #dcdee5;
-        border-top: 1px solid #dcdee5;
         .choose-icon-wrapper {
             position: relative;
             float: left;

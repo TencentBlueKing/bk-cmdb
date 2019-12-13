@@ -37,10 +37,6 @@
     import cmdbHostStatus from './children/status.vue'
     import cmdbHostHistory from './children/history.vue'
     import cmdbHostService from './children/service-list.vue'
-    import {
-        MENU_BUSINESS_HOST_AND_SERVICE,
-        MENU_RESOURCE_HOST
-    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             cmdbHostInfo,
@@ -52,7 +48,7 @@
         },
         data () {
             return {
-                active: 'property',
+                active: this.$route.query.tab || 'property',
                 infoHeight: '81px'
             }
         },
@@ -93,18 +89,7 @@
         },
         methods: {
             setBreadcrumbs (ip) {
-                const isFromBusiness = this.$route.query.from === 'business'
-                this.$store.commit('setBreadcrumbs', [{
-                    label: isFromBusiness ? this.$t('业务主机') : this.$t('主机'),
-                    route: {
-                        name: isFromBusiness ? MENU_BUSINESS_HOST_AND_SERVICE : MENU_RESOURCE_HOST,
-                        query: {
-                            node: isFromBusiness ? this.$route.query.node : undefined
-                        }
-                    }
-                }, {
-                    label: ip
-                }])
+                this.$store.commit('setTitle', `${this.$t('主机详情')}【${ip}】`)
             },
             getData () {
                 this.getProperties()

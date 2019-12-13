@@ -8,7 +8,8 @@
         :font-size="fontSize"
         :popover-options="{
             boundary: 'window'
-        }">
+        }"
+        ref="selector">
         <bk-option
             v-for="(option, index) in options"
             :key="index"
@@ -96,6 +97,9 @@
                 } else {
                     this.selected = this.value
                 }
+            },
+            focus () {
+                this.$refs.selector.show()
             }
         }
     }
