@@ -36,6 +36,7 @@
                                         :disabled="!editable[property['bk_property_id']]"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
+                                        :auto-select="false"
                                         :placeholder="getPlaceholder(property)"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]">
@@ -163,7 +164,7 @@
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
-                this.values = this.$tools.getInstFormValues(this.properties, {})
+                this.values = this.$tools.getInstFormValues(this.properties, {}, false)
                 this.refrenceValues = this.$tools.clone(this.values)
             },
             initEditableStatus () {
@@ -202,7 +203,7 @@
                         multipleValues[propertyId] = this.values[propertyId]
                     }
                 }
-                return multipleValues
+                return this.$tools.formatValues(multipleValues, this.properties)
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {

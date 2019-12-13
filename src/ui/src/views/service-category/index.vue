@@ -376,7 +376,7 @@
 
 <style lang="scss" scoped>
     .category-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
         .category-list {
             display: flex;
             flex-flow: row wrap;

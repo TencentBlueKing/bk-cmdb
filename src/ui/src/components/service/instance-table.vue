@@ -13,11 +13,12 @@
         </div>
         <bk-table
             v-show="localExpanded"
-            :data="processFlattenList">
+            :data="processList">
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row, $index }">
@@ -38,7 +39,7 @@
                 </button>
             </template>
         </bk-table>
-        <div class="add-process-options" v-if="addible && !sourceProcesses.length && processList.length">
+        <div class="add-process-options" v-if="localExpanded && addible && !sourceProcesses.length && processList.length">
             <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
                 <span>{{$t('添加进程')}}</span>
@@ -149,14 +150,12 @@
                     if (property) {
                         header.push({
                             id: property.bk_property_id,
-                            name: property.bk_property_name
+                            name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                            property
                         })
                     }
                 })
                 return header
-            },
-            processFlattenList () {
-                return this.$tools.flattenList(this.processProperties, this.processList)
             },
             immutableProperties () {
                 const properties = []
@@ -317,7 +316,7 @@
                 this.processForm.show = true
 
                 this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.processProperties, this.processForm.instance)['bind_ip']
+                    this.bindIp = this.$tools.getInstFormValues(this.processProperties, this.processForm.instance, false)['bind_ip']
                 })
             },
             handleDeleteProcess (rowIndex) {

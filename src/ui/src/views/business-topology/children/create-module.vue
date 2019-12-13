@@ -1,6 +1,6 @@
 <template>
     <div class="node-create-layout">
-        <h2 class="node-create-title">{{$t('新增模块')}}</h2>
+        <h2 class="node-create-title">{{$t('新建模块')}}</h2>
         <div class="node-create-path" :title="topoPath">{{$t('添加节点已选择')}}：{{topoPath}}</div>
         <div class="node-create-form"
             :style="{
@@ -14,7 +14,7 @@
                         name="createType"
                         v-model="withTemplate"
                         :value="1">
-                    <label for="formTemplate">{{$t('从模板创建')}}</label>
+                    <label for="formTemplate">{{$t('从模板新建')}}</label>
                 </div>
                 <div class="create-type fl ml50">
                     <input class="type-radio"
@@ -23,7 +23,7 @@
                         name="createType"
                         v-model="withTemplate"
                         :value="0">
-                    <label for="createDirectly">{{$t('直接创建')}}</label>
+                    <label for="createDirectly">{{$t('直接新建')}}</label>
                 </div>
             </div>
             <div class="form-item" v-if="withTemplate">

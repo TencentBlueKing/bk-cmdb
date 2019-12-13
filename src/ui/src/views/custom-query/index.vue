@@ -518,7 +518,7 @@
 
 <style lang="scss" scoped>
     .api-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
         .filter-wrapper {
             .business-selector {
                 float: left;

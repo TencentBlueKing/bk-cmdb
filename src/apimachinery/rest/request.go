@@ -286,11 +286,9 @@ func (r *Request) Do() *Result {
 				// Which means that we can retry it. And so does the GET operation.
 				// While the other "write" operation can not simply retry it again, because they are not idempotent.
 
-				if !isConnectionReset(err) || r.verb != GET {
-					result.Err = err
-					if r.peek {
-						blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
-					}
+                blog.Errorf("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
+                if !isConnectionReset(err) || r.verb != GET {
+                    result.Err = err
 					return result
 				}
 
@@ -315,7 +313,7 @@ func (r *Request) Do() *Result {
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s\nresponse status: %s, response body: %s, rid: %s",
+			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s, response status: %s, response body: %s, rid: %s",
                 time.Since(start).Nanoseconds() / int64(time.Millisecond), string(r.verb), url, r.body, resp.Status, body, rid)
 			result.Body = body
 			result.StatusCode = resp.StatusCode
