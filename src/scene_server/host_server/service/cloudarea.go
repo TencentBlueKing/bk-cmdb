@@ -67,7 +67,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		// auth: get authorized resources
 		authorizedPlatIDs, err := s.AuthManager.ListAuthorizedPlatIDs(srvData.ctx, srvData.user)
 		if err != nil {
-			blog.Errorf("FindManyCloudArea failed, ListAuthorizedPlatIDs failed, err: %+v, rid: %s", srvData.user, rid)
+			blog.Errorf("FindManyCloudArea failed, ListAuthorizedPlatIDs failed, user: %s, err: %+v, rid: %s", srvData.user, err, rid)
 			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommListAuthorizedResourceFromIAMFailed)})
 			return
 		}

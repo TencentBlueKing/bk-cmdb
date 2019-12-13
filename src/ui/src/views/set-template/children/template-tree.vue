@@ -1,7 +1,7 @@
 <template>
     <div :class="['template-tree', mode]">
         <div class="node-root clearfix">
-            <i class="folder-icon bk-icon icon-down-shape fl" @click="handleCollapse"></i>
+            <i class="folder-icon bk-icon icon-down-shape fl" :class="{ 'is-collapse': collapse }" @click="handleCollapse"></i>
             <i class="node-icon fl">{{setName[0]}}</i>
             <span class="root-name" :title="templateName">{{templateName}}</span>
         </div>
@@ -277,6 +277,10 @@
             font-size: 12px;
             color: $iconColor;
             cursor: pointer;
+            transition: .2s all;
+            &.is-collapse {
+                transform: rotateZ(-90deg);
+            }
         }
         .root-name {
             display: block;

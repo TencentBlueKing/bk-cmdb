@@ -986,7 +986,6 @@
     "正在同步中请等待": "Being synced, please be patient...",
     "同步进度提示": "Synchronized {completedCount}, remaining {remainingCount}",
     "已选集群实例": "Selected instances: {count}",
-    "集群模板名称占位符": "Please input template name, 20 letters max",
     "模板配置": "Template config",
     "已应用集群": "Applied Set",
     "模板信息": "Template info",
@@ -1005,7 +1004,7 @@
     "集群拓扑": "Set topology",
     "模板集群名称": "Template set name",
     "无服务模板提示": "There are no service templates, {link}",
-    "跳转添加": "Click to create",
+    "去添加服务模板": "Add service template",
     "确认删除xx集群模板": "Confirm to delete set template \"{name}\" ?",
     "确认删除选中的集群模板": "Confirm to delete selected set template(s)",
     "添加服务模板": "Add service template",
@@ -1130,5 +1129,8 @@
     "确认转移主机信息": "Do you want to assign the selected {num} hosts to the idle module of {name}?",
     "新建业务字段": "New Business Field",
     "所属服务分类": "Service category",
-    "关键字": "keywords"
+    "关键字": "keywords",
+    "从模板新建": "Create from template",
+    "直接新建": "Create directly",
+    "新建模块": "Create Module"
 }

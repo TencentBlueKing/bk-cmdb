@@ -24,15 +24,10 @@ export default new Vue({
         getUserInfo (user) {
             const userList = user.split(',')
             const userInfo = []
-            let exist = true
             for (const name of userList) {
-                if (!this.userMap[name]) {
-                    exist = false
-                    return
-                }
+                if (!this.userMap[name]) return
                 userInfo.push(this.userMap[name])
             }
-            if (!exist) return false
             return userInfo.join(',')
         },
         addUser (data) {
@@ -57,26 +52,16 @@ export default new Vue({
                 data.users.forEach(user => {
                     this.userMap[user.english_name] = `${user.english_name}(${user.chinese_name})`
                 })
-                for (const instance of updateList) {
-                    const nameList = instance.user.split(',')
-                    const userInfo = nameList.map(name => this.userMap[name] || name)
-                    const user = userInfo.join(',')
-                    if (instance.node instanceof Vue) {
-                        instance.node.updateUserText(user)
-                    } else {
-                        instance.node.textContent = user || instance.user || '--'
-                        instance.options.title && (instance.node.title = user || instance.user || '--')
-                    }
-                }
-            } catch (_) {
-                for (const instance of updateList) {
-                    const user = instance.user
-                    if (instance.node instanceof Vue) {
-                        instance.node.updateUserText(user)
-                    } else {
-                        instance.node.textContent = user || instance.user || '--'
-                        instance.options.title && (instance.node.title = user || instance.user || '--')
-                    }
+            } catch (_) {}
+            for (const instance of updateList) {
+                const nameList = instance.user.split(',')
+                const userInfo = nameList.map(name => this.userMap[name] || name)
+                const user = userInfo.join(',')
+                if (instance.node instanceof Vue) {
+                    instance.node.updateUserText(user)
+                } else {
+                    instance.node.textContent = user || '--'
+                    instance.options.title && (instance.node.title = user || '--')
                 }
             }
         }
