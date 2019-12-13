@@ -36,8 +36,13 @@ func addChartConfigTable(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 	}
 
 	indexs := []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
+		dal.Index{
+			Keys:       map[string]int32{"id": 1},
+			Name:       common.BKFieldID,
+			Unique:     true,
+			Background: true,
+		},
+		dal.Index{Name: common.BKObjIDField, Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
 	}
 
 	for _, index := range indexs {
@@ -62,7 +67,7 @@ func addChartPositionTable(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	}
 
 	indexs := []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"config_id": 1}, Background: true},
+		dal.Index{Name: "config_id", Keys: map[string]int32{"config_id": 1}, Background: true, Unique: true},
 	}
 
 	for _, index := range indexs {
@@ -88,7 +93,7 @@ func addChartDataTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 	}
 
 	indexs := []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"config_id": 1}, Background: true},
+		dal.Index{Name: "config_id", Keys: map[string]int32{"config_id": 1}, Background: true, Unique: true},
 	}
 
 	for _, index := range indexs {
