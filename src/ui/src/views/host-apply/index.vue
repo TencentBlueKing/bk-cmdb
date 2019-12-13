@@ -23,7 +23,7 @@
                         <div class="config-head">
                             <h2 class="config-title">
                                 <span class="module-name">{{currentModule.bk_inst_name}}</span>
-                                <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}：{{ruleLastEditTime}} )</small>
+                                <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}{{ruleLastEditTime}} )</small>
                             </h2>
                         </div>
                         <div class="config-body">
@@ -142,7 +142,7 @@
                 <div class="empty" v-else>
                     <div class="desc">
                         <i class="bk-cc-icon icon-cc-tips"></i>
-                        <span>{{$t('暂无业务模块，无法启用属性自动应用，可跳转业务拓扑创建')}}</span>
+                        <span>{{$t('主机属性自动应用暂无业务模块')}}</span>
                     </div>
                     <div class="action">
                         <bk-button
@@ -272,7 +272,7 @@
             handleCloseApply () {
                 const h = this.$createElement
                 this.$bkInfo({
-                    title: this.$t('确认关闭？'),
+                    title: this.$t('确认关闭'),
                     extCls: 'close-apply-confirm-modal',
                     subHeader: h('div', { class: 'content' }, [
                         h('p', { class: 'tips' }, this.$t('关闭后转入模块的主机属性不再自动被应用')),
@@ -285,7 +285,7 @@
                             on: {
                                 change: (value) => (this.clearRules = !value)
                             }
-                        }, '保留当前自动应用策略')
+                        }, this.$t('保留当前自动应用策略'))
                     ]),
                     confirmFn: async () => {
                         try {

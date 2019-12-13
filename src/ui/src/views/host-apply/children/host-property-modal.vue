@@ -5,7 +5,7 @@
         :mask-close="false"
         :width="730"
         header-position="left"
-        title="添加字段"
+        :title="$t('选择字段')"
         @value-change="handleVisibleChange"
         @confirm="handleConfirm"
         @cancel="handleCancel"
@@ -28,7 +28,7 @@
                     >
                         <div
                             v-if="!property.host_apply_enabled"
-                            v-bk-tooltips.top-start="'该字段不支持配置'"
+                            v-bk-tooltips.top-start="$t('该字段不支持配置')"
                             style="outline:none"
                         >
                             {{property.bk_property_name}}
@@ -116,7 +116,7 @@
 
 <style lang="scss" scoped>
     .search {
-        width: 240px;
+        width: 280px;
         margin-bottom: 10px;
     }
     .property-list {

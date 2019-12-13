@@ -33,7 +33,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import propertyConfirmTable from './children/property-confirm-table'
+    import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
     import applyStatusModal from './children/apply-status'
     import {
         MENU_BUSINESS_HOST_AND_SERVICE,
@@ -155,7 +155,7 @@
                 } else {
                     this.$bkInfo({
                         title: this.$t('确认应用'),
-                        subTitle: this.$t('您还有无法自动应用的主机属性需确认，是要保留主机原有属性值不做修改吗？'),
+                        subTitle: this.$t('您还有无法自动应用的主机属性需确认'),
                         confirmFn: () => {
                             this.postApply()
                         }

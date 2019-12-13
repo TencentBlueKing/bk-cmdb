@@ -1,7 +1,7 @@
 <template>
     <div class="failed-list">
         <div class="caption">
-            <div class="title">请确认以下主机应用信息：</div>
+            <div class="title">{{$t('请确认以下主机应用信息')}}</div>
         </div>
         <bk-table
             :data="table.list"
@@ -39,8 +39,8 @@
                         {{$t('重试')}}
                     </bk-button>
                 </cmdb-auth>
-                <bk-button theme="default" @click="handleCopyIp">复制IP</bk-button>
-                <bk-button theme="default" @click="handleCancel">取消</bk-button>
+                <bk-button theme="default" @click="handleCopyIp">{{$t('复制IP')}}</bk-button>
+                <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
             </div>
         </div>
         <apply-status-modal
@@ -104,7 +104,7 @@
                     width: 514,
                     isShow: false,
                     content: '',
-                    title: this.$t('拓扑显示设置')
+                    title: ''
                 }
             }
         },
@@ -242,7 +242,7 @@
                 this.handleShowDetails(row)
             },
             async handleShowDetails (row) {
-                this.slider.title = `属性详情【${row.bk_host_innerip}】`
+                this.slider.title = `${this.$t('属性详情')}【${row.bk_host_innerip}】`
                 this.slider.content = 'detail'
                 const properties = this.propertyList
                 const inst = row
