@@ -82,7 +82,7 @@
         position: relative;
         overflow: hidden;
         height: 100%;
-        margin-top: -52px;
+        margin-top: -53px;
         z-index: 99;
     }
     .main-breadcrumbs {
@@ -98,6 +98,7 @@
     }
     .main-views {
         height: calc(100% - 52px);
+        border-top: 1px solid $borderColor;
         margin-top: 52px;
         min-width: 1106px;
     }
