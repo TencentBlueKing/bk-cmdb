@@ -56,11 +56,10 @@ type Cache struct {
 	flag  bool
 }
 
-func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, authManager extensions.AuthManager) *HostSnap {
+func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager extensions.AuthManager) *HostSnap {
 	header := http.Header{}
 	header.Add(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 	header.Add(common.BKHTTPHeaderUser, common.CCSystemCollectorUserName)
-
 	h := &HostSnap{
 		redisCli:   redisCli,
 		ctx:        ctx,
@@ -71,6 +70,7 @@ func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, authMa
 			flag:  false,
 		},
 		authManager: authManager,
+		Engine:      engine,
 	}
 	go h.fetchDBLoop()
 	return h
@@ -88,11 +88,12 @@ func (h *HostSnap) Analyze(mesg string) error {
 		return nil
 	}
 	hostID := host.get(common.BKHostIDField)
-	hostIdStr, ok := hostID.(string)
+	hostIdInt64, ok := hostID.(int64)
 	if !ok {
-		blog.Errorf("[data-collection][hostsnap] host id convert to string failed, continue, %s", val.String())
+		blog.Errorf("host id convert from interface to int64 failed, fail to create auditLog, hostId:%d", hostIdInt64)
 		return nil
 	}
+	hostIdStr := strconv.FormatInt(hostIdInt64, 10)
 	if hostIdStr == "" {
 		blog.Warnf("[data-collection][hostsnap] host id not found, continue, %s", val.String())
 		return nil
@@ -118,24 +119,25 @@ func (h *HostSnap) Analyze(mesg string) error {
 	}
 	setter := parseSetter(&val, innerIp, outIp)
 	if needToUpdate(setter, host) {
+		cond := mapstr.New()
+		cond.Set(common.BKHostIDField, hostID)
 		opt := &metadata.UpdateOption{
-			Condition: mapstr.MapStr{common.BKHostIDField: hostIdStr},
+			Condition: cond,
 			Data:      mapstr.NewFromMap(setter),
 		}
-		_, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.httpHeader, common.BKInnerObjIDHost, opt)
+		res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.httpHeader, common.BKInnerObjIDHost, opt)
 		if err != nil {
 			blog.Errorf("Update host http do error, err: %v,input:%+v,param:%+v", err, data, opt)
+			return err
+		}
+		if !res.Result {
+			blog.Errorf("failed to update host, error msg: %v", res.ErrMsg)
 			return err
 		}
 		copyVal(setter, host)
 	}
 
 	// add auditLog
-	hostIdInt64, ok := hostID.(int64)
-	if !ok {
-		blog.Errorf("host id convert from interface to int64 failed, fail to create auditLog, hostId:%d", hostIdInt64)
-		return nil
-	}
 	curData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostIdStr)
 	if err != nil {
 		blog.Errorf("[data-collection][hostsnap] get host failed, fail to create audit log, err: %v", err)
@@ -165,8 +167,8 @@ func (h *HostSnap) Analyze(mesg string) error {
 		ID:    hostIdInt64,
 		Model: common.BKInnerObjIDHost,
 		Content: metadata.Content{
-			CurData: curData,
-			PreData: preData,
+			CurData: curData.Data,
+			PreData: preData.Data,
 			Headers: auditHeader,
 		},
 		OpDesc: "update " + common.BKInnerObjIDHost,
