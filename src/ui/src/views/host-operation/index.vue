@@ -354,8 +354,9 @@
             },
             setHostAttrsAutoApply (data) {
                 const conflictInfo = (data || []).map(item => item.host_apply_plan)
+                const conflictList = conflictInfo.filter(item => item.conflicts.length || item.update_fields.length)
                 const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
-                tab.props.info = Object.freeze(conflictInfo)
+                tab.props.info = Object.freeze(conflictList)
             },
             setCreateServiceInstance (data) {
                 const instanceInfo = []
