@@ -12,15 +12,12 @@
                     <bk-button theme="primary" text @click="handleShowDetails(row)">{{row.expired_host.bk_host_innerip}}</bk-button>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('云区域')" prop="cloud_area.bk_cloud_name"></bk-table-column>
-            <bk-table-column :label="$t('固资编号')" prop="expired_host.bk_asset_id"></bk-table-column>
             <bk-table-column :label="$t('主机名称')" prop="expired_host.bk_host_name"></bk-table-column>
             <bk-table-column
                 :label="$t('修改值')"
-                width="430"
+                width="530"
                 class-name="table-cell-change-value"
-                :render-header="(h, data) => renderTableHeader(h, data, $t('红色为属性冲突值'), { placement: 'right' })"
-            >
+                :render-header="(h, data) => renderTableHeader(h, data, $t('红色为属性冲突值'), { placement: 'right' })">
                 <template slot-scope="{ row }">
                     <div class="cell-change-value" v-html="getChangeValue(row)"></div>
                 </template>
@@ -28,15 +25,13 @@
             <bk-table-column
                 v-if="showOperation"
                 :label="$t('操作')"
-                :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示'), { width: 275 }) : null"
-            >
+                :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示'), { width: 275 }) : null">
                 <template slot-scope="{ row }">
                     <bk-button
                         v-if="row.conflicts.length > 0"
                         theme="primary"
                         text
-                        @click="handleShowConflict(row)"
-                    >
+                        @click="handleShowConflict(row)">
                         {{row.unresolved_conflict_count > 0 ? '手动修改' : '已修改'}}
                     </bk-button>
                     <span v-else>--</span>
@@ -51,8 +46,7 @@
             :width="800"
             :is-show.sync="slider.isShow"
             :title="slider.title"
-            @hidden="handleSliderCancel"
-        >
+            @hidden="handleSliderCancel">
             <template slot="content">
                 <cmdb-details
                     v-if="slider.content === 'detail'"
