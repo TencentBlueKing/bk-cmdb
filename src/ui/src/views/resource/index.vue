@@ -391,7 +391,7 @@
 
 <style lang="scss" scoped>
     .resource-layout{
-        padding: 0;
+        padding: 15px 0 0 0;
         overflow: hidden;
         .resource-main{
             height: 100%;

@@ -107,7 +107,7 @@
 
 <style lang="scss" scoped>
     .clone-layout {
-        padding: 10px 20px 28px;
+        padding: 15px 20px 28px;
         font-size: 14px;
     }
     .host-type {

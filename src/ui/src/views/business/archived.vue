@@ -13,7 +13,7 @@
         <bk-table class="archived-table"
             :pagination="pagination"
             :data="list"
-            :max-height="$APP.height - 190"
+            :max-height="$APP.height - 200"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column prop="bk_biz_id" label="ID"></bk-table-column>
@@ -203,7 +203,7 @@
 
 <style lang="scss" scoped>
     .archived-layout{
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .archived-filter {
         padding: 0 0 15px 0;

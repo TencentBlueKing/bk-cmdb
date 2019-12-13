@@ -315,7 +315,7 @@
 
 <style lang="scss" scoped>
     .template-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
         .tips-link {
             margin: 0;
         }

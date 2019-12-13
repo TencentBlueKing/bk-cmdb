@@ -1,9 +1,9 @@
 <template>
-    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '96px' : '52px' }">
+    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '100px' : '52px' }">
         <cmdb-main-inject
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
-            <feature-tips
+            <feature-tips class="feature-tips"
                 :feature-name="'model'"
                 :show-tips="showFeatureTips"
                 :desc="$t('模型顶部提示')"
@@ -526,10 +526,10 @@
     }
     .btn-group {
         position: absolute;
-        top: 58px;
+        top: 53px;
         left: 0;
         width: calc(100% - 17px);
-        padding: 0 20px 20px;
+        padding: 15px 20px 20px;
         font-size: 0;
         background-color: #fafbfd;
         z-index: 100;
@@ -538,6 +538,9 @@
         }
         &.sticky {
             box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
+        }
+        .feature-tips {
+            margin-bottom: 15px;
         }
     }
     .model-search-options {

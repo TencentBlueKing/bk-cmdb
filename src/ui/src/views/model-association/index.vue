@@ -291,7 +291,7 @@
 
 <style lang="scss" scoped>
     .relation-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .operation-box {
         margin: 0 0 14px 0;

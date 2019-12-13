@@ -262,6 +262,7 @@
 <style lang="scss" scoped>
     .sync-set-layout {
         height: auto;
+        padding: 15px 0 0 0;
     }
     .no-content {
         position: absolute;

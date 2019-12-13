@@ -1,5 +1,5 @@
 <template>
-    <div class="template-layout">
+    <div class="template-layout" :style="{ padding: isUpdate ? '0' : '15px 0 0 0' }">
         <bk-tab class="template-tab"
             type="unborder-card"
             :show-header="isUpdate"
