@@ -13,7 +13,7 @@
                     font-size="medium"
                     v-validate="'required|singlechar|length:20'"
                     v-model.trim="templateName"
-                    :placeholder="$t('集群模板名称占位符')">
+                    :placeholder="$t('请输入xx', { name: $t('模板名称') })">
                 </bk-input>
             </template>
             <p class="row-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
@@ -151,14 +151,6 @@
         },
         methods: {
             setBreadcrumbs () {
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('集群模板'),
-                    route: {
-                        name: MENU_BUSINESS_SET_TEMPLATE
-                    }
-                }, {
-                    label: this.mode === 'create' ? this.$t('创建') : this.templateName
-                }])
                 if (this.mode !== 'create') {
                     this.$store.commit('setTitle', this.templateName)
                 }

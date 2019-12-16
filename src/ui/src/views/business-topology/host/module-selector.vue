@@ -57,11 +57,17 @@
         </div>
         <div class="layout-footer">
             <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <bk-button theme="primary"
-                :disabled="!checked.length"
-                @click="handleNextStep">
-                {{confirmText || $t('下一步')}}
-            </bk-button>
+            <span class="footer-tips"
+                v-bk-tooltips="{
+                    content: $t('模块相同提示'),
+                    disabled: !checked.length || (checked.length && hasDifference)
+                }">
+                <bk-button theme="primary"
+                    :disabled="!checked.length || !hasDifference"
+                    @click="handleNextStep">
+                    {{confirmText || $t('下一步')}}
+                </bk-button>
+            </span>
         </div>
     </div>
 </template>
@@ -91,6 +97,10 @@
             confirmText: {
                 type: String,
                 default: ''
+            },
+            previousModules: {
+                type: Array,
+                default: () => ([])
             }
         },
         data () {
@@ -118,6 +128,10 @@
                     map[model.bk_obj_id] = model
                 })
                 return map
+            },
+            hasDifference () {
+                const checkedModules = this.checked.map(node => node.data.bk_inst_id).sort()
+                return checkedModules.join(',') !== this.previousModules.join(',')
             }
         },
         watch: {
@@ -284,6 +298,10 @@
             text-align: right;
             font-size: 0;
             z-index: 100;
+            .footer-tips {
+                display: inline-block;
+                vertical-align: middle;
+            }
         }
     }
     .wrapper {

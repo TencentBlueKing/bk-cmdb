@@ -1,5 +1,5 @@
 <template>
-    <div class="template-info-layout">
+    <div class="template-info-layout" :style="{ padding: mode === 'view' ? '0' : '15px 0 0 0' }">
         <template v-if="mode === 'view'">
             <bk-tab class="info-tab"
                 type="unborder-card"

@@ -141,9 +141,6 @@
 </script>
 
 <style lang="scss" scoped>
-    .layout {
-        border-top: 1px solid $cmdbLayoutBorderColor;
-    }
     .resize-layout {
         position: relative;
         width: 286px;

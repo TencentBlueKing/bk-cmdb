@@ -186,12 +186,6 @@ func (s *coreService) GetUserConfig(params core.ContextParams, pathParams, query
 		condition = dat.Condition.(map[string]interface{})
 	}
 
-	appID, err := util.GetInt64ByInterface(condition[common.BKAppIDField])
-	if err != nil {
-		blog.Errorf("get user config failed, invalid appid[%s], err: %v, rid: %s", common.BKAppIDField, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommParamsIsInvalid)
-	}
-
 	start, limit, sort := dat.Start, dat.Limit, dat.Sort
 	var fieldArr []string
 	if "" != dat.Fields {
@@ -205,7 +199,6 @@ func (s *coreService) GetUserConfig(params core.ContextParams, pathParams, query
 		sort = common.CreateTimeField
 	}
 
-	condition[common.BKAppIDField] = appID
 	condition = util.SetModOwner(condition, params.SupplierAccount)
 	count, err := s.db.Table(common.BKTableNameUserAPI).Find(condition).Count(params.Context)
 	if err != nil {

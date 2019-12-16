@@ -104,7 +104,10 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_DELETE_SERVICE
+    } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     import serviceInstanceTable from './service-instance-table.vue'
     export default {
@@ -341,25 +344,16 @@
                 if (disabled) {
                     return false
                 }
-                this.$bkInfo({
-                    title: this.$t('确认删除实例'),
-                    subTitle: this.$t('即将删除选中的实例', { count: this.checked.length }),
-                    confirmFn: async () => {
-                        try {
-                            const serviceInstanceIds = this.checked.map(instance => instance.id)
-                            await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
-                                config: {
-                                    data: this.$injectMetadata({
-                                        service_instance_ids: serviceInstanceIds
-                                    }, { injectBizId: true }),
-                                    requestId: 'batchDeleteServiceInstance'
-                                }
-                            })
-                            this.$success(this.$t('删除成功'))
-                            this.getHostSeriveInstances()
-                            this.checked = []
-                        } catch (e) {
-                            console.error(e)
+                this.$router.push({
+                    name: MENU_BUSINESS_DELETE_SERVICE,
+                    params: {
+                        ids: this.checked.map(instance => instance.id).join('/')
+                    },
+                    query: {
+                        from: this.$route.path,
+                        query: {
+                            ...this.$route.query,
+                            tab: 'service'
                         }
                     }
                 })
@@ -429,9 +423,9 @@
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             },
-            handleShowProcessDetails (inst) {
+            handleShowProcessDetails ({ property }) {
                 this.showDetails = true
-                this.processInst = inst
+                this.processInst = property
             }
         }
     }

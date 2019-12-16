@@ -12,10 +12,12 @@
                     <bk-button theme="primary" text @click="handleShowDetails(row)">{{row.expect_host.bk_host_innerip}}</bk-button>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('云区域')" prop="cloud_area.bk_cloud_name"></bk-table-column>
-            <bk-table-column :label="$t('固资编号')" prop="expect_host.bk_asset_id"></bk-table-column>
             <bk-table-column :label="$t('主机名称')" prop="expect_host.bk_host_name"></bk-table-column>
-            <bk-table-column :label="$t('修改值')" width="430" class-name="table-cell-change-value">
+            <bk-table-column
+                :label="$t('修改值')"
+                width="530"
+                class-name="table-cell-change-value"
+                :render-header="(h, data) => renderTableHeader(h, data, $t('红色为属性冲突值'), { placement: 'right' })">
                 <template slot-scope="{ row }">
                     <div class="cell-change-value" v-html="getChangeValue(row)"></div>
                 </template>
@@ -23,15 +25,13 @@
             <bk-table-column
                 v-if="showOperation"
                 :label="$t('操作')"
-                :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示')) : null"
-            >
+                :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示'), { width: 275 }) : null">
                 <template slot-scope="{ row }">
                     <bk-button
                         v-if="row.conflicts.length > 0"
                         theme="primary"
                         text
-                        @click="handleShowConflict(row)"
-                    >
+                        @click="handleShowConflict(row)">
                         {{row.unresolved_conflict_count > 0 ? '手动修改' : '已修改'}}
                     </bk-button>
                     <span v-else>--</span>
@@ -46,8 +46,7 @@
             :width="800"
             :is-show.sync="slider.isShow"
             :title="slider.title"
-            @hidden="handleSliderCancel"
-        >
+            @hidden="handleSliderCancel">
             <template slot="content">
                 <cmdb-details
                     v-if="slider.content === 'detail'"
@@ -172,16 +171,23 @@
                 fieldList.forEach(item => {
                     valueMap[item['bk_property_id']] = item.bk_property_value
                 })
-                const result = fieldList.map(item => {
+
+                const resultConflicts = conflicts.map(item => {
                     const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
                     let content = `${property.bk_property_name}：${this.$tools.getPropertyText(property, valueMap)}`
                     const conflictExist = conflicts.find(conflictItem => conflictItem.bk_attribute_id === item.bk_attribute_id && conflictItem.unresolved_conflict_exist)
                     if (conflictExist) {
-                        content = `<span class="conflict">${content}</span>`
+                        content = `<span class="conflict-item">${content}</span>`
                     }
                     return content
                 })
-                return result.join('；')
+                const resultUpdates = updateFields.map(item => {
+                    const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
+                    return `${property.bk_property_name}：${this.$tools.getPropertyText(property, valueMap)}`
+                })
+                const conflictSeparator = '<span class="conflict-separator">；</span>'
+
+                return `${resultConflicts.join(conflictSeparator)}${(resultConflicts.length && resultUpdates.length) ? conflictSeparator : ''}${resultUpdates.join('；')}`
             },
             getPropertyGroups () {
                 const modelId = 'host'
@@ -193,18 +199,13 @@
                     })
                 })
             },
-            getOperationColumnText (row) {
-                let text = '--'
-                if (row.conflicts.length > 0) {
-                    text = row.unresolved_conflict_count > 0 ? '手动修改' : '已修改'
-                }
-                return text
-            },
-            renderTableHeader (h, data, tips) {
+            renderTableHeader (h, data, tips, options = {}) {
                 const directive = {
                     content: tips,
-                    placement: 'top-end',
-                    width: 275
+                    placement: options.placement || 'top-end'
+                }
+                if (options.width) {
+                    directive.width = options.width
                 }
                 return <span>{ data.column.label } <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={ directive }></i></span>
             },
@@ -214,6 +215,7 @@
             },
             handleSizeChange (size) {
                 this.table.pagination.limit = size
+                this.table.pagination.current = 1
                 this.setTableList()
             },
             async handleShowDetails (row) {
@@ -269,13 +271,23 @@
 </script>
 
 <style lang="scss" scoped>
+    .cell-change-value {
+        padding: 8px 0;
+        line-height: 1.6;
+        word-break: break-word;
+    }
 </style>
 <style lang="scss">
     .table-cell-change-value {
         .cell {
             -webkit-line-clamp: 3;
-            .conflict {
+            .conflict-item,
+            .conflict-separator {
                 color: #ea3536;
+            }
+
+            .icon-cc-tips {
+                margin-top: -2px;
             }
         }
     }
