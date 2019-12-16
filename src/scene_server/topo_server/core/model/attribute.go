@@ -321,7 +321,7 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 
 	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), a.params.Header, a.attr.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-grp] failed to request the object controller, err: %s, rid: %s", err.Error(), a.params.ReqID)
+		blog.Errorf("[model-grp] failed to request the coreservice, err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 

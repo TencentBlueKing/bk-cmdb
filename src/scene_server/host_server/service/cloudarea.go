@@ -131,7 +131,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	input[common.BkSupplierAccount] = util.GetOwnerID(req.Request.Header)
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Plat); err != nil {
+	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Model); err != nil {
 		blog.Errorf("check create plat authorization failed, err: %v, rid: %s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return

@@ -305,12 +305,14 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 				}
 				output[common.BKDBOR] = exactOr
 			} else {
-				output[i] = targetStr
+				attrVal := gparams.SpecialCharChange(targetStr)
+				output[i] = map[string]interface{}{"$regex": attrVal, "$options": "i"}
 			}
 		default:
 			output[i] = j
 		}
 	}
+
 	return output
 }
 
