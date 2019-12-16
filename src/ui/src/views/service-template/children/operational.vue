@@ -401,7 +401,7 @@
                 const keys = Object.keys(data)
                 for (const key of keys) {
                     const property = this.properties.find(property => property.bk_property_id === key)
-                    if (property && ['int', 'enum'].includes(property.bk_property_type) && !data[key].value) {
+                    if (property && ['enum', 'int', 'float'].includes(property.bk_property_type) && !data[key].value) {
                         data[key].value = null
                     }
                 }
