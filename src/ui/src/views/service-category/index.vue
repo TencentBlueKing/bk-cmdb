@@ -26,56 +26,44 @@
                     <template v-else>
                         <div class="category-name">
                             <span>{{mainCategory['name']}}</span>
-                            <span
-                                v-if="!mainCategory['is_built_in']"
-                                v-cursor="{
-                                    active: !$isAuthorized($OPERATION.U_SERVICE_CATEGORY),
-                                    auth: [$OPERATION.U_SERVICE_CATEGORY]
-                                }">
-                                <bk-button
-                                    :disabled="!$isAuthorized($OPERATION.U_SERVICE_CATEGORY)"
+                            <cmdb-auth v-if="!mainCategory['is_built_in']"
+                                :auth="$authResources({ type: $OPERATION.U_SERVICE_CATEGORY })">
+                                <bk-button slot-scope="{ disabled }"
+                                    class="main-edit-btn"
+                                    theme="primary"
+                                    :disabled="disabled"
                                     :text="true"
                                     @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
                                     <i class="icon-cc-edit-shape"></i>
                                 </bk-button>
-                            </span>
+                            </cmdb-auth>
                             <span v-else class="built-in-sign">{{$t('内置')}}</span>
                         </div>
                         <cmdb-dot-menu class="dot-menu-operation" v-if="!mainCategory['is_built_in']">
                             <div class="menu-operational">
-                                <span
-                                    v-cursor="{
-                                        active: !$isAuthorized($OPERATION.C_SERVICE_CATEGORY),
-                                        auth: [$OPERATION.C_SERVICE_CATEGORY]
-                                    }">
-                                    <bk-button class="menu-btn"
-                                        :disabled="!$isAuthorized($OPERATION.C_SERVICE_CATEGORY)"
+                                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_CATEGORY })">
+                                    <bk-button slot-scope="{ disabled }"
+                                        class="menu-btn"
+                                        :disabled="disabled"
                                         :text="true"
                                         @click="handleShowAddChild(mainCategory['id'])">
                                         {{$t('添加二级分类')}}
                                     </bk-button>
-                                </span>
-                                <span
-                                    v-if="!$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
-                                    v-cursor="{
-                                        active: !$isAuthorized($OPERATION.D_SERVICE_CATEGORY),
-                                        auth: [$OPERATION.D_SERVICE_CATEGORY]
-                                    }">
-                                    <bk-button class="menu-btn"
-                                        :text="true"
-                                        :disabled="!$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
-                                        @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
-                                        {{$t('删除')}}
-                                    </bk-button>
-                                </span>
-                                <bk-button class="menu-btn" v-else-if="!mainCategory['child_category_list'].length"
-                                    :text="true"
-                                    @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
-                                    {{$t('删除')}}
-                                </bk-button>
-                                <span class="menu-btn no-allow-btn" v-else v-bk-tooltips="deleteBtnTips">
-                                    {{$t('删除')}}
-                                </span>
+                                </cmdb-auth>
+                                <cmdb-auth :auth="$authResources({ type: $OPERATION.D_SERVICE_CATEGORY })">
+                                    <template slot-scope="{ disabled }">
+                                        <bk-button v-if="disabled || !mainCategory['child_category_list'].length"
+                                            class="menu-btn"
+                                            :text="true"
+                                            :disabled="disabled"
+                                            @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
+                                            {{$t('删除')}}
+                                        </bk-button>
+                                        <span class="menu-btn no-allow-btn" v-else v-bk-tooltips="deleteBtnTips">
+                                            {{$t('删除')}}
+                                        </span>
+                                    </template>
+                                </cmdb-auth>
                             </div>
                         </cmdb-dot-menu>
                     </template>
@@ -117,33 +105,29 @@
                             <div class="child-title">
                                 <span>{{childCategory['name']}}</span>
                                 <div class="child-edit" v-if="!childCategory['is_built_in']">
-                                    <i
-                                        class="mr10"
-                                        v-cursor="{
-                                            active: !$isAuthorized($OPERATION.U_SERVICE_CATEGORY),
-                                            auth: [$OPERATION.U_SERVICE_CATEGORY]
-                                        }">
-                                        <bk-button class="child-edit-btn"
+                                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_SERVICE_CATEGORY })">
+                                        <bk-button slot-scope="{ disabled }"
+                                            class="child-edit-btn"
+                                            theme="primary"
                                             :text="true"
-                                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_CATEGORY)"
+                                            :disabled="disabled"
                                             @click.stop="handleEditChild(childCategory['id'], childCategory['name'])">
                                             <i class="icon-cc-edit-shape"></i>
                                         </bk-button>
-                                    </i>
-                                    <i v-if="!childCategory['usage_amount']"
-                                        v-cursor="{
-                                            active: !$isAuthorized($OPERATION.D_SERVICE_CATEGORY),
-                                            auth: [$OPERATION.D_SERVICE_CATEGORY]
-                                        }">
-                                        <bk-button class="child-edit-btn"
+                                    </cmdb-auth>
+                                    <cmdb-auth :auth="$authResources({ type: $OPERATION.D_SERVICE_CATEGORY })"
+                                        v-if="!childCategory['usage_amount']">
+                                        <bk-button slot-scope="{ disabled }"
+                                            class="child-edit-btn"
+                                            theme="primary"
                                             :text="true"
-                                            :disabled="!$isAuthorized($OPERATION.D_SERVICE_CATEGORY)"
+                                            :disabled="disabled"
                                             @click.stop="handleDeleteCategory(childCategory['id'], 'child', index)">
                                             <i class="icon-cc-tips-close"></i>
                                         </bk-button>
-                                    </i>
+                                    </cmdb-auth>
                                     <i class="icon-cc-tips-close" v-else
-                                        style="color: #c4c6cc; cursor: not-allowed;"
+                                        style="color: #dcdee5; cursor: not-allowed; outline: none;"
                                         v-bk-tooltips.bottom="tooltips">
                                     </i>
                                 </div>
@@ -168,14 +152,14 @@
                     </div>
                 </div>
                 <div class="child-category"></div>
-                <span class="add-box"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_SERVICE_CATEGORY),
-                        auth: [$OPERATION.C_SERVICE_CATEGORY]
-                    }"
-                    v-if="!showAddMianCategory"
-                    @click="handleAddBox">
-                </span>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_CATEGORY })"
+                    v-if="!showAddMianCategory">
+                    <bk-button slot-scope="{ disabled }"
+                        class="add-btn"
+                        :disabled="disabled"
+                        @click="handleAddBox">
+                    </bk-button>
+                </cmdb-auth>
             </div>
         </div>
     </div>
@@ -227,7 +211,7 @@
             ]),
             getCategoryList () {
                 this.searchServiceCategory({
-                    params: this.$injectMetadata({})
+                    params: this.$injectMetadata({}, { injectBizId: true })
                 }).then((data) => {
                     const categoryList = data.info.map(item => {
                         return {
@@ -250,7 +234,7 @@
                         bk_root_id: rootId,
                         bk_parent_id: rootId,
                         name
-                    })
+                    }, { injectBizId: true })
                 }).then(res => {
                     this.$success(this.$t('保存成功'))
                     this.showAddMianCategory = false
@@ -293,7 +277,7 @@
                         params: this.$injectMetadata({
                             id: data.id,
                             name: type === 'main' ? this.mainCategoryName : this.childCategoryName
-                        })
+                        }, { injectBizId: true })
                     }).then(res => {
                         this.$success(this.$t('保存成功'))
                         this.handleCloseEditChild()
@@ -319,7 +303,7 @@
                     confirmFn: async () => {
                         await this.deleteServiceCategory({
                             params: {
-                                data: this.$injectMetadata({ id })
+                                data: this.$injectMetadata({ id }, { injectBizId: true })
                             },
                             config: {
                                 requestId: 'delete_proc_services_category'
@@ -367,7 +351,6 @@
                 this.editChildStatus = null
             },
             handleAddBox () {
-                if (!this.$isAuthorized(this.$OPERATION.C_SERVICE_CATEGORY)) return
                 this.showAddMianCategory = true
                 this.$nextTick(() => {
                     this.$refs.addCategoryInput.$refs.categoryInput.focus()
@@ -393,7 +376,7 @@
 
 <style lang="scss" scoped>
     .category-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
         .category-list {
             display: flex;
             flex-flow: row wrap;
@@ -416,13 +399,21 @@
                     color: #dcdee5 !important;
                     background-color: transparent !important;
                 }
-                .add-box {
+                .auth-box {
                     position: absolute;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    cursor: pointer;
+                }
+                .add-btn {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: transparent;
+                    border: none;
                     &::after, &::before {
                         content: '';
                         position: absolute;
@@ -473,6 +464,7 @@
                 flex: 1;
                 padding-right: 20px;
                 .icon-cc-edit-shape {
+                    font-size: 14px;
                     display: none;
                     cursor: pointer;
                 }
@@ -490,6 +482,14 @@
                     text-align: center;
                     background-color: #d3d5dd;
                     border-radius: 2px;
+                }
+                .auth-box {
+                    vertical-align: middle;
+                }
+                .main-edit-btn {
+                    display: block;
+                    font-size: 0;
+                    line-height: 1;
                 }
             }
             .dot-menu-operation {
@@ -557,7 +557,7 @@
                     padding-right: 20px;
                     padding-left: 16px;
                     margin-left: 10px;
-                    span {
+                    >span {
                         @include ellipsis;
                         padding-right: 10px;
                     }
@@ -568,10 +568,6 @@
                 }
                 .child-edit {
                     display: none;
-                    .child-edit-btn:disabled {
-                        color: #dcdee5;
-                        font-size: 14px;
-                    }
                 }
                 .edit-box {
                     width: 100%;
@@ -589,6 +585,9 @@
     .menu-operational {
         padding: 6px 0;
         line-height: 32px;
+        .auth-box {
+            display: block;
+        }
         .menu-btn {
             display: block;
             width: 100%;

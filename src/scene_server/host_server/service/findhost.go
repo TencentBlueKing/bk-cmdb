@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"github.com/emicklei/go-restful"
@@ -64,25 +65,41 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 	}
 	bizID, err := util.GetInt64ByInterface(req.PathParameter("appid"))
 	if err != nil {
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_app_id")})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
 		return
 	}
 	if bizID == 0 {
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_app_id")})
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
 		return
 	}
 
-	if parameter.Page.Limit == 0 {
-		parameter.Page.Limit = common.BKMaxPageSize
-	}
-	if parameter.Page.Limit > common.BKMaxPageLimit {
-		blog.Errorf("ListBizHosts failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommPageLimitIsExceeded)})
+	if parameter.Page.IsIllegal() {
+		blog.Errorf("ListBizHosts failed, page limit %d illegal, rid:%s", parameter.Page.Limit, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "page.limit")})
 		return
 	}
+
+	if parameter.SetIDs != nil && len(parameter.SetIDs) != 0 && parameter.SetCond != nil && len(parameter.SetCond) != 0 {
+		blog.Errorf("ListBizHosts failed, bk_set_ids and set_cond can't both be set, rid:%s", srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, "bk_set_ids and set_cond can't both be set")})
+		return
+	}
+
+	var setIDs []int64
+	if parameter.SetIDs != nil {
+		setIDs = parameter.SetIDs
+	} else {
+		setIDs, err = srvData.lgc.GetSetIDByCond(srvData.ctx, parameter.SetCond)
+		if err != nil {
+			blog.ErrorJSON("ListBizHosts failed, GetSetIDByCond %s failed, error: %s, rid:%s", parameter.SetCond, err.Error(), srvData.rid)
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPDoRequestFailed, err.Error())})
+			return
+		}
+	}
+
 	option := meta.ListHosts{
 		BizID:              bizID,
-		SetIDs:             parameter.SetIDs,
+		SetIDs:             setIDs,
 		ModuleIDs:          parameter.ModuleIDs,
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,
@@ -113,12 +130,9 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	if parameter.Page.Limit == 0 {
-		parameter.Page.Limit = common.BKMaxPageSize
-	}
-	if parameter.Page.Limit > common.BKMaxPageLimit {
-		blog.Errorf("ListHostsWithNoBiz failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommPageLimitIsExceeded)})
+	if parameter.Page.IsIllegal() {
+		blog.Errorf("ListHostsWithNoBiz failed, page limit %d illegal, rid:%s", parameter.Page.Limit, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "page.limit")})
 		return
 	}
 	option := meta.ListHosts{
@@ -160,12 +174,9 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	if parameter.Page.Limit == 0 {
-		parameter.Page.Limit = common.BKMaxPageSize
-	}
-	if parameter.Page.Limit > common.BKMaxPageLimit {
-		blog.Errorf("ListBizHosts failed, page limit %d exceed max pageSize %d, rid:%s", parameter.Page.Limit, common.BKMaxPageLimit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommPageLimitIsExceeded)})
+	if parameter.Page.IsIllegal() {
+		blog.Errorf("ListHostByTopoNode failed, page limit %d illegal, rid:%s", parameter.Page.Limit, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "page.limit")})
 		return
 	}
 
@@ -321,4 +332,96 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 
 	result := meta.NewSuccessResponse(hostTopos)
 	_ = resp.WriteEntity(result)
+}
+
+func (s *Service) CountTopoNodeHosts(req *restful.Request, resp *restful.Response) {
+	header := req.Request.Header
+	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.ExtractRequestIDFromContext(ctx)
+	srvData := s.newSrvComm(header)
+	defErr := srvData.ccErr
+
+	option := meta.CountTopoNodeHostsOption{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&option); err != nil {
+		blog.Errorf("CountTopoNodeHosts failed, decode body failed, err: %#v, rid:%s", err, rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	bizID, err := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
+	if err != nil {
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
+		return
+	}
+	if bizID == 0 {
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
+		return
+	}
+	topoNodeHostCounts, ccErr := s.countTopoNodeHosts(srvData, bizID, option)
+	if ccErr != nil {
+		blog.ErrorJSON("CountTopoNodeHosts failed, countTopoNodeHosts failed, option: %s, err: %s, rid:%s", option, ccErr.Error(), rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	response := meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     topoNodeHostCounts,
+	}
+	_ = resp.WriteEntity(response)
+}
+
+func (s *Service) countTopoNodeHosts(srvData *srvComm, bizID int64, option meta.CountTopoNodeHostsOption) ([]meta.TopoNodeHostCount, errors.CCErrorCoder) {
+	rid := srvData.rid
+	topoRoot, ccErr := s.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(srvData.ctx, srvData.header, bizID, false)
+	if ccErr != nil {
+		blog.Errorf("countTopoNodeHosts failed, SearchMainlineInstanceTopo failed, bizID: %d, err: %s, rid: %s", bizID, ccErr.Error(), rid)
+		return nil, ccErr
+	}
+	moduleIDs := make([]int64, 0)
+	nodeModuleIDMap := make(map[string]map[int64]bool)
+	for _, topoNode := range option.Nodes {
+		nodeModuleIDMap[topoNode.String()] = make(map[int64]bool)
+		nodes := topoRoot.TraversalFindNode(topoNode.ObjectID, topoNode.InstanceID)
+		for _, item := range nodes {
+			item.DeepFirstTraversal(func(node *meta.TopoInstanceNode) {
+				if node.ObjectID == common.BKInnerObjIDModule {
+					moduleIDs = append(moduleIDs, node.InstanceID)
+					nodeModuleIDMap[topoNode.String()][node.InstanceID] = true
+				}
+			})
+		}
+	}
+	relationOption := meta.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		ModuleIDArr:   moduleIDs,
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	relationResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, &relationOption)
+	if err != nil {
+		blog.Errorf("countTopoNodeHosts failed, GetHostModuleRelation failed, option: %+v, err: %s, rid: %s", relationOption, err.Error(), rid)
+		return nil, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	hostCounts := make([]meta.TopoNodeHostCount, 0)
+	for _, topoNode := range option.Nodes {
+		hostCount := meta.TopoNodeHostCount{
+			Node:      topoNode,
+			HostCount: 0,
+		}
+		moduleIDMap, ok := nodeModuleIDMap[topoNode.String()]
+		if ok == false {
+			hostCounts = append(hostCounts, hostCount)
+			continue
+		}
+		hostIDs := make([]int64, 0)
+		for _, item := range relationResult.Data.Info {
+			if _, ok := moduleIDMap[item.ModuleID]; ok == true {
+				hostIDs = append(hostIDs, item.HostID)
+			}
+		}
+		hostCount.HostCount = len(util.IntArrayUnique(hostIDs))
+		hostCounts = append(hostCounts, hostCount)
+	}
+
+	return hostCounts, nil
 }

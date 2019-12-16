@@ -245,7 +245,9 @@
                 }
             },
             isCollection (menu) {
-                return menu.id.startsWith('collection')
+                return false
+                // innerdocs 1437
+                // return menu.id.startsWith('collection')
             },
             handleMouseEnter () {
                 if (this.timer) {
@@ -314,7 +316,7 @@
             },
             handleToggleBusiness (id, old) {
                 if (old) {
-                    window.location.hash = '#/business/host'
+                    window.location.hash = '#/business'
                     window.location.reload()
                 }
             }
@@ -361,8 +363,8 @@ $color: #63656E;
 
 .business-wrapper {
     position: relative;
-    padding: 13px 0;
-    height: 59px;
+    padding: 10px 0;
+    height: 53px;
     border-bottom: 1px solid #DCDEE5;
     overflow: hidden;
     .business-selector {

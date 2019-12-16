@@ -18,7 +18,7 @@
             value: {
                 default: null,
                 validator (val) {
-                    return typeof val === 'number' || val === '' || val === null
+                    return ['string', 'number'].includes(typeof val) || val === null
                 }
             },
             disabled: {
@@ -32,6 +32,10 @@
             unit: {
                 type: String,
                 default: ''
+            },
+            autoCheck: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -54,18 +58,21 @@
         },
         methods: {
             handleInput (value, event) {
-                if (this.validateFloat(value)) {
-                    this.localValue = parseFloat(value)
+                const originalValue = String(event.target.value).trim()
+                const floatValue = originalValue.length ? Number(event.target.value.trim()) : null
+                if (isNaN(floatValue)) {
+                    value = this.autoCheck ? null : value
                 } else {
-                    this.$refs.input.curValue = null
-                    this.localValue = null
+                    value = floatValue
                 }
+                this.$refs.input.curValue = value
+                this.localValue = value
             },
             handleChange () {
                 this.$emit('on-change', this.localValue)
             },
-            validateFloat (val) {
-                return /^[+-]?([0-9]*[.]?[0-9]+|[0-9]+[.]?[0-9]*)([eE][+-]?[0-9]+)?$/.test(val)
+            focus () {
+                this.$el.querySelector('input').focus()
             }
         }
     }

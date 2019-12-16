@@ -128,12 +128,12 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("update module instance get inst error :%v, rid:%s", err, ctx.ReqID)
+		blog.Errorf("UpdateModelInstance failed, get inst failed, err: %v, rid:%s", err, ctx.ReqID)
 		return nil, err
 	}
 
 	if len(origins) == 0 {
-		blog.Errorf("UpdateModelInstance update %s model instance not found. condition:%+v, rid:%s", objID, inputParam.Condition, ctx.ReqID)
+		blog.Errorf("UpdateModelInstance failed, no instance found. model: %s, condition:%+v, rid:%s", objID, inputParam.Condition, ctx.ReqID)
 		return nil, ctx.Error.Error(common.CCErrCommNotFound)
 	}
 
@@ -160,7 +160,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		instID, _ := util.GetInt64ByInterface(instIDI)
 		err := m.validUpdateInstanceData(ctx, objID, inputParam.Data, instMedataData, uint64(instID))
 		if nil != err {
-			blog.Errorf("update module instance validate error :%v ,rid:%s", err, ctx.ReqID)
+			blog.Errorf("update model instance validate error :%v ,rid:%s", err, ctx.ReqID)
 			return nil, err
 		}
 		// 设置实例变更前数据
@@ -168,7 +168,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 	}
 
 	if nil != err {
-		blog.Errorf("update module instance validate error :%v ,rid:%s", err, ctx.ReqID)
+		blog.Errorf("update model instance validate error :%v ,rid:%s", err, ctx.ReqID)
 		return &metadata.UpdatedCount{}, err
 	}
 	cnt, err := m.update(ctx, objID, inputParam.Data, inputParam.Condition)

@@ -24,28 +24,28 @@
         </div>
         <bk-table class="association-table"
             v-show="expanded"
-            :data="flattenList"
+            :data="list"
             :max-height="462">
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <span class="text-primary" @click="showTips($event, row)" v-if="$isAuthorized(updateAuth)">
-                        {{$t('取消关联')}}
-                    </span>
-                    <span class="text-primary disabled"
-                        v-else
-                        v-cursor="{
-                            active: true,
-                            auth: [updateAuth]
-                        }">
-                        {{$t('取消关联')}}
-                    </span>
+                    <cmdb-auth :auth="updateAuthResources">
+                        <bk-button slot-scope="{ disabled }"
+                            text
+                            theme="primary"
+                            :disabled="disabled"
+                            @click="showTips($event, row)">
+                            {{$t('取消关联')}}
+                        </bk-button>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff" :auth="permissionAuth"></cmdb-table-empty>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.show">
             <p class="tips-content">{{$t('确认取消')}}</p>
@@ -85,6 +85,14 @@
                     current: 1,
                     size: 10
                 },
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
+                },
                 expanded: false,
                 confirm: {
                     instance: null,
@@ -100,21 +108,36 @@
                 'sourceInstances',
                 'targetInstances'
             ]),
-            updateAuth () {
+            updateAuthResources () {
                 const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
-                    return this.$OPERATION.U_RESOURCE_HOST
+                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
                 }
-                return this.$OPERATION.U_HOST
-            },
-            flattenList () {
-                return this.$tools.flattenList(this.properties, this.list)
+                return this.$authResources({ type: this.$OPERATION.U_HOST })
             },
             hostId () {
                 return parseInt(this.$route.params.id)
             },
             model () {
                 return this.$store.getters['objectModelClassify/getModelById'](this.id)
+            },
+            permissionAuth () {
+                const map = {
+                    host: this.$OPERATION.R_HOST,
+                    biz: this.$OPERATION.R_BUSINESS
+                }
+                const auth = {
+                    type: map[this.model.bk_obj_id]
+                }
+                // 通用模型
+                if (!auth.type) {
+                    auth.type = this.$OPERATION.R_INST
+                    auth.parent_layers = [{
+                        resource_id: this.model.id,
+                        resource_type: 'model'
+                    }]
+                }
+                return auth
             },
             isBusinessModel () {
                 return !!this.$tools.getMetadataBiz(this.model)
@@ -151,7 +174,8 @@
                 const header = headerProperties.map(property => {
                     return {
                         id: property.bk_property_id,
-                        name: property.bk_property_name
+                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        property
                     }
                 })
                 return header
@@ -201,7 +225,8 @@
                 const config = {
                     requestId: this.instanceRequest,
                     cancelPrevious: true,
-                    globalError: false
+                    globalError: false,
+                    globalPermission: false
                 }
                 try {
                     switch (this.id) {

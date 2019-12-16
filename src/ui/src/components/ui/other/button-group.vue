@@ -32,7 +32,7 @@
         <bk-dropdown-menu
             v-else
             trigger="click"
-            font-size="large"
+            font-size="medium"
             @show="toggleDropdownState(true)"
             @hide="toggleDropdownState(false)">
             <bk-button slot="dropdown-trigger">
@@ -41,27 +41,28 @@
             </bk-button>
             <ul class="dropdown-list" slot="dropdown-content">
                 <template v-for="button in available">
-                    <li class="dropdown-item"
-                        v-if="button.auth"
-                        v-cursor="button.auth"
-                        :key="button.id"
-                        :class="{
-                            'is-disabled': button.disabled
-                        }"
-                        @click="handleClick(button)">
+                    <li class="dropdown-item" v-if="button.auth" :key="button.id">
                         <slot :name="button.id">
-                            {{button.text}}
+                            <cmdb-auth style="display: block;" :auth="button.auth">
+                                <bk-button slot-scope="{ disabled }"
+                                    class="dropdown-item-btn"
+                                    text
+                                    theme="primary"
+                                    :disabled="button.disabled || disabled"
+                                    @click="handleClick(button)">
+                                    {{button.text}}
+                                </bk-button>
+                            </cmdb-auth>
                         </slot>
                     </li>
-                    <li class="dropdown-item"
-                        v-else
-                        :key="button.id"
-                        :class="{
-                            'is-disabled': button.disabled
-                        }"
-                        @click="handleClick(button)">
+                    <li class="dropdown-item" v-else :key="button.id">
                         <slot :name="button.id">
-                            {{button.text}}
+                            <bk-button text theme="primary"
+                                class="dropdown-item-btn"
+                                :disabled="button.disabled"
+                                @click="handleClick(button)">
+                                {{button.text}}
+                            </bk-button>
                         </slot>
                     </li>
                 </template>
@@ -126,17 +127,24 @@
             font-size: 14px;
             height: 36px;
             line-height: 36px;
-            padding: 0 15px;
             cursor: pointer;
             @include ellipsis;
-            &:hover {
-                background-color: #ebf4ff;
-                color: #3c96ff;
+            .dropdown-item-btn {
+                width: 100%;
+                padding: 0 15px;
+                height: auto;
+                text-align: left;
+                color: #63656e;
+                &:disabled {
+                    color: #dcdee5 !important;
+                    background-color: transparent !important;
+                }
             }
-            &.is-disabled {
-                background-color: #fff;
-                color: #c4c6cc;
-                cursor: not-allowed;
+            &:hover {
+                .dropdown-item-btn {
+                    background-color: #ebf4ff;
+                    color: #3c96ff;
+                }
             }
         }
     }

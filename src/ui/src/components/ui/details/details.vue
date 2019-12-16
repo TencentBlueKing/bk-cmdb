@@ -12,15 +12,17 @@
                         <ul class="property-list clearfix">
                             <li class="property-item clearfix fl"
                                 v-for="(property, propertyIndex) in $groupedProperties[groupIndex]"
-                                :key="propertyIndex"
-                                :title="getTitle(inst, property)">
-                                <span class="property-name fl">{{property['bk_property_name']}}</span>
+                                :key="propertyIndex">
+                                <span class="property-name fl" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                                 <slot :name="property['bk_property_id']">
-                                    <span class="property-value clearfix fl" v-if="property.unit">
+                                    <span class="property-value clearfix fl"
+                                        v-if="property.unit"
+                                        :title="`${getValue(property)} ${property.unit}`">
                                         <span class="property-value-text fl">{{getValue(property)}}</span>
                                         <span class="property-value-unit fl" v-if="getValue(property) !== '--'">{{property.unit}}</span>
                                     </span>
-                                    <span class="property-value fl" v-else>{{getValue(property)}}</span>
+                                    <span class="property-value fl" v-else-if="property.bk_property_type === 'objuser'" v-user.title="getValue(property)"></span>
+                                    <span class="property-value fl" v-else :title="getValue(property)">{{getValue(property)}}</span>
                                 </slot>
                             </li>
                         </ul>
@@ -32,30 +34,24 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <span class="inline-block-middle"
-                    v-if="showEdit"
-                    v-cursor="{
-                        active: !$isAuthorized(editAuth),
-                        auth: [editAuth]
-                    }">
-                    <bk-button class="button-edit" theme="primary"
-                        :disabled="!$isAuthorized(editAuth)"
+                <cmdb-auth v-if="showEdit" class="inline-block-middle" :auth="authResources(editAuth)">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-edit"
+                        theme="primary"
+                        :disabled="disabled"
                         @click="handleEdit">
                         {{editText}}
                     </bk-button>
-                </span>
-                <span class="inline-block-middle"
-                    v-if="showDelete"
-                    v-cursor="{
-                        active: !$isAuthorized(deleteAuth),
-                        auth: [deleteAuth]
-                    }">
-                    <bk-button class="button-delete" theme="danger"
-                        :disabled="!$isAuthorized(deleteAuth)"
+                </cmdb-auth>
+                <cmdb-auth v-if="showDelete" class="inline-block-middle" :auth="authResources(deleteAuth)">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-delete"
+                        theme="danger"
+                        :disabled="disabled"
                         @click="handleDelete">
                         {{deleteText}}
                     </bk-button>
-                </span>
+                </cmdb-auth>
             </slot>
         </div>
     </div>
@@ -64,6 +60,7 @@
 <script>
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
+    import Formatter from '@/filters/formatter.js'
     export default {
         name: 'cmdb-details',
         mixins: [formMixins],
@@ -121,6 +118,11 @@
             RESIZE_EVENTS.removeResizeListener(this.$el.detailsWrapper, this.checkScrollbar)
         },
         methods: {
+            authResources (auth) {
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
+            },
             checkScrollbar () {
                 const $layout = this.$el
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
@@ -134,8 +136,7 @@
                 return `${property['bk_property_name']}: ${inst[property['bk_property_id']] || '--'} ${property.unit}`
             },
             getValue (property) {
-                const value = this.inst[property['bk_property_id']]
-                return String(value).length ? value : '--'
+                return Formatter(this.inst[property.bk_property_id], property)
             },
             handleEdit () {
                 this.$emit('on-edit', this.inst)
@@ -237,6 +238,9 @@
             min-width: 76px;
             background-color: #fff;
             color: #ff5656;
+            &:disabled {
+                color: #dcdee5 !important;
+            }
         }
     }
 </style>

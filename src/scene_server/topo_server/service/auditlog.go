@@ -48,8 +48,8 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 			}
 
 			cond[common.BKOpTimeField] = common.KvMap{
-				"$gte":              times[0],
-				"$lte":              times[1],
+				common.BKDBGTE:      times[0],
+				common.BKDBLTE:      times[1],
 				CCTimeTypeParseFlag: "1",
 			}
 		}
@@ -71,29 +71,37 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		businessID = id
 	}
 
-	// switch between tow different control mechanism
+    // switch between two different control mechanism
+    // TODO use global authorization for now, need more specific auth control
 	if s.AuthManager.RegisterAuditCategoryEnabled == false {
-		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, businessID); err != nil {
+		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, 0); err != nil {
 			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v, rid: %s", err, params.ReqID)
-			resp, err := s.AuthManager.GenAuthorizeAuditReadNoPermissionsResponse(params.Context, params.Header, businessID)
+			resp, err := s.AuthManager.GenAuthorizeAuditReadNoPermissionsResponse(params.Context, params.Header, 0)
 			if err != nil {
 				return nil, fmt.Errorf("try authorize failed, err: %v", err)
 			}
 			return resp, auth.NoAuthorizeError
 		}
 	} else {
-		authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, businessID)
-		if err != nil {
-			blog.Errorf("AuditQuery failed, make audit query condition from auth failed, %+v, rid: %s", err, params.ReqID)
-			return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
-		}
-		if hasAuthorization == false {
-			blog.Errorf("AuditQuery failed, user %+v has no authorization on audit, rid: %s", params.User, params.ReqID)
-			return nil, nil
-		}
+		var hasAuthorize bool
+		for _, bizID := range []int64{businessID, 0} {
+			authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, bizID)
+			if err != nil {
+				blog.Errorf("AuditQuery failed, make audit query condition from auth failed, %+v, rid: %s", err, params.ReqID)
+				return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
+			}
 
-		query.Condition.(map[string]interface{})["$or"] = authCondition
-		blog.V(5).Infof("AuditQuery, auth condition is: %+v, rid: %s", authCondition, params.ReqID)
+			if hasAuthorization == true {
+				query.Condition.(map[string]interface{})[common.BKDBOR] = authCondition
+				blog.V(5).Infof("AuditQuery, auth condition is: %+v, rid: %s", authCondition, params.ReqID)
+				hasAuthorize = hasAuthorization
+				break
+			}
+		}
+		if hasAuthorize == false {
+			blog.Errorf("AuditQuery failed, user %+v has no authorization on audit, rid: %s", params.User, params.ReqID)
+			return nil, auth.NoAuthorizeError
+		}
 	}
 
 	blog.V(5).Infof("AuditQuery, AuditOperation parameter: %+v, rid: %s", query, params.ReqID)

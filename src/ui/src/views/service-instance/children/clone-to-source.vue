@@ -9,13 +9,14 @@
             </bk-button>
         </div>
         <bk-table class="source-table"
-            :data="flattenList"
+            :data="cloneProcesses"
             @selection-change="handleSelectChange">
             <bk-table-column type="selection" align="center" width="60" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
@@ -32,17 +33,15 @@
             </bk-table-column>
         </bk-table>
         <div class="page-options">
-            <span
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.C_SERVICE_INSTANCE),
-                    auth: [$OPERATION.C_SERVICE_INSTANCE]
-                }">
-                <bk-button class="options-button" theme="primary"
-                    :disabled="!!repeatedProcesses.length || !$isAuthorized($OPERATION.C_SERVICE_INSTANCE)"
+            <cmdb-auth :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                <bk-button slot-scope="{ disabled }"
+                    class="options-button"
+                    theme="primary"
+                    :disabled="!!repeatedProcesses.length || disabled"
                     @click="doClone">
                     {{$t('确定')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <bk-button class="options-button" @click="backToModule">{{$t('取消')}}</bk-button>
         </div>
         <bk-sideslider
@@ -76,7 +75,7 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         name: 'clone-to-source',
         props: {
@@ -118,13 +117,11 @@
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
-                        name: property.bk_property_name
+                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        property
                     }
                 })
                 return header
-            },
-            flattenList () {
-                return this.$tools.flattenList(this.properties, this.cloneProcesses)
             },
             norepeatProperties () {
                 const unique = this.propertyUnique.find(unique => unique.must_check) || {}
@@ -233,7 +230,7 @@
                 this.processForm.instance = {}
                 this.processForm.show = true
                 this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance, false)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -248,10 +245,10 @@
                 this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'single'
                 this.processForm.title = `${this.$t('编辑进程')}${item.bk_process_name}`
-                this.processForm.instance = this.cloneProcesses.find(target => target.bk_process_id === item.bk_process_id)
+                this.processForm.instance = item
                 this.processForm.show = true
                 this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance, false)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -264,7 +261,7 @@
             },
             async getInstanceIpByHost (hostId) {
                 try {
-                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    const instanceIpMap = this.$store.state.businessHost.instanceIpMap
                     let res = null
                     if (instanceIpMap.hasOwnProperty(hostId)) {
                         res = instanceIpMap[hostId]
@@ -275,7 +272,7 @@
                                 requestId: 'getInstanceIpByHost'
                             }
                         })
-                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                        this.$store.commit('businessHost/setInstanceIp', { hostId, res })
                     }
                     this.processBindIp = res.options.map(ip => {
                         return {
@@ -333,7 +330,7 @@
                                     processes: this.getCloneProcessValues()
                                 }
                             ]
-                        })
+                        }, { injectBizId: true })
                     })
                     this.$success(this.$t('克隆成功'))
                     this.backToModule()
@@ -354,9 +351,9 @@
             },
             backToModule () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        module: this.$route.params.moduleId
+                        node: 'module-' + this.$route.params.moduleId
                     }
                 })
             }

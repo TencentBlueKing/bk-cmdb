@@ -1,7 +1,7 @@
 <template>
     <div class="clearfix">
         <dynamic-navigation class="main-navigation"></dynamic-navigation>
-        <dynamic-breadcrumbs class="main-breadcrumbs"></dynamic-breadcrumbs>
+        <dynamic-breadcrumbs class="main-breadcrumbs" v-if="$route.meta.layout.breadcrumbs"></dynamic-breadcrumbs>
         <div class="main-layout">
             <div class="main-scroller" v-bkloading="{ isLoading: globalLoading }" ref="scroller">
                 <router-view class="main-views" :name="view"></router-view>
@@ -60,9 +60,12 @@
             },
             scrollerObserverHandler () {
                 this.$nextTick(() => {
-                    if (this.$refs.scroller) {
+                    const scroller = this.$refs.scroller
+                    if (scroller) {
+                        const gutter = scroller.offsetHeight - scroller.clientHeight
+                        this.$store.commit('setAppHeight', this.$root.$el.offsetHeight - gutter)
                         this.$store.commit('setScrollerState', {
-                            scrollbar: this.$refs.scroller.scrollHeight > this.$refs.scroller.offsetHeight
+                            scrollbar: scroller.scrollHeight > scroller.offsetHeight
                         })
                     }
                 })
@@ -79,7 +82,7 @@
         position: relative;
         overflow: hidden;
         height: 100%;
-        margin-top: -58px;
+        margin-top: -53px;
         z-index: 99;
     }
     .main-breadcrumbs {
@@ -94,8 +97,9 @@
         overflow: auto;
     }
     .main-views {
-        height: calc(100% - 58px);
-        margin-top: 58px;
+        height: calc(100% - 52px);
+        border-top: 1px solid $borderColor;
+        margin-top: 52px;
         min-width: 1106px;
     }
 </style>

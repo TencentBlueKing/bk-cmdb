@@ -115,7 +115,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		}
 
 	case meta.HostFavorite:
-	    iamResourceType = BizHostInstance
+		iamResourceType = BizHostInstance
 
 	case meta.Process:
 		iamResourceType = BizProcessInstance
@@ -143,6 +143,11 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizProcessServiceInstance
 	case meta.BizTopology:
 		iamResourceType = BizTopology
+	case meta.SetTemplate:
+		iamResourceType = BizSetTemplate
+
+	case meta.OperationStatistic:
+		iamResourceType = SysOperationStatistic
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -155,15 +160,16 @@ type ResourceTypeID string
 
 // System Resource
 const (
-	SysSystemBase       ResourceTypeID = "sys_system_base"
-	SysBusinessInstance ResourceTypeID = "sys_business_instance"
-	SysHostInstance     ResourceTypeID = "sys_host_instance"
-	SysEventPushing     ResourceTypeID = "sys_event_pushing"
-	SysModelGroup       ResourceTypeID = "sys_model_group"
-	SysModel            ResourceTypeID = "sys_model"
-	SysInstance         ResourceTypeID = "sys_instance"
-	SysAssociationType  ResourceTypeID = "sys_association_type"
-	SysAuditLog         ResourceTypeID = "sys_audit_log"
+	SysSystemBase         ResourceTypeID = "sys_system_base"
+	SysBusinessInstance   ResourceTypeID = "sys_business_instance"
+	SysHostInstance       ResourceTypeID = "sys_host_instance"
+	SysEventPushing       ResourceTypeID = "sys_event_pushing"
+	SysModelGroup         ResourceTypeID = "sys_model_group"
+	SysModel              ResourceTypeID = "sys_model"
+	SysInstance           ResourceTypeID = "sys_instance"
+	SysAssociationType    ResourceTypeID = "sys_association_type"
+	SysAuditLog           ResourceTypeID = "sys_audit_log"
+	SysOperationStatistic ResourceTypeID = "sys_operation_statistic"
 )
 
 // Business Resource
@@ -180,6 +186,7 @@ const (
 	BizProcessServiceTemplate ResourceTypeID = "biz_process_service_template"
 	BizProcessServiceCategory ResourceTypeID = "biz_process_service_category"
 	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
+	BizSetTemplate            ResourceTypeID = "biz_set_template"
 )
 
 const (
@@ -191,7 +198,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	SysBusinessInstance: "业务",
 	SysHostInstance:     "主机",
 	SysEventPushing:     "事件推送",
-	SysModelGroup:       "模型分级",
+	SysModelGroup:       "模型分组",
 	SysModel:            "模型",
 	SysInstance:         "实例",
 	SysAssociationType:  "关联类型",
@@ -200,7 +207,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizHostInstance:     "业务主机",
 	BizProcessInstance:  "进程",
 	// TODO: delete this when upgrade to v3.5.x
-	BizTopology:               "服务拓扑",
+	BizTopology:               "业务拓扑",
 	BizModelGroup:             "模型分组",
 	BizModel:                  "模型",
 	BizInstance:               "实例",
@@ -209,6 +216,8 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizProcessServiceTemplate: "服务模板",
 	BizProcessServiceCategory: "服务分类",
 	BizProcessServiceInstance: "服务实例",
+	BizSetTemplate:            "集群模板",
+	SysOperationStatistic:     "运营统计",
 }
 
 type ActionID string
@@ -334,6 +343,7 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostToBizFaultModule,
 		meta.MoveHostToBizIdleModule,
+		meta.MoveHostToBizRecycleModule,
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
@@ -428,7 +438,7 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 		rsc.ResourceType = string(*rscType)
 		rsc.ResourceTypeName = ResourceTypeIDMap[*rscType]
 		if len(rscIDs) != 0 {
-			rsc.ResourceID = rscIDs[0].ResourceID
+			rsc.ResourceID = rscIDs[len(rscIDs)-1].ResourceID
 		}
 		rsc.ResourceName = r.Basic.Name
 		p.Resources = [][]metadata.Resource{{rsc}}
@@ -503,5 +513,10 @@ var (
 	SystemBaseDescribe = ResourceDetail{
 		Type:    SysSystemBase,
 		Actions: []ActionID{Get, Delete, Edit, Create},
+	}
+
+	OperationStatistic = ResourceDetail{
+		Type:    SysOperationStatistic,
+		Actions: []ActionID{Get, Edit},
 	}
 )

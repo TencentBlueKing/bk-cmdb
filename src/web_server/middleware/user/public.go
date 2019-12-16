@@ -123,8 +123,8 @@ func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 			blog.Error("GetUserList interface not implemented, rid: %s", rid)
 			rspBody.Code = common.CCErrCommHTTPDoRequestFailed
 			rspBody.ErrMsg = err.Error()
-			return http.StatusInternalServerError, rspBody
 
+			return http.StatusInternalServerError, rspBody
 		}
 		userList, err = getUserListFunc.(func(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error))(c, m.config.ConfigMap)
 	}

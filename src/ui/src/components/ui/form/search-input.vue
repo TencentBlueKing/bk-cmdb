@@ -13,7 +13,7 @@
             </textarea>
             <i class="bk-icon icon-close"
                 :class="{
-                    'is-show': focus
+                    'is-show': isFocus
                 }"
                 v-if="localValue.length"
                 @click="handleClear">
@@ -40,7 +40,7 @@
                 localValue: this.value,
                 rows: 1,
                 timer: null,
-                focus: false
+                isFocus: false
             }
         },
         watch: {
@@ -49,7 +49,7 @@
             }
         },
         created () {
-            if (this.focus) {
+            if (this.isFocus) {
                 this.setRows()
             }
         },
@@ -76,10 +76,10 @@
             },
             handleFocus () {
                 this.setRows()
-                this.focus = true
+                this.isFocus = true
             },
             handleBlur () {
-                this.focus = false
+                this.isFocus = false
                 this.timer = setTimeout(() => {
                     this.rows = 1
                     this.$refs.textarea.scrollTop = 0
@@ -92,6 +92,9 @@
                 this.$nextTick(() => {
                     this.setRows()
                 })
+            },
+            focus () {
+                this.$refs.textarea.focus()
             }
         }
     }

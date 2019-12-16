@@ -11,13 +11,16 @@ const state = {
     user: window.User,
     supplier: window.Supplier,
     language: language,
-    globalLoading: false,
+    globalLoading: true,
     nav: {
         stick: window.localStorage.getItem('navStick') !== 'false',
         fold: window.localStorage.getItem('navStick') === 'false'
     },
     header: {
         back: false
+    },
+    layout: {
+        mainFullScreen: false
     },
     userList: [],
     headerTitle: '',
@@ -37,7 +40,6 @@ const state = {
     permission: [],
     appHeight: window.innerHeight,
     isAdminView: true,
-    breadcrumbs: [],
     title: null,
     businessSelectorVisible: false,
     businessSelectorPromise,
@@ -62,12 +64,12 @@ const getters = {
     globalLoading: state => state.globalLoading,
     navStick: state => state.nav.stick,
     navFold: state => state.nav.fold,
+    mainFullScreen: state => state.layout.mainFullScreen,
     showBack: state => state.header.back,
     userList: state => state.userList,
     headerTitle: state => state.headerTitle,
     featureTipsParams: state => state.featureTipsParams,
     permission: state => state.permission,
-    breadcrumbs: state => state.breadcrumbs,
     title: state => state.title,
     businessSelectorVisible: state => state.businessSelectorVisible,
     scrollerState: state => state.scrollerState
@@ -96,6 +98,9 @@ const mutations = {
     setHeaderStatus (state, status) {
         Object.assign(state.header, status)
     },
+    setLayoutStatus (state, status) {
+        Object.assign(state.layout, status)
+    },
     setUserList (state, list) {
         state.userList = list
     },
@@ -121,9 +126,6 @@ const mutations = {
     },
     setAppHeight (state, height) {
         state.appHeight = height
-    },
-    setBreadcrumbs (state, breadcrumbs) {
-        state.breadcrumbs = breadcrumbs
     },
     setTitle (state, title) {
         state.title = title

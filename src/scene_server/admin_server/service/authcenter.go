@@ -41,7 +41,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	bizs := make([]metadata.BizInst, 0)
 	bizFilter := map[string]interface{}{
 		common.BKDefaultField: map[string]interface{}{
-			common.BKDBNE: 1,
+			common.BKDBNE: common.DefaultAppFlag,
 		},
 	}
 	if err := s.db.Table(common.BKTableNameBaseApp).Find(bizFilter).All(s.ctx, &bizs); err != nil {

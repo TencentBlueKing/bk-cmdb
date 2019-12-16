@@ -1,18 +1,5 @@
 import Meta from '@/router/meta'
 import { MENU_RESOURCE_INSTANCE, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
-import {
-    C_INST,
-    R_INST,
-    U_INST,
-    D_INST
-} from '@/dictionary/auth'
-
-export const OPERATION = {
-    C_INST,
-    R_INST,
-    U_INST,
-    D_INST
-}
 
 export default [{
     name: MENU_RESOURCE_INSTANCE,
@@ -22,27 +9,15 @@ export default [{
         menu: {
             relative: MENU_RESOURCE_MANAGEMENT
         },
-        auth: {
-            operation: OPERATION,
-            authScope: 'global',
-            setDynamicMeta: (to, from, app) => {
-                const modelId = to.params.objId
-                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
-                if (model) {
-                    app.$store.commit('auth/setParentMeta', {
-                        parent_layers: [{
-                            resource_type: 'model',
-                            resource_id: model.id,
-                            resource_model: modelId
-                        }]
-                    })
-                }
-            }
-        },
         checkAvailable: (to, from, app) => {
             const modelId = to.params.objId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return model && !model.bk_ispaused
+        },
+        layout: {
+            previous: {
+                name: MENU_RESOURCE_MANAGEMENT
+            }
         }
     })
 }, {
@@ -52,6 +27,16 @@ export default [{
     meta: new Meta({
         menu: {
             relative: MENU_RESOURCE_MANAGEMENT
+        },
+        layout: {
+            previous () {
+                return {
+                    name: MENU_RESOURCE_INSTANCE,
+                    params: {
+                        objId: window.CMDB_APP.$route.params.objId
+                    }
+                }
+            }
         },
         checkAvailable: (to, from, app) => {
             const modelId = to.params.objId

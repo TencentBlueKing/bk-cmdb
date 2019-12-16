@@ -36,6 +36,7 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
@@ -55,6 +56,11 @@
                     </a>
                 </template>
             </bk-table-column>
+            <cmdb-table-empty
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$authResources({ type: tableDataPermission })">
+            </cmdb-table-empty>
         </bk-table>
         <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
             <p class="tips-content">{{$t('更新确认')}}</p>
@@ -92,7 +98,11 @@
                         current: 1,
                         limit: 10
                     },
-                    sort: ''
+                    sort: '',
+                    stuff: {
+                        type: 'search',
+                        payload: {}
+                    }
                 },
                 specialObj: {
                     'host': 'bk_host_innerip',
@@ -188,6 +198,13 @@
             },
             isSource () {
                 return this.currentOption['bk_obj_id'] === this.objId
+            },
+            tableDataPermission () {
+                const map = {
+                    host: this.$OPERATION.R_HOST,
+                    biz: this.$OPERATION.R_BUSINESS
+                }
+                return map[this.currentAsstObj] || this.$OPERATION.R_INST
             }
         },
         watch: {
@@ -255,15 +272,19 @@
             setTableHeader (propertyId) {
                 const header = [{
                     id: this.instanceIdKey,
-                    name: 'ID'
+                    name: 'ID',
+                    property: 'singlechar'
                 }, {
                     id: this.instanceNameKey,
-                    name: this.instanceName
+                    name: this.instanceName,
+                    property: 'singlechar'
                 }]
                 if (propertyId && propertyId !== this.instanceNameKey) {
+                    const property = this.getProperty(propertyId) || {}
                     header.push({
                         id: propertyId,
-                        name: (this.getProperty(propertyId) || {})['bk_property_name']
+                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        property: property
                     })
                 }
                 this.table.header = header
@@ -456,7 +477,7 @@
                 const objId = this.currentAsstObj
                 const config = {
                     requestId: 'get_relation_inst',
-                    cancelPrevious: true
+                    globalPermission: false
                 }
                 let promise
                 switch (objId) {
@@ -470,7 +491,16 @@
                         promise = this.getObjInstance(objId, config)
                 }
                 promise.then(data => {
+                    this.table.stuff.type = 'search'
                     this.setTableList(data, objId)
+                }).catch(e => {
+                    console.error(e)
+                    if (e.permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission: e.permission }
+                        }
+                    }
                 })
             },
             getHostInstance (config) {
@@ -551,7 +581,7 @@
                 if (asstObjId === this.objId) {
                     data.info = data.info.filter(item => item[this.instanceIdKey] !== this.instId)
                 }
-                this.table.list = data.info.map(item => this.$tools.flattenItem(this.properties, item))
+                this.table.list = data.info
             },
             getProperty (propertyId) {
                 return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)

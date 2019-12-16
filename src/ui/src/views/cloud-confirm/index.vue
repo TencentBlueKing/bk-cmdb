@@ -32,6 +32,7 @@
                 <bk-input
                     class="confirm-filter-value cmdb-form-input fl"
                     type="text"
+                    clearable
                     v-else
                     v-model.trim="filter.text"
                     @enter="getTableData">

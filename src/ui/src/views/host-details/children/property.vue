@@ -1,7 +1,5 @@
 <template>
-    <div class="property" v-bkloading="{
-        isLoading: $loading('updateHostInfo')
-    }">
+    <div class="property">
         <div class="group"
             v-for="(group, index) in groupedProperties"
             :key="index">
@@ -10,68 +8,60 @@
                 <li class="property-item"
                     v-for="property in group.properties"
                     :key="property.id">
-                    <span class="property-name"
-                        :title="property.bk_property_name">
+                    <span class="property-name" v-overflow-tips>
                         {{property.bk_property_name}}
                     </span>
-                    <bk-popover class="property-popover"
-                        placement="bottom"
-                        :disabled="!tooltipState[property.bk_property_id]"
-                        :delay="300"
-                        :offset="-5">
-                        <span class="property-value"
-                            v-show="property !== editState.property"
-                            @mouseover="handleHover($event, property)">
-                            {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
-                        </span>
-                        <span class="popover-content" slot="content">
-                            {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
-                        </span>
-                    </bk-popover>
-                    <template v-if="isPropertyEditable(property)">
-                        <i class="property-edit icon-cc-edit"
-                            v-if="$isAuthorized(updateAuth)"
-                            v-show="property !== editState.property"
-                            @click="setEditState(property)">
-                        </i>
-                        <i class="property-edit icon-cc-edit disabled"
-                            v-else
-                            v-cursor="{
-                                active: true,
-                                auth: [updateAuth]
-                            }">
-                        </i>
-                        <div class="property-form" v-if="property === editState.property">
-                            <component class="form-component"
-                                :is="`cmdb-form-${property.bk_property_type}`"
-                                :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
-                                :options="property.option || []"
-                                :data-vv-name="property.bk_property_id"
-                                :data-vv-as="property.bk_property_name"
-                                :placeholder="$t('请输入xx', { name: property.bk_property_name })"
-                                v-validate="$tools.getValidateRules(property)"
-                                v-model.trim="editState.value"
-                                @enter="confirm">
-                            </component>
-                            <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
-                            <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
-                            <span class="form-error"
-                                v-if="errors.has(property.bk_property_id)">
-                                {{errors.first(property.bk_property_id)}}
-                            </span>
-                        </div>
-                    </template>
-                    <template v-if="$tools.getPropertyText(property, host) !== '--' && property !== editState.property">
-                        <div class="copy-box">
-                            <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), property.bk_property_id)"></i>
-                            <transition name="fade">
-                                <span class="copy-tips"
-                                    :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
-                                    v-if="showCopyTips === property.bk_property_id">
-                                    {{$t('复制成功')}}
+                    <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
+                        v-overflow-tips
+                        v-show="property !== editState.property">
+                        {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
+                    </span>
+                    <template v-if="!loadingState.includes(property)">
+                        <template v-if="isPropertyEditable(property)">
+                            <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;" :auth="updateAuthResources" v-show="property !== editState.property">
+                                <bk-button slot-scope="{ disabled }"
+                                    text
+                                    theme="primary"
+                                    class="property-edit-btn"
+                                    :disabled="disabled"
+                                    @click="setEditState(property)">
+                                    <i class="property-edit icon-cc-edit"></i>
+                                </bk-button>
+                            </cmdb-auth>
+                            <div class="property-form" v-if="property === editState.property">
+                                <component class="form-component"
+                                    :is="`cmdb-form-${property.bk_property_type}`"
+                                    :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
+                                    :options="property.option || []"
+                                    :data-vv-name="property.bk_property_id"
+                                    :data-vv-as="property.bk_property_name"
+                                    :placeholder="getPlaceholder(property)"
+                                    :auto-check="false"
+                                    v-validate="$tools.getValidateRules(property)"
+                                    v-model.trim="editState.value"
+                                    :ref="`component-${property.bk_property_id}`"
+                                    @enter="confirm">
+                                </component>
+                                <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
+                                <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                                <span class="form-error"
+                                    v-if="errors.has(property.bk_property_id)">
+                                    {{errors.first(property.bk_property_id)}}
                                 </span>
-                            </transition>
-                        </div>
+                            </div>
+                        </template>
+                        <template v-if="$tools.getPropertyText(property, host) !== '--' && property !== editState.property">
+                            <div class="copy-box">
+                                <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), property.bk_property_id)"></i>
+                                <transition name="fade">
+                                    <span class="copy-tips"
+                                        :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
+                                        v-if="showCopyTips === property.bk_property_id">
+                                        {{$t('复制成功')}}
+                                    </span>
+                                </transition>
+                            </div>
+                        </template>
                     </template>
                 </li>
             </ul>
@@ -95,7 +85,7 @@
                     property: null,
                     value: null
                 },
-                tooltipState: {},
+                loadingState: [],
                 showCopyTips: false
             }
         },
@@ -105,15 +95,19 @@
             host () {
                 return this.info.host || {}
             },
-            updateAuth () {
+            updateAuthResources () {
                 const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
-                    return this.$OPERATION.U_RESOURCE_HOST
+                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
                 }
-                return this.$OPERATION.U_HOST
+                return this.$authResources({ type: this.$OPERATION.U_HOST })
             }
         },
         methods: {
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             isPropertyEditable (property) {
                 return property.editable && !property.bk_isapi
             },
@@ -121,14 +115,20 @@
                 const value = this.host[property.bk_property_id]
                 this.editState.value = value === null ? '' : value
                 this.editState.property = property
+                this.$nextTick(() => {
+                    const component = this.$refs[`component-${property.bk_property_id}`]
+                    component[0] && component[0].focus && component[0].focus()
+                })
             },
             async confirm () {
+                const { property, value } = this.editState
                 try {
                     const isValid = await this.$validator.validateAll()
                     if (!isValid) {
                         return false
                     }
-                    const { property, value } = this.editState
+                    this.loadingState.push(property)
+                    this.exitForm()
                     await this.$store.dispatch('hostUpdate/updateHost', {
                         params: this.$injectMetadata({
                             [property.bk_property_id]: value,
@@ -141,22 +141,15 @@
                     this.$store.commit('hostDetails/updateInfo', {
                         [property.bk_property_id]: value
                     })
-                    this.exitForm()
+                    this.loadingState = this.loadingState.filter(exist => exist !== property)
                 } catch (e) {
                     console.error(e)
+                    this.loadingState = this.loadingState.filter(exist => exist !== property)
                 }
             },
             exitForm () {
                 this.editState.property = null
                 this.editState.value = null
-            },
-            handleHover (event, property) {
-                const target = event.target
-                const range = document.createRange()
-                range.selectNode(target)
-                const rangeWidth = range.getBoundingClientRect().width
-                const threshold = Math.max(rangeWidth - target.offsetWidth, target.scrollWidth - target.offsetWidth)
-                this.$set(this.tooltipState, property.bk_property_id, threshold > 0.5)
             },
             handleCopy (copyText, propertyId) {
                 this.$copyText(copyText).then(() => {
@@ -218,7 +211,7 @@
             }
             .property-name {
                 position: relative;
-                width: 150px;
+                width: 160px;
                 line-height: 32px;
                 padding: 0 16px 0 36px;
                 font-size: 14px;
@@ -232,7 +225,7 @@
             }
             .property-value {
                 margin: 6px 0 0 4px;
-                max-width: 296px;
+                max-width: 286px;
                 font-size: 14px;
                 color: #313237;
                 overflow:hidden;
@@ -241,18 +234,27 @@
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
+                &.is-loading {
+                    font-size: 0;
+                    &:before {
+                        content: "";
+                        display: inline-block;
+                        width: 16px;
+                        height: 16px;
+                        margin: 2px 0;
+                        background-image: url("../../../assets/images/icon/loading.svg");
+                    }
+                }
+            }
+            .property-edit-btn {
+                height: auto;
+                font-size: 0;
             }
             .property-edit {
-                opacity: 0;
-                margin: 8px 0 0 8px;
                 font-size: 16px;
-                color: #3c96ff;
-                cursor: pointer;
+                opacity: 0;
                 &:hover {
                     opacity: .8;
-                }
-                &.disabled {
-                    color: #ccc;
                 }
             }
             .property-copy {
@@ -291,18 +293,6 @@
                 }
             }
         }
-    }
-    .property-popover {
-        display: inline-block;
-        /deep/ .bk-tooltip-ref {
-            outline: none;
-        }
-    }
-    .popover-content {
-        display: inline-block;
-        max-width: 300px;
-        white-space: normal;
-        word-break: break-all;
     }
     .property-form {
         font-size: 0;
@@ -349,7 +339,7 @@
         .form-component {
             display: inline-block;
             vertical-align: middle;
-            width: 270px;
+            width: 260px;
             margin: 0 4px 0 0;
             &.bool {
                 width: 42px;

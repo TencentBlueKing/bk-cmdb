@@ -183,9 +183,35 @@ func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, temp
 	return &ret.Data, nil
 }
 
-func (p *process) GetServiceTemplateDetail(ctx context.Context, h http.Header, templateID int64) (*metadata.ServiceTemplateDetail, errors.CCErrorCoder) {
-	ret := new(metadata.OneServiceTemplateDetailResult)
-	subPath := fmt.Sprintf("/find/process/service_template/%d/detail", templateID)
+func (p *process) ListServiceTemplateDetail(ctx context.Context, h http.Header, bizID int64, templateIDs ...int64) (metadata.MultipleServiceTemplateDetail, errors.CCErrorCoder) {
+	ret := new(metadata.MultipleServiceTemplateDetailResult)
+	subPath := fmt.Sprintf("/findmany/process/service_template/detail/bk_biz_id/%d", bizID)
+
+	option := map[string]interface{}{
+		"service_template_ids": templateIDs,
+	}
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("ListServiceTemplateDetail failed, http request failed, err: %+v", err)
+		return ret.Data, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return ret.Data, errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}
+
+func (p *process) GetServiceTemplateWithStatistics(ctx context.Context, h http.Header, templateID int64) (*metadata.ServiceTemplateWithStatistics, errors.CCErrorCoder) {
+	ret := new(metadata.OneServiceTemplateWithStatisticsResult)
+	subPath := fmt.Sprintf("/find/process/service_template/%d/with_statistics", templateID)
 
 	err := p.client.Get().
 		WithContext(ctx).
@@ -694,7 +720,7 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 
 func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder) {
 	ret := new(metadata.BusinessDefaultSetModuleInfoResult)
-	subPath := "/find/process/business_default_set_module_info"
+	subPath := fmt.Sprintf("/find/process/business_default_set_module_info/%d", bizID)
 
 	emptyInfo := metadata.BusinessDefaultSetModuleInfo{}
 	err := p.client.Get().

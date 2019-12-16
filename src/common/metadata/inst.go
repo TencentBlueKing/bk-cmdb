@@ -19,38 +19,52 @@ import (
 	"configcenter/src/common/util"
 )
 
+// SetInst contains partial fields of a real set
 type SetInst struct {
-	SetID     int64  `bson:"bk_set_id"`
-	SetName   string `bson:"bk_set_name"`
-	SetStatus string `bson:"bk_service_status"`
-	SetEnv    string `bson:"bk_set_env"`
+	BizID         int64  `bson:"bk_biz_id" json:"bk_biz_id" mapstructure:"bk_biz_id"`
+	SetID         int64  `bson:"bk_set_id" json:"bk_set_id" mapstructure:"bk_set_id"`
+	SetName       string `bson:"bk_set_name" json:"bk_set_name" mapstructure:"bk_set_name"`
+	SetStatus     string `bson:"bk_service_status" json:"bk_service_status" mapstructure:"bk_service_status"`
+	SetEnv        string `bson:"bk_set_env" json:"bk_set_env" mapstructure:"bk_set_env"`
+	SetTemplateID int64  `bson:"set_template_id" json:"set_template_id" mapstructure:"set_template_id"`
+    ParentID  int64  `bson:"bk_parent_id" json:"bk_parent_id" mapstructure:"bk_parent_id"`
+	
+	Creator         string `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
+	CreateTime      Time   `field:"create_time" json:"create_time,omitempty" bson:"create_time" mapstructure:"create_time"`
+	LastTime        Time   `field:"last_time" json:"last_time,omitempty" bson:"last_time" mapstructure:"last_time"`
+	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 }
 
+// ModuleInst contains partial fields of a real module
 type ModuleInst struct {
-	BizID             int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id"`
-	ModuleID          int64  `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id"`
-	ModuleName        string `bson:"bk_module_name" json:"bk_module_name" field:"bk_module_name"`
-	SupplierAccount   string `bson:"bk_supplier_account" json:"bk_supplier_account" field:"bk_supplier_account"`
-	ServiceCategoryID int64  `bson:"service_category_id" json:"service_category_id" field:"service_category_id"`
-	ServiceTemplateID int64  `bson:"service_template_id" json:"service_template_id" field:"service_template_id"`
+	BizID             int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
+	ModuleID          int64  `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id" mapstructure:"bk_module_id"`
+	ModuleName        string `bson:"bk_module_name" json:"bk_module_name" field:"bk_module_name" mapstructure:"bk_module_name"`
+	SupplierAccount   string `bson:"bk_supplier_account" json:"bk_supplier_account" field:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	ServiceCategoryID int64  `bson:"service_category_id" json:"service_category_id" field:"service_category_id" mapstructure:"service_category_id"`
+	ServiceTemplateID int64  `bson:"service_template_id" json:"service_template_id" field:"service_template_id" mapstructure:"service_template_id"`
+	ParentID          int64  `bson:"bk_parent_id" json:"bk_parent_id" field:"bk_parent_id" mapstructure:"bk_parent_id"`
+	SetTemplateID     int64  `bson:"set_template_id" json:"set_template_id" field:"set_template_id" mapstructure:"set_template_id"`
+	Default           int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
 }
 
 type BizInst struct {
-	BizID           int64  `bson:"bk_biz_id"`
-	BizName         string `bson:"bk_biz_name"`
-	SupplierID      int64  `bson:"bk_supplier_id"`
-	SupplierAccount string `bson:"bk_supplier_account"`
+	BizID           int64  `bson:"bk_biz_id" mapstructure:"bk_biz_id"`
+	BizName         string `bson:"bk_biz_name" mapstructure:"bk_biz_name"`
+	SupplierID      int64  `bson:"bk_supplier_id" mapstructure:"bk_supplier_id"`
+	SupplierAccount string `bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 }
 
 type BizBasicInfo struct {
-	BizID   int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id"`
-	BizName string `bson:"bk_biz_name" json:"bk_biz_name" field:"bk_biz_name"`
+	BizID   int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
+	BizName string `bson:"bk_biz_name" json:"bk_biz_name" field:"bk_biz_name" mapstructure:"bk_biz_name"`
 }
 
 type CloudInst struct {
 	CloudID   int64  `bson:"bk_cloud_id"`
 	CloudName string `bson:"bk_cloud_name"`
 }
+
 type ProcessInst struct {
 	ProcessID       int64  `json:"bk_process_id" bson:"bk_process_id"`               // 进程名称
 	ProcessName     string `json:"bk_process_name" bson:"bk_process_name"`           // 进程名称
@@ -116,6 +130,21 @@ type HostIdentModule struct {
 	ModuleName string `json:"bk_module_name"`    // 所属模块(bk_module_name)：			字符串（最大长度25）
 	SetStatus  string `json:"bk_service_status"` // 集群服务状态（bk_set_status）			数字
 	SetEnv     string `json:"bk_set_env"`        // 环境类型（bk_set_type）					数字
+	Layer      *Layer `json:"layer"`             // 自定义层级
+}
+
+type Layer struct {
+	InstID   int64  `json:"bk_inst_id"`
+	InstName string `json:"bk_inst_name"`
+	ObjID    string `json:"bk_obj_id"`
+	Child    *Layer `json:"child"`
+}
+
+type MainlineInstInfo struct {
+	InstID   int64  `json:"bk_inst_id" bson:"bk_inst_id"`
+	InstName string `json:"bk_inst_name" bson:"bk_inst_name"`
+	ObjID    string `json:"bk_obj_id" bson:"bk_obj_id"`
+	ParentID int64  `json:"bk_parent_id" bson:"bk_parent_id"`
 }
 
 // SearchIdentifierParam defines the param

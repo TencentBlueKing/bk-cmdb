@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -40,6 +42,10 @@ func (br *BaseResp) Error() error {
 		return nil
 	}
 	return errors.New(br.Code, br.ErrMsg)
+}
+
+func (br *BaseResp) ToString() string {
+	return fmt.Sprintf("code:%d, message:%s", br.Code, br.ErrMsg)
 }
 
 // Permission  describes all the authorities that a user

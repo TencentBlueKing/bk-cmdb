@@ -85,7 +85,7 @@ func (ps *ProcServer) GetServiceTemplateDetail(ctx *rest.Contexts) {
 		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
 		return
 	}
-	templateDetail, err := ps.CoreAPI.CoreService().Process().GetServiceTemplateDetail(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	templateDetail, err := ps.CoreAPI.CoreService().Process().GetServiceTemplateWithStatistics(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get service template failed, err: %v", err)
 		return
@@ -147,7 +147,7 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		}
 	}
 
-	if input.Page.Limit >= common.BKMaxPageLimit {
+	if input.Page.Limit > common.BKMaxPageSize {
 		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
 		return
 	}
@@ -205,7 +205,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 		}
 	}
 
-	if input.Page.Limit >= common.BKMaxPageLimit {
+	if input.Page.Limit > common.BKMaxPageSize {
 		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
 		return
 	}
@@ -248,8 +248,8 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 	for _, serviceTemplate := range listResult.Info {
 		// process templates reference count
 		option := &metadata.ListProcessTemplatesOption{
-			BusinessID:        bizID,
-			ServiceTemplateID: serviceTemplate.ID,
+			BusinessID:         bizID,
+			ServiceTemplateIDs: []int64{serviceTemplate.ID},
 		}
 		processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {

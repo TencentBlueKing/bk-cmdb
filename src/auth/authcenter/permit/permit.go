@@ -78,6 +78,8 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return true
 	case rsc.Type == meta.ProcessServiceTemplate && IsReadAction(rsc.Action):
 		return true
+	case rsc.Type == meta.SetTemplate && IsReadAction(rsc.Action):
+		return true
 	case rsc.Type == meta.ProcessServiceCategory && IsReadAction(rsc.Action):
 		return true
 	case rsc.Type == meta.ProcessTemplate && IsReadAction(rsc.Action):
@@ -93,8 +95,12 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return true
 	case rsc.Type == meta.MainlineModelTopology && IsReadAction(rsc.Action):
 		return true
-    case rsc.Type == meta.HostFavorite:
-        return true
+	case rsc.Type == meta.OperationStatistic && IsReadAction(rsc.Action):
+		return true
+	case rsc.Type == meta.HostFavorite:
+		return true
+	case rsc.Type == meta.InstallBK:
+		return true
 	default:
 		return false
 	}

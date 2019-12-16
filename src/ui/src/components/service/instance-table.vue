@@ -5,19 +5,20 @@
                 <i class="bk-icon icon-down-shape" v-if="localExpanded"></i>
                 <i class="bk-icon icon-right-shape" v-else></i>
                 {{name}}
-                <i class="bk-icon icon-exclamation" v-if="showTips && !processList.length" v-bk-tooltips="tooltips"></i>
             </div>
             <div class="fr">
+                <span v-if="topology" class="service-topology">{{topology}}</span>
                 <i class="bk-icon icon-close" v-if="deletable" @click.stop="handleDelete"></i>
             </div>
         </div>
         <bk-table
             v-show="localExpanded"
-            :data="processFlattenList">
+            :data="processList">
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row, $index }">
@@ -31,14 +32,14 @@
                     </a>
                 </template>
             </bk-table-column>
-            <template slot="empty">
+            <template slot="empty" v-if="addible">
                 <button class="add-process-button text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
                     <span>{{$t('添加进程')}}</span>
                 </button>
             </template>
         </bk-table>
-        <div class="add-process-options" v-if="!sourceProcesses.length && processList.length">
+        <div class="add-process-options" v-if="localExpanded && addible && !sourceProcesses.length && processList.length">
             <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
                 <span>{{$t('添加进程')}}</span>
@@ -103,9 +104,13 @@
                     return []
                 }
             },
-            showTips: {
+            addible: {
                 type: Boolean,
-                default: false
+                default: true
+            },
+            topology: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -145,14 +150,12 @@
                     if (property) {
                         header.push({
                             id: property.bk_property_id,
-                            name: property.bk_property_name
+                            name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                            property
                         })
                     }
                 })
                 return header
-            },
-            processFlattenList () {
-                return this.$tools.flattenList(this.processProperties, this.processList)
             },
             immutableProperties () {
                 const properties = []
@@ -182,7 +185,7 @@
                 if (this.processForm.type === 'create') {
                     return false
                 }
-                return !property.editable || property.isreadonly
+                return !property.editable || property.isreadonly || this.immutableProperties.includes('bind_ip')
             }
         },
         watch: {
@@ -249,7 +252,7 @@
             },
             async getInstanceIpByHost (hostId) {
                 try {
-                    const instanceIpMap = this.$store.state.businessTopology.instanceIpMap
+                    const instanceIpMap = this.$store.state.businessHost.instanceIpMap
                     let res = null
                     if (instanceIpMap.hasOwnProperty(hostId)) {
                         res = instanceIpMap[hostId]
@@ -260,7 +263,7 @@
                                 requestId: 'getInstanceIpByHost'
                             }
                         })
-                        this.$store.commit('businessTopology/setInstanceIp', { hostId, res })
+                        this.$store.commit('businessHost/setInstanceIp', { hostId, res })
                     }
                     this.processBindIp = res.options.map(ip => {
                         return {
@@ -313,7 +316,7 @@
                 this.processForm.show = true
 
                 this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.processProperties, this.processForm.instance)['bind_ip']
+                    this.bindIp = this.$tools.getInstFormValues(this.processProperties, this.processForm.instance, false)['bind_ip']
                 })
             },
             handleDeleteProcess (rowIndex) {
@@ -347,6 +350,13 @@
             background: #f0b659;
             border-radius: 50%;
             transform: scale(.6);
+        }
+        .service-topology {
+            padding: 0 5px;
+            line-height: 40px;
+            font-size: 12px;
+            color: $textColor;
+            cursor: default;
         }
     }
     .add-process-options {

@@ -582,10 +582,14 @@ func (assoc *association) SearchType(params types.ContextParams, request *metada
 
 func (assoc *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
 
-	rsp, err := assoc.clientSet.CoreService().Association().CreateAssociationType(context.Background(), params.Header, &metadata.CreateAssociationKind{Data: *request})
+	rsp, err := assoc.clientSet.CoreService().Association().CreateAssociationType(params.Context, params.Header, &metadata.CreateAssociationKind{Data: *request})
 	if err != nil {
 		blog.Errorf("create association type failed, kind id: %s, err: %v, rid: %s", request.AssociationKindID, err, params.ReqID)
 		return nil, params.Err.New(common.CCErrTopoCreateAssocKindFailed, err.Error())
+	}
+	if rsp.Result == false || rsp.Code != 0 {
+		blog.ErrorJSON("create association type failed, request: %s, response: %s, rid: %s", request, rsp, params.ReqID)
+		return nil, errors.NewCCError(rsp.Code, rsp.ErrMsg)
 	}
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)

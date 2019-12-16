@@ -188,6 +188,7 @@ type ObjectClsDes struct {
 type InnerModule struct {
 	ModuleID   int64  `json:"bk_module_id" field:"bk_module_id"`
 	ModuleName string `json:"bk_module_name" field:"bk_module_name"`
+	Default    int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
 }
 
 type InnterAppTopo struct {

@@ -20,12 +20,13 @@ const state = {
 const getters = {
     business: state => state.business,
     bizId: state => state.bizId,
+    currentBusiness: state => state.authorizedBusiness.find(business => business.bk_biz_id === state.bizId),
     authorizedBusiness: state => state.authorizedBusiness
 }
 
 const actions = {
-    getAuthorizedBusiness ({ commit }, config = {}) {
-        return $http.get('biz/with_reduced', config).then(data => {
+    getAuthorizedBusiness ({ commit }, sort, config = {}) {
+        return $http.get(`biz/with_reduced${sort ? '?sort=' + sort : ''}`, config).then(data => {
             commit('setAuthorizedBusiness', data.info)
             return data.info
         })
@@ -102,7 +103,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`biz/search/${rootGetters.supplierAccount}`, params, config)
+        return $http.post(`${window.API_HOST}biz/search/web`, params, config)
     },
 
     searchBusinessById ({ rootGetters }, { bizId, config }) {
@@ -120,6 +121,9 @@ const actions = {
         }, config).then(data => {
             return data.info[0] || {}
         })
+    },
+    getFullAmountBusiness ({ commit }, config = {}) {
+        return $http.get('biz/simplify', config)
     }
 }
 

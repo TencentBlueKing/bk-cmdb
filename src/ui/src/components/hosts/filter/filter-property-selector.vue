@@ -161,7 +161,7 @@
     }
     .property-selector {
         margin: 22px 0 0 0;
-        max-height: 310px;
+        max-height: calc((100vh * 0.3) + 0px);
         @include scrollbar-y;
     }
     .group {

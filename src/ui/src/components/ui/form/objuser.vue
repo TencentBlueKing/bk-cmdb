@@ -6,15 +6,15 @@
         @click="handleClick">
         <!--eslint-enable-->
         <div class="objuser-layout"
-            v-bkloading="{ isLoading: $loading('get_user_list') }"
             @contextmenu="handleContextmenu($event)">
+            <i class="objuser-loading" v-if="loading"></i>
             <div class="objuser-container"
                 ref="container"
                 :class="{
-                    focus,
+                    focus: isFocus,
                     ellipsis,
                     disabled: localDisabled,
-                    placeholder: !localValue.length && !focus
+                    placeholder: !localValue.length && !isFocus
                 }"
                 :data-placeholder="localPlaceholder">
                 <span class="objuser-selected"
@@ -29,7 +29,7 @@
                 <span ref="input" class="objuser-input"
                     spellcheck="false"
                     contenteditable
-                    v-show="focus"
+                    v-show="isFocus"
                     @click.stop
                     @input="handleInput"
                     @blur="handleBlur"
@@ -38,7 +38,7 @@
                 </span>
             </div>
             <ul class="suggestion-list" ref="suggestionList"
-                v-show="focus && matchedUsers.length"
+                v-show="isFocus && matchedUsers.length"
                 :class="suggestionListPostion">
                 <li class="suggestion-item"
                     v-for="(user, index) in matchedUsers"
@@ -93,7 +93,7 @@
                 inputIndex: 0,
                 highlightIndex: -1,
                 shouldUpdate: true,
-                focus: false,
+                isFocus: false,
                 ellipsis: false,
                 contextmenu: false,
                 exception: false,
@@ -119,8 +119,11 @@
                 }
                 return []
             },
+            loading () {
+                return this.$loading('get_user_list')
+            },
             localDisabled () {
-                return this.disabled || this.exception
+                return this.disabled || this.exception || this.loading
             },
             localPlaceholder () {
                 if (this.exception) {
@@ -132,8 +135,8 @@
             }
         },
         watch: {
-            focus (focus) {
-                if (this.focus) {
+            isFocus (isFocus) {
+                if (this.isFocus) {
                     this.ellipsis = false
                 } else {
                     this.reset()
@@ -270,7 +273,7 @@
                 if (option.reset) {
                     this.reset()
                 }
-                this.focus = true
+                this.isFocus = true
                 this.shouldUpdate = true
                 this.$nextTick(() => {
                     const $input = this.$refs.input
@@ -365,7 +368,7 @@
                 if (!this.shouldUpdate) {
                     return true
                 }
-                this.focus = false
+                this.isFocus = false
                 if (this.inputValue) {
                     if (!this.exclude) {
                         if (!this.localValue.includes(this.inputValue)) {
@@ -402,7 +405,7 @@
                 })
             },
             handleContextmenu (event) {
-                this.focus = false
+                this.isFocus = false
                 if (!this.localValue.length) {
                     return false
                 }
@@ -502,6 +505,9 @@
                 this.highlightIndex = -1
                 this.inputValue = ''
                 this.$refs.input.innerHTML = ''
+            },
+            focus () {
+                this.handleClick()
             }
         }
     }
@@ -515,6 +521,15 @@
         .objuser-layout {
             position: relative;
             min-height: 100%;
+            .objuser-loading {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                width: 16px;
+                height: 16px;
+                background-image: url("../../../assets/images/icon/loading.svg");
+                z-index: 1;
+            }
             .objuser-container {
                 position: relative;
                 min-width: 100%;

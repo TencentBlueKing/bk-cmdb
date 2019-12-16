@@ -16,13 +16,50 @@ import (
 	"context"
 	"fmt"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
-func (ps *parseStream) getModel(cond mapstr.MapStr) ([]metadata.Object, error) {
+// 注意: 最后返回的模型不一定属于 possibleBizID 对应的业务， 可能是个公有模型, 也可能是私有模型(业务下模型)
+// 背景: possibleBizID 是前端传递过来的请求参数，可能只是用于给公有模型创建一个业务私有字段
+// 取名 possibleBizID 是为了显式告诉调用方获取到的模型不一定是私有模型
+func (ps *parseStream) getPublicOrBizModelByObjectID(possibleBizID int64, objectID string) (metadata.Object, error) {
+	filter := map[string]interface{}{
+		common.BKObjIDField: objectID,
+	}
+	if possibleBizID == 0 {
+		filter[metadata.MetadataBizField] = mapstr.MapStr{common.BKDBExists: false}
+	} else {
+		filter[common.BKDBOR] = []map[string]interface{}{
+			{
+				metadata.MetadataBizField: mapstr.MapStr{common.BKDBExists: false},
+			}, {
+				metadata.MetadataBizField: possibleBizID,
+			},
+		}
+	}
+	return ps.getOneModel(filter)
+}
+
+func (ps *parseStream) getOneModel(cond mapstr.MapStr) (metadata.Object, error) {
+	model := metadata.Object{}
+	models, err := ps.searchModels(cond)
+	if err != nil {
+		return model, err
+	}
+	if len(models) == 0 {
+		return model, fmt.Errorf("model [%+v] not found", cond)
+	}
+	if len(models) > 1 {
+		return model, fmt.Errorf("model [%+v] not found", cond)
+	}
+	return models[0], nil
+}
+
+func (ps *parseStream) searchModels(cond mapstr.MapStr) ([]metadata.Object, error) {
 	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModel(context.Background(), ps.RequestCtx.Header,
 		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
@@ -142,4 +179,81 @@ func (ps *parseStream) getInstAssociation(cond mapstr.MapStr) (metadata.InstAsst
 	}
 
 	return asst.Data.Info[0], nil
+}
+
+func (ps *parseStream) getInstanceTypeByObject(objID string) (meta.ResourceType, error) {
+	switch objID {
+	case common.BKInnerObjIDPlat:
+		return meta.Plat, nil
+	case common.BKInnerObjIDHost:
+		return meta.HostInstance, nil
+	case common.BKInnerObjIDModule:
+		return meta.ModelModule, nil
+	case common.BKInnerObjIDSet:
+		return meta.ModelSet, nil
+	case common.BKInnerObjIDApp:
+		return meta.Business, nil
+	case common.BKInnerObjIDProc:
+		return meta.Process, nil
+	}
+	isMainline, err := ps.isMainlineModel(objID)
+	if err != nil {
+		return "", err
+	}
+	if isMainline {
+		return meta.MainlineInstance, nil
+	}
+	return meta.ModelInstance, nil
+}
+
+func (ps *parseStream) getOneClassification(cond mapstr.MapStr) (metadata.Classification, error) {
+	classification := metadata.Classification{}
+	classifications, err := ps.getClassification(cond)
+	if err != nil {
+		return classification, err
+	}
+	if len(classifications) <= 0 {
+		return classification, fmt.Errorf("classification [%+v] not found", cond)
+	}
+	if len(classifications) > 1 {
+		return classification, fmt.Errorf("get multiple classification with [%+v]", cond)
+	}
+	return classifications[0], nil
+}
+
+func (ps *parseStream) getClassification(cond mapstr.MapStr) ([]metadata.Classification, error) {
+	classificationResult, err := ps.engine.CoreAPI.CoreService().Model().ReadModelClassification(context.Background(), ps.RequestCtx.Header,
+		&metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		return nil, err
+	}
+
+	if !classificationResult.Result {
+		return nil, errors.New(classificationResult.Code, classificationResult.ErrMsg)
+	}
+	if len(classificationResult.Data.Info) <= 0 {
+		return nil, fmt.Errorf("classification [%+v] not found", cond)
+	}
+
+	return classificationResult.Data.Info, nil
+}
+
+func (ps *parseStream) getModelUnique(cond mapstr.MapStr) (metadata.ObjectUnique, error) {
+	unique := metadata.ObjectUnique{}
+	filter := metadata.QueryCondition{Condition: cond}
+	modelUniqueResult, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), ps.RequestCtx.Header, filter)
+	if err != nil {
+		return unique, err
+	}
+
+	if !modelUniqueResult.Result {
+		return unique, errors.New(modelUniqueResult.Code, modelUniqueResult.ErrMsg)
+	}
+	if len(modelUniqueResult.Data.Info) <= 0 {
+		return unique, fmt.Errorf("model unique [%+v] not found", cond)
+	}
+	if len(modelUniqueResult.Data.Info) > 1 {
+		return unique, fmt.Errorf("get multiple model unique with [%+v]", cond)
+	}
+	return modelUniqueResult.Data.Info[0], nil
 }

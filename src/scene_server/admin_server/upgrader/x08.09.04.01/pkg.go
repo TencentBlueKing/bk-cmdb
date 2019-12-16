@@ -30,11 +30,6 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x08.09.04.01] updateSystemProperty error  %s", err.Error())
 		return err
 	}
-	err = updateIcon(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x08.09.04.01] updateIcon error  %s", err.Error())
-		return err
-	}
 	err = fixesProcess(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade x08.09.04.01] fixesProcess error  %s", err.Error())
