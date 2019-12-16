@@ -13,6 +13,7 @@
 package hostsnap
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"fmt"
 	"net/http"
@@ -26,7 +27,6 @@ import (
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	dcUtil "configcenter/src/scene_server/datacollection/datacollection/middleware"
 	"configcenter/src/storage/dal"
@@ -103,11 +103,6 @@ func (h *HostSnap) Analyze(mesg string) error {
 		blog.Errorf("[data-collection][hostsnap] save snapshot %s to redis failed: %s", common.RedisSnapKeyPrefix+hostIdStr, err.Error())
 	}
 
-	preData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostIdStr)
-	if err != nil {
-		blog.Errorf("[data-collection][hostsnap] get host failed, fail to create audit log, err: %v", err)
-		return fmt.Errorf("get host error: %v", err)
-	}
 	innerIp, ok := host.get(common.BKHostInnerIPField).(string)
 	if !ok {
 		blog.Infof("[data-collection][hostsnap] innerip is empty, continue, %s", val.String())
@@ -118,30 +113,32 @@ func (h *HostSnap) Analyze(mesg string) error {
 		blog.Warnf("[data-collection][hostsnap] outerip is not string, %s", val.String())
 	}
 	setter := parseSetter(&val, innerIp, outIp)
-	if needToUpdate(setter, host) {
-		cond := mapstr.New()
-		cond.Set(common.BKHostIDField, hostID)
-		opt := &metadata.UpdateOption{
-			Condition: cond,
-			Data:      mapstr.NewFromMap(setter),
-		}
-		res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.httpHeader, common.BKInnerObjIDHost, opt)
-		if err != nil {
-			blog.Errorf("Update host http do error, err: %v,input:%+v,param:%+v", err, data, opt)
-			return err
-		}
-		if !res.Result {
-			blog.Errorf("failed to update host, error msg: %v", res.ErrMsg)
-			return err
-		}
-		copyVal(setter, host)
+	if !needToUpdate(setter, host) {
+		return nil
 	}
+
+	cond := mapstr.New()
+	cond.Set(common.BKHostIDField, hostID)
+	opt := &metadata.UpdateOption{
+		Condition: cond,
+		Data:      mapstr.NewFromMap(setter),
+	}
+	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.httpHeader, common.BKInnerObjIDHost, opt)
+	if err != nil {
+		blog.Errorf("Update host http do error, err: %v,input:%+v,param:%+v", err, data, opt)
+		return err
+	}
+	if !res.Result {
+		blog.Errorf("failed to update host, error msg: %v", res.ErrMsg)
+		return err
+	}
+	defer copyVal(setter, host)
 
 	// add auditLog
 	curData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostIdStr)
 	if err != nil {
-		blog.Errorf("[data-collection][hostsnap] get host failed, fail to create audit log, err: %v", err)
-		return fmt.Errorf("get host failed, fail to create audit log error: %v", err)
+		blog.Errorf("GetHostByID http response error, err code:%d, err msg: %s, hostID: %s", curData.Code, curData.ErrMsg, hostIdStr)
+		return err
 	}
 	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostIdInt64}}
 	moduleHost, err := h.CoreAPI.CoreService().Host().GetHostModuleRelation(h.ctx, h.httpHeader, input)
@@ -168,7 +165,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 		Model: common.BKInnerObjIDHost,
 		Content: metadata.Content{
 			CurData: curData.Data,
-			PreData: preData.Data,
+			PreData: host.data,
 			Headers: auditHeader,
 		},
 		OpDesc: "update " + common.BKInnerObjIDHost,
@@ -183,7 +180,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 	}
 	if !result.Result {
 		blog.Errorf("create host audit log failed, err code:%d, err msg:%s", result.Code, result.ErrMsg)
-		return err
+		return fmt.Errorf("create host audit log failed, err msg: %s", result.ErrMsg)
 	}
 
 	return nil
