@@ -146,8 +146,11 @@ type ListHosts struct {
 	Page               BasePage                  `json:"page"`
 }
 
-func (option ListHosts) Validate() (string, error) {
-	if key, err := option.Page.Validate(); err != nil {
+// Validate whether ListHosts is valid
+// errKey: invalid key
+// er: detail reason why errKey in invalid
+func (option ListHosts) Validate() (errKey string, err error) {
+	if key, err := option.Page.Validate(true); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
