@@ -1,7 +1,7 @@
 <template>
     <div class="search-layout" ref="searchLayout" :style="{ 'background-color': setStyle.backgroundColor }">
         <div :class="{ 'sticky-layout': result.isShow }" :style="{ 'padding-top': (setStyle.paddingTop) + 'px' }">
-            <div class="search-bar">
+            <div class="search-bar" @keydown="handleSelectedKeywords($event)">
                 <div class="search-box" v-if="result.isShow">
                     <div :class="['search-tab', { 'is-focus': isFocus }]">
                         <span :class="['tab-item', { 'active': activeName === 'host' }]"
@@ -60,19 +60,19 @@
                                 <li :key="index" v-if="item.type === 'host'"
                                     :title="item.source.bk_host_innerip"
                                     @click="handleGoResource(item.source)">
-                                    <span class="lenovo-name">{{item.source.bk_host_innerip}}</span>
+                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_host_innerip}}</span>
                                     <span>({{$t('主机')}})</span>
                                 </li>
                                 <li :key="index" v-else-if="item.type === 'object'"
                                     :title="item.source.bk_inst_name"
                                     @click="handleGoInstace(item.source)">
-                                    <span class="lenovo-name">{{item.source.bk_inst_name}}</span>
+                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_inst_name}}</span>
                                     <span>({{getShowModelName(item.source)}})</span>
                                 </li>
                                 <li :key="index" v-else-if="item.type === 'biz'"
                                     :title="item.source.bk_biz_name"
                                     @click="handleGoBusiness(item.source)">
-                                    <span class="lenovo-name">{{item.source.bk_biz_name}}</span>
+                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_biz_name}}</span>
                                     <span>({{$t('业务')}})</span>
                                     <i class="disabled-mark" v-if="item.source.bk_data_status === 'disabled'">{{$t('已归档')}}</i>
                                 </li>
@@ -92,6 +92,7 @@
                         </div>
                         <ul class="history-list">
                             <li v-for="(history, index) in historyList"
+                                ref="historyItem"
                                 :key="index"
                                 @click="handleHistorySearch(history)">
                                 {{history}}
@@ -161,6 +162,8 @@
         },
         data () {
             return {
+                selectedStatus: false,
+                selectIndex: -1,
                 isFocus: false,
                 activeName: 'fullText',
                 toggleTips: null,
@@ -278,6 +281,7 @@
                 }
             },
             keywords (keywords) {
+                if (this.selectedStatus) return
                 if (this.query.trigger === 'input') {
                     this.query.objId = ''
                 }
@@ -290,6 +294,18 @@
                 } else {
                     this.handleHideLenovo()
                 }
+            },
+            showLenovo (flag) {
+                if (!flag) this.selectIndex = -1
+                this.$refs.lenovoItem && this.$refs.lenovoItem.forEach(item => {
+                    item.parentNode.classList.remove('selected')
+                })
+            },
+            showHistory (flag) {
+                if (!flag) this.selectIndex = -1
+                this.$refs.historyItem && this.$refs.historyItem.forEach(item => {
+                    item.classList.remove('selected')
+                })
             }
         },
         created () {
@@ -524,6 +540,7 @@
                 this.getFullTextSearch()
             },
             handleInputSearch (value) {
+                this.selectedStatus = false
                 if (value.length === 32) {
                     this.toggleTips && this.toggleTips.destroy()
                     this.toggleTips = this.$bkPopover(this.$refs.searchInput.$el, {
@@ -545,6 +562,53 @@
                 this.$refs.searchInput.$refs.input.focus()
                 this.keywords = ''
                 this.toggleTips && this.toggleTips.hide()
+            },
+            getCurrentItem (list, len, index) {
+                let item = {}
+                if (index >= len) {
+                    item = list[len - 1]
+                } else if (index < 0) {
+                    item = list[0]
+                } else {
+                    item = list[index]
+                }
+                return item
+            },
+            handleSelectedKeywords (event) {
+                const showLenovo = this.showLenovo && this.lenovoList.length
+                if (!showLenovo && !this.showHistory) return
+                this.selectedStatus = true
+                const itemList = showLenovo ? this.$refs.lenovoItem : this.$refs.historyItem
+                const len = itemList.length
+                const keyCode = event.keyCode
+                const code = {
+                    'enter': 13,
+                    'up': 38,
+                    'down': 40
+                }
+                let index = this.selectIndex
+                if (code.up === keyCode || code.down === keyCode) {
+                    if (code.up === keyCode) {
+                        index = index <= 0 ? index : index - 1
+                    } else {
+                        index = index >= len - 1 ? len - 1 : index + 1
+                    }
+                    if (index < 0) return
+                    const item = this.getCurrentItem(itemList, len, index)
+                    this.keywords = item.innerText
+                    this.selectIndex = index
+                    itemList.forEach((item, i) => {
+                        const node = showLenovo ? item.parentNode : item
+                        if (i === index) {
+                            node.classList.add('selected')
+                        } else {
+                            node.classList.remove('selected')
+                        }
+                    })
+                } else if (code.enter === keyCode && this.keywords) {
+                    this.showHistory = false
+                    this.handleShowResult()
+                }
             }
         }
     }
@@ -666,7 +730,7 @@
                     padding: 0 20px;
                     line-height: 40px;
                     cursor: pointer;
-                    &:hover {
+                    &:hover, &.selected {
                         color: #3A84FF;
                         background-color: #E1ECFF;
                     }
