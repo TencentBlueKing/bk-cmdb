@@ -83,6 +83,7 @@
     "1101059": "bk_inst_name %s is duplicate.",
     "1101060": "association kind has already been used.",
 	"1101061": "The relationship is 1:n, and multiple source model instances cannot be associated at the same time.",
+	"1101062": "There is already an association between the two instances and cannot be created repeatedly",
 	"1001060":"create model unique constrains failed",
 	"1001061":"update model unique constrains failed",
 	"1001062":"delete model unique constrains failed",
