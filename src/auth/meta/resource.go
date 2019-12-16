@@ -62,6 +62,7 @@ const (
 	InstallBK                ResourceType = "installBK"
 	SetTemplate              ResourceType = "setTemplate"
 	OperationStatistic       ResourceType = "operationStatistic" // 运营统计
+	HostApply                ResourceType = "hostApply"
 )
 
 const (

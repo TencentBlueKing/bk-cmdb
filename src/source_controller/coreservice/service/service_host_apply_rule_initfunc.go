@@ -25,4 +25,5 @@ func (s *coreService) initHostApplyRule() {
 	s.addAction(http.MethodPost, "/updatemany/host_apply_rule/bk_biz_id/{bk_biz_id}", s.BatchUpdateHostApplyRule, nil)
 	s.addAction(http.MethodPost, "/findmany/host_apply_plan/bk_biz_id/{bk_biz_id}/", s.GenerateApplyPlan, nil)
 	s.addAction(http.MethodPost, "/findmany/modules/bk_biz_id/{bk_biz_id}/host_apply_rule_related", s.SearchRuleRelatedModules, nil)
+	s.addAction(http.MethodPut, "/updatemany/host/bk_biz_id/{bk_biz_id}/update_by_host_apply", s.UpdateHostByHostApplyRule, nil)
 }

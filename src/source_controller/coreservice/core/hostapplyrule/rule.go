@@ -28,12 +28,18 @@ import (
 )
 
 type hostApplyRule struct {
-	dbProxy dal.RDB
+	dbProxy    dal.RDB
+	dependence HostApplyDependence
 }
 
-func New(dbProxy dal.RDB) core.HostApplyRuleOperation {
+type HostApplyDependence interface {
+	UpdateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+}
+
+func New(dbProxy dal.RDB, dependence HostApplyDependence) core.HostApplyRuleOperation {
 	rule := &hostApplyRule{
-		dbProxy: dbProxy,
+		dbProxy:    dbProxy,
+		dependence: dependence,
 	}
 	return rule
 }
@@ -195,16 +201,19 @@ func (p *hostApplyRule) UpdateHostApplyRule(ctx core.ContextParams, bizID int64,
 	return rule, nil
 }
 
+// DeleteHostApplyRule delete host apply rule by condition, bizID maybe 0
 func (p *hostApplyRule) DeleteHostApplyRule(ctx core.ContextParams, bizID int64, ruleIDs ...int64) errors.CCErrorCoder {
 	if len(ruleIDs) == 0 {
 		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "host_apply_rule_ids")
 	}
 	filter := map[string]interface{}{
 		common.BKOwnerIDField: ctx.SupplierAccount,
-		common.BKAppIDField:   bizID,
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBIN: ruleIDs,
 		},
+	}
+	if bizID != 0 {
+		filter[common.BKAppIDField] = bizID
 	}
 	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Delete(ctx.Context, filter); err != nil {
 		blog.Errorf("DeleteHostApplyRule failed, db remove failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
@@ -251,6 +260,7 @@ func (p *hostApplyRule) GetHostApplyRuleByAttributeID(ctx core.ContextParams, bi
 	return rule, nil
 }
 
+// ListHostApplyRule by condition, bizID maybe 0
 func (p *hostApplyRule) ListHostApplyRule(ctx core.ContextParams, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
 	result := metadata.MultipleHostApplyRuleResult{}
 	if option.Page.Limit > common.BKMaxPageSize && option.Page.Limit != common.BKNoLimit {
@@ -259,11 +269,18 @@ func (p *hostApplyRule) ListHostApplyRule(ctx core.ContextParams, bizID int64, o
 
 	filter := map[string]interface{}{
 		common.BkSupplierAccount: ctx.SupplierAccount,
-		common.BKAppIDField:      bizID,
+	}
+	if bizID != 0 {
+		filter[common.BKAppIDField] = bizID
 	}
 	if option.ModuleIDs != nil {
 		filter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,
+		}
+	}
+	if len(option.AttributeIDs) != 0 {
+		filter[common.BKAttributeIDField] = map[string]interface{}{
+			common.BKDBIN: option.AttributeIDs,
 		}
 	}
 	query := p.dbProxy.Table(common.BKTableNameHostApplyRule).Find(filter)
@@ -394,8 +411,10 @@ func matchModule(ctx context.Context, module metadata.Module, option metadata.Se
 		if ok == false {
 			return false
 		}
-		if util.CaseInsensitiveContains(module.ModuleName, strValue) {
-			return true
+		if r.Operator == querybuilder.OperatorContains {
+			if util.CaseInsensitiveContains(module.ModuleName, strValue) {
+				return true
+			}
 		}
 		return false
 	})
@@ -414,12 +433,17 @@ func matchRule(ctx context.Context, rule metadata.HostApplyRule, attribute metad
 		if r.Field != strconv.FormatInt(attribute.ID, 10) {
 			return false
 		}
+		if r.Operator == querybuilder.OperatorExist {
+			return true
+		}
 		strValue, ok := r.Value.(string)
 		if ok == false {
 			return false
 		}
-		if util.CaseInsensitiveContains(prettyValue, strValue) {
-			return true
+		if r.Operator == querybuilder.OperatorContains {
+			if util.CaseInsensitiveContains(prettyValue, strValue) {
+				return true
+			}
 		}
 		return false
 	})

@@ -340,26 +340,6 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 		return errors.New(transferHostResult.Code, transferHostResult.ErrMsg)
 	}
 
-	// update host by host apply rule
-	applyPlan := transferPlan.HostApplyPlan
-	if len(applyPlan.UpdateFields) > 0 {
-		updateOption := &metadata.UpdateOption{
-			Data: applyPlan.GetUpdateData(),
-			Condition: map[string]interface{}{
-				common.BKHostIDField: applyPlan.HostID,
-			},
-		}
-		updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
-		if err != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
-			return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if ccErr := updateResult.CCError(); ccErr != nil {
-			blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
-			return ccErr
-		}
-	}
-
 	return nil
 }
 
@@ -471,13 +451,49 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 		return transferPlans, ccErr
 	}
 	hostModules := make([]metadata.Host2Modules, 0)
+	moduleIDs := make([]int64, 0)
+	for _, item := range transferPlans {
+		moduleIDs = append(moduleIDs, item.FinalModules...)
+	}
+	moduleIDs = util.IntArrayUnique(moduleIDs)
+	moduleCondition := metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: moduleIDs,
+			},
+			common.HostApplyEnabledField: true,
+		},
+	}
+	enabledModules, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, &moduleCondition)
+	if err != nil {
+		blog.ErrorJSON("RunHostApplyOnHosts failed, ReadInstance of %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule, moduleCondition, err.Error(), rid)
+		return transferPlans, srvData.ccErr.CCError(common.CCErrCommDBSelectFailed)
+	}
+	enableModuleMap := make(map[int64]bool)
+	for _, item := range enabledModules.Data.Info {
+		module := metadata.ModuleInst{}
+		if err := mapstruct.Decode2Struct(item, &module); err != nil {
+			blog.ErrorJSON("RunHostApplyOnHosts failed, parse module from db failed, module: %s, err: %s, rid: %s", item, err.Error(), rid)
+			return transferPlans, srvData.ccErr.CCError(common.CCErrCommParseDBFailed)
+		}
+		enableModuleMap[module.ModuleID] = true
+	}
 	for _, item := range transferPlans {
 		host2Module := metadata.Host2Modules{
 			HostID:    item.HostID,
-			ModuleIDs: item.FinalModules,
+			ModuleIDs: make([]int64, 0),
+		}
+		for _, moduleID := range item.FinalModules {
+			if _, exist := enableModuleMap[moduleID]; exist == true {
+				host2Module.ModuleIDs = append(host2Module.ModuleIDs, moduleID)
+			}
 		}
 		hostModules = append(hostModules, host2Module)
 	}
+
 	planOption := metadata.HostApplyPlanOption{
 		Rules:             rules.Info,
 		HostModules:       hostModules,

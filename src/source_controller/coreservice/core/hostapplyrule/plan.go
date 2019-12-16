@@ -110,7 +110,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 			err := errors.New(common.CCErrCommNotFound, fmt.Sprintf("host[%d] not found", hostModule.HostID))
 			hostApplyPlan = metadata.OneHostApplyPlan{
 				HostID:         hostModule.HostID,
-				ExpiredHost:    host,
+				ExpectHost:     host,
 				ConflictFields: nil,
 			}
 			hostApplyPlan.SetError(err)
@@ -176,7 +176,7 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	plan := metadata.OneHostApplyPlan{
 		HostID:                  hostID,
 		ModuleIDs:               moduleIDs,
-		ExpiredHost:             host,
+		ExpectHost:              host,
 		ConflictFields:          make([]metadata.HostApplyConflictField, 0),
 		UpdateFields:            make([]metadata.HostApplyUpdateField, 0),
 		UnresolvedConflictCount: 0,
@@ -209,11 +209,8 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		}
 		attribute, exist := attributeMap[attributeID]
 		if exist == false {
-			blog.ErrorJSON("generateOneHostApplyPlan failed, attribute id filed not exist, "+
-				"attributeMap: %s, attributeID: %s, rid: %s", attributeMap, attributeID, rid)
-			err := ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAttributeIDField)
-			plan.ErrCode = err.GetCode()
-			plan.ErrMsg = err.Error()
+			blog.Infof("generateOneHostApplyPlan attribute id filed not exist, attributeID: %s, rid: %s", attributeID, rid)
+			continue
 		}
 		propertyIDField := attribute.PropertyID
 		originalValue, ok := host[propertyIDField]
@@ -259,7 +256,7 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			break
 		}
 
-		plan.ExpiredHost[propertyIDField] = firstValue
+		plan.ExpectHost[propertyIDField] = firstValue
 		plan.UpdateFields = append(plan.UpdateFields, metadata.HostApplyUpdateField{
 			AttributeID:   attributeID,
 			PropertyID:    propertyIDField,
@@ -267,5 +264,112 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		})
 	}
 
+	sort.SliceStable(plan.UpdateFields, func(i, j int) bool {
+		return plan.UpdateFields[i].PropertyID < plan.UpdateFields[j].PropertyID
+	})
+
+	sort.SliceStable(plan.ConflictFields, func(i, j int) bool {
+		return plan.ConflictFields[i].PropertyID < plan.ConflictFields[j].PropertyID
+	})
+
 	return plan, nil
+}
+
+func (p *hostApplyRule) RunHostApplyOnHosts(ctx core.ContextParams, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
+	rid := ctx.ReqID
+	result := metadata.MultipleHostApplyResult{
+		HostResults: make([]metadata.HostApplyResult, 0),
+	}
+	relationFilter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: option.HostIDs,
+		},
+	}
+	relations := make([]metadata.ModuleHost, 0)
+	if err := p.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(ctx.Context, &relations); err != nil {
+		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, relationFilter, err.Error(), rid)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	moduleIDs := make([]int64, 0)
+	for _, item := range relations {
+		moduleIDs = append(moduleIDs, item.ModuleID)
+	}
+	modules := make([]metadata.ModuleInst, 0)
+	moduleFilter := map[string]interface{}{
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: moduleIDs,
+		},
+		common.HostApplyEnabledField: true,
+	}
+	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(ctx.Context, &modules); err != nil {
+		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameBaseModule, moduleFilter, err.Error(), rid)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	enableModuleMap := make(map[int64]bool)
+	for _, module := range modules {
+		enableModuleMap[module.ModuleID] = true
+	}
+	host2Modules := make(map[int64][]int64)
+	for _, relation := range relations {
+		if _, exist := host2Modules[relation.HostID]; exist == false {
+			host2Modules[relation.HostID] = make([]int64, 0)
+		}
+		if _, exist := enableModuleMap[relation.ModuleID]; exist == false {
+			continue
+		}
+		// checkout host apply enabled status on module
+		host2Modules[relation.HostID] = append(host2Modules[relation.HostID], relation.ModuleID)
+	}
+	hostModules := make([]metadata.Host2Modules, 0)
+	for hostID, moduleIDs := range host2Modules {
+		hostModules = append(hostModules, metadata.Host2Modules{
+			HostID:    hostID,
+			ModuleIDs: moduleIDs,
+		})
+	}
+	planOption := metadata.HostApplyPlanOption{
+		HostModules: hostModules,
+	}
+	planResult, ccErr := p.GenerateApplyPlan(ctx, bizID, planOption)
+	if ccErr != nil {
+		blog.ErrorJSON("RunHostApplyOnHosts failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, relationFilter, ccErr.Error(), rid)
+		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	for _, plan := range planResult.Plans {
+		applyResult := metadata.HostApplyResult{
+			ErrorContainer: metadata.ErrorContainer{},
+			HostID:         0,
+		}
+		updateData := plan.GetUpdateData()
+		if len(updateData) == 0 {
+			result.HostResults = append(result.HostResults, applyResult)
+			continue
+		}
+
+		updateOption := metadata.UpdateOption{
+			Condition: map[string]interface{}{
+				common.BKHostIDField: plan.HostID,
+			},
+			Data: updateData,
+		}
+		_, err := p.dependence.UpdateModelInstance(ctx, common.BKInnerObjIDHost, updateOption)
+		blog.Warnf("RunHostApplyOnHosts failed, UpdateModelInstance failed, hostID: %d, updateOption: %+v, err: %+v, rid: %s", plan.HostID, updateOption, err, rid)
+		if err != nil {
+			ccErr, ok := err.(errors.CCErrorCoder)
+			if ok {
+				applyResult.SetError(ccErr)
+			} else {
+				ccErr := ctx.Error.CCError(common.CCErrHostUpdateFail)
+				applyResult.SetError(ccErr)
+			}
+		}
+		result.HostResults = append(result.HostResults, applyResult)
+	}
+
+	for _, hostResult := range result.HostResults {
+		if ccErr := hostResult.GetError(); ccErr != nil {
+			result.SetError(ccErr)
+		}
+	}
+	return result, result.GetError()
 }

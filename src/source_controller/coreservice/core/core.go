@@ -277,6 +277,7 @@ type HostApplyRuleOperation interface {
 	GenerateApplyPlan(ctx ContextParams, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder)
 	SearchRuleRelatedModules(ctx ContextParams, bizID int64, option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder)
 	BatchUpdateHostApplyRule(ctx ContextParams, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder)
+	RunHostApplyOnHosts(ctx ContextParams, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
 type core struct {

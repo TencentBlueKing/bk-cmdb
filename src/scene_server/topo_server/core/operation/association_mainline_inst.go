@@ -218,7 +218,7 @@ func (assoc *association) SetMainlineInstAssociation(params types.ContextParams,
 	return nil
 }
 
-func (assoc *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64, withStatistics bool) ([]*metadata.TopoInstRst, error) {
+func (assoc *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64, withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, error) {
 
 	cond := &metadata.QueryInput{}
 	cond.Condition = mapstr.MapStr{
@@ -254,7 +254,7 @@ func (assoc *association) SearchMainlineAssociationInstTopo(params types.Context
 		results = append(results, tmp)
 	}
 
-	if err = assoc.fillMainlineChildInst(params, obj, results); err != nil {
+	if err = assoc.fillMainlineChildInst(params, obj, results, withDefault); err != nil {
 		blog.Errorf("[SearchMainlineAssociationInstTopo] fillMainlineChildInst for %+v failed: %v, rid: %s", results, err, params.ReqID)
 		return nil, err
 	}
@@ -462,7 +462,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	return nil
 }
 
-func (assoc *association) fillMainlineChildInst(params types.ContextParams, object model.Object, parentInsts []*metadata.TopoInstRst) error {
+func (assoc *association) fillMainlineChildInst(params types.ContextParams, object model.Object, parentInsts []*metadata.TopoInstRst, withDefault bool) error {
 	childObj, err := object.GetMainlineChildObject()
 	if err == io.EOF {
 		return nil
@@ -481,11 +481,20 @@ func (assoc *association) fillMainlineChildInst(params types.ContextParams, obje
 	cond.Field(common.BKInstParentStr).In(parentIDs)
 	if childObj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(childObj.Object().ObjectID)
-	} else if childObj.Object().ObjectID == common.BKInnerObjIDSet {
-		cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
 	}
 
-	_, childInsts, err := assoc.inst.FindInst(params, childObj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
+	// 不包含内置节点时
+	if withDefault == false {
+		if childObj.Object().ObjectID == common.BKInnerObjIDSet {
+			cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
+		}
+	}
+
+	filter := &metadata.QueryInput{
+		Condition: cond.ToMapStr(),
+		Sort:      "default:1",
+	}
+	_, childInsts, err := assoc.inst.FindInst(params, childObj, filter, false)
 	if err != nil {
 		blog.Errorf("[fillMainlineChildInst] FindInst for %+v failed: %v, rid: %s", cond.ToMapStr(), err, params.ReqID)
 		return err
@@ -510,21 +519,42 @@ func (assoc *association) fillMainlineChildInst(params types.ContextParams, obje
 			blog.Errorf("[fillMainlineChildInst] GetParentID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
 			return err
 		}
+		defaultValue := int64(0)
+		defaultFieldValue, exist := childInst.GetValues()[common.BKDefaultField]
+		if exist == true {
+			defaultValue, err = util.GetInt64ByInterface(defaultFieldValue)
+			if err != nil {
+				blog.Errorf("[fillMainlineChildInst] GetParentID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
+				return err
+			}
+		}
 
 		object := childInst.GetObject().Object()
-		tmp := &metadata.TopoInstRst{Child: []*metadata.TopoInstRst{}}
-		tmp.InstID = childInstID
-		tmp.InstName = childInstName
-		tmp.ObjID = object.ObjectID
-		tmp.ObjName = object.ObjectName
 
-		childInstMap[parentID] = append(childInstMap[parentID], tmp)
-		childTopoInsts = append(childTopoInsts, tmp)
+		childInst := &metadata.TopoInstRst{
+			TopoInst: metadata.TopoInst{
+				InstID:               childInstID,
+				InstName:             childInstName,
+				ObjID:                object.ObjectID,
+				ObjName:              object.ObjectName,
+				Default:              int(defaultValue),
+				HostCount:            0,
+				ServiceInstanceCount: 0,
+				ServiceTemplateID:    0,
+				SetTemplateID:        0,
+				HostApplyEnabled:     nil,
+				HostApplyRuleCount:   nil,
+			},
+			Child: []*metadata.TopoInstRst{},
+		}
+
+		childInstMap[parentID] = append(childInstMap[parentID], childInst)
+		childTopoInsts = append(childTopoInsts, childInst)
 	}
 
 	for _, parentInst := range parentInsts {
 		parentInst.Child = append(parentInst.Child, childInstMap[parentInst.InstID]...)
 	}
 
-	return assoc.fillMainlineChildInst(params, childObj, childTopoInsts)
+	return assoc.fillMainlineChildInst(params, childObj, childTopoInsts, withDefault)
 }
