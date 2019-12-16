@@ -27,6 +27,7 @@ func addHostOuterIPUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	attrCond := condition.CreateCondition()
 	attrCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	attrCond.Field(common.BKPropertyIDField).Eq(common.BKHostOuterIPField)
+	attrCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
 	attr := new(metadata.Attribute)
 	err := db.Table(common.BKTableNameObjAttDes).Find(attrCond.ToMapStr()).One(ctx, attr)
 	if err != nil {
