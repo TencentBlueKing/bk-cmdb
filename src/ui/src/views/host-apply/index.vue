@@ -207,7 +207,7 @@
             }
         },
         created () {
-            this.showFeatureTips = this.featureTipsParams['hostApply']
+            // this.showFeatureTips = this.featureTipsParams['hostApply']
             this.getHostPropertyList()
         },
         methods: {
@@ -350,8 +350,6 @@
     }
     .main-wrapper {
         height: 100%;
-        border-top: 1px solid $cmdbLayoutBorderColor;
-
     }
     .tree-layout {
         width: 300px;

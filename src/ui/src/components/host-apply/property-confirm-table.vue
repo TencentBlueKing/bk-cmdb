@@ -230,7 +230,7 @@
                 inst['bk_cloud_id'] = [row.cloud_area]
                 try {
                     const propertyGroups = await this.getPropertyGroups()
-                    this.details.inst = this.$tools.flattenItem(properties, inst)
+                    this.details.inst = inst
                     this.details.properties = properties
                     this.details.propertyGroups = propertyGroups
                     this.slider.isShow = true
