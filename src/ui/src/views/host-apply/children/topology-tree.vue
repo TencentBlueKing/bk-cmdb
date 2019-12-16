@@ -22,7 +22,7 @@
         >
             <div
                 class="node-info clearfix"
-                :title="(data.host_apply_rule_count === 0 && isDel) ? '暂无策略' : ''"
+                :title="(data.host_apply_rule_count === 0 && isDel) ? $t('暂无策略') : ''"
                 :class="{ 'is-selected': node.selected }"
                 slot-scope="{ node, data }"
             >

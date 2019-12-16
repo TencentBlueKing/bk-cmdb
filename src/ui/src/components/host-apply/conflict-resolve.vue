@@ -4,7 +4,7 @@
             class-name="resolve-tips"
             feature-name="hostApply"
             :show-tips="showFeatureTips"
-            :desc="$t('因为主机复用模块的自动应用策略不一致，导致策略失效，需要手动维护不一致的属性。要彻底解决此问题，可以修改复用模块的策略为一致或移除模块的策略配置')"
+            :desc="$t('策略失效提示语')"
             @close-tips="showFeatureTips = false"
         >
         </feature-tips>

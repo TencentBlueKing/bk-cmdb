@@ -31,14 +31,15 @@
                         v-if="row.conflicts.length > 0"
                         theme="primary"
                         text
-                        @click="handleShowConflict(row)">
-                        {{row.unresolved_conflict_count > 0 ? '手动修改' : '已修改'}}
+                        @click="handleShowConflict(row)"
+                    >
+                        {{$t(row.unresolved_conflict_count > 0 ? '手动修改' : '已修改')}}
                     </bk-button>
                     <span v-else>--</span>
                 </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty">
-                <div>{{$t('暂无主机，新转入的主机将会自动应用模块的主机属性')}}</div>
+                <div>{{$t('暂无主机新转入的主机将会自动应用模块的主机属性')}}</div>
             </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
@@ -118,7 +119,7 @@
                     width: 514,
                     isShow: false,
                     content: '',
-                    title: this.$t('拓扑显示设置')
+                    title: ''
                 },
                 currentRow: {},
                 conflictResolveResult: {}
@@ -220,7 +221,7 @@
             },
             async handleShowDetails (row) {
                 this.currentRow = row
-                this.slider.title = `属性详情【${row.expect_host.bk_host_innerip}】`
+                this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
                 this.slider.content = 'detail'
                 const properties = this.propertyList
                 const inst = row.expect_host
@@ -243,7 +244,7 @@
             },
             handleShowConflict (row) {
                 this.currentRow = row
-                this.slider.title = `手动修改【${row.expect_host.bk_host_innerip}】`
+                this.slider.title = `${this.$t('手动修改')}【${row.expect_host.bk_host_innerip}】`
                 this.slider.content = 'conflict'
                 this.slider.isShow = true
             },
