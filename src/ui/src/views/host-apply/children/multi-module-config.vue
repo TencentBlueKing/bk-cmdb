@@ -2,7 +2,11 @@
     <div class="multi-module-config">
         <div class="config-bd">
             <div class="config-item">
-                <div class="item-label">已选择 {{moduleIds.length}} 个模块：</div>
+                <div class="item-label">
+                    <i18n path="已选择N个模块：">
+                        <span place="count">{{moduleIds.length}}</span>
+                    </i18n>
+                </div>
                 <div class="item-content">
                     <div :class="['module-list', { 'show-more': showMore.isMoreModuleShowed }]" ref="moduleList">
                         <div
@@ -18,7 +22,7 @@
                             :style="{ left: `${showMore.linkLeft}px` }"
                             v-show="showMore.showLink" @click="handleShowMore"
                         >
-                            {{showMore.isMoreModuleShowed ? '收起' : '展开更多'}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
+                            {{showMore.isMoreModuleShowed ? $t('收起') : $t('展开更多')}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
                         </div>
                     </div>
                 </div>
@@ -39,7 +43,7 @@
                                 {{$t('选择字段')}}
                             </bk-button>
                         </cmdb-auth>
-                        <span class="tips"><i class="bk-cc-icon icon-cc-tips"></i>此功能可以批量设置字段的自动应用，不需要批量变更的字段需点击“删除”从列表中移除</span>
+                        <span class="tips"><i class="bk-cc-icon icon-cc-tips"></i>{{$t('批量设置字段的自动应用功能提示')}}</span>
                     </div>
                     <div class="config-table" v-show="checkedPropertyIdList.length">
                         <property-config-table
@@ -76,10 +80,10 @@
                     :disabled="delButtonDisabled || disabled"
                     @click="handleDel"
                 >
-                    {{$t('确定删除')}}
+                    {{$t('确定删除按钮')}}
                 </bk-button>
             </cmdb-auth>
-            <bk-button theme="default" @click="handleCancel">取消</bk-button>
+            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
 
         <host-property-modal
@@ -89,10 +93,10 @@
         </host-property-modal>
         <leave-confirm
             v-bind="leaveConfirmConfig"
-            title="是否放弃？"
-            content="启用步骤未完成，是否放弃当前配置"
-            ok-text="留在当前页"
-            cancel-text="确认放弃"
+            :title="$t('是否放弃')"
+            :content="$t('启用步骤未完成，是否放弃当前配置')"
+            :ok-text="$t('留在当前页')"
+            :cancel-text="$t('确认放弃')"
         >
         </leave-confirm>
     </div>
