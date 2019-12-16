@@ -195,3 +195,24 @@ func (s *coreService) BatchUpdateHostApplyRule(params core.ContextParams, pathPa
 	}
 	return result, nil
 }
+
+func (s *coreService) UpdateHostByHostApplyRule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.UpdateHostByHostApplyRuleOption{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("UpdateHostByHostApplyRule failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	result, err := s.core.HostApplyRuleOperation().RunHostApplyOnHosts(params, bizID, option)
+	if err != nil {
+		blog.Errorf("UpdateHostByHostApplyRule failed, RunHostApplyOnHosts failed, option: %+v, err: %+v, rid: %s", option, err, params.ReqID)
+		return nil, err
+	}
+	return result, nil
+}

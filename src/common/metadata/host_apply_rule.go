@@ -20,6 +20,8 @@ import (
 
 const (
 	TopoNodeKeyword = "keyword"
+	// 主机更新时是否剔除绑定了主机属性自动应用的字段
+	HostUpdateWithoutHostApplyFiled = true
 )
 
 // HostApplyRule represent one rule of host property auto apply
@@ -59,8 +61,9 @@ type MultipleHostApplyRuleResult struct {
 }
 
 type ListHostApplyRuleOption struct {
-	ModuleIDs []int64  `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
-	Page      BasePage `json:"page" mapstructure:"page"`
+	ModuleIDs    []int64  `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
+	AttributeIDs []int64  `field:"bk_attribute_ids" json:"bk_attribute_ids" bson:"bk_attribute_ids" mapstructure:"bk_attribute_ids"`
+	Page         BasePage `field:"page" json:"page" bson:"page" mapstructure:"page"`
 }
 
 type ListHostRelatedApplyRuleOption struct {
@@ -74,6 +77,10 @@ type DeleteHostApplyRuleOption struct {
 
 type BatchCreateOrUpdateApplyRuleOption struct {
 	Rules []CreateOrUpdateApplyRuleOption `field:"host_apply_rules" json:"host_apply_rules" bson:"host_apply_rules" mapstructure:"host_apply_rules"`
+}
+
+type UpdateHostByHostApplyRuleOption struct {
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids" mapstructure:"bk_host_ids"`
 }
 
 type CreateOrUpdateApplyRuleOption struct {
@@ -142,7 +149,7 @@ type OneHostApplyPlan struct {
 	CloudInfo      CloudInst `field:"cloud_area" json:"cloud_area" bson:"cloud_area" mapstructure:"cloud_area"`
 	ModuleIDs      []int64   `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
 	// 预计执行后端主机信息
-	ExpiredHost    map[string]interface{}   `field:"expired_host" json:"expired_host" bson:"expired_host" mapstructure:"expired_host"`
+	ExpectHost     map[string]interface{}   `field:"expect_host" json:"expect_host" bson:"expect_host" mapstructure:"expect_host"`
 	UpdateFields   []HostApplyUpdateField   `field:"update_fields" json:"update_fields" bson:"update_fields" mapstructure:"update_fields"`
 	ConflictFields []HostApplyConflictField `field:"conflicts" json:"conflicts" bson:"conflicts" mapstructure:"conflicts"`
 	// 未解决的冲突字段数
@@ -179,6 +186,11 @@ type HostApplyPlanRequest struct {
 type HostApplyResult struct {
 	ErrorContainer `json:",inline"`
 	HostID         int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
+}
+
+type MultipleHostApplyResult struct {
+	ErrorContainer `json:",inline"`
+	HostResults    []HostApplyResult `field:"host_results" json:"host_results" bson:"host_results" mapstructure:"host_results"`
 }
 
 type ErrorContainer struct {

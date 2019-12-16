@@ -124,31 +124,31 @@ type HostObjAttDes struct {
 	HostApplyEnabled bool `json:"host_apply_enabled"`
 }
 
-func (attribute *Attribute) Validate(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key string) (rawError errors.RawErrorInfo) {
 	fieldType := attribute.PropertyType
 	switch fieldType {
 	case common.FieldTypeSingleChar:
-		rawError = attribute.validChar(ctx, val, key)
+		rawError = attribute.validChar(ctx, data, key)
 	case common.FieldTypeLongChar:
-		rawError = attribute.validLongChar(ctx, val, key)
+		rawError = attribute.validLongChar(ctx, data, key)
 	case common.FieldTypeInt:
-		rawError = attribute.validInt(ctx, val, key)
+		rawError = attribute.validInt(ctx, data, key)
 	case common.FieldTypeFloat:
-		rawError = attribute.validFloat(ctx, val, key)
+		rawError = attribute.validFloat(ctx, data, key)
 	case common.FieldTypeEnum:
-		rawError = attribute.validEnum(ctx, val, key)
+		rawError = attribute.validEnum(ctx, data, key)
 	case common.FieldTypeDate:
-		rawError = attribute.validDate(ctx, val, key)
+		rawError = attribute.validDate(ctx, data, key)
 	case common.FieldTypeTime:
-		rawError = attribute.validTime(ctx, val, key)
+		rawError = attribute.validTime(ctx, data, key)
 	case common.FieldTypeTimeZone:
-		rawError = attribute.validTimeZone(ctx, val, key)
+		rawError = attribute.validTimeZone(ctx, data, key)
 	case common.FieldTypeBool:
-		rawError = attribute.validBool(ctx, val, key)
+		rawError = attribute.validBool(ctx, data, key)
 	case common.FieldTypeUser:
-		rawError = attribute.validChar(ctx, val, key)
+		rawError = attribute.validChar(ctx, data, key)
 	case common.FieldTypeList:
-		rawError = attribute.validList(ctx, val, key)
+		rawError = attribute.validList(ctx, data, key)
 	// TODO implement validate for types below
 	// common.FieldTypeSingleLenChar
 	// common.FieldTypeLongLenChar
