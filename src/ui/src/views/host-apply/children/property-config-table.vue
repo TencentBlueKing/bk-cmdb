@@ -15,7 +15,7 @@
         <bk-table-column
             v-if="multiple"
             :label="$t('已配置的模块')"
-            :render-header="(h, data) => renderColumnHeader(h, data, '主机属于多个模块，但主机的属性值仅能有唯一值')"
+            :render-header="(h, data) => renderColumnHeader(h, data, $t('主机属于多个模块但主机的属性值仅能有唯一值'))"
             class-name="table-cell-module-path"
         >
             <template slot-scope="{ row }">
@@ -33,7 +33,7 @@
                     :class="['show-more', { expanded: showMore.expanded[row.id] }]"
                     @click="handleToggleExpanded(row.id)"
                 >
-                    {{showMore.expanded[row.id] ? '收起' : '展开更多'}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
+                    {{showMore.expanded[row.id] ? $t('收起') : $t('展开更多')}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
                 </div>
             </template>
         </bk-table-column>
@@ -75,17 +75,17 @@
             v-if="!readonly"
             width="180"
             :label="$t('操作')"
-            :render-header="multiple ? (h, data) => renderColumnHeader(h, data, '删除操作不影响原有配置') : null"
+            :render-header="multiple ? (h, data) => renderColumnHeader(h, data, $t('删除操作不影响原有配置')) : null"
         >
             <template slot-scope="{ row }">
-                <bk-button theme="primary" text @click="handlePropertyRowDel(row)">删除</bk-button>
+                <bk-button theme="primary" text @click="handlePropertyRowDel(row)">{{$t('删除')}}</bk-button>
             </template>
         </bk-table-column>
     </bk-table>
 </template>
 <script>
     import { mapGetters, mapState } from 'vuex'
-    import propertyFormElement from './property-form-element'
+    import propertyFormElement from '@/components/host-apply/property-form-element'
     export default {
         components: {
             propertyFormElement

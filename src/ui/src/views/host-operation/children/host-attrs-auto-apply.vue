@@ -23,7 +23,7 @@
 </template>
 
 <script>
-    import propertyConfirmTable from '@/views/host-apply/children/property-confirm-table.vue'
+    import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
     export default {
         name: 'host-attrs-auto-apply',
         components: {

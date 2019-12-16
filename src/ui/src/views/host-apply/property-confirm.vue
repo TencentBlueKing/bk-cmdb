@@ -1,15 +1,19 @@
 <template>
     <div class="host-apply-confirm">
         <div class="caption">
-            <div class="title">请确认以下主机应用信息：</div>
+            <div class="title">{{$t('请确认以下主机应用信息')}}</div>
             <div class="stat">
                 <span class="conflict-item">
                     <span v-bk-tooltips="{ content: $t('当一台主机同属多个模块时，且模块配置了不同的属性'), width: 185 }">
                         <i class="bk-cc-icon icon-cc-tips"></i>
                     </span>
-                    属性冲突<em class="conflict-num">{{conflictNum}}</em>台
+                    <i18n path="属性冲突N台">
+                        <em place="num" class="conflict-num">{{conflictNum}}</em>
+                    </i18n>
                 </span>
-                <span>总检测<em class="check-num">{{table.total}}</em>台</span>
+                <i18n path="总检测N台">
+                    <em place="num" class="check-num">{{table.total}}</em>
+                </i18n>
             </div>
         </div>
         <property-confirm-table
@@ -36,10 +40,10 @@
         </div>
         <leave-confirm
             v-bind="leaveConfirmConfig"
-            title="是否放弃？"
-            content="启用步骤未完成，是否放弃当前配置"
-            ok-text="留在当前页"
-            cancel-text="确认放弃"
+            :title="$t('是否放弃')"
+            :content="$t('启用步骤未完成，是否放弃当前配置')"
+            :ok-text="$t('留在当前页')"
+            :cancel-text="$t('确认放弃')"
         >
         </leave-confirm>
         <apply-status-modal
@@ -56,7 +60,7 @@
 <script>
     import { mapGetters, mapState, mapActions } from 'vuex'
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
-    import propertyConfirmTable from './children/property-confirm-table'
+    import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
     import applyStatusModal from './children/apply-status'
     import {
         MENU_BUSINESS_HOST_AND_SERVICE,
@@ -209,7 +213,7 @@
                 } else {
                     this.$bkInfo({
                         title: this.$t('确认应用'),
-                        subTitle: this.$t('您还有无法自动应用的主机属性需确认，是要保留主机原有属性值不做修改吗？'),
+                        subTitle: this.$t('您还有无法自动应用的主机属性需确认'),
                         confirmFn: () => {
                             this.saveAndApply()
                         }

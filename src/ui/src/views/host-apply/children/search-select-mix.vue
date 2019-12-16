@@ -7,7 +7,7 @@
         :show-condition="false"
         :strink="false"
         v-model="searchValue"
-        placeholder="关键字/字段值"
+        :placeholder="$t('关键字/字段值')"
         @change="handleChange"
         @menu-select="handleMenuSelect"
         @key-enter="handleKeyEnter"
