@@ -18,10 +18,10 @@ var _ = Describe("inst test", func() {
 	var instId, instId1 int64
 	var propertyID1, propertyID2, uniqueID uint64
 
-	It("create object bk_classification_id = 'bk_middleware' and bk_obj_id='cc_test'", func() {
+	It("create object bk_classification_id = 'bk_network' and bk_obj_id='cc_test'", func() {
 		test.ClearDatabase()
 		input := metadata.Object{
-			ObjCls:     "bk_middleware",
+			ObjCls:     "bk_network",
 			ObjIcon:    "icon-cc-business",
 			ObjectID:   "cc_test",
 			ObjectName: "cc_test",

@@ -101,6 +101,19 @@ func (am *AuthManager) extractBusinessIDFromModules(modules ...ModuleSimplify) (
 	return businessID, nil
 }
 
+func (am *AuthManager) MakeResourcesByModuleIDs(ctx context.Context, header http.Header, action meta.Action, ids ...int64) ([]meta.ResourceAttribute, error) {
+	modules, err := am.collectModuleByModuleIDs(ctx, header, ids...)
+	if err != nil {
+		return nil, fmt.Errorf("update registered modules failed, get modules by id failed, err: %+v", err)
+	}
+	bizID, err := am.extractBusinessIDFromModules(modules...)
+	if err != nil {
+		return nil, err
+	}
+	iamResources := am.MakeResourcesByModule(header, action, bizID, modules...)
+	return iamResources, nil
+}
+
 func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Action, businessID int64, modules ...ModuleSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, module := range modules {
@@ -154,8 +167,8 @@ func (am *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
 		}},
 	}
 
-    p.ResourceType = p.Resources[0][0].ResourceType
-    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp

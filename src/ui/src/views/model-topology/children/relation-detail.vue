@@ -20,21 +20,6 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('关联描述')}}
-                <span class="color-danger">*</span>
-            </span>
-            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                <bk-input type="text" class="cmdb-form-input"
-                    name="asstName"
-                    :disabled="relationInfo.ispre || !isEdit"
-                    v-model.trim="relationInfo['bk_obj_asst_name']"
-                    v-validate="'required|singlechar|length:256'">
-                </bk-input>
-                <p class="form-error">{{errors.first('asstName')}}</p>
-            </div>
-        </label>
-        <label class="form-label">
-            <span class="label-text">
                 {{$t('源-目标约束')}}
                 <span class="color-danger">*</span>
             </span>
@@ -49,11 +34,35 @@
                 <p class="form-error">{{errors.first('asstId')}}</p>
             </div>
         </label>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('关联描述')}}
+            </span>
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
+                <bk-input type="text" class="cmdb-form-input"
+                    name="asstName"
+                    :disabled="relationInfo.ispre || !isEdit"
+                    v-model.trim="relationInfo['bk_obj_asst_name']"
+                    v-validate="'singlechar|length:256'">
+                </bk-input>
+                <p class="form-error">{{errors.first('asstName')}}</p>
+            </div>
+        </label>
         <div class="btn-group" v-if="isEdit && relationInfo.bk_asst_id !== 'bk_mainline'">
-            <bk-button theme="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
-                {{$t('确定')}}
+            <bk-button
+                theme="primary"
+                :loading="$loading('updateObjectAssociation')"
+                :disabled="JSON.stringify(relationInfo) === relationInfoSnapshot"
+                @click="saveRelation"
+            >
+                {{$t('保存')}}
             </bk-button>
-            <bk-button theme="danger" @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
+            <bk-button
+                theme="danger"
+                outline
+                :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')"
+                @click="deleteRelation"
+            >
                 {{$t('删除关联')}}
             </bk-button>
         </div>
@@ -100,7 +109,8 @@
                     bk_asst_id: '',
                     mapping: '',
                     on_delete: []
-                }
+                },
+                relationInfoSnapshot: ''
             }
         },
         computed: {
@@ -125,6 +135,7 @@
                 })
                 if (this.asstId !== '') {
                     this.relationInfo = asstList.find(asst => asst.id === this.asstId)
+                    this.relationInfoSnapshot = JSON.stringify(this.relationInfo)
                 }
             },
             getModelName (objId) {

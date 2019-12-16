@@ -10,35 +10,30 @@
                 :label="column.name">
                 <template slot-scope="{ row }">
                     <span v-if="column.id === 'bind_ip'">{{row[column.id] | ipText}}</span>
-                    <span v-else>{{row[column.id] || '--'}}</span>
+                    <span v-else>{{row[column.id] | formatter('singlechar')}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')" prop="operation">
+            <bk-table-column :label="$t('操作')" prop="operation" v-if="$parent.isFormMode">
                 <template slot-scope="{ row }">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized(auth),
-                            auth: [auth]
-                        }">
-                        <bk-button class="mr10"
-                            :disabled="!$isAuthorized(auth)"
+                    <cmdb-auth :auth="$authResources(auth)">
+                        <bk-button slot-scope="{ disabled }"
+                            class="mr10"
+                            theme="primary"
+                            :disabled="disabled"
                             :text="true"
-                            @click.stop="handleEdite(row['originData'])">
+                            @click.stop="handleEdit(row._original_)">
                             {{$t('编辑')}}
                         </bk-button>
-                    </span>
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized(auth),
-                            auth: [auth]
-                        }">
-                        <bk-button
-                            :disabled="!$isAuthorized(auth)"
+                    </cmdb-auth>
+                    <cmdb-auth :auth="$authResources(auth)">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            :disabled="disabled"
                             :text="true"
-                            @click.stop="handleDelete(row['originData'])">
+                            @click.stop="handleDelete(row._original_)">
                             {{$t('删除')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -58,8 +53,8 @@
         },
         props: {
             auth: {
-                type: String,
-                default: ''
+                type: Object,
+                default: () => ({})
             },
             list: {
                 type: Array,
@@ -113,7 +108,7 @@
         },
         computed: {
             showList () {
-                let list = this.list.map(template => {
+                const list = this.list.map(template => {
                     const result = {}
                     Object.keys(template).map(key => {
                         const type = typeof template[key]
@@ -123,15 +118,15 @@
                             result[key] = template[key]
                         }
                     })
-                    result['originData'] = template
+                    result._original_ = template
                     return result
                 })
-                list = this.$tools.flattenList(this.properties, list).sort((prev, next) => prev.process_id - next.process_id)
+                list.sort((prev, next) => prev.process_id - next.process_id)
                 return list
             }
         },
         methods: {
-            handleEdite (process) {
+            handleEdit (process) {
                 this.$emit('on-edit', process)
             },
             handleDelete (process) {

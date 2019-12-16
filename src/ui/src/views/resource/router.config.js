@@ -1,16 +1,5 @@
 import Meta from '@/router/meta'
 import { MENU_RESOURCE_HOST, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
-import {
-    C_RESOURCE_HOST,
-    U_RESOURCE_HOST,
-    D_RESOURCE_HOST
-} from '@/dictionary/auth'
-
-export const OPERATION = {
-    C_RESOURCE_HOST,
-    U_RESOURCE_HOST,
-    D_RESOURCE_HOST
-}
 
 export default [{
     name: MENU_RESOURCE_HOST,
@@ -20,9 +9,10 @@ export default [{
         menu: {
             i18n: '主机'
         },
-        auth: {
-            operation: OPERATION,
-            authScope: 'global'
+        layout: {
+            previous: {
+                name: MENU_RESOURCE_MANAGEMENT
+            }
         },
         filterPropertyKey: 'resource_host_filter_properties'
     })
@@ -33,6 +23,11 @@ export default [{
     meta: new Meta({
         menu: {
             relative: MENU_RESOURCE_MANAGEMENT
+        },
+        layout: {
+            previous: {
+                name: MENU_RESOURCE_HOST
+            }
         }
     })
 }]

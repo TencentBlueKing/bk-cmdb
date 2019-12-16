@@ -72,7 +72,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 		blog.Infof("connected to mongo %v", tmServer.config.MongoDB.BuildURI())
 
-		// set core service
+		// set logics service
 		coreService.SetConfig(engine, db, tmServer.config.Transaction)
 		break
 	}

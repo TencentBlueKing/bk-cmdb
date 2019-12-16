@@ -8,17 +8,14 @@
                 :title="$t('全选本页')"
                 @change="handleCheckALL">
             </bk-checkbox>
-            <span style="display: inline-block;"
-                v-cursor="{
-                    active: !$isAuthorized($OPERATION.D_SERVICE_INSTANCE),
-                    auth: [$OPERATION.D_SERVICE_INSTANCE]
-                }">
-                <bk-button class="ml10"
-                    :disabled="!$isAuthorized($OPERATION.D_SERVICE_INSTANCE) || !checked.length"
+            <cmdb-auth :auth="$authResources({ type: $OPERATION.D_SERVICE_INSTANCE })">
+                <bk-button slot-scope="{ disabled }"
+                    class="ml10"
+                    :disabled="disabled || !checked.length"
                     @click="batchDelete(!checked.length)">
                     {{$t('批量删除')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <div class="option-right fr">
                 <bk-checkbox class="options-checkbox"
                     :size="16"
@@ -31,7 +28,7 @@
                     <bk-search-select
                         ref="searchSelect"
                         :show-condition="false"
-                        :placeholder="$t('实例名称/标签')"
+                        :placeholder="$t('请输入实例名称或选择标签')"
                         :data="searchSelect"
                         v-model="searchSelectData"
                         @menu-child-condition-select="handleConditionSelect"
@@ -42,7 +39,7 @@
                     ref="popoverCheckView"
                     :always="true"
                     :width="224"
-                    :tippy-options="{ zIndex: 999 }"
+                    :z-index="999"
                     theme="check-view-color"
                     placement="bottom-end">
                     <div slot="content" class="popover-main">
@@ -77,7 +74,7 @@
         <bk-table v-if="!instances.length" :data="[]" class="mb10">
             <div slot="empty" class="empty-text">
                 <img src="../../../assets/images/empty-content.png" alt="">
-                <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去服务拓扑添加')}}</span></p>
+                <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
             </div>
         </bk-table>
         <bk-pagination v-if="instances.length"
@@ -107,7 +104,10 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SERVICE_TOPOLOGY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_DELETE_SERVICE
+    } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     import serviceInstanceTable from './service-instance-table.vue'
     export default {
@@ -233,7 +233,7 @@
                                 ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
                                 : '',
                             selectors: this.getSelectorParams()
-                        })
+                        }, { injectBizId: true })
                     })
                     if (data.count && !data.info.length) {
                         this.pagination.current -= 1
@@ -294,7 +294,7 @@
             },
             async getHistoryLabel () {
                 const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
-                    params: this.$injectMetadata({}),
+                    params: this.$injectMetadata({}, { injectBizId: true }),
                     config: {
                         requestId: 'getHistoryLabel',
                         cancelPrevious: true
@@ -344,25 +344,16 @@
                 if (disabled) {
                     return false
                 }
-                this.$bkInfo({
-                    title: this.$t('确认删除实例'),
-                    subTitle: this.$t('即将删除选中的实例', { count: this.checked.length }),
-                    confirmFn: async () => {
-                        try {
-                            const serviceInstanceIds = this.checked.map(instance => instance.id)
-                            await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
-                                config: {
-                                    data: this.$injectMetadata({
-                                        service_instance_ids: serviceInstanceIds
-                                    }),
-                                    requestId: 'batchDeleteServiceInstance'
-                                }
-                            })
-                            this.$success(this.$t('删除成功'))
-                            this.getHostSeriveInstances()
-                            this.checked = []
-                        } catch (e) {
-                            console.error(e)
+                this.$router.push({
+                    name: MENU_BUSINESS_DELETE_SERVICE,
+                    params: {
+                        ids: this.checked.map(instance => instance.id).join('/')
+                    },
+                    query: {
+                        from: this.$route.path,
+                        query: {
+                            ...this.$route.query,
+                            tab: 'service'
                         }
                     }
                 })
@@ -429,12 +420,12 @@
             },
             handleGoAddInstance () {
                 this.$router.replace({
-                    name: MENU_BUSINESS_SERVICE_TOPOLOGY
+                    name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             },
-            handleShowProcessDetails (inst) {
+            handleShowProcessDetails ({ property }) {
                 this.showDetails = true
-                this.processInst = inst
+                this.processInst = property
             }
         }
     }
@@ -485,7 +476,7 @@
         padding: 0 10px;
         border-radius: 2px;
         .view-btn {
-            color: #dcdee5;
+            color: #c4c6cc;
             font-size: 14px;
             height: 100%;
             line-height: 30px;

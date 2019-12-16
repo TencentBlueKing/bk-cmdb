@@ -473,7 +473,7 @@ func (t *genericTransfer) getInnerModuleIDArr(ctx core.ContextParams) errors.CCE
 	}
 	moduleConds := condition.CreateCondition()
 	moduleConds.Field(common.BKAppIDField).Eq(bizID)
-	moduleConds.Field(common.BKDefaultField).NotEq(0)
+	moduleConds.Field(common.BKDefaultField).NotEq(common.DefaultFlagDefaultValue)
 	cond := util.SetQueryOwner(moduleConds.ToMapStr(), ctx.SupplierAccount)
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)

@@ -43,8 +43,17 @@ func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header ht
 		cond.Merge(metadata.BizLabelNotExist)
 	}
 	query := &metadata.QueryCondition{
-		Condition: cond,
+		Fields: []string{
+			common.BKFieldID,
+			common.BKObjIDField,
+			common.BKObjNameField,
+			common.MetadataField,
+			common.BKIsPre,
+			common.BKClassificationIDField,
+		},
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+		SortArr:   nil,
+		Condition: cond,
 	}
 	models, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, query)
 	if err != nil {
@@ -159,6 +168,27 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 			},
 			SupplierAccount: util.GetOwnerID(header),
 			BusinessID:      businessID,
+		}
+		resources = append(resources, resource)
+	}
+
+	return resources, nil
+}
+
+func (am *AuthManager) MakeGlobalModelAsBizResources(ctx context.Context, header http.Header, bizID int64, action meta.Action, objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
+	// prepare resource layers for authorization
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, object := range objects {
+		// instance
+		resource := meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Action:     action,
+				Type:       meta.Model,
+				Name:       object.ObjectName,
+				InstanceID: object.ID,
+			},
+			SupplierAccount: util.GetOwnerID(header),
+			BusinessID:      bizID,
 		}
 		resources = append(resources, resource)
 	}

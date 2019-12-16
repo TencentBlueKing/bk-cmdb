@@ -20,7 +20,7 @@ import (
 	"configcenter/src/storage/types"
 )
 
-// ContextParams the logic function params
+// ContextParams the logics function params
 type ContextParams struct {
 	context.Context
 	Session  mongodb.Session

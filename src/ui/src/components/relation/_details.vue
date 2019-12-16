@@ -69,8 +69,7 @@
                 ])
                 this.properties = properties
                 this.propertyGroups = propertyGroups
-                const inst = await this.getDetails()
-                this.inst = this.$tools.flattenItem(properties, inst)
+                this.inst = await this.getDetails()
                 this.$nextTick(() => {
                     const detailsContainerHeight = this.$refs.detailsContainer.getBoundingClientRect().height
                     const detailsTitleHeight = this.$refs.detailsTitle.getBoundingClientRect().height
@@ -84,8 +83,7 @@
                         'bk_obj_id': this.objId
                     }),
                     config: {
-                        requestId: `post_searchObjectAttribute_${this.objId}`,
-                        fromCache: true
+                        requestId: `post_searchObjectAttribute_${this.objId}`
                     }
                 })
             },

@@ -44,7 +44,7 @@
                 :disabled="isReadOnly || !verificationInfo.selected.length"
                 :loading="$loading(['createObjectUniqueConstraints', 'updateObjectUniqueConstraints'])"
                 @click="saveVerification">
-                {{$t('确定')}}
+                {{isEdit ? $t('保存') : $t('提交')}}
             </bk-button>
             <bk-button theme="default" @click="cancel">
                 {{$t('取消')}}

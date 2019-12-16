@@ -13,7 +13,6 @@
 package metadata
 
 import (
-	"configcenter/src/common/querybuilder"
 	"context"
 	"fmt"
 	"net/http"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 )
 
@@ -53,7 +53,7 @@ type UserCustomQueryDetailResult struct {
 type HostInputType string
 
 const (
-	ExecelType  HostInputType = "excel"
+	ExcelType   HostInputType = "excel"
 	CollectType HostInputType = "collect"
 )
 
@@ -118,6 +118,7 @@ type HostModuleFind struct {
 
 type ListHostsParameter struct {
 	SetIDs             []int64                   `json:"bk_set_ids"`
+	SetCond            []ConditionItem           `json:"set_cond"`
 	ModuleIDs          []int64                   `json:"bk_module_ids"`
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
 	Page               BasePage                  `json:"page"`
@@ -126,6 +127,10 @@ type ListHostsParameter struct {
 type ListHostsWithNoBizParameter struct {
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
 	Page               BasePage                  `json:"page"`
+}
+
+type CountTopoNodeHostsOption struct {
+	Nodes []TopoNode `json:"topo_nodes" mapstructure:"topo_nodes"`
 }
 
 type TimeRange struct {
@@ -141,8 +146,11 @@ type ListHosts struct {
 	Page               BasePage                  `json:"page"`
 }
 
-func (option ListHosts) Validate() (string, error) {
-	if key, err := option.Page.Validate(); err != nil {
+// Validate whether ListHosts is valid
+// errKey: invalid key
+// er: detail reason why errKey in invalid
+func (option ListHosts) Validate() (errKey string, err error) {
+	if key, err := option.Page.Validate(true); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
@@ -381,8 +389,17 @@ type CloudAreaParameter struct {
 }
 
 type TopoNode struct {
-	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id"`
-	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" mapstructure:"bk_obj_id"`
+	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id" mapstructure:"bk_inst_id"`
+}
+
+func (node TopoNode) String() string {
+	return fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+}
+
+type TopoNodeHostCount struct {
+	Node      TopoNode `field:"topo_node" json:"topo_node" mapstructure:"topo_node"`
+	HostCount int      `field:"host_count" json:"host_count" mapstructure:"host_count"`
 }
 
 type TransferHostWithAutoClearServiceInstanceOption struct {

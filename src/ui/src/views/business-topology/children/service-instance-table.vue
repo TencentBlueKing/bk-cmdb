@@ -11,7 +11,7 @@
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
             <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
-            <i class="bk-icon icon-exclamation" v-if="withTemplate && !instance.process_count" v-bk-tooltips="tooltips"></i>
+            <i class="bk-icon icon-exclamation" v-if="withTemplate && !instance.process_count && !canSync" v-bk-tooltips="tooltips"></i>
             <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
                 <ul class="menu-list"
                     @mouseenter="handleShowDotMenu"
@@ -19,31 +19,27 @@
                     <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <span class="menu-span"
-                            v-cursor="{
-                                active: !$isAuthorized($OPERATION[menu.auth]),
-                                auth: [$OPERATION[menu.auth]]
-                            }">
-                            <bk-button class="menu-button"
+                        <cmdb-auth class="menu-span" :auth="$authResources({ type: $OPERATION[menu.auth] })">
+                            <bk-button slot-scope="{ disabled }"
+                                class="menu-button"
                                 :text="true"
-                                :disabled="!$isAuthorized($OPERATION[menu.auth])"
+                                :disabled="disabled"
                                 @click="menu.handler">
                                 {{menu.name}}
                             </bk-button>
-                        </span>
+                        </cmdb-auth>
                     </li>
                 </ul>
             </cmdb-dot-menu>
             <div class="instance-label fr" @click.stop>
-                <div :class="['label-title', 'fl', { 'disabled': !$isAuthorized($OPERATION.U_SERVICE_INSTANCE) }]"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                        auth: [$OPERATION.U_SERVICE_INSTANCE]
-                    }"
-                    @click.stop="handleShowEditLabel">
-                    <i class="icon-cc-label"></i>
-                    <span v-if="!labelShowList.length"> + </span>
-                </div>
+                <cmdb-auth class="fl" :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                    <template slot-scope="{ disabled }">
+                        <div :class="['label-title', { 'disabled': disabled }]" @click.stop="handleShowEditLabel(disabled)">
+                            <i class="icon-cc-label"></i>
+                            <span v-if="!labelShowList.length"> + </span>
+                        </div>
+                    </template>
+                </cmdb-auth>
                 <div class="label-list fl">
                     <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
                         <span>{{label.key}}</span>
@@ -70,61 +66,69 @@
         <bk-table
             v-show="localExpanded"
             v-bkloading="{ isLoading: $loading(Object.values(requestId)) }"
-            :data="flattenList">
+            :data="list">
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <div slot-scope="{ row }" :title="(row.property || {})[column.id] | formatter(column.property)">
+                    {{(row.property || {})[column.id] | formatter(column.property)}}
+                </div>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                            auth: [$OPERATION.U_SERVICE_INSTANCE]
-                        }">
-                        <bk-button class="mr10"
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
                             :text="true"
-                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
+                            :disabled="disabled"
                             @click="handleEditProcess(row)">
                             {{$t('编辑')}}
                         </bk-button>
-                    </span>
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                            auth: [$OPERATION.U_SERVICE_INSTANCE]
-                        }">
-                        <bk-button v-if="!withTemplate"
-                            :text="true"
-                            :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
-                            @click="handleDeleteProcess(row)">
-                            {{$t('删除')}}
-                        </bk-button>
-                    </span>
+                    </cmdb-auth>
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                        <template slot-scope="{ disabled }">
+                            <bk-button v-if="!withTemplate"
+                                theme="primary"
+                                :text="true"
+                                :disabled="disabled"
+                                @click="handleDeleteProcess(row)">
+                                {{$t('删除')}}
+                            </bk-button>
+                        </template>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
             <template slot="empty">
                 <template v-if="withTemplate">
-                    <i18n path="暂无模板进程">
-                        <button class="add-process-button text-primary" place="link"
+                    <i18n path="有模板进程未同步" v-if="canSync">
+                        <bk-button class="add-process-button" place="link"
+                            theme="primary"
+                            text
+                            @click.stop="handleSyncProcessToInstance">
+                            {{$t('点击同步')}}
+                        </bk-button>
+                    </i18n>
+                    <i18n path="暂无模板进程" v-else>
+                        <bk-button class="add-process-button" place="link"
+                            theme="primary"
+                            text
                             @click.stop="handleAddProcessToTemplate">
                             {{$t('模板添加')}}
-                        </button>
+                        </bk-button>
                     </i18n>
                 </template>
-                <span style="display: inline-block;" v-else
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.U_SERVICE_INSTANCE),
-                        auth: [$OPERATION.U_SERVICE_INSTANCE]
-                    }">
-                    <button class="add-process-button text-primary"
-                        :disabled="!$isAuthorized($OPERATION.U_SERVICE_INSTANCE)"
+                <cmdb-auth v-else :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="add-process-button"
+                        theme="primary"
+                        text
+                        :disabled="disabled"
                         @click.stop="handleAddProcess">
                         <i class="bk-icon icon-plus"></i>
                         <span>{{$t('添加进程')}}</span>
-                    </button>
-                </span>
+                    </bk-button>
+                </cmdb-auth>
             </template>
         </bk-table>
         <bk-dialog class="bk-dialog-no-padding edit-label-dialog"
@@ -152,6 +156,7 @@
 
 <script>
     import cmdbEditLabel from './edit-label.vue'
+    import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         components: { cmdbEditLabel },
         props: {
@@ -159,7 +164,8 @@
                 type: Object,
                 required: true
             },
-            expanded: Boolean
+            expanded: Boolean,
+            canSync: Boolean
         },
         data () {
             return {
@@ -186,10 +192,10 @@
         },
         computed: {
             currentNode () {
-                return this.$store.state.businessTopology.selectedNode
+                return this.$store.state.businessHost.selectedNode
             },
             isModuleNode () {
-                const node = this.$store.state.businessTopology.selectedNode
+                const node = this.$store.state.businessHost.selectedNode
                 return node && node.data.bk_obj_id === 'module'
             },
             withTemplate () {
@@ -213,12 +219,6 @@
                     })
                 }
                 return menu
-            },
-            module () {
-                return this.$store.state.businessTopology.selectedNodeInstance
-            },
-            flattenList () {
-                return this.$tools.flattenList(this.properties, this.list.map(data => data.property || {}))
             },
             requestId () {
                 return {
@@ -283,7 +283,7 @@
                     this.list = await this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
                         params: this.$injectMetadata({
                             service_instance_id: this.instance.id
-                        }),
+                        }, { injectBizId: true }),
                         config: {
                             requestId: this.requestId.processList
                         }
@@ -306,7 +306,8 @@
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
-                        name: property.bk_property_name
+                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        property
                     }
                 })
                 this.header = header
@@ -315,8 +316,7 @@
                 this.$emit('create-process', this)
             },
             async handleEditProcess (item) {
-                const processInstance = this.list.find(data => data.relation.bk_process_id === item.bk_process_id)
-                this.$emit('update-process', processInstance, this)
+                this.$emit('update-process', item, this)
             },
             async handleDeleteProcess (item) {
                 try {
@@ -325,7 +325,7 @@
                         config: {
                             data: this.$injectMetadata({
                                 process_instance_ids: [item.bk_process_id]
-                            })
+                            }, { injectBizId: true })
                         }
                     })
                     this.$success(this.$t('删除成功'))
@@ -341,7 +341,7 @@
                         instanceId: this.instance.id,
                         hostId: this.instance.bk_host_id,
                         setId: this.currentNode.parent.data.bk_inst_id,
-                        moduleId: this.module.bk_module_id
+                        moduleId: this.currentNode.data.bk_inst_id
                     },
                     query: {
                         title: this.instance.name
@@ -349,29 +349,11 @@
                 })
             },
             handleDeleteInstance () {
-                this.$bkInfo({
-                    title: this.$t('确认删除实例'),
-                    subTitle: this.$t('即将删除实例', { name: this.instance.name }),
-                    extCls: 'bk-dialog-sub-header-center',
-                    confirmFn: async () => {
-                        try {
-                            await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
-                                config: {
-                                    data: this.$injectMetadata({
-                                        service_instance_ids: [this.instance.id]
-                                    }),
-                                    requestId: this.requestId.deleteProcess
-                                }
-                            })
-                            this.currentNode.data.service_instance_count = this.currentNode.data.service_instance_count - 1
-                            this.currentNode.parents.forEach(node => {
-                                node.data.service_instance_count = node.data.service_instance_count - 1
-                            })
-                            this.$success(this.$t('删除成功'))
-                            this.$emit('delete-instance', this.instance.id)
-                        } catch (e) {
-                            console.error(e)
-                        }
+                this.$router.push({
+                    name: MENU_BUSINESS_DELETE_SERVICE,
+                    params: {
+                        ids: this.instance.id,
+                        moduleId: this.currentNode.data.bk_inst_id
                     }
                 })
             },
@@ -379,12 +361,16 @@
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        templateId: this.instance.service_template_id
+                        templateId: this.currentNode.data.service_template_id,
+                        moduleId: this.currentNode.data.bk_inst_id
                     }
                 })
             },
-            handleShowEditLabel () {
-                if (!this.$isAuthorized(this.$OPERATION.U_SERVICE_INSTANCE)) return
+            handleSyncProcessToInstance () {
+                this.$parent.handleSyncTemplate()
+            },
+            handleShowEditLabel (disabled) {
+                if (disabled) return
                 this.editLabel.list = this.labelList
                 this.editLabel.show = true
                 this.editLabel.visiable = true
@@ -415,7 +401,7 @@
                                 data: this.$injectMetadata({
                                     instance_ids: [this.instance.id],
                                     keys: removeKeysList
-                                }),
+                                }, { injectBizId: true }),
                                 requestId: 'deleteInstanceLabel',
                                 transformData: false
                             }
@@ -431,7 +417,7 @@
                             params: this.$injectMetadata({
                                 instance_ids: [this.instance.id],
                                 labels: labelSet
-                            }),
+                            }, { injectBizId: true }),
                             config: {
                                 requestId: 'createInstanceLabel',
                                 transformData: false
@@ -519,6 +505,7 @@
     }
     .add-process-button {
         line-height: 32px;
+        opacity: .7;
         .bk-icon,
         span {
             @include inlineBlock;

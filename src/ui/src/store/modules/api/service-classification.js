@@ -26,6 +26,9 @@ const actions = {
     searchServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
         return $http.post(`findmany/proc/service_category/with_statistics`, params, config)
     },
+    searchServiceCategoryWithoutAmout (context, { params, config }) {
+        return $http.post('findmany/proc/service_category', params, config)
+    },
     /**
      * 创建服务分类
      * @param {Function} commit store commit mutation hander

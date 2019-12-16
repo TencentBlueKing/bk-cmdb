@@ -8,21 +8,21 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="filter-wrapper clearfix">
-            <span class="inline-block-middle" v-cursor="{
-                active: !$isAuthorized($OPERATION.C_CUSTOM_QUERY),
-                auth: [$OPERATION.C_CUSTOM_QUERY]
-            }">
-                <bk-button theme="primary" class="api-btn"
-                    :disabled="!$isAuthorized($OPERATION.C_CUSTOM_QUERY)"
+            <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_CUSTOM_QUERY })">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    class="api-btn"
+                    :disabled="disabled"
                     @click="showUserAPISlider('create')">
                     {{$t('新建')}}
                 </bk-button>
-            </span>
+            </cmdb-auth>
             <div class="api-input fr">
                 <bk-input type="text" class="cmdb-form-input"
                     right-icon="bk-icon icon-search"
+                    clearable
                     v-model="filter.name"
-                    font-size="large"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
                     @enter="getUserAPIList">
                 </bk-input>
@@ -61,32 +61,30 @@
                         @click.stop="getUserAPIDetail(row)">
                         {{$t('预览')}}
                     </bk-button>
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.U_CUSTOM_QUERY),
-                            auth: [$OPERATION.U_CUSTOM_QUERY]
-                        }">
-                        <bk-button class="mr10"
-                            :disabled="!$isAuthorized($OPERATION.U_CUSTOM_QUERY)"
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_CUSTOM_QUERY })">
+                        <bk-button slot-scope="{ disabled }"
+                            :disabled="disabled"
                             :text="true"
                             @click.stop="showUserAPIDetails(row)">
                             {{$t('编辑')}}
                         </bk-button>
-                    </span>
-                    <span
-                        v-cursor="{
-                            active: !$isAuthorized($OPERATION.D_CUSTOM_QUERY),
-                            auth: [$OPERATION.D_CUSTOM_QUERY]
-                        }">
-                        <bk-button
-                            :disabled="!$isAuthorized($OPERATION.D_CUSTOM_QUERY)"
+                    </cmdb-auth>
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.D_CUSTOM_QUERY })">
+                        <bk-button slot-scope="{ disabled }"
+                            :disabled="disabled"
                             :text="true"
                             @click.stop="deleteUserAPI(row)">
                             {{$t('删除')}}
                         </bk-button>
-                    </span>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
+            <cmdb-table-empty
+                slot="empty"
+                :stuff="table.stuff"
+                :auth="$authResources({ type: $OPERATION.C_CUSTOM_QUERY })"
+                @create="showUserAPISlider('create')"
+            ></cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -106,7 +104,7 @@
                 @cancel="handleSliderBeforeClose">
             </v-define>
         </bk-sideslider>
-        
+
         <!-- eslint-disable vue/space-infix-ops -->
         <cmdb-main-inject inject-type="prepend" v-transfer-dom>
             <v-preview ref="preview"
@@ -151,6 +149,12 @@
                         current: 1,
                         count: 0,
                         ...this.$tools.getDefaultPaginationConfig()
+                    },
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.$t('动态分组')
+                        }
                     }
                 },
                 slider: {
@@ -199,12 +203,6 @@
                 }
                 this.filter.name ? params['condition'] = { 'name': this.filter.name } : void (0)
                 return params
-            },
-            editable () {
-                if (this.type === 'update') {
-                    return this.$isAuthorized(this.$OPERATION.D_CUSTOM_QUERY)
-                }
-                return true
             }
         },
         async created () {
@@ -389,24 +387,38 @@
                 }
                 return params
             },
-            async getUserAPIList () {
-                const res = await this.searchCustomQuery({
-                    bizId: this.bizId,
-                    params: this.searchParams,
-                    config: {
-                        requestId: 'searchCustomQuery'
+            async getUserAPIList (value, event) {
+                try {
+                    const res = await this.searchCustomQuery({
+                        bizId: this.bizId,
+                        params: this.searchParams,
+                        config: {
+                            globalPermission: false,
+                            requestId: 'searchCustomQuery'
+                        }
+                    })
+                    if (res.count && !res.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getUserAPIList()
                     }
-                })
-                if (res.count && !res.info.length) {
-                    this.table.pagination.current -= 1
-                    this.getUserAPIList()
+                    if (res.count) {
+                        this.table.list = res.info
+                    } else {
+                        this.table.list = []
+                    }
+                    this.table.pagination.count = res.count
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+                } catch ({ permission }) {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 }
-                if (res.count) {
-                    this.table.list = res.info
-                } else {
-                    this.table.list = []
-                }
-                this.table.pagination.count = res.count
             },
             showUserAPISlider (type) {
                 this.slider.isShow = true
@@ -414,7 +426,8 @@
                 this.slider.title = this.$t('新建动态分组')
             },
             /* 显示自定义API详情 */
-            showUserAPIDetails (userAPI) {
+            showUserAPIDetails (userAPI, event, column = {}) {
+                if (column.property === 'operation') return
                 this.slider.isShow = true
                 this.slider.type = 'update'
                 this.slider.id = userAPI['id']
@@ -505,7 +518,7 @@
 
 <style lang="scss" scoped>
     .api-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
         .filter-wrapper {
             .business-selector {
                 float: left;

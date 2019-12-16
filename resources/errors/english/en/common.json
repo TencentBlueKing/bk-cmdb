@@ -27,7 +27,7 @@
     "1199027": "'%s' authorization information query failed",
     "1199028": "Field value check does not pass",
     "1199029": "Function return value format problem",
-    "1199030": "HTTP POST parsing failed",
+    "1199030": "request parameter invalid, parse HTTP body failed",
     "1199031": "'%s' initialization failed",
     "1199032": "param '%s' should be a string",
     "1199033": "Failed to get field property, error: %s",
@@ -69,11 +69,19 @@
     "1199071":"construct db query condition failed",
     "1199072": "get skip to bk auth center url failed, please refer to bk auth center",
     "1199073": "%s field exceeds maximum value %s",
-    "1199074": "forbidden operate inner model instance with common instance API",
+    "1199074": "global cc error not initialized",
     "1199075": "forbidden operate mainline model instance with common instance API",
     "1199076": "forbidden update built in cloud area",
     "1199077": "operate too many records at once, max: %d",
-
+    "1199078": "module [%s] in business topology does not exist",
+    "1199079": "business [%s] not exist",
+    "1199080": "parsing property list content failed",
+    "1199081": "operate two many records at once, max: %d",
+    "1199082": "list authorized resources from iam failed",
+    "1199083": "modify field %s forbidden",
+    "1199084": "forbidden operate inner model instance with common instance API",
+    
+    
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",
     "":""

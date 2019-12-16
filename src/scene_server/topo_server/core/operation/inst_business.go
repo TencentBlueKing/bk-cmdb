@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -219,16 +220,17 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		return nil, params.Err.New(common.CCErrProcGetDefaultServiceCategoryFailed, err.Error())
 	}
 
-	moduleData := mapstr.New()
-	moduleData.Set(common.BKSetIDField, setID)
-	moduleData.Set(common.BKInstParentStr, setID)
-	moduleData.Set(common.BKAppIDField, bizID)
-	moduleData.Set(common.BKModuleNameField, common.DefaultResModuleName)
-	moduleData.Set(common.BKDefaultField, common.DefaultResModuleFlag)
-	moduleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
-	moduleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
+	idleModuleData := mapstr.New()
+	idleModuleData.Set(common.BKSetIDField, setID)
+	idleModuleData.Set(common.BKInstParentStr, setID)
+	idleModuleData.Set(common.BKAppIDField, bizID)
+	idleModuleData.Set(common.BKModuleNameField, common.DefaultResModuleName)
+	idleModuleData.Set(common.BKDefaultField, common.DefaultResModuleFlag)
+	idleModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+	idleModuleData.Set(common.BKSetTemplateIDField, common.SetTemplateIDNotSet)
+	idleModuleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
 
-	_, err = b.module.CreateModule(params, objModule, bizID, setID, moduleData)
+	_, err = b.module.CreateModule(params, objModule, bizID, setID, idleModuleData)
 	if nil != err {
 		blog.Errorf("create business failed to create business, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -242,11 +244,29 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	faultModuleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	faultModuleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
 	faultModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+	faultModuleData.Set(common.BKSetTemplateIDField, common.SetTemplateIDNotSet)
 	faultModuleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, faultModuleData)
 	if nil != err {
 		blog.Errorf("create business failed to create business, error info is %s, rid: %s", err.Error(), params.ReqID)
+		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	// create recycle module
+	recycleModuleData := mapstr.New()
+	recycleModuleData.Set(common.BKSetIDField, setID)
+	recycleModuleData.Set(common.BKInstParentStr, setID)
+	recycleModuleData.Set(common.BKAppIDField, bizID)
+	recycleModuleData.Set(common.BKModuleNameField, common.DefaultRecycleModuleName)
+	recycleModuleData.Set(common.BKDefaultField, common.DefaultRecycleModuleFlag)
+	recycleModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+	recycleModuleData.Set(common.BKSetTemplateIDField, common.SetTemplateIDNotSet)
+	recycleModuleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
+
+	_, err = b.module.CreateModule(params, objModule, bizID, setID, recycleModuleData)
+	if nil != err {
+		blog.Errorf("create business failed, create recycle module failed, err: %s, rid: %s", err.Error(), params.ReqID)
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
@@ -309,34 +329,34 @@ func (b *business) FindBusiness(params types.ContextParams, cond *metadata.Query
 }
 
 func (b *business) GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error) {
-
-	// search the sets
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKDefaultField).Eq(common.DefaultResModuleFlag)
+	// get set model
 	setObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDSet)
 	if nil != err {
 		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
+	// search internal sets
 	querySet := &metadata.QueryInput{}
+	cond := condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKDefaultField).Eq(common.DefaultResModuleFlag)
 	querySet.Condition = cond.ToMapStr()
 	_, sets, err := b.set.FindSet(params, setObj, querySet)
 	if nil != err {
 		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
-	// search modules
-	cond = condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKDefaultField).NotEq(0)
-
+	// get module model
 	moduleObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		return 0, nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
+	// search internal modules
 	queryModule := &metadata.QueryInput{}
+	cond = condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKDefaultField).NotEq(common.DefaultFlagDefaultValue)
 	queryModule.Condition = cond.ToMapStr()
 	_, modules, err := b.module.FindModule(params, moduleObj, queryModule)
 	if nil != err {
@@ -362,13 +382,14 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 
 	for _, moduleMapStr := range modules {
 		module := metadata.ModuleInst{}
-		if err := moduleMapStr.MarshalJSONInto(&module); err != nil {
-			blog.ErrorJSON("GetInternalModule failed, module: %s, ")
+		if err := mapstruct.Decode2Struct(moduleMapStr, &module); err != nil {
+			blog.ErrorJSON("GetInternalModule failed, unmarshal module failed, module: %s, err: %s, rid: %s", moduleMapStr, err.Error(), params.ReqID)
 			return 0, nil, params.Err.CCError(common.CCErrCommParseDBFailed)
 		}
 		result.Module = append(result.Module, metadata.InnerModule{
 			ModuleID:   module.ModuleID,
 			ModuleName: module.ModuleName,
+			Default:    module.Default,
 		})
 	}
 

@@ -37,6 +37,8 @@ const (
 	ProcType        RequestType = "proc"
 	EventType       RequestType = "event"
 	DataCollectType RequestType = "collect"
+	OperationType   RequestType = "operation"
+	TaskType        RequestType = "task"
 )
 
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
@@ -90,6 +92,10 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	case DataCollectType:
 		servers, err = s.discovery.DataCollect().GetServers()
 
+	case OperationType:
+		servers, err = s.discovery.OperationServer().GetServers()
+	case TaskType:
+		servers, err = s.discovery.TaskServer().GetServers()
 	}
 
 	if err != nil {
@@ -208,7 +214,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			}
 			blog.Warnf("authFilter failed, url: %s, reason: %+v, permissions: %+v, rid: %s", path, decision, permissions, rid)
 			rsp := metadata.BaseResp{
-				Code:        9900403,
+				Code:        common.CCNoPermission,
 				ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
 				Result:      false,
 				Permissions: permissions,

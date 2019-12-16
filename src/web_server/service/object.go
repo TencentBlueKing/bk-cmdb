@@ -19,13 +19,16 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
@@ -320,4 +323,61 @@ func (s *Service) ExportObject(c *gin.Context) {
 		blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
 	}
 
+}
+func (s *Service) SearchBusiness(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromGinContext(c)
+	webCommon.SetProxyHeader(c)
+	language := webCommon.GetLanguageByHTTPRequest(c)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+
+	query := new(params.SearchParams)
+	err := c.BindJSON(&query)
+	if err != nil {
+		blog.Errorf("search business, but unmarshal body to json failed, err: %v, rid: %s", err, rid)
+		c.JSON(http.StatusBadRequest, metadata.BaseResp{
+			Result:      false,
+			Code:        common.CCErrCommJSONUnmarshalFailed,
+			ErrMsg:      defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(),
+			Permissions: nil,
+		})
+		return
+	}
+
+	// change the string query to regexp, only for frontend usage.
+	for k, v := range query.Condition {
+		if reflect.TypeOf(v).Kind() == reflect.String {
+			field := v.(string)
+			query.Condition[k] = mapstr.MapStr{
+				common.BKDBLIKE: params.SpecialCharChange(field),
+				// insensitive with the character case.
+				"$options": "i",
+			}
+		}
+	}
+	ownerID := c.Request.Header.Get(common.BKHTTPOwnerID)
+	biz, err := s.Engine.CoreAPI.ApiServer().SearchBiz(ctx, ownerID, c.Request.Header, query)
+	if err != nil {
+		blog.Error("search business, but request to api failed, err: %v, rid: %s", err, rid)
+		c.JSON(http.StatusBadRequest, metadata.BaseResp{
+			Result:      false,
+			Code:        common.CCErrCommHTTPDoRequestFailed,
+			ErrMsg:      defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
+			Permissions: nil,
+		})
+		return
+	}
+
+	if !biz.Result {
+	    if biz.Code == common.CCNoPermission {
+	        c.JSON(http.StatusOK, biz)
+            return
+        } else {
+            c.JSON(http.StatusBadRequest, biz)
+            return
+        }
+	}
+
+	c.JSON(http.StatusOK, biz)
+	return
 }

@@ -13,15 +13,14 @@
 package service
 
 import (
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apiserver/core"
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/rdapi"
+    "configcenter/src/apimachinery/discovery"
+    "configcenter/src/auth"
+    "configcenter/src/auth/authcenter"
+    "configcenter/src/common/backbone"
+    "configcenter/src/common/errors"
+    "configcenter/src/common/rdapi"
 
-	"github.com/emicklei/go-restful"
+    "github.com/emicklei/go-restful"
 )
 
 // Service service methods
@@ -32,15 +31,12 @@ type Service interface {
 
 // NewService create a new service instance
 func NewService() Service {
-	return &service{
-		core: core.New(nil),
-	}
+	return new(service)
 }
 
 type service struct {
 	engine     *backbone.Engine
 	client     HTTPClient
-	core       core.Core
 	discovery  discovery.DiscoveryInterface
 	authorizer auth.Authorizer
 }

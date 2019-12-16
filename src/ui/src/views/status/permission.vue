@@ -33,7 +33,7 @@
         methods: {
             async setPermission () {
                 const permission = []
-                const operation = this.$OPERATION
+                const operation = this.$tools.getValue(this.$route.meta, 'auth.operation', {})
                 if (Object.keys(operation).length) {
                     const translated = await translateAuth(Object.values(operation))
                     permission.push(...translated)

@@ -42,11 +42,12 @@ const (
 	CC_MODULE_TXC            = "txc"
 	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
 	CC_MODULE_SYNCHRONZESERVER = "sync"
+	CC_MODULE_OPERATION        = "operation"
+	CC_MODULE_TASK             = "task"
 )
 
 // AllModule all cc module
 var AllModule = map[string]bool{
-	// CC_MODULE_AUDITCONTROLLER:  true,
 	CC_MODULE_DATACOLLECTION:   true,
 	CC_MODULE_HOST:             true,
 	CC_MODULE_MIGRATE:          true,
@@ -58,6 +59,8 @@ var AllModule = map[string]bool{
 	CC_MODULE_TXC:              true,
 	CC_MODULE_CORESERVICE:      true,
 	CC_MODULE_SYNCHRONZESERVER: true,
+	CC_MODULE_OPERATION:        true,
+	CC_MODULE_TASK:             true,
 }
 
 // cc functionality define

@@ -147,6 +147,8 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	modules = append(modules, types.CC_MODULE_TXC)
 	modules = append(modules, types.CC_MODULE_CORESERVICE)
 	modules = append(modules, types.CC_MODULE_SYNCHRONZESERVER)
+	modules = append(modules, types.CC_MODULE_OPERATION)
+	modules = append(modules, types.CC_MODULE_TASK)
 
 	dirSubList, err := ioutil.ReadDir(confRootPath)
 	if err != nil {

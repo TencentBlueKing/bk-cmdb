@@ -298,7 +298,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	// 获取目标业务空先机模块ID
 	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).MapStr()
 	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, cond)
+	moduleID, err := srvData.lgc.GetResourcePoolModuleID(srvData.ctx, cond)
 	if err != nil {
 		blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
@@ -368,7 +368,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	// }
 
 	opt := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(appID)
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, opt.MapStr())
+	moduleID, err := srvData.lgc.GetResourcePoolModuleID(srvData.ctx, opt.MapStr())
 	if err != nil {
 		blog.Errorf("add host from agent , but get module id failed, err: %v,ownerID:%s,input:%+v,rid:%s", err, srvData.ownerID, agents, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
@@ -798,7 +798,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		moduleCond = append(moduleCond, meta.ConditionItem{
 			Field:    common.BKDefaultField,
 			Operator: common.BKDBEQ,
-			Value:    0,
+			Value:    common.DefaultFlagDefaultValue,
 		})
 	}
 	// srvData.lgc..NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())

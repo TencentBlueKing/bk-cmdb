@@ -32,12 +32,10 @@ import (
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
-	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
 	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
 )
 
 type srvComm struct {
@@ -57,7 +55,6 @@ type ProcServer struct {
 	EsbConfigChn       chan esbutil.EsbConfig
 	Config             *options.Config
 	EsbSrv             esbserver.EsbClientInterface
-	Cache              *redis.Client
 	procHostInstConfig logics.ProcHostInstConfig
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
@@ -71,6 +68,7 @@ func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
 	ctx, cancel := ps.Engine.CCCtx.WithCancel()
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 
+	errors.SetGlobalCCError(ps.CCErr)
 	return &srvComm{
 		header:        header,
 		rid:           util.GetHTTPCCRequestID(header),
@@ -80,7 +78,7 @@ func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(ps.Engine, header, ps.Cache, ps.EsbSrv, &ps.procHostInstConfig),
+		lgc:           logics.NewLogics(ps.Engine, header, ps.EsbSrv, &ps.procHostInstConfig),
 	}
 }
 
@@ -145,6 +143,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance/with_host", Handler: ps.ListServiceInstancesWithHostWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/details", Handler: ps.ListServiceInstancesDetails})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance", Handler: ps.DeleteServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/deletemany/proc/service_instance/preview", Handler: ps.DeleteServiceInstancePreview})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_instance/difference", Handler: ps.DiffServiceInstanceWithTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_instance/sync", Handler: ps.SyncServiceInstanceByTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/service_instance/labels", Handler: ps.ServiceInstanceAddLabels})
@@ -217,10 +216,7 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}()
 	}
 
-	cfg := ccRedis.ParseConfigFromKV("redis", current.ConfigMap)
-	ps.Config = &options.Config{
-		Redis: &cfg,
-	}
+	ps.Config = &options.Config{}
 
 	hostInstPrefix := "host instance"
 	procHostInstConfig := &ps.procHostInstConfig

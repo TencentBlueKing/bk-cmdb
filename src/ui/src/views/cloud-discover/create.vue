@@ -13,7 +13,7 @@
                             name="taskName"
                             v-validate="'required|singlechar|length:256'"
                             :placeholder="$t('请输入任务名称')">
-                        </div>
+                        </bk-input>
                     </div>
                     <span v-show="errors.has('taskName')" class="error-info color-danger">{{ errors.first('taskName') }}</span>
                 </li>

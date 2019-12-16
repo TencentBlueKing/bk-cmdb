@@ -41,7 +41,9 @@ import (
 	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
+	"configcenter/src/source_controller/coreservice/core/operation"
 	"configcenter/src/source_controller/coreservice/core/process"
+	"configcenter/src/source_controller/coreservice/core/settemplate"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/remote"
@@ -71,7 +73,7 @@ type coreService struct {
 	cfg      options.Config
 	core     core.Core
 	db       dal.RDB
-	cahce    *redis.Client
+	cache    *redis.Client
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
@@ -106,7 +108,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 
 	s.db = db
-	s.cahce = cache
+	s.cache = cache
 
 	// connect the remote mongodb
 	s.core = core.New(
@@ -119,6 +121,8 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		auditlog.New(db),
 		process.New(db, s, cache),
 		label.New(db),
+		settemplate.New(db),
+		operation.New(db),
 	)
 	return nil
 }
@@ -127,7 +131,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 func (s *coreService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
-	container.ServiceErrorHandler(rdapi.ServiceErrorHandler)
+
 	// init service actions
 	s.initService()
 
@@ -135,7 +139,7 @@ func (s *coreService) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.err
 	}
-	api.Path("/api/v3").Filter(s.engin.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/api/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
@@ -253,6 +257,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 
 				// get the error info by the language
 				defErr := s.err.CreateDefaultCCErrorIf(language)
+				errors.SetGlobalCCError(s.err)
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {

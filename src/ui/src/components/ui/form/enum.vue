@@ -8,7 +8,8 @@
         :font-size="fontSize"
         :popover-options="{
             boundary: 'window'
-        }">
+        }"
+        ref="selector">
         <bk-option
             v-for="(option, index) in options"
             :key="index"
@@ -50,7 +51,7 @@
             },
             fontSize: {
                 type: [String, Number],
-                default: 12
+                default: 'medium'
             }
         },
         data () {
@@ -93,7 +94,12 @@
                     } else {
                         this.selected = this.value
                     }
+                } else {
+                    this.selected = this.value
                 }
+            },
+            focus () {
+                this.$refs.selector.show()
             }
         }
     }

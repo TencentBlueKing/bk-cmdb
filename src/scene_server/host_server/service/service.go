@@ -101,11 +101,14 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
 
 	api.Route(api.POST("/hosts/modules").To(s.TransferHostModule))
-	api.Route(api.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))
+	api.Route(api.POST("/hosts/modules/idle").To(s.MoveHost2IdleModule))
 	api.Route(api.POST("/hosts/modules/fault").To(s.MoveHost2FaultModule))
+	api.Route(api.POST("/hosts/modules/recycle").To(s.MoveHost2RecycleModule))
 	api.Route(api.POST("/hosts/modules/resource").To(s.MoveHostToResourcePool))
 	api.Route(api.POST("/hosts/modules/resource/idle").To(s.AssignHostToApp))
 	api.Route(api.POST("/host/add/module").To(s.AssignHostToAppModule))
+	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/").To(s.TransferHostWithAutoClearServiceInstance))
+	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/").To(s.TransferHostWithAutoClearServiceInstancePreview))
 	api.Route(api.POST("/usercustom").To(s.SaveUserCustom))
 	api.Route(api.POST("/usercustom/user/search").To(s.GetUserCustom))
 	api.Route(api.POST("/usercustom/default/search").To(s.GetDefaultCustom))
@@ -138,6 +141,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/lock").To(s.LockHost))
 	api.Route(api.DELETE("/host/lock").To(s.UnlockHost))
 	api.Route(api.POST("/host/lock/search").To(s.QueryHostLock))
+	api.Route(api.POST("/host/count_by_topo_node/bk_biz_id/{bk_biz_id}").To(s.CountTopoNodeHosts))
 
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
 
@@ -158,6 +162,9 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
+
+	// first install use api
+	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
 
 	container.Add(api)
 

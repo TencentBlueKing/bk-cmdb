@@ -115,7 +115,7 @@ func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (b
 	return true, nil
 }
 
-// ExistHostIDSInApp exist host id in app return []int64 don't exist in app hostID, error handle logic error
+// ExistHostIDSInApp exist host id in app return []int64 don't exist in app hostID, error handle logics error
 func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArray []int64) ([]int64, error) {
 	defErr := lgc.ccErr
 
@@ -242,4 +242,29 @@ func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields []string, cond ma
 	}
 
 	return appMap, nil
+}
+
+func (lgc *Logics) ExistInnerModule(ctx context.Context, moduleIDArr []int64) (bool, errors.CCErrorCoder) {
+	input := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKDefaultField: map[string]interface{}{
+				"$ne": common.DefaultFlagDefaultValue,
+			},
+			common.BKModuleIDField: map[string]interface{}{
+				"$in": moduleIDArr,
+			},
+		},
+	}
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, input)
+	if err != nil {
+		blog.Errorf("ExistInnerModule http do error, err:%s, input:%+v, rid:%s", err.Error(), input, lgc.rid)
+		return false, lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("ExistInnerModule http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, input, lgc.rid)
+		return false, result.CCError()
+	}
+
+	exist := result.Data.Count > 0
+	return exist, nil
 }

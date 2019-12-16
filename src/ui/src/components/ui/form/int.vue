@@ -19,7 +19,7 @@
             value: {
                 default: null,
                 validator (val) {
-                    return typeof val === 'number' || val === '' || val === null
+                    return ['string', 'number'].includes(typeof val) || val === null
                 }
             },
             disabled: {
@@ -37,6 +37,10 @@
             unit: {
                 type: String,
                 default: ''
+            },
+            autoCheck: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -59,15 +63,21 @@
         },
         methods: {
             handleInput (value, event) {
-                value = parseInt(event.target.value.trim())
-                if (isNaN(value)) {
-                    value = null
+                const originalValue = String(event.target.value).trim()
+                const intValue = originalValue.length ? Number(event.target.value.trim()) : null
+                if (isNaN(intValue)) {
+                    value = this.autoCheck ? null : value
+                } else {
+                    value = intValue
                 }
                 this.$refs.input.curValue = value
                 this.localValue = value
             },
             handleChange () {
                 this.$emit('on-change', this.localValue)
+            },
+            focus () {
+                this.$el.querySelector('input').focus()
             }
         }
     }

@@ -4,6 +4,7 @@
             <div class="label-item" v-for="(label, index) in list" :key="index">
                 <div class="label-key" :class="{ 'is-error': errors.has('key-' + index) }">
                     <input class="cmdb-form-input" type="text"
+                        ref="tagKey"
                         :data-vv-name="'key-' + index"
                         v-validate="getValidateRules(index, 'key')"
                         v-model="label.key"
@@ -128,6 +129,9 @@
                     id: -1,
                     key: '',
                     value: ''
+                })
+                this.$nextTick(() => {
+                    this.$refs.tagKey[index + 1].focus()
                 })
             },
             handleRemoveLabel (index) {

@@ -83,7 +83,7 @@ type ConfigItem struct {
 	// resource pool sync config
 	SyncResource bool
 
-	// TargetHost target data core
+	// TargetHost target data logics
 	TargetHost string
 
 	// FieldSign source data fields

@@ -4,19 +4,11 @@ import {
     MENU_RESOURCE_BUSINESS_HISTORY,
     MENU_RESOURCE_MANAGEMENT
 } from '@/dictionary/menu-symbol'
-import {
-    C_BUSINESS,
-    U_BUSINESS,
-    R_BUSINESS,
-    BUSINESS_ARCHIVE
-} from '@/dictionary/auth'
 
-export const OPERATION = {
-    R_BUSINESS,
-    C_BUSINESS,
-    U_BUSINESS,
-    BUSINESS_ARCHIVE
-}
+import {
+    BUSINESS_ARCHIVE,
+    GET_AUTH_META
+} from '@/dictionary/auth'
 
 export default [{
     name: MENU_RESOURCE_BUSINESS,
@@ -27,9 +19,10 @@ export default [{
             i18n: '业务',
             relative: MENU_RESOURCE_MANAGEMENT
         },
-        auth: {
-            operation: OPERATION,
-            authScope: 'global'
+        layout: {
+            previous: {
+                name: MENU_RESOURCE_MANAGEMENT
+            }
         }
     })
 }, {
@@ -42,12 +35,13 @@ export default [{
             relative: MENU_RESOURCE_MANAGEMENT
         },
         auth: {
-            view: { BUSINESS_ARCHIVE },
-            operation: { BUSINESS_ARCHIVE },
-            authScope: 'global'
+            view: { ...GET_AUTH_META(BUSINESS_ARCHIVE) },
+            operation: {
+                BUSINESS_ARCHIVE
+            }
         },
-        checkAvailable: (to, from, app) => {
-            return app.$store.getters.isAdminView
+        layout: {
+            previous: { name: MENU_RESOURCE_BUSINESS }
         }
     })
 }]

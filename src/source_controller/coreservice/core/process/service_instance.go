@@ -115,8 +115,8 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 
 	if instance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
 		listProcessTemplateOption := metadata.ListProcessTemplatesOption{
-			BusinessID:        module.BizID,
-			ServiceTemplateID: module.ServiceTemplateID,
+			BusinessID:         module.BizID,
+			ServiceTemplateIDs: []int64{module.ServiceTemplateID},
 			Page: metadata.BasePage{
 				Limit: common.BKNoLimit,
 				Sort:  "id",
@@ -222,12 +222,16 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 		filter[common.BKServiceTemplateIDField] = option.ServiceTemplateID
 	}
 
-	if option.HostID != 0 {
-		filter[common.BKHostIDField] = option.HostID
+	if len(option.HostIDs) > 0 {
+		filter[common.BKHostIDField] = map[string]interface{}{
+			common.BKDBIN: option.HostIDs,
+		}
 	}
 
-	if option.ModuleID != 0 {
-		filter[common.BKModuleIDField] = option.ModuleID
+	if len(option.ModuleIDs) != 0 {
+		filter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBIN: option.ModuleIDs,
+		}
 	}
 
 	if option.ServiceInstanceIDs != nil {
@@ -579,7 +583,7 @@ func (p *processOperation) GetBusinessDefaultSetModuleInfo(ctx core.ContextParam
 	defaultModuleCond := map[string]interface{}{
 		common.BKAppIDField: bizID,
 		common.BKDefaultField: map[string]interface{}{
-			common.BKDBIN: []int64{int64(common.DefaultResModuleFlag), int64(common.DefaultFaultModuleFlag)},
+			common.BKDBNE: common.DefaultFlagDefaultValue,
 		},
 	}
 	modules := make([]struct {
@@ -599,14 +603,15 @@ func (p *processOperation) GetBusinessDefaultSetModuleInfo(ctx core.ContextParam
 		if module.ModuleFlag == common.DefaultFaultModuleFlag {
 			defaultSetModuleInfo.FaultModuleID = module.ModuleID
 		}
+		if module.ModuleFlag == common.DefaultRecycleModuleFlag {
+			defaultSetModuleInfo.RecycleModuleID = module.ModuleID
+		}
 	}
 
 	// find and fill default set
 	defaultSetCond := map[string]interface{}{
-		common.BKAppIDField: bizID,
-		common.BKDefaultField: map[string]interface{}{
-			common.BKDBIN: []int64{int64(common.DefaultResSetFlag)},
-		},
+		common.BKAppIDField:   bizID,
+		common.BKDefaultField: common.DefaultResSetFlag,
 	}
 	sets := make([]struct {
 		SetID int64 `bson:"bk_set_id"`
@@ -721,7 +726,7 @@ func (p *processOperation) RemoveTemplateBindingOnModule(ctx core.ContextParams,
 
 	listOption := metadata.ListServiceInstanceOption{
 		BusinessID:         moduleSimple.BizID,
-		ModuleID:           moduleID,
+		ModuleIDs:          []int64{moduleID},
 		SearchKey:          nil,
 		ServiceInstanceIDs: nil,
 		Page: metadata.BasePage{

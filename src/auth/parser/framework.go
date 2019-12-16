@@ -13,27 +13,31 @@
 package parser
 
 import (
+	"fmt"
 	"regexp"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+
 	"github.com/tidwall/gjson"
 )
 
 type InstanceIDGetter func(request *RequestContext, re *regexp.Regexp) ([]int64, error)
+type BizIDGetter func(request *RequestContext, config AuthConfig) (bizID int64, err error)
 
 type AuthConfig struct {
-	Name                  string
-	Pattern               string
-	Regex                 *regexp.Regexp
-	HTTPMethod            string
-	RequiredBizInMetadata bool
-	ResourceType          meta.ResourceType
-	ResourceAction        meta.Action
-	InstanceIDGetter      InstanceIDGetter
-	Description           string
+	Name             string
+	Pattern          string
+	Regex            *regexp.Regexp
+	HTTPMethod       string
+	ResourceType     meta.ResourceType
+	ResourceAction   meta.Action
+	InstanceIDGetter InstanceIDGetter
+	BizIDGetter      BizIDGetter
+	Description      string
 }
 
 func (config *AuthConfig) Match(request *RequestContext) bool {
@@ -53,18 +57,14 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 			continue
 		}
 
-		var businessID int64
-		if item.RequiredBizInMetadata {
-			bizID := gjson.GetBytes(request.Body, common.BKAppIDField).Int()
-			if bizID == 0 {
-				var err error
-				bizID, err = metadata.BizIDFromMetadata(request.Metadata)
-				if err != nil {
-					blog.Warnf("get business id in metadata failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
-					return nil, err
-				}
+		var bizID int64
+		var err error
+		if item.BizIDGetter != nil {
+			bizID, err = item.BizIDGetter(request, item)
+			if err != nil {
+				blog.Warnf("get business id in metadata failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
+				return nil, err
 			}
-			businessID = bizID
 		}
 
 		iamResources := make([]meta.ResourceAttribute, 0)
@@ -74,7 +74,7 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 					Type:   item.ResourceType,
 					Action: item.ResourceAction,
 				},
-				BusinessID: businessID,
+				BusinessID: bizID,
 			}
 			iamResources = append(iamResources, iamResource)
 		} else {
@@ -90,7 +90,7 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 						Action:     item.ResourceAction,
 						InstanceID: id,
 					},
-					BusinessID: businessID,
+					BusinessID: bizID,
 				}
 				iamResources = append(iamResources, iamResource)
 			}
@@ -98,4 +98,47 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 		return iamResources, nil
 	}
 	return nil, nil
+}
+
+func DefaultBizIDGetter(request *RequestContext, config AuthConfig) (bizID int64, err error) {
+	bizID = gjson.GetBytes(request.Body, common.BKAppIDField).Int()
+	if bizID != 0 {
+		return bizID, nil
+	}
+
+	bizID, err = metadata.BizIDFromMetadata(request.Metadata)
+	if err != nil {
+		blog.Warnf("get business id from metadata failed, name: %s, err: %v, rid: %s", config.Name, err, request.Rid)
+		return 0, err
+	}
+	return bizID, nil
+}
+
+var (
+	BizIDRegex = regexp.MustCompile("bk_biz_id/([0-9]+)")
+)
+
+func BizIDFromURLGetter(request *RequestContext, config AuthConfig) (bizID int64, err error) {
+	match := BizIDRegex.FindStringSubmatch(request.URI)
+	if len(match) == 0 {
+		return 0, fmt.Errorf("url: %s not match regex: %s", request.URI, BizIDRegex)
+	}
+	bizID, err = util.GetInt64ByInterface(match[1])
+	if err != nil {
+		blog.Warnf("get business id from request path failed, name: %s, err: %v, rid: %s", config.Name, err, request.Rid)
+		return 0, err
+	}
+	return bizID, nil
+}
+
+func ParseStreamWithFramework(ps *parseStream, authConfigs []AuthConfig) *parseStream {
+	resources, err := MatchAndGenerateIAMResource(authConfigs, ps.RequestCtx)
+	if err != nil {
+		ps.err = err
+	}
+	if resources != nil {
+		ps.Attribute.Resources = resources
+	}
+	blog.V(7).Infof("ParseStreamWithFramework result: %s", resources)
+	return ps
 }

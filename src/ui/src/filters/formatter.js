@@ -82,7 +82,7 @@ export function enumeration (value, options) {
 
 export function foreignkey (value) {
     if (Array.isArray(value)) {
-        return value.map(inst => inst.bk_inst_name).join(',')
+        return value.map(inst => `${inst.bk_inst_name}[${inst.bk_inst_id}]`).join(',')
     }
     if (String(value).length) {
         return value
@@ -104,9 +104,12 @@ const formatterMap = {
     enum: enumeration
 }
 
-export default function formatter (value, type, options) {
+export default function formatter (value, property, options) {
+    const isPropertyObject = typeof property === 'object'
+    const type = isPropertyObject ? property.bk_property_type : property
+    const propertyOptions = isPropertyObject ? property.option : options
     if (formatterMap.hasOwnProperty(type)) {
-        return formatterMap[type](value, options)
+        return formatterMap[type](value, propertyOptions)
     }
     return value
 }

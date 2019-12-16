@@ -198,13 +198,23 @@ const (
 	CCErrGetNoAuthSkipURLFailed  = 1199072
 
 	// CCErrCommValExceedMaxFailed %s field exceeds maximum value %v
-	CCErrCommValExceedMaxFailed                              = 1199073
-	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199074
+	CCErrCommValExceedMaxFailed          = 1199073
+	CCErrCommGlobalCCErrorNotInitialized = 1199074
+
 	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
 	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
+	
+	// CCErrTopoModuleNotFoundError module [%s] does not exist in the business topology
+    CCErrCommTopoModuleNotFoundError = 1199078
+    // CCErrBizNotFoundError business [%s] does not exist
+    CCErrCommBizNotFoundError = 1199079
+    CCErrParseAttrOptionListFailed = 1199080
+    // one argument: maxValue
+    CCErrExceedMaxOperationRecordsAtOnce = 1199081
 
-	// one argument: maxValue
-	CCErrExceedMaxOperationRecordsAtOnce = 1199077
+	CCErrCommListAuthorizedResourceFromIAMFailed = 1199082
+    CCErrCommModifyFieldForbidden                            = 1199083
+    CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -432,6 +442,13 @@ const (
 	CCErrorTopoObjectInstanceObjIDFieldConflictWithURL     = 1101093
 	CCErrTopoImportMainlineForbidden                       = 1101094
 
+	CCErrorTopoSyncModuleTaskFailed    = 1101095
+	CCErrorTopoSyncModuleTaskIsRunning = 1101096
+
+	CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate = 1101097
+	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
+	CCErrorTopoModuleNameDuplicated                             = 1101099
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -567,6 +584,8 @@ const (
 	CCErrProcUnbindModuleServiceTemplateDisabled = 1108042
 	CCErrProcGetServiceCategoryFailed            = 1108043
 
+	CCErrHostTransferFinalModuleConflict = 1108044
+
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
 	CCErrAuditTakeSnapshotFailed = 1109001
@@ -681,7 +700,6 @@ const (
 	CCErrCollectNetPropertyUpdateFail          = 1112018
 
 	// coreservice 1113xxx
-
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
@@ -747,8 +765,30 @@ const (
 
 	CCErrSynchronizeError = 1114001
 
-	CCErrCloudSyncDeleteSyncTaskFail = 1116011
-	CCErrCloudSyncUpdateSyncTaskFail = 1116012
+	// operation_server 1116xxx
+	CCErrOperationBizModuleHostAmountFail = 1116001
+	CCErrOperationNewAddStatisticFail     = 1116002
+	CCErrOperationChartAlreadyExist       = 1116003
+	CCErrOperationDeleteChartFail         = 1116004
+	CCErrOperationSearchChartFail         = 1116005
+	CCErrOperationUpdateChartFail         = 1116006
+	CCErrOperationGetChartDataFail        = 1116007
+	CCErrOperationUpdateChartPositionFail = 1116008
+	CCErrCloudSyncDeleteSyncTaskFail      = 1116011
+	CCErrCloudSyncUpdateSyncTaskFail      = 1116012
+
+	// task_server 1117xxx
+	// CCErrTaskNotFound task not found
+	CCErrTaskNotFound = 1117001
+	// CCErrTaskSubTaskNotFound sub task not found
+	CCErrTaskSubTaskNotFound = 1117002
+	// CCErrTaskStatusNotAllowChangeTo task not allow status change to xx
+	CCErrTaskStatusNotAllowChangeTo = 1117003
+	// CCErrTaskErrResponseEmtpyFail error response empty
+	CCErrTaskErrResponseEmtpyFail = 1117004
+	CCErrTaskLockedTaskFail       = 1117005
+	CCErrTaskUnLockedTaskFail     = 1117006
+	CCErrTaskListTaskFail         = 1117007
 
 	/** TODO: 以下错误码需要改造 **/
 

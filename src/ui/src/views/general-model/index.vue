@@ -2,28 +2,22 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.C_INST),
-                        auth: [$OPERATION.C_INST]
-                    }">
-                    <bk-button theme="primary"
-                        :disabled="!$isAuthorized($OPERATION.C_INST)"
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST, parent_layers: parentLayers })">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        :disabled="disabled"
                         @click="handleCreate">
                         {{$t('新建')}}
                     </bk-button>
-                </div>
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST]),
-                        auth: [$OPERATION.C_INST, $OPERATION.U_INST]
-                    }">
-                    <bk-button class="models-button"
-                        :disabled="!$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST])"
+                </cmdb-auth>
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST], parent_layers: parentLayers })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="models-button"
+                        :disabled="disabled"
                         @click="importSlider.show = true">
                         {{$t('导入')}}
                     </bk-button>
-                </div>
+                </cmdb-auth>
                 <div class="fl mr10">
                     <bk-button class="models-button" theme="default"
                         :disabled="!table.checked.length"
@@ -38,17 +32,14 @@
                         {{$t('批量更新')}}
                     </bk-button>
                 </div>
-                <div class="fl mr10"
-                    v-cursor="{
-                        active: !$isAuthorized($OPERATION.D_INST),
-                        auth: [$OPERATION.D_INST]
-                    }">
-                    <bk-button class="models-button button-delete"
-                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_INST)"
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST, parent_layers: parentLayers })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="models-button button-delete"
+                        :disabled="!table.checked.length || disabled"
                         @click="handleMultipleDelete">
                         {{$t('删除')}}
                     </bk-button>
-                </div>
+                </cmdb-auth>
             </div>
             <div class="options-button fr">
                 <icon-button class="ml5"
@@ -66,7 +57,7 @@
                 <bk-select class="filter-selector fl"
                     v-model="filter.id"
                     searchable
-                    font-size="14"
+                    font-size="medium"
                     :clearable="false">
                     <bk-option v-for="(option, index) in filter.options"
                         :key="index"
@@ -79,34 +70,37 @@
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :auto-select="false"
-                    font-size="14"
+                    font-size="medium"
                     v-model="filter.value"
-                    @on-selected="getTableData">
+                    @on-selected="getTableData(true)">
                 </cmdb-form-enum>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
-                    font-size="large"
+                    clearable
+                    right-icon="icon-search"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
-                    font-size="large"
+                    clearable
+                    right-icon="icon-search"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
-                    font-size="large"
+                    clearable
+                    right-icon="icon-search"
+                    font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData">
+                    @enter="getTableData(true)">
                 </bk-input>
-                <i class="filter-search bk-icon icon-search"
-                    v-show="filter.type !== 'enum'"
-                    @click="getTableData"></i>
             </div>
         </div>
         <bk-table class="models-table" ref="table"
@@ -129,9 +123,18 @@
                 :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
                 :fixed="column.id === 'bk_inst_name'">
                 <template slot-scope="{ row }">
-                    <span>{{row[column.id] | addUnit(getPropertyUnit(column.id))}}</span>
+                    <span>{{row[column.id] | formatter(column.property)}}</span>
                 </template>
             </bk-table-column>
+            <cmdb-table-empty
+                slot="empty"
+                :auth="$authResources({
+                    type: $OPERATION.C_INST,
+                    parent_layers: parentLayers
+                })"
+                :stuff="table.stuff"
+                @create="handleCreate">
+            </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -139,7 +142,9 @@
             :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
-            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.contentShow">
+            <bk-tab type="unborder-card" slot="content"
+                v-if="slider.contentShow"
+                :active.sync="tab.active" :show-header="attribute.type !== 'create'">
                 <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
@@ -162,6 +167,7 @@
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
                         ref="multipleForm"
+                        :uneditable-properties="['bk_inst_name']"
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
@@ -219,7 +225,6 @@
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
     import cmdbImport from '@/components/import/import'
-    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     export default {
         filters: {
             addUnit (value, unit) {
@@ -244,14 +249,17 @@
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         count: 0,
                         current: 1,
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
-                    sort: 'bk_inst_id'
+                    sort: 'bk_inst_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 filter: {
                     id: '',
@@ -314,6 +322,12 @@
             isPublicModel () {
                 const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
                 return !this.$tools.getMetadataBiz(model)
+            },
+            parentLayers () {
+                return [{
+                    resource_id: this.model.id,
+                    resource_type: 'model'
+                }]
             }
         },
         watch: {
@@ -358,14 +372,6 @@
             ]),
             setDynamicBreadcrumbs () {
                 this.$store.commit('setTitle', this.model.bk_obj_name)
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('资源目录'),
-                    route: {
-                        name: MENU_RESOURCE_MANAGEMENT
-                    }
-                }, {
-                    label: this.model.bk_obj_name
-                }])
             },
             getPropertyUnit (propertyId) {
                 const property = this.properties.find(property => property.bk_property_id === propertyId)
@@ -403,14 +409,19 @@
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         count: 0,
                         current: 1,
                         ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
-                    sort: 'bk_inst_id'
+                    sort: 'bk_inst_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.model['bk_obj_name']
+                        }
+                    }
                 }
             },
             getPropertyGroups () {
@@ -446,19 +457,13 @@
             },
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {
+                    const name = property.bk_property_name
                     return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name']
+                        id: property.bk_property_id,
+                        name: property.unit ? `${name}(${property.unit})` : name,
+                        property
                     }
                 })
-            },
-            async handleCheckAll (type) {
-                if (type === 'current') {
-                    this.table.checked = this.table.list.map(inst => inst['bk_inst_id'])
-                } else {
-                    const allData = await this.getAllInstList()
-                    this.table.checked = allData.info.map(inst => inst['bk_inst_id'])
-                }
             },
             handleRowClick (item) {
                 this.slider.show = true
@@ -488,44 +493,27 @@
                     config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
                 })
             },
-            getAllInstList () {
-                return this.searchInst({
-                    objId: this.objId,
-                    params: this.$injectMetadata({
-                        ...this.getSearchParams(),
-                        page: {}
-                    }, { inject: !this.isPublicModel }),
-                    config: {
-                        requestId: `${this.objId}AllList`,
-                        cancelPrevious: true
-                    }
-                }).then(data => {
-                    this.table.allList = data.info
-                    return data
-                })
-            },
-            setAllHostList (list) {
-                const newList = []
-                list.forEach(item => {
-                    const existItem = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
-                    if (existItem) {
-                        Object.assign(existItem, item)
-                    } else {
-                        newList.push(item)
-                    }
-                })
-                this.table.allList = [...this.table.allList, ...newList]
-            },
-            getTableData () {
-                this.getInstList().then(data => {
+            getTableData (event) {
+                this.getInstList({ cancelPrevious: true, globalPermission: false }).then(data => {
                     if (data.count && !data.info.length) {
                         this.table.pagination.current -= 1
                         this.getTableData()
                     }
-                    this.table.list = this.$tools.flattenList(this.properties, data.info)
+                    this.table.list = data.info
                     this.table.pagination.count = data.count
-                    this.setAllHostList(data.info)
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+
                     return data
+                }).catch(({ permission }) => {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 })
             },
             getSearchParams () {
@@ -581,6 +569,7 @@
                         })
                     }
                 } else if (this.$route.params.instId) {
+                    // 配合全文检索过滤列表
                     params.condition[this.objId].push({
                         field: 'bk_inst_id',
                         operator: '$in',
@@ -590,10 +579,8 @@
                 }
                 return params
             },
-            async handleEdit (flattenItem) {
-                const list = await this.getInstList({ fromCache: true })
-                const inst = list.info.find(item => item['bk_inst_id'] === flattenItem['bk_inst_id'])
-                this.attribute.inst.edit = inst
+            async handleEdit (item) {
+                this.attribute.inst.edit = item
                 this.attribute.type = 'update'
             },
             handleCreate () {
@@ -628,13 +615,7 @@
                         params: this.$injectMetadata(values, { inject: !this.isPublicModel })
                     }).then(() => {
                         this.getTableData()
-                        this.searchInstById({
-                            objId: this.objId,
-                            instId: originalValues['bk_inst_id'],
-                            params: this.$injectMetadata({}, { inject: !this.isPublicModel })
-                        }).then(item => {
-                            this.attribute.inst.details = this.$tools.flattenItem(this.properties, item)
-                        })
+                        this.attribute.inst.details = Object.assign({}, originalValues, values)
                         this.handleCancel()
                         this.$success(this.$t('修改成功'))
                     })
@@ -781,13 +762,13 @@
 
 <style lang="scss" scoped>
     .models-layout {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .options-filter{
         position: relative;
         margin-right: 5px;
         .filter-selector{
-            width: 115px;
+            width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
         }
