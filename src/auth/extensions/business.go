@@ -172,8 +172,8 @@ func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, hea
 		return nil, errors.New("get business detail failed")
 	}
 	p.ScopeName = businesses[0].BKAppNameField
-    p.ResourceType = p.Resources[0][0].ResourceType
-    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
 }
@@ -317,7 +317,7 @@ func (am *AuthManager) GenBusinessNoPermissionResp(ctx context.Context, header h
 	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
 	p.ActionID = string(authcenter.Get)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
-    p.ResourceType = string(authcenter.SysBusinessInstance)
+	p.ResourceType = string(authcenter.SysBusinessInstance)
 	p.ResourceTypeName = authcenter.ResourceTypeIDMap[authcenter.SysBusinessInstance]
 	p.Resources = [][]metadata.Resource{
 		{{

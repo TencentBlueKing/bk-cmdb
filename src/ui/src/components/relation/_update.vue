@@ -36,6 +36,7 @@
             <bk-table-column v-if="filter.id !== instanceNameKey && getLabelText"
                 :prop="filter.id"
                 :label="getLabelText">
+                <template slot-scope="{ row }">{{row[filter.id] | formatter(getProperty(filter.id))}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
@@ -536,7 +537,7 @@
                 if (asstObjId === this.objId) {
                     data.info = data.info.filter(item => item[this.instanceIdKey] !== this.instId)
                 }
-                this.table.list = data.info.map(item => this.$tools.flattenItem(this.properties, item))
+                this.table.list = data.info
             },
             getProperty (propertyId) {
                 return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)

@@ -75,7 +75,7 @@
 
 <script>
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
-    import { MENU_BUSINESS_SET_TEMPLATE, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import setInstance from './set-instance'
     export default {
         components: {
@@ -130,26 +130,6 @@
                     this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
                 })
             },
-            setBreadcrumbs () {
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('集群模板'),
-                    route: { name: MENU_BUSINESS_SET_TEMPLATE }
-                }, {
-                    label: this.templateName,
-                    route: {
-                        name: 'setTemplateConfig',
-                        params: {
-                            mode: 'view',
-                            templateId: this.setTemplateId
-                        },
-                        query: {
-                            tab: 'instance'
-                        }
-                    }
-                }, {
-                    label: this.$t('同步集群模板')
-                }])
-            },
             canSyncStatus () {
                 let status = true
                 this.$refs.setInstance.forEach(instance => {
@@ -166,7 +146,6 @@
                         setTemplateId: this.setTemplateId
                     })
                     this.templateName = info.name
-                    this.setBreadcrumbs()
                 } catch (e) {
                     console.error(e)
                 }
@@ -283,6 +262,7 @@
 <style lang="scss" scoped>
     .sync-set-layout {
         height: auto;
+        padding: 15px 0 0 0;
     }
     .no-content {
         position: absolute;

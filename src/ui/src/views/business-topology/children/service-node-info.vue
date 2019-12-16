@@ -57,7 +57,7 @@
             v-if="type === 'details'"
             :properties="properties"
             :property-groups="propertyGroups"
-            :inst="flattenedInstance"
+            :inst="instance"
             :show-options="modelId !== 'biz' && !isBlueking">
             <template slot="details-options">
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
@@ -192,9 +192,6 @@
             },
             withSetTemplate () {
                 return this.isSetNode && !!this.instance.set_template_id
-            },
-            flattenedInstance () {
-                return this.$tools.flattenItem(this.properties, this.instance)
             },
             moduleFromSetTemplate () {
                 return this.isModuleNode && !!this.selectedNode.parent.data.set_template_id

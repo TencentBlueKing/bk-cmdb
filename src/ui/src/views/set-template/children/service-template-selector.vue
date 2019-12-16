@@ -44,7 +44,7 @@
                 <div class="empty-content">
                     <img class="empty-image" src="../../../assets/images/empty-content.png">
                     <i18n class="empty-tips" path="无服务模板提示">
-                        <a class="empty-link" href="javascript:void(0)" place="link" @click="handleLinkClick">{{$t('跳转添加')}}</a>
+                        <a class="empty-link" href="javascript:void(0)" place="link" @click="handleLinkClick">{{$t('去添加服务模板')}}</a>
                     </i18n>
                 </div>
             </li>
@@ -53,6 +53,7 @@
 </template>
 
 <script>
+    import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         name: 'serviceTemplateSelector',
         props: {
@@ -111,7 +112,7 @@
             },
             handleLinkClick () {
                 this.$router.push({
-                    name: 'operationalTemplate'
+                    name: MENU_BUSINESS_SERVICE_TEMPLATE
                 })
             },
             hanldeFilterTemplates () {

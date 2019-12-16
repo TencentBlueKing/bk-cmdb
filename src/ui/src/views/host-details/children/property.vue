@@ -71,7 +71,9 @@
                                     :placeholder="getPlaceholder(property)"
                                     :auto-check="false"
                                     v-validate="$tools.getValidateRules(property)"
-                                    v-model.trim="editState.value">
+                                    v-model.trim="editState.value"
+                                    :ref="`component-${property.bk_property_id}`"
+                                    @enter="confirm">
                                 </component>
                                 <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                                 <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
@@ -193,6 +195,10 @@
                 const value = this.host[property.bk_property_id]
                 this.editState.value = value === null ? '' : value
                 this.editState.property = property
+                this.$nextTick(() => {
+                    const component = this.$refs[`component-${property.bk_property_id}`]
+                    component[0] && component[0].focus && component[0].focus()
+                })
             },
             async confirm () {
                 const { property, value } = this.editState

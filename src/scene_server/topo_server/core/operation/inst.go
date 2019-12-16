@@ -131,30 +131,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 	}
 
-	// 2. 检查批量数据中实例名称是否重复
-	instNameMap := make(map[string]bool)
-	for line, inst := range batchInfo.BatchInfo {
-		iName, exist := inst[common.BKInstNameField]
-		if !exist {
-			blog.Errorf("create object[%s] instance batch failed, because missing bk_inst_name field., rid: %s", object.ObjectID, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceMissingInstanceNameField, line)
-		}
-
-		name, can := iName.(string)
-		if !can {
-			blog.Errorf("create object[%s] instance batch failed, because  bk_inst_name value type is not string., rid: %s", object.ObjectID, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoInvalidObjectInstanceNameFieldValue, line)
-		}
-
-		// check if this instance name is already exist.
-		if _, ok := instNameMap[name]; ok {
-			blog.Errorf("create object[%s] instance batch, but bk_inst_name %s is duplicated., rid: %s", object.ObjectID, name, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoMultipleObjectInstanceName, name)
-		}
-
-		instNameMap[name] = true
-	}
-
 	nonInnerAttributes, err := obj.GetNonInnerAttributes()
 	if err != nil {
 		blog.Errorf("[audit]failed to get the object(%s)' attribute, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)

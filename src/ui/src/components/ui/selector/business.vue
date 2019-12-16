@@ -81,7 +81,7 @@
             }
         },
         async created () {
-            this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness', this.requestConfig)
+            this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name', this.requestConfig)
             if (this.authorizedBusiness.length) {
                 this.init()
             } else {
@@ -142,6 +142,7 @@
         .bk-icon {
             font-size: 18px;
             color: #979BA5;
+            vertical-align: text-top;
         }
     }
 </style>

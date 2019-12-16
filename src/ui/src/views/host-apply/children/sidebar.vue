@@ -91,7 +91,8 @@
             return {
                 treeOptions: {
                     showCheckbox: false,
-                    selectable: true
+                    selectable: true,
+                    checkOnClick: false
                 },
                 actionMode: '',
                 showCheckedPanel: false,
@@ -121,6 +122,7 @@
                 this.showCheckedPanel = true
                 this.treeOptions.showCheckbox = true
                 this.treeOptions.selectable = false
+                this.treeOptions.checkOnClick = true
             },
             handleTreeSelected (node) {
                 this.$emit('module-selected', node.data)
@@ -166,6 +168,7 @@
             handleCancelEdit () {
                 this.treeOptions.showCheckbox = false
                 this.treeOptions.selectable = true
+                this.treeOptions.checkOnClick = false
                 this.showCheckedPanel = false
                 this.actionMode = ''
                 this.removeChecked()
@@ -256,7 +259,7 @@
                 font-style: normal;
                 font-weight: bold;
                 color: #2dcb56;
-                padding: .1em;
+                margin: .1em;
             }
 
             .clear-all {
@@ -316,8 +319,19 @@
                 }
                 .action-icon {
                     position: absolute;
-                    right: 12px;
-                    top: 12px;
+                    right: 8px;
+                    top: 10px;
+                    width: 28px;
+                    height: 28px;
+                    text-align: center;
+                    line-height: 28px;
+
+                    a {
+                        color: #c4c6cc;
+                        &:hover {
+                            color: #979ba5;
+                        }
+                    }
                 }
             }
         }

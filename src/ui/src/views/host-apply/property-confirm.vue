@@ -267,7 +267,8 @@
                 .conflict-num,
                 .check-num {
                     font-style: normal;
-                    font-weight:bold;
+                    font-weight: bold;
+                    margin: 0 .2em;
                 }
                 .conflict-num {
                     color: #ff5656;

@@ -36,14 +36,10 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 	rid := util.ExtractRequestIDFromContext(ctx)
 	batchLayers = make([][]meta.Item, 0)
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKHostIDField).In(*hostIDArr)
-	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKSetIDField, common.BKHostIDField},
-		Condition: cond.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+	query := &metadata.HostModuleRelationRequest{
+		HostIDArr: *hostIDArr,
 	}
-	result, err := coreService.Instance().ReadInstance(ctx, *requestHeader, common.BKTableNameModuleHostConfig, query)
+	result, err := coreService.Host().GetHostModuleRelation(ctx, *requestHeader, query)
 	if err != nil {
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
 		return
@@ -54,11 +50,7 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 			hostIDArr)
 		return
 	}
-	bkBizID, err = util.GetInt64ByInterface(result.Data.Info[0][common.BKAppIDField])
-	if err != nil {
-		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
-		return
-	}
+	bkBizID = result.Data.Info[0].AppID
 
 	bizTopoTreeRoot, err := coreService.Mainline().SearchMainlineInstanceTopo(ctx, *requestHeader, bkBizID, true)
 	if err != nil {
@@ -82,12 +74,7 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 
 	hostIDs := make([]int64, 0)
 	for _, item := range result.Data.Info {
-		hostID, e := util.GetInt64ByInterface(item[common.BKHostIDField])
-		if e != nil {
-			err = fmt.Errorf("extract hostID from host info failed, host: %+v, err: %+v", item, e)
-			return
-		}
-		hostIDs = append(hostIDs, hostID)
+		hostIDs = append(hostIDs, item.HostID)
 	}
 
 	hostIDInnerIPMap, err := getInnerIPByHostIDs(coreService, *requestHeader, &hostIDs)
@@ -97,24 +84,15 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 	}
 
 	for _, item := range result.Data.Info {
-		bizID, err := util.GetInt64ByInterface(item[common.BKAppIDField])
-		if err != nil {
-			err = fmt.Errorf("get host:%+v layer failed, get bk_app_id field failed, err: %+v", item, err)
-		}
+		bizID := item.AppID
 		if bizID != bkBizID {
 			continue
 		}
-		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
-		if err != nil {
-			err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
-		}
+		moduleID := item.ModuleID
 		path := bizTopoTreeRoot.TraversalFindModule(moduleID)
 		blog.V(9).Infof("traversal find module: %d result: %+v, rid: %s", moduleID, path, rid)
 
-		hostID, err := util.GetInt64ByInterface(item[common.BKHostIDField])
-		if err != nil {
-			err = fmt.Errorf("get host:%+v layer failed, err: %+v", item, err)
-		}
+		hostID := item.HostID
 
 		// prepare host layer
 		var innerIP string
@@ -186,14 +164,10 @@ func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHe
 func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]HostSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(businessID)
-	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKHostInnerIPField, common.BKHostIDField},
-		Condition: cond.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+	query := &metadata.HostModuleRelationRequest{
+		ApplicationID: businessID,
 	}
-	hosts, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameModuleHostConfig, query)
+	hosts, err := am.clientSet.CoreService().Host().GetHostModuleRelation(ctx, header, query)
 	if err != nil {
 		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get host by businessID:%d failed, err: %+v", businessID, err)
@@ -205,16 +179,7 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 	// extract hostID
 	hostIDs := make([]int64, 0)
 	for _, host := range hosts.Data.Info {
-		hostIDVal, exist := host[common.BKHostIDField]
-		if exist == false {
-			continue
-		}
-		hostID, err := util.GetInt64ByInterface(hostIDVal)
-		if err != nil {
-			blog.V(2).Infof("synchronize task skip host:%+v, as parse hostID field failed, err: %+v, rid: %s", host, err, rid)
-			continue
-		}
-		hostIDs = append(hostIDs, hostID)
+		hostIDs = append(hostIDs, host.HostID)
 	}
 
 	return am.collectHostByHostIDs(ctx, header, hostIDs...)
@@ -235,14 +200,10 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 	}
 
 	// inject business,set,module info to HostSimplify
-	hostModuleCondition := condition.CreateCondition()
-	hostModuleCondition.Field(common.BKHostIDField).In(hostIDs)
-	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKSetIDField, common.BKHostIDField},
-		Condition: hostModuleCondition.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+	query := &metadata.HostModuleRelationRequest{
+		HostIDArr: hostIDs,
 	}
-	hostModuleResult, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameModuleHostConfig, query)
+	hostModuleResult, err := am.clientSet.CoreService().Host().GetHostModuleRelation(ctx, header, query)
 	if err != nil {
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDs, err)
 		return nil, err
@@ -253,10 +214,10 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 	}
 	hostModuleMap := map[int64]HostSimplify{}
 	for _, cls := range hostModuleResult.Data.Info {
-		host := HostSimplify{}
-		_, err = host.Parse(cls)
-		if err != nil {
-			return nil, fmt.Errorf("get hosts by object failed, err: %+v", err)
+		host := HostSimplify{
+			BKAppIDField:    cls.AppID,
+			BKModuleIDField: cls.ModuleID,
+			BKSetIDField:    cls.SetID,
 		}
 		hostModuleMap[host.BKHostIDField] = host
 	}

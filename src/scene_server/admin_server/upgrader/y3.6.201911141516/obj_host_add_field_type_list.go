@@ -50,7 +50,7 @@ type Attribute struct {
 }
 
 func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	attrID, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
+	attrID, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
 	if err != nil {
 		return err
 	}

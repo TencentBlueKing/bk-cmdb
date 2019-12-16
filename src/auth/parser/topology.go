@@ -1784,6 +1784,13 @@ func (ps *parseStream) objectAttribute() *parseStream {
 			return ps
 		}
 
+		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1792,6 +1799,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: attrID,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1807,6 +1815,13 @@ func (ps *parseStream) objectAttribute() *parseStream {
 		attrID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object attribute, but got invalid attribute id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
 			return ps
 		}
 
@@ -1833,6 +1848,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 					Action:     meta.Update,
 					InstanceID: attrID,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
