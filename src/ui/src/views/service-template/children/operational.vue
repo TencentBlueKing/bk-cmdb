@@ -397,11 +397,19 @@
                     this.formData.secondaryClassification = ''
                 }
             },
-            handleSaveProcess (values, changedValues, type) {
-                const processValues = type === 'create' ? values : changedValues
-                if (processValues.hasOwnProperty('protocol') && !processValues.protocol.value) {
-                    processValues.protocol.value = null
+            formatSubmitData (data = {}) {
+                const keys = Object.keys(data)
+                for (const key of keys) {
+                    const property = this.properties.find(property => property.bk_property_id === key)
+                    if (property && ['int', 'enum'].includes(property.bk_property_type) && !data[key].value) {
+                        data[key].value = null
+                    }
                 }
+                return data
+            },
+            handleSaveProcess (values, changedValues, type) {
+                const data = type === 'create' ? values : changedValues
+                const processValues = this.formatSubmitData(data)
                 if (type === 'create') {
                     this.createProcessTemplate({
                         params: this.$injectMetadata({
