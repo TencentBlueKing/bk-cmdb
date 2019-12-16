@@ -612,8 +612,25 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 		return nil, err
 	}
 
-	switch modelAsst.Mapping {
+	// Check if two instances are already associated
+	cond = condition.CreateCondition()
+	cond.Field(common.BKInstIDField).Eq(request.InstId)
+	cond.Field(common.BKAsstInstIDField).Eq(request.AsstInstId)
+	cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstId)
+	instAsst, err := a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v", cond, err)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !instAsst.Result {
+		blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+		return nil, params.Err.New(resp.Code, resp.ErrMsg)
+	}
+	if len(instAsst.Data) >= 1 {
+		return nil, params.Err.Error(common.CCErrorAssociationBetweenTwoInstacneAlreadyExist)
+	}
 
+	switch modelAsst.Mapping {
 	case metatype.OneToOneMapping:
 		cond := condition.CreateCondition()
 		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstId)
