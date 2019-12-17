@@ -85,18 +85,18 @@ func (h *HostSnap) Analyze(mesg string) error {
 	host := h.getHostByVal(&val)
 	if host == nil {
 		blog.Warnf("[data-collection][hostsnap] host not found, continue, %s", val.String())
-		return nil
+		return fmt.Errorf("host not found, continue, value: %s", val.String())
 	}
 	hostID := host.get(common.BKHostIDField)
 	hostIdInt64, ok := hostID.(int64)
 	if !ok {
-		blog.Errorf("host id convert from interface to int64 failed, fail to create auditLog, hostId:%d", hostIdInt64)
-		return nil
+		blog.Errorf("host id convert from interface to int64 failed, fail to update host, hostId:%v", hostID)
+		return fmt.Errorf("host id convert from interface to int64 failed, fail to update host")
 	}
 	hostIdStr := strconv.FormatInt(hostIdInt64, 10)
 	if hostIdStr == "" {
 		blog.Warnf("[data-collection][hostsnap] host id not found, continue, %s", val.String())
-		return nil
+		return fmt.Errorf("get host id failed, return, val: %s", val.String())
 	}
 
 	if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostIdStr, data, time.Minute*10).Err(); err != nil {
@@ -113,6 +113,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 		blog.Warnf("[data-collection][hostsnap] outerip is not string, %s", val.String())
 	}
 	setter := parseSetter(&val, innerIp, outIp)
+	// no need to update
 	if !needToUpdate(setter, host) {
 		return nil
 	}
@@ -130,7 +131,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 	}
 	if !res.Result {
 		blog.Errorf("failed to update host, error msg: %v", res.ErrMsg)
-		return err
+		return fmt.Errorf("UpdateInstacne http response error,err code: %d, err msg: %v, opt: %v", res.Code, res.ErrMsg, opt)
 	}
 	defer copyVal(setter, host)
 
