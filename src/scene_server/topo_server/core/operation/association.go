@@ -79,9 +79,9 @@ type AssociationOperationInterface interface {
 	SearchInstAssociationList(params types.ContextParams, query *metadata.QueryCondition) ([]metadata.InstAsst, uint64, error)
 	SearchInstAssociationUIList(params types.ContextParams, objID string, query *metadata.QueryCondition) (result interface{}, asstCnt uint64, err error)
 	SearchInstAssociationSingleObjectInstInfo(params types.ContextParams, returnInstInfoObjID string, query *metadata.QueryCondition) (result []metadata.InstBaseInfo, cnt uint64, err error)
-	CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
+	CheckAssociation(params types.ContextParams, obj model.Object, objectID string, instID int64) error
 
 	// 关联关系改造后的接口
 	SearchObjectAssocWithAssocKindList(params types.ContextParams, asstKindIDs []string) (resp *metadata.AssociationList, err error)
@@ -492,38 +492,67 @@ func (assoc *association) UpdateAssociation(params types.ContextParams, data map
 	return nil
 }
 
-// CheckBeAssociation and return error if the obj has been bind
-func (assoc *association) CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error {
-	exists, err := assoc.SearchInstAssociation(params, &metadata.QueryInput{Condition: cond.ToMapStr()})
+// CheckAssociation and return error if the instance exist association
+func (assoc *association) CheckAssociation(params types.ContextParams, obj model.Object, objectID string, instID int64) error {
+	cond := condition.CreateCondition()
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{common.BKObjIDField: objectID, common.BKInstIDField: instID})
+	or.Item(mapstr.MapStr{common.BKAsstObjIDField: objectID, common.BKAsstInstIDField: instID})
+	asst, err := assoc.SearchInstAssociation(params, &metadata.QueryInput{Condition: cond.ToMapStr()})
 	if nil != err {
 		return err
 	}
-
-	if len(exists) > 0 {
-		beAsstObject := make([]string, 0)
-		for _, asst := range exists {
-			instRsp, err := assoc.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, asst.ObjectID,
-				&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKInstIDField: asst.InstID}})
-			if err != nil {
-				return params.Err.Error(common.CCErrObjectSelectInstFailed)
-			}
-			if !instRsp.Result {
-				return params.Err.New(instRsp.Code, instRsp.ErrMsg)
-			}
-			if len(instRsp.Data.Info) <= 0 {
-				// 作为补充而存在，删除实例主机已经不存在的脏实例关联
-				if delErr := assoc.DeleteInstAssociation(params, condition.CreateCondition().
-					Field(common.BKObjIDField).Eq(asst.ObjectID).Field(common.BKAsstInstIDField).Eq(asst.InstID)); delErr != nil {
-					return delErr
-				}
-				continue
-			}
-			beAsstObject = append(beAsstObject, asst.ObjectID)
+	if len(asst) == 0 {
+		return nil
+	}
+	for _, asst := range asst {
+		var errCheck error
+		isInstExist := false
+		if asst.ObjectID == objectID {
+			isInstExist, errCheck = assoc.CheckAssociationInstExist(params, asst.AsstObjectID, asst.AsstInstID)
+		} else {
+			isInstExist, errCheck = assoc.CheckAssociationInstExist(params, asst.ObjectID, asst.InstID)
 		}
-		if len(beAsstObject) > 0 {
-			return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		if errCheck != nil {
+			return errCheck
+		}
+		if isInstExist {
+			return params.Err.Error(common.CCErrTopoInstHasBeenAssociation)
 		}
 	}
+
+	return nil
+}
+
+func (assoc *association) CheckAssociationInstExist(params types.ContextParams, objectID string, instID int64) (bool, error) {
+	instIDField := common.GetInstIDField(objectID)
+	instRsp, err := assoc.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, objectID,
+		&metadata.QueryCondition{Condition: mapstr.MapStr{instIDField: instID}})
+	if err != nil {
+		return false, params.Err.Error(common.CCErrObjectSelectInstFailed)
+	}
+	if !instRsp.Result {
+		return false, params.Err.New(instRsp.Code, instRsp.ErrMsg)
+	}
+	if len(instRsp.Data.Info) > 0 {
+		return true, nil
+	}
+	// 实例不存在，删除实例的关联关系
+	if err := assoc.DeleteAssociationDirtyData(params, objectID, instID); err != nil {
+		return false, err
+	}
+	return false, nil
+}
+
+func (assoc *association) DeleteAssociationDirtyData(params types.ContextParams, objectID string, instID int64) error {
+	cond := condition.CreateCondition()
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{common.BKObjIDField: objectID, common.BKInstIDField: instID})
+	or.Item(mapstr.MapStr{common.BKAsstObjIDField: objectID, common.BKAsstInstIDField: instID})
+	if delErr := assoc.DeleteInstAssociation(params, cond); delErr != nil {
+		return delErr
+	}
+
 	return nil
 }
 
