@@ -34,9 +34,11 @@ type BasePage struct {
 	Start int    `json:"start" mapstructure:"start"`
 }
 
-func (page BasePage) Validate() (string, error) {
+func (page BasePage) Validate(allowNoLimit bool) (string, error) {
 	if page.Limit > common.BKMaxPageSize {
-		return "limit", fmt.Errorf("exceed max page size: %d", common.BKMaxPageSize)
+		if page.Limit != common.BKNoLimit || allowNoLimit != true {
+			return "limit", fmt.Errorf("exceed max page size: %d", common.BKMaxPageSize)
+		}
 	}
 	return "", nil
 }
