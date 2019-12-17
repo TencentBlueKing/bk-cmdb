@@ -14,10 +14,8 @@ package util
 
 import (
 	"bytes"
-	"github.com/mongodb/mongo-go-driver/x/mongo/driver/uuid"
 	"math/rand"
 	"strconv"
-	"strings"
 	"text/template"
 
 	. "github.com/onsi/gomega"
@@ -53,14 +51,6 @@ func RenderTemplate(templateContext map[string]interface{}, urlTemplate string) 
 	subPath := subPathBuffer.String()
 	return subPath
 
-}
-
-func Cuid() string {
-	uid, err := uuid.New()
-	Expect(err).NotTo(HaveOccurred())
-	uidStr := string(uid[:])
-	uidStr = strings.ReplaceAll(uidStr, "-", "")
-	return uidStr
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
