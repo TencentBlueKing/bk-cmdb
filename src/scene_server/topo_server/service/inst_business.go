@@ -140,10 +140,7 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 	data = mapstr.New()
 	switch common.DataStatusFlag(pathParams("flag")) {
 	case common.DataStatusDisabled:
-		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(obj.Object().ObjectID)
-		innerCond.Field(common.BKAsstInstIDField).Eq(bizID)
-		if err := s.Core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
+		if err := s.Core.AssociationOperation().CheckAssociation(params, obj, obj.Object().ObjectID, bizID); nil != err {
 			return nil, err
 		}
 
