@@ -33,6 +33,7 @@ type SetTemplate interface {
 	SyncSetTplToInst(params types.ContextParams, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
 	UpdateSetSyncStatus(params types.ContextParams, setID int64) (metadata.SetTemplateSyncStatus, errors.CCErrorCoder)
 	GetLatestSyncTaskDetail(params types.ContextParams, setID int64) (*metadata.APITaskDetail, errors.CCErrorCoder)
+	CheckSetInstUpdateToDateStatus(params types.ContextParams, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
 }
 
 func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {
@@ -327,4 +328,59 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 		})
 	}
 	return moduleDiffs
+}
+
+// CheckSetTplInstLatest 检查通过集群模板 setTemplateID 实例化的集群是否都已经达到最新状态
+func (st *setTemplate) CheckSetInstUpdateToDateStatus(params types.ContextParams, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder) {
+	rid := params.ReqID
+
+	result := metadata.SetTemplateUpdateToDateStatus{}
+	setTemplate, ccErr := st.client.CoreService().SetTemplate().GetSetTemplate(params.Context, params.Header, bizID, setTemplateID)
+	if ccErr != nil {
+		blog.Errorf("CheckSetInstUpdateToDateStatus failed, GetSetTemplate failed, bizID: %d, setTemplateID: %d, err: %+v, rid: %s", bizID, setTemplateID, ccErr, rid)
+		return result, ccErr
+	}
+	result.SetTemplateVersion = setTemplate.Version
+	result.SetTemplateID = setTemplateID
+	result.NeedSync = false
+
+	filter := &metadata.QueryCondition{
+		Fields: []string{common.BKSetIDField, common.BKSetTemplateVersionField},
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKAppIDField:         bizID,
+			common.BKSetTemplateIDField: setTemplateID,
+		},
+	}
+	setResult, err := st.client.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+	if err != nil {
+		blog.Errorf("CheckSetInstUpdateToDateStatus failed, ReadInstance of set failed, option: %+v, err: %+v, rid: %s", filter, err, rid)
+		return result, errors.CCHttpError
+	}
+	if ccErr := setResult.CCError(); ccErr != nil {
+		blog.Errorf("CheckSetInstUpdateToDateStatus failed, ReadInstance of set failed, option: %+v, response: %+v, rid: %s", filter, setResult, rid)
+		return result, ccErr
+	}
+
+	for _, item := range setResult.Data.Info {
+		set := metadata.SetInst{}
+		if err := mapstruct.Decode2Struct(item, &set); err != nil {
+			blog.ErrorJSON("CheckSetInstUpdateToDateStatus failed, unmarshal set data failed, set: %s, err: %s, rid: %s", item, err.Error(), rid)
+			return result, params.Err.CCError(common.CCErrCommParseDBFailed)
+		}
+		needSync := set.SetTemplateVersion != setTemplate.Version
+		setStatus := metadata.SetUpdateToDateStatus{
+			SetID:              set.SetID,
+			SetTemplateVersion: set.SetTemplateVersion,
+			NeedSync:           needSync,
+		}
+		if needSync {
+			result.NeedSync = true
+		}
+		result.Sets = append(result.Sets, setStatus)
+	}
+
+	return result, nil
 }
