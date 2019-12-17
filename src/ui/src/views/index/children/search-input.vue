@@ -434,9 +434,13 @@
                 this.handleHideLenovo()
             },
             resetIndex () {
-                // this.$refs.searchInput.$refs.input.focus()
                 this.$router.replace({
                     name: MENU_INDEX
+                })
+                const timer = setTimeout(() => {
+                    this.$refs.searchInput.$refs.input.focus()
+                    this.$emit('focus', true)
+                    clearTimeout(timer)
                 })
             },
             async handleShowResult () {
@@ -560,6 +564,7 @@
             },
             handleClear () {
                 this.$refs.searchInput.$refs.input.focus()
+                this.$emit('focus', true)
                 this.keywords = ''
                 this.toggleTips && this.toggleTips.hide()
             },
