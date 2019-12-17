@@ -53,6 +53,12 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 		return nil, errors.GlobalCCErrorNotInitialized
 	}
 
+	setTemplate, err := st.client.CoreService().SetTemplate().GetSetTemplate(ctx, header, bizID, setTemplateID)
+	if err != nil {
+		blog.Errorf("DiffSetTemplateWithInstances failed, GetSetTemplate failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), rid)
+		return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
 	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(ctx, header, bizID, setTemplateID)
 	if err != nil {
 		blog.Errorf("DiffSetTemplateWithInstances failed, ListSetTplRelatedSvcTpl failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), rid)
@@ -161,6 +167,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 			topoPath = append(topoPath, nodeSimplify)
 		}
 		setDiff.TopoPath = topoPath
+		setDiff.SetTemplateVersion = setTemplate.Version
 		setDiff.UpdateNeedSyncField()
 		setDiffs = append(setDiffs, setDiff)
 	}
@@ -184,10 +191,11 @@ func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64,
 		tasks := make([]metadata.SyncModuleTask, 0)
 		for _, moduleDiff := range setDiff.ModuleDiffs {
 			task := metadata.SyncModuleTask{
-				Header:      params.Header,
-				Set:         setDiff.SetDetail,
-				ModuleDiff:  moduleDiff,
-				SetTopoPath: setDiff.TopoPath,
+				Header:             params.Header,
+				Set:                setDiff.SetDetail,
+				ModuleDiff:         moduleDiff,
+				SetTopoPath:        setDiff.TopoPath,
+				SetTemplateVersion: setDiff.SetTemplateVersion,
 			}
 			tasks = append(tasks, task)
 		}
