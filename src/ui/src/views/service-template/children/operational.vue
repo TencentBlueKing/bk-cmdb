@@ -238,9 +238,6 @@
             },
             setActive () {
                 return this.$route.params.active
-            },
-            isEdit () {
-                return this.$route.params.isEdit
             }
         },
         created () {
@@ -285,8 +282,9 @@
                         Bus.$emit('active-change', 'instance')
                         this.$route.params.active = null
                     }
-                    if (this.isEdit) {
+                    if (this.$route.params.isEdit) {
                         this.insideMode = 'edit'
+                        this.$route.params.isEdit = null
                     }
                 } catch (e) {
                     console.error(e)
