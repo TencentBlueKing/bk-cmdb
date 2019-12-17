@@ -401,7 +401,6 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst, c
 
 func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error {
 	object := obj.Object()
-	objID := object.ID
 	objectID := object.ObjectID
 
 	cond := condition.CreateCondition()
@@ -437,21 +436,8 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		preAudit := NewSupplementary().Audit(params, c.clientSet, delInst.obj, c).CreateSnapshot(delInst.instID, auditFilter)
 
 		// if this instance has been bind to a instance by the association, then this instance should not be deleted.
-		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(objID)
-		innerCond.Field(common.BKAsstInstIDField).Eq(delInst.instID)
-		err := c.asst.CheckBeAssociation(params, obj, innerCond)
+		err := c.asst.CheckAssociation(params, obj, objectID, delInst.instID)
 		if nil != err {
-			return err
-		}
-
-		// this instance has not be bind to another instance, we can delete all the associations it created
-		// by the association with other instances.
-		innerCond = condition.CreateCondition()
-		innerCond.Field(common.BKObjIDField).Eq(objID)
-		innerCond.Field(common.BKInstIDField).Eq(delInst.instID)
-		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
-			blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s, rid: %s", err.Error(), params.ReqID)
 			return err
 		}
 
@@ -459,7 +445,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		delCond := condition.CreateCondition()
 		delCond.Field(delInst.obj.GetInstIDFieldName()).In(delInst.instID)
 		if delInst.obj.IsCommon() {
-			delCond.Field(common.BKObjIDField).Eq(objID)
+			delCond.Field(common.BKObjIDField).Eq(objectID)
 		}
 		// clear association
 		dc := &metadata.DeleteOption{Condition: delCond.ToMapStr()}
@@ -484,23 +470,8 @@ func (c *commonInst) DeleteMainlineInstWithID(params types.ContextParams, obj mo
 	object := obj.Object()
 	preAudit := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(instID, condition.CreateCondition().ToMapStr())
 	// if this instance has been bind to a instance by the association, then this instance should not be deleted.
-	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKAsstObjIDField).Eq(object.ObjectID)
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	innerCond.Field(common.BKAsstInstIDField).Eq(instID)
-	err := c.asst.CheckBeAssociation(params, obj, innerCond)
+	err := c.asst.CheckAssociation(params, obj, object.ObjectID, instID)
 	if nil != err {
-		return err
-	}
-
-	// this instance has not be bind to another instance, we can delete all the associations it created
-	// by the association with other instances.
-	innerCond = condition.CreateCondition()
-	innerCond.Field(common.BKObjIDField).Eq(object.ObjectID)
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	innerCond.Field(common.BKInstIDField).Eq(instID)
-	if err = c.asst.DeleteInstAssociation(params, innerCond); nil != err {
-		blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s", err.Error())
 		return err
 	}
 
