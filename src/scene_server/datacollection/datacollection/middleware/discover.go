@@ -51,17 +51,7 @@ func NewDiscover(ctx context.Context, redisCli *redis.Client, backbone *backbone
 }
 
 func (d *Discover) Analyze(msg string) error {
-	err := d.TryCreateModel(msg)
-	if err != nil {
-		return fmt.Errorf("create model err: %v, raw: %s", err, msg)
-	}
-
-	err = d.UpdateOrAppendAttrs(msg)
-	if err != nil {
-		return fmt.Errorf("create property err: %v, raw: %s", err, msg)
-	}
-
-	err = d.UpdateOrCreateInst(msg)
+	err := d.UpdateOrCreateInst(msg)
 	if err != nil {
 		return fmt.Errorf("create inst err: %v, raw: %s", err, msg)
 	}
@@ -69,26 +59,10 @@ func (d *Discover) Analyze(msg string) error {
 }
 
 var MockMessage = `{
-    "host": {
-        "bk_host_id": 1,
-        "bk_supplier_account": "0"
-    },
     "meta": {
         "model": {
-            "bk_classification_id": "middelware",
             "bk_obj_id": "bk_apache",
-            "bk_obj_name": "apache",
             "bk_supplier_account": "0"
-        },
-        "fields": {
-            "bk_inst_name":{
-                "bk_property_name": "实例名",
-                "bk_property_type":"longchar"
-            },
-            "bk_ip":{
-                "bk_property_name":"IP",
-                "bk_property_type": "longchar"
-            }
         }
     },
     "data": {
