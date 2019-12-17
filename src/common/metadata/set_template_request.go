@@ -110,6 +110,8 @@ type SetDiff struct {
 	SetDetail   SetInst                    `json:"set_detail"`
 	TopoPath    []TopoInstanceNodeSimplify `json:"topo_path"`
 	NeedSync    bool                       `json:"need_sync"`
+
+	SetTemplateVersion int64 `json:"set_template_version"`
 }
 
 func (sd *SetDiff) UpdateNeedSyncField() {
@@ -132,6 +134,8 @@ type SyncModuleTask struct {
 	Set         SetInst                    `json:"set"`
 	SetTopoPath []TopoInstanceNodeSimplify `json:"set_topo_path"`
 	ModuleDiff  SetModuleDiff              `json:"module_diff"`
+
+	SetTemplateVersion int64 `json:"set_template_version"`
 }
 
 var (
