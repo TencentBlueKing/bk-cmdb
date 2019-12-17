@@ -310,6 +310,8 @@ const (
 	CCErrorTopoAssociationKindHasBeenUsed = 1101060
 	// create new instance for a new association, but association map is 1:n
 	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
+	// create instance association, but two instances are already associated
+	CCErrorAssociationBetweenTwoInstacneAlreadyExist = 1101062
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
