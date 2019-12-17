@@ -1,10 +1,6 @@
 <template>
     <div class="form-layout">
-        <feature-tips
-            class="process-tips"
-            :show-tips="true"
-            :desc="$t('添加进程提示')">
-        </feature-tips>
+        <cmdb-tips class="process-tips">{{$t('添加进程提示')}}</cmdb-tips>
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
@@ -75,12 +71,8 @@
 <script>
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
-    import featureTips from '@/components/feature-tips/index'
     import { mapGetters, mapMutations } from 'vuex'
     export default {
-        components: {
-            featureTips
-        },
         mixins: [formMixins],
         props: {
             inst: {

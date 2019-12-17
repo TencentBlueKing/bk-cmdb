@@ -1,13 +1,11 @@
 <template>
-    <div :class="['host-apply', { 'show-feature-tips': showFeatureTips }]">
-        <feature-tips
-            class-name="top-tips"
-            feature-name="hostApply"
-            :show-tips="showFeatureTips"
-            :desc="$t('主机属性自动应用功能提示')"
-            @close-tips="showFeatureTips = false"
-        >
-        </feature-tips>
+    <div :class="['host-apply', { 'show-feature-tips': featureTips }]">
+        <cmdb-tips class="top-tips"
+            v-if="featureTips"
+            :show-close="true"
+            @close="handleCloseTips">
+            {{$t('主机属性自动应用功能提示')}}
+        </cmdb-tips>
         <div class="main-wrapper">
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
@@ -161,7 +159,6 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import featureTips from '@/components/feature-tips/index'
     import sidebar from './children/sidebar.vue'
     import propertyConfigTable from './children/property-config-table'
     import {
@@ -172,25 +169,24 @@
     export default {
         components: {
             sidebar,
-            featureTips,
             propertyConfigTable
         },
         data () {
+            const hostApplyTips = window.localStorage.getItem('hostApplyTips')
             return {
+                featureTips: hostApplyTips === null,
                 currentModule: {},
                 initRuleList: [],
                 checkedPropertyIdList: [],
                 conflictNum: 0,
                 clearRules: false,
                 hasRule: false,
-                showFeatureTips: false,
                 batchAction: false,
                 hostAndServiceRouteName: MENU_BUSINESS_HOST_AND_SERVICE
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters(['featureTipsParams']),
             applyEnabled () {
                 return this.currentModule.host_apply_enabled
             },
@@ -207,7 +203,6 @@
             }
         },
         created () {
-            this.showFeatureTips = this.featureTipsParams['hostApply']
             this.getHostPropertyList()
         },
         methods: {
@@ -331,6 +326,10 @@
             },
             handleActionChange (action) {
                 this.batchAction = action
+            },
+            handleCloseTips () {
+                this.featureTips = false
+                window.localStorage.setItem('hostApplyTips', false)
             }
         }
     }
@@ -339,12 +338,12 @@
 <style lang="scss" scoped>
     .host-apply {
         .top-tips {
-            margin: 0 20px 10px;
+            margin: 10px 20px;
         }
 
         &.show-feature-tips {
             .main-wrapper {
-                height: calc(100% - 42px);
+                height: calc(100% - 52px);
             }
         }
     }
@@ -356,6 +355,7 @@
     .tree-layout {
         width: 300px;
         height: 100%;
+        overflow: hidden;
         border-right: 1px solid $cmdbLayoutBorderColor;
     }
     .main-content {

@@ -15,10 +15,7 @@
             </div>
         </template>
         <template v-else-if="list.length">
-            <feature-tips
-                :show-tips="showFeatureTips"
-                :desc="$t('同步模板功能提示')">
-            </feature-tips>
+            <cmdb-tips class="mb10">{{$t('同步模板功能提示')}}</cmdb-tips>
             <i18n path="服务实例同步确认提示" tag="p" class="tips">
                 <span place="path">{{treePath}}</span>
             </i18n>
@@ -131,11 +128,9 @@
 <script>
     import { mapGetters, mapActions, mapMutations } from 'vuex'
     import instanceDetails from './children/details.vue'
-    import featureTips from '@/components/feature-tips/index'
     export default {
         components: {
-            instanceDetails,
-            featureTips
+            instanceDetails
         },
         filters: {
             badge (value) {
@@ -144,7 +139,6 @@
         },
         data () {
             return {
-                showFeatureTips: true,
                 viewsTitle: '',
                 noFindData: false,
                 isLatsetData: false,

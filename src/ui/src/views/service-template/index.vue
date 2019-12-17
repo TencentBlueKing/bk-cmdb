@@ -1,13 +1,13 @@
 <template>
     <div class="template-wrapper" ref="templateWrapper">
-        <feature-tips
-            :feature-name="'serviceTemplate'"
-            :show-tips="showFeatureTips"
-            @close-tips="showFeatureTips = false">
+        <cmdb-tips class="mb10 top-tips"
+            v-if="featureTips"
+            :show-close="true"
+            @close="handleCloseTips">
             <i18n path="服务模板功能提示">
                 <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick" place="link">{{$t('业务拓扑')}}</a>
             </i18n>
-        </feature-tips>
+        </cmdb-tips>
         <div class="template-filter clearfix">
             <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_SERVICE_TEMPLATE })">
                 <bk-button slot-scope="{ disabled }"
@@ -116,16 +116,13 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
-    import featureTips from '@/components/feature-tips/index'
+    import { mapActions } from 'vuex'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
-        components: {
-            featureTips
-        },
         data () {
+            const serviceTemplateTips = window.localStorage.getItem('serviceTemplateTips')
             return {
-                showFeatureTips: false,
+                featureTips: serviceTemplateTips === null,
                 filter: {
                     mainClassification: '',
                     secondaryClassification: '',
@@ -158,7 +155,6 @@
             }
         },
         computed: {
-            ...mapGetters(['featureTipsParams']),
             params () {
                 const id = this.categoryId
                     ? this.categoryId
@@ -178,7 +174,6 @@
             }
         },
         async created () {
-            this.showFeatureTips = this.featureTipsParams['serviceTemplate']
             try {
                 await this.getServiceClassification()
                 await this.getTableData()
@@ -308,6 +303,10 @@
                 this.$router.push({
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
+            },
+            handleCloseTips () {
+                this.featureTips = false
+                window.localStorage.setItem('serviceTemplateTips', false)
             }
         }
     }
@@ -317,6 +316,7 @@
     .template-wrapper {
         padding: 15px 20px 0;
         .tips-link {
+            color: #3A84FF;
             margin: 0;
         }
         .filter-text {
