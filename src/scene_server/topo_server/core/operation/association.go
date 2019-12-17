@@ -514,10 +514,10 @@ func (assoc *association) CheckAssociation(params types.ContextParams, obj model
 			isInstExist, errCheck = assoc.CheckAssociationInstExist(params, asst.ObjectID, asst.InstID)
 		}
 		if errCheck != nil {
-			return err
+			return errCheck
 		}
 		if isInstExist {
-			return params.Err.Error(1101036)
+			return params.Err.Error(common.CCErrTopoInstHasBeenAssociation)
 		}
 	}
 
