@@ -206,3 +206,16 @@ type MultipleSetTemplateSyncStatus struct {
 	Count int64                   `json:"count"`
 	Info  []SetTemplateSyncStatus `field:"info" json:"info" bson:"info" mapstructure:"info"`
 }
+
+type SetUpdateToDateStatus struct {
+	SetID              int64 `json:"bk_set_id"`
+	SetTemplateVersion int64 `json:"set_template_version"`
+	NeedSync           bool  `json:"need_sync"`
+}
+
+type SetTemplateUpdateToDateStatus struct {
+	Sets               []SetUpdateToDateStatus `json:"sets"`
+	SetTemplateVersion int64                   `json:"set_template_version"`
+	SetTemplateID      int64                   `json:"set_template_id"`
+	NeedSync           bool                    `json:"need_sync"`
+}

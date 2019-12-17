@@ -717,3 +717,24 @@ func (s *Service) ListSetTemplateSyncStatus(params types.ContextParams, pathPara
 	}
 	return result, nil
 }
+
+func (s *Service) CheckSetInstUpdateToDateStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	setTemplateIDStr := pathParams(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	result, err := s.Core.SetTemplateOperation().CheckSetInstUpdateToDateStatus(params, bizID, setTemplateID)
+	if err != nil {
+		blog.ErrorJSON("CheckSetInstUpdateToDateStatus failed, call core implement failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	return result, nil
+}
