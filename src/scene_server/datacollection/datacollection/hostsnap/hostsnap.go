@@ -13,7 +13,6 @@
 package hostsnap
 
 import (
-	"configcenter/src/common/mapstr"
 	"context"
 	"fmt"
 	"net/http"
@@ -27,6 +26,7 @@ import (
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	dcUtil "configcenter/src/scene_server/datacollection/datacollection/middleware"
 	"configcenter/src/storage/dal"
