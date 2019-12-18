@@ -168,7 +168,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'featureTipsParams']),
+            ...mapGetters(['supplierAccount']),
             business () {
                 return this.$store.getters['objectBiz/bizId']
             },
