@@ -95,7 +95,7 @@
 <script>
     import { formatTime } from '@/utils/tools'
     import vPushDetail from './push-detail'
-    import { mapActions, mapGetters } from 'vuex'
+    import { mapActions } from 'vuex'
     export default {
         components: {
             vPushDetail
@@ -126,9 +126,6 @@
                     type: 'create'
                 }
             }
-        },
-        computed: {
-            ...mapGetters(['featureTipsParams'])
         },
         created () {
             this.getTableData()

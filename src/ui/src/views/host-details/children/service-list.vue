@@ -115,6 +115,7 @@
             serviceInstanceTable
         },
         data () {
+            const serverSwitchViewTips = window.localStorage.getItem('serverSwitchViewTips')
             return {
                 searchSelect: [
                     {
@@ -151,7 +152,7 @@
                 filter: [],
                 instances: [],
                 currentView: 'label',
-                checkViewTipsStatus: this.$store.getters['featureTipsParams'].hostServiceInstanceCheckView,
+                checkViewTipsStatus: serverSwitchViewTips === null,
                 historyLabels: {},
                 propertyGroups: [],
                 properties: [],
@@ -402,7 +403,7 @@
                 this.currentView = value
             },
             handleCheckViewStatus () {
-                this.$store.commit('setFeatureTipsParams', 'hostServiceInstanceCheckView')
+                window.localStorage.setItem('serverSwitchViewTips', false)
                 this.$refs.popoverCheckView.instance.hide()
             },
             handleConditionSelect (cur, index) {

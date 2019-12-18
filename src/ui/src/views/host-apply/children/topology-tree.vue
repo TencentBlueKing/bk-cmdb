@@ -85,7 +85,6 @@
         },
         computed: {
             ...mapGetters(['supplierAccount', 'isAdminView']),
-            ...mapGetters(['featureTipsParams']),
             ...mapState('hostApply', ['ruleDraft']),
             business () {
                 return this.$store.state.objectBiz.bizId
@@ -108,7 +107,7 @@
                 return this.action === 'batch-del'
             },
             treeHeight () {
-                const showFeatureTips = this.featureTipsParams['hostApply']
+                const showFeatureTips = window.localStorage.getItem('hostApplyTips')
                 return this.$APP.height - 160 - (showFeatureTips ? 42 : 0) + 'px'
             }
         },
