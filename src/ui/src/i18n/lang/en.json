@@ -538,8 +538,10 @@
     "创建成功": "Created Successfully",
     "请至少选择一项": "Please select at least one",
     "成功上传N条数据": "Successfully uploaded {N} data!",
+    "成功导入N个字段": "{N} fields successfully imported!",
     "上传失败列表": "Upload failed list",
     "更新失败列表": "Update failure list",
+    "新增失败列表": "Added failure list",
     "文件大小溢出": "File size cannot exceed {maxSize}kb",
     "文件格式非法": "The file format is illegal and only {allowType} files can be uploaded!",
     "部分成功": "Partially successful",
@@ -1241,5 +1243,7 @@
     "更新主机属性": "Update host attributes",
     "导入excel更新": "Import excel to update",
     "进程表单锁定提示": "Uneditable，defined in template, {link}",
-    "跳转服务模板": "view in template"
+    "跳转服务模板": "view in template",
+    "导入字段": "Import Field",
+    "第N行字段错误信息": "Line {N}:Field {field}，{info}"
 }

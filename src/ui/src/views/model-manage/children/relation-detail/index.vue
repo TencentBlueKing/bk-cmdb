@@ -30,7 +30,7 @@
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
-        <div class="form-label">
+        <div class="form-label exchange-icon-wrapper">
             <span class="label-text">
                 {{$t('目标模型')}}
                 <span class="color-danger">*</span>
@@ -49,6 +49,9 @@
                 <p class="form-error">{{errors.first('asstObjId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
+            <span class="exchange-icon" @click="exchangeObjAsst" v-if="!(relationInfo.ispre || isReadOnly || isEdit)">
+                <i class="bk-icon icon-sort"></i>
+            </span>
         </div>
         <div class="form-label">
             <span class="label-text">
@@ -92,12 +95,13 @@
                 {{$t('关联描述')}}
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                <bk-input type="text" class="cmdb-form-input"
+                <bk-input type="textarea" class="cmdb-form-input"
                     name="asstName"
+                    :maxlength="100"
                     :placeholder="$t('请输入关联描述')"
                     :disabled="relationInfo.ispre || isReadOnly"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
-                    v-validate="'singlechar|length:256'">
+                    v-validate="'singlechar'">
                 </bk-input>
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
@@ -295,6 +299,10 @@
             },
             cancel () {
                 this.$emit('cancel')
+            },
+            exchangeObjAsst () {
+                const { relationInfo } = this;
+                [relationInfo['bk_obj_id'], relationInfo['bk_asst_obj_id']] = [relationInfo['bk_asst_obj_id'], relationInfo['bk_obj_id']]
             }
         }
     }
@@ -303,5 +311,32 @@
 <style lang="scss" scoped>
     .model-relation-wrapper {
         padding: 20px;
+    }
+    .exchange-icon-wrapper {
+        position: relative;
+    }
+    .exchange-icon {
+        position: absolute;
+        display: inline-block;
+        right: 0;
+        top: 0;
+        padding-top: 2px;
+        width: 20px;
+        height: 20px;
+        border: 1px solid $cmdbBorderFocusColor;
+        border-radius: 50%;
+        color: $cmdbBorderFocusColor;
+        font-size: 12px;
+        line-height: 1;
+        text-align: center;
+        cursor: pointer;
+        &:hover {
+            color: $cmdbMainBtnColor;
+            border-color: $cmdbMainBtnColor;
+        }
+        i {
+            transform: scale(.8);
+            font-weight: bold;
+        }
     }
 </style>

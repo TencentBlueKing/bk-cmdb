@@ -26,14 +26,15 @@
                 {{$t('关联类型')}}
                 <span class="color-danger">*</span>
             </span>
-            <ul class="relation-label cmdb-form-item clearfix" :class="{ 'is-error': errors.has('asstId') }">
-                <li :class="{ 'active': relationInfo['bk_asst_id'] === relation.id }"
-                    v-for="(relation, relationIndex) in relationList"
-                    :key="relationIndex"
-                    @click="relationInfo['bk_asst_id'] = relation.id">
-                    {{relation.name}}
-                </li>
-            </ul>
+            <div class="relation-label cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
+                <cmdb-selector
+                    class="bk-select-full-width"
+                    :list="relationList"
+                    v-validate="'required'"
+                    name="asstId"
+                    v-model="relationInfo['bk_asst_id']"
+                ></cmdb-selector>
+            </div>
         </label>
         <div class="form-label">
             <span class="label-text">
@@ -56,9 +57,10 @@
                 {{$t('关联描述')}}
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
-                <bk-input type="text" class="cmdb-form-input"
+                <bk-input type="textarea" class="cmdb-form-input"
                     name="asstName"
-                    v-validate="'singlechar|length:256'"
+                    :maxlength="100"
+                    v-validate="'singlechar'"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
                     :placeholder="$t('请输入关联描述')">
                 </bk-input>
@@ -246,27 +248,6 @@
         i {
             transform: scale(.8);
             font-weight: bold;
-        }
-    }
-    .relation-label {
-        li {
-            float: left;
-            margin: 5px 7px 5px 0;
-            padding: 0 8px;
-            height: 26px;
-            line-height: 24px;
-            font-size: 12px;
-            border: 1px solid $cmdbTableBorderColor;
-            background: #f5f7f9;
-            cursor: pointer;
-            &:hover {
-                background: #fafafa;
-            }
-            &.active {
-                color: #fff;
-                background: $cmdbBorderFocusColor;
-                border-color: $cmdbBorderFocusColor;
-            }
         }
     }
 </style>
