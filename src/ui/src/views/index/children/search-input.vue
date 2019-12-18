@@ -59,18 +59,21 @@
                             <template v-for="(item, index) in lenovoList">
                                 <li :key="index" v-if="item.type === 'host'"
                                     :title="item.source.bk_host_innerip"
+                                    :class="{ 'selected': selectIndex === index }"
                                     @click="handleGoResource(item.source)">
                                     <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_host_innerip}}</span>
                                     <span>({{$t('主机')}})</span>
                                 </li>
                                 <li :key="index" v-else-if="item.type === 'object'"
                                     :title="item.source.bk_inst_name"
+                                    :class="{ 'selected': selectIndex === index }"
                                     @click="handleGoInstace(item.source)">
                                     <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_inst_name}}</span>
                                     <span>({{getShowModelName(item.source)}})</span>
                                 </li>
                                 <li :key="index" v-else-if="item.type === 'biz'"
                                     :title="item.source.bk_biz_name"
+                                    :class="{ 'selected': selectIndex === index }"
                                     @click="handleGoBusiness(item.source)">
                                     <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_biz_name}}</span>
                                     <span>({{$t('业务')}})</span>
@@ -94,6 +97,7 @@
                             <li v-for="(history, index) in historyList"
                                 ref="historyItem"
                                 :key="index"
+                                :class="{ 'selected': selectIndex === index }"
                                 @click="handleHistorySearch(history)">
                                 {{history}}
                             </li>
@@ -297,15 +301,9 @@
             },
             showLenovo (flag) {
                 if (!flag) this.selectIndex = -1
-                this.$refs.lenovoItem && this.$refs.lenovoItem.forEach(item => {
-                    item.parentNode.classList.remove('selected')
-                })
             },
             showHistory (flag) {
                 if (!flag) this.selectIndex = -1
-                this.$refs.historyItem && this.$refs.historyItem.forEach(item => {
-                    item.classList.remove('selected')
-                })
             }
         },
         created () {
@@ -568,17 +566,6 @@
                 this.keywords = ''
                 this.toggleTips && this.toggleTips.hide()
             },
-            getCurrentItem (list, len, index) {
-                let item = {}
-                if (index >= len) {
-                    item = list[len - 1]
-                } else if (index < 0) {
-                    item = list[0]
-                } else {
-                    item = list[index]
-                }
-                return item
-            },
             handleSelectedKeywords (event) {
                 const showLenovo = this.showLenovo && this.lenovoList.length
                 if (!showLenovo && !this.showHistory) return
@@ -599,17 +586,9 @@
                         index = index >= len - 1 ? len - 1 : index + 1
                     }
                     if (index < 0) return
-                    const item = this.getCurrentItem(itemList, len, index)
-                    this.keywords = item.innerText
                     this.selectIndex = index
-                    itemList.forEach((item, i) => {
-                        const node = showLenovo ? item.parentNode : item
-                        if (i === index) {
-                            node.classList.add('selected')
-                        } else {
-                            node.classList.remove('selected')
-                        }
-                    })
+                    const item = itemList[index]
+                    this.keywords = item.innerText
                 } else if (code.enter === keyCode && this.keywords) {
                     this.showHistory = false
                     this.handleShowResult()
