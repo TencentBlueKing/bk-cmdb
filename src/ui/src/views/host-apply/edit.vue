@@ -14,7 +14,6 @@
     import multiModuleConfig from './children/multi-module-config'
     import singleModuleConfig from './children/single-module-config'
     import {
-        MENU_BUSINESS_HOST_APPLY,
         MENU_BUSINESS_HOST_APPLY_CONFIRM
     } from '@/dictionary/menu-symbol'
     export default {
@@ -81,14 +80,6 @@
             },
             setBreadcrumbs () {
                 this.$store.commit('setTitle', this.title)
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('主机属性自动应用'),
-                    route: {
-                        name: MENU_BUSINESS_HOST_APPLY
-                    }
-                }, {
-                    label: this.title
-                }])
             },
             getTopopath () {
                 return this.$store.dispatch('hostApply/getTopopath', {

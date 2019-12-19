@@ -102,14 +102,6 @@
             },
             setBreadcrumbs () {
                 this.$store.commit('setTitle', this.$t('策略失效列表'))
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('主机属性自动应用'),
-                    route: {
-                        name: MENU_BUSINESS_HOST_APPLY
-                    }
-                }, {
-                    label: this.$t('策略失效列表')
-                }])
             },
             goBack () {
                 this.$router.push({
