@@ -1,5 +1,5 @@
 <template>
-    <div class="cmdb-tips" :style="tipsStyle">
+    <div class="cmdb-tips" :style="tipsStyle" v-if="showTips">
         <i :class="icon" v-if="icon" :style="iconStyle"></i>
         <p class="tips-content" :class="{ 'ellipsis': localEllipsis, 'pr20': showClose }">
             <slot></slot>
@@ -13,6 +13,10 @@
     export default {
         name: 'cmdb-tips',
         props: {
+            tipsKey: {
+                type: String,
+                default: ''
+            },
             tipsStyle: {
                 type: Object,
                 default: () => ({})
@@ -32,15 +36,13 @@
             moreLink: {
                 type: String,
                 default: ''
-            },
-            showClose: {
-                type: Boolean,
-                default: false
             }
         },
         data () {
             return {
-                localEllipsis: false
+                localEllipsis: false,
+                showClose: false,
+                showTips: true
             }
         },
         watch: {
@@ -48,9 +50,24 @@
                 this.localEllipsis = link ? false : this.ellipsis
             }
         },
+        created () {
+            this.setStatus()
+        },
         methods: {
+            setStatus () {
+                let value = !this.tipsKey
+                if (this.tipsKey) {
+                    const localValue = window.localStorage.getItem(this.tipsKey)
+                    value = localValue === null ? true : localValue === 'true'
+                }
+                this.$emit('input', value)
+                this.showTips = value
+                this.showClose = !!this.tipsKey
+            },
             handleClose () {
-                this.$emit('close')
+                window.localStorage.setItem(this.tipsKey, false)
+                this.$emit('input', false)
+                this.showTips = false
             }
         }
     }
