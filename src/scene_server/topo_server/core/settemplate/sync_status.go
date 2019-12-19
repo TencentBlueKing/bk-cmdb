@@ -77,7 +77,7 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 		return setSyncStatus, err
 	}
 	if len(diff) == 0 {
-		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst result empty, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst result empty, setID: %d, rid: %s", setID, params.ReqID)
 		return setSyncStatus, params.Err.CCError(common.CCErrCommInternalServerError)
 	}
 	setDiff := diff[0]
