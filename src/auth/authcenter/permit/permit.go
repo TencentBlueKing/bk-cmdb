@@ -97,12 +97,10 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return true
 	case rsc.Type == meta.InstallBK:
 		return true
-<<<<<<< HEAD
 	// all the model instances' read operation is authorized for now
 	case rsc.Type == meta.ModelInstance && IsReadAction(rsc.Action):
-=======
+		return true
 	case rsc.Type == meta.SystemConfig:
->>>>>>> feature: add change blueking bussiness flag issue #3633
 		return true
 	default:
 		return false
