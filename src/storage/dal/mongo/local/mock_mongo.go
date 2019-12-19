@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strings"
 
 	"configcenter/src/storage/dal"
@@ -64,7 +65,7 @@ type MockResult struct {
 	Err        error
 	OK         bool
 	RawResult  []byte
-	Count      uint64
+	Count      int64
 	SequenceID uint64
 	Info       types.Transaction
 	Indexs     []dal.Index
@@ -105,16 +106,16 @@ type MockCollection struct {
 
 // Find 查询多个并反序列化到 Result
 func (c *MockCollection) Find(filter dal.Filter) dal.Find {
-	return &MockFind{MockCollection: c, filter: filter, projection: types.Document{"_id": false}}
+	return &MockFind{MockCollection: c, filter: filter, projection: map[string]interface{}{"_id": false}}
 }
 
 // MockFind define a find operation
 type MockFind struct {
 	*MockCollection `json:"-"`
-	projection      types.Document
+	projection      map[string]interface{}
 	filter          dal.Filter
-	start           uint64
-	limit           uint64
+	start           int64
+	limit           int64
 	sort            []string
 }
 
@@ -140,13 +141,13 @@ func (f *MockFind) Sort(sort string) dal.Find {
 
 // Start 查询上标
 func (f *MockFind) Start(start uint64) dal.Find {
-	f.start = start
+	f.start = int64(start)
 	return f
 }
 
 // Limit 查询限制
 func (f *MockFind) Limit(limit uint64) dal.Find {
-	f.limit = limit
+	f.limit = int64(limit)
 	return f
 }
 
@@ -213,10 +214,10 @@ func (f *MockFind) Count(ctx context.Context) (uint64, error) {
 	key := "FINDCOUNT:" + f.collName + ":" + string(out)
 
 	if retval, ok := f.Mock.cache[string(key)]; ok {
-		return retval.Count, retval.Err
+		return uint64(retval.Count), retval.Err
 	}
 
-	return f.Mock.retval.Count, err
+	return uint64(f.Mock.retval.Count), err
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
@@ -253,6 +254,25 @@ func (c *MockCollection) Update(ctx context.Context, filter dal.Filter, doc inte
 	c.Mock.retval = nil
 
 	return nil
+}
+
+// UpdateModifyCount 更新数据,返回更新的条数
+func (c *MockCollection) UpdateModifyCount(ctx context.Context, filter dal.Filter, doc interface{}) (int64, error) {
+	bsonout, err := bson.Marshal([]interface{}{filter, doc})
+	if err != nil {
+		return 0, err
+	}
+
+	key := "UPDATE:" + c.collName + ":" + string(bsonout)
+	retval, ok := c.Mock.cache[key]
+	if ok {
+		return 0, retval.Err
+	}
+
+	c.Mock.cache[key] = c.Mock.retval
+	c.Mock.retval = nil
+
+	return retval.Count, nil
 }
 
 // Update or insert data
@@ -301,8 +321,61 @@ func (c *Mock) NextSequence(ctx context.Context, sequenceName string) (uint64, e
 
 }
 
+// StartSession 开启新会话
+func (c *Mock) StartSession() (dal.DB, error) {
+	return c, nil
+}
+
+// EndSession 结束会话
+func (c *Mock) EndSession(ctx context.Context) error {
+	return nil
+}
+
 // StartTransaction 开启新事务
-func (c *Mock) StartTransaction(ctx context.Context) (dal.DB, error) {
+func (c *Mock) StartTransaction(ctx context.Context) error {
+	key := "StartTransaction"
+	if retval, ok := c.cache[key]; ok {
+		return retval.Err
+	}
+	c.cache[key] = c.retval
+	c.retval = nil
+	return nil
+}
+
+// CommitTransaction 提交事务
+func (c *Mock) CommitTransaction(ctx context.Context) error {
+	key := "COMMIT"
+	if retval, ok := c.cache[key]; ok {
+		return retval.Err
+	}
+	c.cache[key] = c.retval
+	c.retval = nil
+	return nil
+}
+
+// AbortTransaction 取消事务
+func (c *Mock) AbortTransaction(ctx context.Context) error {
+	key := "ABORT"
+	if retval, ok := c.cache[key]; ok {
+		return retval.Err
+	}
+	c.cache[key] = c.retval
+	c.retval = nil
+	return nil
+}
+
+// StartTransaction 开启新事务
+//func (c *Mock) StartTransaction(ctx context.Context) (dal.DB, error) {
+//	key := "StartTransaction"
+//	if retval, ok := c.cache[key]; ok {
+//		return c, retval.Err
+//	}
+//	c.cache[key] = c.retval
+//	c.retval = nil
+//	return c, nil
+//}
+
+func (c *Mock) Start(ctx context.Context) (dal.Transaction, error) {
 	key := "StartTransaction"
 	if retval, ok := c.cache[key]; ok {
 		return c, retval.Err
@@ -335,18 +408,36 @@ func (c *Mock) Abort(ctx context.Context) error {
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *Mock) TxnInfo() *types.Transaction {
+func (c *Mock) TxnInfo() (*types.Transaction, error) {
 	key := "TxnInfo"
 	if retval, ok := c.cache[key]; ok {
-		return &retval.Info
+		return &retval.Info, nil
 	}
 	c.cache[key] = c.retval
 	c.retval = nil
-	return &types.Transaction{}
+	return &types.Transaction{}, nil
+}
+
+// TxnInfo 当前事务信息，用于事务发起者往下传递
+//func (c *Mock) TxnInfo() *types.Transaction {
+//	key := "TxnInfo"
+//	if retval, ok := c.cache[key]; ok {
+//		return &retval.Info
+//	}
+//	c.cache[key] = c.retval
+//	c.retval = nil
+//	return &types.Transaction{}
+//}
+
+// AutoRun Interface for automatic processing of encapsulated transactions
+// f func return error, abort commit, other commit transcation. transcation commit can be error.
+// f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
+func (c *Mock) AutoRun(ctx context.Context, opt dal.TxnWrapperOption, f func(header http.Header) error) error {
+	panic("transcation wrapper not implemented")
 }
 
 // HasTable 判断是否存在集合
-func (c *Mock) HasTable(collName string) (bool, error) {
+func (c *Mock) HasTable(ctx context.Context, collName string) (bool, error) {
 	key := "HAS_TABLE" + collName
 	if retval, ok := c.cache[key]; ok {
 		return retval.OK, retval.Err
@@ -357,7 +448,7 @@ func (c *Mock) HasTable(collName string) (bool, error) {
 }
 
 // DropTable 移除集合
-func (c *Mock) DropTable(collName string) error {
+func (c *Mock) DropTable(ctx context.Context, collName string) error {
 	key := "HAS_TABLE:" + collName
 	if retval, ok := c.cache[key]; ok {
 		return retval.Err
@@ -369,7 +460,7 @@ func (c *Mock) DropTable(collName string) error {
 }
 
 // CreateTable 创建集合
-func (c *Mock) CreateTable(collName string) error {
+func (c *Mock) CreateTable(ctx context.Context, collName string) error {
 	key := "CREATE_TABLE:" + collName
 	if retval, ok := c.cache[key]; ok {
 		return retval.Err

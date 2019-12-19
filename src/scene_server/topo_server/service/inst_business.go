@@ -34,8 +34,51 @@ import (
 
 // CreateBusiness create a new business
 func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	var txnErr error
+	// 判断是否使用事务
+	if s.EnableTxn {
+		sess, err := s.DB.StartSession()
+		if err != nil {
+			txnErr = err
+			blog.Errorf("StartSession err: %s, rid: %s", err.Error(), params.ReqID)
+			return nil, err
+		}
+		// 获取事务信息，将其存入context中
+		txnInfo, err := sess.TxnInfo()
+		if err != nil {
+			txnErr = err
+			blog.Errorf("TxnInfo err: %+v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+		params.Header = txnInfo.IntoHeader(params.Header)
+		params.Context = util.TnxIntoContext(params.Context, txnInfo)
+		err = sess.StartTransaction(params.Context)
+		if err != nil {
+			txnErr = err
+			blog.Errorf("StartTransaction err: %+v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+		defer func() {
+			if txnErr == nil {
+				err = sess.CommitTransaction(params.Context)
+				if err != nil {
+					blog.Errorf("CommitTransaction err: %+v", err)
+				}
+			} else {
+				blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
+				err = sess.AbortTransaction(params.Context)
+				if err != nil {
+					blog.Errorf("AbortTransaction err: %+v", err)
+				}
+			}
+			sess.EndSession(params.Context)
+		}()
+	}
+
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
+		txnErr = err
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
@@ -43,22 +86,24 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
 	if err != nil {
+		txnErr = err
 		blog.Errorf("create business failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
 	businessID, err := business.GetInstID()
 	if err != nil {
+		txnErr = err
 		blog.Errorf("unexpected error, create business success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 
 	// auth: register business to iam
 	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
+		txnErr = err
 		blog.Errorf("create business success, but register to iam failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
-
 	return business, nil
 }
 

@@ -14,6 +14,7 @@ package x18_12_13_02
 
 import (
 	"context"
+
 	"gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
@@ -23,13 +24,13 @@ import (
 
 func addCloudTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameCloudTask
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}
@@ -49,13 +50,13 @@ func addCloudTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 
 func addCloudResourceConfirmTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameCloudResourceConfirm
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}
@@ -76,13 +77,13 @@ func addCloudResourceConfirmTable(ctx context.Context, db dal.RDB, conf *upgrade
 
 func addCloudSyncHistoryTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameCloudSyncHistory
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}
@@ -103,13 +104,13 @@ func addCloudSyncHistoryTable(ctx context.Context, db dal.RDB, conf *upgrader.Co
 
 func addCloudConfirmHistoryTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameResourceConfirmHistory
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 
 	if err != nil {
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}

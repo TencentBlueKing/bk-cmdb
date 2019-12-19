@@ -26,9 +26,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 
-	"github.com/rentiansheng/bk_bson/bson"
+	"go.mongodb.org/mongo-driver/bson"
 	"github.com/tidwall/gjson"
-	mgobson "gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -665,9 +664,6 @@ func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
 	case map[string]interface{}:
 		floatOption.Min = getString(option["min"])
 		floatOption.Max = getString(option["max"])
-	case mgobson.M:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
 	case bson.M:
 		floatOption.Min = getString(option["min"])
 		floatOption.Max = getString(option["max"])
@@ -693,9 +689,6 @@ func ParseIntOption(ctx context.Context, val interface{}) IntOption {
 		intOption.Min = gjson.Get(option, "min").Raw
 		intOption.Max = gjson.Get(option, "max").Raw
 	case map[string]interface{}:
-		intOption.Min = getString(option["min"])
-		intOption.Max = getString(option["max"])
-	case mgobson.M:
 		intOption.Min = getString(option["min"])
 		intOption.Max = getString(option["max"])
 	case bson.M:
@@ -789,13 +782,6 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
 				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(mgobson.M); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-				enumOptions = append(enumOptions, enumOption)
 			} else {
 				return nil, fmt.Errorf("unknow val type: %#v", val)
 			}
@@ -839,9 +825,6 @@ func ParseFloatOption(ctx context.Context, val interface{}) FloatOption {
 		floatOption.Min = gjson.Get(option, "min").Raw
 		floatOption.Max = gjson.Get(option, "max").Raw
 	case map[string]interface{}:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
-	case mgobson.M:
 		floatOption.Min = getString(option["min"])
 		floatOption.Max = getString(option["max"])
 	case bson.M:

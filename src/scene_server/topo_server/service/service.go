@@ -43,7 +43,7 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn         dal.Transcation
+	DB         dal.RDB
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
@@ -51,6 +51,7 @@ type Service struct {
 	Error       errors.CCErrorIf
 	Language    language.CCLanguageIf
 	actions     []action
+	EnableTxn   bool
 }
 
 // WebService the web service
