@@ -178,10 +178,9 @@ func (ps *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID := input.BizID
-	if bizID == 0 {
+	if input.BizID == 0 {
 		var err error
-		bizID, err = metadata.BizIDFromMetadata(input.Metadata)
+		_, err = metadata.BizIDFromMetadata(input.Metadata)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get business id failed, err: %v, input: %+v",
 				err, input)
