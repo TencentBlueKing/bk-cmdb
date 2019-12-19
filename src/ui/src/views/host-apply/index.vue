@@ -1,11 +1,6 @@
 <template>
     <div :class="['host-apply', { 'show-feature-tips': featureTips }]">
-        <cmdb-tips class="top-tips"
-            v-if="featureTips"
-            :show-close="true"
-            @close="handleCloseTips">
-            {{$t('主机属性自动应用功能提示')}}
-        </cmdb-tips>
+        <cmdb-tips class="top-tips" tips-key="hostApplyTips" v-model="featureTips">{{$t('主机属性自动应用功能提示')}}</cmdb-tips>
         <div class="main-wrapper">
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
@@ -172,9 +167,8 @@
             propertyConfigTable
         },
         data () {
-            const hostApplyTips = window.localStorage.getItem('hostApplyTips')
             return {
-                featureTips: hostApplyTips === null,
+                featureTips: true,
                 currentModule: {},
                 initRuleList: [],
                 checkedPropertyIdList: [],
@@ -326,10 +320,6 @@
             },
             handleActionChange (action) {
                 this.batchAction = action
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('hostApplyTips', false)
             }
         }
     }
@@ -344,12 +334,13 @@
         &.show-feature-tips {
             .main-wrapper {
                 height: calc(100% - 52px);
+                border-top: 1px solid $cmdbLayoutBorderColor;
             }
         }
     }
     .main-wrapper {
         height: 100%;
-        border-top: 1px solid $cmdbLayoutBorderColor;
+        border-top: none;
 
     }
     .tree-layout {

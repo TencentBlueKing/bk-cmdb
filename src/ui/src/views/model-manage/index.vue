@@ -3,11 +3,10 @@
         <cmdb-main-inject ref="mainInject"
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
-            <cmdb-tips class="mb10"
-                v-if="featureTips"
-                :show-close="true"
-                :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement'"
-                @close="handleCloseTips">
+            <cmdb-tips
+                class="mb10"
+                tips-key="modelTips"
+                :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement'">
                 {{$t('模型顶部提示')}}
             </cmdb-tips>
             <div class="fl">
@@ -237,9 +236,7 @@
             cmdbMainInject
         },
         data () {
-            const modelTips = window.localStorage.getItem('modelTips')
             return {
-                featureTips: modelTips === null,
                 scrollHandler: null,
                 scrollTop: 0,
                 topPadding: 0,
@@ -522,10 +519,6 @@
                         }
                     })
                 }
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('modelTips', false)
             }
         }
     }

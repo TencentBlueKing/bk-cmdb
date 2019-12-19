@@ -1,9 +1,6 @@
 <template>
     <div class="template-layout">
-        <cmdb-tips class="mb10"
-            v-if="featureTips"
-            :show-close="true"
-            @close="handleCloseTips">
+        <cmdb-tips class="mb10" tips-key="showSetTips">
             <i18n path="集群模板功能提示" class="tips-text">
                 <a class="tips-link" href="javascript:void(0)" @click="handleGoBusinessTopo" place="topo">{{$t('业务拓扑')}}</a>
                 <a class="tips-link" href="javascript:void(0)" @click="handleGoServiceTemplate" place="template">{{$t('服务模板')}}</a>
@@ -93,7 +90,6 @@
     import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         data () {
-            const showSetTips = window.localStorage.getItem('showSetTips')
             return {
                 list: [],
                 originList: [],
@@ -105,8 +101,7 @@
                             resource: this.$t('集群模板')
                         }
                     }
-                },
-                featureTips: showSetTips === null
+                }
             }
         },
         computed: {
@@ -204,10 +199,6 @@
                 this.$router.push({
                     name: MENU_BUSINESS_SERVICE_TEMPLATE
                 })
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('showSetTips', false)
             }
         }
     }
