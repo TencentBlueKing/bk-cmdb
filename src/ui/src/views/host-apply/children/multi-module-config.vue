@@ -268,7 +268,8 @@
                     this.$router.push({
                         name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
                         query: {
-                            batch: 1
+                            batch: 1,
+                            mid: this.$route.query.mid
                         }
                     })
                 })
@@ -319,6 +320,7 @@
 <style lang="scss" scoped>
     .multi-module-config {
         // width: 1066px;
+        padding-top: 15px;
         --labelWidth: 180px;
         .config-item {
             display: flex;

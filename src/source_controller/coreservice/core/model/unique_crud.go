@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -72,7 +73,13 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		}
 	}
 
-	err := m.recheckUniqueForExistsInstances(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
+	properties, err := m.getUniqueProperties(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
+	if nil != err {
+		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, inputParam, err, ctx.ReqID)
+		return 0, ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "keys")
+	}
+
+	err = m.recheckUniqueForExistsInstances(ctx, objID, properties, inputParam.Data.MustCheck, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v err: %#v, rid: %s", objID, inputParam, err, ctx.ReqID)
 		return 0, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "instance")
@@ -136,7 +143,13 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 		}
 	}
 
-	err := m.recheckUniqueForExistsInstances(ctx, objID, unique.Keys, unique.MustCheck, unique.Metadata)
+	properties, err := m.getUniqueProperties(ctx, objID, unique.Keys, unique.MustCheck, unique.Metadata)
+	if nil != err {
+		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, unique, err, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "keys")
+	}
+
+	err = m.recheckUniqueForExistsInstances(ctx, objID, properties, unique.MustCheck, unique.Metadata)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v, rid: %s", objID, unique, err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommDuplicateItem, "instance")
@@ -215,19 +228,13 @@ func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID st
 	return nil
 }
 
-// for create or update a model instance unique check usage.
-// the must_check is true, must be check exactly, no matter the check filed is empty or not.
-// the must_check is false, only when all the filed is not empty, then it's check exactly, otherwise, skip this check.
-func (m *modelAttrUnique) recheckUniqueForExistsInstances(ctx core.ContextParams, objID string, keys []metadata.UniqueKey, mustCheck bool, meta metadata.Metadata) error {
-	propertyIDs := make([]uint64, 0)
+// get properties via keys
+func (m *modelAttrUnique) getUniqueProperties(ctx core.ContextParams, objID string, keys []metadata.UniqueKey, mustCheck bool, meta metadata.Metadata) ([]metadata.Attribute, error) {
+	propertyIDs := make([]int64, 0)
 	for _, key := range keys {
-		switch key.Kind {
-		case metadata.UniqueKeyKindProperty:
-			propertyIDs = append(propertyIDs, key.ID)
-		default:
-			return ctx.Error.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
-		}
+		propertyIDs = append(propertyIDs, int64(key.ID))
 	}
+	propertyIDs = util.IntArrayUnique(propertyIDs)
 
 	properties := make([]metadata.Attribute, 0)
 	attCond := condition.CreateCondition()
@@ -244,10 +251,26 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(ctx core.ContextParams
 
 	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(fCond).All(ctx, &properties)
 	if err != nil {
-		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts find properties for %s failed %s: %s, rid: %s", objID, err, ctx.ReqID)
-		return err
+		blog.ErrorJSON("[ObjectUnique] getUniqueProperties find properties for %s failed %s: %s, rid: %s", objID, err, ctx.ReqID)
+		return nil, err
 	}
 
+	if len(properties) <= 0 {
+		blog.ErrorJSON("[ObjectUnique] getUniqueProperties keys empty for [%s] %+s, rid: %s", objID, keys, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, "keys")
+	}
+	if len(properties) != len(propertyIDs) {
+		blog.ErrorJSON("[ObjectUnique] getUniqueProperties keys have non-existent attribute for [%s] %+s, rid: %s", objID, keys, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "keys")
+	}
+
+	return properties, nil
+}
+
+// for create or update a model instance unique check usage.
+// the must_check is true, must be check exactly, no matter the check filed is empty or not.
+// the must_check is false, only when all the filed is not empty, then it's check exactly, otherwise, skip this check.
+func (m *modelAttrUnique) recheckUniqueForExistsInstances(ctx core.ContextParams, objID string, properties []metadata.Attribute, mustCheck bool, meta metadata.Metadata) error {
 	// now, set the pipeline.
 	pipeline := make([]interface{}, 0)
 
@@ -260,11 +283,6 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(ctx core.ContextParams
 	}
 	if common.GetObjByType(objID) == common.BKInnerObjIDObject {
 		instCond.Set(common.BKObjIDField, objID)
-	}
-
-	if len(properties) <= 0 {
-		blog.Warnf("[ObjectUnique] recheckUniqueForExistsInsts keys empty for [%s] %+v, rid: %s", objID, keys, ctx.ReqID)
-		return nil
 	}
 
 	// if a unique is not a "must check", then it has two scenarios:
@@ -310,7 +328,7 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(ctx core.ContextParams
 	result := struct {
 		UniqueCount uint64 `bson:"unique_count"`
 	}{}
-	err = m.dbProxy.Table(common.GetInstTableName(objID)).AggregateOne(ctx, pipeline, &result)
+	err := m.dbProxy.Table(common.GetInstTableName(objID)).AggregateOne(ctx, pipeline, &result)
 	if err != nil && !m.dbProxy.IsNotFoundError(err) {
 		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts failed %s, pipeline: %s, rid: %s", err, pipeline, ctx.ReqID)
 		return err
@@ -324,7 +342,7 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(ctx core.ContextParams
 }
 
 // checkUniqueRequireExist  check if either is a required unique check
-// ignoreUnqiqueIDS 除ignoreUnqiqueIDS之外是否有唯一校验项目
+// ignoreUniqueIDS 除ignoreUniqueIDS之外是否有唯一校验项目
 func (m *modelAttrUnique) checkUniqueRequireExist(ctx core.ContextParams, objID string, ignoreUnqiqueIDS []uint64) (bool, error) {
 	cond := condition.CreateCondition()
 	if len(ignoreUnqiqueIDS) > 0 {

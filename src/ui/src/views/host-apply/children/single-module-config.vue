@@ -175,7 +175,10 @@
                 this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
                     this.$router.push({
-                        name: MENU_BUSINESS_HOST_APPLY_CONFIRM
+                        name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
+                        query: {
+                            mid: this.$route.query.mid
+                        }
                     })
                 })
             },

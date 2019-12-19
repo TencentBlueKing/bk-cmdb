@@ -13,11 +13,11 @@
 package y3_6_201911141516
 
 import (
-	"configcenter/src/common"
 	"context"
 	"fmt"
 	"time"
 
+	"configcenter/src/common"
 	com "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"

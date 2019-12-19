@@ -238,9 +238,6 @@
             },
             setActive () {
                 return this.$route.params.active
-            },
-            isEdit () {
-                return this.$route.params.isEdit
             }
         },
         created () {
@@ -285,8 +282,9 @@
                         Bus.$emit('active-change', 'instance')
                         this.$route.params.active = null
                     }
-                    if (this.isEdit) {
+                    if (this.$route.params.isEdit) {
                         this.insideMode = 'edit'
+                        this.$route.params.isEdit = null
                     }
                 } catch (e) {
                     console.error(e)
@@ -397,11 +395,23 @@
                     this.formData.secondaryClassification = ''
                 }
             },
-            handleSaveProcess (values, changedValues, type) {
-                const processValues = type === 'create' ? values : changedValues
-                if (processValues.hasOwnProperty('protocol') && !processValues.protocol.value) {
-                    processValues.protocol.value = null
+            formatSubmitData (data = {}) {
+                const keys = Object.keys(data)
+                for (const key of keys) {
+                    const property = this.properties.find(property => property.bk_property_id === key)
+                    if (property
+                        && ['enum', 'int', 'float'].includes(property.bk_property_type)
+                        && (!data[key].value || !data[key].as_default_value)) {
+                        data[key].value = null
+                    } else if (!data[key].as_default_value) {
+                        data[key].value = ''
+                    }
                 }
+                return data
+            },
+            handleSaveProcess (values, changedValues, type) {
+                const data = type === 'create' ? values : changedValues
+                const processValues = this.formatSubmitData(data)
                 if (type === 'create') {
                     this.createProcessTemplate({
                         params: this.$injectMetadata({
@@ -472,12 +482,9 @@
                     params: this.$injectMetadata({
                         service_template_id: this.formData.templateId,
                         processes: this.processList.map(process => {
-                            if (process.hasOwnProperty('protocol') && !process.protocol.value) {
-                                process.protocol.value = null
-                            }
                             delete process.sign_id
                             return {
-                                spec: process
+                                spec: this.formatSubmitData(process)
                             }
                         })
                     }, { injectBizId: true })
