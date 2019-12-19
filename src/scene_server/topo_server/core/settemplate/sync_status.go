@@ -40,7 +40,7 @@ func (st *setTemplate) GetOneSet(params types.ContextParams, setID int64) (metad
 		blog.ErrorJSON("GetOneSet failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), params.ReqID)
 		return set, params.Err.CCError(common.CCErrCommDBSelectFailed)
 	}
-	if instResult.Result == false || instResult.Code != 0 {
+	if !instResult.Result || instResult.Code != 0 {
 		blog.ErrorJSON("GetOneSet failed, read instance failed, filter: %s, instResult: %s, rid: %s", filter, instResult, params.ReqID)
 		return set, errors.NewCCError(instResult.Code, instResult.ErrMsg)
 	}
@@ -68,11 +68,11 @@ func extractSetTemplateVersionFromTaskData(detail *metadata.APITaskDetail) (int6
 		return 0, fmt.Errorf("detail field empty")
 	}
 	detailData, ok := detail.Detail[0].Data.(map[string]interface{})
-	if ok == false {
+	if !ok {
 		return 0, fmt.Errorf("detail[0].data field")
 	}
 	version, ok := detailData["set_template_version"]
-	if ok == false {
+	if !ok {
 		return 0, fmt.Errorf("detail[0].data.set_template_version field doesn't exist")
 	}
 	versionInt, err := util.GetInt64ByInterface(version)
@@ -102,7 +102,7 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 		return setSyncStatus, err
 	}
 	if len(diff) == 0 {
-		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst result empty, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
+		blog.Errorf("UpdateSetSyncStatus failed, DiffSetTplWithInst result empty, setID: %d, rid: %s", setID, params.ReqID)
 		return setSyncStatus, params.Err.CCError(common.CCErrCommInternalServerError)
 	}
 	setDiff := diff[0]
@@ -111,22 +111,22 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 	if err != nil {
 		return setSyncStatus, err
 	}
-	syncStatus := metadata.SyncStatusWaiting
+	var syncStatus metadata.SyncStatus
 	if detail == nil {
-		if setDiff.NeedSync == true {
+		if setDiff.NeedSync {
 			syncStatus = metadata.SyncStatusWaiting
 		} else {
 			syncStatus = metadata.SyncStatusFinished
 		}
-	} else if detail.Status.IsFinished() == false {
+	} else if !detail.Status.IsFinished() {
 		syncStatus = metadata.SyncStatusSyncing
-	} else if detail.Status.IsSuccessful() == true {
-		if setDiff.NeedSync == true {
+	} else if detail.Status.IsSuccessful() {
+		if setDiff.NeedSync {
 			syncStatus = metadata.SyncStatusWaiting
 		} else {
 			syncStatus = metadata.SyncStatusFinished
 		}
-	} else if detail.Status.IsFailure() == true {
+	} else if detail.Status.IsFailure() {
 		syncStatus = metadata.SyncStatusFailure
 	} else {
 		blog.ErrorJSON("unexpected task status: %s, rid: %s", detail, params.ReqID)
@@ -233,7 +233,7 @@ func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
 	detail.Header = http.Header{}
 	for taskIdx := range detail.Detail {
 		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
-		if ok == false {
+		if !ok {
 			blog.Warnf("clearSetSyncTaskDetail expect map[string]interface{}, got unexpected type, data: %+v", detail.Detail[taskIdx].Data)
 			detail.Detail[taskIdx].Data = nil
 		}
