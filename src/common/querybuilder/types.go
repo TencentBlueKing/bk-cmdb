@@ -127,7 +127,7 @@ var SupportOperators = map[Operator]bool{
 	OperatorIsNull:    false,
 	OperatorIsNotNull: false,
 
-	OperatorExist:    false,
+	OperatorExist:    true,
 	OperatorNotExist: false,
 }
 

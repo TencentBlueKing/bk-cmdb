@@ -125,7 +125,7 @@ type ListHostsParameter struct {
 }
 
 func (option ListHostsParameter) Validate() (string, error) {
-	if key, err := option.Page.Validate(); err != nil {
+	if key, err := option.Page.Validate(false); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
@@ -147,7 +147,7 @@ type ListHostsWithNoBizParameter struct {
 }
 
 func (option ListHostsWithNoBizParameter) Validate() (string, error) {
-	if key, err := option.Page.Validate(); err != nil {
+	if key, err := option.Page.Validate(false); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 

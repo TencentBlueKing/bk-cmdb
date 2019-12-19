@@ -13,6 +13,7 @@
 package settemplate
 
 import (
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -55,6 +57,29 @@ func (st *setTemplate) GetOneSet(params types.ContextParams, setID int64) (metad
 		return set, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 	return set, nil
+}
+
+func extractSetTemplateVersionFromTaskData(detail *metadata.APITaskDetail) (int64, error) {
+	// TODO: better to implement with JSONPath
+	if detail == nil {
+		return 0, fmt.Errorf("detail field empty")
+	}
+	if len(detail.Detail) == 0 {
+		return 0, fmt.Errorf("detail field empty")
+	}
+	detailData, ok := detail.Detail[0].Data.(map[string]interface{})
+	if ok == false {
+		return 0, fmt.Errorf("detail[0].data field")
+	}
+	version, ok := detailData["set_template_version"]
+	if ok == false {
+		return 0, fmt.Errorf("detail[0].data.set_template_version field doesn't exist")
+	}
+	versionInt, err := util.GetInt64ByInterface(version)
+	if err != nil {
+		return 0, fmt.Errorf("parse set_template_version field failed, err: %+v", err)
+	}
+	return versionInt, nil
 }
 
 func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int64) (metadata.SetTemplateSyncStatus, errors.CCErrorCoder) {
@@ -117,6 +142,7 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 		SupplierAccount: set.SupplierAccount,
 		Status:          syncStatus,
 	}
+	setTemplateVersion := int64(0)
 	if detail == nil {
 		// no sync task has been run, just use
 		setSyncStatus.Creator = set.Creator
@@ -125,6 +151,11 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 		setSyncStatus.TaskID = ""
 		setSyncStatus.Creator = params.User
 	} else {
+		version, err := extractSetTemplateVersionFromTaskData(detail)
+		if err != nil && blog.V(5) {
+			blog.InfoJSON("extractSetTemplateVersionFromTaskData failed, detail: %s, err: %s", detail, err.Error())
+		}
+		setTemplateVersion = version
 		setSyncStatus.Creator = detail.User
 		setSyncStatus.CreateTime = metadata.Time{Time: detail.CreateTime}
 		setSyncStatus.LastTime = metadata.Time{Time: detail.LastTime}
@@ -133,6 +164,14 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 	if setSyncStatus.Status == metadata.SyncStatusWaiting {
 		setSyncStatus.TaskID = ""
 	}
+
+	if setTemplateVersion != 0 {
+		if ccErr := st.UpdateSetVersion(params, setID, setTemplateVersion); ccErr != nil {
+			blog.Errorf("UpdateSetSyncStatus failed, UpdateSetVersion failed, setID: %d, setTemplateVersion: %d, err: %s, rid: %s", setID, setTemplateVersion, ccErr.Error(), params.ReqID)
+			return setSyncStatus, ccErr
+		}
+	}
+
 	err = st.client.CoreService().SetTemplate().UpdateSetTemplateSyncStatus(params.Context, params.Header, setID, setSyncStatus)
 	if err != nil {
 		blog.Errorf("UpdateSetSyncStatus failed, UpdateSetTemplateSyncStatus failed, setID: %d, err: %s, rid: %s", setID, err.Error(), params.ReqID)
@@ -140,6 +179,27 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 	}
 
 	return setSyncStatus, nil
+}
+
+func (st *setTemplate) UpdateSetVersion(params types.ContextParams, setID, setTemplateVersion int64) errors.CCErrorCoder {
+	updateSetOption := &metadata.UpdateOption{
+		Data: map[string]interface{}{
+			common.BKSetTemplateVersionField: setTemplateVersion,
+		},
+		Condition: map[string]interface{}{
+			common.BKSetIDField: setID,
+		},
+	}
+	updateSetResult, err := st.client.CoreService().Instance().UpdateInstance(params.Context, params.Header, common.BKInnerObjIDSet, updateSetOption)
+	if err != nil {
+		blog.Errorf("UpdateSetSyncStatus failed, UpdateInstance of set failed, option: %+v, err: %s, rid: %s", updateSetOption, err.Error(), params.ReqID)
+		return params.Err.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if ccErr := updateSetResult.CCError(); ccErr != nil {
+		blog.Errorf("UpdateSetSyncStatus failed, UpdateInstance failed, option: %+v, result: %+v, rid: %s", updateSetOption, updateSetResult, params.ReqID)
+		return ccErr
+	}
+	return nil
 }
 
 func (st *setTemplate) GetLatestSyncTaskDetail(params types.ContextParams, setID int64) (*metadata.APITaskDetail, errors.CCErrorCoder) {
