@@ -1,11 +1,6 @@
 <template>
     <div class="conflict-layout">
-        <cmdb-tips class="resolve-tips"
-            v-if="featureTips"
-            :show-close="true"
-            @close="handleCloseTips">
-            {{$t('策略失效提示语')}}
-        </cmdb-tips>
+        <cmdb-tips class="resolve-tips" tips-key="hostApplyConfirmTips">{{$t('策略失效提示语')}}</cmdb-tips>
         <div class="conflict-table-wrapper" ref="conflictTable">
             <bk-table
                 ext-cls="conflict-table"
@@ -68,9 +63,7 @@
             }
         },
         data () {
-            const hostApplyConfirmTips = window.localStorage.getItem('hostApplyConfirmTips')
             return {
-                featureTips: hostApplyConfirmTips === null,
                 conflictPropertyList: [],
                 conflictPropertyListSnapshot: [],
                 result: {},
@@ -205,10 +198,6 @@
                     hasSelected = selected
                 })
                 this.toggleConfirmButtonDisabled()
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('hostApplyConfirmTips', false)
             }
         }
     }

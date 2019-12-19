@@ -1,10 +1,9 @@
 <template>
     <div class="push-wrapper">
-        <cmdb-tips class="mb10"
-            v-if="featureTips"
-            :show-close="true"
-            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'"
-            @close="handleCloseTips">
+        <cmdb-tips
+            class="mb10"
+            tips-key="eventPushTips"
+            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'">
             {{$t('事件推送顶部提示')}}
         </cmdb-tips>
         <div class="btn-wrapper clearfix">
@@ -101,9 +100,7 @@
             vPushDetail
         },
         data () {
-            const eventPushTips = window.localStorage.getItem('eventPushTips')
             return {
-                featureTips: eventPushTips === null,
                 curPush: {},
                 table: {
                     list: [],
@@ -236,10 +233,6 @@
             handlePageChange (page) {
                 this.table.pagination.current = page
                 this.getTableData()
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('eventPushTips', false)
             }
         }
     }

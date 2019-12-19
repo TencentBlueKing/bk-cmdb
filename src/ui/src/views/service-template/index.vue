@@ -1,9 +1,6 @@
 <template>
     <div class="template-wrapper" ref="templateWrapper">
-        <cmdb-tips class="mb10 top-tips"
-            v-if="featureTips"
-            :show-close="true"
-            @close="handleCloseTips">
+        <cmdb-tips class="mb10 top-tips" tips-key="serviceTemplateTips">
             <i18n path="服务模板功能提示">
                 <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick" place="link">{{$t('业务拓扑')}}</a>
             </i18n>
@@ -120,9 +117,7 @@
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         data () {
-            const serviceTemplateTips = window.localStorage.getItem('serviceTemplateTips')
             return {
-                featureTips: serviceTemplateTips === null,
                 filter: {
                     mainClassification: '',
                     secondaryClassification: '',
@@ -303,10 +298,6 @@
                 this.$router.push({
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('serviceTemplateTips', false)
             }
         }
     }

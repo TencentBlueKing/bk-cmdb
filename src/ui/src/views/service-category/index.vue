@@ -1,11 +1,6 @@
 <template>
     <div class="category-wrapper">
-        <cmdb-tips class="mb10"
-            v-if="featureTips"
-            :show-close="true"
-            @close="handleCloseTips">
-            {{$t('服务分类功能提示')}}
-        </cmdb-tips>
+        <cmdb-tips class="mb10" tips-key="categoryTips">{{$t('服务分类功能提示')}}</cmdb-tips>
         <div class="category-list">
             <div class="category-item bgc-white" v-for="(mainCategory, index) in list" :key="index">
                 <div class="category-title" :style="{ 'background-color': mainCategory['editStatus'] ? '#f0f1f5' : '' }">
@@ -173,9 +168,7 @@
             categoryInput
         },
         data () {
-            const categoryTips = window.localStorage.getItem('categoryTips')
             return {
-                featureTips: categoryTips === null,
                 tooltips: {
                     content: this.$t('二级分类删除提示')
                 },
@@ -364,10 +357,6 @@
             handleCloseAddChild () {
                 this.addChildStatus = null
                 this.categoryName = ''
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('categoryTips', false)
             }
         }
     }

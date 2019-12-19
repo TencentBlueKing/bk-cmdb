@@ -1,10 +1,9 @@
 <template>
     <div class="relation-wrapper">
-        <cmdb-tips class="mb10"
-            v-if="featureTips"
-            :show-close="true"
-            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'"
-            @close="handleCloseTips">
+        <cmdb-tips
+            class="mb10"
+            tips-key="associationTips"
+            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'">
             {{$t('关联关系提示')}}
         </cmdb-tips>
         <p class="operation-box">
@@ -112,9 +111,7 @@
             theRelation
         },
         data () {
-            const associationTips = window.localStorage.getItem('associationTips')
             return {
-                featureTips: associationTips === null,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -282,10 +279,6 @@
                 this.slider.isReadOnly = true
                 this.slider.isEdit = true
                 this.slider.isShow = true
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('associationTips', false)
             }
         }
     }

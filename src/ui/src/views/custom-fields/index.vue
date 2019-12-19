@@ -1,11 +1,6 @@
 <template>
     <div class="custom-fields-layout" :style="{ padding: featureTips ? '15px 0 0 0' : 0 }">
-        <cmdb-tips class="ml20 mr20 mb10"
-            v-if="featureTips"
-            :show-close="true"
-            @close="handleCloseTips">
-            {{$t('自定义字段功能提示')}}
-        </cmdb-tips>
+        <cmdb-tips class="ml20 mr20 mb10" tips-key="showCustomFields" v-model="featureTips">{{$t('自定义字段功能提示')}}</cmdb-tips>
         <bk-tab class="tab-layout"
             :style="`--subHeight: ${featureTips ? '42px' : 0}`"
             type="unborder-card"
@@ -33,9 +28,8 @@
             fieldGroup
         },
         data () {
-            const showCustomFields = window.localStorage.getItem('showCustomFields')
             return {
-                featureTips: showCustomFields === null,
+                featureTips: true,
                 mainLine: []
             }
         },
@@ -58,10 +52,6 @@
             handleTabChange (modelId) {
                 const activeModel = this.mainLine.find(model => model.bk_obj_id === modelId) || {}
                 this.$store.commit('objectModel/setActiveModel', activeModel)
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('showCustomFields', false)
             }
         }
     }
