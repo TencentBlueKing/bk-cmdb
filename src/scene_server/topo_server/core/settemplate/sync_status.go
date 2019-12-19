@@ -86,7 +86,7 @@ func (st *setTemplate) UpdateSetSyncStatus(params types.ContextParams, setID int
 	if err != nil {
 		return setSyncStatus, err
 	}
-	syncStatus := metadata.SyncStatusWaiting
+	var syncStatus metadata.SyncStatus
 	if detail == nil {
 		if setDiff.NeedSync == true {
 			syncStatus = metadata.SyncStatusWaiting

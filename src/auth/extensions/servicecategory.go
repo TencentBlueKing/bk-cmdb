@@ -109,7 +109,7 @@ func (am *AuthManager) MakeResourcesByServiceCategoryIDs(ctx context.Context, he
 }
 
 func (am *AuthManager) AuthorizeByServiceCategoryID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -147,7 +147,7 @@ func (am *AuthManager) GenServiceCategoryNoPermissionResp() *metadata.BaseResp {
 }
 
 func (am *AuthManager) AuthorizeByServiceCategory(ctx context.Context, header http.Header, action meta.Action, categories ...metadata.ServiceCategory) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -169,7 +169,7 @@ func (am *AuthManager) AuthorizeByServiceCategory(ctx context.Context, header ht
 func (am *AuthManager) UpdateRegisteredServiceCategory(ctx context.Context, header http.Header, categories ...metadata.ServiceCategory) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -196,7 +196,7 @@ func (am *AuthManager) UpdateRegisteredServiceCategory(ctx context.Context, head
 }
 
 func (am *AuthManager) UpdateRegisteredServiceCategoryByID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -212,7 +212,7 @@ func (am *AuthManager) UpdateRegisteredServiceCategoryByID(ctx context.Context, 
 }
 
 func (am *AuthManager) DeregisterServiceCategoryByIDs(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -228,7 +228,7 @@ func (am *AuthManager) DeregisterServiceCategoryByIDs(ctx context.Context, heade
 }
 
 func (am *AuthManager) RegisterServiceCategory(ctx context.Context, header http.Header, categories ...metadata.ServiceCategory) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -249,7 +249,7 @@ func (am *AuthManager) RegisterServiceCategory(ctx context.Context, header http.
 }
 
 func (am *AuthManager) RegisterServiceCategoryByID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -265,7 +265,7 @@ func (am *AuthManager) RegisterServiceCategoryByID(ctx context.Context, header h
 }
 
 func (am *AuthManager) DeregisterServiceCategory(ctx context.Context, header http.Header, categories ...metadata.ServiceCategory) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 

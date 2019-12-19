@@ -126,7 +126,7 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 		object := objectMap[attribute.ObjectID]
 
 		// check obj's group id in map
-		if _, exist := classificationMap[object.ObjCls]; exist == false {
+		if _, exist := classificationMap[object.ObjCls]; !exist {
 			blog.V(3).Infof("authorization failed, get classification by object failed, err: bk_classification_id not exist, rid: %s", rid)
 			return nil, fmt.Errorf("authorization failed, get classification by object failed, err: bk_classification_id not exist")
 		}
@@ -167,7 +167,7 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 }
 
 func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -175,7 +175,7 @@ func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.H
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 
@@ -188,7 +188,7 @@ func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -196,7 +196,7 @@ func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 
@@ -209,7 +209,7 @@ func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http
 }
 
 func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -217,7 +217,7 @@ func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header 
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 
@@ -229,7 +229,7 @@ func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header 
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -237,7 +237,7 @@ func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, heade
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 
@@ -250,7 +250,7 @@ func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, heade
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -258,7 +258,7 @@ func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, h
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 
