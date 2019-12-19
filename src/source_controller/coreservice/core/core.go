@@ -184,6 +184,7 @@ type Core interface {
 	AuditOperation() AuditOperation
 	ProcessOperation() ProcessOperation
 	LabelOperation() LabelOperation
+	SystemOperation() SystemOperation
 }
 
 // ProcessOperation methods
@@ -238,6 +239,10 @@ type LabelOperation interface {
 	RemoveLabel(ctx ContextParams, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder
 }
 
+type SystemOperation interface {
+	GetSystemUserConfig(ctx ContextParams) (map[string]interface{}, errors.CCErrorCoder)
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -248,12 +253,13 @@ type core struct {
 	audit           AuditOperation
 	process         ProcessOperation
 	label           LabelOperation
+	sys             SystemOperation
 }
 
 // New create core
 func New(model ModelOperation, instance InstanceOperation, association AssociationOperation,
 	dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation,
-	audit AuditOperation, process ProcessOperation, label LabelOperation) Core {
+	audit AuditOperation, process ProcessOperation, label LabelOperation, sys SystemOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -264,6 +270,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		audit:           audit,
 		process:         process,
 		label:           label,
+		sys:             sys,
 	}
 }
 
@@ -301,4 +308,8 @@ func (m *core) ProcessOperation() ProcessOperation {
 
 func (m *core) LabelOperation() LabelOperation {
 	return m.label
+}
+
+func (m *core) SystemOperation() SystemOperation {
+	return m.sys
 }

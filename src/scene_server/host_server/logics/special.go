@@ -51,6 +51,9 @@ func (lgc *Logics) NewSpecial() SpecialHandle {
 // 4. 进程不存在不报错
 func (s *special) BkSystemInstall(ctx context.Context, appName string, input *metadata.BkSystemInstallRequest) errors.CCError {
 
+	if input.HostInfo == nil {
+		input.HostInfo = make(map[string]interface{}, 0)
+	}
 	// handle host info
 	input.HostInfo[common.BKHostInnerIPField] = input.InnerIP
 	input.HostInfo[common.BKCloudIDField] = input.CloudID
@@ -236,6 +239,9 @@ func (s *special) bkSystemGetInstallModuleID(ctx context.Context, appID int64, s
 	if err != nil {
 		blog.ErrorJSON("bkSystemGetInstallModuleID GetModuleIDByCond error. err:%s, cond:%s, rid:%s", err.Error(), bkModuleCond, s.lgc.rid)
 		return nil, err
+	}
+	if len(moduleIDArr) == 0 {
+		blog.Warnf("bkSystemGetInstallModuleID GetModuleIDByCond not found set. cond:%v, rid:%s", bkModuleCond, s.lgc.rid)
 	}
 	return moduleIDArr, nil
 }
