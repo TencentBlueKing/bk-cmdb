@@ -53,7 +53,7 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 		blog.Errorf("UpdateServiceTemplate failed, check leaf node failed, err: %+v, rid: %s", ccErr, ctx.ReqID)
 		return nil, ccErr
 	}
-	if isLeafNode == false {
+	if !isLeafNode {
 		return nil, ctx.Error.CCError(common.CCErrCoreServiceOnlyNodeServiceCategoryAvailable)
 	}
 
@@ -144,7 +144,7 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 			blog.Errorf("UpdateServiceTemplate failed, check leaf node failed, err: %+v, rid: %s", err, ctx.ReqID)
 			return nil, err
 		}
-		if isLeafNode == false {
+		if !isLeafNode {
 			return nil, ctx.Error.CCError(common.CCErrCoreServiceOnlyNodeServiceCategoryAvailable)
 		}
 	}
@@ -185,7 +185,7 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, option m
 				if category.ParentID == 0 {
 					continue
 				}
-				if util.InArray(category.ParentID, childrenIDs) == true && util.InArray(category.ID, childrenIDs) == false {
+				if util.InArray(category.ParentID, childrenIDs) && !util.InArray(category.ID, childrenIDs) {
 					childrenIDs = append(childrenIDs, category.ID)
 				}
 			}
