@@ -74,8 +74,10 @@ func (p *setTemplateOperation) ValidateServiceTemplateIDs(ctx core.ContextParams
 func (p *setTemplateOperation) CreateSetTemplate(ctx core.ContextParams, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	now := time.Now()
 	setTemplate := metadata.SetTemplate{
+		ID:              0,
 		Name:            option.Name,
 		BizID:           bizID,
+		Version:         0,
 		Creator:         ctx.User,
 		Modifier:        ctx.User,
 		CreateTime:      now,
@@ -255,6 +257,9 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 				blog.Errorf("UpdateSetTemplate failed, remove no need service template ids failed, filter: %+v, err: %+v, rid: %s", removeFilter, err, ctx.ReqID)
 				return setTemplate, ctx.Error.CCError(common.CCErrCommDBDeleteFailed)
 			}
+		}
+		if len(addRelations) > 0 || len(removeIDs) > 0 {
+			setTemplate.Version += 1
 		}
 	}
 
