@@ -59,7 +59,7 @@ type ProcServer struct {
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
 	Logic              *logics.Logic
-	TransactionClient  dal.Transcation
+	TransactionClient  dal.Transaction
 }
 
 func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {

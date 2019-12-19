@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"sort"
 	"strconv"
 
@@ -22,40 +21,72 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateMainLineObject create a new model in the main line topo
 func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
-	tx, err := s.Txn.Start(context.Background())
-	if err != nil {
-		blog.Errorf("create mainline model failed, start transaction failed, err: %v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+
+	var txnErr error
+	// 判断是否使用事务
+	if s.EnableTxn {
+		sess, err := s.DB.StartSession()
+		if err != nil {
+			txnErr = err
+			blog.Errorf("StartSession err: %s, rid: %s", err.Error(), params.ReqID)
+			return nil, err
+		}
+		// 获取事务信息，将其存入context中
+		txnInfo, err := sess.TxnInfo()
+		if err != nil {
+			txnErr = err
+			blog.Errorf("TxnInfo err: %+v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+		params.Header = txnInfo.IntoHeader(params.Header)
+		params.Context = util.TnxIntoContext(params.Context, txnInfo)
+		err = sess.StartTransaction(params.Context)
+		if err != nil {
+			txnErr = err
+			blog.Errorf("StartTransaction err: %+v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+		defer func() {
+			if txnErr == nil {
+				err = sess.CommitTransaction(params.Context)
+				if err != nil {
+					blog.Errorf("CommitTransaction err: %+v", err)
+				}
+			} else {
+				blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
+				err = sess.AbortTransaction(params.Context)
+				if err != nil {
+					blog.Errorf("AbortTransaction err: %+v", err)
+				}
+			}
+			sess.EndSession(params.Context)
+		}()
 	}
-	params.Header = tx.TxnInfo().IntoHeader(params.Header)
 
 	mainLineAssociation := &metadata.Association{}
-	_, err = mainLineAssociation.Parse(data)
+	_, err := mainLineAssociation.Parse(data)
 	if nil != err {
+		txnErr = err
 		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "mainline object")
 	}
 	params.MetaData = &mainLineAssociation.Metadata
 	ret, err := s.Core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
 	if err != nil {
+		txnErr = err
 		blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, params.ReqID)
-		if txnErr := tx.Abort(context.Background()); txnErr != nil {
-			blog.Errorf("create mainline object, but abort transaction[id: %s] failed; %v, rid: %s", tx.TxnInfo().TxnID, txnErr, params.ReqID)
-		}
 		return nil, err
-	}
-	if txnErr := tx.Commit(context.Background()); txnErr != nil {
-		blog.Errorf("create mainline object, but commit transaction[id: %s] failed, err: %v, rid: %s", tx.TxnInfo().TxnID, txnErr, params.ReqID)
-		return nil, params.Err.Error(common.CCErrTopoMainlineCreatFailed)
 	}
 
 	// auth: register mainline object
 	if err := s.AuthManager.RegisterMainlineObject(params.Context, params.Header, ret.Object()); err != nil {
+		txnErr = err
 		blog.Errorf("create mainline object success, but register mainline model to iam failed, err: %+v, rid: %s", err, params.ReqID)
 		return ret, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
@@ -65,17 +96,56 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 
 // DeleteMainLineObject delete a object int the main line topo
 func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	tx, err := s.Txn.Start(params.Context)
-	if err != nil {
-		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+
+	var txnErr error
+	// 判断是否使用事务
+	if s.EnableTxn {
+		sess, err := s.DB.StartSession()
+		if err != nil {
+			txnErr = err
+			blog.Errorf("StartSession err: %s, rid: %s", err.Error(), params.ReqID)
+			return nil, err
+		}
+		// 获取事务信息，将其存入context中
+		txnInfo, err := sess.TxnInfo()
+		if err != nil {
+			txnErr = err
+			blog.Errorf("TxnInfo err: %+v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+		params.Header = txnInfo.IntoHeader(params.Header)
+		params.Context = util.TnxIntoContext(params.Context, txnInfo)
+		err = sess.StartTransaction(params.Context)
+		if err != nil {
+			txnErr = err
+			blog.Errorf("StartTransaction err: %+v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+		defer func() {
+			if txnErr == nil {
+				err = sess.CommitTransaction(params.Context)
+				if err != nil {
+					blog.Errorf("CommitTransaction err: %+v", err)
+				}
+			} else {
+				blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
+				err = sess.AbortTransaction(params.Context)
+				if err != nil {
+					blog.Errorf("AbortTransaction err: %+v", err)
+				}
+			}
+			sess.EndSession(params.Context)
+		}()
 	}
-	params.Header = tx.TxnInfo().IntoHeader(params.Header)
+
 	objID := pathParams("bk_obj_id")
 
 	var bizID int64
+	var err error
 	if params.MetaData != nil {
 		bizID, err = metadata.BizIDFromMetadata(*params.MetaData)
 		if err != nil {
+			txnErr = err
 			blog.Errorf("parse business id from request failed, err: %+v, rid: %s", err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 		}
@@ -84,23 +154,20 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 	// auth: collection iam resource before it really be deleted
 	iamResources, err := s.AuthManager.MakeResourcesByObjectIDs(params.Context, params.Header, bizID, objID)
 	if err != nil {
-		blog.Errorf("parse business id from request failed, err: %+v, rid: %s", err, params.ReqID)
+		txnErr = err
+		blog.Errorf("MakeResourcesByObjectIDs failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoObjectDeleteFailed)
 	}
 
 	if err = s.Core.AssociationOperation().DeleteMainlineAssociation(params, objID); err != nil {
-		if txErr := tx.Abort(context.Background()); txErr != nil {
-			blog.Errorf("[api-asst] abort transaction failed; %v, rid: %s", err, params.ReqID)
-			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
-		}
-	} else {
-		if txErr := tx.Commit(context.Background()); txErr != nil {
-			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
-		}
+		txnErr = err
+		blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrTopoObjectDeleteFailed)
 	}
 
 	// auth: do deregister
 	if err := s.AuthManager.Authorize.DeregisterResource(params.Context, iamResources...); err != nil {
+		txnErr = err
 		blog.Errorf("delete mainline association success, but deregister mainline model failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}

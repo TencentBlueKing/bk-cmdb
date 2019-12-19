@@ -884,6 +884,9 @@ const (
 	BKHTTPCCRequestTime     = "Cc_Request_Time"
 	BKHTTPCCTransactionID   = "Cc_Txn_Id"
 	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
+	BKHTTPCCTransactionNumber   = "Cc_Txn_Number"
+	BKHTTPCCTxnSessionID = "Cc_Txn_Session_ID"
+	BKHTTPCCTxnSessionState = "Cc_Txn_Session_State"
 )
 
 type CCContextKey string
