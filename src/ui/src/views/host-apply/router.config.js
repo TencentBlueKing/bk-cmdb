@@ -29,6 +29,25 @@ export default [{
         menu: {
             i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
+        },
+        layout: {
+            previous (view) {
+                return new Promise((resolve, reject) => {
+                    view.leaveConfirmConfig.active = false
+                    view.$nextTick(() => {
+                        const config = {
+                            name: MENU_BUSINESS_HOST_APPLY_EDIT,
+                            query: {
+                                mid: view.$route.query.mid
+                            }
+                        }
+                        if (view.isBatch) {
+                            config.query.batch = 1
+                        }
+                        resolve(config)
+                    })
+                })
+            }
         }
     })
 }, {
@@ -40,6 +59,17 @@ export default [{
         menu: {
             i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
+        },
+        layout: {
+            previous (view) {
+                const config = {
+                    name: MENU_BUSINESS_HOST_APPLY
+                }
+                if (view.$route.query.mid.indexOf(',') === -1) {
+                    config.query.module = view.$route.query.mid
+                }
+                return config
+            }
         }
     })
 }, {
@@ -51,6 +81,16 @@ export default [{
         menu: {
             i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
+        },
+        layout: {
+            previous (view) {
+                return {
+                    name: MENU_BUSINESS_HOST_APPLY,
+                    query: {
+                        module: view.$route.query.mid
+                    }
+                }
+            }
         }
     })
 }, {
@@ -62,6 +102,11 @@ export default [{
         menu: {
             i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
+        },
+        layout: {
+            previous: {
+                name: MENU_BUSINESS_HOST_APPLY
+            }
         }
     })
 }]

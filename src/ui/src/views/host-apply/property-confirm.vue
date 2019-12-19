@@ -149,14 +149,6 @@
             setBreadcrumbs () {
                 const title = this.isBatch ? '批量应用属性' : '应用属性'
                 this.$store.commit('setTitle', this.$t(title))
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('主机属性自动应用'),
-                    route: {
-                        name: MENU_BUSINESS_HOST_APPLY
-                    }
-                }, {
-                    label: this.$t(title)
-                }])
             },
             goBack () {
                 this.$store.commit('hostApply/clearRuleDraft')
@@ -246,7 +238,7 @@
 
 <style lang="scss" scoped>
     .host-apply-confirm {
-        padding: 0 20px;
+        padding: 15px 20px 0;
 
         .caption {
             display: flex;
