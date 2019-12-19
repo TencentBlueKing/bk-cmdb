@@ -60,6 +60,7 @@ const (
 	UserCustom               ResourceType = "usercustom"   // 用户自定义
 	SystemBase               ResourceType = "systemBase"
 	InstallBK                ResourceType = "installBK"
+	SystemConfig             ResourceType = "systemConfig" // syste config
 )
 
 const (
