@@ -98,10 +98,6 @@ const actions = {
         dispatch('saveUsercustom', {
             recently_models: newUsercustomData
         })
-    },
-
-    getBlueKingEditStatus ({ commit }, { config }) {
-        return $http.post('system/config/user_config/blueking_modify', {}, config)
     }
 }
 

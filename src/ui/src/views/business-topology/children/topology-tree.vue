@@ -213,7 +213,7 @@
             },
             async getBlueKingEditStatus () {
                 try {
-                    this.editable = await this.$store.dispatch('userCustom/getBlueKingEditStatus', {
+                    this.editable = await this.$store.dispatch('getBlueKingEditStatus', {
                         config: {
                             globalError: false
                         }
