@@ -153,7 +153,7 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 		return nil, err
 	}
 
-	if category.IsBuiltIn == true {
+	if category.IsBuiltIn {
 		blog.Errorf("UpdateServiceCategory failed, forbidden update built-in category, code: %d, rid: %s", common.CCErrCommOperateBuiltInItemForbidden, ctx.ReqID)
 		err := ctx.Error.CCError(common.CCErrCommOperateBuiltInItemForbidden)
 		return nil, err
@@ -203,7 +203,7 @@ func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID i
 	}
 
 	usageMap := map[int64]int64{}
-	if withStatistics == true {
+	if withStatistics {
 		categoryIDs := make([]int64, 0)
 		for _, category := range categories {
 			categoryIDs = append(categoryIDs, category.ID)
@@ -221,7 +221,7 @@ func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID i
 		}
 		for _, tpl := range serviceTemplates {
 			count, exist := usageMap[tpl.ServiceCategoryID]
-			if exist == false {
+			if !exist {
 				usageMap[tpl.ServiceCategoryID] = 1
 				continue
 			}
@@ -231,7 +231,7 @@ func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID i
 
 	categoriesWithStatistics := make([]metadata.ServiceCategoryWithStatistics, 0)
 	for _, category := range categories {
-		count, _ := usageMap[category.ID]
+		count := usageMap[category.ID]
 		categoriesWithStatistics = append(categoriesWithStatistics, metadata.ServiceCategoryWithStatistics{
 			ServiceCategory: category,
 			UsageAmount:     count,

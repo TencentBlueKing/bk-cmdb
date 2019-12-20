@@ -412,19 +412,19 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	// processID -> relation
-	processRelationMap := make(map[int64]metadata.ProcessInstanceRelation, 0)
+	processRelationMap := make(map[int64]metadata.ProcessInstanceRelation)
 	for _, relation := range relations {
 		processRelationMap[relation.ProcessID] = relation
 	}
 	// serviceInstanceID -> []ProcessInstance
-	serviceInstanceMap := make(map[int64][]metadata.ProcessInstanceNG, 0)
+	serviceInstanceMap := make(map[int64][]metadata.ProcessInstanceNG)
 	for _, process := range processes {
 		relation, ok := processRelationMap[process.ProcessID]
-		if ok == false {
+		if !ok {
 			blog.Warnf("ListServiceInstanceDetail got unexpected state, process's relation not found, process: %+v, rid: %s", process, ctx.ReqID)
 			continue
 		}
-		if _, ok := serviceInstanceMap[relation.ServiceInstanceID]; ok == false {
+		if _, ok := serviceInstanceMap[relation.ServiceInstanceID]; !ok {
 			serviceInstanceMap[relation.ServiceInstanceID] = make([]metadata.ProcessInstanceNG, 0)
 		}
 		processInstance := metadata.ProcessInstanceNG{
@@ -436,7 +436,7 @@ func (p *processOperation) ListServiceInstanceDetail(ctx core.ContextParams, opt
 
 	for idx, serviceInstance := range serviceInstanceDetails {
 		processInfo, ok := serviceInstanceMap[serviceInstance.ID]
-		if ok == false {
+		if ok {
 			continue
 		}
 		serviceInstanceDetails[idx].ProcessInstances = processInfo
@@ -491,7 +491,7 @@ func (p *processOperation) generateServiceInstanceName(ctx core.ContextParams, i
 	}
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(instanceFilter).One(ctx.Context, &instance); err != nil {
 		blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, instanceFilter, err, ctx.ReqID)
-		if p.dbProxy.IsNotFoundError(err) == true {
+		if p.dbProxy.IsNotFoundError(err) {
 			return "", ctx.Error.CCErrorf(common.CCErrCommNotFound)
 		}
 		return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -508,7 +508,7 @@ func (p *processOperation) generateServiceInstanceName(ctx core.ContextParams, i
 	}
 	if err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).One(ctx.Context, &host); err != nil {
 		blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameBaseHost, hostFilter, err, ctx.ReqID)
-		if p.dbProxy.IsNotFoundError(err) == true {
+		if p.dbProxy.IsNotFoundError(err) {
 			return "", ctx.Error.CCErrorf(common.CCErrCommNotFound)
 		}
 		return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -523,7 +523,7 @@ func (p *processOperation) generateServiceInstanceName(ctx core.ContextParams, i
 	order := "id"
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).Sort(order).One(ctx.Context, &relation); err != nil {
 		// relation not found means no process in service instance, service instance's name will only contains ip in that case
-		if p.dbProxy.IsNotFoundError(err) != true {
+		if !p.dbProxy.IsNotFoundError(err) {
 			blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, relationFilter, err, ctx.ReqID)
 			return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
@@ -537,7 +537,7 @@ func (p *processOperation) generateServiceInstanceName(ctx core.ContextParams, i
 		}
 		if err := p.dbProxy.Table(common.BKTableNameBaseProcess).Find(processFilter).One(ctx.Context, &process); err != nil {
 			blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameBaseProcess, processFilter, err, ctx.ReqID)
-			if p.dbProxy.IsNotFoundError(err) == true {
+			if p.dbProxy.IsNotFoundError(err) {
 				return "", ctx.Error.CCErrorf(common.CCErrCommNotFound)
 			}
 			return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
