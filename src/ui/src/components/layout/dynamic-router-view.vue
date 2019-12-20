@@ -82,7 +82,7 @@
         position: relative;
         overflow: hidden;
         height: 100%;
-        margin-top: -58px;
+        margin-top: -53px;
         z-index: 99;
     }
     .main-breadcrumbs {
@@ -97,8 +97,9 @@
         overflow: auto;
     }
     .main-views {
-        height: calc(100% - 58px);
-        margin-top: 58px;
+        height: calc(100% - 52px);
+        border-top: 1px solid $borderColor;
+        margin-top: 52px;
         min-width: 1106px;
     }
 </style>

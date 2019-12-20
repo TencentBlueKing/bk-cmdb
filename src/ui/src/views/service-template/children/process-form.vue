@@ -60,7 +60,7 @@
                     <bk-button slot-scope="{ disabled }"
                         class="button-save"
                         theme="primary"
-                        :disabled="saveDisabled || $loading() || disabled"
+                        :disabled="saveDisabled || $loading() || disabled || btnStatus()"
                         @click="handleSave">
                         {{type === 'create' ? $t('提交') : $t('保存')}}
                     </bk-button>
@@ -161,10 +161,10 @@
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
                         }
-                        if (['bind_ip'].includes(property['bk_property_id'])) {
-                            property.bk_property_type = 'enum'
-                            property.option = this.ipOption
-                        }
+                        // if (['bind_ip'].includes(property['bk_property_id'])) {
+                        //     property.bk_property_type = 'enum'
+                        //     property.option = this.ipOption
+                        // }
                     })
                     return filterProperties
                 })
@@ -204,14 +204,18 @@
             },
             changedValues () {
                 const changedValues = {}
+                if (!Object.keys(this.refrenceValues).length) return {}
                 if (!this.values['bind_ip']['value']) {
                     this.$set(this.values.bind_ip, 'value', '')
                     this.$set(this.refrenceValues.bind_ip, 'value', '')
                 }
                 Object.keys(this.values).forEach(propertyId => {
-                    const isChange = Object.keys(this.values[propertyId]).some(key => {
-                        return JSON.stringify(this.values[propertyId][key]) !== JSON.stringify(this.refrenceValues[propertyId][key])
-                    })
+                    let isChange = false
+                    if (!['sign_id', 'process_id'].includes(propertyId)) {
+                        isChange = Object.keys(this.values[propertyId]).some(key => {
+                            return JSON.stringify(this.values[propertyId][key]) !== JSON.stringify(this.refrenceValues[propertyId][key])
+                        })
+                    }
                     if (isChange) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
@@ -220,6 +224,9 @@
             },
             hasChange () {
                 return !!Object.keys(this.changedValues()).length
+            },
+            btnStatus () {
+                return this.type === 'create' ? false : !this.hasChange()
             },
             checkScrollbar () {
                 const $layout = this.$el
@@ -237,7 +244,14 @@
                         }
                     })
                 }
-                const formValues = this.$tools.getInstFormValues(this.properties, inst)
+                const properties = this.properties.map(property => {
+                    if (['bind_ip'].includes(property['bk_property_id'])) {
+                        property.bk_property_type = 'enum'
+                        property.option = this.ipOption
+                    }
+                    return property
+                })
+                const formValues = this.$tools.getInstFormValues(properties, inst, this.type === 'create')
                 Object.keys(formValues).forEach(key => {
                     this.$set(this.values, key, {
                         value: formValues[key],
@@ -290,17 +304,17 @@
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
-                    if (!this.hasChange()) {
+                    if (result && !this.hasChange()) {
                         this.$emit('on-cancel')
-                        return
-                    }
-                    if (result && this.isCreatedService) {
-                        if (this.type === 'create' && !this.hasProcessName(this.values)) {
+                    } else if (result && this.isCreatedService) {
+                        const cloneValues = this.$tools.clone(this.values)
+                        const formatValue = this.$parent.$parent.formatSubmitData(cloneValues)
+                        if (this.type === 'create' && !this.hasProcessName(formatValue)) {
                             this.values['sign_id'] = new Date().getTime()
-                            this.addLocalProcessTemplate(this.values)
+                            this.addLocalProcessTemplate(formatValue)
                             this.$emit('on-cancel')
                         } else if (this.type === 'update') {
-                            this.updateLocalProcessTemplate(this.values)
+                            this.updateLocalProcessTemplate(formatValue)
                             this.$emit('on-cancel')
                         } else {
                             this.$bkMessage({
@@ -427,7 +441,7 @@
             .property-value{
                 height: 32px;
                 line-height: 32px;
-                font-size: 12px;
+                font-size: 0;
                 position: relative;
                 /deep/ .control-append-group {
                     .bk-input-text {

@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/tmserver/service"
 )
@@ -45,7 +44,6 @@ func (s *Server) onConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 
 		s.config.MongoDB = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-		s.config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
 
 		s.config.Transaction.Enable = current.ConfigMap["transaction.enable"]
 		s.config.Transaction.TransactionLifetimeSecond = current.ConfigMap["transaction.transactionLifetimeSecond"]

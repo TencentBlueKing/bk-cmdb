@@ -198,7 +198,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	SysBusinessInstance: "业务",
 	SysHostInstance:     "主机",
 	SysEventPushing:     "事件推送",
-	SysModelGroup:       "模型分级",
+	SysModelGroup:       "模型分组",
 	SysModel:            "模型",
 	SysInstance:         "实例",
 	SysAssociationType:  "关联类型",
@@ -207,7 +207,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizHostInstance:     "业务主机",
 	BizProcessInstance:  "进程",
 	// TODO: delete this when upgrade to v3.5.x
-	BizTopology:               "服务拓扑",
+	BizTopology:               "业务拓扑",
 	BizModelGroup:             "模型分组",
 	BizModel:                  "模型",
 	BizInstance:               "实例",
@@ -438,7 +438,7 @@ func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []m
 		rsc.ResourceType = string(*rscType)
 		rsc.ResourceTypeName = ResourceTypeIDMap[*rscType]
 		if len(rscIDs) != 0 {
-			rsc.ResourceID = rscIDs[0].ResourceID
+			rsc.ResourceID = rscIDs[len(rscIDs)-1].ResourceID
 		}
 		rsc.ResourceName = r.Basic.Name
 		p.Resources = [][]metadata.Resource{{rsc}}

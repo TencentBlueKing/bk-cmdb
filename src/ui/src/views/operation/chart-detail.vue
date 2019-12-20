@@ -134,9 +134,9 @@
                                     v-validate="'required|number'" name="chartNumber"
                                     v-model="chartData.x_axis_count">
                                 <i class="bk-icon icon-angle-down" @click="calculate('down')"></i>
-                                <i class="bk-icon icon-angle-up" @click="calculate('up')" v-if="maxNum !== chartData.x_axis_count"></i>
-                                <bk-popover class="tool-tip" placement="right" :content="$t('已经超出可显示的最大数量')" v-if="maxNum <= chartData.x_axis_count">
-                                    <i class="bk-icon icon-angle-up" @click="calculate('up')"></i>
+                                <i class="bk-icon icon-angle-up" @click="calculate('up')" v-if="maxNum > chartData.x_axis_count"></i>
+                                <bk-popover class="tool-tip" placement="right" :content="$t('已经超出可显示的最大数量')" v-else>
+                                    <i class="bk-icon icon-angle-up"></i>
                                 </bk-popover>
                             </div>
                             <span class="form-error">{{errors.first('chartNumber')}}</span>

@@ -29,7 +29,7 @@
                     <li class="module-item is-trigger"
                         v-if="type === 'business'"
                         @click="handleChangeModule">
-                        <i class="icon-cc-plus"></i>
+                        <i class="icon icon-cc-edit"></i>
                     </li>
                 </ul>
                 <div class="module-grep"></div>
@@ -202,7 +202,10 @@
         async created () {
             this.resolveData(this.$route)
             this.setBreadcrumbs()
-            await this.getTopologyModels()
+            await Promise.all([
+                this.getTopologyModels(),
+                this.getHostInfo()
+            ])
             this.getPreviewData()
         },
         mounted () {
@@ -258,14 +261,6 @@
                     remove: this.$t('移除主机')
                 }
                 this.$store.commit('setTitle', titleMap[this.type])
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('业务拓扑'),
-                    route: {
-                        name: MENU_BUSINESS_HOST_AND_SERVICE
-                    }
-                }, {
-                    label: titleMap[this.type]
-                }])
             },
             async getTopologyModels () {
                 try {
@@ -352,12 +347,11 @@
                 })
                 const tab = this.tabList.find(tab => tab.id === 'createServiceInstance')
                 tab.props.info = Object.freeze(instanceInfo)
-                this.setHostInfo(data)
             },
-            async setHostInfo (data) {
+            async getHostInfo () {
                 try {
                     const result = await this.$store.dispatch('hostSearch/searchHost', {
-                        params: this.getSearchHostParams(data),
+                        params: this.getSearchHostParams(),
                         config: {
                             requestId: this.request.host
                         }
@@ -367,7 +361,7 @@
                     console.error(e)
                 }
             },
-            getSearchHostParams (data) {
+            getSearchHostParams () {
                 const params = {
                     bk_biz_id: this.bizId,
                     ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
@@ -378,7 +372,7 @@
                 hostCondition.condition.push({
                     field: 'bk_host_id',
                     operator: '$in',
-                    value: data.map(item => item.bk_host_id)
+                    value: this.resources
                 })
                 return params
             },
@@ -447,11 +441,22 @@
                 this.tab.active = tab.id
             },
             handleChangeModule () {
-                this.dialog.props = {
+                const props = {
                     moduleType: this.type,
                     title: this.type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块'),
                     defaultChecked: this.targetModules
                 }
+                const selection = this.hostInfo
+                const firstSelectionModules = selection[0].module.map(module => module.bk_module_id).sort()
+                const firstSelectionModulesStr = firstSelectionModules.join(',')
+                const allSame = selection.slice(1).every(item => {
+                    const modules = item.module.map(module => module.bk_module_id).sort().join(',')
+                    return modules === firstSelectionModulesStr
+                })
+                if (allSame) {
+                    props.previousModules = firstSelectionModules
+                }
+                this.dialog.props = props
                 this.dialog.width = 720
                 this.dialog.component = ModuleSelector.name
                 this.dialog.show = true
@@ -528,6 +533,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .layout {
+        padding: 15px 0 0 0;
+    }
     .info {
         .info-label {
             width: 128px;
@@ -576,7 +584,7 @@
                 text-align: center;
                 font-size: 0;
                 cursor: pointer;
-                .icon-cc-plus {
+                .icon-cc-edit {
                     font-size: 14px;
                 }
             }

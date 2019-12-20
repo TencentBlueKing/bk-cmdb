@@ -80,7 +80,7 @@
                         <cmdb-collapse class="instances-box" collapse>
                             <div class="title" slot="title">
                                 <h3>{{$t('涉及实例')}}</h3>
-                                <span>（{{process['service_instances'].length}}）</span>
+                                <span>（{{process['service_instance_count'] || 0}}）</span>
                             </div>
                             <div class="service-instances">
                                 <div class="instances-item"
@@ -130,7 +130,6 @@
 
 <script>
     import { mapGetters, mapActions, mapMutations } from 'vuex'
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import instanceDetails from './children/details.vue'
     import featureTips from '@/components/feature-tips/index'
     export default {
@@ -226,7 +225,6 @@
         },
         async created () {
             try {
-                this.setBreadcrumbs()
                 await this.getCategory()
                 await this.getModaelProperty()
                 await this.getModuleInstance()
@@ -250,20 +248,6 @@
                 'searchServiceInstanceDifferences',
                 'syncServiceInstanceByTemplate'
             ]),
-            setBreadcrumbs () {
-                const relative = this.$route.meta.menu.relative
-                this.$store.commit('setBreadcrumbs', [{
-                    label: relative === MENU_BUSINESS_HOST_AND_SERVICE ? this.$t('服务拓扑') : this.$t('服务模板'),
-                    route: {
-                        name: relative,
-                        query: {
-                            node: 'module-' + this.$route.params.moduleId
-                        }
-                    }
-                }, {
-                    label: this.$t('同步模板')
-                }])
-            },
             getList () {
                 const formatList = []
                 Object.keys(this.differenData).forEach(key => {
@@ -542,7 +526,7 @@
     .synchronous-wrapper {
         position: relative;
         color: #63656e;
-        padding: 0 20px;
+        padding: 15px 20px 0;
         .no-content {
             position: absolute;
             top: 50%;

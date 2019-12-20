@@ -39,6 +39,8 @@ type Identifier struct {
 	clouds           map[int64]metadata.CloudInst
 	hostProcRelation map[int64][]metadata.HostIdentProcess
 	modulehosts      map[int64][]metadata.ModuleHost
+	asstMap          map[string]string
+	layers           map[string]map[int64]metadata.MainlineInstInfo
 }
 
 func NewIdentifier(db dal.DB) *Identifier {
@@ -51,6 +53,8 @@ func NewIdentifier(db dal.DB) *Identifier {
 		clouds:           make(map[int64]metadata.CloudInst),
 		hostProcRelation: make(map[int64][]metadata.HostIdentProcess),
 		modulehosts:      make(map[int64][]metadata.ModuleHost),
+		asstMap:          make(map[string]string),
+		layers:           make(map[string]map[int64]metadata.MainlineInstInfo),
 	}
 }
 
@@ -75,6 +79,11 @@ func (i *Identifier) Identifier(ctx core.ContextParams, hostIDs []int64) ([]meta
 		return nil, err
 	}
 	err = i.findHostCloud(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = i.findHostLayerInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -280,12 +289,64 @@ func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64
 	return nil
 }
 
+// findHostLayerInfo handle host layer info
+func (i *Identifier) findHostLayerInfo(ctx core.ContextParams) error {
+	// find mainline association
+	asstArr := make([]metadata.Association, 0)
+	cond := condition.CreateCondition().Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
+	err := i.dbQuery.ExecQuery(ctx, common.BKTableNameObjAsst, nil, cond.ToMapStr(), &asstArr)
+	if err != nil {
+		blog.ErrorJSON("findHostLayerInfo query mainline association info error. condition:%s, rid:%s", cond.ToMapStr(), ctx.ReqID)
+		return err
+	}
+
+	for _, asst := range asstArr {
+		i.asstMap[asst.ObjectID] = asst.AsstObjID
+	}
+
+	// initialize parent inst search param
+	parentIDs := make([]int64, 0)
+	for _, set := range i.sets {
+		parentIDs = append(parentIDs, set.ParentID)
+	}
+	curObj, ok := i.asstMap[common.BKInnerObjIDSet]
+	if !ok {
+		return nil
+	}
+
+	// find layer info
+	for curObj != "" && curObj != common.BKInnerObjIDApp {
+		layers := make([]metadata.MainlineInstInfo, 0)
+		cond := condition.CreateCondition().Field(common.BKInstIDField).In(parentIDs)
+		cond.Field(common.BKObjIDField).Eq(curObj)
+		err := i.dbQuery.ExecQuery(ctx, common.BKTableNameBaseInst, nil, cond.ToMapStr(), &layers)
+		if err != nil {
+			blog.Errorf("findHostLayerInfo query layer info error. condition:%#v, rid:%s", cond.ToMapStr(), ctx.ReqID)
+			return err
+		}
+
+		parentIDs = make([]int64, 0)
+		curObj = i.asstMap[curObj]
+
+		for _, layer := range layers {
+			if i.layers[layer.ObjID] == nil {
+				i.layers[layer.ObjID] = make(map[int64]metadata.MainlineInstInfo)
+			}
+			i.layers[layer.ObjID][layer.InstID] = layer
+			parentIDs = append(parentIDs, layer.ParentID)
+		}
+	}
+
+	blog.V(5).Infof("findHostLayerInfo query host layer info. layers: %#v, rid;%s", i.layers, ctx.ReqID)
+	return nil
+}
+
 func (i *Identifier) build(ctx core.ContextParams) {
 	for idx, host := range i.hosts {
 		if cloudInfo, ok := i.clouds[host.CloudID]; ok {
 			host.CloudName = cloudInfo.CloudName
 		}
-		// 填充主机身份中的 业务，模块，集群信息
+		// 填充主机身份中的 业务，模块，集群，自定义层级信息
 		for _, relation := range i.modulehosts[host.HostID] {
 			mod := &metadata.HostIdentModule{
 				SetID:    relation.SetID,
@@ -303,19 +364,48 @@ func (i *Identifier) build(ctx core.ContextParams) {
 				host.SupplierID = biz.SupplierID
 			}
 
+			var parentID int64
 			if set, ok := i.sets[mod.SetID]; ok {
 				mod.SetName = set.SetName
 				mod.SetEnv = set.SetEnv
 				mod.SetStatus = set.SetStatus
+				parentID = set.ParentID
 			}
 
 			if module, ok := i.modules[mod.ModuleID]; ok {
 				mod.ModuleName = module.ModuleName
 			}
 
+			curObj, ok := i.asstMap[common.BKInnerObjIDSet]
+			if !ok {
+				continue
+			}
+			var layer *metadata.Layer
+			for curObj != "" && curObj != common.BKInnerObjIDApp {
+				objLayers, ok := i.layers[curObj]
+				if !ok {
+					curObj = i.asstMap[curObj]
+					continue
+				}
+				objLayer, ok := objLayers[parentID]
+				if !ok {
+					curObj = i.asstMap[curObj]
+					continue
+				}
+
+				layer = &metadata.Layer{
+					InstID:   objLayer.InstID,
+					InstName: objLayer.InstName,
+					ObjID:    objLayer.ObjID,
+					Child:    layer,
+				}
+
+				curObj = i.asstMap[curObj]
+				parentID = objLayer.ParentID
+			}
+			mod.Layer = layer
 		}
 		host.Process = i.hostProcRelation[host.HostID]
 		i.hosts[idx] = host
-
 	}
 }
