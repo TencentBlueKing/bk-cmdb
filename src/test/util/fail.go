@@ -33,5 +33,9 @@ func Fail(message string, callerSkip ...int) {
 		j, _ := json.MarshalIndent(response, "", "\t")
 		msg = fmt.Sprintf("Test failed, message:\n%v\n\nresponse:\n%s", message, j)
 	}
-	ginkgo.Fail(msg, callerSkip ...)
+	skip := 0
+	if len(callerSkip) > 0 {
+		skip = callerSkip[0] + 1
+	}
+	ginkgo.Fail(msg, skip)
 }

@@ -10,14 +10,17 @@
                         <span class="color-danger">*</span>
                     </label>
                     <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
-                        <bk-input type="text" class="cmdb-form-input" id="templateName"
-                            name="templateName"
-                            :placeholder="$t('请输入模板名称')"
-                            :disabled="!isCreateMode"
-                            v-model.trim="formData.templateName"
-                            v-validate="'required|singlechar|length:256'">
-                        </bk-input>
-                        <p class="form-error">{{errors.first('templateName')}}</p>
+                        <template v-if="isCreateMode">
+                            <bk-input type="text" class="cmdb-form-input" id="templateName"
+                                name="templateName"
+                                :placeholder="$t('请输入模板名称')"
+                                :disabled="!isCreateMode"
+                                v-model.trim="formData.templateName"
+                                v-validate="'required|singlechar|length:256'">
+                            </bk-input>
+                            <p class="form-error">{{errors.first('templateName')}}</p>
+                        </template>
+                        <span v-else class="template-name" :title="formData.templateName">{{formData.templateName}}</span>
                     </div>
                 </div>
                 <div class="form-info clearfix">
@@ -279,6 +282,10 @@
                         Bus.$emit('active-change', 'instance')
                         this.$route.params.active = null
                     }
+                    if (this.$route.params.isEdit) {
+                        this.insideMode = 'edit'
+                        this.$route.params.isEdit = null
+                    }
                 } catch (e) {
                     console.error(e)
                 }
@@ -286,27 +293,11 @@
             setBreadcrumbs () {
                 if (this.isCreateMode) {
                     this.$store.commit('setTitle', this.$t('新建模板'))
-                    this.$store.commit('setBreadcrumbs', [{
-                        label: this.$t('服务模板'),
-                        route: {
-                            name: MENU_BUSINESS_SERVICE_TEMPLATE
-                        }
-                    }, {
-                        label: this.$t('新建模板')
-                    }])
                 } else {
                     this.$store.commit('setTitle', this.$t('模板详情'))
                 }
             },
             initEdit () {
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('服务模板'),
-                    route: {
-                        name: MENU_BUSINESS_SERVICE_TEMPLATE
-                    }
-                }, {
-                    label: this.originTemplateValues.name
-                }])
                 this.formData.templateId = this.originTemplateValues['id']
                 this.formData.templateName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']
@@ -404,11 +395,23 @@
                     this.formData.secondaryClassification = ''
                 }
             },
-            handleSaveProcess (values, changedValues, type) {
-                const processValues = type === 'create' ? values : changedValues
-                if (processValues.hasOwnProperty('protocol') && !processValues.protocol.value) {
-                    processValues.protocol.value = null
+            formatSubmitData (data = {}) {
+                const keys = Object.keys(data)
+                for (const key of keys) {
+                    const property = this.properties.find(property => property.bk_property_id === key)
+                    if (property
+                        && ['enum', 'int', 'float'].includes(property.bk_property_type)
+                        && (!data[key].value || !data[key].as_default_value)) {
+                        data[key].value = null
+                    } else if (!data[key].as_default_value) {
+                        data[key].value = ''
+                    }
                 }
+                return data
+            },
+            handleSaveProcess (values, changedValues, type) {
+                const data = type === 'create' ? values : changedValues
+                const processValues = this.formatSubmitData(data)
                 if (type === 'create') {
                     this.createProcessTemplate({
                         params: this.$injectMetadata({
@@ -479,12 +482,9 @@
                     params: this.$injectMetadata({
                         service_template_id: this.formData.templateId,
                         processes: this.processList.map(process => {
-                            if (process.hasOwnProperty('protocol') && !process.protocol.value) {
-                                process.protocol.value = null
-                            }
                             delete process.sign_id
                             return {
-                                spec: process
+                                spec: this.formatSubmitData(process)
                             }
                         })
                     }, { injectBizId: true })
@@ -640,6 +640,12 @@
                 }
                 .cmdb-form-item {
                     width: 520px;
+                }
+                .template-name {
+                    @include inlineBlock;
+                    @include ellipsis;
+                    width: 100%;
+                    line-height: 36px;
                 }
                 .bk-select {
                     width: 254px;

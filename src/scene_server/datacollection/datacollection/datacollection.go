@@ -62,7 +62,7 @@ func (d *DataCollection) Run(redisCli, snapCli, disCli, netCli *redis.Client) er
 
 	if snapCli != nil {
 		snapChanName := d.getSnapChanName(defaultAppID)
-		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, redisCli, d.db, d.AuthManager)
+		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, redisCli, d.db, d.Engine, d.AuthManager)
 		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, redisCli, snapCli, snapChanName, hostsnap.MockMessage, d.registry, d.Engine)
 		manager.AddPorter(snapPorter)
 	}

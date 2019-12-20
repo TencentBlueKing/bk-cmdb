@@ -25,8 +25,8 @@ const getters = {
 }
 
 const actions = {
-    getAuthorizedBusiness ({ commit }, config = {}) {
-        return $http.get('biz/with_reduced', config).then(data => {
+    getAuthorizedBusiness ({ commit }, sort, config = {}) {
+        return $http.get(`biz/with_reduced${sort ? '?sort=' + sort : ''}`, config).then(data => {
             commit('setAuthorizedBusiness', data.info)
             return data.info
         })
@@ -103,7 +103,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post('biz/search/web', params, config)
+        return $http.post(`${window.API_HOST}biz/search/web`, params, config)
     },
 
     searchBusinessById ({ rootGetters }, { bizId, config }) {

@@ -13,7 +13,7 @@ class FileTemplate(Template):
 
 
 def generate_config_file(
-        rd_server_v, db_name_v, redis_ip_v, redis_port_v, redis_user_v,
+        rd_server_v, db_name_v, redis_ip_v, redis_port_v,
         redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v,
         cc_url_v, paas_url_v, full_text_search, es_url_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level
@@ -26,7 +26,6 @@ def generate_config_file(
         mongo_pass=mongo_pass_v,
         mongo_port=mongo_port_v,
         redis_host=redis_ip_v,
-        redis_user=redis_user_v,
         redis_pass=redis_pass_v,
         redis_port=redis_port_v,
         cc_url=cc_url_v,
@@ -77,28 +76,24 @@ enable = true
 [snap-redis]
 host = $redis_host
 port = $redis_port
-usr = $redis_user
 pwd = $redis_pass
 database = 0
 
 [discover-redis]
 host = $redis_host
 port = $redis_port
-usr = $redis_user
 pwd = $redis_pass
 database = 0
 
 [netcollect-redis]
 host = $redis_host
 port = $redis_port
-usr = $redis_user
 pwd = $redis_pass
 database = 0
 
 [redis]
 host = $redis_host
 port = $redis_port
-usr = $redis_user
 pwd = $redis_pass
 database = 0
 
@@ -128,7 +123,6 @@ mechanism = SCRAM-SHA-1
 [redis]
 host = $redis_host
 port = $redis_port
-usr = $redis_user
 pwd = $redis_pass
 database = 0
 port = $redis_port
@@ -150,7 +144,6 @@ pwd = L%blKas
 [redis]
 host = $redis_host
 port = $redis_port
-usr = $redis_user
 pwd = $redis_pass
 database = 0
 port = $redis_port
@@ -224,7 +217,6 @@ enable = true
 [redis]
 host = $redis_host
 port = $redis_port
-usr = $redis_user
 pwd = $redis_pass
 database = 0
 port = $redis_port
@@ -239,13 +231,6 @@ maxIDleConns = 1000
 
     # proc.conf
     proc_file_template_str = '''
-[redis]
-host = $redis_host
-port = $redis_port
-usr = $redis_user
-pwd = $redis_pass
-port = $redis_port
-database = 0
 
 [auth]
 address = $auth_address
@@ -297,15 +282,7 @@ database = $db
 port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
-[redis]
-host = $redis_host
-port = $redis_port
-usr = $redis_user
-pwd = $redis_pass
-database = 0
-port = $redis_port
-maxOpenConns = 3000
-maxIDleConns = 1000
+
 [transaction]
 enable = false
 transactionLifetimeSecond = 60
@@ -396,7 +373,6 @@ mechanism = SCRAM-SHA-1
 [redis]
 host = $redis_host
 port = $redis_port
-usr = $redis_user
 pwd = $redis_pass
 database = 0
 port = $redis_port
@@ -452,7 +428,6 @@ def main(argv):
     rd_server = ''
     redis_ip = ''
     redis_port = 6379
-    redis_user = 'cc'
     redis_pass = ''
     mongo_ip = ''
     mongo_port = 27017
@@ -491,7 +466,7 @@ def main(argv):
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
-        "redis_user=", "redis_pass=", "mongo_ip=", "mongo_port=",
+        "redis_pass=", "mongo_ip=", "mongo_port=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=",
         "blueking_paas_url=", "listen_port=", "es_url=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
@@ -705,7 +680,6 @@ def main(argv):
         db_name_v=db_name,
         redis_ip_v=redis_ip,
         redis_port_v=redis_port,
-        redis_user_v=redis_user,
         redis_pass_v=redis_pass,
         mongo_ip_v=mongo_ip,
         mongo_port_v=mongo_port,

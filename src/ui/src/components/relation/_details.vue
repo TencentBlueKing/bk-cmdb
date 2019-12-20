@@ -69,8 +69,7 @@
                 ])
                 this.properties = properties
                 this.propertyGroups = propertyGroups
-                const inst = await this.getDetails()
-                this.inst = this.$tools.flattenItem(properties, inst)
+                this.inst = await this.getDetails()
                 this.$nextTick(() => {
                     const detailsContainerHeight = this.$refs.detailsContainer.getBoundingClientRect().height
                     const detailsTitleHeight = this.$refs.detailsTitle.getBoundingClientRect().height

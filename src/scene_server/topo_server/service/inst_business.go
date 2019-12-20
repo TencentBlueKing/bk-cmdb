@@ -140,10 +140,7 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 	data = mapstr.New()
 	switch common.DataStatusFlag(pathParams("flag")) {
 	case common.DataStatusDisabled:
-		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(obj.Object().ObjectID)
-		innerCond.Field(common.BKAsstInstIDField).Eq(bizID)
-		if err := s.Core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
+		if err := s.Core.AssociationOperation().CheckAssociation(params, obj, obj.Object().ObjectID, bizID); nil != err {
 			return nil, err
 		}
 
@@ -188,9 +185,20 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 // 1. have any authorized resources in a business.
 // 2. only returned with a few field for this business info.
 func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	page := metadata.BasePage{
+		Limit: common.BKNoLimit,
+	}
+	sortParam := queryParams("sort")
+	if len(sortParam) > 0 {
+		page.Sort = sortParam
+	}
+	if errKey, err := page.Validate(true); err != nil {
+		blog.Errorf("[api-biz] SearchReducedBusinessList failed, page parameter invalid, errKey: %s, err: %s, rid: %s", errKey, err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, errKey)
+	}
 	query := &metadata.QueryBusinessRequest{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField, "business_dept_id", "business_dept_name"},
-		Page:   metadata.BasePage{},
+		Page:   page,
 		Condition: mapstr.MapStr{
 			common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
 			common.BKDefaultField:    0,
@@ -294,12 +302,14 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 				}
 				output[common.BKDBOR] = exactOr
 			} else {
-				output[i] = targetStr
+				attrVal := gparams.SpecialCharChange(targetStr)
+				output[i] = map[string]interface{}{"$regex": attrVal, "$options": "i"}
 			}
 		default:
 			output[i] = j
 		}
 	}
+
 	return output
 }
 
@@ -551,6 +561,17 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 
 // ListAllBusinessSimplify list all businesses with return only several fields
 func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	page := metadata.BasePage{
+		Limit: common.BKNoLimit,
+	}
+	sortParam := queryParams("sort")
+	if len(sortParam) > 0 {
+		page.Sort = sortParam
+	}
+	if errKey, err := page.Validate(true); err != nil {
+		blog.Errorf("[api-biz] ListAllBusinessSimplify failed, page parameter invalid, errKey: %s, err: %s, rid: %s", errKey, err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, errKey)
+	}
 
 	fields := []string{
 		common.BKAppIDField,

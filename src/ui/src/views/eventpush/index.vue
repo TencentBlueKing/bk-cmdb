@@ -248,7 +248,7 @@
 
 <style lang="scss" scoped>
     .push-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .btn-wrapper {
         margin-bottom: 14px;

@@ -112,8 +112,16 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
 	}, {
-		Name:           "ListSetTplRelatedSetsWebRegex",
+		Name:           "ListSetTplRelatedSvcTplRegex",
 		Description:    "查询集群模板关联的服务模板列表-Web",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/service_templates/with_statistics/?$`),
+		HTTPMethod:     http.MethodGet,
+		BizIDGetter:    BizIDFromURLGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
+	}, {
+		Name:           "ListSetTplRelatedSetsWebRegex",
+		Description:    "查询集群模板关联的集群列表-Web",
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/sets/web/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
