@@ -104,7 +104,7 @@ func (am *AuthManager) MakeResourcesBySetTemplateIDs(ctx context.Context, header
 }
 
 func (am *AuthManager) AuthorizeBySetTemplateID(ctx context.Context, header http.Header, action meta.Action, bizID int64, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -142,7 +142,7 @@ func (am *AuthManager) GenSetTemplateNoPermissionResp() *metadata.BaseResp {
 }
 
 func (am *AuthManager) AuthorizeBySetTemplates(ctx context.Context, header http.Header, action meta.Action, templates ...metadata.SetTemplate) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -164,7 +164,7 @@ func (am *AuthManager) AuthorizeBySetTemplates(ctx context.Context, header http.
 func (am *AuthManager) UpdateRegisteredSetTemplates(ctx context.Context, header http.Header, templates ...metadata.SetTemplate) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -191,7 +191,7 @@ func (am *AuthManager) UpdateRegisteredSetTemplates(ctx context.Context, header 
 }
 
 func (am *AuthManager) UpdateRegisteredSetTemplateByID(ctx context.Context, header http.Header, bizID int64, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -207,7 +207,7 @@ func (am *AuthManager) UpdateRegisteredSetTemplateByID(ctx context.Context, head
 }
 
 func (am *AuthManager) DeregisterSetTemplateByIDs(ctx context.Context, header http.Header, bizID int64, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -223,7 +223,7 @@ func (am *AuthManager) DeregisterSetTemplateByIDs(ctx context.Context, header ht
 }
 
 func (am *AuthManager) RegisterSetTemplates(ctx context.Context, header http.Header, templates ...metadata.SetTemplate) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -244,7 +244,7 @@ func (am *AuthManager) RegisterSetTemplates(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) RegisterSetTemplateByID(ctx context.Context, header http.Header, bizID int64, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -260,7 +260,7 @@ func (am *AuthManager) RegisterSetTemplateByID(ctx context.Context, header http.
 }
 
 func (am *AuthManager) DeregisterSetTemplates(ctx context.Context, header http.Header, templates ...metadata.SetTemplate) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 

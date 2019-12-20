@@ -28,7 +28,7 @@ func ParseRule(data map[string]interface{}) (queryFilter Rule, errKey string, er
 	if data == nil {
 		return nil, "", nil
 	}
-	if _, ok := data["condition"]; ok == true {
+	if _, ok := data["condition"]; ok {
 		ruleGroupData := &RuleGroup{}
 		// shouldn't use mapstr here as it doesn't support nest struct
 		// TODO: replace it with more efficient way
@@ -49,7 +49,7 @@ func ParseRule(data map[string]interface{}) (queryFilter Rule, errKey string, er
 			}
 		}
 		queryFilter = combinedRule
-	} else if _, ok := data["operator"]; ok == true {
+	} else if _, ok := data["operator"]; ok {
 		rule := AtomRule{}
 		if err := mapstr.DecodeFromMapStr(&rule, data); err != nil {
 			return nil, "", fmt.Errorf("decode to rule struct failed, err: %+v", err)
@@ -78,7 +78,7 @@ func (qf *QueryFilter) Validate() (string, error) {
 	if qf.Rule == nil {
 		return "", nil
 	}
-	if _, ok := qf.Rule.(CombinedRule); ok == false {
+	if _, ok := qf.Rule.(CombinedRule); !ok {
 		return "", fmt.Errorf("query filter must be combined rules")
 	}
 	return qf.Rule.Validate()
