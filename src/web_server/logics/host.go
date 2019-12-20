@@ -126,9 +126,6 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 	if nil == sheet {
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
-	if nil == sheet {
-		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
-	}
 
 	return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang)
 }
