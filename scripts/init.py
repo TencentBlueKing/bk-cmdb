@@ -373,7 +373,6 @@ mechanism = SCRAM-SHA-1
 [redis]
 host = $redis_host
 port = $redis_port
-usr = $redis_user
 pwd = $redis_pass
 database = 0
 port = $redis_port

@@ -14,9 +14,9 @@ bk-cmdb provide user complete new way of self define model management. Users can
 
 The core of the new version focuses on resources. We divide the atomic resources managed by CMDB into host, process, and generic objects, and build an atomic operation layer on these resources. On top of these atomic operations, we built a scenario layer that is closer to the user's operations. The scenario layer completes the user's request through a combination of different resources.
 
-bk-cmdb uses golang as a development language. It is high performance and easy to develop. In addition, it adopts micro-service architecture design, which has strong scalability, easy to monitor and support smooth upgrade，At the same time, the system's deployment release can support traditional methods and container methods.
-
 The open source version will be in both BlueKing Community Edition and Enterprise Edition and be updated simultaneously. Our goal is to create a unified configuration management platform that can be compatible with different industries and different architectures, and to become the industry's leading free and open source CMDB with good versatility and ease of use. We welcome colleagues who are interested in participating in it.
+
+![front-page](docs/resource/img/frontpage_en.png)
 
 ## Overview
 * [Architecture Design (In Chinese)](docs/overview/architecture.md)
@@ -38,7 +38,7 @@ If you want to know more about the above features, please refer to the [Function
 ## Getting started
 * [Download and Compile (In Chinese)](docs/overview/source_compile.md)
 * [Installation and Deployment (In Chinese)](docs/overview/installation.md)
-* [API Instructions (In Chinese)](docs/apidoc/readme.md)
+* API Instructions (In Chinese): [v3.2](docs/apidoc/v3.2/readme.md) or [v3.1](docs/apidoc/v3.1/readme.md)
 
 ## Version plan
 * [Version iteration rules (In Chinese)](docs/VERSION.md)
