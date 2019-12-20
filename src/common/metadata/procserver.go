@@ -257,6 +257,17 @@ type EsbUserListResponse struct {
 	Data            []UserInfo `json:"data"`
 }
 
+type EsbListUserResponse struct {
+	EsbBaseResponse `json:",inline"`
+	Data            []ListUserItem `json:"data"`
+}
+
+type ListUserItem struct {
+	ID          int64  `json:"id"`
+	Username    string `json:"username"`
+	DisplayName string `json:"display_name"`
+}
+
 type EsbBaseResponse struct {
 	Result       bool   `json:"result"`
 	Code         int    `json:"code"`
