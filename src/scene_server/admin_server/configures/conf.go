@@ -100,6 +100,9 @@ func (cc *ConfCenter) writeErrorRes2Center(errorres string) error {
 	}
 
 	data, err := json.Marshal(errcode)
+	if err != nil {
+		return fmt.Errorf("unmarshal resource failed, err: %s", err)
+	}
 	key := types.CC_SERVERROR_BASEPATH
 	return cc.confRegDiscv.Write(key, data)
 }
