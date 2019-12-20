@@ -108,8 +108,9 @@
                 return this.action === 'batch-del'
             },
             treeHeight () {
-                const showFeatureTips = this.featureTipsParams['hostApply']
-                return this.$APP.height - 160 - (showFeatureTips ? 42 : 0) + 'px'
+                // const showFeatureTips = this.featureTipsParams['hostApply']
+                // return this.$APP.height - 160 - (showFeatureTips ? 42 : 0) + 'px'
+                return this.$APP.height - 160 + 'px'
             }
         },
         watch: {
