@@ -89,7 +89,9 @@
                     properties: [],
                     parentNode: null,
                     nextModelId: null
-                }
+                },
+                editable: false,
+                timer: null
             }
         },
         computed: {
@@ -115,6 +117,15 @@
                 return (this.treeData[0] || {}).bk_inst_name === '蓝鲸'
             }
         },
+        watch: {
+            isBlueKing (flag) {
+                if (flag) {
+                    this.getBlueKingEditStatus()
+                    clearInterval(this.timer)
+                    this.timer = setInterval(this.getBlueKingEditStatus, 1000 * 60)
+                }
+            }
+        },
         async created () {
             const [data, mainLine] = await Promise.all([
                 this.getTopologyData(),
@@ -126,6 +137,9 @@
             this.$nextTick(() => {
                 this.setDefaultState(data)
             })
+        },
+        beforeDestroy () {
+            clearInterval(this.timer)
         },
         methods: {
             setDefaultState (data) {
@@ -191,10 +205,22 @@
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
-                return !isModule && !this.isBlueKing
+                const editable = this.isBlueKing ? this.editable : true
+                return !isModule && editable
             },
             isTemplate (node) {
                 return node.data.service_template_id
+            },
+            async getBlueKingEditStatus () {
+                try {
+                    this.editable = await this.$store.dispatch('userCustom/getBlueKingEditStatus', {
+                        config: {
+                            globalError: false
+                        }
+                    })
+                } catch (_) {
+                    this.editable = false
+                }
             },
             async showCreateDialog (node) {
                 const nodeModel = this.mainLine.find(data => data.bk_obj_id === node.data.bk_obj_id)
