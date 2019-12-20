@@ -77,7 +77,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	}
 	setInstResult, e := st.client.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, setFilter)
 	if e != nil {
-		blog.Errorf("DiffSetTemplateWithInstances failed, list sets failed, bizID: %d, setTemplateID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setTemplateID, option.SetIDs, err.Error(), rid)
+		blog.Errorf("DiffSetTemplateWithInstances failed, list sets failed, bizID: %d, setTemplateID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setTemplateID, option.SetIDs, e.Error(), rid)
 		return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if len(setInstResult.Data.Info) != len(setIDs) {
@@ -92,7 +92,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 			return nil, ccError.CCError(common.CCErrCommJSONMarshalFailed)
 		}
 		if set.SetID == 0 {
-			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance result setID=0, data: %+v, err: %s, rid: %s", setInstance, err.Error(), rid)
+			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance result setID=0, data: %+v, rid: %s", setInstance, rid)
 			return nil, ccError.CCError(common.CCErrCommJSONMarshalFailed)
 		}
 		setMap[set.SetID] = set
@@ -111,7 +111,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	}
 	modulesInstResult, e := st.client.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, moduleFilter)
 	if e != nil {
-		blog.Errorf("DiffSetTemplateWithInstances failed, list modules failed, bizID: %d, setTemplateID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setTemplateID, option.SetIDs, err.Error(), rid)
+		blog.Errorf("DiffSetTemplateWithInstances failed, list modules failed, bizID: %d, setTemplateID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setTemplateID, option.SetIDs, e.Error(), rid)
 		return nil, ccError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -254,7 +254,7 @@ func (st *setTemplate) DispatchTask4ModuleSync(ctx context.Context, header http.
 		return taskDetail, errors.CCHttpError
 	}
 	if createTaskResult.Code != 0 || createTaskResult.Result == false {
-		blog.ErrorJSON("dispatch synchronize task failed, task: %s, err: %s, rid: %s", tasks, err.Error(), rid)
+		blog.ErrorJSON("dispatch synchronize task failed, task: %s, rid: %s", tasks, rid)
 		return taskDetail, errors.NewCCError(createTaskResult.Code, createTaskResult.ErrMsg)
 	}
 	blog.InfoJSON("dispatch synchronize task success, task: %s, create result: %s, rid: %s", tasks, createTaskResult, rid)
