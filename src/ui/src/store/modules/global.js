@@ -83,6 +83,9 @@ const actions = {
             commit('setUserList', list)
             return list
         })
+    },
+    getBlueKingEditStatus ({ commit }, { config }) {
+        return $http.post('system/config/user_config/blueking_modify', {}, config)
     }
 }
 
