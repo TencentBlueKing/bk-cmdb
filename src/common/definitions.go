@@ -732,6 +732,9 @@ const (
 	// FieldTypeList the lis type
 	FieldTypeList string = "list"
 
+	// FieldTypeOrganization the organization field type
+	FieldTypeOrganization string = "organization"
+
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
 
