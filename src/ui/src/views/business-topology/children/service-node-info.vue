@@ -218,7 +218,7 @@
                 immediate: true,
                 handler (active) {
                     if (active) {
-                        this.refresh()
+                        this.refresh && this.refresh()
                     }
                 }
             }
