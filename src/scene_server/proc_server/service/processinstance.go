@@ -173,7 +173,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 	}
 	invalidProcessIDs := make([]string, 0)
 	for _, processID := range processIDs {
-		if util.InArray(processID, foundProcessIDs) == false {
+		if !util.InArray(processID, foundProcessIDs) {
 			invalidProcessIDs = append(invalidProcessIDs, strconv.FormatInt(processID, 10))
 		}
 	}
@@ -189,7 +189,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 		if relation.ProcessTemplateID == common.ServiceTemplateIDNotSet {
 			continue
 		}
-		if _, exist := processTemplateMap[relation.ProcessTemplateID]; exist == true {
+		if _, exist := processTemplateMap[relation.ProcessTemplateID]; exist {
 			continue
 		}
 		processTemplate, err := ps.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, relation.ProcessTemplateID)
@@ -218,13 +218,13 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 		clearFields = metadata.FilterValidFields(clearFields)
 
 		relation, exist := process2ServiceInstanceMap[process.ProcessID]
-		if exist == false {
+		if !exist {
 			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessIDField)
 			blog.ErrorJSON("update process instance failed, process related service instance not found, process: %s, err: %s, rid: %s", process, err, rid)
 			return nil, err
 		}
 
-		processData := make(map[string]interface{})
+		var processData map[string]interface{}
 		if relation.ProcessTemplateID == common.ServiceTemplateIDNotSet {
 			serviceInstanceID := relation.ServiceInstanceID
 			process.BusinessID = bizID
@@ -244,7 +244,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 			delete(processData, common.CreateTimeField)
 		} else {
 			processTemplate, exist = processTemplateMap[relation.ProcessTemplateID]
-			if exist == false {
+			if !exist {
 				err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
 				blog.Errorf("update process instance failed, process related template not found, relation: %+v, err: %v, rid: %s", relation, err, rid)
 				return nil, err
@@ -287,7 +287,7 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 	if err != nil {
 		blog.ErrorJSON("CheckHostInBusiness failed, GetHostModuleRelation failed, filter: %s, err: %s, rid: %s", hostConfigFilter, err.Error(), ctx.Kit.Rid)
 		e, ok := err.(errors.CCErrorCoder)
-		if ok == true {
+		if ok {
 			return e
 		} else {
 			return ctx.Kit.CCError.CCError(common.CCErrWebGetHostFail)
@@ -298,7 +298,7 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 	}
 	invalidHost := make([]int64, 0)
 	for hostID, hit := range hostIDHit {
-		if hit == false {
+		if !hit {
 			invalidHost = append(invalidHost, hostID)
 		}
 	}
@@ -466,6 +466,11 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 		},
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
+	if err != nil {
+		blog.Errorf("DeleteProcessInstance failed, ListProcessInstanceRelation failed, option: %+v, err: %+v, rid: %s", listOption, err, ctx.Kit.Rid)
+		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %+v, but list instance relation failed.", input.ProcessInstanceIDs)
+		return
+	}
 	templateProcessIDs := make([]string, 0)
 	serviceInstanceIDs := make([]int64, 0)
 	for _, relation := range relations.Info {
@@ -561,7 +566,7 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 	processIDPropertyMap := map[int64]mapstr.MapStr{}
 	for _, process := range processResult.Data.Info {
 		processIDVal, exist := process.Get(common.BKProcessIDField)
-		if exist == false {
+		if !exist {
 			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "list process instance failed, parse bk_process_id from process property failed, field not exist, bizID: %d, processIDs: %+v", bizID, processIDs)
 			return
 		}
@@ -580,7 +585,7 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 			Relation: relation,
 		}
 		process, exist := processIDPropertyMap[relation.ProcessID]
-		if exist == true {
+		if exist {
 			processInstance.Property = process
 		}
 		processInstanceList = append(processInstanceList, processInstance)
@@ -592,7 +597,7 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 var UnbindServiceTemplateOnModuleEnable = true
 
 func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
-	if UnbindServiceTemplateOnModuleEnable == true {
+	if UnbindServiceTemplateOnModuleEnable {
 		ctx.RespErrorCodeOnly(common.CCErrProcUnbindModuleServiceTemplateDisabled, "unbind service template from module disabled")
 		return
 	}
