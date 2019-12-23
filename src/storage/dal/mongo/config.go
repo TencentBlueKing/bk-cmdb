@@ -77,17 +77,17 @@ func (c Config) GetMaxIdleConns() int {
 }
 
 // ParseConfigFromKV returns a new config
-func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
+func ParseConfigFromKV(prefix string, configmap map[string]string) Config {
 	return Config{
-		Address:      conifgmap[prefix+".host"],
-		Port:         conifgmap[prefix+".port"],
-		User:         conifgmap[prefix+".usr"],
-		Password:     conifgmap[prefix+".pwd"],
-		Database:     conifgmap[prefix+".database"],
-		MaxOpenConns: conifgmap[prefix+".maxOpenConns"],
-		MaxIdleConns: conifgmap[prefix+".maxIDleConns"],
-		Mechanism:    conifgmap[prefix+".mechanism"],
-		Enable:       conifgmap[prefix+".enable"],
+		Address:      configmap[prefix+".host"],
+		Port:         configmap[prefix+".port"],
+		User:         configmap[prefix+".usr"],
+		Password:     configmap[prefix+".pwd"],
+		Database:     configmap[prefix+".database"],
+		MaxOpenConns: configmap[prefix+".maxOpenConns"],
+		MaxIdleConns: configmap[prefix+".maxIDleConns"],
+		Mechanism:    configmap[prefix+".mechanism"],
+		Enable:       configmap[prefix+".enable"],
 	}
 }
 
