@@ -63,9 +63,10 @@ export default [{
         layout: {
             previous (view) {
                 const config = {
-                    name: MENU_BUSINESS_HOST_APPLY
+                    name: MENU_BUSINESS_HOST_APPLY,
+                    query: {}
                 }
-                if (view.$route.query.mid.indexOf(',') === -1) {
+                if (String(view.$route.query.mid).indexOf(',') === -1) {
                     config.query.module = view.$route.query.mid
                 }
                 return config
