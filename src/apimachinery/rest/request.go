@@ -92,6 +92,17 @@ func (r *Request) WithParams(params map[string]string) *Request {
 	return r
 }
 
+func (r *Request) WithParamsFromURL(u *url.URL) *Request {
+	if r.params == nil {
+		r.params = make(url.Values)
+	}
+	params := u.Query()
+	for paramName, value := range params {
+		r.params[paramName] = append(r.params[paramName], value...)
+	}
+	return r
+}
+
 func (r *Request) WithParam(paramName, value string) *Request {
 	if r.params == nil {
 		r.params = make(url.Values)

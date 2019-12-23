@@ -58,6 +58,22 @@ func (s *Service) GetUserList(c *gin.Context) {
 	return
 }
 
+// GetDepartment get department info
+func (s *Service) GetDepartment(c *gin.Context) {
+	user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+	code, data := user.GetDepartment(c)
+	c.JSON(code, data)
+	return
+}
+
+// GetDepartmentProfile get department info
+func (s *Service) GetDepartmentProfile(c *gin.Context) {
+	user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+	code, data := user.GetDepartmentProfile(c)
+	c.JSON(code, data)
+	return
+}
+
 func (s *Service) UpdateUserLanguage(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
