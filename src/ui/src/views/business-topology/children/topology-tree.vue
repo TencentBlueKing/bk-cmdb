@@ -130,7 +130,9 @@
                     properties: [],
                     parentNode: null,
                     nextModelId: null
-                }
+                },
+                editable: false,
+                timer: null
             }
         },
         computed: {
@@ -251,6 +253,17 @@
                 const isModule = data.bk_obj_id === 'module'
                 const isIdleSet = data.is_idle_set
                 return !isModule && !isIdleSet
+            },
+            async getBlueKingEditStatus () {
+                try {
+                    this.editable = await this.$store.dispatch('getBlueKingEditStatus', {
+                        config: {
+                            globalError: false
+                        }
+                    })
+                } catch (_) {
+                    this.editable = false
+                }
             },
             async showCreateDialog (node) {
                 const nodeModel = this.topologyModels.find(data => data.bk_obj_id === node.data.bk_obj_id)
