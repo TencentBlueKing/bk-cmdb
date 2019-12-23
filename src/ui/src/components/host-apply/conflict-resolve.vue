@@ -1,13 +1,6 @@
 <template>
     <div class="conflict-layout">
-        <feature-tips
-            class-name="resolve-tips"
-            feature-name="hostApply"
-            :show-tips="showFeatureTips"
-            :desc="$t('策略失效提示语')"
-            @close-tips="showFeatureTips = false"
-        >
-        </feature-tips>
+        <cmdb-tips class="resolve-tips" tips-key="hostApplyConfirmTips">{{$t('策略失效提示语')}}</cmdb-tips>
         <div class="conflict-table-wrapper" ref="conflictTable">
             <bk-table
                 ext-cls="conflict-table"
@@ -53,12 +46,10 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import featureTips from '@/components/feature-tips/index'
     import RESIZE_EVENTS from '@/utils/resize-events'
     import propertyFormElement from './property-form-element'
     export default {
         components: {
-            featureTips,
             propertyFormElement
         },
         props: {
@@ -78,14 +69,12 @@
                 result: {},
                 moduleMap: {},
                 scrollbar: false,
-                confirmButtonDisabled: false,
-                showFeatureTips: false
+                confirmButtonDisabled: false
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('hostApply', ['configPropertyList']),
-            ...mapGetters(['featureTipsParams']),
             moduleIds () {
                 return this.dataRow.bk_module_ids
             }
@@ -96,7 +85,6 @@
             }
         },
         created () {
-            this.showFeatureTips = this.featureTipsParams['hostApplyConfirm']
             this.getData()
         },
         mounted () {
@@ -221,10 +209,10 @@
         @include scrollbar-y;
     }
     .resolve-tips {
-        margin: 12px 20px;
+        margin: 12px 20px 0;
     }
     .conflict-table-wrapper {
-        padding: 0 20px;
+        padding: 12px 20px 0;
         .conflict-name {
             font-weight: bold;
         }
