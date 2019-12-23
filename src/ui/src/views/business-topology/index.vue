@@ -19,25 +19,23 @@
                 <bk-tab-panel name="hostList" :label="$t('主机列表')">
                     <host-list :active="activeTab === 'hostList'" ref="hostList"></host-list>
                 </bk-tab-panel>
-                <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" :disabled="!showServiceInstance">
-                    <span slot="label"
-                        v-bk-tooltips="{
-                            content: $t('请选择业务模块'),
-                            disabled: showServiceInstance
-                        }">
-                        {{$t('服务实例')}}
-                    </span>
-                    <service-instance ref="serviceInstance"></service-instance>
+                <bk-tab-panel name="serviceInstance" :label="$t('服务实例')">
+                    <div class="non-business-module" v-if="!showServiceInstance">
+                        <div class="tips">
+                            <i class="bk-cc-icon icon-cc-tips"></i>
+                            <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
+                        </div>
+                    </div>
+                    <service-instance v-else ref="serviceInstance"></service-instance>
                 </bk-tab-panel>
-                <bk-tab-panel name="nodeInfo" :disabled="!showNodeInfo">
-                    <span slot="label"
-                        v-bk-tooltips="{
-                            content: $t('请选择非内置节点'),
-                            disabled: showNodeInfo
-                        }">
-                        {{$t('节点信息')}}
-                    </span>
-                    <service-node-info :active="activeTab === 'nodeInfo'" ref="nodeInfo"></service-node-info>
+                <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
+                    <div class="default-node-info" v-if="!showNodeInfo">
+                        <div class="info-item">
+                            <label class="name">{{$t('节点名称')}}</label>
+                            <span class="value">{{nodeName}}</span>
+                        </div>
+                    </div>
+                    <service-node-info v-else :active="activeTab === 'nodeInfo'" ref="nodeInfo"></service-node-info>
                 </bk-tab-panel>
             </bk-tab>
         </div>
@@ -79,21 +77,14 @@
             },
             showNodeInfo () {
                 return this.selectedNode && this.selectedNode.data.default === 0
+            },
+            nodeName () {
+                return this.selectedNode && this.selectedNode.data.bk_inst_name
             }
         },
         watch: {
-            showServiceInstance (value) {
-                if (!value && this.activeTab === 'serviceInstance') {
-                    this.activeTab = 'hostList'
-                }
-            },
-            showNodeInfo (value) {
-                if (!value) {
-                    this.activeTab = 'hostList'
-                }
-            },
             activeTab (tab) {
-                const refresh = this.$refs[tab].refresh
+                const refresh = (this.$refs[tab] || {}).refresh
                 typeof refresh === 'function' && refresh(1)
             }
         },
@@ -183,6 +174,32 @@
                     padding: 0;
                     margin: 0 20px;
                 }
+            }
+        }
+    }
+
+    .non-business-module {
+        display: flex;
+        height: 80%;
+        justify-content: center;
+        align-items: center;
+        .tips {
+            font-size: 14px;
+            .bk-cc-icon {
+                font-size: 16px;
+                margin-top: -2px;
+            }
+        }
+    }
+    .default-node-info {
+        padding: 20px 0 20px 36px;
+        .info-item {
+            font-size: 14px;
+            .name {
+                color: #63656e;
+            }
+            .value {
+                color: #313238;
             }
         }
     }
