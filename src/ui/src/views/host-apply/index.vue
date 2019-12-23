@@ -1,13 +1,6 @@
 <template>
-    <div :class="['host-apply', { 'show-feature-tips': showFeatureTips }]">
-        <feature-tips
-            class-name="top-tips"
-            feature-name="hostApply"
-            :show-tips="showFeatureTips"
-            :desc="$t('主机属性自动应用功能提示')"
-            @close-tips="showFeatureTips = false"
-        >
-        </feature-tips>
+    <div :class="['host-apply', { 'show-feature-tips': featureTips }]">
+        <cmdb-tips class="top-tips" tips-key="hostApplyTips" v-model="featureTips">{{$t('主机属性自动应用功能提示')}}</cmdb-tips>
         <div class="main-wrapper">
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
@@ -161,7 +154,6 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import featureTips from '@/components/feature-tips/index'
     import sidebar from './children/sidebar.vue'
     import propertyConfigTable from './children/property-config-table'
     import {
@@ -172,25 +164,23 @@
     export default {
         components: {
             sidebar,
-            featureTips,
             propertyConfigTable
         },
         data () {
             return {
+                featureTips: true,
                 currentModule: {},
                 initRuleList: [],
                 checkedPropertyIdList: [],
                 conflictNum: 0,
                 clearRules: false,
                 hasRule: false,
-                showFeatureTips: false,
                 batchAction: false,
                 hostAndServiceRouteName: MENU_BUSINESS_HOST_AND_SERVICE
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters(['featureTipsParams']),
             applyEnabled () {
                 return this.currentModule.host_apply_enabled
             },
@@ -339,21 +329,24 @@
 <style lang="scss" scoped>
     .host-apply {
         .top-tips {
-            margin: 0 20px 10px;
+            margin: 10px 20px;
         }
 
         &.show-feature-tips {
             .main-wrapper {
-                height: calc(100% - 42px);
+                height: calc(100% - 52px);
+                border-top: 1px solid $cmdbLayoutBorderColor;
             }
         }
     }
     .main-wrapper {
         height: 100%;
+        border-top: none;
     }
     .tree-layout {
         width: 300px;
         height: 100%;
+        overflow: hidden;
         border-right: 1px solid $cmdbLayoutBorderColor;
     }
     .main-content {
