@@ -1,12 +1,9 @@
 <template>
     <div class="api-wrapper">
-        <feature-tips
-            :feature-name="'customQuery'"
-            :show-tips="showFeatureTips"
-            :desc="$t('动态分组提示')"
-            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%886%EF%BC%89%E5%8A%A8%E6%80%81%E5%88%86%E7%BB%84'"
-            @close-tips="showFeatureTips = false">
-        </feature-tips>
+        <cmdb-tips class="mb10" tips-key="showCustomQuery"
+            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%886%EF%BC%89%E5%8A%A8%E6%80%81%E5%88%86%E7%BB%84'">
+            {{$t('动态分组提示')}}
+        </cmdb-tips>
         <div class="filter-wrapper clearfix">
             <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_CUSTOM_QUERY })">
                 <bk-button slot-scope="{ disabled }"
@@ -121,20 +118,17 @@
 
 <script>
     import { mapActions, mapGetters } from 'vuex'
-    import featureTips from '@/components/feature-tips/index'
     import vDefine from './define'
     import vPreview from './preview'
     import cmdbMainInject from '@/components/layout/main-inject'
     export default {
         components: {
-            featureTips,
             vDefine,
             vPreview,
             cmdbMainInject
         },
         data () {
             return {
-                showFeatureTips: false,
                 isPreviewShow: false,
                 previewHeader: ['bk_host_innerip', 'bk_set_name', 'bk_module_name', 'bk_biz_name', 'bk_cloud_id'],
                 apiParams: {},
@@ -193,7 +187,7 @@
             }
         },
         computed: {
-            ...mapGetters(['featureTipsParams', 'supplierAccount']),
+            ...mapGetters(['supplierAccount']),
             ...mapGetters('objectBiz', ['bizId']),
             searchParams () {
                 const params = {
@@ -206,7 +200,6 @@
             }
         },
         async created () {
-            this.showFeatureTips = this.featureTipsParams['customQuery']
             this.getUserAPIList()
             await this.initObjectProperties()
         },

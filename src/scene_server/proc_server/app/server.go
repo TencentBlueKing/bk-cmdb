@@ -42,7 +42,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	procSvr := new(service.ProcServer)
-	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
+	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig)
 
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: procSvr.OnProcessConfigUpdate,
@@ -63,7 +63,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			break
 		}
 	}
-	if false == configReady {
+	if !configReady {
 		return fmt.Errorf("configuration item not found")
 	}
 
