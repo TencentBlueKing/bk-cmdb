@@ -224,6 +224,13 @@ export function getHeaderProperties (properties, customColumns, fixedPropertyIds
     return headerProperties
 }
 
+export function getHeaderPropertyName (property) {
+    if (property.unit) {
+        return `${property.bk_property_name}(${property.unit})`
+    }
+    return property.bk_property_name
+}
+
 /**
  * 深拷贝
  * @param {Object} object - 需拷贝的对象
@@ -335,6 +342,7 @@ export default {
     getDefaultHeaderProperties,
     getCustomHeaderProperties,
     getHeaderProperties,
+    getHeaderPropertyName,
     formatTime,
     clone,
     getInstFormValues,
