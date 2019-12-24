@@ -31,7 +31,7 @@
                     class="info-create-trigger fr"
                     :auth="$authResources({ type: $OPERATION.C_TOPO })">
                     <template slot-scope="{ disabled }">
-                        <i v-if="isBlueKing"
+                        <i v-if="isBlueKing && !editable"
                             class="node-button disabled-node-button"
                             v-bk-tooltips="{ content: $t('蓝鲸业务拓扑节点提示'), placement: 'top' }">
                             {{$t('新建')}}
@@ -151,6 +151,13 @@
                 if (Object.keys(map).includes(value)) {
                     this.nodeCountType = map[value]
                 }
+            },
+            isBlueKing (flag) {
+                if (flag) {
+                    this.getBlueKingEditStatus()
+                    clearInterval(this.timer)
+                    this.timer = setInterval(this.getBlueKingEditStatus, 1000 * 60)
+                }
             }
         },
         created () {
@@ -162,6 +169,7 @@
         },
         beforeDestroy () {
             Bus.$off('refresh-count', this.refreshCount)
+            clearInterval(this.timer)
         },
         methods: {
             async initTopology () {
