@@ -42,13 +42,13 @@
                     <div class="property-name">
                         <span>{{$t('最小值')}}</span>：
                     </div>
-                    <span class="property-value">{{field.option.min || '--'}}</span>
+                    <span class="property-value">{{field.option.min || (field.option.min === 0 ? 0 : '--')}}</span>
                 </div>
                 <div class="property-item">
                     <div class="property-name">
                         <span>{{$t('最大值')}}</span>：
                     </div>
-                    <span class="property-value">{{field.option.max || '--'}}</span>
+                    <span class="property-value">{{field.option.max || (field.option.max === 0 ? 0 : '--')}}</span>
                 </div>
             </template>
             <div class="property-item" v-else-if="['enum', 'list'].includes(field.bk_property_type)">

@@ -104,7 +104,7 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
 
 export function formatValues (values, properties) {
     const formatted = { ...values }
-    const convertProperties = properties.filter(property => ['enum', 'int', 'float'].includes(property.bk_property_type))
+    const convertProperties = properties.filter(property => ['enum', 'int', 'float', 'list'].includes(property.bk_property_type))
     convertProperties.forEach(property => {
         const key = property.bk_property_id
         if (formatted.hasOwnProperty(key) && ['', undefined].includes(formatted[key])) {
