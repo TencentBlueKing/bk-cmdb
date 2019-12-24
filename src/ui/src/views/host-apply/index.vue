@@ -327,26 +327,12 @@
 </script>
 
 <style lang="scss" scoped>
-    .host-apply {
-        .top-tips {
-            margin: 10px 20px;
-        }
-
-        &.show-feature-tips {
-            .main-wrapper {
-                height: calc(100% - 52px);
-                border-top: 1px solid $cmdbLayoutBorderColor;
-            }
-        }
-    }
     .main-wrapper {
         height: 100%;
-        border-top: none;
     }
     .tree-layout {
         width: 300px;
         height: 100%;
-        overflow: hidden;
         border-right: 1px solid $cmdbLayoutBorderColor;
     }
     .main-content {
@@ -389,11 +375,10 @@
         }
 
         .config-title {
-            height: 32px;
-            line-height: 32px;
             font-size: 14px;
             color: #313238;
             font-weight: 700;
+            margin-top: 20px;
 
             .last-edit-time {
                 font-size: 12px;
