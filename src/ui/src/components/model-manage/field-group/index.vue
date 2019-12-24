@@ -726,12 +726,16 @@
             },
             updatePropertyIndex () {
                 const updateProperties = []
-                const flatProperties = this.groupedProperties.reduce((acc, group) => acc.concat(group.properties), [])
-                flatProperties.forEach((property, index) => {
-                    if (property['bk_property_index'] !== index) {
-                        property['bk_property_index'] = index
-                        updateProperties.push(property)
-                    }
+                let propertyIndex = 0
+                this.groupedProperties.forEach(group => {
+                    group.properties.forEach(property => {
+                        if (property['bk_property_index'] !== propertyIndex || property['bk_property_group'] !== group.info['bk_group_id']) {
+                            property['bk_property_index'] = propertyIndex
+                            property['bk_property_group'] = group.info['bk_group_id']
+                            updateProperties.push(property)
+                        }
+                        propertyIndex++
+                    })
                 })
                 if (!updateProperties.length) return
                 this.updatePropertyGroup({
