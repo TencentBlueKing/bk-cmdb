@@ -66,8 +66,8 @@ export function timezone (value) {
 }
 
 export function bool (value) {
-    if (['true', 'false'].includes(value.toString())) {
-        return value.toString()
+    if (['true', 'false'].includes(String(value))) {
+        return String(value)
     }
     return '--'
 }
