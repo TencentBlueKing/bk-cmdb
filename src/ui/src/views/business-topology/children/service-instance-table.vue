@@ -324,7 +324,7 @@
                         serviceInstanceId: this.instance.id,
                         config: {
                             data: this.$injectMetadata({
-                                process_instance_ids: [item.bk_process_id]
+                                process_instance_ids: [item.relation.bk_process_id]
                             }, { injectBizId: true })
                         }
                     })
