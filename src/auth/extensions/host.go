@@ -218,6 +218,7 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 			BKAppIDField:    cls.AppID,
 			BKModuleIDField: cls.ModuleID,
 			BKSetIDField:    cls.SetID,
+			BKHostIDField:   cls.HostID,
 		}
 		hostModuleMap[host.BKHostIDField] = host
 	}
