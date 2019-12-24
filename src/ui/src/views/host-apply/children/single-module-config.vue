@@ -215,13 +215,6 @@
             flex: auto;
         }
     }
-    .config-title {
-        height: 32px;
-        line-height: 32px;
-        font-size: 14px;
-        color: #313238;
-        font-weight: 700;
-    }
 
     .choose-field {
         padding: 16px 2px;
