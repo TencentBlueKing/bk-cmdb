@@ -1,5 +1,5 @@
 <template>
-    <div class="synchronous-wrapper">
+    <div class="synchronous-wrapper" v-bkloading="{ isLoading: $loading(requestId) }">
         <template v-if="noFindData">
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
@@ -91,15 +91,6 @@
                                     <span v-if="process['operational_type'] === 'changed'">（{{instance['changed_attributes'].length}}）</span>
                                 </div>
                             </div>
-                            <bk-pagination class="pagination pt10" v-show="process['operational_type'] === 'others'"
-                                align="right"
-                                size="small"
-                                :current="pagination.current"
-                                :count="pagination.count"
-                                :limit="pagination.size"
-                                @change="handlePageChange"
-                                @limit-change="handleSizeChange">
-                            </bk-pagination>
                         </cmdb-collapse>
                     </section>
                 </div>
@@ -163,14 +154,10 @@
                     title: '',
                     details: {}
                 },
-                pagination: {
-                    current: 1,
-                    count: 0,
-                    size: 10
-                },
                 categoryList: [],
                 changedAttributes: {},
-                list: []
+                list: [],
+                requestId: Symbol('getInstanceDiff')
             }
         },
         computed: {
@@ -319,7 +306,10 @@
                         params: this.$injectMetadata({
                             bk_module_ids: [Number(this.routerParams.moduleId)],
                             service_template_id: this.serviceTemplateId
-                        }, { injectBizId: true })
+                        }, { injectBizId: true }),
+                        config: {
+                            requestId: this.requestId
+                        }
                     }).then(async res => {
                         res = res[0] || {}
                         const differen = {
@@ -338,7 +328,6 @@
                                     service_instance: item
                                 }
                             })
-                            this.pagination.count = data.count
                             differen.others = [{
                                 process_template_id: -1,
                                 process_template_name: this.$t('服务分类变更'),
@@ -359,11 +348,7 @@
                 return this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                     params: this.$injectMetadata({
                         bk_module_id: Number(this.routerParams.moduleId),
-                        with_name: true,
-                        page: {
-                            start: (this.pagination.current - 1) * this.pagination.size,
-                            limit: this.pagination.size
-                        }
+                        with_name: true
                     }, { injectBizId: true }),
                     config: {
                         requestId: 'getModuleServiceInstances',
@@ -494,29 +479,6 @@
                         node: 'module-' + this.routerParams.moduleId
                     }
                 })
-            },
-            async handleChangeInstances () {
-                const data = await this.getModuleServiceInstances()
-                const serviceInstances = data.info.map(item => {
-                    return {
-                        process: null,
-                        service_instance: item
-                    }
-                })
-                this.pagination.count = data.count
-                const index = this.list.findIndex(item => item['operational_type'] === 'others')
-                if (index !== -1) {
-                    this.$set(this.list[index], 'service_instances', serviceInstances)
-                }
-            },
-            handlePageChange (page) {
-                this.pagination.current = page
-                this.handleChangeInstances()
-            },
-            handleSizeChange (size) {
-                this.pagination.current = 1
-                this.pagination.size = size
-                this.handleChangeInstances()
             }
         }
     }
