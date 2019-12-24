@@ -50,9 +50,8 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 		filter = append(filter, getFilterFields(objID)...)
 	}
 
-	sortedFields := SortByIsRequired(fields)
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
-	productExcelHeader(ctx, sortedFields, filter, sheet, ccLang)
+	productExcelHealer(ctx, fields, filter, sheet, ccLang)
 	// indexID := getFieldsIDIndexMap(fields)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
@@ -66,7 +65,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
 		}
 
-		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, sortedFields)
+		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
 
 		instPrimaryKeyValMap[instID] = primaryKeyArr
 		rowIndex++
@@ -98,8 +97,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	fields = addExtFields(fields, extFields)
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang)
 
-	sortedFields := SortByIsRequired(fields)
-	productExcelHeader(ctx, sortedFields, filter, sheet, ccLang)
+	productExcelHealer(ctx, fields, filter, sheet, ccLang)
 
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
 	// indexID := getFieldsIDIndexMap(fields)
@@ -124,10 +122,9 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 			blog.Errorf("setExcelRowDataByIndex inst:%+v, not inst id key:%s, objID:%s, rid:%s", rowMap, instIDKey, objID, rid)
 			return ccErr.Errorf(common.CCErrCommInstFieldNotFound, "instIDKey", objID)
 		}
-		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, sortedFields)
+		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
 		instPrimaryKeyValMap[instID] = primaryKeyArr
 		rowIndex++
-
 	}
 
 	err = lgc.BuildAssociationExcelFromData(ctx, objID, instPrimaryKeyValMap, xlsxFile, header, meta)
@@ -209,8 +206,6 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 		return err
 	}
 
-	sortedFields := SortByIsRequired(fields)
-
 	var file *xlsx.File
 	file = xlsx.NewFile()
 	sheet, err := file.AddSheet(objID)
@@ -219,7 +214,7 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 		return err
 	}
 	blog.V(5).Infof("BuildExcelTemplate fields count:%d, rid: %s", fields, rid)
-	productExcelHeader(ctx, sortedFields, filterFields, sheet, defLang)
+	productExcelHealer(ctx, fields, filterFields, sheet, defLang)
 	ProductExcelCommentSheet(ctx, file, defLang)
 
 	if err = file.Save(filename); nil != err {
