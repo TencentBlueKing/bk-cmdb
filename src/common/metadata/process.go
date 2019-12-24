@@ -552,8 +552,11 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 
 	processInstance.BindIP = nil
 	if IsAsDefaultValue(property.BindIP.AsDefaultValue) {
-		processInstance.BindIP = new(string)
-		*processInstance.BindIP = property.BindIP.Value.IP()
+		bindIP := property.BindIP.Value.IP()
+		if len(bindIP) > 0 {
+			processInstance.BindIP = new(string)
+			*processInstance.BindIP = bindIP
+		}
 	}
 
 	processInstance.Priority = nil
