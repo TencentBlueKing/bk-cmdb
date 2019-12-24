@@ -162,6 +162,8 @@ func (s *Service) WebService() *restful.Container {
 	// first install use api
 	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
 
+	api.Route(api.POST("/system/config/user_config/blueking_modify").To(s.FindSystemUserConfigBKSwitch))
+
 	container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)

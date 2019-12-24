@@ -25,6 +25,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/model"
 	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/synchronize"
+	ccSystem "configcenter/src/apimachinery/coreservice/system"
 	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
@@ -42,6 +43,7 @@ type CoreServiceClientInterface interface {
 	Cloud() cloudsync.CloudSyncClientInterface
 	Label() label.LabelInterface
 	TopoGraphics() topographics.TopoGraphicsInterface
+	System() ccSystem.SystemClientInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -97,4 +99,8 @@ func (c *coreService) Label() label.LabelInterface {
 
 func (c *coreService) TopoGraphics() topographics.TopoGraphicsInterface {
 	return topographics.NewTopoGraphicsInterface(c.restCli)
+}
+
+func (c *coreService) System() ccSystem.SystemClientInterface {
+	return ccSystem.NewSystemClientInterface(c.restCli)
 }
