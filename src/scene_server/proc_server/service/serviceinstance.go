@@ -196,6 +196,10 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	for _, instance := range instances.Info {
 		item, err := mapstr.Struct2Map(instance)
 		if err != nil {
+			blog.ErrorJSON("SearchServiceInstancesInModuleWeb failed, Struct2Map failed, serviceInstance: %s, err: %s, rid: %s", instance, err.Error(), ctx.Kit.Rid)
+			ccErr := ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed)
+			ctx.RespAutoError(ccErr)
+			return
 		}
 		item["process_count"] = 0
 		if count, ok := processCountMap[instance.ID]; ok == true {
