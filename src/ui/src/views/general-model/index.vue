@@ -226,14 +226,6 @@
     import cmdbRelation from '@/components/relation'
     import cmdbImport from '@/components/import/import'
     export default {
-        filters: {
-            addUnit (value, unit) {
-                if (value === '--' || !unit) {
-                    return value
-                }
-                return value + unit
-            }
-        },
         components: {
             cmdbColumnsConfig,
             cmdbAuditHistory,
@@ -373,13 +365,6 @@
             setDynamicBreadcrumbs () {
                 this.$store.commit('setTitle', this.model.bk_obj_name)
             },
-            getPropertyUnit (propertyId) {
-                const property = this.properties.find(property => property.bk_property_id === propertyId)
-                if (!property) {
-                    return ''
-                }
-                return property.unit || ''
-            },
             async reload () {
                 try {
                     this.setRencentlyData()
@@ -457,10 +442,9 @@
             },
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {
-                    const name = property.bk_property_name
                     return {
                         id: property.bk_property_id,
-                        name: property.unit ? `${name}(${property.unit})` : name,
+                        name: this.$tools.getHeaderPropertyName(property),
                         property
                     }
                 })
