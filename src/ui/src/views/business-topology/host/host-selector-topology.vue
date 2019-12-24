@@ -104,9 +104,7 @@
             displayNodesFilterMethod (keyword, node) {
                 const displayNodes = this.$parent.displayNodes
                 if (this.filter) {
-                    const isParentsDisplay = node.parents.some(parent => displayNodes.includes(parent.id))
-                    const isDescendantsDisplay = node.descendants.some(descendant => displayNodes.includes(descendant.id))
-                    return (isParentsDisplay || isDescendantsDisplay) && node.name.toLowerCase().indexOf(keyword) > -1
+                    return node.data.bk_obj_id === 'host' && node.name.indexOf(keyword) > -1
                 }
                 return displayNodes.includes(node.id) || node.data.bk_obj_id === 'host'
             },

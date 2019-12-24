@@ -1,13 +1,11 @@
 <template>
-    <div :class="['host-apply', { 'show-feature-tips': featureTips }]">
-        <cmdb-tips class="top-tips" tips-key="hostApplyTips" v-model="featureTips">{{$t('主机属性自动应用功能提示')}}</cmdb-tips>
+    <div class="host-apply">
         <div class="main-wrapper">
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
                 :handler-offset="3"
                 :min="300"
-                :max="480"
-            >
+                :max="480">
                 <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
             </cmdb-resize-layout>
             <div class="main-content">
@@ -168,7 +166,6 @@
         },
         data () {
             return {
-                featureTips: true,
                 currentModule: {},
                 initRuleList: [],
                 checkedPropertyIdList: [],
@@ -197,7 +194,6 @@
             }
         },
         created () {
-            // this.showFeatureTips = this.featureTipsParams['hostApply']
             this.getHostPropertyList()
         },
         methods: {
