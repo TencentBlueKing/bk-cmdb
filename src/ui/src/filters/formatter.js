@@ -90,6 +90,10 @@ export function foreignkey (value) {
     return '--'
 }
 
+export function list (value) {
+    return defaultFormatter(value)
+}
+
 const formatterMap = {
     singlechar,
     longchar,
@@ -101,6 +105,7 @@ const formatterMap = {
     timezone,
     bool,
     foreignkey,
+    list,
     enum: enumeration
 }
 
