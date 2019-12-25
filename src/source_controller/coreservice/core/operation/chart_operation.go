@@ -71,7 +71,7 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 }
 
 func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (uint64, error) {
-	configID, err := m.dbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
+	configID, err := m.dbProxy.NextSequence(ctx, common.BKTableNameChartConfig)
 	if err != nil {
 		return 0, err
 	}

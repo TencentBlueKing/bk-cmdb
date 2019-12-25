@@ -194,6 +194,10 @@ func (s *coreService) topographics() {
 	s.addAction(http.MethodPost, "/topographics/update", s.UpdateTopoGraphics, nil)
 }
 
+func (s *coreService) ccSystem() {
+	s.addAction(http.MethodPost, "/find/system/user_config", s.GetSystemUserConfig, nil)
+}
+
 func (s *coreService) initService() {
 	s.initModelClassification()
 	s.initModel()
@@ -212,5 +216,6 @@ func (s *coreService) initService() {
 	s.initCloudSync()
 	s.label()
 	s.topographics()
+	s.ccSystem()
 	s.initSetTemplate()
 }

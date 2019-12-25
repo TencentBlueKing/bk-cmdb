@@ -93,11 +93,6 @@ var expectSystemResourceType = []ResourceType{
 				ActionName:        "删除",
 				IsRelatedResource: true,
 			},
-			{
-				ActionID:          Get,
-				ActionName:        "查询",
-				IsRelatedResource: true,
-			},
 		},
 	},
 	{

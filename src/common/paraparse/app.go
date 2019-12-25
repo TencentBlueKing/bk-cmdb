@@ -14,7 +14,6 @@ package params
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -34,11 +33,12 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 	for _, i := range input {
 		switch i.Operator {
 		case common.BKDBEQ:
-			if reflect.TypeOf(i.Value).Kind() == reflect.String {
+			output[i.Field] = i.Value
+			/*if reflect.TypeOf(i.Value).Kind() == reflect.String {
 				output[i.Field] = SpecialCharChange(i.Value.(string))
 			} else {
-				output[i.Field] = i.Value
-			}
+			output[i.Field] = i.Value
+			}*/
 		case common.BKDBLIKE:
 			regex := make(map[string]interface{})
 			regex[common.BKDBLIKE] = i.Value
@@ -66,8 +66,8 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 			d := make(map[string]interface{})
 			if i.Value == nil {
 				d[i.Operator] = i.Value
-			} else if reflect.TypeOf(i.Value).Kind() == reflect.String {
-				d[i.Operator] = SpecialCharChange(i.Value.(string))
+				/*} else if reflect.TypeOf(i.Value).Kind() == reflect.String {
+				d[i.Operator] = SpecialCharChange(i.Value.(string))*/
 			} else {
 				d[i.Operator] = i.Value
 			}
@@ -79,7 +79,7 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 
 func SpecialCharChange(targetStr string) string {
 
-	re := regexp.MustCompile("[.()\\\\|\\[\\]\\-\\*{}\\^\\$\\?]")
+	re := regexp.MustCompile("[.()\\\\|\\[\\]\\*{}\\^\\$\\?]")
 	delItems := re.FindAllString(targetStr, -1)
 	tmp := map[string]struct{}{}
 	for _, target := range delItems {
