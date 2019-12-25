@@ -153,7 +153,7 @@ var expectSystemResourceType = []ResourceType{
 	},
 	{
 		ResourceTypeID:       SysEventPushing,
-		ResourceTypeName:     "事件推送",
+		ResourceTypeName:     "事件订阅",
 		ParentResourceTypeID: "",
 		Share:                false,
 		Actions: []Action{
