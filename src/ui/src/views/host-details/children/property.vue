@@ -72,8 +72,7 @@
                                     :auto-check="false"
                                     v-validate="$tools.getValidateRules(property)"
                                     v-model.trim="editState.value"
-                                    :ref="`component-${property.bk_property_id}`"
-                                    @enter="confirm">
+                                    :ref="`component-${property.bk_property_id}`">
                                 </component>
                                 <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                                 <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
