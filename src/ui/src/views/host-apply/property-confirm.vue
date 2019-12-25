@@ -223,13 +223,19 @@
                 this.goBack()
             },
             handleViewHost () {
+                const query = {}
+                if (!this.isBatch) {
+                    query.node = `module-${this.propertyConfig.bk_module_ids[0]}`
+                }
                 this.$router.push({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query
                 })
             },
             handleViewFailed () {
                 this.$router.push({
-                    name: MENU_BUSINESS_HOST_APPLY_FAILED
+                    name: MENU_BUSINESS_HOST_APPLY_FAILED,
+                    query: this.$route.query
                 })
             }
         }
