@@ -63,8 +63,7 @@ func updateSortedPropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader.C
 
 			attr.PropertyIndex = index
 			filter := make(map[string]interface{})
-			filter[common.BKObjIDField] = attr.ObjectID
-			filter[common.BKPropertyIDField] = attr.PropertyID
+			filter["id"] = attr.ID
 			if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, attr); err != nil {
 				blog.Errorf("updateSortedPropertyIndex, update attribute failed continue, objID: %s, propertyID: %v err: %v", attr.ObjectID, attr.PropertyID, err)
 				return fmt.Errorf("updateSortedPropertyIndex, update attribute failed continue, objID: %s, propertyID: %v err: %v", attr.ObjectID, attr.PropertyID, err)
