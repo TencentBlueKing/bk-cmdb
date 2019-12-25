@@ -239,6 +239,8 @@ func (s *Service) UserDetail(c *gin.Context) {
 		URL:    targetUrl,
 		Header: c.Request.Header,
 	}
+	// 删除 Accept-Encoding 避免返回值被压缩
+	rq.Header.Del("Accept-Encoding")
 	rq.Header.Add("Accept", "application/json; nested=true")
 	response, err := client.Do(rq)
 	if err != nil {
