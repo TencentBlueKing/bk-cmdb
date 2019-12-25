@@ -570,7 +570,7 @@ func (s *Service) DiffSetTplWithInst(params types.ContextParams, pathParams, que
 		if setDiff.NeedSync == true || setDiff.SetTemplateVersion == setDiff.SetDetail.SetTemplateVersion {
 			continue
 		}
-		if s.UpdateSetVersion(params, bizID, setDiff.SetID, setDiff.SetTemplateVersion); err != nil {
+		if err := s.UpdateSetVersion(params, bizID, setDiff.SetID, setDiff.SetTemplateVersion); err != nil {
 			blog.Errorf("DiffSetTplWithInst failed, UpdateSetVersion failed, bizID: %d, setID: %d, version: %d, err: %+v, rid: %s",
 				bizID, setDiff.SetID, setDiff.SetTemplateVersion, err, params.ReqID)
 		}
@@ -769,4 +769,29 @@ func (s *Service) CheckSetInstUpdateToDateStatus(params types.ContextParams, pat
 		return nil, err
 	}
 	return result, nil
+}
+
+func (s *Service) BatchCheckSetInstUpdateToDateStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	option := metadata.BatchCheckSetInstUpdateToDateStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &option); err != nil {
+		blog.Errorf("BatchCheckSetInstUpdateToDateStatus failed, decode request body failed, data: %+v, err: %+v, rid: %s", data, err, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	batchResult := make([]metadata.SetTemplateUpdateToDateStatus, 0)
+	for _, setTemplateID := range option.SetTemplateIDs {
+		oneResult, err := s.Core.SetTemplateOperation().CheckSetInstUpdateToDateStatus(params, bizID, setTemplateID)
+		if err != nil {
+			blog.ErrorJSON("BatchCheckSetInstUpdateToDateStatus failed, CheckSetInstUpdateToDateStatus failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), params.ReqID)
+			return nil, err
+		}
+		batchResult = append(batchResult, oneResult)
+	}
+	return batchResult, nil
 }
