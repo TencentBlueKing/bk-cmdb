@@ -458,25 +458,34 @@ func (m *modelAttribute) getLangObjID(ctx core.ContextParams, objID string) stri
 	return langObjID
 }
 
-func (m *modelAttribute) buildUpdateIndexReturn(ctx core.ContextParams, objID, propertyGroup string) ([]*metadata.UpdateAttributeIndex, error) {
+func (m *modelAttribute) buildUpdateIndexReturn(ctx core.ContextParams, objID, propertyGroup string) (*metadata.UpdateAttrIndexData, error) {
 	cond := mapstr.MapStr{
 		common.BKObjIDField:         objID,
 		common.BKPropertyGroupField: propertyGroup,
 	}
-	result := make([]*metadata.UpdateAttributeIndex, 0)
 	attrs := []metadata.Attribute{}
 	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).All(ctx, &attrs)
 	if nil != err {
 		blog.Errorf("buildUpdateIndexReturn failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
-		return result, err
+		return nil, err
 	}
 
+	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).Count(ctx)
+	if nil != err {
+		blog.Errorf("buildUpdateIndexReturn failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return nil, err
+	}
+	info := make([]*metadata.UpdateAttributeIndex, 0)
 	for _, attr := range attrs {
 		idIndex := &metadata.UpdateAttributeIndex{
 			Id:    attr.ID,
 			Index: attr.PropertyIndex,
 		}
-		result = append(result, idIndex)
+		info = append(info, idIndex)
+	}
+	result := &metadata.UpdateAttrIndexData{
+		Info:  info,
+		Count: count,
 	}
 
 	return result, nil

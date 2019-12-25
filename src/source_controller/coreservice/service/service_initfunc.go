@@ -49,7 +49,7 @@ func (s *coreService) initModel() {
 	s.addAction(http.MethodPost, "/create/model/{bk_obj_id}/attributes", s.CreateModelAttributes, nil)
 	s.addAction(http.MethodPost, "/set/model/{bk_obj_id}/attributes", s.SetModelAttributes, nil)
 	s.addAction(http.MethodPut, "/update/model/{bk_obj_id}/attributes", s.UpdateModelAttributes, nil)
-	s.addAction(http.MethodPut, "/update/model/{bk_obj_id}/attributes/index", s.UpdateModelAttributesIndex, nil)
+	s.addAction(http.MethodPost, "/update/model/{bk_obj_id}/attributes/index", s.UpdateModelAttributesIndex, nil)
 	s.addAction(http.MethodPut, "/update/model/attributes", s.UpdateModelAttributesByCondition, nil)
 	s.addAction(http.MethodDelete, "/delete/model/{bk_obj_id}/attributes", s.DeleteModelAttribute, nil)
 	s.addAction(http.MethodPost, "/read/model/{bk_obj_id}/attributes", s.SearchModelAttributes, nil)

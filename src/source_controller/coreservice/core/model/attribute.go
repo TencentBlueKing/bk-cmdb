@@ -178,10 +178,9 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) ([]*metadata.UpdateAttributeIndex, error) {
+func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateAttrIndexData, error) {
 
-	result := make([]*metadata.UpdateAttributeIndex, 0)
-
+	result := &metadata.UpdateAttrIndexData{}
 	// attributes exist check
 	cond := inputParam.Condition
 	cond = util.SetModOwner(cond, ctx.SupplierAccount)
