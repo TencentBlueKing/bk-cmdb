@@ -244,6 +244,7 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 				removeIDs = append(removeIDs, item.ServiceTemplateID)
 			}
 		}
+		// TODO add reference check
 		if len(removeIDs) > 0 {
 			removeFilter := map[string]interface{}{
 				common.BKSetTemplateIDField: setTemplate.ID,
