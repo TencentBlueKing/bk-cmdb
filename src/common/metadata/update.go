@@ -28,5 +28,10 @@ type UpdatedOptionResult struct {
 // UpdatedAttrIndexResult  update attributes index result
 type UpdatedAttrIndexResult struct {
 	BaseResp `json:",inline"`
-	Data     []*UpdateAttributeIndex `json:"data"`
+	Data     *UpdateAttrIndexData `json:"data"`
+}
+
+type UpdateAttrIndexData struct {
+	Info  []*UpdateAttributeIndex `json:"info"`
+	Count uint64                  `json:"count"`
 }

@@ -37,7 +37,7 @@ type AttributeOperationInterface interface {
 	FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error)
 	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error)
 	UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error
-	UpdateObjectAttributeIndex(params types.ContextParams, objID string, data mapstr.MapStr, attID int64) ([]*metadata.UpdateAttributeIndex, error)
+	UpdateObjectAttributeIndex(params types.ContextParams, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error)
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface, grp GroupOperationInterface)
 }
@@ -286,7 +286,7 @@ func (a *attribute) isMainlineModel(head http.Header, modelID string) (bool, err
 	return false, nil
 }
 
-func (a *attribute) UpdateObjectAttributeIndex(params types.ContextParams, objID string, data mapstr.MapStr, attID int64) ([]*metadata.UpdateAttributeIndex, error) {
+func (a *attribute) UpdateObjectAttributeIndex(params types.ContextParams, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error) {
 	input := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),
 		Data:      data,
