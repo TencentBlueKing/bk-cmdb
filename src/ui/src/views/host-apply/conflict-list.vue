@@ -159,12 +159,16 @@
             },
             handleViewHost () {
                 this.$router.push({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query: {
+                        node: `module-${this.moduleIds[0]}`
+                    }
                 })
             },
             handleViewFailed () {
                 this.$router.push({
-                    name: MENU_BUSINESS_HOST_APPLY_FAILED
+                    name: MENU_BUSINESS_HOST_APPLY_FAILED,
+                    query: this.$route.query
                 })
             }
         }
@@ -173,7 +177,7 @@
 
 <style lang="scss" scoped>
     .conflict-list {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
 
     .bottom-actionbar {
