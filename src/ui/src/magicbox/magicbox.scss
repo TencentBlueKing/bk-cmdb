@@ -65,30 +65,10 @@
         border-bottom: none;
     }
     .bk-table-fixed-right {
-        border-right: 1px solid #dfe0e5;
         border-bottom: none;
         tr.bk-table-row-last {
             td.is-last {
                 border-bottom: 1px solid #dfe0e5;
-            }
-        }
-    }
-    .bk-table-selection {
-        .cell {
-            padding: 0;
-            height: 100%;
-            .bk-form-checkbox {
-                display: block;
-                width: 100%;
-                height: 100%;
-                text-align: center;
-                &:before {
-                    content: '';
-                    display: inline-block;
-                    vertical-align: middle;
-                    height: 100%;
-                    width: 0;
-                }
             }
         }
     }
