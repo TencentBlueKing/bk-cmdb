@@ -15,7 +15,6 @@
         <bk-table-column
             v-if="multiple"
             :label="$t('已配置的模块')"
-            :render-header="(h, data) => renderColumnHeader(h, data, $t('主机属于多个模块但主机的属性值仅能有唯一值'))"
             class-name="table-cell-module-path"
         >
             <template slot-scope="{ row }">
@@ -167,7 +166,6 @@
                             // 初始化值
                             if (this.multiple) {
                                 property.__extra__.ruleList = this.ruleList.filter(item => item.bk_attribute_id === property.id)
-                                // 默认值设定为空串
                                 property.__extra__.value = this.getPropertyDefaultValue(property)
                             } else {
                                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
@@ -249,6 +247,8 @@
     .path-item,
     .value-item {
         padding: 1px 0;
+        height: 20px;
+        line-height: 20px;
         @include ellipsis;
     }
     .show-more {

@@ -80,7 +80,7 @@
         },
         async created () {
             await this.getHostPropertyList()
-            this.propertyList = this.configPropertyList.filter(property => property.host_apply_enabled)
+            this.propertyList = this.$tools.clone(this.configPropertyList.filter(property => property.host_apply_enabled))
         },
         methods: {
             async getHostPropertyList () {
