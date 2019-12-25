@@ -34,6 +34,16 @@ type Config struct {
 	Timer     string
 }
 
+func (c *Config) Ready() bool {
+	if c == nil {
+		return false
+	}
+	if len(c.Timer) == 0 {
+		return false
+	}
+	return true
+}
+
 func NewServerOption() *ServerOption {
 	s := ServerOption{
 		ServConf: config.NewCCAPIConfig(),
