@@ -77,8 +77,9 @@
                             </span>
                         </div>
                         <div class="content-item">
-                            <label class="label-text">
+                            <label class="label-text" :style="{ marginRight: '47px' }">
                                 {{$t('统计维度')}}
+                                <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('模型中需包含枚举字段才可以作为维度统计')"></i>
                             </label>
                             <span class="cmdb-form-item">
                                 <bk-select v-model="chartData.field"
@@ -223,7 +224,7 @@
                 staList: [],
                 chartType: true,
                 showDia: true,
-                hostFilter: ['host', 'module', 'biz', 'set', 'process'],
+                hostFilter: ['host', 'module', 'biz', 'set', 'process', 'plat'],
                 editTitle: '',
                 maxNum: 0
             }
