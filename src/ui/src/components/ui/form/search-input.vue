@@ -136,6 +136,12 @@
                 resize: none;
                 font-size: 14px;
                 @include scrollbar-y;
+                &:disabled {
+                    color: #c4c6cc;
+                    background-color: #fafbfd!important;
+                    cursor: not-allowed;
+                    border-color: #dcdee5!important;
+                }
             }
             .icon-close {
                 display: none;

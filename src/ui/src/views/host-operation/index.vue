@@ -191,8 +191,8 @@
             },
             availableTabList () {
                 const map = {
-                    remove: ['deletedServiceInstance', 'moveToIdleHost'],
-                    idle: ['deletedServiceInstance'],
+                    remove: ['deletedServiceInstance', 'moveToIdleHost', 'hostAttrsAutoApply'],
+                    idle: ['deletedServiceInstance', 'hostAttrsAutoApply'],
                     business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply']
                 }
                 const available = map[this.type]
