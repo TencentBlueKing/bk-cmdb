@@ -124,7 +124,7 @@
                             <span class="cmdb-radio-text">100%</span>
                         </label>
                     </div>
-                    <div class="content-item">
+                    <div class="content-item" v-if="chartData.chart_type !== 'pie' && chartData.report_type !== 'host_change_biz_chart'">
                         <label class="label-text-x">
                             {{$t('横轴坐标数量')}}
                             <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('图标可视区横轴坐标数量，建议不超过20个')"></i>
