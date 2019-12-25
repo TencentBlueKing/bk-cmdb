@@ -19,15 +19,15 @@
                 <span class="status-icon bk-icon icon-close icon-fail" v-else-if="success.length === 0"></span>
             </div>
             <p class="result-title">{{$t('应用成功')}}</p>
-            <p class="result-subtitle" v-if="fail.length === 0">{{$t('保存策略并应用到当前模块下主机成功')}}</p>
+            <p class="result-subtitle" v-if="fail.length === 0">{{$t('成功保存策略并应用到当前模块下主机')}}</p>
             <i18n class="result-stat" tag="p" path="应用结果">
                 <span class="result-count" place="success">{{success.length}}</span>
                 <span :class="['result-count', { fail: fail.length > 0 }]" place="fail">{{fail.length}}</span>
             </i18n>
             <div class="result-options">
-                <bk-button class="mr10" theme="primary" @click="handleEvent('view-host')" v-if="fail.length === 0">{{$t('立即查看主机')}}</bk-button>
-                <bk-button class="mr10" theme="primary" @click="handleEvent('view-failed')" v-else>{{$t('查看失败')}}</bk-button>
-                <bk-button @click="handleEvent('return')">{{$t('返回')}}</bk-button>
+                <bk-button class="mr10" theme="primary" @click="handleEvent('return')">{{$t('返回列表')}}</bk-button>
+                <bk-button @click="handleEvent('view-host')" v-if="fail.length === 0">{{$t('查看主机')}}</bk-button>
+                <bk-button @click="handleEvent('view-failed')" v-else>{{$t('查看失败')}}</bk-button>
             </div>
         </div>
     </cmdb-dialog>

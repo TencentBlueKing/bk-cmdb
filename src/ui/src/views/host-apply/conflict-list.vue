@@ -159,7 +159,10 @@
             },
             handleViewHost () {
                 this.$router.push({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query: {
+                        node: `module-${this.moduleIds[0]}`
+                    }
                 })
             },
             handleViewFailed () {

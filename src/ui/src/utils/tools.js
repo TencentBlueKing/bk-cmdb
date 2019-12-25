@@ -256,7 +256,7 @@ export function getValidateRules (property) {
         rules.required = true
     }
     if (option) {
-        if (propertyType === 'int') {
+        if (['int', 'float'].includes(propertyType)) {
             if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
                 rules['min_value'] = option.min
             }
