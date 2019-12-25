@@ -219,6 +219,8 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 	case hostURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, hostRoot, true
 
+	case strings.HasPrefix(string(*u), rootPath+"/system/config"):
+		from, to, isHit = rootPath, hostRoot, true
 	default:
 		isHit = false
 	}
