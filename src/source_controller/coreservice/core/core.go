@@ -199,6 +199,7 @@ type Core interface {
 	ProcessOperation() ProcessOperation
 	LabelOperation() LabelOperation
 	SetTemplateOperation() SetTemplateOperation
+	SystemOperation() SystemOperation
 }
 
 // ProcessOperation methods
@@ -267,6 +268,10 @@ type SetTemplateOperation interface {
 	DeleteSetTemplateSyncStatus(ctx ContextParams, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder
 }
 
+type SystemOperation interface {
+	GetSystemUserConfig(ctx ContextParams) (map[string]interface{}, errors.CCErrorCoder)
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -278,14 +283,15 @@ type core struct {
 	operation       StatisticOperation
 	process         ProcessOperation
 	label           LabelOperation
+	sys             SystemOperation
 	setTemplate     SetTemplateOperation
 }
 
 // New create core
 func New(model ModelOperation, instance InstanceOperation, association AssociationOperation,
 	dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation,
-	audit AuditOperation, process ProcessOperation, label LabelOperation, setTemplate SetTemplateOperation, operation StatisticOperation) Core {
-	return &core{
+	audit AuditOperation, process ProcessOperation, label LabelOperation, sys SystemOperation, setTemplate SetTemplateOperation, operation StatisticOperation) Core {
+return &core{
 		model:           model,
 		instance:        instance,
 		associaction:    association,
@@ -296,6 +302,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		operation:       operation,
 		process:         process,
 		label:           label,
+		sys:             sys,
 		setTemplate:     setTemplate,
 	}
 }
@@ -342,4 +349,8 @@ func (m *core) LabelOperation() LabelOperation {
 
 func (m *core) SetTemplateOperation() SetTemplateOperation {
 	return m.setTemplate
+}
+
+func (m *core) SystemOperation() SystemOperation {
+	return m.sys
 }

@@ -66,7 +66,6 @@
                 </div>
                 <cmdb-auth class="restart-btn"
                     v-if="!isMainLine && activeModel['bk_ispaused']"
-                    v-bk-tooltips.right="$t('保留模型和相应实例，隐藏关联关系')"
                     :auth="$authResources({ resource_id: modelId, type: $OPERATION.U_MODEL })">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"

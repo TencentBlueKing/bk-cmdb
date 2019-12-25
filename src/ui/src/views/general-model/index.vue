@@ -65,15 +65,16 @@
                         :name="option.name">
                     </bk-option>
                 </bk-select>
-                <cmdb-form-enum class="filter-value fl"
-                    v-if="filter.type === 'enum'"
+                <component class="filter-value fl"
+                    v-if="['enum', 'list'].includes(filter.type)"
+                    :is="`cmdb-form-${filter.type}`"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :auto-select="false"
-                    font-size="medium"
                     v-model="filter.value"
+                    font-size="medium"
                     @on-selected="getTableData(true)">
-                </cmdb-form-enum>
+                </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"

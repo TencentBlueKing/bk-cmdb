@@ -11,8 +11,8 @@
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list clearfix">
                             <li class="property-item clearfix fl"
-                                v-for="(property, propertyIndex) in $groupedProperties[groupIndex]"
-                                :key="propertyIndex">
+                                v-for="property in $groupedProperties[groupIndex]"
+                                :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
                                 <span class="property-name fl" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                                 <slot :name="property['bk_property_id']">
                                     <span class="property-value clearfix fl"
