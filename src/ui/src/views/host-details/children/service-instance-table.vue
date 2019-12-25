@@ -108,7 +108,7 @@
                 header: [],
                 list: [],
                 pathToolTips: {
-                    content: this.$t('跳转服务拓扑'),
+                    content: this.$t('去业务拓扑添加'),
                     placement: 'top'
                 }
             }
