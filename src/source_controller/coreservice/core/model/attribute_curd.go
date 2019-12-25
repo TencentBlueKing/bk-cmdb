@@ -458,12 +458,12 @@ func (m *modelAttribute) getLangObjID(ctx core.ContextParams, objID string) stri
 	return langObjID
 }
 
-func (m *modelAttribute) buildUpdateIndexReturn(ctx core.ContextParams, objID, propertyGroup string) ([]*metadata.UpdatedIndex, error) {
+func (m *modelAttribute) buildUpdateIndexReturn(ctx core.ContextParams, objID, propertyGroup string) ([]*metadata.UpdateAttributeIndex, error) {
 	cond := mapstr.MapStr{
 		common.BKObjIDField:         objID,
 		common.BKPropertyGroupField: propertyGroup,
 	}
-	result := make([]*metadata.UpdatedIndex, 0)
+	result := make([]*metadata.UpdateAttributeIndex, 0)
 	attrs := []metadata.Attribute{}
 	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).All(ctx, &attrs)
 	if nil != err {
@@ -472,7 +472,7 @@ func (m *modelAttribute) buildUpdateIndexReturn(ctx core.ContextParams, objID, p
 	}
 
 	for _, attr := range attrs {
-		idIndex := &metadata.UpdatedIndex{
+		idIndex := &metadata.UpdateAttributeIndex{
 			Id:    attr.ID,
 			Index: attr.PropertyIndex,
 		}
