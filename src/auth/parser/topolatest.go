@@ -1626,8 +1626,9 @@ const (
 )
 
 var (
-	deleteObjectAttributeLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectattr/[0-9]+/?$`)
-	updateObjectAttributeLatestRegexp = regexp.MustCompile(`^/api/v3/update/objectattr/[0-9]+/?$`)
+	deleteObjectAttributeLatestRegexp      = regexp.MustCompile(`^/api/v3/delete/objectattr/[0-9]+/?$`)
+	updateObjectAttributeLatestRegexp      = regexp.MustCompile(`^/api/v3/update/objectattr/[0-9]+/?$`)
+	updateObjectAttributeIndexLatestRegexp = regexp.MustCompile(`^/api/v3/update/objectattr/index/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) objectAttributeLatest() *parseStream {
@@ -1715,6 +1716,49 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 		}
 
 		attrID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("update object attribute, but got invalid attribute id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
+		if err != nil {
+			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
+			return ps
+		}
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		// 对属性操作的鉴权，依赖于属性是公有属性，还是业务私有属性
+		bizID, err := metadata.BizIDFromMetadata(attr[0].Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:       meta.ModelAttribute,
+					Action:     meta.Update,
+					InstanceID: attrID,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+		return ps
+	}
+
+	// update object attribute index operation
+	if ps.hitRegexp(updateObjectAttributeIndexLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("update object attribute, but got invalid url")
+			return ps
+		}
+
+		attrID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object attribute, but got invalid attribute id %s", ps.RequestCtx.Elements[4])
 			return ps
