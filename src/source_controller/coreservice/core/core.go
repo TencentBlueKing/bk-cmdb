@@ -14,12 +14,12 @@ package core
 
 import (
 	"context"
-    "net/http"
+	"net/http"
 
-    "configcenter/src/common/errors"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    "configcenter/src/common/selector"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/selector"
 )
 
 // ModelAttributeGroup model attribute group methods definitions
@@ -50,6 +50,7 @@ type ModelAttribute interface {
 	CreateModelAttributes(ctx ContextParams, objID string, inputParam metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error)
 	SetModelAttributes(ctx ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult, error)
 	UpdateModelAttributes(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	UpdateModelAttributesIndex(ctx ContextParams, objID string, inputParam metadata.UpdateOption) ([]*metadata.UpdatedIndex, error)
 	UpdateModelAttributesByCondition(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModelAttributes(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	SearchModelAttributes(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error)
@@ -291,7 +292,7 @@ type core struct {
 func New(model ModelOperation, instance InstanceOperation, association AssociationOperation,
 	dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation,
 	audit AuditOperation, process ProcessOperation, label LabelOperation, sys SystemOperation, setTemplate SetTemplateOperation, operation StatisticOperation) Core {
-return &core{
+	return &core{
 		model:           model,
 		instance:        instance,
 		associaction:    association,
