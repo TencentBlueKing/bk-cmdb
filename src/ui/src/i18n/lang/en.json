@@ -781,6 +781,7 @@
     "从模板创建": "Create from template",
     "直接创建": "Create directly",
     "添加进程": "Add Process",
+    "暂未配置进程": "No Process",
     "克隆": "Clone",
     "确认删除实例": "Confirm to delete instance？",
     "即将删除实例": "Will delete instalce {name}",
