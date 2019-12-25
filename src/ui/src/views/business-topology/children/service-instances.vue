@@ -305,9 +305,12 @@
             }
         },
         watch: {
-            async currentNode (node) {
-                if (node && node.data.bk_obj_id === 'module') {
-                    this.getData()
+            currentNode: {
+                immediate: true,
+                handler (node) {
+                    if (node && node.data.bk_obj_id === 'module') {
+                        this.getData()
+                    }
                 }
             },
             bindIp (value) {
