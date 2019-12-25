@@ -32,4 +32,5 @@ func (s *Service) initSetTemplate() {
 	s.addAction(http.MethodPost, "/findmany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}", s.ListSetTemplateSyncStatus, nil)
 	s.addAction(http.MethodPost, "/findmany/topo/set_template_sync_history/bk_biz_id/{bk_biz_id}", s.ListSetTemplateSyncHistory, nil)
 	s.addAction(http.MethodGet, "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/set_template_status", s.CheckSetInstUpdateToDateStatus, nil)
+	s.addAction(http.MethodPost, "/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/set_template_status", s.BatchCheckSetInstUpdateToDateStatus, nil)
 }

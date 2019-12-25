@@ -219,3 +219,7 @@ type SetTemplateUpdateToDateStatus struct {
 	SetTemplateID      int64                   `json:"set_template_id"`
 	NeedSync           bool                    `json:"need_sync"`
 }
+
+type BatchCheckSetInstUpdateToDateStatusOption struct {
+	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids" mapstructure:"set_template_ids"`
+}
