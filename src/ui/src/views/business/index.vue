@@ -427,6 +427,7 @@
             handleDelete (inst) {
                 this.$bkInfo({
                     title: this.$t('确认要归档', { name: inst['bk_biz_name'] }),
+                    subTitle: this.$t('归档确认信息'),
                     confirmFn: () => {
                         this.archiveBusiness(inst['bk_biz_id']).then(() => {
                             this.slider.show = false
