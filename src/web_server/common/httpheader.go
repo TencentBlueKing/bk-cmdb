@@ -25,6 +25,9 @@ func SetProxyHeader(c *gin.Context) {
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
 	ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
 	supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
+
+	// 删除 Accept-Encoding 避免返回值被压缩
+	c.Request.Header.Del("Accept-Encoding")
 	c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 	c.Request.Header.Add(common.BKHTTPLanguage, GetLanguageByHTTPRequest(c))
 	c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
