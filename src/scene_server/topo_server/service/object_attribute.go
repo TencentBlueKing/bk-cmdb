@@ -112,7 +112,7 @@ func (s *Service) UpdateObjectAttributeIndex(params types.ContextParams, pathPar
 	paramPath.Set(common.BKObjIDField, pathParams(common.BKObjIDField))
 	objID, err := paramPath.String(common.BKObjIDField)
 	if nil != err {
-		blog.Errorf("[api-att] failed to parse the path params bk_obj_id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
+		blog.Errorf("[api-att] failed to parse the path params bk_obj_id(%s), error info is %s , rid: %s", objID, err.Error(), params.ReqID)
 		return nil, err
 	}
 
