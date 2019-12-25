@@ -12,8 +12,7 @@
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled"
-                        @click="handleCreate"
-                    >
+                        @click="handleCreate">
                         {{$t('新建')}}
                     </bk-button>
                 </cmdb-auth>
@@ -32,7 +31,12 @@
             :data="list"
             :row-style="{ cursor: 'pointer' }"
             @row-click="handleRowClick">
-            <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight"></bk-table-column>
+            <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight">
+                <div slot-scope="{ row }"
+                    :class="['template-name', { 'need-sync': row._need_sync_ }]">
+                    {{row.name}}
+                </div>
+            </bk-table-column>
             <bk-table-column :label="$t('应用数量')" prop="set_instance_count"></bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="modifier"></bk-table-column>
             <bk-table-column :label="$t('修改时间')" prop="last_time">
@@ -109,6 +113,11 @@
                 return this.$store.state.objectBiz.bizId
             }
         },
+        watch: {
+            originList () {
+                this.getSyncStatus()
+            }
+        },
         async created () {
             await this.getSetTemplates()
         },
@@ -123,10 +132,31 @@
                 })
                 const list = (data.info || []).map(item => ({
                     set_instance_count: item.set_instance_count,
-                    ...item.set_template
+                    ...item.set_template,
+                    _need_sync_: false
                 }))
                 this.list = list
                 this.originList = list
+            },
+            async getSyncStatus () {
+                try {
+                    if (this.originList.length) {
+                        const data = await this.$store.dispatch('setTemplate/getSetTemplateStatus', {
+                            bizId: this.business,
+                            params: {
+                                set_template_ids: this.originList.map(item => item.id)
+                            }
+                        })
+                        this.originList.map(item => {
+                            const syncStatus = data.find(status => status.set_template_id === item.id)
+                            if (syncStatus) {
+                                this.$set(item, '_need_sync_', syncStatus.need_sync)
+                            }
+                        })
+                    }
+                } catch (e) {
+                    console.error(e)
+                }
             },
             handleCreate () {
                 this.$router.push({
@@ -219,5 +249,24 @@
     }
     .template-table {
         margin-top: 16px;
+        .template-name {
+            position: relative;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 40px;
+            padding-right: 10px;
+            max-width: 100%;
+            @include ellipsis;
+            &.need-sync:after {
+                content: "";
+                position: absolute;
+                top: 10px;
+                right: 2px;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background-color: $dangerColor;
+            }
+        }
     }
 </style>
