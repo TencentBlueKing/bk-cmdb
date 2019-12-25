@@ -287,6 +287,7 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(params types.ContextPara
 			common.BKServiceTemplateIDField: map[string]interface{}{
 				common.BKDBIN: serviceTemplateIDs,
 			},
+			common.BKSetTemplateIDField: setTemplateID,
 		},
 	}
 	moduleResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, &moduleFilter)

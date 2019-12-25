@@ -166,6 +166,8 @@ func (s *Service) WebService() *restful.Container {
 	// first install use api
 	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
 
+	api.Route(api.POST("/system/config/user_config/blueking_modify").To(s.FindSystemUserConfigBKSwitch))
+
 	// 主机属性自动应用
 	api.Route(api.POST("/create/host_apply_rule/bk_biz_id/{bk_biz_id}").To(s.CreateHostApplyRule))
 	api.Route(api.PUT("/update/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}").To(s.UpdateHostApplyRule))

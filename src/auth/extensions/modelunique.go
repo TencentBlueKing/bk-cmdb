@@ -169,14 +169,14 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniques) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -189,14 +189,14 @@ func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniques) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -209,14 +209,14 @@ func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) DeregisterModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniqueIDs) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -241,14 +241,14 @@ func (am *AuthManager) DeregisterModelUniqueByID(ctx context.Context, header htt
 // }
 
 func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniques) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -261,14 +261,14 @@ func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header h
 }
 
 func (am *AuthManager) UpdateRegisteredModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniqueIDs) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -382,14 +382,14 @@ func (am *AuthManager) UpdateRegisteredModelUniqueByID(ctx context.Context, head
 // }
 
 func (am *AuthManager) RegisterModuleUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniqueIDs) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 

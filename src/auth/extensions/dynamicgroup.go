@@ -138,7 +138,7 @@ func (am *AuthManager) extractBusinessIDFromDynamicGroups(dynamicGroups ...Dynam
 // }
 
 func (am *AuthManager) UpdateRegisteredDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -165,7 +165,7 @@ func (am *AuthManager) UpdateRegisteredDynamicGroups(ctx context.Context, header
 }
 
 func (am *AuthManager) UpdateRegisteredDynamicGroupByID(ctx context.Context, header http.Header, ids ...string) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -181,7 +181,7 @@ func (am *AuthManager) UpdateRegisteredDynamicGroupByID(ctx context.Context, hea
 }
 
 func (am *AuthManager) RegisterDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -202,7 +202,7 @@ func (am *AuthManager) RegisterDynamicGroups(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) RegisterDynamicGroupByID(ctx context.Context, header http.Header, ids ...string) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -217,7 +217,7 @@ func (am *AuthManager) RegisterDynamicGroupByID(ctx context.Context, header http
 }
 
 func (am *AuthManager) DeregisterDynamicGroupByID(ctx context.Context, header http.Header, configMeta metadata.UserConfigMeta) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
