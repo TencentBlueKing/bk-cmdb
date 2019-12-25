@@ -1137,5 +1137,6 @@
     "新建模块": "Create Module",
     "已选实例": "Service Selected",
     "N个": "{ count }",
-    "仅移除服务实例，主机无变更": "Only remove service instances, no host change"
+    "仅移除服务实例，主机无变更": "Only remove service instances, no host change",
+    "模型中需包含枚举字段才可以作为维度统计": "Models need to include enumerated fields for dimensional statistics"
 }
