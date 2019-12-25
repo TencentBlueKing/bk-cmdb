@@ -99,7 +99,7 @@ func validateSliceOfBasicType(value interface{}, requireSameType bool) error {
 			return err
 		}
 	}
-	if requireSameType == true {
+	if requireSameType {
 		vTypes := make([]string, 0)
 		for i := 0; i < v.Len(); i++ {
 			item := v.Index(i).Interface()

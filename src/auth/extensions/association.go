@@ -66,11 +66,7 @@ func (am *AuthManager) makeResourceByAssociationType(ctx context.Context, header
 }
 
 func (am *AuthManager) RegisterAssociationType(ctx context.Context, header http.Header, aks ...*metadata.AssociationKind) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -87,7 +83,7 @@ func (am *AuthManager) RegisterAssociationType(ctx context.Context, header http.
 }
 
 func (am *AuthManager) RegisterAssociationTypeByID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -104,7 +100,7 @@ func (am *AuthManager) RegisterAssociationTypeByID(ctx context.Context, header h
 }
 
 func (am *AuthManager) UpdateAssociationTypeByID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -126,7 +122,8 @@ func (am *AuthManager) UpdateAssociationTypeByID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) DeregisterAssociationTypeByIDs(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+
+	if !am.Enabled() {
 		return nil
 	}
 

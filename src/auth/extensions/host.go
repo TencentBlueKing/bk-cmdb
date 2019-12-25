@@ -13,6 +13,12 @@
 package extensions
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
@@ -22,11 +28,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strconv"
 )
 
 // GetHostLayers get resource layers id by hostID(layers is a data structure for call iam)
@@ -98,7 +99,7 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 		var innerIP string
 		var exist bool
 		innerIP, exist = hostIDInnerIPMap[hostID]
-		if exist == false {
+		if !exist {
 			innerIP = fmt.Sprintf("host:%d", hostID)
 		}
 		hostLayer := meta.Item{
@@ -224,7 +225,7 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 	}
 	for idx, host := range hosts {
 		hostModule, exist := hostModuleMap[host.BKHostIDField]
-		if exist == false {
+		if !exist {
 			return nil, fmt.Errorf("hostID:%+d doesn't exist in any module", host.BKHostIDField)
 		}
 		hosts[idx].BKAppIDField = hostModule.BKAppIDField
@@ -302,7 +303,7 @@ func (am *AuthManager) makeHostsResourcesGroupByBusiness(ctx context.Context, he
 	for _, host := range hosts {
 		bizID := host.BKAppIDField
 		_, exist := result[bizID]
-		if exist == false {
+		if !exist {
 			result[bizID] = make([]meta.ResourceAttribute, 0)
 		}
 		resource := meta.ResourceAttribute{
@@ -323,7 +324,7 @@ func (am *AuthManager) makeHostsResourcesGroupByBusiness(ctx context.Context, he
 }
 
 func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -468,7 +469,7 @@ func (am *AuthManager) GenMoveBizHostToResourcePoolNoPermissionResp(ctx context.
 func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
@@ -519,7 +520,7 @@ func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header htt
 }
 
 func (am *AuthManager) AuthorizeCreateHost(ctx context.Context, header http.Header, bizID int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -527,7 +528,7 @@ func (am *AuthManager) AuthorizeCreateHost(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) UpdateRegisteredHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -551,7 +552,7 @@ func (am *AuthManager) UpdateRegisteredHosts(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) UpdateRegisteredHostsByID(ctx context.Context, header http.Header, hostIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -567,7 +568,7 @@ func (am *AuthManager) UpdateRegisteredHostsByID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) DeregisterHostsByID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -583,7 +584,7 @@ func (am *AuthManager) DeregisterHostsByID(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) RegisterHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -601,7 +602,7 @@ func (am *AuthManager) RegisterHosts(ctx context.Context, header http.Header, ho
 }
 
 func (am *AuthManager) RegisterHostsByID(ctx context.Context, header http.Header, hostIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -617,7 +618,7 @@ func (am *AuthManager) RegisterHostsByID(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) DeregisterHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 

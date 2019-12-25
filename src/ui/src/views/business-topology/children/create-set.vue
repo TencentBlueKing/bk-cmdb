@@ -29,11 +29,14 @@
                 <span class="form-error" v-if="errors.has('setTemplate')">{{errors.first('setTemplate')}}</span>
             </div>
             <div class="form-item">
-                <label>{{$t('集群名称')}}</label>
+                <label>
+                    {{$t('集群名称')}}
+                    <font color="red">*</font>
+                </label>
                 <bk-input class="form-textarea"
                     type="textarea"
                     data-vv-name="setName"
-                    v-validate="'required|singlechar|emptySetName|setNameMap|length:256'"
+                    v-validate="'required|singlechar|emptySetName|setNameMap|setNameLen'"
                     v-model="setName"
                     :rows="rows"
                     :placeholder="$t('集群多个创建提示')"
