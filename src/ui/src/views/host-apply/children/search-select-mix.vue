@@ -116,7 +116,7 @@
                                 rule.operator = 'exist'
                             } else {
                                 rule.operator = 'contains'
-                                rule.value = value.id
+                                rule.value = String(value.id)
                             }
                             rules.push(rule)
                         } else {
@@ -128,7 +128,7 @@
                                 subRule.rules.push({
                                     field: String(item.id),
                                     operator: 'contains',
-                                    value: value.id
+                                    value: String(value.id)
                                 })
                             })
                             rules.push(subRule)
@@ -137,7 +137,7 @@
                         rules.push({
                             field: 'keyword',
                             operator: 'contains',
-                            value: item.id
+                            value: String(item.id)
                         })
                     }
                 })
