@@ -65,6 +65,9 @@ func (s *Service) UpdateObjectAttribute(params types.ContextParams, pathParams, 
 	// TODO: why does remove this????
 	data.Remove(metadata.BKMetadata)
 
+	// UpdateObjectAttribute should not update bk_property_index
+	data.Remove(common.BKPropertyIndexField)
+
 	err = s.Core.AttributeOperation().UpdateObjectAttribute(params, data, id)
 
 	// auth: update registered resource
@@ -102,4 +105,29 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 	err = s.Core.AttributeOperation().DeleteObjectAttribute(params, cond)
 
 	return nil, err
+}
+
+func (s *Service) UpdateObjectAttributeIndex(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	paramPath := mapstr.MapStr{}
+	paramPath.Set(common.BKObjIDField, pathParams(common.BKObjIDField))
+	objID, err := paramPath.String(common.BKObjIDField)
+	if nil != err {
+		blog.Errorf("[api-att] failed to parse the path params bk_obj_id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	id, err := data.Int64("id")
+	if nil != err {
+		blog.Errorf("[api-att] failed to parse the params id(%s), error info is %s , rid: %s", data["id"], err.Error(), params.ReqID)
+		return nil, err
+	}
+	result, err := s.Core.AttributeOperation().UpdateObjectAttributeIndex(params, objID, data, id)
+
+	// auth: update registered resource
+	if err := s.AuthManager.UpdateRegisteredModelAttributeByID(params.Context, params.Header, id); err != nil {
+		blog.Errorf("update object attribute index success , but update registered model attribute to auth failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
+	}
+
+	return result, err
 }

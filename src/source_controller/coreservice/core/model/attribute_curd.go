@@ -63,6 +63,17 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 		return id, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
+	opt := make(map[string]interface{})
+	opt[common.BKObjIDField] = attribute.ObjectID
+	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
+	opt[common.BkSupplierAccount] = attribute.OwnerID
+	attr := metadata.Attribute{}
+	sortCond := "-bk_property_index"
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).One(ctx, &attr); err != nil {
+		return id, err
+	}
+
+	attribute.PropertyIndex = attr.PropertyIndex + 1
 	attribute.ID = int64(id)
 	attribute.OwnerID = ctx.SupplierAccount
 
@@ -445,4 +456,28 @@ func (m *modelAttribute) getLangObjID(ctx core.ContextParams, objID string) stri
 		langObjID = objID
 	}
 	return langObjID
+}
+
+func (m *modelAttribute) buildUpdateIndexReturn(ctx core.ContextParams, objID, propertyGroup string) ([]*metadata.UpdatedIndex, error) {
+	cond := mapstr.MapStr{
+		common.BKObjIDField:         objID,
+		common.BKPropertyGroupField: propertyGroup,
+	}
+	result := make([]*metadata.UpdatedIndex, 0)
+	attrs := []metadata.Attribute{}
+	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).All(ctx, &attrs)
+	if nil != err {
+		blog.Errorf("buildUpdateIndexReturn failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return result, err
+	}
+
+	for _, attr := range attrs {
+		idIndex := &metadata.UpdatedIndex{
+			Id:    attr.ID,
+			Index: attr.PropertyIndex,
+		}
+		result = append(result, idIndex)
+	}
+
+	return result, nil
 }
