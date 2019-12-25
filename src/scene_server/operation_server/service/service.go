@@ -172,7 +172,7 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 
 	o.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
+		blog.Errorf("parse auth center config failed: %v", err)
 		return
 	}
 
