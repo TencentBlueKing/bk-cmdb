@@ -43,6 +43,9 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 		pathArr := strings.Split(c.Request.URL.Path, "/")
 		path1 := pathArr[1]
 
+		// 删除 Accept-Encoding 避免返回值被压缩
+		c.Request.Header.Del("Accept-Encoding")
+
 		switch path1 {
 		case "healthz", "metrics":
 			c.Next()
