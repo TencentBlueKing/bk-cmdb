@@ -221,7 +221,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objI
 			return result, err
 		}
 
-		result, err := m.buildUpdateIndexReturn(ctx, objID, propertyGroupStr)
+		result, err := m.buildUpdateAttrIndexReturn(ctx, objID, propertyGroupStr)
 		if err != nil {
 			blog.Errorf("UpdateModelAttributesIndex, update index success, but build return data failed, rid: %s, err: %s", ctx.ReqID, err.Error())
 			return result, err
@@ -264,7 +264,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objI
 		return result, err
 	}
 
-	result, err = m.buildUpdateIndexReturn(ctx, objID, propertyGroupStr)
+	result, err = m.buildUpdateAttrIndexReturn(ctx, objID, propertyGroupStr)
 	if err != nil {
 		blog.Errorf("UpdateModelAttributesIndex, update index success, but build return data failed, rid: %s, err: %s", ctx.ReqID, err.Error())
 		return result, err

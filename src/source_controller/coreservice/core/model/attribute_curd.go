@@ -63,17 +63,12 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 		return id, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
-	opt := make(map[string]interface{})
-	opt[common.BKObjIDField] = attribute.ObjectID
-	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
-	opt[common.BkSupplierAccount] = attribute.OwnerID
-	attr := metadata.Attribute{}
-	sortCond := "-bk_property_index"
-	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).One(ctx, &attr); err != nil {
+	index, err := m.GetAttrLastIndex(ctx, attribute)
+	if err != nil {
 		return id, err
 	}
 
-	attribute.PropertyIndex = attr.PropertyIndex + 1
+	attribute.PropertyIndex = index
 	attribute.ID = int64(id)
 	attribute.OwnerID = ctx.SupplierAccount
 
@@ -458,7 +453,7 @@ func (m *modelAttribute) getLangObjID(ctx core.ContextParams, objID string) stri
 	return langObjID
 }
 
-func (m *modelAttribute) buildUpdateIndexReturn(ctx core.ContextParams, objID, propertyGroup string) (*metadata.UpdateAttrIndexData, error) {
+func (m *modelAttribute) buildUpdateAttrIndexReturn(ctx core.ContextParams, objID, propertyGroup string) (*metadata.UpdateAttrIndexData, error) {
 	cond := mapstr.MapStr{
 		common.BKObjIDField:         objID,
 		common.BKPropertyGroupField: propertyGroup,
@@ -489,4 +484,29 @@ func (m *modelAttribute) buildUpdateIndexReturn(ctx core.ContextParams, objID, p
 	}
 
 	return result, nil
+}
+
+func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute metadata.Attribute) (int64, error) {
+
+	opt := make(map[string]interface{})
+	opt[common.BKObjIDField] = attribute.ObjectID
+	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
+	opt[common.BkSupplierAccount] = attribute.OwnerID
+	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Count(ctx)
+	if err != nil {
+		blog.Error("get attr index failed, err: %v", err)
+		return 0, err
+	}
+	if count <= 0 {
+		return 0, nil
+	}
+
+	attr := metadata.Attribute{}
+	sortCond := "-bk_property_index"
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).One(ctx, &attr); err != nil {
+		blog.Error("get attr index failed, err: %v", err)
+		return 0, err
+	}
+
+	return attr.PropertyIndex + 1, nil
 }
