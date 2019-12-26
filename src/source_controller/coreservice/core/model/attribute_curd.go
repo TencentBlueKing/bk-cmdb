@@ -510,7 +510,7 @@ func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute meta
 	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Count(ctx)
 	if err != nil {
 		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", ctx.ReqID, err)
-		return 0, err
+		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	if count <= 0 {
 		return 0, nil
@@ -520,7 +520,7 @@ func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute meta
 	sortCond := "-bk_property_index"
 	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).One(ctx, &attr); err != nil {
 		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", ctx.ReqID, err)
-		return 0, err
+		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	return attr.PropertyIndex + 1, nil
