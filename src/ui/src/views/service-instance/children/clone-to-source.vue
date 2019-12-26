@@ -117,7 +117,7 @@
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
-                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        name: this.$tools.getHeaderPropertyName(property),
                         property
                     }
                 })

@@ -306,7 +306,7 @@
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
-                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        name: this.$tools.getHeaderPropertyName(property),
                         property
                     }
                 })
@@ -324,7 +324,7 @@
                         serviceInstanceId: this.instance.id,
                         config: {
                             data: this.$injectMetadata({
-                                process_instance_ids: [item.bk_process_id]
+                                process_instance_ids: [item.relation.bk_process_id]
                             }, { injectBizId: true })
                         }
                     })
