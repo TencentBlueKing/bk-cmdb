@@ -166,7 +166,7 @@
                 this.table.list = this.list.slice(start, start + limit)
             },
             getChangeValue (row) {
-                const { conflicts, update_fields: updateFields } = row
+                const { conflicts, update_fields: updateFields, unresolved_conflict_count: conflictCount } = row
                 const valueMap = {}
                 const fieldList = [...conflicts, ...updateFields]
                 fieldList.forEach(item => {
@@ -186,7 +186,7 @@
                     const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
                     return `${property.bk_property_name}：${this.$tools.getPropertyText(property, valueMap)}`
                 })
-                const conflictSeparator = '<span class="conflict-separator">；</span>'
+                const conflictSeparator = `<span class="conflict-separator${!conflictCount ? ' resolved' : ''}">；</span>`
 
                 return `${resultConflicts.join(conflictSeparator)}${(resultConflicts.length && resultUpdates.length) ? conflictSeparator : ''}${resultUpdates.join('；')}`
             },
@@ -230,7 +230,7 @@
                 inst['bk_cloud_id'] = [row.cloud_area]
                 try {
                     const propertyGroups = await this.getPropertyGroups()
-                    this.details.inst = this.$tools.flattenItem(properties, inst)
+                    this.details.inst = inst
                     this.details.properties = properties
                     this.details.propertyGroups = propertyGroups
                     this.slider.isShow = true
@@ -285,6 +285,10 @@
             .conflict-item,
             .conflict-separator {
                 color: #ea3536;
+
+                &.resolved {
+                    color: inherit;
+                }
             }
 
             .icon-cc-tips {

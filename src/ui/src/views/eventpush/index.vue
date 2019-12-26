@@ -1,12 +1,11 @@
 <template>
     <div class="push-wrapper">
-        <feature-tips
-            :feature-name="'eventpush'"
-            :show-tips="showFeatureTips"
-            :desc="$t('事件推送顶部提示')"
-            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'"
-            @close-tips="showFeatureTips = false">
-        </feature-tips>
+        <cmdb-tips
+            class="mb10"
+            tips-key="eventPushTips"
+            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'">
+            {{$t('事件推送顶部提示')}}
+        </cmdb-tips>
         <div class="btn-wrapper clearfix">
             <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_EVENT })">
                 <bk-button slot-scope="{ disabled }"
@@ -94,17 +93,14 @@
 
 <script>
     import { formatTime } from '@/utils/tools'
-    import featureTips from '@/components/feature-tips/index'
     import vPushDetail from './push-detail'
-    import { mapActions, mapGetters } from 'vuex'
+    import { mapActions } from 'vuex'
     export default {
         components: {
-            vPushDetail,
-            featureTips
+            vPushDetail
         },
         data () {
             return {
-                showFeatureTips: false,
                 curPush: {},
                 table: {
                     list: [],
@@ -128,12 +124,8 @@
                 }
             }
         },
-        computed: {
-            ...mapGetters(['featureTipsParams'])
-        },
         created () {
             this.getTableData()
-            this.showFeatureTips = this.featureTipsParams['eventpush']
         },
         methods: {
             ...mapActions('eventSub', [

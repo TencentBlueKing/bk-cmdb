@@ -127,12 +127,12 @@ var SupportOperators = map[Operator]bool{
 	OperatorIsNull:    false,
 	OperatorIsNotNull: false,
 
-	OperatorExist:    false,
+	OperatorExist:    true,
 	OperatorNotExist: false,
 }
 
 func (op Operator) Validate() error {
-	if support, ok := SupportOperators[op]; support == false || ok == false {
+	if support, ok := SupportOperators[op]; !support || !ok {
 		return fmt.Errorf("unsupported operator: %s", op)
 	}
 	return nil
@@ -174,7 +174,7 @@ var (
 )
 
 func (r AtomRule) validateField() error {
-	if ValidFieldPattern.MatchString(r.Field) == false {
+	if !ValidFieldPattern.MatchString(r.Field) {
 		return fmt.Errorf("invalid field: %s", r.Field)
 	}
 	return nil

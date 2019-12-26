@@ -19,8 +19,9 @@
             }
         },
         methods: {
-            handleClick () {
-                this.$router.replace(typeof this.previous === 'function' ? this.previous() : this.previous)
+            async handleClick () {
+                const config = typeof this.previous === 'function' ? await this.previous(this.$parent.$refs.view) : this.previous
+                this.$router.replace(config)
             }
         }
     }

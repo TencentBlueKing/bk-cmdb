@@ -1,20 +1,11 @@
 <template>
-    <div :class="['host-apply', { 'show-feature-tips': showFeatureTips }]">
-        <feature-tips
-            class-name="top-tips"
-            feature-name="hostApply"
-            :show-tips="showFeatureTips"
-            :desc="$t('主机属性自动应用功能提示')"
-            @close-tips="showFeatureTips = false"
-        >
-        </feature-tips>
+    <div class="host-apply">
         <div class="main-wrapper">
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
                 :handler-offset="3"
                 :min="300"
-                :max="480"
-            >
+                :max="480">
                 <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
             </cmdb-resize-layout>
             <div class="main-content">
@@ -161,7 +152,6 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import featureTips from '@/components/feature-tips/index'
     import sidebar from './children/sidebar.vue'
     import propertyConfigTable from './children/property-config-table'
     import {
@@ -172,7 +162,6 @@
     export default {
         components: {
             sidebar,
-            featureTips,
             propertyConfigTable
         },
         data () {
@@ -183,14 +172,12 @@
                 conflictNum: 0,
                 clearRules: false,
                 hasRule: false,
-                showFeatureTips: false,
                 batchAction: false,
                 hostAndServiceRouteName: MENU_BUSINESS_HOST_AND_SERVICE
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters(['featureTipsParams']),
             applyEnabled () {
                 return this.currentModule.host_apply_enabled
             },
@@ -207,7 +194,6 @@
             }
         },
         created () {
-            this.showFeatureTips = this.featureTipsParams['hostApply']
             this.getHostPropertyList()
         },
         methods: {
@@ -337,21 +323,8 @@
 </script>
 
 <style lang="scss" scoped>
-    .host-apply {
-        .top-tips {
-            margin: 0 20px 10px;
-        }
-
-        &.show-feature-tips {
-            .main-wrapper {
-                height: calc(100% - 42px);
-            }
-        }
-    }
     .main-wrapper {
         height: 100%;
-        border-top: 1px solid $cmdbLayoutBorderColor;
-
     }
     .tree-layout {
         width: 300px;
@@ -398,11 +371,10 @@
         }
 
         .config-title {
-            height: 32px;
-            line-height: 32px;
             font-size: 14px;
             color: #313238;
             font-weight: 700;
+            margin-top: 20px;
 
             .last-edit-time {
                 font-size: 12px;

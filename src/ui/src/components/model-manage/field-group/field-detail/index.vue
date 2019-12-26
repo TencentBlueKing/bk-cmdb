@@ -281,6 +281,10 @@
                     return
                 }
                 let fieldId = null
+                if (this.fieldInfo.bk_property_type === 'int') {
+                    this.fieldInfo.option.min = Number(this.fieldInfo.option.min)
+                    this.fieldInfo.option.max = Number(this.fieldInfo.option.max)
+                }
                 if (this.isEditField) {
                     await this.updateObjectAttribute({
                         id: this.field.id,
@@ -333,52 +337,52 @@
         height: 100%;
         padding: 0;
         overflow: hidden;
-    }
-    .slider-main {
-        max-height: calc(100% - 52px);
-        @include scrollbar-y;
-        padding: 20px 20px 0;
-    }
-    .slider-content {
-        /deep/ textarea[disabled] {
-            background-color: #fafbfd!important;
-            cursor: not-allowed;
+        .slider-main {
+            max-height: calc(100% - 52px);
+            @include scrollbar-y;
+            padding: 20px 20px 0;
         }
-    }
-    .icon-info-circle {
-        font-size: 18px;
-        color: $cmdbBorderColor;
-        padding-left: 5px;
-    }
-    .field-detail {
-        width: 94%;
-        margin-bottom: 20px;
-        padding: 20px;
-        background: #f3f8ff;
-        .form-label:last-child {
-            margin: 0;
+        .slider-content {
+            /deep/ textarea[disabled] {
+                background-color: #fafbfd!important;
+                cursor: not-allowed;
+            }
         }
-        .label-text {
-            vertical-align: top;
+        .icon-info-circle {
+            font-size: 18px;
+            color: $cmdbBorderColor;
+            padding-left: 5px;
         }
-        .cmdb-form-checkbox {
-            width: 90px;
-            line-height: 22px;
-            vertical-align: middle;
+        .field-detail {
+            width: 94%;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f3f8ff;
+            .form-label:last-child {
+                margin: 0;
+            }
+            .label-text {
+                vertical-align: top;
+            }
+            .cmdb-form-checkbox {
+                width: 90px;
+                line-height: 22px;
+                vertical-align: middle;
+            }
         }
-    }
-    .cmdb-form-item {
-        width: 94% !important;
-    }
-    .icon-cc-exclamation-tips {
-        font-size: 18px;
-        color: #979ba5;
-        margin-left: 10px;
-    }
-    .btn-group {
-        padding: 10px 20px;
-        &.sticky-layout {
-            border-top: 1px solid #dcdee5;
+        .cmdb-form-item {
+            width: 94% !important;
+        }
+        .icon-cc-exclamation-tips {
+            font-size: 18px;
+            color: #979ba5;
+            margin-left: 10px;
+        }
+        .btn-group {
+            padding: 10px 20px;
+            &.sticky-layout {
+                border-top: 1px solid #dcdee5;
+            }
         }
     }
 </style>

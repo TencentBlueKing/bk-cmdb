@@ -200,6 +200,7 @@ type Core interface {
 	LabelOperation() LabelOperation
 	SetTemplateOperation() SetTemplateOperation
 	HostApplyRuleOperation() HostApplyRuleOperation
+	SystemOperation() SystemOperation
 }
 
 // ProcessOperation methods
@@ -280,6 +281,10 @@ type HostApplyRuleOperation interface {
 	RunHostApplyOnHosts(ctx ContextParams, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
+type SystemOperation interface {
+	GetSystemUserConfig(ctx ContextParams) (map[string]interface{}, errors.CCErrorCoder)
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -291,6 +296,7 @@ type core struct {
 	operation       StatisticOperation
 	process         ProcessOperation
 	label           LabelOperation
+	sys             SystemOperation
 	setTemplate     SetTemplateOperation
 	hostApplyRule   HostApplyRuleOperation
 }
@@ -308,6 +314,7 @@ func New(
 	setTemplate SetTemplateOperation,
 	operation StatisticOperation,
 	hostApplyRule HostApplyRuleOperation,
+    sys SystemOperation,
 ) Core {
 	return &core{
 		model:           model,
@@ -320,6 +327,7 @@ func New(
 		operation:       operation,
 		process:         process,
 		label:           label,
+		sys:             sys,
 		setTemplate:     setTemplate,
 		hostApplyRule:   hostApplyRule,
 	}
@@ -367,6 +375,10 @@ func (m *core) LabelOperation() LabelOperation {
 
 func (m *core) SetTemplateOperation() SetTemplateOperation {
 	return m.setTemplate
+}
+
+func (m *core) SystemOperation() SystemOperation {
+	return m.sys
 }
 
 func (m *core) HostApplyRuleOperation() HostApplyRuleOperation {

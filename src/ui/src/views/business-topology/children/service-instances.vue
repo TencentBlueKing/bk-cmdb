@@ -305,9 +305,12 @@
             }
         },
         watch: {
-            async currentNode (node) {
-                if (node && node.data.bk_obj_id === 'module') {
-                    this.getData()
+            currentNode: {
+                immediate: true,
+                handler (node) {
+                    if (node && node.data.bk_obj_id === 'module') {
+                        this.getData()
+                    }
                 }
             },
             bindIp (value) {
@@ -675,7 +678,7 @@
                 if (processes.length) {
                     const process = processes[0].property
                     name.push(process.bk_process_name)
-                    name.push(process.port)
+                    process.port && name.push(process.port)
                 }
                 instance.name = name.join('_')
             },

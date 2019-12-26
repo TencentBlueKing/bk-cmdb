@@ -44,6 +44,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/source_controller/coreservice/core/operation"
 	"configcenter/src/source_controller/coreservice/core/process"
+	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
@@ -124,10 +125,11 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		auditlog.New(db),
 		process.New(db, s, cache),
 		label.New(db),
-		settemplate.New(db),
-		operation.New(db),
-		hostApplyRuleCore,
-	)
+        settemplate.New(db),
+        operation.New(db),
+        hostApplyRuleCore,
+		dbSystem.New(db),  
+)
 	return nil
 }
 

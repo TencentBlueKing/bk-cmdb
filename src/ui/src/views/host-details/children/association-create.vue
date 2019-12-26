@@ -283,7 +283,7 @@
                     const property = this.getProperty(propertyId) || {}
                     header.push({
                         id: propertyId,
-                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        name: this.$tools.getHeaderPropertyName(property),
                         property: property
                     })
                 }

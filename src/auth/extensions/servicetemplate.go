@@ -103,7 +103,7 @@ func (am *AuthManager) MakeResourcesByServiceTemplateIDs(ctx context.Context, he
 }
 
 func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -140,7 +140,7 @@ func (am *AuthManager) GenServiceTemplateNoPermissionResp() *metadata.BaseResp {
 }
 
 func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header http.Header, action meta.Action, templates ...metadata.ServiceTemplate) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -162,7 +162,7 @@ func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header h
 func (am *AuthManager) UpdateRegisteredServiceTemplates(ctx context.Context, header http.Header, templates ...metadata.ServiceTemplate) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -189,7 +189,7 @@ func (am *AuthManager) UpdateRegisteredServiceTemplates(ctx context.Context, hea
 }
 
 func (am *AuthManager) UpdateRegisteredServiceTemplateByID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -205,7 +205,7 @@ func (am *AuthManager) UpdateRegisteredServiceTemplateByID(ctx context.Context, 
 }
 
 func (am *AuthManager) DeregisterServiceTemplateByIDs(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -221,7 +221,7 @@ func (am *AuthManager) DeregisterServiceTemplateByIDs(ctx context.Context, heade
 }
 
 func (am *AuthManager) RegisterServiceTemplates(ctx context.Context, header http.Header, templates ...metadata.ServiceTemplate) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -242,7 +242,7 @@ func (am *AuthManager) RegisterServiceTemplates(ctx context.Context, header http
 }
 
 func (am *AuthManager) RegisterServiceTemplateByID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -258,7 +258,7 @@ func (am *AuthManager) RegisterServiceTemplateByID(ctx context.Context, header h
 }
 
 func (am *AuthManager) DeregisterServiceTemplates(ctx context.Context, header http.Header, templates ...metadata.ServiceTemplate) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 

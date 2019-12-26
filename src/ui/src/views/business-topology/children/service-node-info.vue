@@ -218,7 +218,7 @@
                 immediate: true,
                 handler (active) {
                     if (active) {
-                        this.refresh()
+                        this.refresh && this.refresh()
                     }
                 }
             }
@@ -624,11 +624,12 @@
                             requestId: 'diffTemplateAndInstances'
                         }
                     })
-                    const diff = data[0] ? data[0].module_diffs : []
+                    const diff = data.difference ? (data.difference[0] || {}).module_diffs : []
                     const len = diff.filter(_module => _module.diff_type !== 'unchanged').length
                     this.hasChange = !!len
                 } catch (e) {
                     console.error(e)
+                    this.hasChange = false
                 }
             },
             handleSyncSetTemplate () {

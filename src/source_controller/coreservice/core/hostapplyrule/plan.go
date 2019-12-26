@@ -106,7 +106,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	unresolvedConflictCount := int64(0)
 	for _, hostModule := range option.HostModules {
 		host, exist := hostMap[hostModule.HostID]
-		if exist == false {
+		if !exist {
 			err := errors.New(common.CCErrCommNotFound, fmt.Sprintf("host[%d] not found", hostModule.HostID))
 			hostApplyPlan = metadata.OneHostApplyPlan{
 				HostID:         hostModule.HostID,
@@ -135,11 +135,11 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx core.ContextParams, bizID int64, o
 	// fill cloud area info
 	for index, item := range hostApplyPlans {
 		cloudID, ok := hostID2CloudID[item.HostID]
-		if ok == false {
+		if !ok {
 			continue
 		}
 		cloudArea, ok := cloudMap[cloudID]
-		if ok == false {
+		if !ok {
 			continue
 		}
 		hostApplyPlans[index].CloudInfo = cloudArea
@@ -188,10 +188,10 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	}
 	attributeRules := make(map[int64][]metadata.HostApplyRule)
 	for _, rule := range rules {
-		if _, exist := moduleIDSet[rule.ModuleID]; exist == false {
+		if _, exist := moduleIDSet[rule.ModuleID]; !exist {
 			continue
 		}
-		if _, exist := attributeRules[rule.AttributeID]; exist == false {
+		if _, exist := attributeRules[rule.AttributeID]; !exist {
 			attributeRules[rule.AttributeID] = make([]metadata.HostApplyRule, 0)
 		}
 		attributeRules[rule.AttributeID] = append(attributeRules[rule.AttributeID], rule)
@@ -208,13 +208,13 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			continue
 		}
 		attribute, exist := attributeMap[attributeID]
-		if exist == false {
+		if !exist {
 			blog.Infof("generateOneHostApplyPlan attribute id filed not exist, attributeID: %s, rid: %s", attributeID, rid)
 			continue
 		}
 		propertyIDField := attribute.PropertyID
 		originalValue, ok := host[propertyIDField]
-		if ok == false {
+		if !ok {
 			originalValue = nil
 		}
 
@@ -222,9 +222,9 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		firstValue := targetRules[0].PropertyValue
 		conflictedStillExist := false
 		for _, rule := range targetRules {
-			if cmp.Equal(firstValue, rule.PropertyValue) == false {
+			if !cmp.Equal(firstValue, rule.PropertyValue) {
 				conflictedStillExist = true
-				if propertyValue, exist := resolverMap[attribute.ID]; exist == true {
+				if propertyValue, exist := resolverMap[attribute.ID]; exist {
 					conflictedStillExist = false
 					firstValue = propertyValue
 				}
@@ -239,7 +239,7 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			}
 		}
 
-		if conflictedStillExist == true {
+		if conflictedStillExist {
 			plan.UnresolvedConflictCount += 1
 			continue
 		}
@@ -311,10 +311,10 @@ func (p *hostApplyRule) RunHostApplyOnHosts(ctx core.ContextParams, bizID int64,
 	}
 	host2Modules := make(map[int64][]int64)
 	for _, relation := range relations {
-		if _, exist := host2Modules[relation.HostID]; exist == false {
+		if _, exist := host2Modules[relation.HostID]; !exist {
 			host2Modules[relation.HostID] = make([]int64, 0)
 		}
-		if _, exist := enableModuleMap[relation.ModuleID]; exist == false {
+		if _, exist := enableModuleMap[relation.ModuleID]; !exist {
 			continue
 		}
 		// checkout host apply enabled status on module

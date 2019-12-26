@@ -175,7 +175,10 @@
                 this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
                     this.$router.push({
-                        name: MENU_BUSINESS_HOST_APPLY_CONFIRM
+                        name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
+                        query: {
+                            mid: this.$route.query.mid
+                        }
                     })
                 })
             },
@@ -211,13 +214,6 @@
         .config-body {
             flex: auto;
         }
-    }
-    .config-title {
-        height: 32px;
-        line-height: 32px;
-        font-size: 14px;
-        color: #313238;
-        font-weight: 700;
     }
 
     .choose-field {

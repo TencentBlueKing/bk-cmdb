@@ -32,7 +32,7 @@ export const PROCESS_BIND_MODULE = 'process.boundModuleToProcess'
 export const PROCESS_UNBIND_MODULE = 'process.unboundModelToProcess'
 export const PROCESS_SEARCH_MODULE = 'process.findBoundModuleProcess'
 
-// 服务拓扑
+// 业务拓扑
 export const C_TOPO = 'mainlineInstance.create'
 export const U_TOPO = 'mainlineInstance.update'
 export const D_TOPO = 'mainlineInstance.delete'
@@ -142,7 +142,7 @@ export const RESOURCE_TYPE_NAME = {
     processServiceCategory: i18n.t('服务分类'),
     processServiceTemplate: i18n.t('服务模板'),
     processServiceInstance: i18n.t('服务实例'),
-    mainlineInstance: i18n.t('服务拓扑'),
+    mainlineInstance: i18n.t('业务拓扑'),
     operationStatistic: i18n.t('运营统计'),
     setTemplate: i18n.t('集群模板'),
     hostApply: i18n.t('主机属性自动应用')

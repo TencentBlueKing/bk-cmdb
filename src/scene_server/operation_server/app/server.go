@@ -50,15 +50,14 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if nil == operationSvr.Config {
-			time.Sleep(time.Second)
-		} else {
+		if operationSvr.Config.Ready() {
 			configReady = true
 			break
 		}
+		time.Sleep(time.Second)
 	}
 	if false == configReady {
-		return fmt.Errorf("configuration item not found")
+		return fmt.Errorf("waiting for configuration timeout, maybe parse configuration failed")
 	}
 	authConf := operationSvr.Config.Auth
 	if err != nil {

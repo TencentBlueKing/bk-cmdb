@@ -33,7 +33,7 @@ const (
 	// BKNoLimit no limit definition
 	BKNoLimit = 999999999
 	// max limit of a page
-	BKMaxPageSize  = 1000
+	BKMaxPageSize = 1000
 
 	// 一次最大操作记录数
 	BKMaxRecordsAtOnce = 2000
@@ -469,7 +469,8 @@ const (
 	BKProcessTemplateIDField = "process_template_id"
 	BKServiceCategoryIDField = "service_category_id"
 
-	BKSetTemplateIDField = "set_template_id"
+	BKSetTemplateIDField      = "set_template_id"
+	BKSetTemplateVersionField = "set_template_version"
 
 	HostApplyRuleIDField = "host_apply_rule_id"
 

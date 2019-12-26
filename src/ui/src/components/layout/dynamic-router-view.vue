@@ -4,7 +4,7 @@
         <dynamic-breadcrumbs class="main-breadcrumbs" v-if="$route.meta.layout.breadcrumbs"></dynamic-breadcrumbs>
         <div class="main-layout">
             <div class="main-scroller" v-bkloading="{ isLoading: globalLoading }" ref="scroller">
-                <router-view class="main-views" :name="view"></router-view>
+                <router-view class="main-views" :name="view" ref="view"></router-view>
             </div>
         </div>
     </div>

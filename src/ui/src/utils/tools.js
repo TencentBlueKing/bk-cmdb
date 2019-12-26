@@ -104,7 +104,7 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
 
 export function formatValues (values, properties) {
     const formatted = { ...values }
-    const convertProperties = properties.filter(property => ['enum', 'int', 'float'].includes(property.bk_property_type))
+    const convertProperties = properties.filter(property => ['enum', 'int', 'float', 'list'].includes(property.bk_property_type))
     convertProperties.forEach(property => {
         const key = property.bk_property_id
         if (formatted.hasOwnProperty(key) && ['', undefined].includes(formatted[key])) {
@@ -224,6 +224,13 @@ export function getHeaderProperties (properties, customColumns, fixedPropertyIds
     return headerProperties
 }
 
+export function getHeaderPropertyName (property) {
+    if (property.unit) {
+        return `${property.bk_property_name}(${property.unit})`
+    }
+    return property.bk_property_name
+}
+
 /**
  * 深拷贝
  * @param {Object} object - 需拷贝的对象
@@ -256,7 +263,7 @@ export function getValidateRules (property) {
         rules.required = true
     }
     if (option) {
-        if (propertyType === 'int') {
+        if (['int', 'float'].includes(propertyType)) {
             if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
                 rules['min_value'] = option.min
             }
@@ -335,6 +342,7 @@ export default {
     getDefaultHeaderProperties,
     getCustomHeaderProperties,
     getHeaderProperties,
+    getHeaderPropertyName,
     formatTime,
     clone,
     getInstFormValues,
