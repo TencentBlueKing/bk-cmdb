@@ -16,11 +16,12 @@
         </cmdb-selector>
         <div class="property-value fl" style="width: 245px;"
             v-if="Object.keys(selectedProperty).length">
-            <cmdb-form-enum
-                v-if="selectedProperty['bk_property_type'] === 'enum'"
+            <component
+                v-if="['enum', 'list'].includes(selectedProperty['bk_property_type'])"
+                :is="`cmdb-form-${selectedProperty['bk_property_type']}`"
                 :options="selectedProperty.option || []"
                 v-model="localSelected.value">
-            </cmdb-form-enum>
+            </component>
             <component
                 v-else
                 :is="`cmdb-form-${selectedProperty['bk_property_type']}`"
