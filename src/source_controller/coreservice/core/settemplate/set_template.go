@@ -74,8 +74,10 @@ func (p *setTemplateOperation) ValidateServiceTemplateIDs(ctx core.ContextParams
 func (p *setTemplateOperation) CreateSetTemplate(ctx core.ContextParams, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	now := time.Now()
 	setTemplate := metadata.SetTemplate{
+		ID:              0,
 		Name:            option.Name,
 		BizID:           bizID,
+		Version:         0,
 		Creator:         ctx.User,
 		Modifier:        ctx.User,
 		CreateTime:      now,
@@ -217,7 +219,7 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 		}
 		addRelations := make([]metadata.SetServiceTemplateRelation, 0)
 		for _, serviceTemplateID := range serviceTemplateIDs {
-			if _, exist := existIDMap[serviceTemplateID]; exist == false {
+			if _, exist := existIDMap[serviceTemplateID]; !exist {
 				addRelations = append(addRelations, metadata.SetServiceTemplateRelation{
 					BizID:             setTemplate.BizID,
 					SetTemplateID:     setTemplate.ID,
@@ -240,10 +242,11 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 		}
 		removeIDs := make([]int64, 0)
 		for _, item := range relations {
-			if _, exist := targetIDMap[item.ServiceTemplateID]; exist == false {
+			if _, exist := targetIDMap[item.ServiceTemplateID]; !exist {
 				removeIDs = append(removeIDs, item.ServiceTemplateID)
 			}
 		}
+		// TODO add reference check
 		if len(removeIDs) > 0 {
 			removeFilter := map[string]interface{}{
 				common.BKSetTemplateIDField: setTemplate.ID,
@@ -255,6 +258,9 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 				blog.Errorf("UpdateSetTemplate failed, remove no need service template ids failed, filter: %+v, err: %+v, rid: %s", removeFilter, err, ctx.ReqID)
 				return setTemplate, ctx.Error.CCError(common.CCErrCommDBDeleteFailed)
 			}
+		}
+		if len(addRelations) > 0 || len(removeIDs) > 0 {
+			setTemplate.Version += 1
 		}
 	}
 

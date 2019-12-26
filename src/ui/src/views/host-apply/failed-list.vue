@@ -114,6 +114,17 @@
             ...mapState('hosts', ['propertyList']),
             hostIds () {
                 return this.propertyConfig.bk_host_ids || []
+            },
+            isBatch () {
+                return this.$route.query.batch === 1
+            },
+            moduleId () {
+                const mid = this.$route.query.mid
+                let moduleId
+                if (mid) {
+                    moduleId = Number(mid)
+                }
+                return moduleId
             }
         },
         created () {
@@ -138,14 +149,6 @@
             },
             setBreadcrumbs () {
                 this.$store.commit('setTitle', this.$t('失败列表'))
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('主机属性自动应用'),
-                    route: {
-                        name: MENU_BUSINESS_HOST_APPLY
-                    }
-                }, {
-                    label: this.$t('失败列表')
-                }])
             },
             async getHostList () {
                 try {
@@ -248,7 +251,7 @@
                 const inst = row
                 try {
                     const propertyGroups = await this.getPropertyGroups()
-                    this.details.inst = this.$tools.flattenItem(properties, inst)
+                    this.details.inst = inst
                     this.details.properties = properties
                     this.details.propertyGroups = propertyGroups
                     this.slider.isShow = true
@@ -270,13 +273,19 @@
                 this.goBack()
             },
             handleViewHost () {
+                const query = {}
+                if (!this.isBatch && this.moduleId) {
+                    query.node = `module-${this.moduleId}`
+                }
                 this.$router.push({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query
                 })
             },
             handleViewFailed () {
                 this.$router.push({
-                    name: MENU_BUSINESS_HOST_APPLY_FAILED
+                    name: MENU_BUSINESS_HOST_APPLY_FAILED,
+                    query: this.$route.query
                 })
             },
             handleCopyIp () {
@@ -293,7 +302,7 @@
 
 <style lang="scss" scoped>
     .failed-list {
-        padding: 0 20px;
+        padding: 15px 20px 0;
 
         .caption {
             display: flex;

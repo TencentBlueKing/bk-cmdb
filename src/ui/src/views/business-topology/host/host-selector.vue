@@ -4,7 +4,10 @@
         <div class="wrapper clearfix">
             <div class="wrapper-column wrapper-left fl">
                 <h2 class="title">{{$t('选择主机')}}</h2>
-                <bk-select class="selector-type" v-model="type" :clearable="false">
+                <bk-select class="selector-type"
+                    :clearable="false"
+                    :disabled="!!displayNodes.length"
+                    v-model="type">
                     <bk-option id="topology" :name="$t('业务拓扑')"></bk-option>
                     <bk-option id="custom" name="IP"></bk-option>
                 </bk-select>
@@ -71,6 +74,10 @@
             confirmText: {
                 type: String,
                 default: ''
+            },
+            displayNodes: {
+                type: Array,
+                default: () => ([])
             }
         },
         data () {

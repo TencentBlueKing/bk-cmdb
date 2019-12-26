@@ -15,7 +15,6 @@
         <bk-table-column
             v-if="multiple"
             :label="$t('已配置的模块')"
-            :render-header="(h, data) => renderColumnHeader(h, data, $t('主机属于多个模块但主机的属性值仅能有唯一值'))"
             class-name="table-cell-module-path"
         >
             <template slot-scope="{ row }">
@@ -167,12 +166,11 @@
                             // 初始化值
                             if (this.multiple) {
                                 property.__extra__.ruleList = this.ruleList.filter(item => item.bk_attribute_id === property.id)
-                                // 默认值设定为空串
-                                property.__extra__.value = ''
+                                property.__extra__.value = this.getPropertyDefaultValue(property)
                             } else {
                                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
                                 property.__extra__.ruleId = rule.id
-                                property.__extra__.value = rule.bk_property_value || ''
+                                property.__extra__.value = rule.hasOwnProperty('bk_property_value') ? rule.bk_property_value : this.getPropertyDefaultValue(property)
                             }
                             this.modulePropertyList.push(property)
                         }
@@ -200,6 +198,13 @@
             },
             getRuleValue (attrId, moduleId) {
                 return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.bk_module_id === moduleId) || {}).bk_property_value || ''
+            },
+            getPropertyDefaultValue (property) {
+                let value = ''
+                if (property.bk_property_type === 'bool') {
+                    value = false
+                }
+                return value
             },
             reset () {
                 if (!this.hasRuleDraft) {
@@ -242,6 +247,8 @@
     .path-item,
     .value-item {
         padding: 1px 0;
+        height: 20px;
+        line-height: 20px;
         @include ellipsis;
     }
     .show-more {

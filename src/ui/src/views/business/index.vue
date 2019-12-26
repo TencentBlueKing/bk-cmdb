@@ -39,15 +39,16 @@
                         :name="option.name">
                     </bk-option>
                 </bk-select>
-                <cmdb-form-enum class="filter-value fl"
-                    v-if="filter.type === 'enum'"
+                <component class="filter-value fl"
+                    v-if="['enum', 'list'].includes(filter.type)"
+                    :is="`cmdb-form-${filter.type}`"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :auto-select="false"
                     v-model="filter.value"
                     font-size="medium"
                     @on-selected="handleFilterData">
-                </cmdb-form-enum>
+                </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
@@ -330,7 +331,7 @@
                 this.table.header = properties.map(property => {
                     return {
                         id: property['bk_property_id'],
-                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        name: this.$tools.getHeaderPropertyName(property),
                         property
                     }
                 })
@@ -427,6 +428,7 @@
             handleDelete (inst) {
                 this.$bkInfo({
                     title: this.$t('确认要归档', { name: inst['bk_biz_name'] }),
+                    subTitle: this.$t('归档确认信息'),
                     confirmFn: () => {
                         this.archiveBusiness(inst['bk_biz_id']).then(() => {
                             this.slider.show = false

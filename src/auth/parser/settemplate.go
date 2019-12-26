@@ -177,6 +177,24 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		ResourceType:     meta.ModelSet,
 		ResourceAction:   meta.FindMany,
 		InstanceIDGetter: nil,
+	}, {
+		Name:             "CheckSetInstUpdateToDateStatusRegex",
+		Description:      "检查集群模板的同步状态",
+		Regex:            regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/set_template_status/?$`),
+		HTTPMethod:       http.MethodGet,
+		BizIDGetter:      BizIDFromURLGetter,
+		ResourceType:     meta.ModelSet,
+		ResourceAction:   meta.FindMany,
+		InstanceIDGetter: nil,
+	}, {
+		Name:             "BatchCheckSetInstUpdateToDateStatusRegex",
+		Description:      "批量检查集群模板的同步状态",
+		Regex:            regexp.MustCompile(`^/api/v3/findmany/topo/set_template/bk_biz_id/([0-9]+)/set_template_status/?$`),
+		HTTPMethod:       http.MethodPost,
+		BizIDGetter:      BizIDFromURLGetter,
+		ResourceType:     meta.ModelSet,
+		ResourceAction:   meta.FindMany,
+		InstanceIDGetter: nil,
 	},
 }
 

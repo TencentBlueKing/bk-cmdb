@@ -113,7 +113,7 @@ func (hm *hostManager) QueryHostLock(params core.ContextParams, input *metadata.
 }
 
 func diffHostLockIP(ips []string, hostInfos []mapstr.MapStr, rid string) []string {
-	mapInnerIP := make(map[string]bool, 0)
+	mapInnerIP := make(map[string]bool)
 	for _, hostInfo := range hostInfos {
 		innerIP, err := hostInfo.String(common.BKHostInnerIPField)
 		if nil != err {

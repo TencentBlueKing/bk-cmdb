@@ -172,17 +172,21 @@ func (p *hostApplyRule) CreateHostApplyRule(ctx core.ContextParams, bizID int64,
 }
 
 func (p *hostApplyRule) UpdateHostApplyRule(ctx core.ContextParams, bizID int64, ruleID int64, option metadata.UpdateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
-	rule, err := p.GetHostApplyRule(ctx, bizID, ruleID)
-	if err != nil {
-		blog.Errorf("UpdateHostApplyRule failed, rule not found, bizID: %d, id: %d, rid: %s", bizID, ruleID, ctx.ReqID)
+	rule, ccErr := p.GetHostApplyRule(ctx, bizID, ruleID)
+	if ccErr != nil {
+		blog.Errorf("UpdateHostApplyRule failed, GetHostApplyRule failed, bizID: %d, id: %d, err: %s, rid: %s", bizID, ruleID, ccErr.Error(), ctx.ReqID)
 		return rule, ctx.Error.CCError(common.CCErrCommNotFound)
 	}
 
-	attribute, err := p.getHostAttribute(ctx, bizID, rule.AttributeID)
+	attribute, ccErr := p.getHostAttribute(ctx, bizID, rule.AttributeID)
+	if ccErr != nil {
+		blog.Errorf("UpdateHostApplyRule failed, getHostAttribute failed, bizID: %d, attributeID: %d, err: %s, rid: %s", bizID, rule.AttributeID, ccErr.Error(), ctx.ReqID)
+		return rule, ccErr
+	}
 	rawError := attribute.Validate(ctx.Context, option.PropertyValue, common.BKPropertyValueField)
 	if rawError.ErrCode != 0 {
 		ccErr := rawError.ToCCError(ctx.Error)
-		blog.Errorf("UpdateHostApplyRule failed, validate host attribute value failed,  attribute: %+v, value: %+v, err: %+v, rid: %s", attribute, option.PropertyValue, ccErr, ctx.ReqID)
+		blog.Errorf("UpdateHostApplyRule failed, validate host attribute value failed, attribute: %+v, value: %+v, err: %+v, rid: %s", attribute, option.PropertyValue, ccErr, ctx.ReqID)
 		return rule, ccErr
 	}
 
@@ -381,16 +385,16 @@ func (p *hostApplyRule) SearchRuleRelatedModules(ctx core.ContextParams, bizID i
 
 	for _, rule := range rules {
 		attribute, exist := attributeMap[rule.AttributeID]
-		if exist == false {
+		if !exist {
 			continue
 		}
 		if matchRule(ctx, rule, attribute, option) {
 			module, exist := moduleMap[rule.ModuleID]
-			if exist == false {
+			if !exist {
 				continue
 			}
 			// avoid repeat
-			if _, exist := resultModuleMap[module.ModuleID]; exist == true {
+			if _, exist := resultModuleMap[module.ModuleID]; exist {
 				continue
 			}
 			resultModules = append(resultModules, module)
@@ -408,7 +412,7 @@ func matchModule(ctx context.Context, module metadata.Module, option metadata.Se
 			return false
 		}
 		strValue, ok := r.Value.(string)
-		if ok == false {
+		if !ok {
 			return false
 		}
 		if r.Operator == querybuilder.OperatorContains {
@@ -437,7 +441,7 @@ func matchRule(ctx context.Context, rule metadata.HostApplyRule, attribute metad
 			return true
 		}
 		strValue, ok := r.Value.(string)
-		if ok == false {
+		if !ok {
 			return false
 		}
 		if r.Operator == querybuilder.OperatorContains {
