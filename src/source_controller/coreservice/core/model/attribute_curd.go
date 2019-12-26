@@ -509,7 +509,7 @@ func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute meta
 	opt[common.BkSupplierAccount] = attribute.OwnerID
 	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Count(ctx)
 	if err != nil {
-		blog.Error("get attr index failed, err: %v", err)
+		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", ctx.ReqID, err)
 		return 0, err
 	}
 	if count <= 0 {
@@ -519,7 +519,7 @@ func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute meta
 	attr := metadata.Attribute{}
 	sortCond := "-bk_property_index"
 	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).One(ctx, &attr); err != nil {
-		blog.Error("get attr index failed, err: %v", err)
+		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", ctx.ReqID, err)
 		return 0, err
 	}
 
