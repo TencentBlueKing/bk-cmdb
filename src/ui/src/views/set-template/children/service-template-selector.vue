@@ -1,6 +1,6 @@
 <template>
     <section>
-        <bk-input v-if="templates.length"
+        <bk-input v-if="allTemplates.length"
             class="search"
             type="text"
             :placeholder="$t('请输入模板名称搜索')"
@@ -172,6 +172,11 @@
                 background-color: #fff;
                 border-radius: 50%;
                 border: 1px solid #979BA5;
+            }
+            .template-name {
+                display: block;
+                max-width: calc(100% - 18px);
+                @include ellipsis;
             }
         }
     }

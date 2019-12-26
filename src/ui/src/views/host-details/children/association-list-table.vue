@@ -174,7 +174,7 @@
                 const header = headerProperties.map(property => {
                     return {
                         id: property.bk_property_id,
-                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        name: this.$tools.getHeaderPropertyName(property),
                         property
                     }
                 })
