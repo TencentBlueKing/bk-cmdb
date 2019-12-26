@@ -227,6 +227,7 @@
                 const inst = row.expect_host
                 // 云区域数据
                 row.cloud_area['bk_inst_name'] = row.cloud_area['bk_cloud_name']
+                row.cloud_area['bk_inst_id'] = row.cloud_area['bk_cloud_id']
                 inst['bk_cloud_id'] = [row.cloud_area]
                 try {
                     const propertyGroups = await this.getPropertyGroups()
