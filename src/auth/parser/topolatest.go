@@ -301,6 +301,8 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 
 		filter := mapstr.MapStr{
@@ -337,6 +339,8 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 
 		if len(ps.RequestCtx.Elements) != 5 {
@@ -1121,6 +1125,8 @@ func (ps *parseStream) objectLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("create object, but get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1158,6 +1164,8 @@ func (ps *parseStream) objectLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(model.Metadata)
 		if err != nil {
 			blog.Warnf("delete object, but get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1215,6 +1223,8 @@ func (ps *parseStream) objectLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1233,6 +1243,8 @@ func (ps *parseStream) objectLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1251,6 +1263,8 @@ func (ps *parseStream) objectLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find object topology graphic, but get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1306,6 +1320,8 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1401,6 +1417,8 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1418,6 +1436,8 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1458,6 +1478,8 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		filter := mapstr.MapStr{
 			common.BKObjIDField: gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value(),
@@ -1500,6 +1522,8 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1526,6 +1550,8 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			bizID, err := metadata.BizIDFromMetadata(group.Metadata)
 			if err != nil {
 				blog.Warnf("get business id in metadata failed, err: %v", err)
+				ps.err = err
+				return ps
 			}
 
 			filter := mapstr.MapStr{
@@ -1572,6 +1598,8 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(groups[0].Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: groups[0].ObjectID})
@@ -1603,6 +1631,8 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1644,6 +1674,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: modelEn})
@@ -1693,6 +1725,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(attr[0].Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1736,6 +1770,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(attr[0].Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1779,6 +1815,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(attr[0].Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1802,6 +1840,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.V(5).Infof("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 
 		modelCond := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
@@ -1854,6 +1894,8 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1872,6 +1914,8 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1891,6 +1935,8 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1969,6 +2015,8 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find business instance, but get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
