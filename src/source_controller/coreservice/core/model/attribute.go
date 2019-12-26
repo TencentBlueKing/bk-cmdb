@@ -178,9 +178,8 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateAttrIndexData, error) {
+func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (result *metadata.UpdateAttrIndexData, err error) {
 
-	result := &metadata.UpdateAttrIndexData{}
 	// attributes exist check
 	cond := inputParam.Condition
 	cond = util.SetModOwner(cond, ctx.SupplierAccount)
@@ -241,7 +240,6 @@ func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objI
 	}
 
 	for _, attr := range resultAttrs {
-		blog.Debug(attr.PropertyName, attr.PropertyIndex)
 		opt := mapstr.MapStr{}
 		opt["id"] = attr.ID
 		data := mapstr.MapStr{common.BKPropertyIndexField: attr.PropertyIndex + 1}
