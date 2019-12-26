@@ -29,9 +29,16 @@ func (m *modelAttribute) isExists(ctx core.ContextParams, objID, propertyID stri
 		common.BKObjIDField:               objID,
 	}
 
-	bizCondition := metadata.PublicAndBizCondition(meta)
-	if _, ok := bizCondition[common.BKDBOR]; ok == false {
-		filter[common.BKDBOR] = bizCondition[common.BKDBOR]
+	bizID, err := meta.ParseBizID()
+	if err != nil {
+		blog.Errorf("request(%s): database findOne operation is failed, parse biz id failed, error info is %s", ctx.ReqID, err.Error())
+		return oneAttribute, false, err
+	}
+	if bizID != 0 {
+		oc := metadata.NewPublicOrBizConditionByBizID(bizID)
+		if _, ok := oc[common.BKDBOR]; ok == true {
+			filter[common.BKDBOR] = oc[common.BKDBOR]
+		}
 	}
 
 	condMap := util.SetModOwner(filter, ctx.SupplierAccount)
