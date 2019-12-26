@@ -218,6 +218,9 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 }
 
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error) {
+	limits := cond.GetLimit()
+	sort := cond.GetSort()
+	start := cond.GetStart()
 	fCond := cond.ToMapStr()
 	if nil != params.MetaData {
 		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
@@ -226,7 +229,13 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
+	opt := &metadata.QueryCondition{
+		Condition: fCond,
+		Limit:     metadata.SearchLimit{Limit: limits, Offset: start},
+		SortArr:   metadata.NewSearchSortParse().String(sort).ToSearchSortArr(),
+	}
+
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, opt)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

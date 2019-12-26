@@ -344,16 +344,18 @@ func (m *modelAttribute) SearchModelAttributesByCondition(ctx core.ContextParams
 		Info: []metadata.Attribute{},
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
+	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), parse condition  error [%#v]", ctx.ReqID, inputParam, err)
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
-	attrArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	cond.Element(&mongo.In{Key: metadata.AttributeFieldSupplierAccount, Val: attrArr})
-	attrResult, err := m.search(ctx, cond)
+	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
+	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
+	inputParam.Condition = condition.ToMapStr()
+
+	attrResult, err := m.searchWithSort(ctx, inputParam)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), error info is %s", ctx.ReqID, cond, err.Error())
+		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), error info is %s", ctx.ReqID, inputParam, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 
