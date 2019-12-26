@@ -43,13 +43,27 @@ func (s *Service) CreateObjectAttribute(params types.ContextParams, pathParams, 
 func (s *Service) SearchObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	data.Remove(metadata.PageName)
+	if data.Exists(metadata.PageName) {
+		page, err := data.MapStr(metadata.PageName)
+		if err != nil {
+			blog.Errorf("SearchObjectAttribute failed, page info convert to mapstr failed, page: %v, err: %v, rid: %s", data[metadata.PageName], err, params.ReqID)
+			return nil, err
+		}
+		if err := cond.SetPage(page); err != nil {
+			blog.Errorf("SearchObjectAttribute, cond set page failed, page: %v, err: %v, rid: %v", page, err, params.ReqID)
+			return nil, err
+		}
+		data.Remove(metadata.PageName)
+	}
+
 	if err := cond.Parse(data); nil != err {
 		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
+
 	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
 	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
+
 	return s.Core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
 }
 

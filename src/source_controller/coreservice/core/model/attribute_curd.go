@@ -224,9 +224,24 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 }
 
 func (m *modelAttribute) search(ctx core.ContextParams, cond universalsql.Condition) (resultAttrs []metadata.Attribute, err error) {
-
 	resultAttrs = []metadata.Attribute{}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &resultAttrs)
+	return resultAttrs, err
+}
+
+func (m *modelAttribute) searchWithSort(ctx core.ContextParams, cond metadata.QueryCondition) (resultAttrs []metadata.Attribute, err error) {
+	resultAttrs = []metadata.Attribute{}
+
+	instHandler := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.Condition)
+	for _, sort := range cond.SortArr {
+		field := sort.Field
+		if sort.IsDsc {
+			field = "-" + field
+		}
+		instHandler = instHandler.Sort(field)
+	}
+	err = instHandler.Start(uint64(cond.Limit.Offset)).Limit(uint64(cond.Limit.Limit)).All(ctx, &resultAttrs)
+
 	return resultAttrs, err
 }
 
