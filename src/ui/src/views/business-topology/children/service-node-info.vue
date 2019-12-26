@@ -55,6 +55,7 @@
         </div>
         <cmdb-details class="topology-details"
             v-if="type === 'details'"
+            :class="{ pt10: !isSetNode && !isModuleNode }"
             :properties="properties"
             :property-groups="propertyGroups"
             :inst="instance"
@@ -763,7 +764,7 @@
         }
     }
     .topology-details {
-        padding: 0 !important;
+        padding-left: 0 !important;
         /deep/ {
             .property-list {
                 margin-left: 36px;

@@ -17,8 +17,8 @@
         </cmdb-tips>
         <property-confirm-table
             ref="confirmTable"
+            max-height="auto"
             :list="list"
-            :max-height="600"
             :render-icon="true"
             :show-operation="!!conflictList.length">
         </property-confirm-table>

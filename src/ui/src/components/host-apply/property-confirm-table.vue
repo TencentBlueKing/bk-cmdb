@@ -86,7 +86,7 @@
                 type: Number
             },
             maxHeight: {
-                type: Number,
+                type: [Number, String],
                 default: 0
             },
             renderIcon: {
