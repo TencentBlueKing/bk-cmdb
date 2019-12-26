@@ -186,7 +186,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objI
 	exists, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).Count(ctx)
 	if nil != err {
 		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, condition: %v, err: %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return result, err
+		return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	if exists <= 0 {
 		blog.Errorf("UpdateModelAttributesIndex failed, attributes not exist, condition: %v", inputParam.Condition)
@@ -207,7 +207,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objI
 	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condition).Count(ctx)
 	if nil != err {
 		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
-		return result, err
+		return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	if count <= 0 {
 		data := mapstr.MapStr{
@@ -217,7 +217,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objI
 		err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond, data)
 		if nil != err {
 			blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
-			return result, err
+			return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 		}
 
 		result, err := m.buildUpdateAttrIndexReturn(ctx, objID, propertyGroupStr)
@@ -236,7 +236,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objI
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condition).All(ctx, &resultAttrs)
 	if nil != err {
 		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
-		return result, err
+		return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	for _, attr := range resultAttrs {
@@ -246,12 +246,11 @@ func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objI
 		err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, opt, data)
 		if nil != err {
 			blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
-			return result, err
+			return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 		}
 	}
 
 	// update bk_property_index now
-	condition.Remove(common.BKPropertyIndexField)
 	data := mapstr.MapStr{
 		common.BKPropertyIndexField: inputParam.Data[common.BKPropertyIndexField],
 		common.BKPropertyGroupField: inputParam.Data[common.BKPropertyGroupField],
@@ -259,7 +258,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objI
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond, data)
 	if nil != err {
 		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
-		return result, err
+		return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	result, err = m.buildUpdateAttrIndexReturn(ctx, objID, propertyGroupStr)
