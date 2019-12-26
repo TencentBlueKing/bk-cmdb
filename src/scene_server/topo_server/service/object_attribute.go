@@ -155,14 +155,7 @@ func (s *Service) ListHostModelAttribute(params types.ContextParams, pathParams,
 		if item == nil {
 			continue
 		}
-		hostApplyEnabled := false
-		enabled, exist := metadata.HostApplyFieldMap[item.PropertyID]
-		if exist {
-			hostApplyEnabled = enabled
-		}
-		if item.IsPre == false {
-			hostApplyEnabled = true
-		}
+		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(item.PropertyID)
 		hostAttribute := metadata.HostObjAttDes{
 			ObjAttDes:        *item,
 			HostApplyEnabled: hostApplyEnabled,

@@ -212,6 +212,9 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			blog.Infof("generateOneHostApplyPlan attribute id filed not exist, attributeID: %s, rid: %s", attributeID, rid)
 			continue
 		}
+		if metadata.CheckAllowHostApplyOnField(attribute.PropertyID) == false {
+			continue
+		}
 		propertyIDField := attribute.PropertyID
 		originalValue, ok := host[propertyIDField]
 		if !ok {
