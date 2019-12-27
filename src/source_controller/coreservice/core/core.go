@@ -14,12 +14,12 @@ package core
 
 import (
 	"context"
-    "net/http"
+	"net/http"
 
-    "configcenter/src/common/errors"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    "configcenter/src/common/selector"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/selector"
 )
 
 // ModelAttributeGroup model attribute group methods definitions
@@ -50,6 +50,7 @@ type ModelAttribute interface {
 	CreateModelAttributes(ctx ContextParams, objID string, inputParam metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error)
 	SetModelAttributes(ctx ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult, error)
 	UpdateModelAttributes(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	UpdateModelAttributesIndex(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateAttrIndexData, error)
 	UpdateModelAttributesByCondition(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModelAttributes(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	SearchModelAttributes(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error)
@@ -199,6 +200,7 @@ type Core interface {
 	ProcessOperation() ProcessOperation
 	LabelOperation() LabelOperation
 	SetTemplateOperation() SetTemplateOperation
+	SystemOperation() SystemOperation
 }
 
 // ProcessOperation methods
@@ -267,6 +269,10 @@ type SetTemplateOperation interface {
 	DeleteSetTemplateSyncStatus(ctx ContextParams, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder
 }
 
+type SystemOperation interface {
+	GetSystemUserConfig(ctx ContextParams) (map[string]interface{}, errors.CCErrorCoder)
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -278,13 +284,14 @@ type core struct {
 	operation       StatisticOperation
 	process         ProcessOperation
 	label           LabelOperation
+	sys             SystemOperation
 	setTemplate     SetTemplateOperation
 }
 
 // New create core
 func New(model ModelOperation, instance InstanceOperation, association AssociationOperation,
 	dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation,
-	audit AuditOperation, process ProcessOperation, label LabelOperation, setTemplate SetTemplateOperation, operation StatisticOperation) Core {
+	audit AuditOperation, process ProcessOperation, label LabelOperation, sys SystemOperation, setTemplate SetTemplateOperation, operation StatisticOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -296,6 +303,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		operation:       operation,
 		process:         process,
 		label:           label,
+		sys:             sys,
 		setTemplate:     setTemplate,
 	}
 }
@@ -342,4 +350,8 @@ func (m *core) LabelOperation() LabelOperation {
 
 func (m *core) SetTemplateOperation() SetTemplateOperation {
 	return m.setTemplate
+}
+
+func (m *core) SystemOperation() SystemOperation {
+	return m.sys
 }

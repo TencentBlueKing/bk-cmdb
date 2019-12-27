@@ -285,6 +285,9 @@ const (
 
 	// 特殊接口，给蓝鲸业务使用
 	hostInstallPattern = "/api/v3/host/install/bk"
+
+	// cc system user config
+	systemUserConfig = "/api/v3/system/config/user_config/blueking_modify"
 )
 
 var (
@@ -779,6 +782,18 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.InstallBK,
 					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(systemUserConfig, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.SystemConfig,
+					Action: meta.FindMany,
 				},
 			},
 		}
