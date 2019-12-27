@@ -46,4 +46,4 @@ RUN cd /data/src/configcenter/src/bin/build/*/ && ls -al . &&     python init.py
 RUN cd /data/src/configcenter/src/ && export GOPATH=/data/ && make ui
 
 # copy to bin directory
-RUN mkdir -p /data/bin/ && mv /data/src/configcenter/src/bin/build/* /data/bin/cmdb && ls -al /data/bin/cmdb/
+RUN mkdir -p /data/bin/ && mv /data/src/configcenter/src/bin/build/* /data/bin/bk-cmdb && ls -al /data/bin/bk-cmdb/
