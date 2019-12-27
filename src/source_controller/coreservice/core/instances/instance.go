@@ -166,12 +166,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		// 设置实例变更前数据
 		eh.SetPreData(instID, origin)
 	}
-
-	if nil != err {
-		blog.Errorf("update model instance validate error :%v ,rid:%s", err, ctx.ReqID)
-		return &metadata.UpdatedCount{}, err
-	}
-	cnt, err := m.update(ctx, objID, inputParam.Data, inputParam.Condition)
+	err = m.update(ctx, objID, inputParam.Data, inputParam.Condition)
 	if err != nil {
 		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, condition:%s, rid:%s", objID, inputParam.Condition, ctx.ReqID)
 		return nil, err
@@ -182,7 +177,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		return nil, err
 	}
 
-	return &metadata.UpdatedCount{Count: cnt}, nil
+	return &metadata.UpdatedCount{Count: uint64(len(origins))}, nil
 }
 
 func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
