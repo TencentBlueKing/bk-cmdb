@@ -25,7 +25,7 @@
                         <span :class="['node-checkbox fr', { 'is-checked': checked.includes(node) }]"
                             v-if="moduleType === 'idle' && data.bk_obj_id === 'module'">
                         </span>
-                        <span class="node-name">{{node.name}}</span>
+                        <span class="node-name" :title="node.name">{{node.name}}</span>
                     </template>
                 </bk-big-tree>
             </div>
@@ -311,6 +311,7 @@
             flex: 1;
         }
         .wrapper-left {
+            max-width: 380px;
             border-right: 1px solid $borderColor;
             .title {
                 margin-top: 15px;

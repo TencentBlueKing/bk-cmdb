@@ -81,29 +81,6 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
 	}
 
-	header := ctx.Kit.Header
-	tx, e := ps.TransactionClient.Start(context.Background())
-	if e != nil {
-		blog.Errorf("createServiceInstances failed, start transaction failed, err: %+v, rid: %s", e, rid)
-		return nil, ctx.Kit.CCError.CCError(common.CCErrCommStartTransactionFailed)
-	}
-	header = tx.TxnInfo().IntoHeader(header)
-	ctx.Kit.Header = header
-
-	defer func() {
-		if err != nil {
-			if txErr := tx.Abort(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("createServiceInstances failed, abort translation failed, err: %v, rid: %s", txErr, rid)
-				return
-			}
-		} else {
-			if txErr := tx.Commit(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("createServiceInstances failed, commit transaction failed, err: %v, rid: %s", txErr, rid)
-				return
-			}
-		}
-	}()
-
 	serviceInstanceIDs := make([]int64, 0)
 	for _, inst := range input.Instances {
 		instance := &metadata.ServiceInstance{
@@ -249,6 +226,10 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	for _, instance := range instances.Info {
 		item, err := mapstr.Struct2Map(instance)
 		if err != nil {
+			blog.ErrorJSON("SearchServiceInstancesInModuleWeb failed, Struct2Map failed, serviceInstance: %s, err: %s, rid: %s", instance, err.Error(), ctx.Kit.Rid)
+			ccErr := ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed)
+			ctx.RespAutoError(ccErr)
+			return
 		}
 		item["process_count"] = 0
 		if count, ok := processCountMap[instance.ID]; ok == true {
@@ -881,6 +862,10 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 	if err != nil {
 		blog.ErrorJSON("syncServiceInstanceByTemplate failed, ListServiceInstance failed, option: %s, err: %s, rid: %s", serviceInstanceOption, err.Error(), rid)
 		return err
+	}
+	if serviceInstanceResult.Count == 0 {
+		blog.V(3).Infof("syncServiceInstanceByTemplate success, no service instance found, option: %+v, rid: %s", serviceInstanceOption, rid)
+		return nil
 	}
 	serviceInstanceIDs := make([]int64, 0)
 	for _, serviceInstance := range serviceInstanceResult.Info {

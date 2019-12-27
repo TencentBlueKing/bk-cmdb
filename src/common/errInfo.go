@@ -201,20 +201,20 @@ const (
 	CCErrCommValExceedMaxFailed          = 1199073
 	CCErrCommGlobalCCErrorNotInitialized = 1199074
 
-	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
-	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
-	
-	// CCErrTopoModuleNotFoundError module [%s] does not exist in the business topology
-    CCErrCommTopoModuleNotFoundError = 1199078
-    // CCErrBizNotFoundError business [%s] does not exist
-    CCErrCommBizNotFoundError = 1199079
-    CCErrParseAttrOptionListFailed = 1199080
-    // one argument: maxValue
-    CCErrExceedMaxOperationRecordsAtOnce = 1199081
+	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI = 1199075
+	CCErrTopoUpdateBuiltInCloudForbidden                   = 1199076
 
-	CCErrCommListAuthorizedResourceFromIAMFailed = 1199082
-    CCErrCommModifyFieldForbidden                            = 1199083
-    CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
+	// CCErrTopoModuleNotFoundError module [%s] does not exist in the business topology
+	CCErrCommTopoModuleNotFoundError = 1199078
+	// CCErrBizNotFoundError business [%s] does not exist
+	CCErrCommBizNotFoundError      = 1199079
+	CCErrParseAttrOptionListFailed = 1199080
+	// one argument: maxValue
+	CCErrExceedMaxOperationRecordsAtOnce = 1199081
+
+	CCErrCommListAuthorizedResourceFromIAMFailed             = 1199082
+	CCErrCommModifyFieldForbidden                            = 1199083
+	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -449,6 +449,8 @@ const (
 	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
 	CCErrorTopoModuleNameDuplicated                             = 1101099
 
+	CCErrorTopoPathParamPaserFailed                = 1101100
+	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group

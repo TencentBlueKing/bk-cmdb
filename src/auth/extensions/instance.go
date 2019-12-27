@@ -152,13 +152,13 @@ func (am *AuthManager) collectObjectsByInstances(ctx context.Context, header htt
 	instanceIDObjectMap := map[int64]metadata.Object{}
 	for _, instance := range instances {
 		objectMap, exist := bizIDObjID2ObjMap[instance.BizID]
-		if exist == false {
+		if !exist {
 			blog.Errorf("extractObjectIDFromInstances failed, instance's model not found, biz id %d not in bizIDObjID2ObjMap %+v, rid: %s", instance.BizID, bizIDObjID2ObjMap, rid)
 			return nil, fmt.Errorf("get model by instance failed, unexpected err, business id:%d related models not found", instance.BizID)
 		}
 
 		object, exist := objectMap[instance.ObjectID]
-		if exist == false {
+		if !exist {
 			blog.Errorf("extractObjectIDFromInstances failed, instance's model not found, instances: %+v, objectMap: %+v, rid: %s", instance, objectMap, rid)
 			return nil, fmt.Errorf("get model by instance failed, not found")
 		}
@@ -192,7 +192,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 	objectIDMap := map[int64]metadata.Object{}
 	for _, instance := range instances {
 		object, exist := instanceIDObjectMap[instance.InstanceID]
-		if exist == false {
+		if !exist {
 			blog.Errorf("MakeResourcesByInstances failed, unexpected err, instance related object not found, instance: %+v, instanceIDObjectMap: %+v, rid: %s", instance, instanceIDObjectMap, rid)
 			return nil, errors.New("unexpected err, get instance related model failed, not found")
 		}
@@ -256,7 +256,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 }
 
 func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.Header, action meta.Action, objID string, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -287,7 +287,7 @@ func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.He
 func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Header, action meta.Action, instances ...InstanceSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -309,7 +309,7 @@ func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Hea
 func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -330,7 +330,7 @@ func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header htt
 }
 
 func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -355,7 +355,7 @@ func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header 
 }
 
 func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -380,7 +380,7 @@ func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, head
 }
 
 func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 	switch objectID {
@@ -404,7 +404,7 @@ func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 	switch objectID {
@@ -430,7 +430,7 @@ func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.He
 func (am *AuthManager) registerInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -447,7 +447,7 @@ func (am *AuthManager) registerInstances(ctx context.Context, header http.Header
 func (am *AuthManager) DeregisterInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
