@@ -466,6 +466,12 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 		},
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
+	if err != nil {
+		blog.Errorf("DeleteProcessInstance failed, ListProcessInstanceRelation failed, option: %+v, err: %+v, rid: %s", listOption, err, ctx.Kit.Rid)
+		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %+v, but list instance relation failed.", input.ProcessInstanceIDs)
+		return
+	}
+
 	templateProcessIDs := make([]string, 0)
 	serviceInstanceIDs := make([]int64, 0)
 	for _, relation := range relations.Info {

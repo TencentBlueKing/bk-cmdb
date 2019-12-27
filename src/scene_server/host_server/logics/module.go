@@ -79,7 +79,8 @@ func (lgc *Logics) GetNormalModuleByModuleID(ctx context.Context, appID, moduleI
 func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
 	if err := parse.ParseCommonParams(cond, condc); err != nil {
-		blog.Warnf("ParseCommonParams failed, err: %+v, rid: %s", err, lgc.rid)
+		blog.Errorf("ParseCommonParams failed, err: %+v, rid: %s", err, lgc.rid)
+		return nil, lgc.ccErr.Errorf(common.CCErrCommUtilHandleFail, "parse condition", err.Error())
 	}
 
 	query := &metadata.QueryCondition{

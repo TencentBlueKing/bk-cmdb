@@ -229,6 +229,19 @@ func (m *model) UpdateModelAttrs(ctx context.Context, h http.Header, objID strin
 	return
 }
 
+func (m *model) UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (resp *metadata.UpdatedAttrIndexResult, err error) {
+	resp = new(metadata.UpdatedAttrIndexResult)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef("/update/model/%s/attributes/index", objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (m *model) UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
 	resp = new(metadata.UpdatedOptionResult)
 	subPath := fmt.Sprintf("/update/model/attributes")

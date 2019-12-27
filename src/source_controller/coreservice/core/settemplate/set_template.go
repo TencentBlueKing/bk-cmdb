@@ -217,7 +217,7 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 		}
 		addRelations := make([]metadata.SetServiceTemplateRelation, 0)
 		for _, serviceTemplateID := range serviceTemplateIDs {
-			if _, exist := existIDMap[serviceTemplateID]; exist == false {
+			if _, exist := existIDMap[serviceTemplateID]; !exist {
 				addRelations = append(addRelations, metadata.SetServiceTemplateRelation{
 					BizID:             setTemplate.BizID,
 					SetTemplateID:     setTemplate.ID,
@@ -240,10 +240,11 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 		}
 		removeIDs := make([]int64, 0)
 		for _, item := range relations {
-			if _, exist := targetIDMap[item.ServiceTemplateID]; exist == false {
+			if _, exist := targetIDMap[item.ServiceTemplateID]; !exist {
 				removeIDs = append(removeIDs, item.ServiceTemplateID)
 			}
 		}
+		// TODO add reference check
 		if len(removeIDs) > 0 {
 			removeFilter := map[string]interface{}{
 				common.BKSetTemplateIDField: setTemplate.ID,

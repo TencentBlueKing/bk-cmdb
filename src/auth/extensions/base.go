@@ -90,7 +90,7 @@ func (am *AuthManager) authorize(ctx context.Context, header http.Header, busine
 	if err != nil {
 		return fmt.Errorf("authorize failed, err: %+v", err)
 	}
-	if decision.Authorized == false {
+	if !decision.Authorized {
 		return auth.NoAuthorizeError
 	}
 
@@ -108,7 +108,7 @@ func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, r
 	}
 
 	for _, decision := range decisions {
-		if decision.Authorized == false {
+		if !decision.Authorized {
 			return auth.NoAuthorizeError
 		}
 	}
@@ -146,7 +146,7 @@ func extractBusinessID(m metadata.Label) (int64, error) {
 }
 
 func (am *AuthManager) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 	return am.Authorize.DeregisterResource(ctx, rs...)

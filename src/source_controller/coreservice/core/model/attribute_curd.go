@@ -63,6 +63,12 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 		return id, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
+	index, err := m.GetAttrLastIndex(ctx, attribute)
+	if err != nil {
+		return id, err
+	}
+
+	attribute.PropertyIndex = index
 	attribute.ID = int64(id)
 	attribute.OwnerID = ctx.SupplierAccount
 
@@ -218,9 +224,24 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 }
 
 func (m *modelAttribute) search(ctx core.ContextParams, cond universalsql.Condition) (resultAttrs []metadata.Attribute, err error) {
-
 	resultAttrs = []metadata.Attribute{}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &resultAttrs)
+	return resultAttrs, err
+}
+
+func (m *modelAttribute) searchWithSort(ctx core.ContextParams, cond metadata.QueryCondition) (resultAttrs []metadata.Attribute, err error) {
+	resultAttrs = []metadata.Attribute{}
+
+	instHandler := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.Condition)
+	for _, sort := range cond.SortArr {
+		field := sort.Field
+		if sort.IsDsc {
+			field = "-" + field
+		}
+		instHandler = instHandler.Sort(field)
+	}
+	err = instHandler.Start(uint64(cond.Limit.Offset)).Limit(uint64(cond.Limit.Limit)).All(ctx, &resultAttrs)
+
 	return resultAttrs, err
 }
 
@@ -445,4 +466,62 @@ func (m *modelAttribute) getLangObjID(ctx core.ContextParams, objID string) stri
 		langObjID = objID
 	}
 	return langObjID
+}
+
+func (m *modelAttribute) buildUpdateAttrIndexReturn(ctx core.ContextParams, objID, propertyGroup string) (*metadata.UpdateAttrIndexData, error) {
+	cond := mapstr.MapStr{
+		common.BKObjIDField:         objID,
+		common.BKPropertyGroupField: propertyGroup,
+	}
+	attrs := []metadata.Attribute{}
+	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).All(ctx, &attrs)
+	if nil != err {
+		blog.Errorf("buildUpdateIndexReturn failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return nil, err
+	}
+
+	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).Count(ctx)
+	if nil != err {
+		blog.Errorf("buildUpdateIndexReturn failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return nil, err
+	}
+	info := make([]*metadata.UpdateAttributeIndex, 0)
+	for _, attr := range attrs {
+		idIndex := &metadata.UpdateAttributeIndex{
+			Id:    attr.ID,
+			Index: attr.PropertyIndex,
+		}
+		info = append(info, idIndex)
+	}
+	result := &metadata.UpdateAttrIndexData{
+		Info:  info,
+		Count: count,
+	}
+
+	return result, nil
+}
+
+func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute metadata.Attribute) (int64, error) {
+
+	opt := make(map[string]interface{})
+	opt[common.BKObjIDField] = attribute.ObjectID
+	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
+	opt[common.BkSupplierAccount] = attribute.OwnerID
+	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Count(ctx)
+	if err != nil {
+		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", ctx.ReqID, err)
+		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	}
+	if count <= 0 {
+		return 0, nil
+	}
+
+	attr := metadata.Attribute{}
+	sortCond := "-bk_property_index"
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).One(ctx, &attr); err != nil {
+		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", ctx.ReqID, err)
+		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	return attr.PropertyIndex + 1, nil
 }

@@ -118,7 +118,7 @@ func (am *AuthManager) extractBusinessIDFromBusinesses(businesses ...BusinessSim
 }
 
 func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action, businesses ...BusinessSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -135,7 +135,7 @@ func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -172,14 +172,14 @@ func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, hea
 		return nil, errors.New("get business detail failed")
 	}
 	p.ScopeName = businesses[0].BKAppNameField
-    p.ResourceType = p.Resources[0][0].ResourceType
-    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
 }
 
 func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -200,7 +200,7 @@ func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -216,7 +216,7 @@ func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header 
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -232,7 +232,7 @@ func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, head
 }
 
 func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -248,7 +248,7 @@ func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -263,7 +263,7 @@ func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Heade
 }
 
 func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -279,7 +279,7 @@ func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -294,7 +294,7 @@ func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -317,7 +317,7 @@ func (am *AuthManager) GenBusinessNoPermissionResp(ctx context.Context, header h
 	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
 	p.ActionID = string(authcenter.Get)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
-    p.ResourceType = string(authcenter.SysBusinessInstance)
+	p.ResourceType = string(authcenter.SysBusinessInstance)
 	p.ResourceTypeName = authcenter.ResourceTypeIDMap[authcenter.SysBusinessInstance]
 	p.Resources = [][]metadata.Resource{
 		{{

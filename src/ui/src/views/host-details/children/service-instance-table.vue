@@ -108,7 +108,7 @@
                 header: [],
                 list: [],
                 pathToolTips: {
-                    content: this.$t('跳转服务拓扑'),
+                    content: this.$t('去业务拓扑添加'),
                     placement: 'top'
                 }
             }
@@ -216,7 +216,7 @@
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
-                        name: property.unit ? `${property.bk_property_name}(${property.unit})` : property.bk_property_name,
+                        name: this.$tools.getHeaderPropertyName(property),
                         property
                     }
                 })
