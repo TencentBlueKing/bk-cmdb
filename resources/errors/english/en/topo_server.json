@@ -121,5 +121,6 @@
     "1101099": "instance of a mainline model, which is not allowed to be operated by excel import",
 
 	"1101100": "parse url params failed",
+	"1101101": "Query model attributes failed, please refresh the page",
     "": "" 
 }
