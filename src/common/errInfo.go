@@ -449,7 +449,8 @@ const (
 	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
 	CCErrorTopoModuleNameDuplicated                             = 1101099
 
-	CCErrorTopoPathParamPaserFailed = 1101100
+	CCErrorTopoPathParamPaserFailed                = 1101100
+	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
