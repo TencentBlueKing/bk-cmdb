@@ -1390,8 +1390,25 @@ func (ps *ProcServer) DeleteServiceInstancePreview(ctx *rest.Contexts) {
 		})
 	}
 
+	finalModules := make([]int64, 0)
+	for _, item := range finalHostModules {
+		finalModules = append(finalModules, item.ModuleIDs...)
+	}
+	listRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: finalModules,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	ruleResult, err := ps.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, listRuleOption)
+	if err != nil {
+		blog.Errorf("generate delete preview failed, ListHostApplyRule failed, option: %+v, err: %+v, rid: %s", listRuleOption, err, ctx.Kit.Rid)
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "generate delete preview failed, ListHostApplyRule failed, option: %+v", listRuleOption)
+		return
+	}
 	hostApplyPlanOption := metadata.HostApplyPlanOption{
 		HostModules: finalHostModules,
+		Rules:       ruleResult.Info,
 	}
 	applyPlan, err := ps.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID, hostApplyPlanOption)
 	if err != nil {
