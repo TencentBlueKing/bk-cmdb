@@ -36,7 +36,19 @@ func (s *Service) CreateObjectAttribute(params types.ContextParams, pathParams, 
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
-	return attr.ToMapStr()
+	cond := condition.CreateCondition()
+	cond.Field("id").Eq(attribute.ID)
+	attrInfo, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
+	if err != nil {
+		blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
+	}
+	if len(attrInfo) <= 0 {
+		blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
+	}
+
+	return attrInfo[0], nil
 }
 
 // SearchObjectAttribute search the object attributes
