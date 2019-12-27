@@ -65,15 +65,16 @@
                         :name="option.name">
                     </bk-option>
                 </bk-select>
-                <cmdb-form-enum class="filter-value fl"
-                    v-if="filter.type === 'enum'"
+                <component class="filter-value fl"
+                    v-if="['enum', 'list'].includes(filter.type)"
+                    :is="`cmdb-form-${filter.type}`"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :auto-select="false"
-                    font-size="medium"
                     v-model="filter.value"
+                    font-size="medium"
                     @on-selected="getTableData(true)">
-                </cmdb-form-enum>
+                </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
@@ -226,14 +227,6 @@
     import cmdbRelation from '@/components/relation'
     import cmdbImport from '@/components/import/import'
     export default {
-        filters: {
-            addUnit (value, unit) {
-                if (value === '--' || !unit) {
-                    return value
-                }
-                return value + unit
-            }
-        },
         components: {
             cmdbColumnsConfig,
             cmdbAuditHistory,
@@ -373,13 +366,6 @@
             setDynamicBreadcrumbs () {
                 this.$store.commit('setTitle', this.model.bk_obj_name)
             },
-            getPropertyUnit (propertyId) {
-                const property = this.properties.find(property => property.bk_property_id === propertyId)
-                if (!property) {
-                    return ''
-                }
-                return property.unit || ''
-            },
             async reload () {
                 try {
                     this.setRencentlyData()
@@ -457,10 +443,9 @@
             },
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {
-                    const name = property.bk_property_name
                     return {
                         id: property.bk_property_id,
-                        name: property.unit ? `${name}(${property.unit})` : name,
+                        name: this.$tools.getHeaderPropertyName(property),
                         property
                     }
                 })

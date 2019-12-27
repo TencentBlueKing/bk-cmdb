@@ -15,15 +15,15 @@
             <bk-table-column type="selection" width="50"></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 :key="column.bk_property_id"
-                :label="column.bk_property_name"
+                :label="$tools.getHeaderPropertyName(column)"
                 :sortable="getColumnSortable(column)"
                 :prop="column.bk_property_id"
                 :width="column.bk_property_id === 'bk_host_innerip' ? 130 : 'auto'"
                 :fixed="column.bk_property_id === 'bk_host_innerip'"
                 :class-name="column.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <div slot-scope="{ row }"
-                    :title="row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) | unit(column.unit)">
-                    {{ row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) | unit(column.unit) }}
+                    :title="row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column)">
+                    {{ row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) }}
                 </div>
             </bk-table-column>
         </bk-table>

@@ -37,6 +37,7 @@ type AttributeOperationInterface interface {
 	FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error)
 	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error)
 	UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error
+	UpdateObjectAttributeIndex(params types.ContextParams, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error)
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface, grp GroupOperationInterface)
 }
@@ -217,6 +218,9 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 }
 
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error) {
+	limits := cond.GetLimit()
+	sort := cond.GetSort()
+	start := cond.GetStart()
 	fCond := cond.ToMapStr()
 	if nil != params.MetaData {
 		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
@@ -225,7 +229,13 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
+	opt := &metadata.QueryCondition{
+		Condition: fCond,
+		Limit:     metadata.SearchLimit{Limit: limits, Offset: start},
+		SortArr:   metadata.NewSearchSortParse().String(sort).ToSearchSortArr(),
+	}
+
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, opt)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -283,4 +293,24 @@ func (a *attribute) isMainlineModel(head http.Header, modelID string) (bool, err
 	}
 
 	return false, nil
+}
+
+func (a *attribute) UpdateObjectAttributeIndex(params types.ContextParams, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error) {
+	input := metadata.UpdateOption{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),
+		Data:      data,
+	}
+
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsIndex(context.Background(), params.Header, objID, &input)
+	if nil != err {
+		blog.Errorf("[operation-attr] failed to request object CoreService, error info is %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-attr] failed to update the attribute index by the attr-id(%d), error info is %s, rid: %s", attID, rsp.ErrMsg, params.ReqID)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return rsp.Data, nil
 }

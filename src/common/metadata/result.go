@@ -109,6 +109,12 @@ type UpdatedCount struct {
 	Count uint64 `json:"updated_count"`
 }
 
+// UpdateAttributeIndex created bk_property_index info struct
+type UpdateAttributeIndex struct {
+	Id    int64 `json:"id"`
+	Index int64 `json:"index"`
+}
+
 // DeletedCount created count struct
 type DeletedCount struct {
 	Count uint64 `json:"deleted_count"`
