@@ -121,7 +121,7 @@ func (s *Service) initObjectAttribute() {
 	s.addAction(http.MethodPost, "/objectattr/search", s.SearchObjectAttribute, nil)
 	s.addAction(http.MethodPut, "/objectattr/{id}", s.UpdateObjectAttribute, nil)
 	s.addAction(http.MethodDelete, "/objectattr/{id}", s.DeleteObjectAttribute, nil)
-	s.addAction(http.MethodPost, "/objectattr/index/{bk_obj_id}/{id}", s.UpdateObjectAttributeIndex, nil)
+	s.addAction(http.MethodPost, "/update/objectattr/index/{bk_obj_id}/{id}", s.UpdateObjectAttributeIndex, nil)
 }
 
 func (s *Service) initObjectClassification() {
