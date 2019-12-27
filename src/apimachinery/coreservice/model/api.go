@@ -236,7 +236,7 @@ func (m *model) UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID 
 	err = m.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
