@@ -216,6 +216,8 @@ const (
 	CCErrCommModifyFieldForbidden                            = 1199083
 	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
 
+	CCErrCommGetBusinessIDByHostIDFailed = 1199086
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
