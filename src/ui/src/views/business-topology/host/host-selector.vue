@@ -1,5 +1,5 @@
 <template>
-    <div class="layout clearfix"
+    <div class="host-selector-layout clearfix"
         v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="wrapper clearfix">
             <div class="wrapper-column wrapper-left fl">
@@ -169,7 +169,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .layout {
+    .host-selector-layout {
         position: relative;
         height: 460px;
         min-height: 300px;
