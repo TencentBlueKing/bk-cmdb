@@ -75,12 +75,12 @@
                     <template slot-scope="{ disabled }">
                         <span class="inline-block-middle" v-if="moduleFromSetTemplate"
                             v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
-                            <bk-button class="btn-delete" disabled>
+                            <bk-button class="btn-delete" hover-theme="danger" disabled>
                                 {{$t('删除节点')}}
                             </bk-button>
                         </span>
                         <bk-button class="btn-delete" v-else
-                            theme="default"
+                            hover-theme="danger"
                             :disabled="disabled"
                             @click="handleDelete">
                             {{$t('删除节点')}}
@@ -841,11 +841,6 @@
     }
     .btn-delete{
         min-width: 76px;
-        &:not(.is-disabled):hover {
-            color: #ffffff;
-            border-color: #ff5656;
-            background-color: #ff5656;
-        }
     }
     .sync-set-btn {
         position: relative;

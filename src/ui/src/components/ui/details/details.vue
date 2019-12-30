@@ -45,6 +45,7 @@
                 </cmdb-auth>
                 <cmdb-auth v-if="showDelete" class="inline-block-middle" :auth="authResources(deleteAuth)">
                     <bk-button slot-scope="{ disabled }"
+                        hover-theme="danger"
                         class="button-delete"
                         :disabled="disabled"
                         @click="handleDelete">
@@ -235,14 +236,6 @@
         }
         .button-delete{
             min-width: 76px;
-            &:hover {
-                background-color: #ff5656;
-                color: #ffffff;
-                border-color: #ff5656;
-            }
-            &:disabled {
-                color: #dcdee5 !important;
-            }
         }
     }
 </style>
