@@ -1229,5 +1229,7 @@
     "模型中需包含枚举字段才可以作为维度统计": "Models need to include enumerated fields for dimensional statistics",
     "请输入值": "Please input the value",
     "默认值设置": "Default setting",
-    "列表值": "List value"
+    "列表值": "List value",
+    "转移到空闲机的主机": "Host transferred to idle machine",
+    "转移到空闲机": "Transfer to idle machine"
 }
