@@ -57,6 +57,9 @@ func updateSortedPropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader.C
 	for _, group := range attrGroups {
 		var index int64
 		for _, attr := range attributes {
+			if attr.PropertyGroup == "none" || attr.PropertyGroup == "" {
+				attr.PropertyGroup = common.BKDefaultField
+			}
 			if attr.PropertyGroup != group.GroupID {
 				continue
 			}
