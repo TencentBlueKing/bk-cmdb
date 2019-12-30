@@ -91,8 +91,9 @@ func (s *Service) UpdateObjectAttribute(params types.ContextParams, pathParams, 
 	// TODO: why does remove this????
 	data.Remove(metadata.BKMetadata)
 
-	// UpdateObjectAttribute should not update bk_property_index
+	// UpdateObjectAttribute should not update bk_property_index、bk_property_group
 	data.Remove(common.BKPropertyIndexField)
+	data.Remove(common.BKPropertyGroupField)
 
 	err = s.Core.AttributeOperation().UpdateObjectAttribute(params, data, id)
 
