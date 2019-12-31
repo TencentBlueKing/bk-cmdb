@@ -1,40 +1,38 @@
 <template>
     <section>
-        <bk-input v-if="allTemplates.length"
-            class="search"
-            type="text"
-            :placeholder="$t('请输入模板名称搜索')"
-            clearable
-            right-icon="bk-icon icon-search"
-            v-model.trim="searchName"
-            @enter="hanldeFilterTemplates"
-            @clear="hanldeFilterTemplates">
-        </bk-input>
+        <div class="top" v-if="allTemplates.length">
+            <bk-input
+                class="search"
+                type="text"
+                :placeholder="$t('请输入模板名称搜索')"
+                clearable
+                right-icon="bk-icon icon-search"
+                v-model.trim="searchName"
+                @enter="hanldeFilterTemplates"
+                @clear="hanldeFilterTemplates">
+            </bk-input>
+            <span class="to-template" @click="handleLinkClick">
+                <i class="icon-cc-share"></i>
+                {{$t('跳转服务模版')}}
+            </span>
+        </div>
         <ul class="template-list clearfix"
             v-bkloading="{ isLoading: $loading('getServiceTemplate') }"
             :style="{ height: !!templates.length ? '264px' : '306px' }"
             :class="{ 'is-loading': $loading('getServiceTemplate') }">
             <template v-if="templates.length">
                 <template v-for="(template, index) in templates">
-                    <li v-if="$parent.$parent.serviceExistHost(template.id)"
-                        class="template-item disabled fl clearfix"
-                        :class="{
-                            'is-selected': localSelected.includes(template.id),
-                            'is-middle': index % 3 === 1
-                        }"
-                        :key="template.id"
-                        v-bk-tooltips="$t('该模块下有主机不可取消')">
-                        <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
-                        <span class="template-name" :title="template.name">{{template.name}}</span>
-                    </li>
-                    <li v-else
+                    <li
                         class="template-item fl clearfix"
                         :class="{
                             'is-selected': localSelected.includes(template.id),
-                            'is-middle': index % 3 === 1
+                            'is-middle': index % 3 === 1,
+                            'disabled': $parent.$parent.serviceExistHost(template.id)
                         }"
                         :key="template.id"
-                        @click="handleClick(template)">
+                        @click="handleClick(template, $parent.$parent.serviceExistHost(template.id))"
+                        @mouseenter="handleShowDetails(template, $event, $parent.$parent.serviceExistHost(template.id))"
+                        @mouseleave="handlehideTips">
                         <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
                         <span class="template-name" :title="template.name">{{template.name}}</span>
                     </li>
@@ -49,6 +47,25 @@
                 </div>
             </li>
         </ul>
+        <div ref="templateDetails"
+            class="template-details"
+            v-bkloading="{ isLoading: $loading(processRequestId) }"
+            v-show="tips.show">
+            <div class="disabled-tips" v-show="processInfo.disabled">{{$t('该模块下有主机不可取消')}}</div>
+            <div class="info-item">
+                <span>{{$t('服务分类')}} ：</span>
+                <div class="details">{{processInfo.cagetory}}</div>
+            </div>
+            <div class="info-item">
+                <span>{{$t('服务进程')}} ：</span>
+                <div class="details">
+                    <p v-for="(item, index) in processInfo.processes" :key="index">{{item}}</p>
+                    <template v-if="!processInfo.processes.length">
+                        <p>{{$t('模板没配置进程')}}</p>
+                    </template>
+                </div>
+            </div>
+        </div>
     </section>
 </template>
 
@@ -71,11 +88,25 @@
                 allTemplates: [],
                 templates: [],
                 localSelected: [...this.selected],
-                searchName: ''
+                searchName: '',
+                templateDetailsData: {},
+                processRequestId: Symbol('processDetails'),
+                tips: {
+                    show: false,
+                    instance: null
+                },
+                curTemplate: {},
+                cagetory: [],
+                processInfo: {
+                    disabled: false,
+                    cagetory: '',
+                    processes: []
+                }
             }
         },
-        created () {
+        async created () {
             this.getTemplates()
+            await this.getServiceCategory()
         },
         methods: {
             async getTemplates () {
@@ -99,7 +130,8 @@
                     this.templates = []
                 }
             },
-            handleClick (template) {
+            handleClick (template, disabled) {
+                if (disabled) return
                 const index = this.localSelected.indexOf(template.id)
                 if (index > -1) {
                     this.localSelected.splice(index, 1)
@@ -117,15 +149,95 @@
             },
             hanldeFilterTemplates () {
                 this.templates = this.allTemplates.filter(template => template.name.indexOf(this.searchName) > -1)
+            },
+            async handleShowDetails (template = {}, event, disabled) {
+                this.curTemplate = template
+                this.processInfo.disabled = disabled
+                const curInfo = this.templateDetailsData[template.id]
+                if (curInfo) {
+                    this.setProcessInfo(curInfo, event)
+                    return
+                }
+                try {
+                    const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
+                        params: this.$injectMetadata({
+                            service_template_id: template.id
+                        }, { injectBizId: true }),
+                        config: {
+                            requestId: this.processRequestId,
+                            cancelPrevious: true
+                        }
+                    })
+                    this.setProcessInfo(data.info, event)
+                    this.templateDetailsData[template.id] = data.info
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            setProcessInfo (data = [], event) {
+                this.processInfo.processes = data.map(process => {
+                    const port = process.property
+                        ? process.property.port ? process.property.port.value : ''
+                        : ''
+                    return `${process.bk_process_name}${port ? `:${port}` : ''}`
+                })
+                const subCagetory = this.cagetory.find(item => item.id === this.curTemplate.service_category_id) || {}
+                const cagetory = this.cagetory.find(item => item.id === subCagetory.bk_parent_id) || {}
+                this.processInfo.cagetory = subCagetory && cagetory
+                    ? `${cagetory.name} / ${subCagetory.name}`
+                    : '-- / --'
+                this.tips.instance && this.tips.instance.destroy()
+                this.tips.instance = this.$bkPopover(event.target, {
+                    content: this.$refs.templateDetails,
+                    zIndex: 9999,
+                    width: 'auto',
+                    trigger: 'manual',
+                    boundary: 'window',
+                    arrow: true
+                })
+                this.tips.show = true
+                this.$nextTick(() => {
+                    this.tips.instance.show()
+                })
+            },
+            handlehideTips () {
+                this.tips.instance && this.tips.instance.destroy()
+                this.tips.instance = null
+            },
+            async getServiceCategory () {
+                try {
+                    const data = await this.$store.dispatch('serviceClassification/searchServiceCategoryWithoutAmout', {
+                        params: this.$injectMetadata({}),
+                        config: {
+                            requestId: 'getServiceCategoryWithoutAmount'
+                        }
+                    })
+                    this.cagetory = data.info
+                } catch (e) {
+                    console.error(e)
+                    this.cagetory = []
+                }
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .search {
-        width: 240px;
+    .top {
         margin-bottom: 10px;
+        .search {
+            @include inlineBlock;
+            width: 240px;
+        }
+        .to-template {
+            @include inlineBlock;
+            color: #3A84FF;
+            margin-left: 10px;
+            cursor: pointer;
+            .icon-cc-share {
+                margin-top: -2px;
+            }
+        }
     }
     .template-list {
         height: 264px;
@@ -178,6 +290,12 @@
                 max-width: calc(100% - 18px);
                 @include ellipsis;
             }
+            .bk-tooltip {
+                width: 100%;
+                /deep/ .bk-tooltip-ref {
+                    width: 100%;
+                }
+            }
         }
     }
     .template-empty {
@@ -202,6 +320,21 @@
             .empty-link {
                 color: #3A84FF;
             }
+        }
+    }
+    .template-details {
+        line-height: 20px;
+        .disabled-tips {
+            border-bottom: 1px solid #FFFFFF;
+            padding: 0 0 6px;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+        .info-item {
+            display: flex;
+        }
+        .details {
+            font-size: 12px;
         }
     }
 </style>
