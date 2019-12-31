@@ -207,8 +207,8 @@
             async recoveryBiz () {
                 if (!await this.$validator.validateAll()) return
                 this.recoveryBusiness({
+                    bizId: this.recovery.bizId,
                     params: {
-                        'bk_biz_id': this.recovery.bizId,
                         'bk_biz_name': this.recovery.name
                     },
                     config: {
