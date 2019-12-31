@@ -326,13 +326,27 @@ func (h *host) GetUserCustomByUser(ctx context.Context, user string, header http
 	return
 }
 
-func (h *host) GetDefaultUserCustom(ctx context.Context, user string, header http.Header) (resp *metadata.GetUserCustomResult, err error) {
+func (h *host) GetDefaultUserCustom(ctx context.Context, header http.Header) (resp *metadata.GetUserCustomResult, err error) {
 	resp = new(metadata.GetUserCustomResult)
-	subPath := fmt.Sprintf("/find/usercustom/default/search/%s", user)
+	subPath := "/find/usercustom/default"
 
 	err = h.client.Post().
 		WithContext(ctx).
 		Body(nil).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) UpdateDefaultUserCustom(ctx context.Context, header http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := "/update/usercustom/default"
+
+	err = h.client.Put().
+		WithContext(ctx).
+		Body(dat).
 		SubResource(subPath).
 		WithHeaders(header).
 		Do().
