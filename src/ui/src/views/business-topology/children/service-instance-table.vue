@@ -41,7 +41,12 @@
                     </template>
                 </cmdb-auth>
                 <div class="label-list fl">
-                    <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
+                    <div class="label-item"
+                        style="cursor: pointer;"
+                        v-for="(label, index) in labelShowList"
+                        :title="`${label.key}：${label.value}`"
+                        :key="index"
+                        @click="handleFilterByLabel(label)">
                         <span>{{label.key}}</span>
                         <span>:</span>
                         <span>{{label.value}}</span>
@@ -53,7 +58,13 @@
                         placement="bottom-end">
                         <span>...</span>
                         <div class="tips-label-list" slot="content">
-                            <span class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelTipsList">
+                            <span
+                                class="label-item"
+                                style="cursor: pointer;"
+                                v-for="(label, index) in labelTipsList"
+                                :title="`${label.key}：${label.value}`"
+                                :key="index"
+                                @click="handleFilterByLabel(label)">
                                 <span>{{label.key}}</span>
                                 <span>:</span>
                                 <span>{{label.value}}</span>
@@ -444,6 +455,26 @@
             },
             handleHideDotMenu () {
                 this.$refs.dotMenu.$el.style.opacity = 0
+            },
+            handleFilterByLabel (label) {
+                this.$parent.searchSelectData = [{
+                    condition: {
+                        id: label.key,
+                        name: label.key + ' : '
+                    },
+                    disabled: false,
+                    id: 1,
+                    name: `${this.$t('标签')}(value)`,
+                    values: [{
+                        id: label.value,
+                        name: label.value
+                    }]
+                }]
+                this.$set(this.$parent.searchSelect[1], 'children', [{
+                    id: label.value,
+                    name: label.value
+                }])
+                this.$parent.handleSearch()
             }
         }
     }
