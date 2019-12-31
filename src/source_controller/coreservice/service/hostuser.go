@@ -245,7 +245,7 @@ func (s *coreService) UserConfigDetail(params core.ContextParams, pathParams, qu
 func (s *coreService) AddUserCustom(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	ID := xid.New()
 	data["id"] = ID.String()
-	data["bk_user"] = pathParams("bk_user")
+	data["bk_user"] = params.User
 	data = util.SetModOwner(data, params.SupplierAccount)
 	err := s.db.Table(common.BKTableNameUserCustom).Insert(params.Context, data)
 	if nil != err {
@@ -270,7 +270,7 @@ func (s *coreService) UpdateUserCustomByID(params core.ContextParams, pathParams
 
 func (s *coreService) GetUserCustomByUser(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	conds := make(map[string]interface{})
-	conds["bk_user"] = pathParams("bk_user")
+	conds["bk_user"] = params.User
 	conds = util.SetModOwner(conds, params.SupplierAccount)
 
 	result := make(map[string]interface{})
@@ -283,9 +283,10 @@ func (s *coreService) GetUserCustomByUser(params core.ContextParams, pathParams,
 	return result, nil
 }
 
+// GetDefaultUserCustom  find user custom set table heaher for any object
 func (s *coreService) GetDefaultUserCustom(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	conds := make(map[string]interface{})
-	conds["is_default"] = 1
+	conds[common.BKDefaultField] = 1
 	conds = util.SetModOwner(conds, params.SupplierAccount)
 
 	result := make(map[string]interface{})
@@ -296,4 +297,20 @@ func (s *coreService) GetDefaultUserCustom(params core.ContextParams, pathParams
 	}
 
 	return result, nil
+}
+
+// UpdatDefaultUserCustom update user custom set table header for any object
+func (s *coreService) UpdatDefaultUserCustom(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	conditons := make(map[string]interface{})
+	conditons[common.BKDefaultField] = 1
+	conditons = util.SetModOwner(conditons, params.SupplierAccount)
+
+	data[common.ModifierField] = params.User
+	data[common.LastTimeField] = util.GetCurrentTimePtr()
+	err := s.db.Table(common.BKTableNameUserCustom).Upsert(params.Context, conditons, data)
+	if nil != err {
+		blog.Errorf("update  default custom failed, err: %v, data:%v, rid: %s", err, data, params.ReqID)
+		return nil, params.Error.CCError(common.CCErrCommDBUpdateFailed)
+	}
+	return nil, nil
 }
