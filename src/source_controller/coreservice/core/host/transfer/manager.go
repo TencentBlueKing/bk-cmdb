@@ -329,14 +329,14 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 	// attributes in legacy business
 	legacyAttributes, err := transfer.dependent.SelectObjectAttWithParams(ctx, common.BKInnerObjIDHost, input.SrcApplicationID)
 	if err != nil {
-		blog.ErrorJSON("TransferToAnotherBusiness failed, SelectObjectAttWithParams failed, bizID: %d, err:%s, rid:%s", input.SrcApplicationID, err.Error(), ctx.ReqID)
+		blog.ErrorJSON("TransferToAnotherBusiness failed, SelectObjectAttWithParams failed, bizID: %s, err:%s, rid:%s", input.SrcApplicationID, err.Error(), ctx.ReqID)
 		return nil, err
 	}
 
 	// attributes in new business
 	newAttributes, err := transfer.dependent.SelectObjectAttWithParams(ctx, common.BKInnerObjIDHost, input.DstApplicationID)
 	if err != nil {
-		blog.ErrorJSON("TransferToAnotherBusiness failed, SelectObjectAttWithParams failed, bizID: %d, err:%s, rid:%s", input.DstApplicationID, err.Error(), ctx.ReqID)
+		blog.ErrorJSON("TransferToAnotherBusiness failed, SelectObjectAttWithParams failed, bizID: %s, err:%s, rid:%s", input.DstApplicationID, err.Error(), ctx.ReqID)
 		return nil, err
 	}
 
@@ -400,7 +400,7 @@ func (manager *TransferManager) clearLegacyPrivateField(ctx core.ContextParams, 
 		common.BKHostIDField: hostID,
 	}
 	if err := manager.dbProxy.Table(common.BKTableNameBaseHost).UpdateMultiModel(ctx, filter, reset); err != nil {
-		blog.Errorf("clearLegacyPrivateField failed. table: %s, filter: %+v, doc: %+v, err: %s, rid:%s", common.BKTableNameBaseHost, filter, doc, err.Error(), ctx.ReqID)
+		blog.ErrorJSON("clearLegacyPrivateField failed. table: %s, filter: %s, doc: %s, err: %s, rid:%s", common.BKTableNameBaseHost, filter, doc, err.Error(), ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
@@ -430,7 +430,7 @@ func (manager *TransferManager) setDefaultPrivateField(ctx core.ContextParams, a
 	}
 	_, err := manager.dependence.UpdateModelInstance(ctx, common.BKInnerObjIDHost, updateOption)
 	if err != nil {
-		blog.Errorf("setDefaultPrivateField failed. UpdateModelInstance failed, option: %+v, err: %s, rid:%s", common.BKTableNameBaseHost, updateOption, err.Error(), ctx.ReqID)
+		blog.ErrorJSON("setDefaultPrivateField failed. UpdateModelInstance failed, option: %s, err: %s, rid:%s", common.BKTableNameBaseHost, updateOption, err.Error(), ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
