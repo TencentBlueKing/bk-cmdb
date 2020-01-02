@@ -45,6 +45,7 @@
 * [安装部署](docs/overview/installation.md)
 * [API使用说明见这里](docs/apidoc/)
 * [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
+* [使用Helm部署CMDB到K8S环境](helm/README.md)
 
 ## Roadmap
 * [版本规划](docs/VERSION.md)
