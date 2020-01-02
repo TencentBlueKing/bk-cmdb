@@ -13,8 +13,11 @@
 package model
 
 import (
+	"context"
+	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -26,6 +29,7 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 var (
@@ -255,7 +259,7 @@ func (m *modelAttribute) searchReturnMapStr(ctx core.ContextParams, cond univers
 func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
 	resultAttrs := make([]metadata.Attribute, 0)
-	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKObjIDField}
+	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKObjIDField, common.MetadataField}
 
 	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).Fields(fields...).All(ctx, &resultAttrs)
@@ -272,6 +276,11 @@ func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condit
 	objIDArrMap := make(map[string][]int64, 0)
 	for _, attr := range resultAttrs {
 		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
+	}
+
+	if err := m.cleanAttributeFieldInInstances(ctx, ctx.SupplierAccount, resultAttrs); err != nil {
+		blog.ErrorJSON("delete object attributes with cond: %s, but delete these attribute in instance failed, err: %v, rid:%s", condMap, err, ctx.ReqID)
+		return 0, err
 	}
 
 	exist, err := m.checkAttributeInUnique(ctx, objIDArrMap)
@@ -292,6 +301,224 @@ func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condit
 	}
 
 	return cnt, err
+}
+
+type bizObjectFields struct {
+	bizID  int64
+	object string
+	fields []string
+}
+
+// remove attribute filed in this object's instances
+func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, ownerID string, attrs []metadata.Attribute) error {
+
+	objPublicFields := make(map[string][]string)
+	objBizFields := make([]bizObjectFields, 0)
+
+	// TODO: now, we only support set, module, host model's biz attribute clean operation.
+	for _, attr := range attrs {
+
+		biz, err := metadata.BizIDFromMetadata(attr.Metadata)
+		if err != nil {
+			return err
+		}
+
+		if biz != 0 {
+			if !isBizObject(attr.ObjectID) {
+				return fmt.Errorf("unsupported object %s's clean instance field operation", attr.ObjectID)
+			}
+
+			// this is a business attribute
+			hit := false
+			for index, ele := range objBizFields {
+				if ele.object == attr.ObjectID && ele.bizID == biz {
+					hit = true
+					objBizFields[index].fields = append(objBizFields[index].fields, attr.PropertyID)
+				}
+			}
+
+			if !hit {
+				objBizFields = append(objBizFields, bizObjectFields{
+					bizID:  biz,
+					object: attr.ObjectID,
+					fields: []string{attr.PropertyID},
+				})
+			}
+
+		} else {
+			// this is a public attribute
+			_, exist := objPublicFields[attr.ObjectID]
+			if !exist {
+				objPublicFields[attr.ObjectID] = make([]string, 0)
+			}
+			objPublicFields[attr.ObjectID] = append(objPublicFields[attr.ObjectID], attr.PropertyID)
+		}
+	}
+
+	// delete these attribute's filed in the model instance
+	// step 1: handle object's public attribute
+	var hitError error
+	wg := sync.WaitGroup{}
+	for object, fields := range objPublicFields {
+
+		if len(fields) == 0 {
+			// no fields need to be removed, skip directly.
+			continue
+		}
+
+		var cond mapstr.MapStr
+		if isBizObject(object) {
+			if object == common.BKInnerObjIDHost {
+				ele := bizObjectFields{
+					bizID:  0,
+					object: object,
+					fields: fields,
+				}
+				if err := m.cleanHostAttributeField(ctx, ownerID, ele); err != nil {
+					return err
+				}
+				return nil
+			}
+
+			cond = mapstr.MapStr{}
+		} else {
+			cond = mapstr.MapStr{
+				common.BKObjIDField: object,
+			}
+		}
+		cond[common.BkSupplierAccount] = mapstr.MapStr{
+			"$in": []string{ownerID, common.BKDefaultOwnerID},
+		}
+
+		collectionName := common.GetInstTableName(object)
+		wg.Add(1)
+		go func(collName string, filter dal.Filter, fields []string) {
+			defer wg.Done()
+			if err := m.dbProxy.Table(collName).DropColumns(ctx, filter, fields); err != nil {
+				blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
+				hitError = err
+				return
+			}
+		}(collectionName, cond, fields)
+	}
+	// wait for all the public object routine is done.
+	wg.Wait()
+	if hitError != nil {
+		return hitError
+	}
+
+	// step 2: handle object's biz attribute
+	wg = sync.WaitGroup{}
+	for _, ele := range objBizFields {
+		if len(ele.fields) == 0 {
+			// no fields need to be removed, skip directly.
+			continue
+		}
+		if !isBizObject(ele.object) {
+			return fmt.Errorf("unsupported object %s's clean instance field operation", ele.object)
+		}
+
+		if ele.object == common.BKInnerObjIDHost {
+			if err := m.cleanHostAttributeField(ctx, ownerID, ele); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		cond := mapstr.MapStr{
+			common.BKAppIDField: ele.bizID,
+		}
+		cond[common.BkSupplierAccount] = mapstr.MapStr{
+			"$in": []string{ownerID, common.BKDefaultOwnerID},
+		}
+
+		collectionName := common.GetInstTableName(ele.object)
+		wg.Add(1)
+		go func(collName string, filter dal.Filter, fields []string) {
+			defer wg.Done()
+			if err := m.dbProxy.Table(collName).DropColumns(ctx, filter, fields); err != nil {
+				blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
+				hitError = err
+				return
+			}
+		}(collectionName, cond, ele.fields)
+	}
+	// wait for all the public object routine is done.
+	wg.Wait()
+	if hitError != nil {
+		return hitError
+	}
+
+	return nil
+}
+
+const pageSize = 500
+
+func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID string, info bizObjectFields) error {
+	cond := mapstr.MapStr{}
+	cond[common.BkSupplierAccount] = mapstr.MapStr{
+		"$in": []string{ownerID, common.BKDefaultOwnerID},
+	}
+	// biz id = 0 means all the hosts.
+	// TODO: optimize when the filed is a public filed in all the host instances. handle with page
+	if info.bizID != 0 {
+		// find hosts in this biz
+		cond = mapstr.MapStr{
+			common.BKAppIDField: info.bizID,
+		}
+	}
+	type hostInst struct {
+		HostID int64 `bson:"bk_host_id"`
+	}
+	hostList := make([]hostInst, 0)
+	err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(common.BKHostIDField).All(ctx, &hostList)
+	if err != nil {
+		return err
+	}
+	if len(hostList) == 0 {
+		// no host in this business, do not need to clean the filed.
+		return nil
+	}
+
+	count := len(hostList)
+	for start := 0; start < count; start += pageSize {
+		end := start + pageSize
+		if end > count {
+			end = count
+		}
+		ids := make([]int64, 0)
+		for index := start; index < end; index++ {
+			ids = append(ids, hostList[index].HostID)
+		}
+		hostFilter := mapstr.MapStr{
+			common.BKHostIDField: mapstr.MapStr{common.BKDBIN: ids},
+		}
+		if err := m.dbProxy.Table(common.BKTableNameBaseHost).DropColumns(ctx, hostFilter, info.fields); err != nil {
+			return fmt.Errorf("clean host biz attribute %v failed, err: %v", info.fields, err)
+		}
+	}
+
+	return nil
+
+}
+
+// now, we only support set, module, host model's biz attribute clean operation.
+func isBizObject(objectID string) bool {
+	switch objectID {
+	// biz is a special object, but it can not have biz attribute obviously.
+	case common.BKInnerObjIDApp:
+		return true
+	case common.BKInnerObjIDHost:
+		return true
+	case common.BKInnerObjIDModule:
+		return true
+	case common.BKInnerObjIDSet:
+		return true
+	default:
+		// TODO: remove this when the common object support biz attribute and biz instance field.
+		return false
+
+	}
 }
 
 //  saveCheck 新加字段检查
