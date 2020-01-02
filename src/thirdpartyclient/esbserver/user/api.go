@@ -27,7 +27,7 @@ func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.E
 
 	err = p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithHeaders(h).
 		Do().
@@ -85,7 +85,7 @@ func (p *user) ListUsers(ctx context.Context, h http.Header) (resp *metadata.Esb
 		WithContext(ctx).
 		WithParam("fields", "username,id").
 		WithParam("no_page", "true").
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithHeaders(h).
 		Do().
