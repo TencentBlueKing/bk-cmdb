@@ -13,16 +13,33 @@
             <div class="info clearfix mb10" ref="changeInfo">
                 <label class="info-label fl">{{$t('变更确认')}}：</label>
                 <div class="info-content">
-                    <ul class="tab clearfix">
-                        <li class="tab-item active fl">
-                            <span class="tab-label">{{$t('转移到空闲机的主机')}}</span>
-                            <span class="tab-count">{{moveToIdleHosts.length}}</span>
-                        </li>
-                    </ul>
-                    <div class="tab-empty" v-if="!moveToIdleHosts.length">
+                    <template v-if="availableTabList.length">
+                        <ul class="tab clearfix">
+                            <template v-for="(item, index) in availableTabList">
+                                <li class="tab-grep fl" v-if="index" :key="index"></li>
+                                <li class="tab-item fl"
+                                    :class="{ active: activeTab === item }"
+                                    :key="item.id"
+                                    @click="handleTabClick(item)">
+                                    <span class="tab-label">{{item.label}}</span>
+                                    <span :class="['tab-count', { 'has-badge': !item.confirmed }]">
+                                        {{item.props.info.length}}
+                                    </span>
+                                </li>
+                            </template>
+                        </ul>
+                        <component class="tab-component"
+                            v-for="item in availableTabList"
+                            v-bind="item.props"
+                            v-show="activeTab === item"
+                            :ref="item.id"
+                            :key="item.id"
+                            :is="item.component">
+                        </component>
+                    </template>
+                    <div class="tab-empty" v-else>
                         {{$t('仅移除服务实例，主机无变更')}}
                     </div>
-                    <move-to-idle-host class="tab-component" :info="moveToIdleHosts" v-else></move-to-idle-host>
                 </div>
             </div>
             <div class="options" :class="{ 'is-sticky': hasScrollbar }">
@@ -38,19 +55,41 @@
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { mapGetters } from 'vuex'
     import MoveToIdleHost from './children/move-to-idle-host.vue'
+    import HostAttrsAutoApply from './children/host-attrs-auto-apply.vue'
     export default {
         components: {
-            MoveToIdleHost
+            [MoveToIdleHost.name]: MoveToIdleHost,
+            [HostAttrsAutoApply.name]: HostAttrsAutoApply
         },
         data () {
             return {
                 ready: false,
                 hasScrollbar: false,
                 moveToIdleHosts: [],
+                tabList: [{
+                    id: 'moveToIdleHost',
+                    label: this.$t('转移到空闲机的主机'),
+                    confirmed: false,
+                    component: MoveToIdleHost.name,
+                    props: {
+                        info: []
+                    }
+                }, {
+                    id: 'hostAttrsAutoApply',
+                    label: this.$t('属性自动应用'),
+                    confirmed: false,
+                    component: HostAttrsAutoApply.name,
+                    props: {
+                        info: []
+                    }
+                }],
                 request: {
                     preview: Symbol('review'),
                     confirm: Symbol('confirm'),
                     host: Symbol('host')
+                },
+                tab: {
+                    active: null
                 }
             }
         },
@@ -64,6 +103,12 @@
             },
             serviceInstanceIds () {
                 return String(this.$route.params.ids).split('/').map(id => parseInt(id, 10))
+            },
+            availableTabList () {
+                return this.tabList.filter(tab => tab.props.info.length > 0)
+            },
+            activeTab () {
+                return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
             }
         },
         watch: {
@@ -71,6 +116,17 @@
                 this.$nextTick(() => {
                     addResizeListener(this.$refs.changeInfo, this.resizeHandler)
                 })
+            },
+            availableTabList (tabList) {
+                tabList.forEach(tab => {
+                    if (tab !== this.activeTab) {
+                        tab.confirmed = false
+                    }
+                })
+            },
+            activeTab (tab) {
+                if (!tab) return
+                tab.confirmed = true
             }
         },
         async created () {
@@ -92,6 +148,7 @@
                         }
                     })
                     this.setMoveToIdleHosts(data.to_move_module_hosts)
+                    this.setHostAttrsAutoApply(data.host_apply_plan)
                 } catch (e) {
                     console.error(e)
                 }
@@ -104,13 +161,20 @@
                             hostIds.push(item.bk_host_id)
                         }
                     })
-                    this.moveToIdleHosts = await this.getHostInfo(hostIds)
+                    const moveToIdleHosts = await this.getHostInfo(hostIds)
+                    const tab = this.tabList.find(tab => tab.id === 'moveToIdleHost')
+                    tab.props.info = moveToIdleHosts
                     setTimeout(() => {
                         this.ready = true
                     }, 300)
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            setHostAttrsAutoApply (data = {}) {
+                const applyList = data.plans || []
+                const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
+                tab.props.info = applyList.filter(item => item.conflicts.length || item.update_fields.length)
             },
             getHostInfo (hostIds) {
                 return this.$store.dispatch('hostSearch/searchHost', {
@@ -159,6 +223,9 @@
             },
             handleCancel () {
                 this.redirect()
+            },
+            handleTabClick (tab) {
+                this.tab.active = tab.id
             },
             redirect () {
                 if (this.$route.query.from) {
