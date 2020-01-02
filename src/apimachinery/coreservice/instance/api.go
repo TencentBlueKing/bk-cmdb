@@ -14,7 +14,6 @@ package instance
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -22,12 +21,12 @@ import (
 
 func (inst *instance) CreateInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelInstance) (resp *metadata.CreatedOneOptionResult, err error) {
 	resp = new(metadata.CreatedOneOptionResult)
-	subPath := fmt.Sprintf("/create/model/%s/instance", objID)
+	subPath := "/create/model/%s/instance"
 
 	err = inst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -36,12 +35,12 @@ func (inst *instance) CreateInstance(ctx context.Context, h http.Header, objID s
 
 func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateManyModelInstance) (resp *metadata.CreatedManyOptionResult, err error) {
 	resp = new(metadata.CreatedManyOptionResult)
-	subPath := fmt.Sprintf("/createmany/model/%s/instance", objID)
+	subPath := "/createmany/model/%s/instance"
 
 	err = inst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -50,12 +49,12 @@ func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, obj
 
 func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
-	subPath := fmt.Sprintf("/setmany/model/%s/instances", objID)
+	subPath := "/setmany/model/%s/instances"
 
 	err = inst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -64,12 +63,12 @@ func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID 
 
 func (inst *instance) UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
 	resp = new(metadata.UpdatedOptionResult)
-	subPath := fmt.Sprintf("/update/model/%s/instance", objID)
+	subPath := "/update/model/%s/instance"
 
 	err = inst.client.Put().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -78,12 +77,12 @@ func (inst *instance) UpdateInstance(ctx context.Context, h http.Header, objID s
 
 func (inst *instance) ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
 	resp = new(metadata.QueryConditionResult)
-	subPath := fmt.Sprintf("/read/model/%s/instances", objID)
+	subPath := "/read/model/%s/instances"
 
 	err = inst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -92,12 +91,12 @@ func (inst *instance) ReadInstance(ctx context.Context, h http.Header, objID str
 
 func (inst *instance) DeleteInstance(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
-	subPath := fmt.Sprintf("/delete/model/%s/instance", objID)
+	subPath := "/delete/model/%s/instance"
 
 	err = inst.client.Delete().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -106,12 +105,12 @@ func (inst *instance) DeleteInstance(ctx context.Context, h http.Header, objID s
 
 func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
-	subPath := fmt.Sprintf("/delete/model/%s/instance/cascade", objID)
+	subPath := "/delete/model/%s/instance/cascade"
 
 	err = inst.client.Delete().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
