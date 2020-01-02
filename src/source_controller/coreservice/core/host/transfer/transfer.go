@@ -371,15 +371,6 @@ func (t *genericTransfer) delHostModuleRelationItem(ctx core.ContextParams, bizI
 	cond.Field(common.BKHostIDField).Eq(hostID)
 
 	delCondition := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
-	num, numError := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(delCondition).Count(ctx)
-	if numError != nil {
-		blog.Errorf("delete host relation, but get module host relation failed, err: %v, rid: %s", numError, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-
-	if num == 0 {
-		return nil, nil
-	}
 
 	// retrieve original data
 	originDatas := make([]mapstr.MapStr, 0)
