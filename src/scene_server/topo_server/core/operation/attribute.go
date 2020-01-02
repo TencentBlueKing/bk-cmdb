@@ -189,27 +189,38 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error) {
 	attrs, err := a.FindObjectAttribute(params, cond)
 	if nil != err {
+		blog.ErrorJSON("FindObjectAttribute failed, err: %s, cond: %s", err, cond.ToMapStr())
 		return nil, err
 	}
 	results := make([]*metadata.ObjAttDes, 0)
+	grpCond := condition.CreateCondition()
+	grpOrCond := grpCond.NewOR()
 	for _, attr := range attrs {
-		result := &metadata.ObjAttDes{Attribute: *attr.Attribute()}
-
 		attribute := attr.Attribute()
-		grpCond := condition.CreateCondition()
-		grpCond.Field(metadata.GroupFieldGroupID).Eq(attribute.PropertyGroup)
-		grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attribute.OwnerID)
-		grpCond.Field(metadata.GroupFieldObjectID).Eq(attribute.ObjectID)
-		grps, err := a.grp.FindObjectGroup(params, grpCond)
-		if nil != err {
-			return nil, err
+		grpOrCond.Item(map[string]interface{}{
+			metadata.GroupFieldGroupID:         attribute.PropertyGroup,
+			metadata.GroupFieldSupplierAccount: attribute.OwnerID,
+			metadata.GroupFieldObjectID:        attribute.ObjectID,
+		})
+	}
+	grps, err := a.grp.FindObjectGroup(params, grpCond)
+	if nil != err {
+		blog.ErrorJSON("FindObjectGroup failed, err: %s, grpCond: %s", err, grpCond.ToMapStr())
+		return nil, err
+	}
+	grpMap := make(map[string]string)
+	for _, grp := range grps {
+		grpMap[grp.Group().GroupID] = grp.Group().GroupName
+	}
+	for _, attr := range attrs {
+		attribute := attr.Attribute()
+		result := &metadata.ObjAttDes{Attribute: *attribute}
+		grpName, ok := grpMap[attribute.PropertyGroup]
+		if !ok {
+			blog.ErrorJSON("attribute [%s] has an invalid bk_property_group %s", *attribute, attribute.PropertyGroup)
+			return nil, params.Err.CCErrorf(common.CCErrCommParamsIsInvalid, "attribute.bk_property_group: "+attribute.PropertyGroup)
 		}
-
-		for _, grp := range grps {
-			// should be only one
-			result.PropertyGroupName = grp.Group().GroupName
-		}
-
+		result.PropertyGroupName = grpName
 		results = append(results, result)
 	}
 
