@@ -15,6 +15,7 @@ package hostapplyrule
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -144,6 +145,9 @@ func (p *hostApplyRule) CreateHostApplyRule(ctx core.ContextParams, bizID int64,
 		return rule, ccErr
 	}
 
+	if value, ok := option.PropertyValue.(string); ok {
+		option.PropertyValue = strings.TrimSpace(value)
+	}
 	rawError := attribute.Validate(ctx.Context, option.PropertyValue, common.BKPropertyValueField)
 	if rawError.ErrCode != 0 {
 		ccErr := rawError.ToCCError(ctx.Error)
@@ -182,6 +186,9 @@ func (p *hostApplyRule) UpdateHostApplyRule(ctx core.ContextParams, bizID int64,
 	if ccErr != nil {
 		blog.Errorf("UpdateHostApplyRule failed, getHostAttribute failed, bizID: %d, attributeID: %d, err: %s, rid: %s", bizID, rule.AttributeID, ccErr.Error(), ctx.ReqID)
 		return rule, ccErr
+	}
+	if value, ok := option.PropertyValue.(string); ok {
+		option.PropertyValue = strings.TrimSpace(value)
 	}
 	rawError := attribute.Validate(ctx.Context, option.PropertyValue, common.BKPropertyValueField)
 	if rawError.ErrCode != 0 {

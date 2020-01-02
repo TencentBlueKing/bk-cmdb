@@ -149,12 +149,8 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validChar(ctx, data, key)
 	case common.FieldTypeList:
 		rawError = attribute.validList(ctx, data, key)
-	// TODO implement validate for types below
-	// common.FieldTypeSingleLenChar
-	// common.FieldTypeLongLenChar
-	// common.FieldTypeStrictCharRegexp
-	// common.FieldTypeSingleCharRegexp
-	// common.FieldTypeLongCharRegexp
+	// compatible for older version attribute type
+	case "foreignkey", "singleasst", "multiasst":
 	default:
 		rawError = errors.RawErrorInfo{
 			ErrCode: common.CCErrCommUnexpectedFieldType,
@@ -480,34 +476,23 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 			return errors.RawErrorInfo{}
 		}
 
-		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, value)
-		if nil != err || !match {
-			blog.Errorf(`params "%s" not match longchar regexp, rid:  %s`, val, rid)
+		option, ok := attribute.Option.(string)
+		if !ok {
+			break
+		}
+		strReg, err := regexp.Compile(option)
+		if nil != err {
+			blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{key},
+				Args:    []interface{}{option},
 			}
 		}
-
-		if "" != val {
-			option, ok := attribute.Option.(string)
-			if !ok {
-				break
-			}
-			strReg, err := regexp.Compile(option)
-			if nil != err {
-				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
-			}
-			if !strReg.MatchString(value) {
-				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
+		if !strReg.MatchString(value) {
+			blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrFieldRegValidFailed,
+				Args:    []interface{}{key},
 			}
 		}
 	default:
@@ -521,10 +506,10 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 	return errors.RawErrorInfo{}
 }
 
-// validChar valid object attribute that is  char type
+// validChar valid object attribute that is char type
 func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val || "" == val {
+	if nil == val {
 		if attribute.IsRequired {
 			blog.Errorf("params in need, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -536,6 +521,7 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 	}
 	switch value := val.(type) {
 	case string:
+		value = strings.TrimSpace(value)
 		if len(value) > common.FieldTypeSingleLenChar {
 			blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
 			return errors.RawErrorInfo{
@@ -554,35 +540,23 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 
-		value = strings.TrimSpace(value)
-		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
-		if nil != err || !match {
-			blog.Errorf(`params "%s" not match singlechar regexp, rid:  %s`, val, rid)
+		option, ok := attribute.Option.(string)
+		if !ok {
+			break
+		}
+		strReg, err := regexp.Compile(option)
+		if nil != err {
+			blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{key},
+				Args:    []interface{}{option},
 			}
 		}
-
-		if "" != val {
-			option, ok := attribute.Option.(string)
-			if !ok {
-				break
-			}
-			strReg, err := regexp.Compile(option)
-			if nil != err {
-				blog.Errorf(`params "%s" not match regexp "%s", rid:  %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
-			}
-			if !strReg.MatchString(value) {
-				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
+		if !strReg.MatchString(value) {
+			blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, value, option, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrFieldRegValidFailed,
+				Args:    []interface{}{key},
 			}
 		}
 	default:
