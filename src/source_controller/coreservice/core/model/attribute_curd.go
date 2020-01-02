@@ -144,44 +144,32 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(ctx core.ContextParams, attr
 }
 
 func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribute metadata.Attribute) error {
-	if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
-		return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
-	} else if attribute.PropertyID != "" {
+	if attribute.PropertyID != "" {
+		attribute.PropertyID = strings.TrimSpace(attribute.PropertyID)
+		if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
+			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
+		}
 		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, attribute.PropertyID)
 		if nil != err || !match {
 			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
 		}
 	}
 
-	if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
+	if attribute.PropertyName = strings.TrimSpace(attribute.PropertyName); common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
 		return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
-	} else if attribute.PropertyName != "" {
-		attribute.PropertyName = strings.TrimSpace(attribute.PropertyName)
-		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.PropertyName)
-		if nil != err || !match {
-			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyName)
-		}
 	}
 
 	if attribute.Placeholder != "" {
+		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
 		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
 			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
-		}
-		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
-		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
-		if nil != err || !match {
-			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHoler)
 		}
 	}
 
 	if attribute.Unit != "" {
+		attribute.Unit = strings.TrimSpace(attribute.Unit)
 		if common.AttributeUnitMaxLength < utf8.RuneCountInString(attribute.Unit) {
 			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_uint"), common.AttributeUnitMaxLength)
-		}
-		attribute.Unit = strings.TrimSpace(attribute.Unit)
-		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.Unit)
-		if nil != err || !match {
-			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldUnit)
 		}
 	}
 
