@@ -35,6 +35,8 @@ type TransferManager struct {
 
 type OperationDependence interface {
 	AutoCreateServiceInstanceModuleHost(ctx core.ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	SelectObjectAttWithParams(ctx core.ContextParams, objID string, bizID int64) (attribute []metadata.Attribute, err error)
+	UpdateModelInstance(ctx core.ContextParams, objID string, param metadata.UpdateOption) (*metadata.UpdatedCount, error)
 }
 
 func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence OperationDependence) *TransferManager {
@@ -323,7 +325,23 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 		blog.ErrorJSON("TransferToAnotherBusiness failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
 	}
+
+	// attributes in legacy business
+	legacyAttributes, err := transfer.dependent.SelectObjectAttWithParams(ctx, common.BKInnerObjIDHost, input.SrcApplicationID)
+	if err != nil {
+		blog.ErrorJSON("TransferToAnotherBusiness failed, SelectObjectAttWithParams failed, bizID: %s, err:%s, rid:%s", input.SrcApplicationID, err.Error(), ctx.ReqID)
+		return nil, err
+	}
+
+	// attributes in new business
+	newAttributes, err := transfer.dependent.SelectObjectAttWithParams(ctx, common.BKInnerObjIDHost, input.DstApplicationID)
+	if err != nil {
+		blog.ErrorJSON("TransferToAnotherBusiness failed, SelectObjectAttWithParams failed, bizID: %s, err:%s, rid:%s", input.DstApplicationID, err.Error(), ctx.ReqID)
+		return nil, err
+	}
+
 	var exceptionArr []metadata.ExceptionResult
+	successHostIDs := make([]int64, 0)
 	for _, hostID := range input.HostIDArr {
 		err := transfer.Transfer(ctx, hostID)
 		if err != nil {
@@ -333,6 +351,28 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 				Code:        int64(err.GetCode()),
 				OriginIndex: hostID,
 			})
+			continue
+		}
+		successHostIDs = append(successHostIDs, hostID)
+	}
+
+	if len(successHostIDs) > 0 {
+		// reset private field in legacy business
+		if err := manager.clearLegacyPrivateField(ctx, legacyAttributes, successHostIDs...); err != nil {
+			blog.ErrorJSON("TransferToAnotherBusiness failed, clearLegacyPrivateField failed, hostID:%s, attributes:%s, err:%s, rid:%s", successHostIDs, legacyAttributes, err.Error(), ctx.ReqID)
+			// we should go on setting default value for new private field
+		}
+
+		// set default value for private field in new business
+		if err := manager.setDefaultPrivateField(ctx, newAttributes, successHostIDs...); err != nil {
+			blog.ErrorJSON("TransferToAnotherBusiness failed, setDefaultPrivateField failed, hostID:%s, attributes:%s, err:%s, rid:%s", successHostIDs, newAttributes, err.Error(), ctx.ReqID)
+			for _, hostID := range successHostIDs {
+				exceptionArr = append(exceptionArr, metadata.ExceptionResult{
+					Message:     err.Error(),
+					Code:        int64(err.GetCode()),
+					OriginIndex: hostID,
+				})
+			}
 		}
 	}
 	if len(exceptionArr) > 0 {
@@ -340,6 +380,70 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 	}
 
 	return nil, nil
+}
+
+func (manager *TransferManager) clearLegacyPrivateField(ctx core.ContextParams, attributes []metadata.Attribute, hostIDs ...int64) errors.CCErrorCoder {
+	doc := make(map[string]interface{}, 0)
+	for _, attribute := range attributes {
+		bizID, err := attribute.Metadata.ParseBizID()
+		if err != nil {
+			blog.Warnf("clearLegacyPrivateField, parse bizID from attribute failed, attribute: %+v, err: %s, rid: %s", attribute, err.Error(), ctx.ReqID)
+			continue
+		}
+		if bizID == 0 {
+			continue
+		}
+		doc[attribute.PropertyID] = nil
+	}
+	if len(doc) == 0 {
+		return nil
+	}
+	reset := dal.ModeUpdate{
+		Op:  "unset",
+		Doc: doc,
+	}
+	filter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}
+	if err := manager.dbProxy.Table(common.BKTableNameBaseHost).UpdateMultiModel(ctx, filter, reset); err != nil {
+		blog.ErrorJSON("clearLegacyPrivateField failed. table: %s, filter: %s, doc: %s, err: %s, rid:%s", common.BKTableNameBaseHost, filter, doc, err.Error(), ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBUpdateFailed)
+	}
+	return nil
+}
+
+func (manager *TransferManager) setDefaultPrivateField(ctx core.ContextParams, attributes []metadata.Attribute, hostID ...int64) errors.CCErrorCoder {
+	doc := make(map[string]interface{})
+	for _, attribute := range attributes {
+		bizID, err := attribute.Metadata.ParseBizID()
+		if err != nil {
+			blog.Warnf("clearLegacyPrivateField, parse bizID from attribute failed, attribute: %+v, err: %s, rid: %s", attribute, err.Error(), ctx.ReqID)
+			continue
+		}
+		if bizID == 0 {
+			continue
+		}
+		doc[attribute.PropertyID] = nil
+	}
+	if len(doc) == 0 {
+		return nil
+	}
+	updateOption := metadata.UpdateOption{
+		Data: doc,
+		Condition: map[string]interface{}{
+			common.BKHostIDField: map[string]interface{}{
+				common.BKDBIN: hostID,
+			},
+		},
+	}
+	_, err := manager.dependence.UpdateModelInstance(ctx, common.BKInnerObjIDHost, updateOption)
+	if err != nil {
+		blog.ErrorJSON("setDefaultPrivateField failed. UpdateModelInstance failed, option: %s, err: %s, rid:%s", common.BKTableNameBaseHost, updateOption, err.Error(), ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBUpdateFailed)
+	}
+	return nil
 }
 
 // GetHostModuleRelation get host module relation

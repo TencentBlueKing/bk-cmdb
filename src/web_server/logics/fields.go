@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/errors"
 )
 
 // Property object fields
@@ -35,7 +34,6 @@ type Property struct {
 	IsPre         bool
 	IsRequire     bool
 	Group         string
-	Index         int64
 	ExcelColIndex int
 	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
 	IsOnly        bool
@@ -58,55 +56,19 @@ type PropertyPrimaryVal struct {
 
 // GetObjFieldIDs get object fields
 func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, meta *metadata.Metadata) (map[string]Property, error) {
-
 	fields, err := lgc.getObjFieldIDs(objID, header, meta)
 	if nil != err {
 		return nil, fmt.Errorf("get object fields failed, err: %+v", err)
 	}
-	groups, err := lgc.getObjectGroup(objID, header, meta)
-	if nil != err {
-		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)
-	}
-	if len(groups) == 0 {
-		return nil, errors.New("get attribute group by object not found")
-	}
 
 	ret := make(map[string]Property)
-
-	// user specified export model field sort start index
-	var ustomFieldStartIndex int
-	//  sort the start of normal of the model
-	var normalFieldStartIndex int
-	// calculate the length of the user-psecified field
 	for _, field := range fields {
-		// filter fields cannot exported
 		if util.InStrArr(filterFields, field.ID) {
-			continue
+			field.NotExport = true
 		}
-		// filter fields than do not exist
-		if !util.InStrArr(customFields, field.ID) {
-			continue
-		}
-		normalFieldStartIndex++
+		ret[field.ID] = field
 	}
 
-	for _, group := range groups {
-		for _, field := range fields {
-			if field.Group == group.ID {
-				if util.InStrArr(filterFields, field.ID) {
-					field.NotExport = true
-				} else if util.InStrArr(customFields, field.ID) {
-					field.ExcelColIndex = ustomFieldStartIndex
-					ustomFieldStartIndex++
-				} else {
-					field.ExcelColIndex = normalFieldStartIndex
-					normalFieldStartIndex++
-				}
-				ret[field.ID] = field
-
-			}
-		}
-	}
 	return ret, nil
 }
 
@@ -162,7 +124,8 @@ func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header
 }
 
 func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metadata.Metadata) ([]Property, error) {
-	sort := fmt.Sprintf("-%s,bk_property_index", common.BKIsRequiredField)
+	sort := fmt.Sprintf("%s,-%s", common.BKPropertyIndexField, common.BKIsRequiredField)
+
 	return lgc.getObjFieldIDsBySort(objID, sort, header, nil, meta)
 
 }
@@ -226,28 +189,20 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	}
 
 	ret := []Property{}
-	for _, mapField := range result.Data {
-		fieldIsOnly := keyIDs[uint64(mapField.ID)]
-		fieldName := mapField.PropertyName
-		fieldID := mapField.PropertyID
-		fieldType := mapField.PropertyType
-		fieldIsRequire := mapField.IsRequired
-		fieldIsOption := mapField.Option
-		fieldIsPre := mapField.IsPre
-		fieldGroup := mapField.PropertyGroup
-		fieldIndex := mapField.PropertyIndex
-
+	index := 0
+	for _, attr := range result.Data {
 		ret = append(ret, Property{
-			ID:           fieldID,
-			Name:         fieldName,
-			PropertyType: fieldType,
-			IsRequire:    fieldIsRequire,
-			IsPre:        fieldIsPre,
-			Option:       fieldIsOption,
-			Group:        fieldGroup,
-			Index:        fieldIndex,
-			IsOnly:       fieldIsOnly,
+			ID:            attr.PropertyID,
+			Name:          attr.PropertyName,
+			PropertyType:  attr.PropertyType,
+			IsRequire:     attr.IsRequired,
+			IsPre:         attr.IsPre,
+			Option:        attr.Option,
+			Group:         attr.PropertyGroup,
+			ExcelColIndex: index,
+			IsOnly:        keyIDs[uint64(attr.ID)],
 		})
+		index++
 	}
 	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d, rid: %s", len(ret), rid)
 	return ret, nil
