@@ -88,7 +88,7 @@ func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 
 	if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, hostListTypeField); err != nil {
-		return fmt.Errorf("upgrade y3_6_201911141516, bug insert host list type field failed, err: %v", err)
+		return fmt.Errorf("upgrade y3_6_201911141516, but insert host list type field failed, err: %v", err)
 	}
 
 	return nil
