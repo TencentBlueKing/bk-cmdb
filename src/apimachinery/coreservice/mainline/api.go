@@ -14,7 +14,6 @@ package mainline
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/blog"
@@ -35,7 +34,7 @@ func (m *mainline) SearchMainlineModelTopo(ctx context.Context, header http.Head
 	err := m.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(ret)
@@ -57,11 +56,11 @@ func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, header http.H
 	input["with_detail"] = withDetail
 
 	ret := new(metadata.SearchTopoInstanceNodeResult)
-	subPath := fmt.Sprintf("/read/mainline/instance/%d", bkBizID)
+	subPath := "/read/mainline/instance/%d"
 	err := m.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath, bkBizID).
 		WithHeaders(header).
 		Do().
 		Into(ret)
