@@ -14,7 +14,6 @@ package process
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/blog"
@@ -29,7 +28,7 @@ func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, cate
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(category).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -47,11 +46,11 @@ func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, cate
 
 func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceCategoryResult)
-	subPath := fmt.Sprintf("/find/process/service_category/%d", categoryID)
+	subPath := "/find/process/service_category/%d"
 
 	err := p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, categoryID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -73,7 +72,7 @@ func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) 
 
 	err := p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -91,12 +90,12 @@ func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) 
 
 func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceCategoryResult)
-	subPath := fmt.Sprintf("/update/process/service_category/%d", categoryID)
+	subPath := "/update/process/service_category/%d"
 
 	err := p.client.Put().
 		WithContext(ctx).
 		Body(category).
-		SubResource(subPath).
+		SubResourcef(subPath, categoryID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -114,11 +113,11 @@ func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, cate
 
 func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, categoryID int64) errors.CCErrorCoder {
 	ret := new(metadata.OneServiceCategoryResult)
-	subPath := fmt.Sprintf("/delete/process/service_category/%d", categoryID)
+	subPath := "/delete/process/service_category/%d"
 
 	err := p.client.Delete().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, categoryID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -141,7 +140,7 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, opti
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -167,7 +166,7 @@ func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, temp
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(template).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -185,7 +184,7 @@ func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, temp
 
 func (p *process) ListServiceTemplateDetail(ctx context.Context, h http.Header, bizID int64, templateIDs ...int64) (metadata.MultipleServiceTemplateDetail, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleServiceTemplateDetailResult)
-	subPath := fmt.Sprintf("/findmany/process/service_template/detail/bk_biz_id/%d", bizID)
+	subPath := "/findmany/process/service_template/detail/bk_biz_id/%d"
 
 	option := map[string]interface{}{
 		"service_template_ids": templateIDs,
@@ -193,7 +192,7 @@ func (p *process) ListServiceTemplateDetail(ctx context.Context, h http.Header, 
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResource(subPath).
+		SubResourcef(subPath, bizID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -211,11 +210,11 @@ func (p *process) ListServiceTemplateDetail(ctx context.Context, h http.Header, 
 
 func (p *process) GetServiceTemplateWithStatistics(ctx context.Context, h http.Header, templateID int64) (*metadata.ServiceTemplateWithStatistics, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceTemplateWithStatisticsResult)
-	subPath := fmt.Sprintf("/find/process/service_template/%d/with_statistics", templateID)
+	subPath := "/find/process/service_template/%d/with_statistics"
 
 	err := p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, templateID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -233,11 +232,11 @@ func (p *process) GetServiceTemplateWithStatistics(ctx context.Context, h http.H
 
 func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templateID int64) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceTemplateResult)
-	subPath := fmt.Sprintf("/find/process/service_template/%d", templateID)
+	subPath := "/find/process/service_template/%d"
 
 	err := p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, templateID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -255,12 +254,12 @@ func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templat
 
 func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceTemplateResult)
-	subPath := fmt.Sprintf("/update/process/service_template/%d", templateID)
+	subPath := "/update/process/service_template/%d"
 
 	err := p.client.Put().
 		WithContext(ctx).
 		Body(template).
-		SubResource(subPath).
+		SubResourcef(subPath, templateID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -278,11 +277,11 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 
 func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, templateID int64) errors.CCErrorCoder {
 	ret := new(metadata.OneServiceTemplateResult)
-	subPath := fmt.Sprintf("/delete/process/service_template/%d", templateID)
+	subPath := "/delete/process/service_template/%d"
 
 	err := p.client.Delete().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, templateID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -305,7 +304,7 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, optio
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -328,7 +327,7 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, temp
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(template).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -346,11 +345,11 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, temp
 
 func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessTemplateResult)
-	subPath := fmt.Sprintf("/find/process/process_template/%d", templateID)
+	subPath := "/find/process/process_template/%d"
 
 	err := p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, templateID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -368,12 +367,12 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 
 func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, property map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessTemplateResult)
-	subPath := fmt.Sprintf("/update/process/process_template/%d", templateID)
+	subPath := "/update/process/process_template/%d"
 
 	err := p.client.Put().
 		WithContext(ctx).
 		Body(property).
-		SubResource(subPath).
+		SubResourcef(subPath, templateID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -391,11 +390,11 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, temp
 
 func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, templateID int64) errors.CCErrorCoder {
 	ret := new(metadata.OneProcessTemplateResult)
-	subPath := fmt.Sprintf("/delete/process/process_template/%d", templateID)
+	subPath := "/delete/process/process_template/%d"
 
 	err := p.client.Delete().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, templateID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -422,7 +421,7 @@ func (p *process) DeleteProcessTemplateBatch(ctx context.Context, h http.Header,
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -445,7 +444,7 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, optio
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -471,7 +470,7 @@ func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, inst
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(instance).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -489,11 +488,11 @@ func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, inst
 
 func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceInstanceResult)
-	subPath := fmt.Sprintf("/find/process/service_instance/%d", instanceID)
+	subPath := "/find/process/service_instance/%d"
 
 	err := p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, instanceID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -511,12 +510,12 @@ func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanc
 
 func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceInstanceResult)
-	subPath := fmt.Sprintf("/update/process/service_instance/%d", instanceID)
+	subPath := "/update/process/service_instance/%d"
 
 	err := p.client.Put().
 		WithContext(ctx).
 		Body(instance).
-		SubResource(subPath).
+		SubResourcef(subPath, instanceID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -539,7 +538,7 @@ func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, opti
 	err := p.client.Delete().
 		Body(option).
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -562,7 +561,7 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -585,7 +584,7 @@ func (p *process) ListServiceInstanceDetail(ctx context.Context, h http.Header, 
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -611,7 +610,7 @@ func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Head
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(instance).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -629,11 +628,11 @@ func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Head
 
 func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessInstanceRelationResult)
-	subPath := fmt.Sprintf("/find/process/process_instance_relation/%d", processID)
+	subPath := "/find/process/process_instance_relation/%d"
 
 	err := p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, processID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -651,12 +650,12 @@ func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header,
 
 func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	ret := new(metadata.OneProcessInstanceRelationResult)
-	subPath := fmt.Sprintf("/update/process/process_instance_relation/%d", instanceID)
+	subPath := "/update/process/process_instance_relation/%d"
 
 	err := p.client.Put().
 		WithContext(ctx).
 		Body(instance).
-		SubResource(subPath).
+		SubResourcef(subPath, instanceID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -678,7 +677,7 @@ func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Head
 
 	err := p.client.Delete().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		Body(option).
 		WithHeaders(h).
 		Do().
@@ -702,7 +701,7 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 	err := p.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -720,12 +719,12 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 
 func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder) {
 	ret := new(metadata.BusinessDefaultSetModuleInfoResult)
-	subPath := fmt.Sprintf("/find/process/business_default_set_module_info/%d", bizID)
+	subPath := "/find/process/business_default_set_module_info/%d"
 
 	emptyInfo := metadata.BusinessDefaultSetModuleInfo{}
 	err := p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, bizID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -743,11 +742,11 @@ func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.He
 
 func (p *process) RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, moduleID int64) (*metadata.RemoveTemplateBoundOnModuleResult, errors.CCErrorCoder) {
 	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
-	subPath := fmt.Sprintf("/delete/process/module_bound_template/%d", moduleID)
+	subPath := "/delete/process/module_bound_template/%d"
 
 	err := p.client.Delete().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, moduleID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -765,11 +764,11 @@ func (p *process) RemoveTemplateBindingOnModule(ctx context.Context, h http.Head
 
 func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder {
 	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
-	subPath := fmt.Sprintf("/update/process/service_instance_name/%d", instanceID)
+	subPath := "/update/process/service_instance_name/%d"
 
 	err := p.client.Post().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, instanceID).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -792,7 +791,7 @@ func (p *process) GetProc2Module(ctx context.Context, h http.Header, option meta
 	err := p.client.Post().
 		Body(option).
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
