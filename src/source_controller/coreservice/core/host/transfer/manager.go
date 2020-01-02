@@ -341,6 +341,7 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 	}
 
 	var exceptionArr []metadata.ExceptionResult
+	successHostIDs := make([]int64, 0)
 	for _, hostID := range input.HostIDArr {
 		err := transfer.Transfer(ctx, hostID)
 		if err != nil {
@@ -352,21 +353,26 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 			})
 			continue
 		}
+		successHostIDs = append(successHostIDs, hostID)
+	}
 
+	if len(successHostIDs) > 0 {
 		// reset private field in legacy business
-		if err := manager.clearLegacyPrivateField(ctx, legacyAttributes, hostID); err != nil {
-			blog.ErrorJSON("TransferToAnotherBusiness failed, clearLegacyPrivateField failed, hostID:%s, attributes:%s, err:%s, rid:%s", hostID, legacyAttributes, err.Error(), ctx.ReqID)
+		if err := manager.clearLegacyPrivateField(ctx, legacyAttributes, successHostIDs...); err != nil {
+			blog.ErrorJSON("TransferToAnotherBusiness failed, clearLegacyPrivateField failed, hostID:%s, attributes:%s, err:%s, rid:%s", successHostIDs, legacyAttributes, err.Error(), ctx.ReqID)
 			// we should go on setting default value for new private field
 		}
 
 		// set default value for private field in new business
-		if err := manager.setDefaultPrivateField(ctx, newAttributes, hostID); err != nil {
-			blog.ErrorJSON("TransferToAnotherBusiness failed, setDefaultPrivateField failed, hostID:%s, attributes:%s, err:%s, rid:%s", hostID, newAttributes, err.Error(), ctx.ReqID)
-			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.GetCode()),
-				OriginIndex: hostID,
-			})
+		if err := manager.setDefaultPrivateField(ctx, newAttributes, successHostIDs...); err != nil {
+			blog.ErrorJSON("TransferToAnotherBusiness failed, setDefaultPrivateField failed, hostID:%s, attributes:%s, err:%s, rid:%s", successHostIDs, newAttributes, err.Error(), ctx.ReqID)
+			for _, hostID := range successHostIDs {
+				exceptionArr = append(exceptionArr, metadata.ExceptionResult{
+					Message:     err.Error(),
+					Code:        int64(err.GetCode()),
+					OriginIndex: hostID,
+				})
+			}
 		}
 	}
 	if len(exceptionArr) > 0 {
