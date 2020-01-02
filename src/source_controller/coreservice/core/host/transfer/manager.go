@@ -376,7 +376,7 @@ func (manager *TransferManager) TransferToAnotherBusiness(ctx core.ContextParams
 	return nil, nil
 }
 
-func (manager *TransferManager) clearLegacyPrivateField(ctx core.ContextParams, attributes []metadata.Attribute, hostID int64) errors.CCErrorCoder {
+func (manager *TransferManager) clearLegacyPrivateField(ctx core.ContextParams, attributes []metadata.Attribute, hostIDs ...int64) errors.CCErrorCoder {
 	doc := make(map[string]interface{}, 0)
 	for _, attribute := range attributes {
 		bizID, err := attribute.Metadata.ParseBizID()
@@ -397,7 +397,9 @@ func (manager *TransferManager) clearLegacyPrivateField(ctx core.ContextParams, 
 		Doc: doc,
 	}
 	filter := map[string]interface{}{
-		common.BKHostIDField: hostID,
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
 	}
 	if err := manager.dbProxy.Table(common.BKTableNameBaseHost).UpdateMultiModel(ctx, filter, reset); err != nil {
 		blog.ErrorJSON("clearLegacyPrivateField failed. table: %s, filter: %s, doc: %s, err: %s, rid:%s", common.BKTableNameBaseHost, filter, doc, err.Error(), ctx.ReqID)
@@ -406,7 +408,7 @@ func (manager *TransferManager) clearLegacyPrivateField(ctx core.ContextParams, 
 	return nil
 }
 
-func (manager *TransferManager) setDefaultPrivateField(ctx core.ContextParams, attributes []metadata.Attribute, hostID int64) errors.CCErrorCoder {
+func (manager *TransferManager) setDefaultPrivateField(ctx core.ContextParams, attributes []metadata.Attribute, hostID ...int64) errors.CCErrorCoder {
 	doc := make(map[string]interface{})
 	for _, attribute := range attributes {
 		bizID, err := attribute.Metadata.ParseBizID()
@@ -425,7 +427,9 @@ func (manager *TransferManager) setDefaultPrivateField(ctx core.ContextParams, a
 	updateOption := metadata.UpdateOption{
 		Data: doc,
 		Condition: map[string]interface{}{
-			common.BKHostIDField: hostID,
+			common.BKHostIDField: map[string]interface{}{
+				common.BKDBIN: hostID,
+			},
 		},
 	}
 	_, err := manager.dependence.UpdateModelInstance(ctx, common.BKInnerObjIDHost, updateOption)
