@@ -711,23 +711,25 @@
                     this.updatePropertyIndex(info)
                 }
             },
-            updatePropertyIndex ({ element: property, newIndex }) {
-                // 取排序字段的前一个字段的index + 1
+            async updatePropertyIndex ({ element: property, newIndex }) {
                 let curIndex = 0
                 let curGroup = ''
-                const dragIndex = newIndex - 1 // newInex是从1开始计算
                 for (const group of this.groupedProperties) {
+                    const len = group.properties.length
                     for (const item of group.properties) {
                         if (item.bk_property_id === property.bk_property_id) {
-                            if ((dragIndex - 1) > 0) {
-                                curIndex = Number(group.properties[dragIndex - 1].bk_property_index) + 1
+                            // 取移动字段新位置的前一个字段 index + 1
+                            if (newIndex > 0) {
+                                // 拖拽插件bug 跨组拖动到最后的位置index会多1
+                                const index = newIndex === len ? newIndex - 2 : newIndex - 1
+                                curIndex = Number(group.properties[index].bk_property_index) + 1
                             }
                             curGroup = group.info.bk_group_id
                             break
                         }
                     }
                 }
-                this.updatePropertySort({
+                await this.updatePropertySort({
                     objId: this.objId,
                     propertyId: property.id,
                     params: this.$injectMetadata({
@@ -739,6 +741,8 @@
                         cancelWhenRouteChange: false
                     }
                 })
+                const properties = await this.getProperties()
+                this.init(properties, this.preview.groups)
             },
             handleAddField (group) {
                 this.slider.isEditField = false
