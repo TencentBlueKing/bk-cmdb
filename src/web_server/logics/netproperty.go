@@ -49,14 +49,13 @@ func GetImportNetProperty(
 }
 
 func BuildNetPropertyExcelFromData(ctx context.Context, defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
-	sortedFields := SortByIsRequired(fields)
-	productExcelHeader(ctx, sortedFields, nil, sheet, defLang)
+	productExcelHealer(ctx, fields, nil, sheet, defLang)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 	for _, row := range data {
 		propertyData := row
 
-		setExcelRowDataByIndex(propertyData, sheet, rowIndex, sortedFields)
+		setExcelRowDataByIndex(propertyData, sheet, rowIndex, fields)
 		rowIndex++
 	}
 
@@ -113,8 +112,7 @@ func BuildNetPropertyExcelTemplate(header http.Header, defLang language.DefaultC
 	fields := GetNetPropertyField(defLang)
 
 	blog.V(5).Infof("[Build NetProperty Excel Template]  fields count:%d, rid: %s", len(fields), rid)
-	sortedFields := SortByIsRequired(fields)
-	productExcelHeader(ctx, sortedFields, nil, sheet, defLang)
+	productExcelHealer(ctx, fields, nil, sheet, defLang)
 
 	if err = file.Save(filename); nil != err {
 		return err

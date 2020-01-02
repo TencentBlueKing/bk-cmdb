@@ -13,6 +13,8 @@
 package model
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -176,6 +178,98 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
+func (m *modelAttribute) UpdateModelAttributesIndex(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (result *metadata.UpdateAttrIndexData, err error) {
+
+	// attributes exist check
+	cond := inputParam.Condition
+	cond = util.SetModOwner(cond, ctx.SupplierAccount)
+	exists, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).Count(ctx)
+	if nil != err {
+		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, condition: %v, err: %s", ctx.ReqID, inputParam.Condition, err.Error())
+		return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	}
+	if exists <= 0 {
+		blog.Errorf("UpdateModelAttributesIndex failed, attributes not exist, condition: %v", inputParam.Condition)
+		return result, fmt.Errorf("UpdateModelAttributesIndex failed, attributes not exist, condition: %v", inputParam.Condition)
+	}
+
+	propertyGroupStr, err := inputParam.Data.String(common.BKPropertyGroupField)
+	if err != nil {
+		blog.ErrorJSON("UpdateModelAttributesIndex failed, request(%s): mapstr convert string failed, condition: %v, err: %s", ctx.ReqID, inputParam.Condition, err.Error())
+		return result, err
+	}
+	// check if bk_property_index has been used, if not, use it directly
+	condition := mapstr.MapStr{}
+	condition = util.SetModOwner(condition, ctx.SupplierAccount)
+	condition[common.BKObjIDField] = objID
+	condition[common.BKPropertyGroupField] = inputParam.Data[common.BKPropertyGroupField]
+	condition[common.BKPropertyIndexField] = inputParam.Data[common.BKPropertyIndexField]
+	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condition).Count(ctx)
+	if nil != err {
+		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	}
+	if count <= 0 {
+		data := mapstr.MapStr{
+			common.BKPropertyIndexField: inputParam.Data[common.BKPropertyIndexField],
+			common.BKPropertyGroupField: inputParam.Data[common.BKPropertyGroupField],
+		}
+		err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond, data)
+		if nil != err {
+			blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+			return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+		}
+
+		result, err := m.buildUpdateAttrIndexReturn(ctx, objID, propertyGroupStr)
+		if err != nil {
+			blog.Errorf("UpdateModelAttributesIndex, update index success, but build return data failed, rid: %s, err: %s", ctx.ReqID, err.Error())
+			return result, err
+		}
+
+		return result, nil
+	}
+
+	// get all properties which bk_property_index is larger than the current bk_property_index , exclude self
+	condition[common.BKPropertyIndexField] = mapstr.MapStr{"$gte": inputParam.Data[common.BKPropertyIndexField]}
+	condition["id"] = mapstr.MapStr{"$ne": inputParam.Condition["id"]}
+	resultAttrs := []metadata.Attribute{}
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condition).All(ctx, &resultAttrs)
+	if nil != err {
+		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	for _, attr := range resultAttrs {
+		opt := mapstr.MapStr{}
+		opt["id"] = attr.ID
+		data := mapstr.MapStr{common.BKPropertyIndexField: attr.PropertyIndex + 1}
+		err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, opt, data)
+		if nil != err {
+			blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+			return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+		}
+	}
+
+	// update bk_property_index now
+	data := mapstr.MapStr{
+		common.BKPropertyIndexField: inputParam.Data[common.BKPropertyIndexField],
+		common.BKPropertyGroupField: inputParam.Data[common.BKPropertyGroupField],
+	}
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond, data)
+	if nil != err {
+		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return result, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	result, err = m.buildUpdateAttrIndexReturn(ctx, objID, propertyGroupStr)
+	if err != nil {
+		blog.Errorf("UpdateModelAttributesIndex, update index success, but build return data failed, rid: %s, err: %s", ctx.ReqID, err.Error())
+		return result, err
+	}
+
+	return result, nil
+}
+
 func (m *modelAttribute) UpdateModelAttributesByCondition(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
@@ -247,16 +341,18 @@ func (m *modelAttribute) SearchModelAttributesByCondition(ctx core.ContextParams
 		Info: []metadata.Attribute{},
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
+	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), parse condition  error [%#v]", ctx.ReqID, inputParam, err)
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
-	attrArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	cond.Element(&mongo.In{Key: metadata.AttributeFieldSupplierAccount, Val: attrArr})
-	attrResult, err := m.search(ctx, cond)
+	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
+	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
+	inputParam.Condition = condition.ToMapStr()
+
+	attrResult, err := m.searchWithSort(ctx, inputParam)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), error info is %s", ctx.ReqID, cond, err.Error())
+		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), error info is %s", ctx.ReqID, inputParam, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 
