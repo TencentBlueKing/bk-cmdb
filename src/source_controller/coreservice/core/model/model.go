@@ -13,6 +13,11 @@
 package model
 
 import (
+	"fmt"
+	"time"
+
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -31,13 +36,14 @@ type modelManager struct {
 	*modelClassification
 	*modelAttrUnique
 	dbProxy   dal.RDB
+	cache     *redis.Client
 	dependent OperationDependences
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB, dependent OperationDependences) core.ModelOperation {
+func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client) core.ModelOperation {
 
-	coreMgr := &modelManager{dbProxy: dbProxy, dependent: dependent}
+	coreMgr := &modelManager{dbProxy: dbProxy, dependent: dependent, cache: cache}
 
 	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr}
 	coreMgr.modelClassification = &modelClassification{dbProxy: dbProxy, model: coreMgr}
@@ -48,6 +54,19 @@ func New(dbProxy dal.RDB, dependent OperationDependences) core.ModelOperation {
 }
 
 func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
+
+	redisKey := fmt.Sprintf("%screate:model:%s", common.BKCacheKeyV3Prefix, inputParam.Spec.ObjectID)
+	defer m.cache.Del(redisKey)
+	looked, err := m.cache.SetNX(redisKey, "", time.Second*35).Result()
+	if err != nil {
+		blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommRedisOPErr)
+	}
+	if !looked {
+		blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s)", inputParam.Spec.ObjectID))
+	}
+	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%s, rid:%s", redisKey, looked, err, ctx.ReqID)
 
 	dataResult := &metadata.CreateOneDataResult{}
 
