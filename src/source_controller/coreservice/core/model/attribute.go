@@ -13,9 +13,15 @@
 package model
 
 import (
+	"fmt"
+	"time"
+
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -27,6 +33,7 @@ import (
 type modelAttribute struct {
 	model   *modelManager
 	dbProxy dal.RDB
+	cache   *redis.Client
 }
 
 func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributes) (dataResult *metadata.CreateManyDataResult, err error) {
@@ -54,6 +61,21 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 	}
 
 	for attrIdx, attr := range inputParam.Attributes {
+		redisKey := fmt.Sprintf("coreservice:create:model:%s:attr:%s", objID, attr.PropertyID)
+
+		locker := lock.NewLocker(m.cache)
+		looked, err := locker.Lock(redisKey, time.Second*35)
+		defer locker.Unlock()
+		if err != nil {
+			blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, ctx.ReqID)
+			addExceptionFunc(int64(attrIdx), ctx.Error.CCErrorf(common.CCErrCommRedisOPErr), &attr)
+			continue
+		}
+		if !looked {
+			blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, ctx.ReqID)
+			addExceptionFunc(int64(attrIdx), ctx.Error.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)), &attr)
+			continue
+		}
 		if attr.IsPre {
 			if attr.PropertyID == common.BKInstNameField {
 				attr.PropertyName = util.FirstNotEmptyString(ctx.Lang.Language("common_property_"+attr.PropertyID), attr.PropertyName, attr.PropertyID)
