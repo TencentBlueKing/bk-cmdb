@@ -59,8 +59,8 @@ If you want to know more about the above features, please refer to the [Function
  orchestration and management for micro-service business.
 - [BK-BCS-SaaS](https://github.com/Tencent/bk-bcs-saas)：a SaaS provides users with highly scalable
 , flexible and easy-to-use container products and services.
-- [BK-PaaS](https://github.com/Tencent/bk-PaaS)：is an development platform that allows developers to create, develop, deploy and manage SaaS applications easily and quickly.
-- [BK-SOPS](https://github.com/Tencent/bk-sops)：is an lightweight scheduling SaaS  for task flow
+- [BK-PaaS](https://github.com/Tencent/bk-PaaS)：an development platform that allows developers to create, develop, deploy and manage SaaS applications easily and quickly.
+- [BK-SOPS](https://github.com/Tencent/bk-sops)：an lightweight scheduling SaaS  for task flow
  scheduling and execution through a visual graphical interface. 
 
 ## Contributing

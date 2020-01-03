@@ -81,29 +81,6 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
 	}
 
-	header := ctx.Kit.Header
-	tx, e := ps.TransactionClient.Start(context.Background())
-	if e != nil {
-		blog.Errorf("createServiceInstances failed, start transaction failed, err: %+v, rid: %s", e, rid)
-		return nil, ctx.Kit.CCError.CCError(common.CCErrCommStartTransactionFailed)
-	}
-	header = tx.TxnInfo().IntoHeader(header)
-	ctx.Kit.Header = header
-
-	defer func() {
-		if err != nil {
-			if txErr := tx.Abort(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("createServiceInstances failed, abort translation failed, err: %v, rid: %s", txErr, rid)
-				return
-			}
-		} else {
-			if txErr := tx.Commit(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("createServiceInstances failed, commit transaction failed, err: %v, rid: %s", txErr, rid)
-				return
-			}
-		}
-	}()
-
 	serviceInstanceIDs := make([]int64, 0)
 	for _, inst := range input.Instances {
 		instance := &metadata.ServiceInstance{

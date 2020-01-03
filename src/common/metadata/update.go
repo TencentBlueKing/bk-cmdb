@@ -24,3 +24,14 @@ type UpdatedOptionResult struct {
 	BaseResp `json:",inline"`
 	Data     UpdatedCount `json:"data" mapstructure:"data"`
 }
+
+// UpdatedAttrIndexResult  update attributes index result
+type UpdatedAttrIndexResult struct {
+	BaseResp `json:",inline"`
+	Data     *UpdateAttrIndexData `json:"data"`
+}
+
+type UpdateAttrIndexData struct {
+	Info  []*UpdateAttributeIndex `json:"info"`
+	Count uint64                  `json:"count"`
+}
