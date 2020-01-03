@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -45,7 +46,7 @@ func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client) c
 
 	coreMgr := &modelManager{dbProxy: dbProxy, dependent: dependent, cache: cache}
 
-	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr}
+	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr, cache: cache}
 	coreMgr.modelClassification = &modelClassification{dbProxy: dbProxy, model: coreMgr}
 	coreMgr.modelAttributeGroup = &modelAttributeGroup{dbProxy: dbProxy, model: coreMgr}
 	coreMgr.modelAttrUnique = &modelAttrUnique{dbProxy: dbProxy}
@@ -55,9 +56,11 @@ func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client) c
 
 func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 
-	redisKey := fmt.Sprintf("%screate:model:%s", common.BKCacheKeyV3Prefix, inputParam.Spec.ObjectID)
-	defer m.cache.Del(redisKey)
-	looked, err := m.cache.SetNX(redisKey, "", time.Second*35).Result()
+	locker := lock.NewLocker(m.cache)
+	redisKey := fmt.Sprintf("coreservice:create:model:%s", inputParam.Spec.ObjectID)
+
+	looked, err := locker.Lock(redisKey, time.Second*35)
+	defer locker.Unlock()
 	if err != nil {
 		blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommRedisOPErr)
