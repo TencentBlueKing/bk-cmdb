@@ -366,6 +366,16 @@ func (s *coreService) UpdateModelAttributes(params core.ContextParams, pathParam
 	return s.core.ModelOperation().UpdateModelAttributes(params, pathParams("bk_obj_id"), inputData)
 }
 
+func (s *coreService) UpdateModelAttributesIndex(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().UpdateModelAttributesIndex(params, pathParams("bk_obj_id"), inputData)
+}
+
 func (s *coreService) UpdateModelAttributesByCondition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.UpdateOption{}
