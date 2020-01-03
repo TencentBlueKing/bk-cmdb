@@ -81,29 +81,6 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
 	}
 
-	header := ctx.Kit.Header
-	tx, e := ps.TransactionClient.Start(context.Background())
-	if e != nil {
-		blog.Errorf("createServiceInstances failed, start transaction failed, err: %+v, rid: %s", e, rid)
-		return nil, ctx.Kit.CCError.CCError(common.CCErrCommStartTransactionFailed)
-	}
-	header = tx.TxnInfo().IntoHeader(header)
-	ctx.Kit.Header = header
-
-	defer func() {
-		if err != nil {
-			if txErr := tx.Abort(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("createServiceInstances failed, abort translation failed, err: %v, rid: %s", txErr, rid)
-				return
-			}
-		} else {
-			if txErr := tx.Commit(ctx.Kit.Ctx); txErr != nil {
-				blog.Errorf("createServiceInstances failed, commit transaction failed, err: %v, rid: %s", txErr, rid)
-				return
-			}
-		}
-	}()
-
 	serviceInstanceIDs := make([]int64, 0)
 	for _, inst := range input.Instances {
 		instance := &metadata.ServiceInstance{
@@ -1314,7 +1291,7 @@ func (ps *ProcServer) DeleteServiceInstancePreview(ctx *rest.Contexts) {
 		}
 	}
 
-	// step3. get related hosts expired service instances(current minus to be deleted ones)
+	// step3. get related hosts expired service instances(current minus deleted items)
 	listOption = &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
 		HostIDs:    hostIDs,
@@ -1340,33 +1317,82 @@ func (ps *ProcServer) DeleteServiceInstancePreview(ctx *rest.Contexts) {
 		expiredHostModule[instance.HostID] = append(expiredHostModule[instance.HostID], instance.ModuleID)
 	}
 
+	// get idle module
+	idleModule, err := ps.getDefaultModule(ctx, bizID, common.DefaultResModuleFlag)
+	if err != nil {
+		blog.Errorf("generate delete preview failed, getDefaultModule failed, bizID: %d, err: %+v, rid: %s", bizID, err, ctx.Kit.Rid)
+		ctx.RespWithError(err, common.CCErrGetModule, "generate delete preview failed, get idle module failed, bizID: %d", bizID)
+		return
+	}
+	idleModuleID := idleModule.ModuleID
+
 	preview := metadata.ServiceInstanceDeletePreview{
 		ToMoveModuleHosts: make([]metadata.RemoveFromModuleHost, 0),
 	}
 
 	// check host remove from modules
+	finalHostModules := make([]metadata.Host2Modules, 0)
 	for hostID, moduleIDs := range hostModules {
 		hostPreview := metadata.RemoveFromModuleHost{
-			HostID:  hostID,
-			Modules: make([]int64, 0),
+			HostID:            hostID,
+			RemoveFromModules: make([]int64, 0),
 		}
 		expiredModules, exist := expiredHostModule[hostID]
 		if !exist {
 			// host will be move to idle module
 			hostPreview.MoveToIdle = true
-			hostPreview.Modules = moduleIDs
+			hostPreview.RemoveFromModules = moduleIDs
+			hostPreview.FinalModules = []int64{idleModuleID}
 			preview.ToMoveModuleHosts = append(preview.ToMoveModuleHosts, hostPreview)
+			finalHostModules = append(finalHostModules, metadata.Host2Modules{
+				HostID:    hostID,
+				ModuleIDs: hostPreview.FinalModules,
+			})
 			continue
 		}
 		for _, moduleID := range moduleIDs {
 			if !util.InArray(moduleID, expiredModules) {
 				// host will be remove from module:expiredModules[hostID]
-				hostPreview.Modules = append(hostPreview.Modules, moduleID)
+				hostPreview.RemoveFromModules = append(hostPreview.RemoveFromModules, moduleID)
+			} else {
+				hostPreview.FinalModules = append(hostPreview.FinalModules, moduleID)
 			}
 		}
-		if len(hostPreview.Modules) > 0 {
+		if len(hostPreview.RemoveFromModules) > 0 {
 			preview.ToMoveModuleHosts = append(preview.ToMoveModuleHosts, hostPreview)
 		}
+		finalHostModules = append(finalHostModules, metadata.Host2Modules{
+			HostID:    hostID,
+			ModuleIDs: hostPreview.FinalModules,
+		})
 	}
+
+	finalModules := make([]int64, 0)
+	for _, item := range finalHostModules {
+		finalModules = append(finalModules, item.ModuleIDs...)
+	}
+	listRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: finalModules,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	ruleResult, err := ps.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, listRuleOption)
+	if err != nil {
+		blog.Errorf("generate delete preview failed, ListHostApplyRule failed, option: %+v, err: %+v, rid: %s", listRuleOption, err, ctx.Kit.Rid)
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "generate delete preview failed, ListHostApplyRule failed, option: %+v", listRuleOption)
+		return
+	}
+	hostApplyPlanOption := metadata.HostApplyPlanOption{
+		HostModules: finalHostModules,
+		Rules:       ruleResult.Info,
+	}
+	applyPlan, err := ps.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(ctx.Kit.Ctx, ctx.Kit.Header, bizID, hostApplyPlanOption)
+	if err != nil {
+		blog.Errorf("generate delete preview failed, GenerateApplyPlan failed, option: %+v, err: %+v, rid: %s", hostApplyPlanOption, err, ctx.Kit.Rid)
+		ctx.RespWithError(err, common.CCErrGetModule, "generate delete preview failed, GenerateApplyPlan failed, option: %+v", hostApplyPlanOption)
+		return
+	}
+	preview.HostApplyPlan = applyPlan
 	ctx.RespEntity(preview)
 }
