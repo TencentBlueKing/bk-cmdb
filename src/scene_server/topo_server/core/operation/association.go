@@ -508,16 +508,18 @@ func (assoc *association) CheckAssociation(params types.ContextParams, obj model
 	for _, asst := range asst {
 		var errCheck error
 		isInstExist := false
-		if asst.ObjectID == objectID {
+		if asst.ObjectID == objectID && asst.InstID == instID {
 			isInstExist, errCheck = assoc.CheckAssociationInstExist(params, asst.AsstObjectID, asst.AsstInstID)
-		} else {
+		} else if asst.AsstObjectID == objectID && asst.AsstInstID == instID {
 			isInstExist, errCheck = assoc.CheckAssociationInstExist(params, asst.ObjectID, asst.InstID)
+		} else {
+			return params.Err.New(common.CCErrCommDBSelectFailed, "instance is not associated in selected association")
 		}
 		if errCheck != nil {
 			return errCheck
 		}
 		if isInstExist {
-			return params.Err.Error(common.CCErrTopoInstHasBeenAssociation)
+			return params.Err.CCErrorf(common.CCErrTopoInstHasBeenAssociation, instID)
 		}
 	}
 
