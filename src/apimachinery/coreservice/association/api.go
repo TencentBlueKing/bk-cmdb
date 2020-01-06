@@ -26,7 +26,7 @@ func (asst *association) CreateAssociationType(ctx context.Context, h http.Heade
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -40,7 +40,7 @@ func (asst *association) CreateManyAssociation(ctx context.Context, h http.Heade
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -54,7 +54,7 @@ func (asst *association) SetAssociation(ctx context.Context, h http.Header, inpu
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -68,7 +68,7 @@ func (asst *association) SetManyAssociation(ctx context.Context, h http.Header, 
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -82,7 +82,7 @@ func (asst *association) UpdateAssociationType(ctx context.Context, h http.Heade
 	err = asst.client.Put().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -96,7 +96,7 @@ func (asst *association) DeleteAssociationType(ctx context.Context, h http.Heade
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -110,7 +110,7 @@ func (asst *association) DeleteAssociationCascade(ctx context.Context, h http.He
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -124,7 +124,7 @@ func (asst *association) ReadAssociationType(ctx context.Context, h http.Header,
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -138,7 +138,7 @@ func (asst *association) CreateModelAssociation(ctx context.Context, h http.Head
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -152,7 +152,7 @@ func (asst *association) CreateMainlineModelAssociation(ctx context.Context, h h
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -166,7 +166,7 @@ func (asst *association) SetModelAssociation(ctx context.Context, h http.Header,
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -180,7 +180,7 @@ func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Head
 	err = asst.client.Put().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -194,7 +194,7 @@ func (asst *association) ReadModelAssociation(ctx context.Context, h http.Header
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -208,7 +208,7 @@ func (asst *association) DeleteModelAssociation(ctx context.Context, h http.Head
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -222,7 +222,7 @@ func (asst *association) DeleteModelAssociationCascade(ctx context.Context, h ht
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -236,7 +236,7 @@ func (asst *association) CreateInstAssociation(ctx context.Context, h http.Heade
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -250,7 +250,7 @@ func (asst *association) SetInstAssociation(ctx context.Context, h http.Header, 
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -264,7 +264,7 @@ func (asst *association) UpdateInstAssociation(ctx context.Context, h http.Heade
 	err = asst.client.Put().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -278,7 +278,7 @@ func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header,
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -292,7 +292,7 @@ func (asst *association) DeleteInstAssociation(ctx context.Context, h http.Heade
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

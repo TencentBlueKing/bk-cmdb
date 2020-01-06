@@ -14,7 +14,6 @@ package object
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -27,7 +26,7 @@ func (t *object) CreateClassification(ctx context.Context, h http.Header, obj *m
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(obj).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -36,12 +35,12 @@ func (t *object) CreateClassification(ctx context.Context, h http.Header, obj *m
 
 func (t *object) SelectClassificationWithObjects(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/object/classification/%s/objects", ownerID)
+	subPath := "/object/classification/%s/objects"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -54,7 +53,7 @@ func (t *object) SelectClassificationWithParams(ctx context.Context, h http.Head
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -62,12 +61,12 @@ func (t *object) SelectClassificationWithParams(ctx context.Context, h http.Head
 }
 func (t *object) UpdateClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/object/classification/%s", classID)
+	subPath := "/object/classification/%s"
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath, classID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -75,12 +74,12 @@ func (t *object) UpdateClassification(ctx context.Context, classID string, h htt
 }
 func (t *object) DeleteClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/object/classification/%s", classID)
+	subPath := "/object/classification/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath, classID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
