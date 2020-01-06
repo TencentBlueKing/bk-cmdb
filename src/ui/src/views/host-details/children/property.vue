@@ -432,6 +432,7 @@
             margin: 0 4px 0 0;
             &.bool {
                 width: 42px;
+                height: 24px;
             }
         }
     }
