@@ -1,5 +1,5 @@
 <template>
-    <div class="layout"
+    <div class="module-selector-layout"
         v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="wrapper">
             <div class="wrapper-column wrapper-left">
@@ -281,7 +281,7 @@
 
 <style lang="scss" scoped>
     $leftPadding: 0 12px 0 23px;
-    .layout {
+    .module-selector-layout {
         height: 460px;
         min-height: 300px;
         padding: 0 0 50px;

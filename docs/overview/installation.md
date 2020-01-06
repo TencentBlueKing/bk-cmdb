@@ -4,7 +4,7 @@
 
 * ZooKeeper >= 3.4.11
 * Redis   >= 3.2.11
-* MongoDB >= 2.8.0
+* MongoDB >= 3.6.0
 * Elasticsearch >= 5.0.0 & < 7 (用于全文检索功能，推荐使用5.x的版本)
 * Mongo-connector >= 2.5.0 (用于全文检索功能，推荐3.1.1)
 
@@ -51,7 +51,7 @@
 
 请参考官方资料 [MongoDB](https://docs.mongodb.com/manual/installation/)
 
-推荐版本下载：[MongoDB 2.8.0](http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel70-2.8.0-rc5.tgz?_ga=2.109966917.1194957577.1522583108-162706957.1522583108)
+推荐版本下载：[MongoDB 3.6.0](http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel70-3.6.0-rc5.tgz?_ga=2.109966917.1194957577.1522583108-162706957.1522583108)
 
 ### 4. Release包下载
 

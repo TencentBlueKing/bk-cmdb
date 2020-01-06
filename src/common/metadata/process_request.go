@@ -34,11 +34,13 @@ type UpdateServiceTemplateOption struct {
 }
 
 type RemoveFromModuleHost struct {
-	MoveToIdle bool    `field:"move_to_idle" json:"move_to_idle"`
-	HostID     int64   `field:"bk_host_id" json:"bk_host_id"`
-	Modules    []int64 `field:"bk_module_ids" json:"bk_module_ids"`
+	MoveToIdle        bool    `field:"move_to_idle" json:"move_to_idle"`
+	HostID            int64   `field:"bk_host_id" json:"bk_host_id"`
+	RemoveFromModules []int64 `field:"bk_module_ids" json:"bk_module_ids"`
+	FinalModules      []int64 `field:"final_module_ids" json:"final_module_ids"`
 }
 
 type ServiceInstanceDeletePreview struct {
 	ToMoveModuleHosts []RemoveFromModuleHost `field:"to_move_module_hosts" json:"to_move_module_hosts"`
+	HostApplyPlan     HostApplyPlanResult    `field:"host_apply_plan" json:"host_apply_plan"`
 }

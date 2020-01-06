@@ -779,7 +779,7 @@
         }
     }
     .topology-details {
-        padding: 0 !important;
+        padding-left: 0 !important;
         /deep/ {
             .property-list {
                 margin-left: 36px;
@@ -856,11 +856,6 @@
     }
     .btn-delete{
         min-width: 76px;
-        &:not(.is-disabled):hover {
-            color: #ffffff;
-            border-color: #ff5656;
-            background-color: #ff5656;
-        }
     }
     .sync-set-btn {
         position: relative;

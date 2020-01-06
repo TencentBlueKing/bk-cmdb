@@ -34,6 +34,7 @@
                 </div>
                 <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST, parent_layers: parentLayers })">
                     <bk-button slot-scope="{ disabled }"
+                        hover-theme="danger"
                         class="models-button button-delete"
                         :disabled="!table.checked.length || disabled"
                         @click="handleMultipleDelete">
@@ -790,14 +791,6 @@
         position: relative;
         &:hover{
             z-index: 1;
-            &.button-delete {
-                color: $cmdbDangerColor;
-                border-color: $cmdbDangerColor;
-            }
-            /deep/ &.bk-button.bk-default[disabled] {
-                border-color: #dcdee5 !important;
-                color: #c4c6cc !important;
-            }
         }
     }
     .models-table{

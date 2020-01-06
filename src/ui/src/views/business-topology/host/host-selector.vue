@@ -1,5 +1,5 @@
 <template>
-    <div class="layout clearfix"
+    <div class="host-selector-layout clearfix"
         v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="wrapper clearfix">
             <div class="wrapper-column wrapper-left fl">
@@ -43,8 +43,8 @@
             </div>
         </div>
         <div class="layout-footer">
-            <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <bk-button theme="primary" :disabled="!selected.length" @click="handleNextStep">{{confirmText || $t('下一步')}}</bk-button>
+            <bk-button class="mr10" theme="primary" :disabled="!selected.length" @click="handleNextStep">{{confirmText || $t('下一步')}}</bk-button>
+            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
 </template>
@@ -169,7 +169,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .layout {
+    .host-selector-layout {
         position: relative;
         height: 460px;
         min-height: 300px;

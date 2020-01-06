@@ -1186,7 +1186,7 @@
     "确认应用": "Confirm Apply",
     "您还有无法自动应用的主机属性需确认": "You have to confirm the host attributes that cannot be applied automatically. Do you want to keep the original attribute values of the host without modification?",
     "确认关闭": "Confirm Close?",
-    "关闭后转入模块的主机属性不再自动被应用": "Host properties transferred to the module after shutdown are no longer automatically applied",
+    "确认关闭当前模块的主机属性自动应用": "Confirm that the host properties of the current module are automatically applied",
     "保留当前自动应用策略": "Keep current auto-apply policies",
     "固资编号": "Asset Id",
     "所属拓扑": "Belong Topology",
@@ -1231,5 +1231,10 @@
     "跳转服务模版": "To Service Template",
     "模板没配置进程": "Template has no processes",
     "表格排序设置": "Table sorting settings",
-    "实例表格字段排序设置": "Instance table field sorting settings"
+    "实例表格字段排序设置": "Instance table field sorting settings",
+    "请输入值": "Please input the value",
+    "默认值设置": "Default setting",
+    "列表值": "List value",
+    "转移到空闲机的主机": "Host transferred to idle machine",
+    "转移到空闲机": "Transfer to idle machine"
 }
