@@ -2,7 +2,7 @@
     <div class="group-layout" v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }">
         <div class="layout-header">
             <bk-button @click="previewShow = true" :disabled="!properties.length">{{$t('字段预览')}}</bk-button>
-            <bk-button text class="setting-btn" @click="configProperty.show = true">
+            <bk-button text class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
                 <i class="icon-cc-setting"></i>
                 {{$t('表格排序设置')}}
             </bk-button>
@@ -271,7 +271,7 @@
     import previewField from './preview-field'
     import fieldDetailsView from './field-view'
     import CmdbColumnsConfig from '@/components/columns-config/columns-config'
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters, mapActions, mapState } from 'vuex'
     export default {
         components: {
             vueDraggable,
@@ -349,6 +349,7 @@
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount', 'isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', ['isInjectable', 'activeModel']),
             objId () {
@@ -398,6 +399,12 @@
                     biz: ['bk_biz_name']
                 }
                 return disabled[this.objId] || ['bk_inst_name']
+            },
+            curGlobalCustomTableColumns () {
+                return this.globalUsercustom[`${this.objId}_global_custom_table_columns`]
+            },
+            canEditSort () {
+                return !this.customObjId && this.curModel['bk_classification_id'] !== 'bk_biz_topo'
             }
         },
         async created () {
@@ -501,7 +508,7 @@
                     }
                 })
                 const seletedProperties = this.$tools.getHeaderProperties(properties, [], this.disabledConfig)
-                this.configProperty.selected = seletedProperties.map(property => property.bk_property_id)
+                this.configProperty.selected = this.curGlobalCustomTableColumns || seletedProperties.map(property => property.bk_property_id)
                 this.initGroupState = this.$tools.clone(groupState)
                 this.groupState = Object.assign({}, groupState, this.groupState)
                 this.groupedProperties = groupedProperties
@@ -898,8 +905,17 @@
             handleReceiveAuth (auth) {
                 this.updateAuth = auth
             },
-            handleApplyConfig () {
-
+            handleApplyConfig (properties) {
+                const setProperties = properties.map(property => property.bk_property_id)
+                this.$store.dispatch('userCustom/saveGlobalUsercustom', {
+                    objId: this.objId,
+                    params: {
+                        global_custom_table_columns: setProperties
+                    }
+                }).then(() => {
+                    this.configProperty.selected = setProperties
+                    this.configProperty.show = false
+                })
             }
         }
     }
