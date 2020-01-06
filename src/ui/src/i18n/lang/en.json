@@ -1229,5 +1229,7 @@
     "非业务模块，无服务实例，请选择业务模块查看": "Non-business module, no service instance, please select the business module to view",
     "模型中需包含枚举字段才可以作为维度统计": "Models need to include enumerated fields for dimensional statistics",
     "跳转服务模版": "To Service Template",
-    "模板没配置进程": "Template has no processes"
+    "模板没配置进程": "Template has no processes",
+    "表格排序设置": "Table sorting settings",
+    "实例表格字段排序设置": "Instance table field sorting settings"
 }
