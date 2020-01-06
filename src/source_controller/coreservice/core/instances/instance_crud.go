@@ -82,42 +82,45 @@ func (m *instanceManager) getInstDataByID(ctx core.ContextParams, objID string, 
 func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (results []mapstr.MapStr, err error) {
 	results = []mapstr.MapStr{}
 	tableName := common.GetInstTableName(objID)
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond := inputParam.Condition
 	results = make([]mapstr.MapStr, 0)
-	if nil != err {
-		return results, err
-	}
 	if tableName == common.BKTableNameBaseInst {
-		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
-	}
-	condsMap := util.SetQueryOwner(condition.ToMapStr(), ctx.SupplierAccount)
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %#v, rid:%s", tableName, condition.ToMapStr(), ctx.ReqID)
-	instHandler := m.dbProxy.Table(tableName).Find(condsMap)
-	for _, sort := range inputParam.SortArr {
-		fileld := sort.Field
-		if sort.IsDsc {
-			fileld = "-" + fileld
+		objIDCond, ok := cond[common.BKObjIDField]
+		if ok && objIDCond != objID {
+			blog.V(9).Infof("searchInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, ctx.ReqID)
+			return results, nil
 		}
-		instHandler = instHandler.Sort(fileld)
+		cond[common.BKObjIDField] = objID
+	}
+	cond = util.SetQueryOwner(cond, ctx.SupplierAccount)
+	blog.V(9).Infof("searchInstance with table: %s and parameters: %#v, rid:%s", tableName, inputParam, ctx.ReqID)
+	instHandler := m.dbProxy.Table(tableName).Find(cond)
+	for _, sort := range inputParam.SortArr {
+		field := sort.Field
+		if sort.IsDsc {
+			field = "-" + field
+		}
+		instHandler = instHandler.Sort(field)
 	}
 	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).Fields(inputParam.Fields...).All(ctx, &results)
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v, rid: %s", tableName, condition.ToMapStr(), results, ctx.ReqID)
+	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v, rid: %s", tableName, inputParam, results, ctx.ReqID)
 
 	return results, err
 }
 
 func (m *instanceManager) countInstance(ctx core.ContextParams, objID string, cond mapstr.MapStr) (count uint64, err error) {
 	tableName := common.GetInstTableName(objID)
-	condition, err := mongo.NewConditionFromMapStr(cond)
-	if nil != err {
-		return 0, err
-	}
 	if tableName == common.BKTableNameBaseInst {
-		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
+		objIDCond, ok := cond[common.BKObjIDField]
+		if ok && objIDCond != objID {
+			blog.V(9).Infof("countInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, ctx.ReqID)
+			return 0, nil
+		}
+		cond[common.BKObjIDField] = objID
 	}
 
-	condsMap := util.SetQueryOwner(condition.ToMapStr(), ctx.SupplierAccount)
-	count, err = m.dbProxy.Table(tableName).Find(condsMap).Count(ctx)
+	cond = util.SetQueryOwner(cond, ctx.SupplierAccount)
+	count, err = m.dbProxy.Table(tableName).Find(cond).Count(ctx)
 
 	return count, err
 }
