@@ -199,6 +199,7 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 	cnt, err = m.checkUpdate(ctx, data, cond)
 	if err != nil {
+		blog.ErrorJSON("checkUpdate error. data:%s, cond:%s, rid:%s", data, cond, ctx.ReqID)
 		return cnt, err
 	}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
@@ -353,10 +354,11 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	for _, dbAttribute := range dbAttributeArr {
 		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName)
 		if err != nil {
-			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), dbAttribute, ctx.ReqID)
 			return changeRow, err
 		}
 		if err = m.checkChangeField(ctx, dbAttribute, data); err != nil {
+			blog.ErrorJSON("save attribute check change unique field err:%s, input:%s, rid:%s", err.Error(), dbAttribute, ctx.ReqID)
 			return changeRow, err
 		}
 	}
