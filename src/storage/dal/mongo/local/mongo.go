@@ -394,6 +394,18 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	return err
 }
 
+// DropColumn remove a column by the name
+func (c *Collection) DropColumns(ctx context.Context, filter dal.Filter, fields []string) error {
+	c.dbc.Refresh()
+	unsetFields := make(map[string]interface{})
+	for _, field := range fields {
+		unsetFields[field] = ""
+	}
+	datac := types.Document{"$unset": unsetFields}
+	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(filter, datac)
+	return err
+}
+
 // AggregateAll aggregate all operation
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
 	return c.dbc.DB(c.dbname).C(c.collName).Pipe(pipeline).All(result)

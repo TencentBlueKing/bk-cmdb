@@ -131,10 +131,10 @@ func (r *Request) WithTimeout(d time.Duration) *Request {
 
 func (r *Request) SubResourcef(subPath string, args ...interface{}) *Request {
 	r.subPathArgs = args
-	return r.SubResource(subPath)
+	return r.subResource(subPath)
 }
 
-func (r *Request) SubResource(subPath string) *Request {
+func (r *Request) subResource(subPath string) *Request {
 	subPath = strings.TrimLeft(subPath, "/")
 	r.subPath = subPath
 	return r

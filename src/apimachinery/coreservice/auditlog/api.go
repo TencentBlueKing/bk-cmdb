@@ -29,7 +29,7 @@ func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...m
 		Body(struct {
 			Data []metadata.SaveAuditLogParams `json:"data"`
 		}{Data: logs}).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -43,7 +43,7 @@ func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param m
 	err = inst.client.Post().
 		WithContext(ctx).
 		Body(param).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
