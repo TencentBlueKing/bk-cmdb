@@ -456,6 +456,11 @@ func (c *MockCollection) DropColumn(ctx context.Context, field string) error {
 	return nil
 }
 
+// DropColumns 移除字段
+func (c *MockCollection) DropColumns(ctx context.Context, filter dal.Filter, fields []string) error {
+	return errors.New("unsupported")
+}
+
 func (c *MockCollection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
 	out, err := json.Marshal(pipeline)
 	if err != nil {

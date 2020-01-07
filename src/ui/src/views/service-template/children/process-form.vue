@@ -410,16 +410,19 @@
                 position: relative;
                 display: inline-block;
                 vertical-align: middle;
-                padding: 0 14px 0 0;
+                padding: 0 6px 0 0;
                 font-size: 14px;
                 @include ellipsis;
-                &.required:after{
-                    position: absolute;
-                    left: 100%;
-                    top: 0;
-                    margin: 0 0 0 -10px;
-                    content: "*";
-                    color: #ff5656;
+                &.required {
+                    padding: 0 14px 0 0;
+                    &:after {
+                        position: absolute;
+                        left: 100%;
+                        top: 0;
+                        margin: 0 0 0 -10px;
+                        content: "*";
+                        color: #ff5656;
+                    }
                 }
             }
             .property-name-tooltips{
@@ -453,6 +456,7 @@
         width: 100%;
         padding: 28px 32px 0;
         font-size: 0;
+        z-index: 101;
         &.sticky {
             padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
