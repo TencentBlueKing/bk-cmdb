@@ -14,7 +14,6 @@ package apiserver
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -24,12 +23,12 @@ import (
 
 func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header, params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
-	subPath := fmt.Sprintf("/biz/%s", ownerID)
+	subPath := "/biz/%s"
 
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -38,11 +37,11 @@ func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header
 
 func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/biz/%s/%s", ownerID, bizID)
+	subPath := "/biz/%s/%s"
 	err = a.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, bizID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -51,11 +50,11 @@ func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string,
 
 func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, bizID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/biz/status/%s/%s/%s", flag, ownerID, bizID)
+	subPath := "/biz/status/%s/%s/%s"
 	err = a.client.Put().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, flag, ownerID, bizID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -64,11 +63,11 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 
 func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := fmt.Sprintf("/biz/search/%s", ownerID)
+	subPath := "/biz/search/%s"
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

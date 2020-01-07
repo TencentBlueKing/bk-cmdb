@@ -110,6 +110,8 @@ type Table interface {
 	RenameColumn(ctx context.Context, oldName, newColumn string) error
 	// DropColumn 移除字段
 	DropColumn(ctx context.Context, field string) error
+	// 根据条件移除字段
+	DropColumns(ctx context.Context, filter Filter, fields []string) error
 }
 
 // JoinOption defind join transaction options

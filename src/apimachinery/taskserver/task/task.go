@@ -14,7 +14,6 @@ package task
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -33,7 +32,7 @@ func (t *task) Create(ctx context.Context, header http.Header, name, flag string
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(body).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
@@ -42,12 +41,12 @@ func (t *task) Create(ctx context.Context, header http.Header, name, flag string
 
 func (t *task) ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error) {
 	resp = new(metadata.ListAPITaskResponse)
-	subPath := "/task/findmany/list/" + name
+	subPath := "/task/findmany/list/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath, name).
 		WithHeaders(header).
 		Do().
 		Into(resp)
@@ -56,12 +55,12 @@ func (t *task) ListTask(ctx context.Context, header http.Header, name string, da
 
 func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error) {
 	resp = new(metadata.TaskDetailResponse)
-	subPath := "/task/findone/detail/" + taskID
+	subPath := "/task/findone/detail/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, taskID).
 		WithHeaders(header).
 		Do().
 		Into(resp)
@@ -70,12 +69,12 @@ func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string
 
 func (t *task) TaskStatusToSuccess(ctx context.Context, header http.Header, taskID, subTaskID string) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/task/set/status/sucess/id/%s/sub_id/%s", taskID, subTaskID)
+	subPath := "/task/set/status/sucess/id/%s/sub_id/%s"
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, taskID, subTaskID).
 		WithHeaders(header).
 		Do().
 		Into(resp)
@@ -84,12 +83,12 @@ func (t *task) TaskStatusToSuccess(ctx context.Context, header http.Header, task
 
 func (t *task) TaskStatusToFailure(ctx context.Context, header http.Header, taskID, subTaskID string, errResponse *metadata.Response) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/task/set/status/failure/id/%s/sub_id/%s", taskID, subTaskID)
+	subPath := "/task/set/status/failure/id/%s/sub_id/%s"
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(errResponse).
-		SubResource(subPath).
+		SubResourcef(subPath, taskID, subTaskID).
 		WithHeaders(header).
 		Do().
 		Into(resp)

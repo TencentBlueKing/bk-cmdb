@@ -100,3 +100,7 @@ func (s *coreService) SearchUnique(ctx core.ContextParams, objID string) (unique
 	result, err := s.core.ModelOperation().SearchModelAttrUnique(ctx, queryCond)
 	return result.Info, err
 }
+
+func (s *coreService) UpdateModelInstance(ctx core.ContextParams, objID string, param metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+	return s.core.InstanceOperation().UpdateModelInstance(ctx, objID, param)
+}
