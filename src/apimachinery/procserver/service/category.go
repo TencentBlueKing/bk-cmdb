@@ -14,7 +14,7 @@ func (s *service) CreateServiceCategory(ctx context.Context, h http.Header, data
 	err = s.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -28,7 +28,7 @@ func (s *service) DeleteServiceCategory(ctx context.Context, h http.Header, data
 	err = s.client.Delete().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -42,7 +42,7 @@ func (s *service) SearchServiceCategory(ctx context.Context, h http.Header, data
 	err = s.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -56,7 +56,7 @@ func (s *service) UpdateServiceCategory(ctx context.Context, h http.Header, data
 	err = s.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

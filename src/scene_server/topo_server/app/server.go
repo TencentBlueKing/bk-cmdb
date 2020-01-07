@@ -59,8 +59,6 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 	}
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-	t.Config.FullTextSearch = current.ConfigMap["es.full_text_search"]
-	t.Config.EsUrl = current.ConfigMap["es.url"]
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
@@ -68,6 +66,11 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 	if err != nil {
 		blog.Warnf("parse auth center config failed: %v", err)
+	}
+
+	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse es config failed: %v", err)
 	}
 }
 
@@ -118,14 +121,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	essrv := new(elasticsearch.EsSrv)
-	if server.Config.FullTextSearch == "on" {
-		// if use https, config tls.Config{xxx}, and instead NewEsClient param nil
-		esclient, err := elasticsearch.NewEsClient(server.Config.EsUrl, nil)
+	if server.Config.Es.FullTextSearch == "on" {
+		esClient, err := elasticsearch.NewEsClient(server.Config.Es)
 		if err != nil {
 			blog.Errorf("failed to create elastic search client, err:%s", err.Error())
 			return fmt.Errorf("new es client failed, err: %v", err)
 		}
-		essrv.Client = esclient
+		essrv.Client = esClient
 	}
 
 	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)

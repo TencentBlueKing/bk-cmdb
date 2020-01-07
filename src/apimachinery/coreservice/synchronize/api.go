@@ -26,7 +26,7 @@ func (sync *synchronize) SynchronizeInstance(ctx context.Context, h http.Header,
 	err = sync.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -40,7 +40,7 @@ func (sync *synchronize) SynchronizeModel(ctx context.Context, h http.Header, in
 	err = sync.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -54,7 +54,7 @@ func (sync *synchronize) SynchronizeAssociation(ctx context.Context, h http.Head
 	err = sync.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -68,7 +68,7 @@ func (sync *synchronize) SynchronizeFind(ctx context.Context, h http.Header, inp
 	err = sync.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -82,7 +82,7 @@ func (sync *synchronize) SynchronizeClearData(ctx context.Context, h http.Header
 	err = sync.client.Delete().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -96,7 +96,7 @@ func (sync *synchronize) SetIdentifierFlag(ctx context.Context, h http.Header, i
 	err = sync.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
