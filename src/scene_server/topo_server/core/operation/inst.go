@@ -985,10 +985,10 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 	default:
 		queryCond, err := mapstr.NewFromInterface(cond.Condition)
 		input := &metadata.QueryCondition{Condition: queryCond}
-		input.Limit.Offset = int64(cond.Start)
-		input.Limit.Limit = int64(cond.Limit)
+		input.Page.Start = cond.Start
+		input.Page.Limit = cond.Limit
+		input.Page.Sort = cond.Sort
 		input.Fields = strings.Split(cond.Fields, ",")
-		input.SortArr = metadata.NewSearchSortParse().String(cond.Sort).ToSearchSortArr()
 		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, obj.GetObjectID(), input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)

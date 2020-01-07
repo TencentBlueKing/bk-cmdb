@@ -143,7 +143,7 @@ func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHe
 	query := &metadata.QueryCondition{
 		Fields:    []string{common.BKHostInnerIPField, common.BKHostIDField},
 		Condition: cond.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	hosts, err := coreService.Instance().ReadInstance(ctx, rHeader, common.BKInnerObjIDHost, query)
 	if err != nil {

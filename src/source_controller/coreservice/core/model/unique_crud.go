@@ -29,14 +29,7 @@ import (
 func (m *modelAttrUnique) searchModelAttrUnique(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
 	results = []metadata.ObjectUnique{}
 	instHandler := m.dbProxy.Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
-	for _, sort := range inputParam.SortArr {
-		field := sort.Field
-		if sort.IsDsc {
-			field = "-" + field
-		}
-		instHandler = instHandler.Sort(field)
-	}
-	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
+	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).All(ctx, &results)
 
 	return results, err
 }

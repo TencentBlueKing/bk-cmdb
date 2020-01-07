@@ -247,14 +247,7 @@ func (m *modelAttribute) searchWithSort(ctx core.ContextParams, cond metadata.Qu
 	resultAttrs = []metadata.Attribute{}
 
 	instHandler := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.Condition)
-	for _, sort := range cond.SortArr {
-		field := sort.Field
-		if sort.IsDsc {
-			field = "-" + field
-		}
-		instHandler = instHandler.Sort(field)
-	}
-	err = instHandler.Start(uint64(cond.Limit.Offset)).Limit(uint64(cond.Limit.Limit)).All(ctx, &resultAttrs)
+	err = instHandler.Start(uint64(cond.Page.Start)).Limit(uint64(cond.Page.Limit)).Sort(cond.Page.Sort).All(ctx, &resultAttrs)
 
 	return resultAttrs, err
 }
