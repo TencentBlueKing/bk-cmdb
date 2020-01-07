@@ -936,7 +936,6 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 		for _, inVal := range listOption {
 			inValStr, ok := inVal.(string)
 			if !ok {
-				blog.Errorf("inner list option convert to string  failed, params %s not valid , list field value: %#v", key, val)
 				return "", fmt.Errorf("parse list option failed, item not string, item: %+v", inVal)
 			}
 			if strVal == inValStr {
