@@ -190,13 +190,13 @@ func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[st
 	specStr, ok := configMap[prefix+".spec"]
 	if !ok {
 		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer, set timer-spec default value: 00:30")
-		return defaultSpec, goErr.New("missing 'spec' configuration for timer")
+		return defaultSpec, nil
 	}
 
 	spec, err := parseTimerConfig(specStr)
 	if err != nil || spec == "" {
 		blog.Errorf("parse timer config failed, set timer-spec default value: 00:30, err: %v", err)
-		return defaultSpec, err
+		return defaultSpec, nil
 	}
 
 	return spec, nil
