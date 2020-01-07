@@ -21,7 +21,7 @@ type lock struct {
 // Locker redis atomic lock
 type Locker interface {
 	// Lock can lock one
-	Lock(key string, expire time.Duration) (looked bool, err error)
+	Lock(key StrFormat, expire time.Duration) (looked bool, err error)
 	Unlock() error
 }
 
@@ -35,8 +35,8 @@ func NewLocker(cache *redis.Client) Locker {
 	}
 }
 
-// Lock can lock one
-func (l *lock) Lock(key string, expire time.Duration) (locked bool, err error) {
+// Lock can lock one, key from GetLockKey function
+func (l *lock) Lock(key StrFormat, expire time.Duration) (locked bool, err error) {
 	if l.isFirst {
 		return false, fmt.Errorf("repeat lock")
 	}
