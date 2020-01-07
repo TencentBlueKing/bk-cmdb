@@ -137,7 +137,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, ctx.ReqID)
 			// return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
-		rawErr := property.Validate(ctx, instanceData, key)
+		rawErr := property.Validate(ctx, val, key)
 		if rawErr.ErrCode > 0 {
 			return rawErr.ToCCError(valid.errif)
 		}
@@ -252,7 +252,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 		return err
 	}
 
-	for key := range instanceData {
+	for key, val := range instanceData {
 
 		if util.InStrArr(updateIgnoreKeys, key) {
 			// ignore the key field
@@ -264,7 +264,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			delete(instanceData, key)
 			continue
 		}
-		rawErr := property.Validate(ctx, instanceData, key)
+		rawErr := property.Validate(ctx, val, key)
 		if rawErr.ErrCode > 0 {
 			return rawErr.ToCCError(valid.errif)
 		}
