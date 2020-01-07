@@ -15,10 +15,8 @@ package handler
 import (
 	"fmt"
 
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
@@ -48,41 +46,19 @@ func (ih *IAMHandler) HandlePlatSync(task *meta.WorkRequest) error {
 		blog.Errorf("HandlePlatSync failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
 		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
 	}
-	if len(resources) == 0 && len(plats) > 0 {
-		blog.Errorf("make iam resource for plat %+v return empty, rid: %s", plats, rid)
-		return nil
-	}
-	iamResources, err := ih.authManager.Authorize.DryRunRegisterResource(ctx, resources...)
-	if err != nil {
-		blog.Errorf("HandleInstanceSync failed, DryRunRegisterResource failed, object: %s, instances: %+v, err: %+v, rid: %s", common.BKInnerObjIDPlat, plats, err, rid)
-		return nil
-	}
-	if len(iamResources.Resources) == 0 {
-		if blog.V(5) {
-			blog.InfoJSON("HandlePlatSync failed, no cmdb resource found, skip sync for safe, resource: %s, rid: %s", resources, rid)
-		}
-		return nil
-	}
-	first := iamResources.Resources[0]
-	if len(first.ResourceID) < 2 {
-		blog.ErrorJSON("HandlePlatSync failed, DryRunRegisterResource result unexpected, iamResources: %s, rid: %s", iamResources, rid)
-		return fmt.Errorf("DryRunRegisterResource result unexpected, layer not enough, iamResources: %+v", iamResources)
-	}
-	searchCondition := authcenter.SearchCondition{
-		ScopeInfo: authcenter.ScopeInfo{
-			ScopeType: first.ScopeType,
-			ScopeID:   first.ScopeID,
+	rs := &authmeta.ResourceAttribute{
+		Basic: authmeta.Basic{
+			Type: authmeta.Plat,
 		},
-		ResourceType:    first.ResourceType,
-		ParentResources: first.ResourceID[0 : len(first.ResourceID)-1],
+		Layers: make([]authmeta.Item, 0),
 	}
 
 	taskName := "sync all plat"
-	iamIDPrefix := "plat:"
+	iamIDPrefix := ""
 	skipDeregister := false
-	if err := ih.diffAndSyncInstances(*header, taskName, searchCondition, iamIDPrefix, resources, skipDeregister); err != nil {
-		blog.Errorf("HandlePlatSync failed, diffAndSyncInstances failed, err: %+v, rid: %s", err, rid)
-		return fmt.Errorf("diffAndSyncInstances failed, err: %+v, rid: %s", err, rid)
+	if err := ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister); err != nil {
+		blog.Errorf("HandlePlatSync failed, diffAndSync failed, err: %+v, rid: %s", err, rid)
+		return fmt.Errorf("diffAndSync failed, err: %+v, rid: %s", err, rid)
 	}
 	return nil
 }

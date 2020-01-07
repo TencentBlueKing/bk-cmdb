@@ -2482,14 +2482,11 @@ func (ps *parseStream) fullTextSearch() *parseStream {
 	return ps
 }
 
-const (
-	findManyCloudAreaPattern = "/api/v3/findmany/cloudarea"
-	createCloudAreaPattern   = "/api/v3/create/cloudarea"
-)
-
 var (
-	updateCloudAreaRegexp = regexp.MustCompile(`^/api/v3/update/cloudarea/[0-9]+/?$`)
-	deleteCloudAreaRegexp = regexp.MustCompile(`^/api/v3/delete/cloudarea/[0-9]+/?$`)
+	findManyCloudAreaRegex = regexp.MustCompile(`^/api/v3/findmany/cloudarea/?$`)
+	createCloudAreaRegex   = regexp.MustCompile(`^/api/v3/create/cloudarea/?$`)
+	updateCloudAreaRegexp  = regexp.MustCompile(`^/api/v3/update/cloudarea/([0-9]+)/?$`)
+	deleteCloudAreaRegexp  = regexp.MustCompile(`^/api/v3/delete/cloudarea/([0-9]+)/?$`)
 )
 
 func (ps *parseStream) cloudArea() *parseStream {
@@ -2497,59 +2494,72 @@ func (ps *parseStream) cloudArea() *parseStream {
 		return ps
 	}
 
-	model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDPlat})
-	if err != nil {
-		ps.err = err
-		return ps
-	}
-
-	if ps.hitPattern(findManyCloudAreaPattern, http.MethodPost) {
+	if ps.hitRegexp(findManyCloudAreaRegex, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.FindMany,
+					Type: meta.Plat,
+					// Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
 	}
 
-	if ps.hitPattern(createCloudAreaPattern, http.MethodPost) {
+	if ps.hitRegexp(createCloudAreaRegex, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.Plat,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
 	}
 
 	if ps.hitRegexp(updateCloudAreaRegexp, http.MethodPut) {
+		sub := updateCloudAreaRegexp.FindStringSubmatch(ps.RequestCtx.URI)
+		if len(sub) != 2 {
+			ps.err = fmt.Errorf("parse bk_cloud_id from path failed, uri: %s", ps.RequestCtx.URI)
+			return ps
+		}
+		cloudAreaID, err := strconv.ParseInt(sub[1], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse bk_cloud_id from path failed, uri: %s, err: %+v", ps.RequestCtx.URI, err)
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.Update,
+					Type:       meta.Plat,
+					Action:     meta.Update,
+					InstanceID: cloudAreaID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
 	}
 
 	if ps.hitRegexp(deleteCloudAreaRegexp, http.MethodDelete) {
+		sub := deleteCloudAreaRegexp.FindStringSubmatch(ps.RequestCtx.URI)
+		if len(sub) != 2 {
+			ps.err = fmt.Errorf("parse bk_cloud_id from path failed, uri: %s", ps.RequestCtx.URI)
+			return ps
+		}
+		cloudAreaID, err := strconv.ParseInt(sub[1], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse bk_cloud_id from path failed, uri: %s, err: %+v", ps.RequestCtx.URI, err)
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.Delete,
+					Type:       meta.Plat,
+					Action:     meta.Delete,
+					InstanceID: cloudAreaID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps

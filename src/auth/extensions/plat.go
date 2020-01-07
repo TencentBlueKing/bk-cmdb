@@ -200,7 +200,7 @@ func (am *AuthManager) UpdateRegisteredPlatByID(ctx context.Context, header http
 
 	plats, err := am.collectPlatByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+		return fmt.Errorf("update registered plats failed, get plat by id failed, err: %+v", err)
 	}
 	return am.UpdateRegisteredPlat(ctx, header, plats...)
 }
@@ -216,7 +216,7 @@ func (am *AuthManager) UpdateRegisteredPlatByRawID(ctx context.Context, header h
 
 	plats, err := am.collectPlatByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+		return fmt.Errorf("update registered plats failed, get plat by id failed, err: %+v", err)
 	}
 	return am.UpdateRegisteredPlat(ctx, header, plats...)
 }

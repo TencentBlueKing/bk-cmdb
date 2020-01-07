@@ -369,28 +369,12 @@ func auditLogResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 }
 
 func platID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	if len(attribute.Layers) < 1 {
-		return nil, NotEnoughLayer
+	id := RscTypeAndID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
 
-	// groupType := SysModelGroup
-	modelType := SysModel
-	if attribute.BusinessID > 0 {
-		// groupType = BizModelGroup
-		modelType = BizModel
-	}
-
-	instanceID := fmt.Sprintf("plat:%d", attribute.InstanceID)
-	return []RscTypeAndID{
-		{
-			ResourceType: modelType,
-			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
-		},
-		{
-			ResourceType: resourceType,
-			ResourceID:   instanceID,
-		},
-	}, nil
+	return []RscTypeAndID{id}, nil
 }
 
 func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {

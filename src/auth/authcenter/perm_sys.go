@@ -245,5 +245,27 @@ var expectSystemResourceType = []ResourceType{
 				IsRelatedResource: false,
 			},
 		},
+	}, {
+		ResourceTypeID:       SysCloudArea,
+		ResourceTypeName:     "云区域",
+		ParentResourceTypeID: "",
+		Share:                false,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: true,
+			},
+		},
 	},
 }

@@ -106,7 +106,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		}
 
 	case meta.Plat:
-		iamResourceType = SysInstance
+		iamResourceType = SysCloudArea
 	case meta.HostInstance:
 		if businessID <= 0 {
 			iamResourceType = SysHostInstance
@@ -171,6 +171,7 @@ const (
 	SysAssociationType    ResourceTypeID = "sys_association_type"
 	SysAuditLog           ResourceTypeID = "sys_audit_log"
 	SysOperationStatistic ResourceTypeID = "sys_operation_statistic"
+	SysCloudArea          ResourceTypeID = "sys_cloud_area"
 )
 
 // Business Resource

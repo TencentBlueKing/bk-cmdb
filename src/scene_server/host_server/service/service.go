@@ -160,9 +160,9 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.SearchCloudSyncHistory))
 
 	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
-	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
-	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
-	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
+	api.Route(api.POST("/create/cloudarea").To(s.CreateCloudArea))
+	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdateCloudArea))
+	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DeleteCloudArea))
 
 	// first install use api
 	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
