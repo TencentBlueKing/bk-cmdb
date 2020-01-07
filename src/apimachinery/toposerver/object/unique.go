@@ -14,7 +14,6 @@ package object
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -22,12 +21,12 @@ import (
 
 func (t *object) CreateObjectUnique(ctx context.Context, objID string, h http.Header, data *metadata.CreateUniqueRequest) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/create/objectunique/object/%s", objID)
+	subPath := "/create/objectunique/object/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -36,12 +35,12 @@ func (t *object) CreateObjectUnique(ctx context.Context, objID string, h http.He
 
 func (t *object) SearchObjectUnique(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/find/objectunique/object/%s", objID)
+	subPath := "/find/objectunique/object/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -50,12 +49,12 @@ func (t *object) SearchObjectUnique(ctx context.Context, objID string, h http.He
 
 func (t *object) UpdateObjectUnique(ctx context.Context, objID string, h http.Header, uniqueID uint64, data *metadata.UpdateUniqueRequest) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/update/objectunique/object/%s/unique/%d", objID, uniqueID)
+	subPath := "/update/objectunique/object/%s/unique/%d"
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath, objID, uniqueID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -64,12 +63,12 @@ func (t *object) UpdateObjectUnique(ctx context.Context, objID string, h http.He
 
 func (t *object) DeleteObjectUnique(ctx context.Context, objID string, h http.Header, uniqueID uint64) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/delete/objectunique/object/%s/unique/%d", objID, uniqueID)
+	subPath := "/delete/objectunique/object/%s/unique/%d"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, objID, uniqueID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
