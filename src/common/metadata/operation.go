@@ -72,7 +72,7 @@ type AggregateStringResponse struct {
 }
 
 type StringIDCount struct {
-	Id    string `json:"id" bson:"_id"`
+	Id    string `json:"id" bson:"id"`
 	Count int64  `json:"count" bson:"count"`
 }
 
@@ -87,20 +87,10 @@ type UpdateID struct {
 }
 
 type HostChangeChartData struct {
-	ReportType string                    `json:"report_type" bson:"report_type"`
-	Data       map[string][]BizHostChart `json:"data" bson:"data"`
-	OwnerID    string                    `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	LastTime   Time                      `json:"last_time" bson:"last_time"`
-}
-
-type BizHostChart struct {
-	Id    Time  `json:"id" bson:"id"`
-	Count int64 `json:"count" bson:"count"`
-}
-
-type IDStringCountInt64 struct {
-	Id    string `json:"id" bson:"id"`
-	Count int64  `json:"count" bson:"count"`
+	ReportType string          `json:"report_type" bson:"report_type"`
+	Data       []StringIDCount `json:"data" bson:"data"`
+	OwnerID    string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	CreateTime string          `json:"create_time" bson:"create_time"`
 }
 
 type ChartData struct {
