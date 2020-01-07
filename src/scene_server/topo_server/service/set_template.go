@@ -81,7 +81,7 @@ func (s *Service) UpdateSetTemplate(params types.ContextParams, pathParams, quer
 	}
 
 	filter := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: mapstr.MapStr(map[string]interface{}{
@@ -280,7 +280,7 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(params types.ContextPara
 		serviceTemplateIDs = append(serviceTemplateIDs, item.ID)
 	}
 	moduleFilter := metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: map[string]interface{}{
@@ -401,10 +401,7 @@ func (s *Service) ListSetTplRelatedSets(params types.ContextParams, pathParams, 
 		}
 	}
 	qc := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
-			Offset: int64(option.Page.Start),
-			Limit:  int64(option.Page.Limit),
-		},
+		Page:      option.Page,
 		Condition: filter,
 	}
 	setInstanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, qc)
@@ -667,7 +664,7 @@ func (s *Service) GetSetSyncDetails(params types.ContextParams, pathParams, quer
 	}
 	if option.SetIDs == nil {
 		filter := &metadata.QueryCondition{
-			Limit: metadata.SearchLimit{
+			Page: metadata.BasePage{
 				Limit: common.BKNoLimit,
 			},
 			Condition: mapstr.MapStr(map[string]interface{}{

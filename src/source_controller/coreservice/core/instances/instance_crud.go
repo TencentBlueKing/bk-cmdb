@@ -95,14 +95,7 @@ func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, i
 	cond = util.SetQueryOwner(cond, ctx.SupplierAccount)
 	blog.V(9).Infof("searchInstance with table: %s and parameters: %#v, rid:%s", tableName, inputParam, ctx.ReqID)
 	instHandler := m.dbProxy.Table(tableName).Find(cond)
-	for _, sort := range inputParam.SortArr {
-		field := sort.Field
-		if sort.IsDsc {
-			field = "-" + field
-		}
-		instHandler = instHandler.Sort(field)
-	}
-	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).Fields(inputParam.Fields...).All(ctx, &results)
+	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).Fields(inputParam.Fields...).All(ctx, &results)
 	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v, rid: %s", tableName, inputParam, results, ctx.ReqID)
 
 	return results, err

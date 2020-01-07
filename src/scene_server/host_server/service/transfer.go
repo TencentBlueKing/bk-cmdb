@@ -457,7 +457,7 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 	}
 	moduleIDs = util.IntArrayUnique(moduleIDs)
 	moduleCondition := metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: map[string]interface{}{
@@ -598,7 +598,7 @@ func (s *Service) getModule(srvData *srvComm, bizID int64, moduleID int64) (meta
 
 func (s *Service) getModules(srvData *srvComm, bizID int64, moduleIDs []int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
 	query := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Fields: []string{
@@ -640,7 +640,7 @@ func (s *Service) getModules(srvData *srvComm, bizID int64, moduleIDs []int64) (
 
 func (s *Service) getInnerModules(srvData srvComm, bizID int64) ([]metadata.ModuleInst, errors.CCErrorCoder) {
 	query := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Fields: []string{

@@ -59,14 +59,7 @@ func (m *associationInstance) instCount(ctx core.ContextParams, cond mapstr.MapS
 func (m *associationInstance) searchInstanceAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.InstAsst, err error) {
 	results = []metadata.InstAsst{}
 	instHandler := m.dbProxy.Table(common.BKTableNameInstAsst).Find(inputParam.Condition).Fields(inputParam.Fields...)
-	for _, sort := range inputParam.SortArr {
-		fileld := sort.Field
-		if sort.IsDsc {
-			fileld = "-" + fileld
-		}
-		instHandler = instHandler.Sort(fileld)
-	}
-	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
+	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).All(ctx, &results)
 	return results, err
 }
 

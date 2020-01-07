@@ -657,7 +657,7 @@ func (s *Service) listHostRelatedApplyRule(srvData *srvComm, bizID int64, option
 
 	// filter enabled modules
 	moduleFilter := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: map[string]interface{}{
