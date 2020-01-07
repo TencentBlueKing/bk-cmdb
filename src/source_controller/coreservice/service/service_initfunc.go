@@ -137,7 +137,8 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/create/usercustom/{bk_user}", s.AddUserCustom, nil)
 	s.addAction(http.MethodPut, "/update/usercustom/{bk_user}/{id}", s.UpdateUserCustomByID, nil)
 	s.addAction(http.MethodGet, "/find/usercustom/user/search/{bk_user}", s.GetUserCustomByUser, nil)
-	s.addAction(http.MethodPost, "/find/usercustom/default/search/{bk_user}", s.GetDefaultUserCustom, nil)
+	s.addAction(http.MethodPost, "/find/usercustom/default", s.GetDefaultUserCustom, nil)
+	s.addAction(http.MethodPut, "/update/usercustom/default", s.UpdatDefaultUserCustom, nil)
 
 	s.addAction(http.MethodPost, "/create/hosts/favorites/{user}", s.AddHostFavourite, nil)
 	s.addAction(http.MethodPut, "/update/hosts/favorites/{user}/{id}", s.UpdateHostFavouriteByID, nil)
