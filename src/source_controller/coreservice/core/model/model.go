@@ -57,6 +57,11 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 		return dataResult, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
 	}
 
+	if !SatisfyMongoCollLimit(inputParam.Spec.ObjectID) {
+		blog.Errorf("inputParam.Spec.ObjectID:%s not SatisfyMongoCollLimit", inputParam.Spec.ObjectID)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID)
+	}
+
 	// check the input classification ID
 	isValid, err := m.modelClassification.isValid(ctx, inputParam.Spec.ObjCls)
 	if nil != err {
