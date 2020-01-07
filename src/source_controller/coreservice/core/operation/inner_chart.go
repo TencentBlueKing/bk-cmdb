@@ -25,12 +25,9 @@ import (
 )
 
 func (m *operationManager) TimerFreshData(params core.ContextParams) error {
-
-	blog.Infof("00000000000000")
 	wg := &sync.WaitGroup{}
 	wg.Add(3)
 	go func(wg *sync.WaitGroup) {
-		blog.Infof("111111111111111")
 		if err := m.ModelInst(params, wg); err != nil {
 			blog.Errorf("TimerFreshData, count model's instance, search model info fail ,err: %v, rid: %v", err)
 			return

@@ -158,6 +158,5 @@ func (m *operationManager) SearchTimerChartData(ctx core.ContextParams, inputPar
 		}
 	}
 
-	blog.Debug("result: %v", result)
 	return result, nil
 }

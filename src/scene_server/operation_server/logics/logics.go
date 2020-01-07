@@ -164,7 +164,6 @@ func (lgc *Logics) CheckTableExist(ctx context.Context) {
 	opt := mapstr.MapStr{}
 	for {
 		resp, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
-		blog.Debug("resp: %v", *resp)
 		if err != nil {
 			blog.Error("statistic chart data fail, err: %v", err)
 			time.Sleep(10 * time.Second)
