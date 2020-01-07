@@ -209,6 +209,11 @@ const (
 	// CCErrBizNotFoundError business [%s] does not exist
 	CCErrCommBizNotFoundError = 1199079
 
+	// CCErrCommRedisOPErr operate redis error.
+	CCErrCommRedisOPErr = 1199076
+	// CCErrCommOPInProgressErr have the same task[%s] in progress
+	CCErrCommOPInProgressErr = 1199077
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 

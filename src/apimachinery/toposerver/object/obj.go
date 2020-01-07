@@ -46,8 +46,8 @@ func (t *object) SearchObjectBatch(ctx context.Context, h http.Header, data map[
 		Into(resp)
 	return
 }
-func (t *object) CreateObject(ctx context.Context, h http.Header, obj metadata.Object) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *object) CreateObject(ctx context.Context, h http.Header, obj metadata.Object) (resp *metadata.CreateModelResult, err error) {
+	resp = new(metadata.CreateModelResult)
 	subPath := "/object"
 
 	err = t.client.Post().

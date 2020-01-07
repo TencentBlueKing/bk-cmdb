@@ -497,10 +497,7 @@ func (d *Discover) TryCreateModel(msg string) error {
 	newObj.ObjIcon = defaultModelIcon
 	newObj.Creator = bkc.CCSystemCollectorUserName
 
-	input := metadata.CreateModel{
-		Spec: newObj,
-	}
-	resp, err := d.CoreAPI.CoreService().Model().CreateModel(d.ctx, d.httpHeader, &input)
+	resp, err := d.CoreAPI.TopoServer().Object().CreateObject(d.ctx, d.httpHeader, newObj)
 	if err != nil {
 		blog.Errorf("create model failed %s", err.Error())
 		return fmt.Errorf("create model failed: %s", err.Error())
@@ -509,7 +506,8 @@ func (d *Discover) TryCreateModel(msg string) error {
 		blog.Errorf("create model failed %s", resp.ErrMsg)
 		return fmt.Errorf("create model failed: %s", resp.ErrMsg)
 	}
-	newObj.ID = int64(resp.Data.Created.ID)
+
+	newObj.ID = int64(resp.Data.ID)
 
 	// update registry to iam
 	if err := d.authManager.RegisterObject(d.ctx, d.httpHeader, newObj); err != nil {
