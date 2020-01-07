@@ -164,11 +164,16 @@ func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) 
 func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig) {
 	var err error
 
-	cfg := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-	o.Config = &options.Config{
-		Mongo: cfg,
-	}
+	o.Config = &options.Config{}
 	o.Config.ConfigMap = current.ConfigMap
+	o.Config.Timer, err = o.ParseTimerConfigFromKV("timer", current.ConfigMap)
+	if err != nil {
+		blog.Errorf("parse timer config failed, err: %v", err)
+		return
+	}
+
+	cfg := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+	o.Config.Mongo = cfg
 
 	o.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 	if err != nil {
@@ -176,11 +181,6 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 		return
 	}
 
-	o.Config.Timer, err = o.ParseTimerConfigFromKV("timer", current.ConfigMap)
-	if err != nil {
-		blog.Errorf("parse timer config failed, err: %v", err)
-		return
-	}
 }
 
 func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
