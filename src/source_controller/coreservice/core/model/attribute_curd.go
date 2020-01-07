@@ -154,18 +154,28 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(ctx core.ContextParams, attr
 }
 
 func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribute metadata.Attribute) error {
-	if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
-		return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
-	} else if attribute.PropertyID != "" {
+	if attribute.PropertyID != "" {
+		if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
+			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
+		}
+
+		if !SatisfyMongoFieldLimit(attribute.PropertyID) {
+			blog.Errorf("attribute.PropertyID:%s not SatisfyMongoFieldLimit", attribute.PropertyID)
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
+		}
+
 		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, attribute.PropertyID)
 		if nil != err || !match {
 			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
 		}
 	}
 
-	if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
-		return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
-	} else if attribute.PropertyName != "" {
+
+	if attribute.PropertyName != "" {
+		if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
+			return ctx.Error.Errorf(common.CCErrCommValExceedMaxFailed, ctx.Lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
+		}
+
 		attribute.PropertyName = strings.TrimSpace(attribute.PropertyName)
 		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.PropertyName)
 		if nil != err || !match {
