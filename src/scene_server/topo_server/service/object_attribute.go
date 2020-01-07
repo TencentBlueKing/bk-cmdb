@@ -36,20 +36,46 @@ func (s *Service) CreateObjectAttribute(params types.ContextParams, pathParams, 
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
-	return attr.ToMapStr()
+	cond := condition.CreateCondition()
+	cond.Field("id").Eq(attribute.ID)
+	attrInfo, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
+	if err != nil {
+		blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
+	}
+	if len(attrInfo) <= 0 {
+		blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
+	}
+
+	return attrInfo[0], nil
 }
 
 // SearchObjectAttribute search the object attributes
 func (s *Service) SearchObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	data.Remove(metadata.PageName)
+	if data.Exists(metadata.PageName) {
+		page, err := data.MapStr(metadata.PageName)
+		if err != nil {
+			blog.Errorf("SearchObjectAttribute failed, page info convert to mapstr failed, page: %v, err: %v, rid: %s", data[metadata.PageName], err, params.ReqID)
+			return nil, err
+		}
+		if err := cond.SetPage(page); err != nil {
+			blog.Errorf("SearchObjectAttribute, cond set page failed, page: %v, err: %v, rid: %v", page, err, params.ReqID)
+			return nil, err
+		}
+		data.Remove(metadata.PageName)
+	}
+
 	if err := cond.Parse(data); nil != err {
 		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
+
 	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
 	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
+
 	return s.Core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
 }
 
@@ -64,6 +90,10 @@ func (s *Service) UpdateObjectAttribute(params types.ContextParams, pathParams, 
 	}
 	// TODO: why does remove this????
 	data.Remove(metadata.BKMetadata)
+
+	// UpdateObjectAttribute should not update bk_property_index、bk_property_group
+	data.Remove(common.BKPropertyIndexField)
+	data.Remove(common.BKPropertyGroupField)
 
 	err = s.Core.AttributeOperation().UpdateObjectAttribute(params, data, id)
 
@@ -120,19 +150,45 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 		blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", params, err, params.ReqID)
 		return nil, err
 	}
+	
+    if len(ruleIDs) > 0 {
+        deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+            RuleIDs: ruleIDs,
+        }
+        if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(params.Context, params.Header, 0, deleteRuleOption); err != nil {
+            blog.Errorf("delete object attribute success, but DeleteHostApplyRule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err, params.ReqID)
+            return nil, err
+        }
+    }
 
-	if len(ruleIDs) > 0 {
-		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
-			RuleIDs: ruleIDs,
-		}
-		if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(params.Context, params.Header, 0, deleteRuleOption); err != nil {
-			blog.Errorf("delete object attribute success, but DeleteHostApplyRule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err, params.ReqID)
-			return nil, err
-		}
+    return nil, err
+}
+
+func (s *Service) UpdateObjectAttributeIndex(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	paramPath := mapstr.MapStr{}
+	paramPath.Set("id", pathParams("id"))
+	paramPath.Set(common.BKObjIDField, pathParams(common.BKObjIDField))
+	objID, err := paramPath.String(common.BKObjIDField)
+	if nil != err {
+		blog.Errorf("[api-att] failed to parse the path params bk_obj_id(%s), error info is %s , rid: %s", objID, err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrorTopoPathParamPaserFailed)
 	}
 
-	return nil, err
+	id, err := paramPath.Int64("id")
+	if nil != err {
+		blog.Errorf("[api-att] failed to parse the params id(%s), error info is %s , rid: %s", data["id"], err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrorTopoPathParamPaserFailed)
+	}
+	result, err := s.Core.AttributeOperation().UpdateObjectAttributeIndex(params, objID, data, id)
+	if err != nil {
+		blog.Errorf("UpdateObjectAttributeIndex failed, error info is %s , rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
+
+	return result, nil
 }
+
+
 
 // ListHostModelAttribute list host model's attributes
 func (s *Service) ListHostModelAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -155,14 +211,7 @@ func (s *Service) ListHostModelAttribute(params types.ContextParams, pathParams,
 		if item == nil {
 			continue
 		}
-		hostApplyEnabled := false
-		enabled, exist := metadata.HostApplyFieldMap[item.PropertyID]
-		if exist {
-			hostApplyEnabled = enabled
-		}
-		if item.IsPre == false {
-			hostApplyEnabled = true
-		}
+		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(item.PropertyID)
 		hostAttribute := metadata.HostObjAttDes{
 			ObjAttDes:        *item,
 			HostApplyEnabled: hostApplyEnabled,
