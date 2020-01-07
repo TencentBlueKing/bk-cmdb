@@ -57,7 +57,8 @@ func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client) c
 func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 
 	locker := lock.NewLocker(m.cache)
-	redisKey := fmt.Sprintf("coreservice:create:model:%s", inputParam.Spec.ObjectID)
+	// fmt.Sprintf("coreservice:create:model:%s", inputParam.Spec.ObjectID)
+	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
 
 	looked, err := locker.Lock(redisKey, time.Second*35)
 	defer locker.Unlock()

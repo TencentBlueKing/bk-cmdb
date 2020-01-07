@@ -61,7 +61,8 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 	}
 
 	for attrIdx, attr := range inputParam.Attributes {
-		redisKey := fmt.Sprintf("coreservice:create:model:%s:attr:%s", objID, attr.PropertyID)
+		// fmt.Sprintf("coreservice:create:model:%s:attr:%s", objID, attr.PropertyID)
+		redisKey := lock.GetLockKey(lock.CreateModuleAttrFormat, objID, attr.PropertyID)
 
 		locker := lock.NewLocker(m.cache)
 		looked, err := locker.Lock(redisKey, time.Second*35)

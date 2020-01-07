@@ -31,22 +31,22 @@ func TestLock(t *testing.T) {
 	lock := NewLocker(client)
 
 	prefix := fmt.Sprintf("%d", time.Now().Unix())
-	locked, err := lock.Lock(prefix+"lock1", time.Minute)
+	locked, err := lock.Lock(StrFormat(prefix+"lock1"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, true, locked)
 
 	lock = NewLocker(client)
-	locked, err = lock.Lock(prefix+"lock2", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"lock2"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, true, locked)
 
 	lock = NewLocker(client)
-	locked, err = lock.Lock(prefix+"lock3", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"lock3"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, true, locked)
 
 	lock = NewLocker(client)
-	locked, err = lock.Lock(prefix+"lock1", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"lock1"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, false, locked)
 }
@@ -58,7 +58,7 @@ func TestUnlock(t *testing.T) {
 	lock := NewLocker(client)
 
 	prefix := fmt.Sprintf("%d", time.Now().Unix())
-	locked, err := lock.Lock(prefix+"unlock", time.Minute)
+	locked, err := lock.Lock(StrFormat(prefix+"unlock"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, true, locked)
 
@@ -66,7 +66,7 @@ func TestUnlock(t *testing.T) {
 	require.NoError(t, err)
 
 	lock = NewLocker(client)
-	locked, err = lock.Lock(prefix+"unlock", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"unlock"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, true, locked)
 
@@ -77,12 +77,12 @@ func TestUnlockLockErr(t *testing.T) {
 
 	prefix := fmt.Sprintf("%d", time.Now().Unix())
 	lockSucc := NewLocker(client)
-	locked, err := lockSucc.Lock(prefix+"UnlockLockErr", time.Minute*2)
+	locked, err := lockSucc.Lock(StrFormat(prefix+"UnlockLockErr"), time.Minute*2)
 	require.NoError(t, err)
 	require.Equal(t, true, locked)
 
 	lock := NewLocker(client)
-	locked, err = lock.Lock(prefix+"UnlockLockErr", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"UnlockLockErr"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, false, locked)
 
@@ -91,7 +91,7 @@ func TestUnlockLockErr(t *testing.T) {
 	require.NoError(t, err)
 
 	lock = NewLocker(client)
-	locked, err = lock.Lock(prefix+"UnlockLockErr", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"UnlockLockErr"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, false, locked)
 
@@ -99,7 +99,7 @@ func TestUnlockLockErr(t *testing.T) {
 	require.NoError(t, err)
 
 	lock = NewLocker(client)
-	locked, err = lock.Lock(prefix+"UnlockLockErr", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"UnlockLockErr"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, true, locked)
 
@@ -110,12 +110,12 @@ func TestUnlockLockExpire(t *testing.T) {
 
 	prefix := fmt.Sprintf("%d", time.Now().Unix())
 	lockSucc := NewLocker(client)
-	locked, err := lockSucc.Lock(prefix+"UnlockLockExpire", time.Second*2)
+	locked, err := lockSucc.Lock(StrFormat(prefix+"UnlockLockExpire"), time.Second*2)
 	require.NoError(t, err)
 	require.Equal(t, true, locked)
 
 	lock := NewLocker(client)
-	locked, err = lock.Lock(prefix+"UnlockLockExpire", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"UnlockLockExpire"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, false, locked)
 
@@ -124,15 +124,24 @@ func TestUnlockLockExpire(t *testing.T) {
 	require.NoError(t, err)
 
 	lock = NewLocker(client)
-	locked, err = lock.Lock(prefix+"UnlockLockExpire", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"UnlockLockExpire"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, false, locked)
 
 	time.Sleep(time.Second * 2)
 
 	lock = NewLocker(client)
-	locked, err = lock.Lock(prefix+"test1", time.Minute)
+	locked, err = lock.Lock(StrFormat(prefix+"test1"), time.Minute)
 	require.NoError(t, err)
 	require.Equal(t, true, locked)
 
+}
+
+func TestGetLockKey(t *testing.T) {
+
+	key := GetLockKey(CreateModelFormat, "aa")
+
+	require.Equal(t, "coreservice:create:model:aa", string(key))
+	key = GetLockKey(CreateModuleAttrFormat, "aa", "attr")
+	require.Equal(t, "coreservice:create:model:aa:attr:attr", string(key))
 }
