@@ -211,7 +211,6 @@ func (s *coreService) initService() {
 	s.initMainline()
 	s.host()
 	s.audit()
-	s.initOperation()
 	s.initProcess()
 	s.initOperation()
 	s.initCloudSync()

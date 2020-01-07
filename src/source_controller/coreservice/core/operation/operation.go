@@ -106,9 +106,9 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 		return nil, err
 	}
 
-	respData := make([]metadata.IDStringCountInt64, 0)
+	respData := make([]metadata.StringIDCount, 0)
 	for _, opt := range option {
-		info := metadata.IDStringCountInt64{
+		info := metadata.StringIDCount{
 			Id:    opt.Name,
 			Count: 0,
 		}
@@ -130,11 +130,34 @@ func (m *operationManager) SearchTimerChartData(ctx core.ContextParams, inputPar
 	condition := mapstr.MapStr{}
 	condition[common.OperationReportType] = inputParam.ReportType
 
-	chartData := metadata.ChartData{}
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).One(ctx, &chartData); err != nil {
+	if inputParam.ReportType != common.HostChangeBizChart {
+		chartData := metadata.ChartData{}
+		if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).One(ctx, &chartData); err != nil {
+			blog.Errorf("search chart data fail, chart name: %v err: %v, rid: %v", inputParam.Name, err, ctx.ReqID)
+			return nil, err
+		}
+		return chartData.Data, nil
+	}
+
+	chartData := make([]metadata.HostChangeChartData, 0)
+	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).All(ctx, &chartData); err != nil {
 		blog.Errorf("search chart data fail, chart name: %v err: %v, rid: %v", inputParam.Name, err, ctx.ReqID)
 		return nil, err
 	}
 
-	return chartData.Data, nil
+	result := make(map[string][]metadata.StringIDCount, 0)
+	for _, data := range chartData {
+		for _, info := range data.Data {
+			if _, ok := result[info.Id]; !ok {
+				result[info.Id] = make([]metadata.StringIDCount, 0)
+			}
+			result[info.Id] = append(result[info.Id], metadata.StringIDCount{
+				Id:    data.CreateTime,
+				Count: info.Count,
+			})
+		}
+	}
+
+	blog.Debug("result: %v", result)
+	return result, nil
 }
