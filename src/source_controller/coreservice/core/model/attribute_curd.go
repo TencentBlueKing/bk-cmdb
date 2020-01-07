@@ -502,7 +502,6 @@ func (m *modelAttribute) buildUpdateAttrIndexReturn(ctx core.ContextParams, objI
 }
 
 func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute metadata.Attribute) (int64, error) {
-
 	opt := make(map[string]interface{})
 	opt[common.BKObjIDField] = attribute.ObjectID
 	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
