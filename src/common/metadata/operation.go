@@ -57,12 +57,12 @@ type AggregateIntResponse struct {
 }
 
 type IntIDCount struct {
-	Id    int64 `json:"id" bson:"_id"`
+	ID    int64 `json:"id" bson:"_id"`
 	Count int64 `json:"count" bson:"count"`
 }
 
 type IntIDArrayCount struct {
-	Id    int64   `json:"id" bson:"_id"`
+	ID    int64   `json:"id" bson:"_id"`
 	Count []int64 `json:"count" bson:"count"`
 }
 
@@ -72,12 +72,12 @@ type AggregateStringResponse struct {
 }
 
 type StringIDCount struct {
-	Id    string `json:"id" bson:"id"`
+	ID    string `json:"id" bson:"_id"`
 	Count int64  `json:"count" bson:"count"`
 }
 
 type UpdateInstCount struct {
-	Id    UpdateID `json:"id" bson:"_id"`
+	ID    UpdateID `json:"id" bson:"_id"`
 	Count int64    `json:"count" bson:"count"`
 }
 
@@ -98,6 +98,13 @@ type ChartData struct {
 	Data       interface{} `json:"data" data:"data"`
 	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	LastTime   time.Time   `json:"last_time" bson:"last_time"`
+}
+
+type ModelInstChartData struct {
+	ReportType string          `json:"report_type" bson:"report_type"`
+	Data       []StringIDCount `json:"data" data:"data"`
+	OwnerID    string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime   time.Time       `json:"last_time" bson:"last_time"`
 }
 
 type SearchChartResponse struct {
@@ -131,7 +138,7 @@ type CloudMapping struct {
 type AttributesOptions []AttributesOption
 
 type AttributesOption struct {
-	Id        string `json:"id" bson:"id"`
+	ID        string `json:"id" bson:"id"`
 	Name      string `json:"name" bson:"name"`
 	Type      string `json:"type" bson:"type"`
 	IsDefault string `json:"is_default" bson:"is_default"`
