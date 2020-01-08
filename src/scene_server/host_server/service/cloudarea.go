@@ -63,7 +63,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 	}
 
 	filter := input.Condition
-	if s.AuthManager.Enabled() {
+	if s.AuthManager.Enabled() && !s.AuthManager.SkipReadAuthorization {
 		// auth: get authorized resources
 		authorizedPlatIDs, err := s.AuthManager.ListAuthorizedPlatIDs(srvData.ctx, srvData.user)
 		if err != nil {
