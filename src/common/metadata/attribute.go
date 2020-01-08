@@ -935,3 +935,11 @@ var HostApplyFieldMap = map[string]bool{
 	common.LastTimeField:      false,
 	common.BKImportFrom:       false,
 }
+
+// CheckAllowHostApplyOnField 检查字段是否能用于主机属性自动应用
+func CheckAllowHostApplyOnField(field string) bool {
+	if allow, exist := HostApplyFieldMap[field]; exist == true {
+		return allow
+	}
+	return true
+}

@@ -167,10 +167,6 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		eh.SetPreData(instID, origin)
 	}
 
-	if nil != err {
-		blog.Errorf("update model instance validate error :%v ,rid:%s", err, ctx.ReqID)
-		return &metadata.UpdatedCount{}, err
-	}
 	cnt, err := m.update(ctx, objID, inputParam.Data, inputParam.Condition)
 	if err != nil {
 		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, condition:%s, rid:%s", objID, inputParam.Condition, ctx.ReqID)

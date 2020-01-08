@@ -80,7 +80,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		}
 	}
 	filters := make([]map[string]interface{}, 0)
-	if hostIDFilter != nil && len(hostIDFilter) > 0 {
+	if len(hostIDFilter) > 0 {
 		filters = append(filters, hostIDFilter)
 	}
 
@@ -93,7 +93,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		filters = append(filters, propertyFilter)
 	}
 	finalFilter := map[string]interface{}{}
-	util.SetQueryOwner(&finalFilter, util.ExtractOwnerFromContext(ctx))
+	finalFilter = util.SetQueryOwner(finalFilter, util.ExtractOwnerFromContext(ctx))
 	if len(filters) > 0 {
 		finalFilter[common.BKDBAND] = filters
 	}

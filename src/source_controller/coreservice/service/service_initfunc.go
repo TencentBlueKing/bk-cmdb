@@ -49,6 +49,7 @@ func (s *coreService) initModel() {
 	s.addAction(http.MethodPost, "/create/model/{bk_obj_id}/attributes", s.CreateModelAttributes, nil)
 	s.addAction(http.MethodPost, "/set/model/{bk_obj_id}/attributes", s.SetModelAttributes, nil)
 	s.addAction(http.MethodPut, "/update/model/{bk_obj_id}/attributes", s.UpdateModelAttributes, nil)
+	s.addAction(http.MethodPost, "/update/model/{bk_obj_id}/attributes/index", s.UpdateModelAttributesIndex, nil)
 	s.addAction(http.MethodPut, "/update/model/attributes", s.UpdateModelAttributesByCondition, nil)
 	s.addAction(http.MethodDelete, "/delete/model/{bk_obj_id}/attributes", s.DeleteModelAttribute, nil)
 	s.addAction(http.MethodPost, "/read/model/{bk_obj_id}/attributes", s.SearchModelAttributes, nil)
@@ -136,7 +137,8 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/create/usercustom/{bk_user}", s.AddUserCustom, nil)
 	s.addAction(http.MethodPut, "/update/usercustom/{bk_user}/{id}", s.UpdateUserCustomByID, nil)
 	s.addAction(http.MethodGet, "/find/usercustom/user/search/{bk_user}", s.GetUserCustomByUser, nil)
-	s.addAction(http.MethodPost, "/find/usercustom/default/search/{bk_user}", s.GetDefaultUserCustom, nil)
+	s.addAction(http.MethodPost, "/find/usercustom/default", s.GetDefaultUserCustom, nil)
+	s.addAction(http.MethodPut, "/update/usercustom/default", s.UpdatDefaultUserCustom, nil)
 
 	s.addAction(http.MethodPost, "/create/hosts/favorites/{user}", s.AddHostFavourite, nil)
 	s.addAction(http.MethodPut, "/update/hosts/favorites/{user}/{id}", s.UpdateHostFavouriteByID, nil)

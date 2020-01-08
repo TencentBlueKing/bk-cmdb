@@ -16,6 +16,7 @@
             {{$t('转移属性变化确认提示')}}
         </cmdb-tips>
         <property-confirm-table
+            class="table"
             ref="confirmTable"
             max-height="auto"
             :list="list"
@@ -48,3 +49,9 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .table {
+        margin-top: 8px;
+    }
+</style>
