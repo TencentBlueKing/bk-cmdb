@@ -47,7 +47,7 @@ func (m *modelClassification) isExists(ctx core.ContextParams, classificationID 
 		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).One(ctx, origin)
+	err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).One(ctx, origin)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
 		return origin, false, err
 	}

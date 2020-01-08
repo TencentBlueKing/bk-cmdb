@@ -68,7 +68,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 			common.BKDBNE: true,
 		},
 	}
-	if err := s.db.Table(common.BKTableNameObjClassifiction).Find(clsFilter).All(s.ctx, &cls); err != nil {
+	if err := s.db.Table(common.BKTableNameObjClassification).Find(clsFilter).All(s.ctx, &cls); err != nil {
 		blog.Errorf("init auth center failed, list classifications failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommInitAuthCenterFailed, err.Error()),

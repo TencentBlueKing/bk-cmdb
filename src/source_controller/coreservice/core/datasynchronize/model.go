@@ -73,7 +73,7 @@ func (m *model) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 func (m *model) saveSynchronizeModelClassification(ctx core.ContextParams) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	// "cc_ObjClassification"
-	dbParam.tableName = common.BKTableNameObjClassifiction
+	dbParam.tableName = common.BKTableNameObjClassification
 	dbParam.InstIDField = common.BKFieldID
 	m.base.saveSynchronize(ctx, dbParam)
 	return nil

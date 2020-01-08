@@ -23,9 +23,9 @@ import (
 
 func (m *modelClassification) count(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).Count(ctx)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).Count(ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a database count operation on the table(%s) by the condition(%#v), error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute a database count operation on the table(%s) by the condition(%#v), error info is %s", ctx.Kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
 		return 0, err
 	}
 	return cnt, err
@@ -33,7 +33,7 @@ func (m *modelClassification) count(ctx core.ContextParams, cond universalsql.Co
 
 func (m *modelClassification) save(ctx core.ContextParams, classification metadata.Classification) (id uint64, err error) {
 
-	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjClassifiction)
+	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjClassification)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to create a new sequence id on the table(%s) of the database, error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, err.Error())
 		return id, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -42,7 +42,7 @@ func (m *modelClassification) save(ctx core.ContextParams, classification metada
 	classification.ID = int64(id)
 	classification.OwnerID = ctx.SupplierAccount
 
-	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Insert(ctx, classification)
+	err = m.dbProxy.Table(common.BKTableNameObjClassification).Insert(ctx, classification)
 	return id, err
 }
 
@@ -58,9 +58,9 @@ func (m *modelClassification) update(ctx core.ContextParams, data mapstr.MapStr,
 	}
 
 	data.Remove(metadata.ClassFieldClassificationID)
-	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Update(ctx, cond.ToMapStr(), data)
+	err = m.dbProxy.Table(common.BKTableNameObjClassification).Update(ctx, cond.ToMapStr(), data)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a database update operation on the table(%s) by the condition(%#v) , error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute a database update operation on the table(%s) by the condition(%#v) , error info is %s", ctx.ReqID, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
 		return 0, err
 	}
 	return cnt, err
@@ -77,7 +77,7 @@ func (m *modelClassification) delete(ctx core.ContextParams, cond universalsql.C
 		return 0, err
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Delete(ctx, cond.ToMapStr())
+	err = m.dbProxy.Table(common.BKTableNameObjClassification).Delete(ctx, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute a database deletion operation on the table(%s) by the condition(%#v), error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
 		return 0, err
@@ -89,13 +89,13 @@ func (m *modelClassification) delete(ctx core.ContextParams, cond universalsql.C
 func (m *modelClassification) search(ctx core.ContextParams, cond universalsql.Condition) ([]metadata.Classification, error) {
 
 	results := make([]metadata.Classification, 0)
-	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).All(ctx, &results)
+	err := m.dbProxy.Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(ctx, &results)
 	return results, err
 }
 
 func (m *modelClassification) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 
 	results := make([]mapstr.MapStr, 0)
-	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).All(ctx, &results)
+	err := m.dbProxy.Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(ctx, &results)
 	return results, err
 }

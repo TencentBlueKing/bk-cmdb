@@ -235,7 +235,7 @@ func (s *synchronizeAdapter) getSameInfo(ctx core.ContextParams, instIDField, ta
 		if err != nil {
 			return 0, false, err
 		}
-	case common.BKTableNameObjClassifiction:
+	case common.BKTableNameObjClassification:
 		err = bsi.BuildSameInfoObjClassificationCond(ctx)
 		if err != nil {
 			return 0, false, err
