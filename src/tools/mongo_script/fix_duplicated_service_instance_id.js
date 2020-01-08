@@ -44,11 +44,11 @@ while ( cursor.hasNext() ) {
 		id: item.id,
 		create_time: {$gt: MigrationTime}
 	};
-	const r1 = db.cc_ServiceInstance.update(instanceFilter, {id: newID}, { $multi: true });
+	const r1 = db.cc_ServiceInstance.update(instanceFilter, {$set: {id: newID}}, { $multi: true });
 	const relationFilter = {
-		bk_host_id: item.bk_host_id, 
+		bk_host_id: item.bk_host_id,
 		service_instance_id: item.id
 	};
-	const r2 = db.cc_ProcessInstanceRelation.update(relationFilter, {service_instance_id: newID}, { $multi: true });
+	const r2 = db.cc_ProcessInstanceRelation.update(relationFilter, {$set: {service_instance_id: newID}}, { $multi: true });
 	print("update instance result:", r1, "update relation result:", r2, "\n");
 }
