@@ -66,7 +66,7 @@ func (a *associationFindData) findModel(ctx core.ContextParams) ([]mapstr.MapStr
 	case common.SynchronizeModelTypeAttributeGroup:
 		return a.dbQueryModel(ctx, common.BKTableNamePropertyGroup)
 	case common.SynchronizeModelTypeClassification:
-		return a.dbQueryModel(ctx, common.BKTableNameObjClassifiction)
+		return a.dbQueryModel(ctx, common.BKTableNameObjClassification)
 	}
 	return nil, 0, nil
 }
