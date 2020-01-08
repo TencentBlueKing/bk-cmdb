@@ -14,7 +14,7 @@ func (p *process) CreateProcessInstance(ctx context.Context, h http.Header, data
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -28,7 +28,7 @@ func (p *process) DeleteProcessInstance(ctx context.Context, h http.Header, data
 	err = p.client.Delete().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -42,7 +42,7 @@ func (p *process) SearchProcessInstance(ctx context.Context, h http.Header, data
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -56,7 +56,7 @@ func (p *process) UpdateProcessInstance(ctx context.Context, h http.Header, data
 	err = p.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

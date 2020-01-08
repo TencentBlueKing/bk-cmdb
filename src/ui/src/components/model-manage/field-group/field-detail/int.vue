@@ -78,11 +78,9 @@
             async handleInput () {
                 const res = await this.$validator.validateAll()
                 if (res) {
-                    const min = this.localValue.min
-                    const max = this.localValue.max
                     this.$emit('input', {
-                        min: min ? Number(min) : null,
-                        max: max ? Number(max) : null
+                        min: this.localValue.min,
+                        max: this.localValue.max
                     })
                 }
             },
