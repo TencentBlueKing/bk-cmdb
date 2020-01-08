@@ -5,6 +5,7 @@
         :filter-menu-method="filterMenuMethod"
         :filter-children-method="filterChildrenMethod"
         :show-condition="false"
+        :show-popover-tag-change="false"
         :strink="false"
         v-model="searchValue"
         :placeholder="$t('关键字/字段值')"

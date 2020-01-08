@@ -62,19 +62,21 @@
                                 </bk-button>
                             </cmdb-auth>
                             <div class="property-form" v-if="property === editState.property">
-                                <component class="form-component"
-                                    :is="`cmdb-form-${property.bk_property_type}`"
-                                    :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
-                                    :unit="property.unit"
-                                    :options="property.option || []"
-                                    :data-vv-name="property.bk_property_id"
-                                    :data-vv-as="property.bk_property_name"
-                                    :placeholder="getPlaceholder(property)"
-                                    :auto-check="false"
-                                    v-validate="$tools.getValidateRules(property)"
-                                    v-model.trim="editState.value"
-                                    :ref="`component-${property.bk_property_id}`">
-                                </component>
+                                <div class="form-component">
+                                    <component
+                                        :is="`cmdb-form-${property.bk_property_type}`"
+                                        :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
+                                        :unit="property.unit"
+                                        :options="property.option || []"
+                                        :data-vv-name="property.bk_property_id"
+                                        :data-vv-as="property.bk_property_name"
+                                        :placeholder="getPlaceholder(property)"
+                                        :auto-check="false"
+                                        v-validate="$tools.getValidateRules(property)"
+                                        v-model.trim="editState.value"
+                                        :ref="`component-${property.bk_property_id}`">
+                                    </component>
+                                </div>
                                 <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                                 <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
                                 <span class="form-error"
@@ -426,7 +428,7 @@
             color: $cmdbDangerColor;
         }
         .form-component {
-            display: inline-flex;
+            display: inline-block;
             vertical-align: middle;
             height: 32px;
             width: 260px;

@@ -43,6 +43,9 @@
                     <span class="node-name">{{data.bk_inst_name}}</span>
                 </div>
             </div>
+            <div slot="empty" class="empty">
+                <span>{{$t('bk.bigTree.emptyText')}}</span>
+            </div>
         </bk-big-tree>
     </div>
 </template>
@@ -331,6 +334,15 @@
                     margin-right: 8px;
                 }
             }
+        }
+
+        .empty {
+            position: absolute;
+            display: flex;
+            height: calc(100% - 30px);
+            width: 100%;
+            justify-content: center;
+            align-items: center;
         }
     }
 </style>
