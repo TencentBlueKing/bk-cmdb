@@ -43,10 +43,10 @@ func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.StringIDCount, err
 		}
 		info := metadata.StringIDCount{}
 		if obj == common.BKInnerObjIDApp {
-			info.Id = obj
+			info.ID = obj
 			info.Count = int64(result.Data.Count) - 1
 		} else {
-			info.Id = obj
+			info.ID = obj
 			info.Count = int64(result.Data.Count)
 		}
 		data = append(data, info)
@@ -70,7 +70,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.StringIDCount
 
 	info := make([]metadata.StringIDCount, 0)
 	info = append(info, metadata.StringIDCount{
-		Id:    "model",
+		ID:    "model",
 		Count: result.Data.Count, // 去除内置的模型(主机、集群等)
 	})
 
@@ -81,7 +81,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.StringIDCount
 		return nil, err
 	}
 	info = append(info, metadata.StringIDCount{
-		Id:    "inst",
+		ID:    "inst",
 		Count: int64(resp.Data),
 	})
 
