@@ -69,7 +69,8 @@
                             :data="searchSelect"
                             :max-width="280"
                             v-model="searchSelectData"
-                            @menu-child-condition-select="handleConditionSelect">
+                            @menu-child-condition-select="handleConditionSelect"
+                            @change="handleSearch">
                         </bk-search-select>
                     </div>
                 </div>
@@ -317,10 +318,6 @@
             },
             checked () {
                 this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
-            },
-            searchSelectData (searchSelectData) {
-                if (!searchSelectData.length && this.inSearch) this.inSearch = false
-                this.handleSearch()
             }
         },
         async created () {
@@ -440,6 +437,10 @@
                     this.isExpandAll = false
                     this.instances = data.info
                     this.pagination.count = data.count
+                    if (!this.searchSelectData.length && this.inSearch) this.inSearch = false
+                    this.$nextTick(() => {
+                        this.handleCheckALL(false)
+                    })
                 } catch (e) {
                     console.error(e)
                     this.instances = []
@@ -737,14 +738,12 @@
                 })
             },
             handleCheckALL (checked) {
-                this.searchSelectData = []
                 this.isCheckAll = checked
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.checked = checked
                 })
             },
             handleExpandAll (expanded) {
-                this.searchSelectData = []
                 this.isExpandAll = expanded
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.localExpanded = expanded
