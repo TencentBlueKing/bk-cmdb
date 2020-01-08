@@ -153,12 +153,6 @@ type HostOperation interface {
 	UnlockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError
 	QueryHostLock(params ContextParams, input *metadata.QueryHostLockRequest) ([]metadata.HostLockData, errors.CCError)
 
-	// cloud sync
-	CreateCloudSyncTask(ctx ContextParams, input *metadata.CloudTaskList) (uint64, error)
-	CreateResourceConfirm(ctx ContextParams, input *metadata.ResourceConfirm) (uint64, error)
-	CreateCloudSyncHistory(ctx ContextParams, input *metadata.CloudHistory) (uint64, error)
-	CreateConfirmHistory(ctx ContextParams, input mapstr.MapStr) (uint64, error)
-
 	// host search
 	ListHosts(ctx ContextParams, input metadata.ListHosts) (*metadata.ListHostResult, error)
 }
@@ -315,7 +309,7 @@ func New(
 	setTemplate SetTemplateOperation,
 	operation StatisticOperation,
 	hostApplyRule HostApplyRuleOperation,
-    sys SystemOperation,
+	sys SystemOperation,
 ) Core {
 	return &core{
 		model:           model,

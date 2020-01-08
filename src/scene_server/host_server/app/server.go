@@ -96,8 +96,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	// 关闭云同步
-	// go hostSrv.Service.InitBackground()
 	select {
 	case <-ctx.Done():
 	}
