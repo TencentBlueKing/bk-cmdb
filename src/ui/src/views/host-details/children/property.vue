@@ -65,6 +65,7 @@
                                 <component class="form-component"
                                     :is="`cmdb-form-${property.bk_property_type}`"
                                     :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
+                                    :unit="property.unit"
                                     :options="property.option || []"
                                     :data-vv-name="property.bk_property_id"
                                     :data-vv-as="property.bk_property_name"
@@ -425,7 +426,7 @@
             color: $cmdbDangerColor;
         }
         .form-component {
-            display: inline-block;
+            display: inline-flex;
             vertical-align: middle;
             height: 32px;
             width: 260px;
