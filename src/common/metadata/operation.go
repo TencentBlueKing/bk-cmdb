@@ -56,11 +56,13 @@ type AggregateIntResponse struct {
 	Data     []IntIDCount `json:"data"`
 }
 
+// IntIDCount int类型字段做mongoDB聚合时使用
 type IntIDCount struct {
 	ID    int64 `json:"id" bson:"_id"`
 	Count int64 `json:"count" bson:"count"`
 }
 
+// IntIDArrayCount int类型字段做mongoDB聚合，且结果为数组时使用
 type IntIDArrayCount struct {
 	ID    int64   `json:"id" bson:"_id"`
 	Count []int64 `json:"count" bson:"count"`
@@ -71,6 +73,7 @@ type AggregateStringResponse struct {
 	Data     []StringIDCount `json:"data"`
 }
 
+// StringIDCount string类型字段做mongoDB聚合时使用
 type StringIDCount struct {
 	ID    string `json:"id" bson:"_id"`
 	Count int64  `json:"count" bson:"count"`
