@@ -124,10 +124,46 @@ func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header
 }
 
 func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metadata.Metadata) ([]Property, error) {
+	rid := util.GetHTTPCCRequestID(header)
 	sort := fmt.Sprintf("%s,-%s", common.BKPropertyIndexField, common.BKIsRequiredField)
 
-	return lgc.getObjFieldIDsBySort(objID, sort, header, nil, meta)
+	sortedFields, err := lgc.getObjFieldIDsBySort(objID, sort, header, nil, meta)
+	if err != nil {
+		blog.Errorf("getObjFieldIDs, getObjFieldIDsBySort failed, sort: %s, rid: %s, err: %v", sort, rid, err)
+		return nil, err
+	}
 
+	groups, err := lgc.getObjectGroup(objID, header, meta)
+	if nil != err {
+		return nil, fmt.Errorf("getObjFieldIDs, get attribute group failed, err: %+v", err)
+	}
+	if len(groups) == 0 {
+		return nil, fmt.Errorf("get attribute group by object not found")
+	}
+
+	fields := make([]Property, 0)
+	index := 0
+	for _, field := range sortedFields {
+		if field.IsRequire != true {
+			break
+		}
+		field.ExcelColIndex = index
+		index++
+		fields = append(fields, field)
+	}
+
+	noRequiredField := sortedFields[index:]
+	for _, group := range groups {
+		for _, field := range noRequiredField {
+			if field.Group != group.ID {
+				continue
+			}
+			field.ExcelColIndex = index
+			index++
+			fields = append(fields, field)
+		}
+	}
+	return fields, nil
 }
 
 func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, meta *metadata.Metadata) ([]Property, error) {
@@ -189,7 +225,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	}
 
 	ret := []Property{}
-	index := 0
 	for _, attr := range result.Data {
 		ret = append(ret, Property{
 			ID:            attr.PropertyID,
@@ -199,10 +234,9 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 			IsPre:         attr.IsPre,
 			Option:        attr.Option,
 			Group:         attr.PropertyGroup,
-			ExcelColIndex: index,
+			ExcelColIndex: int(attr.PropertyIndex),
 			IsOnly:        keyIDs[uint64(attr.ID)],
 		})
-		index++
 	}
 	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d, rid: %s", len(ret), rid)
 	return ret, nil
