@@ -733,7 +733,9 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        title: this.currentNode.data.bk_inst_name
+                        title: this.currentNode.data.bk_inst_name,
+                        node: this.currentNode.id,
+                        tab: 'serviceInstance'
                     }
                 })
             },
