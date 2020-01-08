@@ -151,21 +151,6 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPut, "/updatemany/hosts/cloudarea_field", s.UpdateHostCloudAreaField, nil)
 }
 
-func (s *coreService) initCloudSync() {
-	s.addAction(http.MethodPost, "/create/cloud/sync/task", s.CreateCloudSyncTask, nil)
-	s.addAction(http.MethodDelete, "/delete/cloud/sync/task/{taskID}", s.DeleteCloudSyncTask, nil)
-	s.addAction(http.MethodPost, "/update/cloud/sync/task", s.UpdateCloudSyncTask, nil)
-	s.addAction(http.MethodPost, "/search/cloud/sync/task", s.SearchCloudSyncTask, nil)
-	s.addAction(http.MethodPost, "/create/cloud/confirm", s.CreateConfirm, nil)
-	s.addAction(http.MethodPost, "/check/cloud/task/name", s.CheckTaskNameUnique, nil)
-	s.addAction(http.MethodDelete, "/delete/cloud/confirm/{taskID}", s.DeleteConfirm, nil)
-	s.addAction(http.MethodPost, "/search/cloud/confirm", s.SearchConfirm, nil)
-	s.addAction(http.MethodPost, "/create/cloud/sync/history", s.CreateSyncHistory, nil)
-	s.addAction(http.MethodPost, "/search/cloud/sync/history", s.SearchSyncHistory, nil)
-	s.addAction(http.MethodPost, "/create/cloud/confirm/history", s.CreateConfirmHistory, nil)
-	s.addAction(http.MethodPost, "/search/cloud/confirm/history", s.SearchConfirmHistory, nil)
-}
-
 func (s *coreService) audit() {
 	s.addAction(http.MethodPost, "/create/auditlog", s.CreateAuditLog, nil)
 	s.addAction(http.MethodPost, "/read/auditlog", s.SearchAuditLog, nil)
@@ -214,7 +199,6 @@ func (s *coreService) initService() {
 	s.initOperation()
 	s.initProcess()
 	s.initOperation()
-	s.initCloudSync()
 	s.label()
 	s.topographics()
 	s.ccSystem()
