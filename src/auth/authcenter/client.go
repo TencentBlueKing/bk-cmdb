@@ -241,7 +241,7 @@ func (a *authClient) RegistSystem(ctx context.Context, header http.Header, syste
 	}{}
 
 	err := a.client.Post().
-		SubResource(url).
+		SubResourcef(url).
 		WithContext(ctx).
 		WithHeaders(header).
 		Body(system).
@@ -290,7 +290,7 @@ func (a *authClient) InitSystemBatch(ctx context.Context, header http.Header, de
 	resp := BaseResponse{}
 
 	err := a.client.Put().
-		SubResource(url).
+		SubResourcef(url).
 		WithContext(ctx).
 		WithHeaders(header).
 		Body(detail).
@@ -528,7 +528,7 @@ func (a *authClient) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p
 	}
 	resp := new(GetSkipUrlResult)
 	err = a.client.Post().
-		SubResource(url).
+		SubResourcef(url).
 		WithContext(ctx).
 		WithHeaders(header).
 		Body(req).

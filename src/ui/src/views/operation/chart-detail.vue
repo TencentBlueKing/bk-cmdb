@@ -77,8 +77,9 @@
                             </span>
                         </div>
                         <div class="content-item">
-                            <label class="label-text">
+                            <label class="label-text" :style="{ marginRight: '47px' }">
                                 {{$t('统计维度')}}
+                                <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('模型中需包含枚举字段才可以作为维度统计')"></i>
                             </label>
                             <span class="cmdb-form-item">
                                 <bk-select v-model="chartData.field"
@@ -123,7 +124,7 @@
                             <span class="cmdb-radio-text">100%</span>
                         </label>
                     </div>
-                    <div class="content-item">
+                    <div class="content-item" v-if="chartData.chart_type !== 'pie' && chartData.report_type !== 'host_change_biz_chart'">
                         <label class="label-text-x">
                             {{$t('横轴坐标数量')}}
                             <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('图标可视区横轴坐标数量，建议不超过20个')"></i>
@@ -223,7 +224,7 @@
                 staList: [],
                 chartType: true,
                 showDia: true,
-                hostFilter: ['host', 'module', 'biz', 'set', 'process'],
+                hostFilter: ['host', 'module', 'biz', 'set', 'process', 'plat'],
                 editTitle: '',
                 maxNum: 0
             }
