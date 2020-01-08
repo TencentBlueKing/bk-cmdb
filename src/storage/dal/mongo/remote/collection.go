@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/mongodb"
-	//"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
 
@@ -308,6 +307,11 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 		return errors.New(reply.Message)
 	}
 	return nil
+}
+
+// DropColumns 移除字段
+func (c *Collection) DropColumns(ctx context.Context, filter dal.Filter, fields []string) error {
+	return errors.New("unsupported operation DropColumns")
 }
 
 // AggregateOne 聚合查询

@@ -15,7 +15,7 @@ class FileTemplate(Template):
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v,
         redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v,
-        cc_url_v, paas_url_v, full_text_search, es_url_v, auth_address, auth_app_code,
+        cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level
 ):
     output = os.getcwd() + "/cmdb_adminserver/configures/"
@@ -31,6 +31,8 @@ def generate_config_file(
         cc_url=cc_url_v,
         paas_url=paas_url_v,
         es_url=es_url_v,
+        es_user=es_user_v,
+        es_pass=es_pass_v,
         ui_root="../web",
         agent_url=paas_url_v,
         configures_dir=output,
@@ -316,6 +318,8 @@ appSecret = $auth_app_secret
 [es]
 full_text_search = $full_text_search
 url=$es_url
+usr = $es_user
+pwd = $es_pass
 '''
 
     template = FileTemplate(topo_file_template_str)
@@ -447,6 +451,8 @@ def main(argv):
     }
     full_text_search = 'off'
     es_url = 'http://127.0.0.1:9200'
+    es_user = ''
+    es_pass = ''
     log_level = '3'
 
     server_ports = {
@@ -468,7 +474,7 @@ def main(argv):
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
         "redis_pass=", "mongo_ip=", "mongo_port=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=",
-        "blueking_paas_url=", "listen_port=", "es_url=", "auth_address=",
+        "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level="
     ]
@@ -493,6 +499,8 @@ def main(argv):
       --auth_app_secret    <auth_app_secret>      app code for iam
       --full_text_search   <full_text_search>     full text search on or off
       --es_url             <es_url>               the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
+      --es_user            <es_user>              the es user name
+      --es_pass            <es_pass>              the es password
       --log_level          <log_level>            log level to start cmdb process, default: 3
 
 
@@ -519,6 +527,8 @@ def main(argv):
       --auth_sync_interval_minutes  45 \\
       --full_text_search   off \\
       --es_url             http://127.0.0.1:9200 \\
+      --es_user            cc \\
+      --es_pass            cc \\
       --log_level          3
     '''
     try:
@@ -600,6 +610,12 @@ def main(argv):
         elif opt in("-es","--es_url",):
             es_url = arg
             print('es_url:', es_url)
+        elif opt in ("--es_user",):
+            es_user = arg
+            print('es_user:', es_user)
+        elif opt in ("--es_pass",):
+            es_pass = arg
+            print('es_pass:', es_pass)
         elif opt in("-v","--log_level",):
             log_level = arg
             print('log_level:', log_level)
@@ -645,8 +661,8 @@ def main(argv):
         print('full_text_search can only be off or on')
         sys.exit()
     if full_text_search == "on":
-        if not es_url.startswith("http://"):
-            print('es url not start with http://')
+        if not(es_url.startswith("http://") or es_url.startswith("https://")) :
+            print('es url not start with http:// or https://')
             sys.exit()
 
     if auth["auth_scheme"] not in ["internal", "iam"]:
@@ -689,6 +705,8 @@ def main(argv):
         paas_url_v=paas_url,
         full_text_search=full_text_search,
         es_url_v=es_url,
+        es_user_v=es_user,
+        es_pass_v=es_pass,
         log_level=log_level,
         **auth
     )

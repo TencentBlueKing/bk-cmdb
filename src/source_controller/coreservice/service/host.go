@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 func (s *coreService) TransferHostToInnerModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -163,7 +165,25 @@ func (s *coreService) GetHosts(params core.ContextParams, pathParams, queryParam
 	}
 
 	condition := util.ConvParamsTime(dat.Condition)
-	condition = util.SetModOwner(condition, params.SupplierAccount)
+	var cond map[string]interface{}
+	switch value := condition.(type) {
+	case map[string]interface{}:
+		cond = value
+	case mapstr.MapStr:
+		cond = value
+	case common.KvMap:
+		cond = value
+	default:
+		out, err := bson.Marshal(condition)
+		if err != nil {
+			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
+		}
+		err = bson.Unmarshal(out, &cond)
+		if err != nil {
+			blog.Errorf("SetModOwner failed condition %#v, error %s", condition, err.Error())
+		}
+	}
+	condition = util.SetModOwner(cond, params.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 	result, err := s.getObjectByCondition(params, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
 	if err != nil {
