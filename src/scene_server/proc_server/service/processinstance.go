@@ -308,30 +308,42 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 	return nil
 }
 
+func (ps *ProcServer) getDefaultModule(ctx *rest.Contexts, bizID int64, defaultFlag int) (*metadata.ModuleInst, errors.CCErrorCoder) {
+	filter := map[string]interface{}{
+		common.BKAppIDField:   bizID,
+		common.BKDefaultField: defaultFlag,
+	}
+	return ps.getOneModule(ctx, filter)
+}
+
 func (ps *ProcServer) getModule(ctx *rest.Contexts, moduleID int64) (*metadata.ModuleInst, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKModuleIDField: moduleID,
 	}
+	return ps.getOneModule(ctx, filter)
+}
+
+func (ps *ProcServer) getOneModule(ctx *rest.Contexts, filter map[string]interface{}) (*metadata.ModuleInst, errors.CCErrorCoder) {
 	moduleFilter := &metadata.QueryCondition{
 		Condition: mapstr.MapStr(filter),
 	}
 	modules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleFilter)
 	if err != nil {
-		blog.Errorf("getModule failed, moduleID: %d, err: %s, rid: %s", moduleID, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("getModule failed, filter: %+v, err: %s, rid: %s", filter, err.Error(), ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err)
 	}
 	if len(modules.Data.Info) == 0 {
-		blog.Errorf("getModule failed, moduleID: %d, err: %+v, rid: %s", moduleID, "not found", ctx.Kit.Rid)
+		blog.Errorf("getModule failed, filter: %+v, err: %+v, rid: %s", filter, "not found", ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "not found")
 	}
 	if len(modules.Data.Info) > 1 {
-		blog.Errorf("getModule failed, moduleID: %d, err: %+v, rid: %s", moduleID, "get multiple", ctx.Kit.Rid)
+		blog.Errorf("getModule failed, filter: %+v, err: %+v, rid: %s", filter, "get multiple", ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "get multiple modules")
 	}
 	module := modules.Data.Info[0]
 	moduleInst := &metadata.ModuleInst{}
 	if err := module.ToStructByTag(moduleInst, "field"); err != nil {
-		blog.Errorf("getModule failed, marshal json failed, moduleID: %d, err: %+v, rid: %s", moduleID, err, ctx.Kit.Rid)
+		blog.Errorf("getModule failed, marshal json failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
 	return moduleInst, nil

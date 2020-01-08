@@ -261,7 +261,7 @@
                     title: this.$t('确认关闭'),
                     extCls: 'close-apply-confirm-modal',
                     subHeader: h('div', { class: 'content' }, [
-                        h('p', { class: 'tips' }, this.$t('关闭后转入模块的主机属性不再自动被应用')),
+                        h('p', { class: 'tips' }, this.$t('确认关闭当前模块的主机属性自动应用')),
                         h('bk-checkbox', {
                             props: {
                                 checked: true,

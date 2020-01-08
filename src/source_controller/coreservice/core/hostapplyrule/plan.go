@@ -213,6 +213,9 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 			blog.Infof("generateOneHostApplyPlan attribute id filed not exist, attributeID: %s, rid: %s", attributeID, rid)
 			continue
 		}
+		if metadata.CheckAllowHostApplyOnField(attribute.PropertyID) == false {
+			continue
+		}
 		propertyIDField := attribute.PropertyID
 		originalValue, ok := host[propertyIDField]
 		if !ok {
@@ -223,21 +226,24 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		firstValue := targetRules[0].PropertyValue
 		conflictedStillExist := false
 		for _, rule := range targetRules {
-			if !cmp.Equal(firstValue, rule.PropertyValue) {
-				conflictedStillExist = true
-				if propertyValue, exist := resolverMap[attribute.ID]; exist {
-					conflictedStillExist = false
-					firstValue = propertyValue
-				}
-				plan.ConflictFields = append(plan.ConflictFields, metadata.HostApplyConflictField{
-					AttributeID:             attributeID,
-					PropertyID:              propertyIDField,
-					PropertyValue:           originalValue,
-					Rules:                   targetRules,
-					UnresolvedConflictExist: conflictedStillExist,
-				})
-				break
+			if cmp.Equal(firstValue, rule.PropertyValue) {
+				continue
 			}
+
+			conflictedStillExist = true
+			if propertyValue, exist := resolverMap[attribute.ID]; exist {
+				conflictedStillExist = false
+				firstValue = propertyValue
+			}
+
+			plan.ConflictFields = append(plan.ConflictFields, metadata.HostApplyConflictField{
+				AttributeID:             attributeID,
+				PropertyID:              propertyIDField,
+				PropertyValue:           originalValue,
+				Rules:                   targetRules,
+				UnresolvedConflictExist: conflictedStillExist,
+			})
+			break
 		}
 
 		if conflictedStillExist {
@@ -332,7 +338,19 @@ func (p *hostApplyRule) RunHostApplyOnHosts(ctx core.ContextParams, bizID int64,
 			ModuleIDs: moduleIDs,
 		})
 	}
+	listHostApplyRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: moduleIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	rules, ccErr := p.ListHostApplyRule(ctx, bizID, listHostApplyRuleOption)
+	if ccErr != nil {
+		blog.ErrorJSON("RunHostApplyOnHosts failed, ListHostApplyRule failed, option: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, listHostApplyRuleOption, ccErr.Error(), rid)
+		return result, ccErr
+	}
 	planOption := metadata.HostApplyPlanOption{
+		Rules:       rules.Info,
 		HostModules: hostModules,
 	}
 	planResult, ccErr := p.GenerateApplyPlan(ctx, bizID, planOption)
