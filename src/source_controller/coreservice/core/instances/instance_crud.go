@@ -44,20 +44,15 @@ func (m *instanceManager) save(ctx core.ContextParams, objID string, inputParam 
 	return id, err
 }
 
-func (m *instanceManager) update(ctx core.ContextParams, objID string, data mapstr.MapStr, cond mapstr.MapStr) (cnt uint64, err error) {
+func (m *instanceManager) update(ctx core.ContextParams, objID string, data mapstr.MapStr, cond mapstr.MapStr) error {
 	tableName := common.GetInstTableName(objID)
 	if !util.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
-	cnt, err = m.dbProxy.Table(tableName).Find(cond).Count(ctx)
-	if nil != err {
-		return cnt, err
-	}
 	ts := time.Now()
 	data.Set(common.LastTimeField, ts)
 	data.Remove(common.BKObjIDField)
-	err = m.dbProxy.Table(tableName).Update(ctx, cond, data)
-	return cnt, err
+	return m.dbProxy.Table(tableName).Update(ctx, cond, data)
 }
 
 func (m *instanceManager) getInsts(ctx core.ContextParams, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
@@ -65,9 +60,6 @@ func (m *instanceManager) getInsts(ctx core.ContextParams, objID string, cond ma
 	tableName := common.GetInstTableName(objID)
 	if !util.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
-	}
-	if nil != err {
-		return origins, false, err
 	}
 	err = m.dbProxy.Table(tableName).Find(cond).All(ctx, &origins)
 	return origins, !m.dbProxy.IsNotFoundError(err), err
