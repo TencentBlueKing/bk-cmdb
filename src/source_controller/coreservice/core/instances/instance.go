@@ -166,6 +166,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		// 设置实例变更前数据
 		eh.SetPreData(instID, origin)
 	}
+
 	err = m.update(ctx, objID, inputParam.Data, inputParam.Condition)
 	if err != nil {
 		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, condition:%s, rid:%s", objID, inputParam.Condition, ctx.ReqID)
