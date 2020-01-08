@@ -540,6 +540,16 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 
+		if key == common.BKAppNameField || key == common.BKSetNameField || key == common.BKModuleNameField {
+			if strings.Contains(value, "##") {
+				blog.ErrorJSON("params %s contains TopoModuleName's split flag ##, rid: %s", value, rid)
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsInvalid,
+					Args:    []interface{}{value},
+				}
+			}
+		}
+
 		option, ok := attribute.Option.(string)
 		if !ok {
 			break
