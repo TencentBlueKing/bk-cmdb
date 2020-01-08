@@ -300,6 +300,7 @@
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapState('hosts', ['collectionList', 'isHostSearch']),
@@ -311,6 +312,9 @@
             },
             customColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
+            },
+            globalCustomColumns () {
+                return this.globalUsercustom['host_global_custom_table_columns'] || []
             },
             clipboardList () {
                 return this.table.header.filter(header => header.type !== 'checkbox')
@@ -490,7 +494,8 @@
                 this.$refs.hostFilter.handleToggleFilter()
             },
             setTableHeader () {
-                const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
+                const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
+                const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, customColumns, this.columnsConfigDisabledColumns)
                 this.table.header = properties.map(property => {
                     return {
                         id: property.bk_property_id,

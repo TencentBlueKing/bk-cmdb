@@ -1,7 +1,11 @@
 <template>
     <div class="group-layout" v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }">
         <div class="layout-header">
-            <bk-button @click="previewShow = true" :disabled="!preview.properties.length">{{$t('字段预览')}}</bk-button>
+            <bk-button @click="previewShow = true" :disabled="!properties.length">{{$t('字段预览')}}</bk-button>
+            <bk-button text class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
+                <i class="icon-cc-setting"></i>
+                {{$t('表格排序设置')}}
+            </bk-button>
         </div>
         <div class="layout-content">
             <div class="group"
@@ -237,9 +241,26 @@
             :is-show.sync="previewShow">
             <preview-field v-if="previewShow"
                 slot="content"
-                :properties="preview.properties"
-                :property-groups="preview.groups">
+                :properties="properties"
+                :property-groups="groups">
             </preview-field>
+        </bk-sideslider>
+
+        <bk-sideslider
+            v-transfer-dom
+            :is-show.sync="configProperty.show"
+            :width="676"
+            :title="$t('实例表格字段排序设置')">
+            <cmdb-columns-config slot="content"
+                v-if="configProperty.show"
+                :properties="properties"
+                :selected="configProperty.selected"
+                :disabled-columns="disabledConfig"
+                :show-reset="false"
+                :confirm-text="$t('确定')"
+                @on-cancel="configProperty.show = false"
+                @on-apply="handleApplyConfig">
+            </cmdb-columns-config>
         </bk-sideslider>
     </div>
 </template>
@@ -249,13 +270,15 @@
     import theFieldDetail from './field-detail'
     import previewField from './preview-field'
     import fieldDetailsView from './field-view'
-    import { mapGetters, mapActions } from 'vuex'
+    import CmdbColumnsConfig from '@/components/columns-config/columns-config'
+    import { mapGetters, mapActions, mapState } from 'vuex'
     export default {
         components: {
             vueDraggable,
             theFieldDetail,
             previewField,
-            fieldDetailsView
+            fieldDetailsView,
+            CmdbColumnsConfig
         },
         props: {
             customObjId: String
@@ -263,6 +286,8 @@
         data () {
             return {
                 updateAuth: false,
+                properties: [],
+                groups: [],
                 groupedProperties: [],
                 shouldUpdatePropertyIndex: false,
                 previewShow: false,
@@ -316,10 +341,15 @@
                 preview: {
                     properties: [],
                     groups: []
+                },
+                configProperty: {
+                    show: false,
+                    selected: []
                 }
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount', 'isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', ['isInjectable', 'activeModel']),
             objId () {
@@ -362,12 +392,25 @@
                     resource_id: this.modelId,
                     type: this.$OPERATION.U_MODEL
                 })
+            },
+            disabledConfig () {
+                const disabled = {
+                    host: ['bk_host_innerip', 'bk_cloud_id'],
+                    biz: ['bk_biz_name']
+                }
+                return disabled[this.objId] || ['bk_inst_name']
+            },
+            curGlobalCustomTableColumns () {
+                return this.globalUsercustom[`${this.objId}_global_custom_table_columns`]
+            },
+            canEditSort () {
+                return !this.customObjId && this.curModel['bk_classification_id'] !== 'bk_biz_topo'
             }
         },
         async created () {
             const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
-            this.preview.properties = properties
-            this.preview.groups = groups
+            this.properties = properties
+            this.groups = groups
             this.init(properties, groups)
         },
         methods: {
@@ -443,8 +486,8 @@
                         this.handleSliderHidden()
                     }
                 }
-                this.preview.properties = properties
-                this.preview.groups = groups
+                this.properties = properties
+                this.groups = groups
                 this.init(properties, groups)
             },
             init (properties, groups) {
@@ -464,6 +507,8 @@
                         })
                     }
                 })
+                const seletedProperties = this.$tools.getHeaderProperties(properties, [], this.disabledConfig)
+                this.configProperty.selected = this.curGlobalCustomTableColumns || seletedProperties.map(property => property.bk_property_id)
                 this.initGroupState = this.$tools.clone(groupState)
                 this.groupState = Object.assign({}, groupState, this.groupState)
                 this.groupedProperties = groupedProperties
@@ -859,6 +904,18 @@
             },
             handleReceiveAuth (auth) {
                 this.updateAuth = auth
+            },
+            handleApplyConfig (properties) {
+                const setProperties = properties.map(property => property.bk_property_id)
+                this.$store.dispatch('userCustom/saveGlobalUsercustom', {
+                    objId: this.objId,
+                    params: {
+                        global_custom_table_columns: setProperties
+                    }
+                }).then(() => {
+                    this.configProperty.selected = setProperties
+                    this.configProperty.show = false
+                })
             }
         }
     }
@@ -873,6 +930,17 @@
     }
     .layout-header {
         margin: 0 0 14px;
+        .setting-btn {
+            float: right;
+            height: 32px;
+            line-height: 32px;
+            color: #63656e;
+            .icon-cc-setting {
+                font-size: 18px;
+                color: #979ba5;
+                vertical-align: unset;
+            }
+        }
     }
     .group {
         margin-bottom: 19px;
