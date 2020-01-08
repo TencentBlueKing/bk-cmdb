@@ -69,8 +69,7 @@
                             :data="searchSelect"
                             :max-width="280"
                             v-model="searchSelectData"
-                            @menu-child-condition-select="handleConditionSelect"
-                            @change="handleSearch">
+                            @menu-child-condition-select="handleConditionSelect">
                         </bk-search-select>
                     </div>
                 </div>
@@ -321,6 +320,7 @@
             },
             searchSelectData (searchSelectData) {
                 if (!searchSelectData.length && this.inSearch) this.inSearch = false
+                this.handleSearch()
             }
         },
         async created () {
