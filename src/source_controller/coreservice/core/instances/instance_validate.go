@@ -13,6 +13,8 @@
 package instances
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -21,7 +23,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
-	"strings"
 )
 
 var updateIgnoreKeys = []string{
