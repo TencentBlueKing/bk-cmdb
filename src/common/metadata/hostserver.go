@@ -83,6 +83,12 @@ type HostsModuleRelation struct {
 	IsIncrement   bool    `json:"is_increment"`
 }
 
+type HostModuleConfig struct {
+	ApplicationID int64   `json:"bk_biz_id" bson:"bk_biz_id"`
+	HostID        []int64 `json:"bk_host_id" bson:"bk_host_id"`
+	ModuleID      []int64 `json:"bk_module_id" bson:"bk_module_id"`
+}
+
 type RemoveHostsFromModuleOption struct {
 	ApplicationID int64 `json:"bk_biz_id"`
 	HostID        int64 `json:"bk_host_id"`
