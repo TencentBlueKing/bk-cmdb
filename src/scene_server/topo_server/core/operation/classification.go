@@ -193,63 +193,15 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		objIDs = append(objIDs, info.Spec.ObjectID)
 		objMap[info.Spec.ObjCls] = append(objMap[info.Spec.ObjCls], info.Spec)
 	}
-	objIDs = util.StrArrayUnique(objIDs)
-	asstItems, err := c.asst.SearchObjectsAssociation(params, objIDs)
-	if nil != err {
-		return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
-	}
-	asstIDs := make([]string, 0)
-	for _, asstItem := range asstItems {
-		asstIDs = append(asstIDs, asstItem.AsstObjID)
-	}
-	asstIDs = util.StrArrayUnique(asstIDs)
-	searchObjCond := condition.CreateCondition()
-	searchObjCond.Field(common.BKObjIDField).In(asstIDs)
-	asstObjs, err := c.obj.FindObject(params, searchObjCond)
-	if nil != err {
-		return nil, err
-	}
-
-	asstObjsMap := make(map[string]map[string][]metadata.Object)
-	for _, asstItem := range asstItems {
-		asstObjMap := make(map[string][]metadata.Object)
-		if asstObjs, ok := asstObjsMap[asstItem.ObjectID]; ok {
-			asstObjMap = asstObjs
-		}
-		for _, obj := range asstObjs {
-			if obj.Object().ObjectID == asstItem.AsstObjID {
-				asstObjMap[asstItem.ObjectID] = append(asstObjMap[asstItem.ObjectID], obj.Object())
-			}
-		}
-		asstObjsMap[asstItem.ObjectID] = asstObjMap
-	}
-
-	asstMap := make(map[string]map[string][]metadata.Object)
-	for _, info := range queryObjectResp.Data.Info {
-		asstObjMap := make(map[string][]metadata.Object)
-		if asstObjs, ok := asstMap[info.Spec.ObjCls]; ok {
-			asstObjMap = asstObjs
-		}
-		if asstObjs, ok := asstObjsMap[info.Spec.ObjectID]; ok {
-			for asstObjKey, asstObj := range asstObjs {
-				asstObjMap[asstObjKey] = asstObj
-			}
-		}
-		asstMap[info.Spec.ObjCls] = asstObjMap
-	}
 
 	datas := make([]metadata.ClassificationWithObject, 0)
 	for _, cls := range rsp.Data.Info {
 		clsItem := metadata.ClassificationWithObject{
 			Classification: cls,
 			Objects:        []metadata.Object{},
-			AsstObjects:    map[string][]metadata.Object{},
 		}
 		if obj, ok := objMap[cls.ClassificationID]; ok {
 			clsItem.Objects = obj
-		}
-		if asst, ok := asstMap[cls.ClassificationID]; ok {
-			clsItem.AsstObjects = asst
 		}
 		datas = append(datas, clsItem)
 	}
