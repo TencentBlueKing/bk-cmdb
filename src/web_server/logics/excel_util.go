@@ -100,9 +100,6 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 	// 非模型字段导出是没有field中没有ID 字段，因为导入的时候，第二行是作为Property
 	for id, property := range fields {
 		val, ok := rowMap[id]
-		//}
-		//for id, val := range rowMap {
-		//	property, ok := fields[id]
 		if false == ok {
 			continue
 		}
