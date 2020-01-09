@@ -288,6 +288,24 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
 
+	sheet.Col(0).Width = 18
+	sheet.Col(0).SetStyle(styleCell)
+	cellName := sheet.Cell(0, 0)
+	fieldName := defLang.Language("field_name")
+	cellName.Value = fieldName
+
+	cellType := sheet.Cell(1, 0)
+	fieldType := defLang.Language("field_type")
+	cellType.Value = fieldType
+
+	cellID := sheet.Cell(2, 0)
+	fieldID := defLang.Language("field_id")
+	cellID.Value = fieldID
+
+	cellInst := sheet.Cell(3, 0)
+	instData := defLang.Language("inst_data")
+	cellInst.Value = instData
+
 	for _, field := range fields {
 		index := field.ExcelColIndex
 		sheet.Col(index).Width = 18

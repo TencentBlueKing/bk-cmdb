@@ -189,7 +189,7 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	}
 
 	ret := []Property{}
-	index := 0
+	index := 1
 	for _, attr := range result.Data {
 		ret = append(ret, Property{
 			ID:            attr.PropertyID,
