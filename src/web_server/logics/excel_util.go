@@ -288,23 +288,18 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
 
+	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
+	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
+
 	sheet.Col(0).Width = 18
-	sheet.Col(0).SetStyle(styleCell)
-	cellName := sheet.Cell(0, 0)
-	fieldName := defLang.Language("field_name")
-	cellName.Value = fieldName
-
-	cellType := sheet.Cell(1, 0)
-	fieldType := defLang.Language("field_type")
-	cellType.Value = fieldType
-
-	cellID := sheet.Cell(2, 0)
-	fieldID := defLang.Language("field_id")
-	cellID.Value = fieldID
-
-	cellInst := sheet.Cell(3, 0)
-	instData := defLang.Language("inst_data")
-	cellInst.Value = instData
+	sheet.Col(0).SetStyle(colStyle)
+	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType, common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
+	for index, field := range firstColFields {
+		cellName := sheet.Cell(index, 0)
+		fieldName := defLang.Language(field)
+		cellName.Value = fieldName
+		cellName.SetStyle(cellStyle)
+	}
 
 	for _, field := range fields {
 		index := field.ExcelColIndex

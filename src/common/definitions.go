@@ -783,6 +783,10 @@ const (
 	ExcelHeaderOtherRowFontColor = "FF000000"
 	// ExcelCellDefaultBorderColor black color
 	ExcelCellDefaultBorderColor = "FFD4D4D4"
+	// ExcelHeaderFirstColumnColor light gray
+	ExcelHeaderFirstColumnColor = "fee9da"
+	// ExcelFirstColumnCellColor dark gray
+	ExcelFirstColumnCellColor = "fabf8f"
 
 	// ExcelAsstPrimaryKeySplitChar split char
 	ExcelAsstPrimaryKeySplitChar = ","
@@ -799,6 +803,12 @@ const (
 
 	// ExcelCommentSheetCotentLangPrefixKey excel comment sheet centent language prefixe key
 	ExcelCommentSheetCotentLangPrefixKey = "import_comment"
+
+	// ExcelFirstColumnFieldName export excel first column for tips
+	ExcelFirstColumnFieldName = "field_name"
+	ExcelFirstColumnFieldType = "field_type"
+	ExcelFirstColumnFieldID   = "field_id"
+	ExcelFirstColumnInstData  = "inst_data"
 )
 
 const (
