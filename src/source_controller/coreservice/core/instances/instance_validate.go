@@ -137,33 +137,9 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, ctx.ReqID)
 			// return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
-		fieldType := property.PropertyType
-		switch fieldType {
-		case common.FieldTypeSingleChar:
-			err = valid.validChar(ctx.Context, val, key)
-		case common.FieldTypeLongChar:
-			err = valid.validLongChar(ctx.Context, val, key)
-		case common.FieldTypeInt:
-			err = valid.validInt(ctx.Context, val, key)
-		case common.FieldTypeFloat:
-			err = valid.validFloat(ctx.Context, val, key)
-		case common.FieldTypeEnum:
-			err = valid.validEnum(ctx.Context, val, key)
-		case common.FieldTypeDate:
-			err = valid.validDate(ctx.Context, val, key)
-		case common.FieldTypeTime:
-			err = valid.validTime(ctx.Context, val, key)
-		case common.FieldTypeTimeZone:
-			err = valid.validTimeZone(ctx.Context, val, key)
-		case common.FieldTypeBool:
-			err = valid.validBool(ctx.Context, val, key)
-		case common.FieldTypeList:
-			err = valid.validList(ctx.Context, val, key)
-		default:
-			continue
-		}
-		if nil != err {
-			return err
+		rawErr := property.Validate(ctx, val, key)
+		if rawErr.ErrCode > 0 {
+			return rawErr.ToCCError(valid.errif)
 		}
 	}
 	if instanceData.Exists(metadata.BKMetadata) {
@@ -288,33 +264,9 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			delete(instanceData, key)
 			continue
 		}
-		fieldType := property.PropertyType
-		switch fieldType {
-		case common.FieldTypeSingleChar:
-			err = valid.validChar(ctx.Context, val, key)
-		case common.FieldTypeLongChar:
-			err = valid.validLongChar(ctx.Context, val, key)
-		case common.FieldTypeInt:
-			err = valid.validInt(ctx.Context, val, key)
-		case common.FieldTypeFloat:
-			err = valid.validFloat(ctx.Context, val, key)
-		case common.FieldTypeEnum:
-			err = valid.validEnum(ctx.Context, val, key)
-		case common.FieldTypeDate:
-			err = valid.validDate(ctx.Context, val, key)
-		case common.FieldTypeTime:
-			err = valid.validTime(ctx.Context, val, key)
-		case common.FieldTypeTimeZone:
-			err = valid.validTimeZone(ctx.Context, val, key)
-		case common.FieldTypeBool:
-			err = valid.validBool(ctx.Context, val, key)
-		case common.FieldTypeList:
-			err = valid.validList(ctx.Context, val, key)
-		default:
-			continue
-		}
-		if nil != err {
-			return err
+		rawErr := property.Validate(ctx, val, key)
+		if rawErr.ErrCode > 0 {
+			return rawErr.ToCCError(valid.errif)
 		}
 	}
 
