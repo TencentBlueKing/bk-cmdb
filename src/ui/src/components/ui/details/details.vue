@@ -23,6 +23,11 @@
                                         <span class="property-value-unit fl" v-if="getValue(property) !== '--'">{{property.unit}}</span>
                                     </span>
                                     <span class="property-value fl" v-else-if="property.bk_property_type === 'objuser'" v-user.title="getValue(property)"></span>
+                                    <cmdb-form-organization
+                                        v-else-if="property.bk_property_type === 'organization'"
+                                        :viewonly="true"
+                                        :value="getValue(property) || []">
+                                    </cmdb-form-organization>
                                     <span class="property-value fl" v-else :title="getValue(property)">{{getValue(property)}}</span>
                                 </slot>
                             </li>

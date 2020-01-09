@@ -193,7 +193,7 @@
                 return output
             },
             getPlaceholder (property) {
-                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             getValidateRules (property) {

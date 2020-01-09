@@ -90,7 +90,16 @@
                 :prop="column.id"
                 :label="column.name"
                 show-overflow-tooltip>
-                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+                <template slot-scope="{ row }">
+                    <cmdb-form-organization
+                        v-if="column.property.bk_property_type === 'organization'"
+                        :viewonly="true"
+                        :value="row[column.id] || []">
+                    </cmdb-form-organization>
+                    <span v-else>
+                        {{row[column.id] | formatter(column.property)}}
+                    </span>
+                </template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">

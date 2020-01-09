@@ -15,7 +15,14 @@
                     <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
                         v-overflow-tips
                         v-show="property !== editState.property">
-                        {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
+                        <cmdb-form-organization
+                            v-if="property.bk_property_type === 'organization'"
+                            :viewonly="true"
+                            :value="host[property.bk_property_id] || []">
+                        </cmdb-form-organization>
+                        <template v-else>
+                            {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
+                        </template>
                     </span>
                     <template v-if="!loadingState.includes(property)">
                         <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
@@ -176,7 +183,7 @@
                 }
             },
             getPlaceholder (property) {
-                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             isPropertyEditable (property) {
@@ -184,7 +191,7 @@
             },
             setEditState (property) {
                 const value = this.host[property.bk_property_id]
-                this.editState.value = value === null ? '' : value
+                this.editState.value = (value === null || value === undefined) ? '' : value
                 this.editState.property = property
                 this.$nextTick(() => {
                     const component = this.$refs[`component-${property.bk_property_id}`]

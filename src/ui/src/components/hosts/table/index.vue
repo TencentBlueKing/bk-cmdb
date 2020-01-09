@@ -117,7 +117,14 @@
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option'))}}
+                    <cmdb-form-organization
+                        v-if="column.type === 'organization'"
+                        :viewonly="true"
+                        :value="row[column.objId][column.id] || []">
+                    </cmdb-form-organization>
+                    <span v-else>
+                        {{row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option'))}}
+                    </span>
                 </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
