@@ -142,7 +142,6 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
 
 	w.Config.Session.Name = current.ConfigMap["session.name"]
-	w.Config.Session.Skip = current.ConfigMap["session.skip"]
 	w.Config.Session.Host = current.ConfigMap["session.host"]
 	w.Config.Session.Port = current.ConfigMap["session.port"]
 	w.Config.Session.Address = current.ConfigMap["session.address"]

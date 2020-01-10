@@ -41,7 +41,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 type Session struct {
 	Name            string
-	Skip            string
 	DefaultLanguage string
 	Host            string
 	// used to redis sentinel mode, expect format style: ip:port;ip:port
