@@ -15,6 +15,7 @@ package model
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -30,46 +31,46 @@ type modelAttributeGroup struct {
 	dbProxy dal.RDB
 }
 
-func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error) {
+func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error) {
 	dataResult := &metadata.CreateOneDataResult{}
 
 	// NOW: Temporarily blocked
-	// if err := g.model.isValid(ctx, objID); nil != err {
-	// 	blog.Errorf("request(%s): it is failed to create a model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+	// if err := g.model.isValid(kit, objID); nil != err {
+	// 	blog.Errorf("request(%s): it is failed to create a model attribute group (%#v), error info is %s", kit.Rid, inputParam.Data, err.CCError())
 	// 	return dataResult, err
 	// }
 	inputParam.Data.ObjectID = objID
-	inputParam.Data.OwnerID = ctx.SupplierAccount
+	inputParam.Data.OwnerID = kit.SupplierAccount
 
-	_, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID, inputParam.Data.Metadata)
+	_, isExists, err := g.groupIDIsExists(kit, objID, inputParam.Data.GroupID, inputParam.Data.Metadata)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupID, err.Error())
+		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", kit.Rid, inputParam.Data.GroupID, err.Error())
 		return dataResult, err
 	}
 	if isExists {
-		blog.Errorf("request(%s): it is to failed to create a new group (%#v), because of the groupID (%s) is exists", ctx.ReqID, inputParam.Data, inputParam.Data.GroupID)
-		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupID)
+		blog.Errorf("request(%s): it is to failed to create a new group (%#v), because of the groupID (%s) is exists", kit.Rid, inputParam.Data, inputParam.Data.GroupID)
+		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupID)
 	}
 
-	_, isExists, err = g.groupNameIsExists(ctx, objID, inputParam.Data.GroupName, inputParam.Data.Metadata)
+	_, isExists, err = g.groupNameIsExists(kit, objID, inputParam.Data.GroupName, inputParam.Data.Metadata)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupName, err.Error())
+		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, inputParam.Data.GroupName, err.Error())
 		return dataResult, err
 	}
 	if isExists {
-		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %#v", ctx.ReqID, inputParam.Data.GroupName, err)
-		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
+		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %#v", kit.Rid, inputParam.Data.GroupName, err)
+		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
 	}
-	id, err := g.save(ctx, inputParam.Data)
+	id, err := g.save(kit, inputParam.Data)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to create a new model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is to failed to create a new model attribute group (%#v), error info is %s", kit.Rid, inputParam.Data, err.Error())
 		return dataResult, err
 	}
 	dataResult.Created.ID = id
 	return dataResult, err
 }
 
-func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.SetModelAttributeGroup) (*metadata.SetDataResult, error) {
+func (g *modelAttributeGroup) SetModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributeGroup) (*metadata.SetDataResult, error) {
 
 	dataResult := &metadata.SetDataResult{
 		Created:    []metadata.CreatedDataResult{},
@@ -77,33 +78,33 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 		Exceptions: []metadata.ExceptionResult{},
 	}
 
-	if err := g.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to set a model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+	if err := g.model.isValid(kit, objID); nil != err {
+		blog.Errorf("request(%s): it is failed to set a model attribute group (%#v), error info is %s", kit.Rid, inputParam.Data, err.Error())
 		return dataResult, err
 	}
 	inputParam.Data.ObjectID = objID
-	inputParam.Data.OwnerID = ctx.SupplierAccount
+	inputParam.Data.OwnerID = kit.SupplierAccount
 
-	_, isExists, err := g.groupNameIsExists(ctx, objID, inputParam.Data.GroupName, inputParam.Data.Metadata)
+	_, isExists, err := g.groupNameIsExists(kit, objID, inputParam.Data.GroupName, inputParam.Data.Metadata)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupName, err.Error())
+		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, inputParam.Data.GroupName, err.Error())
 		return dataResult, err
 	}
 	if isExists {
-		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
+		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
 	}
 
-	existsGroup, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID, inputParam.Data.Metadata)
+	existsGroup, isExists, err := g.groupIDIsExists(kit, objID, inputParam.Data.GroupID, inputParam.Data.Metadata)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupID, err.Error())
+		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", kit.Rid, inputParam.Data.GroupID, err.Error())
 		return dataResult, err
 	}
 
 	if !isExists {
 
-		id, err := g.save(ctx, inputParam.Data)
+		id, err := g.save(kit, inputParam.Data)
 		if nil != err {
-			blog.Errorf("request(%s): it is to failed to create a new model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+			blog.Errorf("request(%s): it is to failed to create a new model attribute group (%#v), error info is %s", kit.Rid, inputParam.Data, err.Error())
 			return &metadata.SetDataResult{}, err
 		}
 
@@ -118,12 +119,12 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupID, Val: inputParam.Data.GroupID})
-	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldID, Val: existsGroup.ID})
 
-	cnt, err := g.update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond)
+	cnt, err := g.update(kit, mapstr.NewFromStruct(inputParam.Data, "field"), cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update the model attribute group (%#v) by the condition (%#v), err: %s", ctx.ReqID, g, cond, err)
+		blog.Errorf("request(%s): it is failed to update the model attribute group (%#v) by the condition (%#v), err: %s", kit.Rid, g, cond, err)
 		return dataResult, err
 	}
 	dataResult.UpdatedCount.Count = cnt
@@ -135,16 +136,16 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 	return dataResult, nil
 }
 
-func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+func (g *modelAttributeGroup) UpdateModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	if err := g.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to create a model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+	if err := g.model.isValid(kit, objID); nil != err {
+		blog.Errorf("request(%s): it is failed to create a model attribute group (%#v), error info is %s", kit.Rid, inputParam.Data, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
@@ -159,40 +160,40 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, 
 		queryCond := metadata.QueryCondition{
 			Condition: cond.ToMapStr(),
 		}
-		resp, err := g.SearchModelAttributeGroupByCondition(ctx, queryCond)
+		resp, err := g.SearchModelAttributeGroupByCondition(kit, queryCond)
 		if nil != err {
-			blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
+			blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, name, err.Error())
 			return &metadata.UpdatedCount{}, err
 		}
 		for _, item := range resp.Info {
 			if item.GroupName == name {
 				continue
 			}
-			_, exists, err := g.groupNameIsExists(ctx, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
+			_, exists, err := g.groupNameIsExists(kit, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
 			if nil != err {
-				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
+				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, name, err.Error())
 				return &metadata.UpdatedCount{}, err
 			}
 			if exists {
-				blog.Errorf("request(%s): it is to failed to update the group name, because (%s) exists", ctx.ReqID, name)
-				return &metadata.UpdatedCount{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, name)
+				blog.Errorf("request(%s): it is to failed to update the group name, because (%s) exists", kit.Rid, name)
+				return &metadata.UpdatedCount{}, kit.CCError.Errorf(common.CCErrCommDuplicateItem, name)
 			}
 		}
 	}
-	cnt, err := g.update(ctx, inputParam.Data, cond)
+	cnt, err := g.update(kit, inputParam.Data, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%#v), error info is %s", kit.Rid, inputParam.Data, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -206,37 +207,37 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(ctx core.Cont
 		queryCond := metadata.QueryCondition{
 			Condition: cond.ToMapStr(),
 		}
-		resp, err := g.SearchModelAttributeGroupByCondition(ctx, queryCond)
+		resp, err := g.SearchModelAttributeGroupByCondition(kit, queryCond)
 		if nil != err {
-			blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
+			blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, name, err.Error())
 			return &metadata.UpdatedCount{}, err
 		}
 		for _, item := range resp.Info {
 			if item.GroupName == name {
 				continue
 			}
-			_, exists, err := g.groupNameIsExists(ctx, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
+			_, exists, err := g.groupNameIsExists(kit, item.ObjectID, name, metadata.Metadata{Label: metadata.Label{}})
 			if nil != err {
-				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, name, err.Error())
+				blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", kit.Rid, name, err.Error())
 				return &metadata.UpdatedCount{}, err
 			}
 			if exists {
-				blog.Errorf("request(%s): it is to failed to update the group name, because (%s) exists", ctx.ReqID, name)
-				return &metadata.UpdatedCount{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, name)
+				blog.Errorf("request(%s): it is to failed to update the group name, because (%s) exists", kit.Rid, name)
+				return &metadata.UpdatedCount{}, kit.CCError.Errorf(common.CCErrCommDuplicateItem, name)
 			}
 		}
 	}
 
-	cnt, err := g.update(ctx, inputParam.Data, cond)
+	cnt, err := g.update(kit, inputParam.Data, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%#v), error info is %s", kit.Rid, inputParam.Data, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-func (g *modelAttributeGroup) SearchModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
+func (g *modelAttributeGroup) SearchModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
 
 	dataResult := &metadata.QueryModelAttributeGroupDataResult{
 		Info: []metadata.Group{},
@@ -244,27 +245,27 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(ctx core.ContextParams, 
 
 	// TODO: Paging queries needs to be implemented
 	// NOW: Temporarily blocked
-	// if err := g.model.isValid(ctx, objID); nil != err {
-	// 	blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+	// if err := g.model.isValid(kit, objID); nil != err {
+	// 	blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", kit.Rid, inputParam.Condition, err.CCError())
 	// 	return dataResult, err
 	// }
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return dataResult, err
 	}
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 
-	totalCount, err := g.count(ctx, cond)
+	totalCount, err := g.count(kit, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to count by the condition (%#v), error info is %s ", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to count by the condition (%#v), error info is %s ", kit.Rid, cond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 
-	grps, err := g.search(ctx, cond)
+	grps, err := g.search(kit, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 
@@ -274,23 +275,23 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(ctx core.ContextParams, 
 
 }
 
-func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
+func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeGroupDataResult{}, err
 	}
 
-	totalCount, err := g.count(ctx, cond)
+	totalCount, err := g.count(kit, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to count by the condition (%#v), error info is %s ", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to count by the condition (%#v), error info is %s ", kit.Rid, cond.ToMapStr(), err.Error())
 		return &metadata.QueryModelAttributeGroupDataResult{}, err
 	}
 
-	grps, err := g.search(ctx, cond)
+	grps, err := g.search(kit, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
 		return &metadata.QueryModelAttributeGroupDataResult{}, err
 	}
 
@@ -299,58 +300,58 @@ func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(ctx core.Cont
 }
 
 // desperated only for old api
-func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
-	grps, err := g.search(ctx, cond)
+	grps, err := g.search(kit, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to query model attribute groups by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to query model attribute groups by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	for _, grp := range grps {
-		hasAttrs, err := g.hasAttributes(ctx, grp.ObjectID, []string{grp.GroupID})
+		hasAttrs, err := g.hasAttributes(kit, grp.ObjectID, []string{grp.GroupID})
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to check whether the group(%s) has some attributes for the model(%s), error info is %s", ctx.ReqID, grp.GroupID, grp.ObjectID, err.Error())
+			blog.Errorf("request(%s): it is failed to check whether the group(%s) has some attributes for the model(%s), error info is %s", kit.Rid, grp.GroupID, grp.ObjectID, err.Error())
 			return &metadata.DeletedCount{}, err
 		}
 		if hasAttrs {
-			blog.Errorf("request(%s): the group(%s) has some attributes, forbidden to delete", ctx.ReqID, grp.GroupID)
-			return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrCoreServiceModelAttributeGroupHasSomeAttributes)
+			blog.Errorf("request(%s): the group(%s) has some attributes, forbidden to delete", kit.Rid, grp.GroupID)
+			return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelAttributeGroupHasSomeAttributes)
 		}
 	}
 
-	cnt, err := g.delete(ctx, cond)
+	cnt, err := g.delete(kit, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to delete the group by the condition(%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to delete the group by the condition(%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
-func (g *modelAttributeGroup) DeleteModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (g *modelAttributeGroup) DeleteModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
-	if err := g.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to delete a model by the condition(%#v), error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+	if err := g.model.isValid(kit, objID); nil != err {
+		blog.Errorf("request(%s): it is failed to delete a model by the condition(%#v), error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 
-	grps, err := g.search(ctx, cond)
+	grps, err := g.search(kit, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to query model attribute groups by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to query model attribute groups by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -359,19 +360,19 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroup(ctx core.ContextParams, 
 		grpIDS = append(grpIDS, grp.GroupID)
 	}
 
-	isExists, err := g.hasAttributes(ctx, objID, grpIDS)
+	isExists, err := g.hasAttributes(kit, objID, grpIDS)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether the group IDS (%#v) has some attributes for the model(%s), error info is %s", ctx.ReqID, grpIDS, objID, err.Error())
+		blog.Errorf("request(%s): it is failed to check whether the group IDS (%#v) has some attributes for the model(%s), error info is %s", kit.Rid, grpIDS, objID, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	if isExists {
-		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrCoreServiceModelAttributeGroupHasSomeAttributes)
+		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelAttributeGroupHasSomeAttributes)
 	}
 
-	cnt, err := g.delete(ctx, cond)
+	cnt, err := g.delete(kit, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to delete the group by the condition(%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to delete the group by the condition(%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
