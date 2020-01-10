@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -74,4 +75,8 @@ func (s *coreService) TranslateClassificationName(defLang language.DefaultCCLang
 
 func (s *coreService) TranslateOperationChartName(defLang language.DefaultCCLanguageIf, att metadata.ChartConfig) string {
 	return util.FirstNotEmptyString(defLang.Language("operation_chart_"+att.ReportType), att.Name, att.ReportType)
+}
+
+func (s *coreService) TranslateServiceCategory(defLang language.DefaultCCLanguageIf, att *metadata.ServiceCategory) string {
+	return util.FirstNotEmptyString(defLang.Language("service_category_"+strings.Replace(att.Name, " ", "_", -1)), att.Name)
 }
