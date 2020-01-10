@@ -158,7 +158,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapState, mapGetters, mapActions } from 'vuex'
     import { MENU_RESOURCE_BUSINESS_HISTORY } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
@@ -219,6 +219,7 @@
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
@@ -228,6 +229,9 @@
             },
             customBusinessColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
+            },
+            globalCustomColumns () {
+                return this.globalUsercustom['biz_global_custom_table_columns'] || []
             },
             saveAuth () {
                 const type = this.attribute.type
@@ -309,7 +313,8 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, this.columnsConfig.disabledColumns)
+                    const customColumns = this.customBusinessColumns.length ? this.customBusinessColumns : this.globalCustomColumns
+                    const headerProperties = this.$tools.getHeaderProperties(this.properties, customColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.updateTableHeader(properties)

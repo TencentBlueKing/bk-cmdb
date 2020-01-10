@@ -17,10 +17,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
 
@@ -43,35 +43,35 @@ func NewSetIdentifierFlag(dbProxy dal.RDB, params *metadata.SetIdenifierFlag) *s
 }
 
 // Run execute set identifier flag logic
-func (s *setIdentifierFlag) Run(ctx core.ContextParams) errors.CCErrorCoder {
-	blog.V(5).Infof("SetIdentifierFlag api Run. input:%#v, rid:%s", s.params, ctx.ReqID)
+func (s *setIdentifierFlag) Run(kit *rest.Kit) errors.CCErrorCoder {
+	blog.V(5).Infof("SetIdentifierFlag api Run. input:%#v, rid:%s", s.params, kit.Rid)
 	if s.params.DataType != metadata.SynchronizeOperateDataTypeInstance {
 		// not support DataType
-		blog.Errorf(" not support data_type. input:%#v, rid:%s", s.params, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommParamsValueInvalidError, "data_type", s.params.DataType)
+		blog.Errorf(" not support data_type. input:%#v, rid:%s", s.params, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsValueInvalidError, "data_type", s.params.DataType)
 	}
-	err := s.dbCollectionInfo(ctx)
+	err := s.dbCollectionInfo(kit)
 	if err != nil {
-		blog.Errorf("dbCollectionInfo handle db identifier id field error. err:%s, input:%#v, rid:%s", err.Error(), s.params, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommParamsValueInvalidError, "data_type", s.params.DataType)
+		blog.Errorf("dbCollectionInfo handle db identifier id field error. err:%s, input:%#v, rid:%s", err.Error(), s.params, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsValueInvalidError, "data_type", s.params.DataType)
 
 	}
 	switch s.params.OperateType {
 	case metadata.SynchronizeOperateTypeAdd:
-		return s.addFlag(ctx)
+		return s.addFlag(kit)
 	case metadata.SynchronizeOperateTypeRepalce:
-		return s.replaceFlag(ctx)
+		return s.replaceFlag(kit)
 	case metadata.SynchronizeOperateTypeDelete:
-		return s.deleteFlag(ctx)
+		return s.deleteFlag(kit)
 	default:
 		// not upport OperateType
-		blog.Errorf(" not support op_type. input:%#v, rid:%s", s.params, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommParamsValueInvalidError, "op_type", s.params.OperateType)
+		blog.Errorf(" not support op_type. input:%#v, rid:%s", s.params, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsValueInvalidError, "op_type", s.params.OperateType)
 	}
 }
 
 // dbCollectionInfo get data in db table name and data identifier id field
-func (s *setIdentifierFlag) dbCollectionInfo(ctx core.ContextParams) errors.CCErrorCoder {
+func (s *setIdentifierFlag) dbCollectionInfo(kit *rest.Kit) errors.CCErrorCoder {
 	switch s.params.DataType {
 	case metadata.SynchronizeOperateDataTypeInstance:
 		s.tableName = common.GetInstTableName(s.params.DataClassify)
@@ -79,8 +79,8 @@ func (s *setIdentifierFlag) dbCollectionInfo(ctx core.ContextParams) errors.CCEr
 
 	default:
 		// not suuport DataType
-		blog.Errorf(" not support data_type. input:%#v, rid:%s", s.params, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommParamsValueInvalidError, "data_type", s.params.DataType)
+		blog.Errorf(" not support data_type. input:%#v, rid:%s", s.params, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsValueInvalidError, "data_type", s.params.DataType)
 
 	}
 
@@ -88,7 +88,7 @@ func (s *setIdentifierFlag) dbCollectionInfo(ctx core.ContextParams) errors.CCEr
 }
 
 // addFlag 添加新的需要同步数据cmdb身份标识
-func (s *setIdentifierFlag) addFlag(ctx core.ContextParams) errors.CCErrorCoder {
+func (s *setIdentifierFlag) addFlag(kit *rest.Kit) errors.CCErrorCoder {
 	conds := condition.CreateCondition()
 	conds.Field(s.instIDField).In(s.params.IdentifierID)
 	condMap := conds.ToMapStr()
@@ -97,41 +97,41 @@ func (s *setIdentifierFlag) addFlag(ctx core.ContextParams) errors.CCErrorCoder 
 	fixMetadataCondMap := condMap.Clone()
 	fixMetadataCondMap[common.MetadataField] = nil
 
-	err := s.dbProxy.Table(s.tableName).Update(ctx, fixMetadataCondMap, mapstr.MapStr{common.MetadataField: mapstr.New()})
+	err := s.dbProxy.Table(s.tableName).Update(kit.Ctx, fixMetadataCondMap, mapstr.MapStr{common.MetadataField: mapstr.New()})
 	if err != nil {
-		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, rid:%s", err.Error(), fixMetadataCondMap, ctx.ReqID)
-		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, rid:%s", err.Error(), fixMetadataCondMap, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	// 如果同步数据cmdb身份标识已经存在，不做任何操作。否则新加同步标志
 	data := mapstr.MapStr{
 		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
 	}
-	err = s.dbProxy.Table(s.tableName).UpdateMultiModel(ctx, condMap, dal.ModeUpdate{Op: dal.UpdateOpAddToSet, Doc: data})
+	err = s.dbProxy.Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, dal.ModeUpdate{Op: dal.UpdateOpAddToSet, Doc: data})
 	if err != nil {
-		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, ctx.ReqID)
-		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
 }
 
 // repalceFlag 使用当前cmdb系统同步身份标识。该操作会删除之前的所有的cmdb系统同步身份标识
-func (s *setIdentifierFlag) replaceFlag(ctx core.ContextParams) errors.CCErrorCoder {
+func (s *setIdentifierFlag) replaceFlag(kit *rest.Kit) errors.CCErrorCoder {
 	conds := condition.CreateCondition()
 	conds.Field(s.instIDField).In(s.params.IdentifierID)
 	condMap := conds.ToMapStr()
 	data := mapstr.MapStr{
 		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): []string{s.params.Flag},
 	}
-	err := s.dbProxy.Table(s.tableName).Update(ctx, condMap, data)
+	err := s.dbProxy.Table(s.tableName).Update(kit.Ctx, condMap, data)
 	if err != nil {
-		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, ctx.ReqID)
-		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
 }
 
 // deleteFlag
-func (s *setIdentifierFlag) deleteFlag(ctx core.ContextParams) errors.CCErrorCoder {
+func (s *setIdentifierFlag) deleteFlag(kit *rest.Kit) errors.CCErrorCoder {
 	conds := condition.CreateCondition()
 	conds.Field(s.instIDField).In(s.params.IdentifierID)
 	conds.Field(common.MetadataField).NotEq(nil)
@@ -139,10 +139,10 @@ func (s *setIdentifierFlag) deleteFlag(ctx core.ContextParams) errors.CCErrorCod
 	data := mapstr.MapStr{
 		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
 	}
-	err := s.dbProxy.Table(s.tableName).UpdateMultiModel(ctx, condMap, dal.ModeUpdate{Op: dal.UpdateOpPull, Doc: data})
+	err := s.dbProxy.Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, dal.ModeUpdate{Op: dal.UpdateOpPull, Doc: data})
 	if err != nil {
-		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, ctx.ReqID)
-		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
 }

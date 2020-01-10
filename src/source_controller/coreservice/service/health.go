@@ -26,7 +26,7 @@ func (s *coreService) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// zk health status
 	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.engin.Ping(); err != nil {
+	if err := s.engine.Ping(); err != nil {
 		zkItem.IsHealthy = false
 		zkItem.Message = err.Error()
 	}
