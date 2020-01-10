@@ -14,23 +14,23 @@ package service
 
 import (
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) UpdateHostCloudAreaField(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 	input := metadata.UpdateHostCloudAreaFieldOption{}
-	if err := data.MarshalJSONInto(&input); nil != err {
-		blog.Errorf("UpdateHostCloudAreaField failed, err:%s, input:%v, rid: %v", data, err.Error(), params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	err := s.core.HostOperation().UpdateHostCloudAreaField(params, input)
+	err := s.core.HostOperation().UpdateHostCloudAreaField(ctx.Kit, input)
 	if err != nil {
-		blog.Errorf("UpdateHostCloudAreaField failed, call core operation failed, input: %+v, err: %v, rid: %v", input, err, params.ReqID)
-		return nil, err
+		blog.Errorf("UpdateHostCloudAreaField failed, call core operation failed, input: %+v, err: %v, rid: %v", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return nil, nil
+	ctx.RespEntity(nil)
 }

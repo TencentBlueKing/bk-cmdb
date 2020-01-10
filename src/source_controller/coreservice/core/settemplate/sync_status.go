@@ -16,21 +16,21 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (p *setTemplateOperation) UpdateSetTemplateSyncStatus(ctx core.ContextParams, setID int64, option metadata.SetTemplateSyncStatus) errors.CCErrorCoder {
+func (p *setTemplateOperation) UpdateSetTemplateSyncStatus(kit *rest.Kit, setID int64, option metadata.SetTemplateSyncStatus) errors.CCErrorCoder {
 	if setID != option.SetID {
-		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
 	}
 
 	filter := map[string]interface{}{
 		common.BKSetIDField: setID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Upsert(ctx.Context, filter, option); err != nil {
-		blog.Errorf("UpdateSetTemplateSyncStatus failed, db upsert sync status failed, id: %d, option: %s, err: %s, rid: %s", setID, option, err.Error(), ctx.ReqID)
-		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Upsert(kit.Ctx, filter, option); err != nil {
+		blog.Errorf("UpdateSetTemplateSyncStatus failed, db upsert sync status failed, id: %d, option: %s, err: %s, rid: %s", setID, option, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 
 	if len(option.TaskID) == 0 {
@@ -40,40 +40,40 @@ func (p *setTemplateOperation) UpdateSetTemplateSyncStatus(ctx core.ContextParam
 	historyFilter := map[string]interface{}{
 		common.BKTaskIDField: option.TaskID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncHistory).Upsert(ctx.Context, historyFilter, option); err != nil {
-		blog.Errorf("UpdateSetTemplateSyncStatus failed, db upsert sync history failed, id: %d, option: %s, err: %s, rid: %s", setID, option, err.Error(), ctx.ReqID)
-		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncHistory).Upsert(kit.Ctx, historyFilter, option); err != nil {
+		blog.Errorf("UpdateSetTemplateSyncStatus failed, db upsert sync history failed, id: %d, option: %s, err: %s, rid: %s", setID, option, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 
 	return nil
 }
 
-func (p *setTemplateOperation) ListSetTemplateSyncStatus(ctx core.ContextParams, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
-	return p.listSetTemplateSyncStatus(ctx, option, common.BKTableNameSetTemplateSyncStatus)
+func (p *setTemplateOperation) ListSetTemplateSyncStatus(kit *rest.Kit, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+	return p.listSetTemplateSyncStatus(kit, option, common.BKTableNameSetTemplateSyncStatus)
 }
 
-func (p *setTemplateOperation) ListSetTemplateSyncHistory(ctx core.ContextParams, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
-	return p.listSetTemplateSyncStatus(ctx, option, common.BKTableNameSetTemplateSyncHistory)
+func (p *setTemplateOperation) ListSetTemplateSyncHistory(kit *rest.Kit, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+	return p.listSetTemplateSyncStatus(kit, option, common.BKTableNameSetTemplateSyncHistory)
 }
 
-func (p *setTemplateOperation) listSetTemplateSyncStatus(ctx core.ContextParams, option metadata.ListSetTemplateSyncStatusOption, tableName string) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
+func (p *setTemplateOperation) listSetTemplateSyncStatus(kit *rest.Kit, option metadata.ListSetTemplateSyncStatusOption, tableName string) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
 	result := metadata.MultipleSetTemplateSyncStatus{
 		Count: 0,
 		Info:  make([]metadata.SetTemplateSyncStatus, 0),
 	}
 	if option.BizID == 0 {
-		return result, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
+		return result, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
 	}
 	if option.SetTemplateID == 0 {
-		return result, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+		return result, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
 	}
 
 	filter := option.ToFilter()
 	querySet := p.dbProxy.Table(tableName).Find(filter)
-	total, err := querySet.Count(ctx.Context)
+	total, err := querySet.Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("ListSetTemplateSyncStatus failed, db count failed, filter: %s, err: %s, rid: %s", filter, err.Error(), ctx.ReqID)
-		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.ErrorJSON("ListSetTemplateSyncStatus failed, db count failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
+		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	result.Count = int64(total)
 
@@ -86,24 +86,24 @@ func (p *setTemplateOperation) listSetTemplateSyncStatus(ctx core.ContextParams,
 	if len(option.Page.Sort) != 0 {
 		querySet = querySet.Sort(option.Page.Sort)
 	}
-	if err := querySet.All(ctx.Context, &result.Info); err != nil {
-		blog.ErrorJSON("ListSetTemplateSyncStatus failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), ctx.ReqID)
-		return result, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	if err := querySet.All(kit.Ctx, &result.Info); err != nil {
+		blog.ErrorJSON("ListSetTemplateSyncStatus failed, db select failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
+		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
 	return result, nil
 }
 
-func (p *setTemplateOperation) DeleteSetTemplateSyncStatus(ctx core.ContextParams, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder {
+func (p *setTemplateOperation) DeleteSetTemplateSyncStatus(kit *rest.Kit, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder {
 	filter := map[string]interface{}{
 		common.BKSetIDField: map[string]interface{}{
 			common.BKDBIN: option.SetIDs,
 		},
 		common.BKAppIDField: option.BizID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Delete(ctx.Context, filter); err != nil {
-		blog.Errorf("RemoveSetTemplateSyncStatus failed, db delete sync status failed, option: %s, err: %s, rid: %s", option, err.Error(), ctx.ReqID)
-		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+	if err := p.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Delete(kit.Ctx, filter); err != nil {
+		blog.Errorf("RemoveSetTemplateSyncStatus failed, db delete sync status failed, option: %s, err: %s, rid: %s", option, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
 }

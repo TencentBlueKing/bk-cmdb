@@ -49,6 +49,11 @@ func (c *Contexts) DecodeInto(to interface{}) error {
 		return c.Kit.CCError.Error(common.CCErrCommHTTPReadBodyFailed)
 	}
 
+	if len(body) == 0 {
+		blog.V(9).InfoDepthf(1, "request body is empty, rid: %s", c.Kit.Rid)
+		return nil
+	}
+
 	if err := json.Unmarshal(body, to); err != nil {
 		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, unmarshal request body failed, err: %v, body: %s", c.Kit.Rid, err, string(body)))
 		return c.Kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed)
@@ -63,6 +68,39 @@ func (c *Contexts) RespEntity(data interface{}) {
 	c.resp.Header().Set("Content-Type", "application/json")
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
 	if err := c.resp.WriteAsJson(metadata.NewSuccessResp(data)); err != nil {
+		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+	}
+}
+
+func (c *Contexts) RespEntityWithError(data interface{}, err error) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Set("Content-Type", "application/json")
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	resp := metadata.Response{
+		Data: data,
+	}
+	if err != nil {
+		t, yes := err.(errors.CCErrorCoder)
+		var code int
+		var errMsg string
+		if yes {
+			code = t.GetCode()
+			errMsg = t.Error()
+		} else {
+			code = common.CCErrorUnknownOrUnrecognizedError
+			errMsg = c.Kit.CCError.Error(code).Error()
+		}
+		resp.BaseResp = metadata.BaseResp{
+			Result: false,
+			ErrMsg: errMsg,
+			Code:   code,
+		}
+	} else {
+		resp.BaseResp = metadata.SuccessBaseResp
+	}
+	if err := c.resp.WriteAsJson(resp); err != nil {
 		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
 	}
 }
