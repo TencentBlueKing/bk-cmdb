@@ -82,9 +82,9 @@ func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]s
 	h.Set("Accept", "application/json")
 
 	if _, ok := params["fields"]; ok == false {
-		params["fields"] = "username,id"
+		params["fields"] = "username,id,display_name"
 	}
-	params["fields"] = "true"
+	params["no_page"] = "true"
 	err = p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
