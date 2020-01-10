@@ -21,6 +21,7 @@
                     :placeholder="$t('所有一级分类')"
                     :auto-select="false"
                     :allow-clear="true"
+                    :searchable="true"
                     :list="mainList"
                     v-model="filter['mainClassification']"
                     @on-selected="handleSelect">
@@ -31,6 +32,7 @@
                     :placeholder="$t('所有二级分类')"
                     :auto-select="false"
                     :allow-clear="true"
+                    :searchable="true"
                     :list="secondaryList"
                     v-model="filter['secondaryClassification']"
                     :empty-text="emptyText"
