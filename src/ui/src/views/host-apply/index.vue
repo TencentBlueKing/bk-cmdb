@@ -243,8 +243,11 @@
             async getHostPropertyList () {
                 try {
                     const properties = await this.$store.dispatch('hostApply/getProperties', {
-                        requestId: 'getHostPropertyList',
-                        fromCache: true
+                        params: this.$injectMetadata(),
+                        config: {
+                            requestId: 'getHostPropertyList',
+                            fromCache: true
+                        }
                     })
                     this.$store.commit('hostApply/setPropertyList', properties)
                 } catch (e) {
