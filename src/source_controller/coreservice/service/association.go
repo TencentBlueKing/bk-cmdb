@@ -13,178 +13,272 @@
 package service
 
 import (
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateOneAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) CreateOneAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.CreateAssociationKind{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().CreateAssociationKind(params, inputData)
+	result, err := s.core.AssociationOperation().CreateAssociationKind(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) CreateManyAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) CreateManyAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.CreateManyAssociationKind{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().CreateManyAssociationKind(params, inputData)
+	result, err := s.core.AssociationOperation().CreateManyAssociationKind(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) SetOneAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) SetOneAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.SetAssociationKind{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().SetAssociationKind(params, inputData)
+	result, err := s.core.AssociationOperation().SetAssociationKind(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) SetManyAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) SetManyAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.SetManyAssociationKind{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().SetManyAssociationKind(params, inputData)
+	result, err := s.core.AssociationOperation().SetManyAssociationKind(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) UpdateAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) UpdateAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.UpdateOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().UpdateAssociationKind(params, inputData)
+	result, err := s.core.AssociationOperation().UpdateAssociationKind(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) DeleteAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) DeleteAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().DeleteAssociationKind(params, inputData)
+	result, err := s.core.AssociationOperation().DeleteAssociationKind(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) CascadeDeleteAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) CascadeDeleteAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().CascadeDeleteAssociationKind(params, inputData)
+	result, err := s.core.AssociationOperation().CascadeDeleteAssociationKind(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) SearchAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) SearchAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().SearchAssociationKind(params, inputData)
+	result, err := s.core.AssociationOperation().SearchAssociationKind(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) CreateModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) CreateModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.CreateModelAssociation{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().CreateModelAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().CreateModelAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) CreateMainlineModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) CreateMainlineModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.CreateModelAssociation{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().CreateMainlineModelAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().CreateMainlineModelAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) SetModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) SetModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.SetModelAssociation{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().SetModelAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().SetModelAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) UpdateModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) UpdateModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.UpdateOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().UpdateModelAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().UpdateModelAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) SearchModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) SearchModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().SearchModelAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().SearchModelAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) DeleteModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) DeleteModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().DeleteModelAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().DeleteModelAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) CascadeDeleteModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) CascadeDeleteModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().DeleteModelAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().DeleteModelAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) CreateOneInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) CreateOneInstanceAssociation(ctx *rest.Contexts) {
 	inputData := metadata.CreateOneInstanceAssociation{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().CreateOneInstanceAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().CreateOneInstanceAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) CreateManyInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) CreateManyInstanceAssociation(ctx *rest.Contexts) {
 	inputData := metadata.CreateManyInstanceAssociation{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().CreateManyInstanceAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().CreateManyInstanceAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) SearchInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) SearchInstanceAssociation(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().SearchInstanceAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) DeleteInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *coreService) DeleteInstanceAssociation(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.AssociationOperation().DeleteInstanceAssociation(params, inputData)
+	result, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
 }

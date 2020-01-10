@@ -17,17 +17,16 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *instanceManager) save(ctx core.ContextParams, objID string, inputParam mapstr.MapStr) (id uint64, err error) {
-
+func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (id uint64, err error) {
 	tableName := common.GetInstTableName(objID)
-	id, err = m.dbProxy.NextSequence(ctx, tableName)
+	id, err = m.dbProxy.NextSequence(kit.Ctx, tableName)
 	if nil != err {
 		return id, err
 	}
@@ -37,14 +36,14 @@ func (m *instanceManager) save(ctx core.ContextParams, objID string, inputParam 
 		inputParam[common.BKObjIDField] = objID
 	}
 	ts := time.Now()
-	inputParam.Set(common.BKOwnerIDField, ctx.SupplierAccount)
+	inputParam.Set(common.BKOwnerIDField, kit.SupplierAccount)
 	inputParam.Set(common.CreateTimeField, ts)
 	inputParam.Set(common.LastTimeField, ts)
-	err = m.dbProxy.Table(tableName).Insert(ctx, inputParam)
+	err = m.dbProxy.Table(tableName).Insert(kit.Ctx, inputParam)
 	return id, err
 }
 
-func (m *instanceManager) update(ctx core.ContextParams, objID string, data mapstr.MapStr, cond mapstr.MapStr) error {
+func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) error {
 	tableName := common.GetInstTableName(objID)
 	if !util.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
@@ -52,34 +51,34 @@ func (m *instanceManager) update(ctx core.ContextParams, objID string, data maps
 	ts := time.Now()
 	data.Set(common.LastTimeField, ts)
 	data.Remove(common.BKObjIDField)
-	return m.dbProxy.Table(tableName).Update(ctx, cond, data)
+	return m.dbProxy.Table(tableName).Update(kit.Ctx, cond, data)
 }
 
-func (m *instanceManager) getInsts(ctx core.ContextParams, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
+func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
 	origins = make([]mapstr.MapStr, 0)
 	tableName := common.GetInstTableName(objID)
 	if !util.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
-	err = m.dbProxy.Table(tableName).Find(cond).All(ctx, &origins)
+	err = m.dbProxy.Table(tableName).Find(cond).All(kit.Ctx, &origins)
 	return origins, !m.dbProxy.IsNotFoundError(err), err
 }
 
-func (m *instanceManager) getInstDataByID(ctx core.ContextParams, objID string, instID uint64, instanceManager *instanceManager) (origin mapstr.MapStr, err error) {
+func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID uint64, instanceManager *instanceManager) (origin mapstr.MapStr, err error) {
 	tableName := common.GetInstTableName(objID)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.GetInstIDField(objID), Val: instID})
 	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
 		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
-	err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(ctx, &origin)
+	err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &origin)
 	if nil != err {
 		return nil, err
 	}
 	return origin, nil
 }
 
-func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (results []mapstr.MapStr, err error) {
+func (m *instanceManager) searchInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (results []mapstr.MapStr, err error) {
 	results = []mapstr.MapStr{}
 	tableName := common.GetInstTableName(objID)
 	cond := inputParam.Condition
@@ -87,33 +86,33 @@ func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, i
 	if tableName == common.BKTableNameBaseInst {
 		objIDCond, ok := cond[common.BKObjIDField]
 		if ok && objIDCond != objID {
-			blog.V(9).Infof("searchInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, ctx.ReqID)
+			blog.V(9).Infof("searchInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, kit.Rid)
 			return results, nil
 		}
 		cond[common.BKObjIDField] = objID
 	}
-	cond = util.SetQueryOwner(cond, ctx.SupplierAccount)
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %#v, rid:%s", tableName, inputParam, ctx.ReqID)
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+	blog.V(9).Infof("searchInstance with table: %s and parameters: %#v, rid:%s", tableName, inputParam, kit.Rid)
 	instHandler := m.dbProxy.Table(tableName).Find(cond)
-	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).Fields(inputParam.Fields...).All(ctx, &results)
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v, rid: %s", tableName, inputParam, results, ctx.ReqID)
+	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).Fields(inputParam.Fields...).All(kit.Ctx, &results)
+	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v, rid: %s", tableName, inputParam, results, kit.Rid)
 
 	return results, err
 }
 
-func (m *instanceManager) countInstance(ctx core.ContextParams, objID string, cond mapstr.MapStr) (count uint64, err error) {
+func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr.MapStr) (count uint64, err error) {
 	tableName := common.GetInstTableName(objID)
 	if tableName == common.BKTableNameBaseInst {
 		objIDCond, ok := cond[common.BKObjIDField]
 		if ok && objIDCond != objID {
-			blog.V(9).Infof("countInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, ctx.ReqID)
+			blog.V(9).Infof("countInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, kit.Rid)
 			return 0, nil
 		}
 		cond[common.BKObjIDField] = objID
 	}
 
-	cond = util.SetQueryOwner(cond, ctx.SupplierAccount)
-	count, err = m.dbProxy.Table(tableName).Find(cond).Count(ctx)
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+	count, err = m.dbProxy.Table(tableName).Find(cond).Count(kit.Ctx)
 
 	return count, err
 }

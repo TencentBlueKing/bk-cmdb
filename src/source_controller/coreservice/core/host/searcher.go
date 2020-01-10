@@ -13,10 +13,10 @@
 package host
 
 import (
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (hm *hostManager) ListHosts(ctx core.ContextParams, input metadata.ListHosts) (*metadata.ListHostResult, error) {
-	return hm.hostSearcher.ListHosts(ctx, input)
+func (hm *hostManager) ListHosts(kit *rest.Kit, input metadata.ListHosts) (*metadata.ListHostResult, error) {
+	return hm.hostSearcher.ListHosts(kit.Ctx, input)
 }

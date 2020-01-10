@@ -110,7 +110,7 @@ func addObjDesData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 }
 
 func addClassifications(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	tablename := common.BKTableNameObjClassifiction
+	tablename := common.BKTableNameObjClassification
 	blog.Infof("add %s rows", tablename)
 	for _, row := range classificationRows {
 		if _, _, err = upgrader.Upsert(ctx, db, tablename, row, "id", []string{common.BKClassificationIDField}, []string{"id"}); err != nil {

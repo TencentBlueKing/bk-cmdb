@@ -15,9 +15,9 @@ package util
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
 
@@ -32,16 +32,16 @@ func NewDBExecQuery(dbProxy dal.RDB) *DBExecQuery {
 }
 
 // dbExecQuery get info from table with condition
-func (query DBExecQuery) ExecQuery(ctx core.ContextParams, tableName string, fields []string, condMap mapstr.MapStr, result interface{}) error {
-	newCondMap := util.SetQueryOwner(condMap, ctx.SupplierAccount)
+func (query DBExecQuery) ExecQuery(kit *rest.Kit, tableName string, fields []string, condMap mapstr.MapStr, result interface{}) error {
+	newCondMap := util.SetQueryOwner(condMap, kit.SupplierAccount)
 	dbFind := query.DbProxy.Table(tableName).Find(newCondMap)
 	if len(fields) > 0 {
 		dbFind = dbFind.Fields(fields...)
 	}
-	err := dbFind.All(ctx, result)
+	err := dbFind.All(kit.Ctx, result)
 	if err != nil {
-		blog.ErrorJSON("ExecQuery query table[%s] error. condition: %s, err:%s, rid:%s", tableName, newCondMap, err.Error(), ctx.ReqID)
-		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
+		blog.ErrorJSON("ExecQuery query table[%s] error. condition: %s, err:%s, rid:%s", tableName, newCondMap, err.Error(), kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 	return nil
 }
