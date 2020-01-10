@@ -56,7 +56,7 @@ var getUserFailData = userDataResult{
 
 // GetUserList get user list
 func (s *Service) GetUserList(c *gin.Context) {
-	user := user.NewUser(*s.Config, s.Engine, s.CacheCli, s.VersionPlg)
+	user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
 	code, data := user.GetUserList(c)
 	c.JSON(code, data)
 	return
