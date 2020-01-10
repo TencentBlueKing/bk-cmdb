@@ -18,10 +18,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
 
@@ -70,55 +70,55 @@ func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, er
 	}
 }
 
-func (m *instanceManager) validBizID(ctx core.ContextParams, bizID int64) error {
+func (m *instanceManager) validBizID(kit *rest.Kit, bizID int64) error {
 	if bizID == 0 {
 		return nil
 	}
 	cond := map[string]interface{}{
 		common.BKAppIDField: bizID,
 	}
-	cnt, err := m.countInstance(ctx, common.BKInnerObjIDApp, cond)
+	cnt, err := m.countInstance(kit, common.BKInnerObjIDApp, cond)
 	if err != nil {
-		blog.Errorf("search instance biz error %v, rid: %s", err, ctx.ReqID)
+		blog.Errorf("search instance biz error %v, rid: %s", err, kit.Rid)
 		return err
 	}
 	if cnt != 1 {
-		blog.Errorf("biz %d invalid, rid: %s", bizID, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+		blog.Errorf("biz %d invalid, rid: %s", bizID, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 	}
 	return nil
 }
 
-func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
+func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
 	bizID, err := FetchBizIDFromInstance(objID, instanceData)
 	if err != nil {
-		blog.Errorf("validCreateInstanceData failed, FetchBizIDFromInstance failed, err: %+v, rid: %s", err, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+		blog.Errorf("validCreateInstanceData failed, FetchBizIDFromInstance failed, err: %+v, rid: %s", err, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 	}
 
-	err = m.validBizID(ctx, bizID)
+	err = m.validBizID(kit, bizID)
 	if err != nil {
-		blog.Errorf("valid biz id error %v, rid: %s", err, ctx.ReqID)
+		blog.Errorf("valid biz id error %v, rid: %s", err, kit.Rid)
 		return err
 	}
-	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
+	valid, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
 	if nil != err {
-		blog.Errorf("init validator failed %s, rid: %s", err.Error(), ctx.ReqID)
+		blog.Errorf("init validator failed %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
-	for _, key := range valid.requirefields {
+	for _, key := range valid.requireFields {
 		if _, ok := instanceData[key]; !ok {
-			blog.Errorf("field [%s] in required for model [%s], input data: %+v, rid: %s", key, objID, instanceData, ctx.ReqID)
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			blog.Errorf("field [%s] in required for model [%s], input data: %+v, rid: %s", key, objID, instanceData, kit.Rid)
+			return valid.errIf.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
-	FillLostedFieldValue(ctx.Context, instanceData, valid.propertyslice)
+	FillLostedFieldValue(kit.Ctx, instanceData, valid.propertySlice)
 	var instMedataData metadata.Metadata
 	instMedataData.Label = make(metadata.Label)
 	for key, val := range instanceData {
 		if key == common.BKObjIDField {
 			// common instance always has no property bk_obj_id, but this field need save to db
-			blog.V(9).Infof("skip verify filed: %s, rid: %s", key, ctx.ReqID)
+			blog.V(9).Infof("skip verify filed: %s, rid: %s", key, kit.Rid)
 			continue
 		}
 		if metadata.BKMetadata == key {
@@ -132,20 +132,20 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			// ignore the key field
 			continue
 		}
-		property, ok := valid.propertys[key]
+		property, ok := valid.properties[key]
 		if !ok {
 			delete(instanceData, key)
 			continue
-			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, ctx.ReqID)
-			// return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
+			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, kit.Rid)
+			// return valid.errIf.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		if value, ok := val.(string); ok {
 			val = strings.TrimSpace(value)
 			instanceData[key] = val
 		}
-		rawErr := property.Validate(ctx.Context, val, key)
+		rawErr := property.Validate(kit.Ctx, val, key)
 		if rawErr.ErrCode != 0 {
-			return rawErr.ToCCError(ctx.Error)
+			return rawErr.ToCCError(kit.CCError)
 		}
 	}
 	if instanceData.Exists(metadata.BKMetadata) {
@@ -154,43 +154,43 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 
 	// module instance's name must coincide with template
 	if objID == common.BKInnerObjIDModule {
-		if err := m.validateModuleCreate(ctx, instanceData, valid); err != nil {
+		if err := m.validateModuleCreate(kit, instanceData, valid); err != nil {
 			if blog.V(9) {
-				blog.InfoJSON("validateModuleCreate failed, module: %s, err: %s, rid: %s", instanceData, err, ctx.ReqID)
+				blog.InfoJSON("validateModuleCreate failed, module: %s, err: %s, rid: %s", instanceData, err, kit.Rid)
 			}
 			return err
 		}
 	}
-	return valid.validCreateUnique(ctx, instanceData, instMedataData, m)
+	return valid.validCreateUnique(kit, instanceData, instMedataData, m)
 }
 
-func (m *instanceManager) validateModuleCreate(ctx core.ContextParams, instanceData mapstr.MapStr, valid *validator) error {
+func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapstr.MapStr, valid *validator) error {
 	svcTplIDIf, exist := instanceData[common.BKServiceTemplateIDField]
 	if exist == false {
-		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, common.BKServiceTemplateIDField)
+		return valid.errIf.Errorf(common.CCErrCommParamsNeedSet, common.BKServiceTemplateIDField)
 	}
 	svcTplID, err := util.GetInt64ByInterface(svcTplIDIf)
 	if err != nil {
-		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, common.BKServiceTemplateIDField)
+		return valid.errIf.Errorf(common.CCErrCommParamsNeedInt, common.BKServiceTemplateIDField)
 	}
 	if svcTplID == common.ServiceTemplateIDNotSet {
 		return nil
 	}
 	svcCategoryIDIf, exist := instanceData[common.BKServiceCategoryIDField]
 	if exist == false {
-		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, common.BKServiceCategoryIDField)
+		return valid.errIf.Errorf(common.CCErrCommParamsNeedSet, common.BKServiceCategoryIDField)
 	}
 	svcCategoryID, err := util.GetInt64ByInterface(svcCategoryIDIf)
 	if err != nil {
-		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, common.BKServiceCategoryIDField)
+		return valid.errIf.Errorf(common.CCErrCommParamsNeedInt, common.BKServiceCategoryIDField)
 	}
 	bizIDIf, exist := instanceData[common.BKAppIDField]
 	if exist == false {
-		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+		return valid.errIf.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
 	}
 	bizID, err := util.GetInt64ByInterface(bizIDIf)
 	if err != nil {
-		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, common.MetadataLabelBiz)
+		return valid.errIf.Errorf(common.CCErrCommParamsNeedInt, common.MetadataLabelBiz)
 	}
 	tpl := metadata.ServiceTemplate{}
 	filter := map[string]interface{}{
@@ -198,8 +198,8 @@ func (m *instanceManager) validateModuleCreate(ctx core.ContextParams, instanceD
 		common.BKServiceCategoryIDField: svcCategoryID,
 		common.BKAppIDField:             bizID,
 	}
-	if err := m.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).One(ctx.Context, &tpl); err != nil {
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	if err := m.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).One(kit.Ctx, &tpl); err != nil {
+		return valid.errIf.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 	instanceData[common.BKModuleNameField] = tpl.Name
 
@@ -207,54 +207,54 @@ func (m *instanceManager) validateModuleCreate(ctx core.ContextParams, instanceD
 }
 
 // getHostRelatedBizID 根据主机ID获取所属业务ID
-func getHostRelatedBizID(ctx core.ContextParams, dbProxy dal.DB, hostID int64) (bizID int64, ccErr errors.CCErrorCoder) {
-	rid := ctx.ReqID
+func getHostRelatedBizID(kit *rest.Kit, dbProxy dal.DB, hostID int64) (bizID int64, ccErr errors.CCErrorCoder) {
+	rid := kit.Rid
 	filter := map[string]interface{}{
 		common.BKHostIDField: hostID,
 	}
 	hostConfig := make([]metadata.HostModuleConfig, 0)
-	if err := dbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).All(ctx.Context, &hostConfig); err != nil {
+	if err := dbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).All(kit.Ctx, &hostConfig); err != nil {
 		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
-		return 0, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if len(hostConfig) == 0 {
 		blog.Errorf("host module config empty, hostID: %d, rid: %s", hostID, rid)
-		return 0, ctx.Error.CCErrorf(common.CCErrHostModuleConfigFailed, hostID)
+		return 0, kit.CCError.CCErrorf(common.CCErrHostModuleConfigFailed, hostID)
 	}
 	bizID = hostConfig[0].ApplicationID
 	for _, item := range hostConfig {
 		if item.ApplicationID != bizID {
 			blog.Errorf("getHostRelatedBizID failed, get multiple bizID, hostID: %d, hostConfig: %+v, rid: %s", hostID, hostConfig, rid)
-			return 0, ctx.Error.CCErrorf(common.CCErrCommGetMultipleObject)
+			return 0, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
 		}
 	}
 	return bizID, nil
 }
 
-func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
-	updateData, err := m.getInstDataByID(ctx, objID, instID, m)
+func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
+	updateData, err := m.getInstDataByID(kit, objID, instID, m)
 	if err != nil {
-		blog.ErrorJSON("validUpdateInstanceData failed, getInstDataByID failed, err: %s, objID: %s, instID: %s, rid: %s", err, instID, objID, ctx.ReqID)
+		blog.ErrorJSON("validUpdateInstanceData failed, getInstDataByID failed, err: %s, objID: %s, instID: %s, rid: %s", err, instID, objID, kit.Rid)
 		return err
 	}
 	var bizID int64
 	if objID != common.BKInnerObjIDHost {
 		bizID, err = FetchBizIDFromInstance(objID, updateData)
 		if err != nil {
-			blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, ctx.ReqID)
-			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+			blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 		}
 	} else {
-		bizID, err = getHostRelatedBizID(ctx, m.dbProxy, int64(instID))
+		bizID, err = getHostRelatedBizID(kit, m.dbProxy, int64(instID))
 		if err != nil {
-			blog.ErrorJSON("validUpdateInstanceData failed, getHostRelatedBizID failed, hostID: %d, err: %s, rid: %s", instID, err, ctx.ReqID)
-			return ctx.Error.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
+			blog.ErrorJSON("validUpdateInstanceData failed, getHostRelatedBizID failed, hostID: %d, err: %s, rid: %s", instID, err, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
 		}
 	}
 
-	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
+	valid, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
 	if nil != err {
-		blog.Errorf("init validator failed %s, rid: %s", err.Error(), ctx.ReqID)
+		blog.Errorf("init validator failed %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
 
@@ -265,7 +265,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			continue
 		}
 
-		property, ok := valid.propertys[key]
+		property, ok := valid.properties[key]
 		if !ok {
 			delete(instanceData, key)
 			continue
@@ -274,9 +274,9 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			val = strings.TrimSpace(value)
 			instanceData[key] = val
 		}
-		rawErr := property.Validate(ctx.Context, val, key)
+		rawErr := property.Validate(kit.Ctx, val, key)
 		if rawErr.ErrCode != 0 {
-			return rawErr.ToCCError(ctx.Error)
+			return rawErr.ToCCError(kit.CCError)
 		}
 	}
 
@@ -285,16 +285,16 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 	}
 	bizID, err = FetchBizIDFromInstance(objID, updateData)
 	if err != nil {
-		blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+		blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
 	}
 	if bizID != 0 {
-		err = m.validBizID(ctx, bizID)
+		err = m.validBizID(kit, bizID)
 		if err != nil {
-			blog.Errorf("valid biz id error %v, rid: %s", err, ctx.ReqID)
+			blog.Errorf("valid biz id error %v, rid: %s", err, kit.Rid)
 			return err
 		}
 	}
 
-	return valid.validUpdateUnique(ctx, updateData, instMetaData, instID, m)
+	return valid.validUpdateUnique(kit, updateData, instMetaData, instID, m)
 }

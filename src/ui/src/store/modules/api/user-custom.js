@@ -11,7 +11,8 @@
 import $http from '@/api'
 
 const state = {
-    usercustom: {}
+    usercustom: {},
+    globalUsercustom: {}
 }
 
 const getters = {
@@ -98,12 +99,34 @@ const actions = {
         dispatch('saveUsercustom', {
             recently_models: newUsercustomData
         })
+    },
+
+    saveGlobalUsercustom ({ commit }, { objId, params, config }) {
+        return $http.post(`usercustom/default/model/${objId}`, params, config).then(data => {
+            commit('setGlobalUsercustom', {
+                [`${objId}_global_custom_table_columns`]: params.global_custom_table_columns
+            })
+            return data
+        })
+    },
+
+    getGlobalUsercustom ({ commit }, { config }) {
+        const mergedConfig = Object.assign({
+            requestId: 'getGlobalUsercustom'
+        }, config)
+        return $http.post('usercustom/default/model', {}, mergedConfig).then(usercustom => {
+            commit('setGlobalUsercustom', usercustom)
+            return usercustom
+        })
     }
 }
 
 const mutations = {
     setUsercustom (state, usercustom) {
         state.usercustom = Object.assign({}, state.usercustom, usercustom)
+    },
+    setGlobalUsercustom (state, globalUsercustom) {
+        state.globalUsercustom = Object.assign({}, state.globalUsercustom, globalUsercustom)
     }
 }
 

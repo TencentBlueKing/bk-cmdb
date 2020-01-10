@@ -18,214 +18,262 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateCloudSyncTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateCloudSyncTask(ctx *rest.Contexts) {
 	input := new(meta.CloudTaskList)
-	if err := data.MarshalJSONInto(input); nil != err {
-		blog.Errorf("create cloud sync task failed， MarshalJSONInto error, err:%s, input:%v, rid: %v", err.Error(), data, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	id, err := s.core.HostOperation().CreateCloudSyncTask(params, input)
+	id, err := s.core.HostOperation().CreateCloudSyncTask(ctx.Kit, input)
 	if err != nil {
-		blog.Errorf("create cloud sync fail input: %v, error: %v, rid: %v", input, err, params.ReqID)
-		return nil, err
+		blog.Errorf("create cloud sync fail input: %v, error: %v, rid: %v", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-
-	return id, nil
+	ctx.RespEntity(id)
 }
 
-func (s *coreService) CheckTaskNameUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CheckTaskNameUnique(ctx *rest.Contexts) {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
 	condition := common.KvMap{common.CloudSyncTaskName: data[common.CloudSyncTaskName]}
-	num, err := s.db.Table(common.BKTableNameCloudTask).Find(condition).Count(params)
+	num, err := s.db.Table(common.BKTableNameCloudTask).Find(condition).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("CheckTaskNameUnique fail, get task name [%s] failed, err: %v, rid: %v", data["bk_task_name"], err, params.ReqID)
-		return nil, err
+		blog.Errorf("CheckTaskNameUnique fail, get task name [%s] failed, err: %v, rid: %v", data["bk_task_name"], err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-
-	return num, nil
+	ctx.RespEntity(num)
 }
 
-func (s *coreService) DeleteCloudSyncTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	taskID := pathParams("taskID")
+func (s *coreService) DeleteCloudSyncTask(ctx *rest.Contexts) {
+	taskID := ctx.Request.PathParameter("taskID")
 	intTaskID, err := strconv.ParseInt(taskID, 10, 64)
 	if err != nil {
-		blog.Errorf("DeleteCloudSyncTask fail, taskID string to int64 failed with err: %v, rid: %v", err, params.ReqID)
-		return nil, err
+		blog.Errorf("DeleteCloudSyncTask fail, taskID string to int64 failed with err: %v, rid: %v", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
 	opt := common.KvMap{common.CloudSyncTaskID: intTaskID}
-	if err := s.db.Table(common.BKTableNameCloudTask).Delete(params, opt); err != nil {
-		blog.Errorf("DeleteCloudSyncTask failed err: %v, rid: %v", err, params.ReqID)
-		return nil, err
+	if err := s.db.Table(common.BKTableNameCloudTask).Delete(ctx.Kit.Ctx, opt); err != nil {
+		blog.Errorf("DeleteCloudSyncTask failed err: %v, rid: %v", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) SearchCloudSyncTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchCloudSyncTask(ctx *rest.Contexts) {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
 	page := meta.ParsePage(data["page"])
 	result := make([]meta.CloudTaskInfo, 0)
-	err := s.db.Table(common.BKTableNameCloudTask).Find(data).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result)
+	err := s.db.Table(common.BKTableNameCloudTask).Find(data).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(ctx.Kit.Ctx, &result)
 	if err != nil {
-		blog.Error("SearchCloudSyncTask failed err: %v, rid: %v", err, params.ReqID)
-		return nil, err
+		blog.Error("SearchCloudSyncTask failed err: %v, rid: %v", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	count, err := s.db.Table(common.BKTableNameCloudTask).Find(data).Count(params)
+	count, err := s.db.Table(common.BKTableNameCloudTask).Find(data).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Error("SearchCloudSyncTask failed, get task count fail, err: %v, rid: %v", err, params.ReqID)
-		return nil, err
+		blog.Error("SearchCloudSyncTask failed, get task count fail, err: %v, rid: %v", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return meta.CloudTaskSearch{
+	ctx.RespEntity(meta.CloudTaskSearch{
 		Count: count,
 		Info:  result,
-	}, nil
+	})
 }
 
-func (s *coreService) UpdateCloudSyncTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	opt := common.KvMap{common.CloudSyncTaskID: data[common.CloudSyncTaskID]}
-	err := s.db.Table(common.BKTableNameCloudTask).Update(params, opt, data)
-	if nil != err {
-		blog.Error("UpdateCloudSyncTask fail, error information is %s, params:%v, rid: %v", err.Error(), data, params.ReqID)
-		return nil, err
+func (s *coreService) UpdateCloudSyncTask(ctx *rest.Contexts) {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-
-	return nil, nil
+	opt := common.KvMap{common.CloudSyncTaskID: data[common.CloudSyncTaskID]}
+	err := s.db.Table(common.BKTableNameCloudTask).Update(ctx.Kit.Ctx, opt, data)
+	if nil != err {
+		blog.Error("UpdateCloudSyncTask fail, error information is %s, ctx:%v, rid: %v", err.Error(), data, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) CreateConfirm(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateConfirm(ctx *rest.Contexts) {
 	input := new(meta.ResourceConfirm)
-	if err := data.MarshalJSONInto(input); nil != err {
-		blog.Errorf("create resource confirm failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), input, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	input.CreateTime = time.Now()
-	id, err := s.core.HostOperation().CreateResourceConfirm(params, input)
+	id, err := s.core.HostOperation().CreateResourceConfirm(ctx.Kit, input)
 	if err != nil {
-		blog.Errorf("CreateConfirm fail, input: %v error: %v, rid: %s", input, err, params.ReqID)
-		return nil, err
+		blog.Errorf("CreateConfirm fail, input: %v error: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-
-	return id, nil
+	ctx.RespEntity(id)
 }
 
-func (s *coreService) SearchConfirm(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchConfirm(ctx *rest.Contexts) {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
 	page := meta.ParsePage(data["page"])
 	result := make([]map[string]interface{}, 0)
-	err := s.db.Table(common.BKTableNameCloudResourceConfirm).Find(data).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result)
+	err := s.db.Table(common.BKTableNameCloudResourceConfirm).Find(data).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(ctx.Kit.Ctx, &result)
 	if err != nil {
-		blog.Error("search cloud resource confirm  fail, search condition: %v err: %v, rid: %v", data, err, params.ReqID)
-		return nil, err
+		blog.Error("search cloud resource confirm  fail, search condition: %v err: %v, rid: %v", data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	count, err := s.db.Table(common.BKTableNameCloudResourceConfirm).Find(data).Count(params)
+	count, err := s.db.Table(common.BKTableNameCloudResourceConfirm).Find(data).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Error("search cloud resource confirm count fail, err: %v, rid: %v", err, params.ReqID)
-		return nil, err
+		blog.Error("search cloud resource confirm count fail, err: %v, rid: %v", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return meta.FavoriteResult{
+	ctx.RespEntity(meta.FavoriteResult{
 		Count: count,
 		Info:  result,
-	}, nil
+	})
 }
 
-func (s *coreService) DeleteConfirm(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	resourceID := pathParams("taskID")
+func (s *coreService) DeleteConfirm(ctx *rest.Contexts) {
+	resourceID := ctx.Request.PathParameter("taskID")
 	intResourceID, err := strconv.ParseInt(resourceID, 10, 64)
 	if err != nil {
-		blog.Errorf("DeleteConfirm fail, taskID string to int64 failed with err: %v, rid: %v", err, params.ReqID)
-		return nil, err
+		blog.Errorf("DeleteConfirm fail, taskID string to int64 failed with err: %v, rid: %v", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
 	opt := common.KvMap{common.CloudSyncResourceConfirmID: intResourceID}
-	if err := s.db.Table(common.BKTableNameCloudResourceConfirm).Delete(params, opt); err != nil {
-		blog.Errorf("DeleteConfirm failed err: %v, rid: %v", err, params.ReqID)
-		return nil, err
+	if err := s.db.Table(common.BKTableNameCloudResourceConfirm).Delete(ctx.Kit.Ctx, opt); err != nil {
+		blog.Errorf("DeleteConfirm failed err: %v, rid: %v", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) CreateSyncHistory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateSyncHistory(ctx *rest.Contexts) {
 	input := new(meta.CloudHistory)
-	if err := data.MarshalJSONInto(&input); nil != err {
-		blog.Errorf("create cloud sync history failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), input, params.ReqID)
-		return nil, err
+	if err := ctx.DecodeInto(&input); nil != err {
+		blog.Errorf("create cloud sync history failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	id, err := s.core.HostOperation().CreateCloudSyncHistory(params, input)
+	id, err := s.core.HostOperation().CreateCloudSyncHistory(ctx.Kit, input)
 	if err != nil {
-		blog.Errorf("create cloud history fail, input: %v error: %v, rid: %v", input, err, params.ReqID)
-		return nil, err
+		blog.Errorf("create cloud history fail, input: %v error: %v, rid: %v", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return id, nil
+	ctx.RespEntity(id)
 }
 
-func (s *coreService) SearchSyncHistory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchSyncHistory(ctx *rest.Contexts) {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
 	condition := make(map[string]interface{})
 	condition["bk_start_time"] = util.ConvParamsTime(data["bk_start_time"])
 	condition["bk_task_id"] = data["bk_task_id"]
 	page := meta.ParsePage(data["page"])
 
 	result := make([]map[string]interface{}, 0)
-	if err := s.db.Table(common.BKTableNameCloudSyncHistory).Find(condition).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result); err != nil {
-		blog.Error("search cloud sync history fail, err: %v, input: %v, rid: %v", err, data, params.ReqID)
-		return nil, err
+	if err := s.db.Table(common.BKTableNameCloudSyncHistory).Find(condition).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(ctx.Kit.Ctx, &result); err != nil {
+		blog.Error("search cloud sync history fail, err: %v, input: %v, rid: %v", err, data, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	count, err := s.db.Table(common.BKTableNameCloudSyncHistory).Find(condition).Count(params)
+	count, err := s.db.Table(common.BKTableNameCloudSyncHistory).Find(condition).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Error("search cloud sync history count fail, err: %v, rid: %v", err, params.ReqID)
-		return nil, err
+		blog.Error("search cloud sync history count fail, err: %v, rid: %v", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return meta.FavoriteResult{
+	ctx.RespEntity(meta.FavoriteResult{
 		Count: count,
 		Info:  result,
-	}, nil
+	})
 }
 
-func (s *coreService) CreateConfirmHistory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateConfirmHistory(ctx *rest.Contexts) {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
 	data[common.CloudSyncConfirmTime] = time.Now()
-	id, err := s.core.HostOperation().CreateConfirmHistory(params, data)
+	id, err := s.core.HostOperation().CreateConfirmHistory(ctx.Kit, data)
 	if err != nil {
-		blog.Errorf("CreateConfirmHistory fail, input: %v error: %v, rid: %v", data, err, params.ReqID)
-		return nil, err
+		blog.Errorf("CreateConfirmHistory fail, input: %v error: %v, rid: %v", data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return id, nil
+	ctx.RespEntity(id)
 }
 
-func (s *coreService) SearchConfirmHistory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchConfirmHistory(ctx *rest.Contexts) {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
 	page := meta.ParsePage(data["page"])
 	delete(data, "page")
 	condition := util.ConvParamsTime(data)
 
 	result := make([]map[string]interface{}, 0)
-	err := s.db.Table(common.BKTableNameResourceConfirmHistory).Find(condition).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result)
+	err := s.db.Table(common.BKTableNameResourceConfirmHistory).Find(condition).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(ctx.Kit.Ctx, &result)
 	if err != nil {
-		blog.Error("search resource confirm history fail, err: %v, input: %v, rid: %v", err, data, params.ReqID)
-		return nil, err
+		blog.Error("search resource confirm history fail, err: %v, input: %v, rid: %v", err, data, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	num, err := s.db.Table(common.BKTableNameResourceConfirmHistory).Find(condition).Count(params)
+	num, err := s.db.Table(common.BKTableNameResourceConfirmHistory).Find(condition).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Error("SearchConfirmHistory count fail, err: %v, input: %v, rid: %v", err, data, params.ReqID)
-		return nil, err
+		blog.Error("SearchConfirmHistory count fail, err: %v, input: %v, rid: %v", err, data, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return meta.FavoriteResult{
+	ctx.RespEntity(meta.FavoriteResult{
 		Count: num,
 		Info:  result,
-	}, nil
+	})
 }

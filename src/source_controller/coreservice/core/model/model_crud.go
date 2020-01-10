@@ -17,34 +17,34 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelManager) count(ctx core.ContextParams, cond universalsql.Condition) (uint64, error) {
+func (m *modelManager) count(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
 
-	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database count operation by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
-		return 0, ctx.Error.Errorf(common.CCErrObjectDBOpErrno, err.Error())
+		blog.Errorf("request(%s): it is failed to execute database count operation by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
+		return 0, kit.CCError.Errorf(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
 	return cnt, err
 }
 
-func (m *modelManager) save(ctx core.ContextParams, model *metadata.Object) (id uint64, err error) {
+func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, err error) {
 
-	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjDes)
+	id, err = m.dbProxy.NextSequence(kit.Ctx, common.BKTableNameObjDes)
 	if err != nil {
-		blog.Errorf("request(%s): it is failed to make sequence id on the table (%s), error info is %s", ctx.ReqID, common.BKTableNameObjDes, err.Error())
-		return id, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+		blog.Errorf("request(%s): it is failed to make sequence id on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
+		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 	model.ID = int64(id)
-	model.OwnerID = ctx.SupplierAccount
+	model.OwnerID = kit.SupplierAccount
 
 	if nil == model.LastTime {
 		model.LastTime = &metadata.Time{}
@@ -55,13 +55,13 @@ func (m *modelManager) save(ctx core.ContextParams, model *metadata.Object) (id 
 		model.CreateTime.Time = time.Now()
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjDes).Insert(ctx, model)
+	err = m.dbProxy.Table(common.BKTableNameObjDes).Insert(kit.Ctx, model)
 	return id, err
 }
 
-func (m *modelManager) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
+func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.count(ctx, cond)
+	cnt, err = m.count(kit, cond)
 	if nil != err {
 		return 0, err
 	}
@@ -72,10 +72,10 @@ func (m *modelManager) update(ctx core.ContextParams, data mapstr.MapStr, cond u
 
 	data.Set(metadata.ModelFieldLastTime, time.Now())
 	models := make([]metadata.Object, 0)
-	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(ctx, &models)
+	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &models)
 	if nil != err {
-		blog.Errorf("find models failed, filter: %+v, err: %s, rid: %s", cond.ToMapStr(), err.Error(), ctx.ReqID)
-		return 0, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+		blog.Errorf("find models failed, filter: %+v, err: %s, rid: %s", cond.ToMapStr(), err.Error(), kit.Rid)
+		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
 	if objName, exist := data[common.BKObjNameField]; exist == true && len(util.GetStrByInterface(objName)) > 0 {
@@ -93,61 +93,61 @@ func (m *modelManager) update(ctx core.ContextParams, data mapstr.MapStr, cond u
 			for key, value := range bizFilter {
 				modelNameUniqueFilter[key] = value
 			}
-			sameNameCount, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(ctx)
+			sameNameCount, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
 			if err != nil {
-				blog.Errorf("check whether same name model exists failed, name: %s, filter: %+v, err: %s, rid: %s", modelName, modelNameUniqueFilter, err.Error(), ctx.ReqID)
+				blog.Errorf("check whether same name model exists failed, name: %s, filter: %+v, err: %s, rid: %s", modelName, modelNameUniqueFilter, err.Error(), kit.Rid)
 				return 0, err
 			}
 			if sameNameCount > 0 {
-				blog.Warnf("update model failed, field `%s` duplicated, rid: %s", modelName, ctx.ReqID)
-				return 0, ctx.Error.Errorf(common.CCErrCommDuplicateItem, modelName)
+				blog.Warnf("update model failed, field `%s` duplicated, rid: %s", modelName, kit.Rid)
+				return 0, kit.CCError.Errorf(common.CCErrCommDuplicateItem, modelName)
 			}
 
 			// 一次更新多个模型的时候，唯一校验需要特别小心
 			filter := map[string]interface{}{common.BKFieldID: model.ID}
-			err = m.dbProxy.Table(common.BKTableNameObjDes).Update(ctx, filter, data)
+			err = m.dbProxy.Table(common.BKTableNameObjDes).Update(kit.Ctx, filter, data)
 			if nil != err {
-				blog.Errorf("request(%s): it is failed to execute database update operation on the table (%s), error info is %s", ctx.ReqID, common.BKTableNameObjDes, err.Error())
-				return 0, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+				blog.Errorf("request(%s): it is failed to execute database update operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
+				return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 			}
 		}
 		return cnt, nil
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjDes).Update(ctx, cond.ToMapStr(), data)
+	err = m.dbProxy.Table(common.BKTableNameObjDes).Update(kit.Ctx, cond.ToMapStr(), data)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database update operation on the table (%s), error info is %s", ctx.ReqID, common.BKTableNameObjDes, err.Error())
-		return 0, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+		blog.Errorf("request(%s): it is failed to execute database update operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
+		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
 	return cnt, err
 }
 
-func (m *modelManager) search(ctx core.ContextParams, cond universalsql.Condition) ([]metadata.Object, error) {
+func (m *modelManager) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Object, error) {
 
 	dataResult := make([]metadata.Object, 0)
-	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(ctx, &dataResult); nil != err {
-		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
-		return dataResult, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult); nil != err {
+		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
+		return dataResult, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
 	return dataResult, nil
 }
 
-func (m *modelManager) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) ([]mapstr.MapStr, error) {
+func (m *modelManager) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 
 	dataResult := make([]mapstr.MapStr, 0)
-	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(ctx, &dataResult); nil != err {
-		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
-		return dataResult, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult); nil != err {
+		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
+		return dataResult, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
 	return dataResult, nil
 }
 
-func (m *modelManager) delete(ctx core.ContextParams, cond universalsql.Condition) (uint64, error) {
+func (m *modelManager) delete(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
 
-	cnt, err := m.count(ctx, cond)
+	cnt, err := m.count(kit, cond)
 	if nil != err {
 		return 0, err
 	}
@@ -156,20 +156,20 @@ func (m *modelManager) delete(ctx core.ContextParams, cond universalsql.Conditio
 		return 0, nil
 	}
 
-	if err = m.dbProxy.Table(common.BKTableNameObjDes).Delete(ctx, cond.ToMapStr()); nil != err {
-		blog.Errorf("request(%s): it is failed to execute a deletion operation on the table (%s), error info is %s", ctx.ReqID, common.BKTableNameObjDes, err.Error())
-		return 0, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	if err = m.dbProxy.Table(common.BKTableNameObjDes).Delete(kit.Ctx, cond.ToMapStr()); nil != err {
+		blog.Errorf("request(%s): it is failed to execute a deletion operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
+		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
 	return cnt, nil
 }
 
 // cascadeDelete 删除模型的字段，分组，唯一校验。模型等。
-func (m *modelManager) cascadeDelete(ctx core.ContextParams, cond universalsql.Condition) (uint64, error) {
+func (m *modelManager) cascadeDelete(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
 
-	modelItems, err := m.search(ctx, cond)
+	modelItems, err := m.search(kit, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a cascade model deletion operation by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute a cascade model deletion operation by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
 		return 0, err
 	}
 
@@ -182,36 +182,36 @@ func (m *modelManager) cascadeDelete(ctx core.ContextParams, cond universalsql.C
 		return 0, nil
 	}
 
-	if err := m.canCascadeDelete(ctx, targetObjIDS); err != nil {
+	if err := m.canCascadeDelete(kit, targetObjIDS); err != nil {
 		return 0, err
 	}
 
 	delCond := mongo.NewCondition()
 	delCond.Element(mongo.Field(common.BKObjIDField).In(targetObjIDS))
-	delCondMap := util.SetQueryOwner(delCond.ToMapStr(), ctx.SupplierAccount)
+	delCondMap := util.SetQueryOwner(delCond.ToMapStr(), kit.SupplierAccount)
 
 	// delete model property group
-	if err := m.dbProxy.Table(common.BKTableNamePropertyGroup).Delete(ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete model attribute group error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
-		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	if err := m.dbProxy.Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, delCondMap); err != nil {
+		blog.ErrorJSON("delete model attribute group error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	// delete model property attribute
-	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete model attribute error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
-		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, delCondMap); err != nil {
+		blog.ErrorJSON("delete model attribute error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	// delete model unique
-	if err := m.dbProxy.Table(common.BKTableNameObjUnique).Delete(ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
-		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	if err := m.dbProxy.Table(common.BKTableNameObjUnique).Delete(kit.Ctx, delCondMap); err != nil {
+		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	// delete model
-	if err := m.dbProxy.Table(common.BKTableNameObjDes).Delete(ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, ctx.ReqID)
-		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	if err := m.dbProxy.Table(common.BKTableNameObjDes).Delete(kit.Ctx, delCondMap); err != nil {
+		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	return uint64(len(targetObjIDS)), nil
@@ -221,11 +221,11 @@ func (m *modelManager) cascadeDelete(ctx core.ContextParams, cond universalsql.C
 // 1. 检查是否内置模型
 // 2. 是否包含实例
 // 3. 是否有关联关系
-func (m *modelManager) canCascadeDelete(ctx core.ContextParams, targetObjIDS []string) (err error) {
+func (m *modelManager) canCascadeDelete(kit *rest.Kit, targetObjIDS []string) (err error) {
 	// notice inner model not can delete
 	for _, objID := range targetObjIDS {
 		if util.IsInnerObject(objID) {
-			return ctx.Error.Errorf(common.CCErrCoreServiceNotAllowDeleteErr, m.modelAttribute.getLangObjID(ctx, objID))
+			return kit.CCError.Errorf(common.CCErrCoreServiceNotAllowDeleteErr, m.modelAttribute.getLangObjID(kit, objID))
 		}
 	}
 
@@ -234,15 +234,15 @@ func (m *modelManager) canCascadeDelete(ctx core.ContextParams, targetObjIDS []s
 		common.BKObjIDField: map[string]interface{}{
 			common.BKDBIN: targetObjIDS,
 		},
-		common.BkSupplierAccount: ctx.SupplierAccount,
+		common.BkSupplierAccount: kit.SupplierAccount,
 	}
-	cnt, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(instanceFilter).Count(ctx)
+	cnt, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(instanceFilter).Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("canCascadeDelete failed, count model instance failed, error. cond:%s, err:%s, rid:%s", instanceFilter, err.Error(), ctx.ReqID)
-		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
+		blog.ErrorJSON("canCascadeDelete failed, count model instance failed, error. cond:%s, err:%s, rid:%s", instanceFilter, err.Error(), kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 	if cnt > 0 {
-		return ctx.Error.Error(common.CCErrCoreServiceModelHasInstanceErr)
+		return kit.CCError.Error(common.CCErrCoreServiceModelHasInstanceErr)
 	}
 
 	// has model association, 不检查关联关系的是否有实例化。
@@ -251,14 +251,14 @@ func (m *modelManager) canCascadeDelete(ctx core.ContextParams, targetObjIDS []s
 		mongo.Field(common.BKObjIDField).In(targetObjIDS),
 		mongo.Field(common.BKAsstObjIDField).In(targetObjIDS),
 	)
-	asstCondMap := util.SetQueryOwner(asstCond.ToMapStr(), ctx.SupplierAccount)
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjAsst).Find(asstCondMap).Count(ctx)
+	asstCondMap := util.SetQueryOwner(asstCond.ToMapStr(), kit.SupplierAccount)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjAsst).Find(asstCondMap).Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("canCascadeDelete failed, count model association failed, cond:%s, err:%s, rid:%s", asstCondMap, err.Error(), ctx.ReqID)
-		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
+		blog.ErrorJSON("canCascadeDelete failed, count model association failed, cond:%s, err:%s, rid:%s", asstCondMap, err.Error(), kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 	if cnt > 0 {
-		return ctx.Error.Error(common.CCErrCoreServiceModelHasAssociationErr)
+		return kit.CCError.Error(common.CCErrCoreServiceModelHasAssociationErr)
 	}
 
 	return nil

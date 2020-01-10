@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -34,13 +35,13 @@ func New(dbProxy dal.RDB) core.SystemOperation {
 	}
 }
 
-func (sm *systemManager) GetSystemUserConfig(ctx core.ContextParams) (map[string]interface{}, errors.CCErrorCoder) {
+func (sm *systemManager) GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder) {
 	cond := map[string]string{"type": metadata.CCSystemUserConfigSwitch}
 	result := make(map[string]interface{}, 0)
-	err := sm.dbProxy.Table(common.BKTableNameSystem).Find(cond).One(ctx, &result)
+	err := sm.dbProxy.Table(common.BKTableNameSystem).Find(cond).One(kit.Ctx, &result)
 	if err != nil && !sm.dbProxy.IsNotFoundError(err) {
-		blog.ErrorJSON("GetSystemUserConfig find error. cond:%s, err:%s, rid:%s", cond, err.Error(), ctx.ReqID)
-		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.ErrorJSON("GetSystemUserConfig find error. cond:%s, err:%s, rid:%s", cond, err.Error(), kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
 	return result, nil
