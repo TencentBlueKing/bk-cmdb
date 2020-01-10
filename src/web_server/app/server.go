@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"plugin"
 	"strings"
 	"time"
 
@@ -110,14 +109,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.CacheCli = cacheCli
 	service.Logics = &logics.Logics{Engine: engine}
 	service.Config = &webSvr.Config
-
-	if webSvr.Config.LoginVersion != common.BKDefaultLoginUserPluginVersion && webSvr.Config.LoginVersion != "" {
-		service.VersionPlg, err = plugin.Open("login.so")
-		if nil != err {
-			service.VersionPlg = nil
-			return fmt.Errorf("load login so err: %v", err)
-		}
-	}
 
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
 	if err != nil {
