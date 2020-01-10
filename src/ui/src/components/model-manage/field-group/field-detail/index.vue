@@ -42,6 +42,7 @@
                 <div class="cmdb-form-item">
                     <bk-select
                         class="bk-select-full-width"
+                        searchable
                         :clearable="false"
                         v-model="fieldInfo.bk_property_type"
                         :disabled="isEditField">
