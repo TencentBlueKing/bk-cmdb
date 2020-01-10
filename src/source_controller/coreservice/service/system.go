@@ -13,10 +13,9 @@
 package service
 
 import (
-	"configcenter/src/common/mapstr"
-	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/common/http/rest"
 )
 
-func (s *coreService) GetSystemUserConfig(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	return s.core.SystemOperation().GetSystemUserConfig(params)
+func (s *coreService) GetSystemUserConfig(ctx *rest.Contexts) {
+	ctx.RespEntityWithError(s.core.SystemOperation().GetSystemUserConfig(ctx.Kit))
 }
