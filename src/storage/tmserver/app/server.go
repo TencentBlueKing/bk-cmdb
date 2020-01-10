@@ -13,13 +13,10 @@
 package app
 
 import (
-	"os"
 	"sync"
 
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/tmserver/service"
@@ -50,31 +47,3 @@ func (s *Server) onConfigUpdate(previous, current cc.ProcessConfig) {
 	}
 }
 
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-
-	return info, nil
-}
