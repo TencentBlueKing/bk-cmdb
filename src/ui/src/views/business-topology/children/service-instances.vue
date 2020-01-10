@@ -439,7 +439,7 @@
                     this.pagination.count = data.count
                     if (!this.searchSelectData.length && this.inSearch) this.inSearch = false
                     this.$nextTick(() => {
-                        this.handleCheckALL(false)
+                        data.info.length && this.handleCheckALL(false)
                     })
                 } catch (e) {
                     console.error(e)
