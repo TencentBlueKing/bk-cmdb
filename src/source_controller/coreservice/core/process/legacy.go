@@ -16,20 +16,20 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (p *processOperation) GetProc2Module(ctx core.ContextParams, option *metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder) {
+func (p *processOperation) GetProc2Module(kit *rest.Kit, option *metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder) {
 	filter := mapstr.NewFromStruct(option, "json")
-	filter = util.SetModOwner(filter, ctx.SupplierAccount)
+	filter = util.SetModOwner(filter, kit.SupplierAccount)
 
 	result := make([]metadata.Proc2Module, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcModule).Find(filter).All(ctx, &result); err != nil {
-		blog.Errorf("get process2module config failed. err: %v, rid:%s", err, ctx.ReqID)
-		return nil, ctx.Error.CCError(common.CCErrProcSelectProc2Module)
+	if err := p.dbProxy.Table(common.BKTableNameProcModule).Find(filter).All(kit.Ctx, &result); err != nil {
+		blog.Errorf("get process2module config failed. err: %v, rid:%s", err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrProcSelectProc2Module)
 	}
 
 	return result, nil

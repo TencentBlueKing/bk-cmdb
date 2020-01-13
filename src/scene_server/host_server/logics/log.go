@@ -335,7 +335,7 @@ func (h *HostModuleLog) getModules(ctx context.Context, moduleIds []int64) ([]ma
 		return make([]mapstr.MapStr, 0), nil
 	}
 	query := &metadata.QueryCondition{
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
 		Condition: mapstr.MapStr{common.BKModuleIDField: common.KvMap{common.BKDBIN: moduleIds}},
 		Fields:    []string{common.BKModuleIDField, common.BKSetIDField, common.BKModuleNameField, common.BKAppIDField, common.BKOwnerIDField},
 	}
@@ -357,7 +357,7 @@ func (h *HostModuleLog) getSets(ctx context.Context, setIDs []int64) ([]mapstr.M
 		return make([]mapstr.MapStr, 0), nil
 	}
 	query := &metadata.QueryCondition{
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
 		Condition: mapstr.MapStr{common.BKSetIDField: mapstr.MapStr{common.BKDBIN: setIDs}},
 		Fields:    []string{common.BKSetNameField, common.BKSetIDField, common.BKOwnerIDField},
 	}
@@ -378,7 +378,7 @@ func (h *HostModuleLog) getApps(ctx context.Context, appIDs []int64) ([]mapstr.M
 		return make([]mapstr.MapStr, 0), nil
 	}
 	query := &metadata.QueryCondition{
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
 		Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: appIDs}},
 		Fields:    []string{common.BKAppIDField, common.BKAppNameField, common.BKOwnerIDField},
 	}

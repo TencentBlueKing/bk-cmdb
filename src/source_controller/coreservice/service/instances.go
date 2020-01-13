@@ -16,44 +16,47 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateOneModelInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateOneModelInstance(ctx *rest.Contexts) {
 	inputData := metadata.CreateModelInstance{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.InstanceOperation().CreateModelInstance(params, pathParams("bk_obj_id"), inputData)
+	ctx.RespEntityWithError(s.core.InstanceOperation().CreateModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
-func (s *coreService) CreateManyModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateManyModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.CreateManyModelInstance{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.InstanceOperation().CreateManyModelInstance(params, pathParams("bk_obj_id"), inputData)
+	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
-func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) UpdateModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.UpdateOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	// TODO: remove this logic when biz model is changed.
 	cond := metadata.QueryCondition{
-		Condition: mapstr.MapStr{
+		Condition: map[string]interface{}{
 			common.AssociationKindIDField:  common.AssociationKindMainline,
-			common.AssociatedObjectIDField: pathParams("bk_obj_id"),
+			common.AssociatedObjectIDField: ctx.Request.PathParameter("bk_obj_id"),
 		},
 	}
-	result, err := s.core.AssociationOperation().SearchModelAssociation(params, cond)
+	result, err := s.core.AssociationOperation().SearchModelAssociation(ctx.Kit, cond)
 	if err != nil {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 
 	if len(result.Info) != 0 {
@@ -62,17 +65,18 @@ func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams
 		inputData.Condition.Remove("metadata")
 	}
 
-	return s.core.InstanceOperation().UpdateModelInstance(params, pathParams("bk_obj_id"), inputData)
+	ctx.RespEntityWithError(s.core.InstanceOperation().UpdateModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
-func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	// 判断是否有要根据default字段，需要国际化的内容
-	if _, ok := defaultNameLanguagePkg[pathParams("bk_obj_id")]; ok {
+	if _, ok := defaultNameLanguagePkg[ctx.Request.PathParameter("bk_obj_id")]; ok {
 		// 大于两个字段
 		if len(inputData.Fields) > 1 {
 			inputData.Fields = append(inputData.Fields, common.BKDefaultField)
@@ -82,36 +86,40 @@ func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams
 		}
 	}
 
-	dataResult, err := s.core.InstanceOperation().SearchModelInstance(params, pathParams("bk_obj_id"), inputData)
+	dataResult, err := s.core.InstanceOperation().SearchModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData)
 	if nil != err {
-		return dataResult, err
+		ctx.RespEntityWithError(dataResult, err)
+		return
 	}
-
 	// translate language for default name
-	if m, ok := defaultNameLanguagePkg[pathParams("bk_obj_id")]; ok {
+	language := util.GetLanguage(ctx.Kit.Header)
+	lang := s.language.CreateDefaultCCLanguageIf(language)
+	if m, ok := defaultNameLanguagePkg[ctx.Request.PathParameter(common.BKObjIDField)]; ok {
 		for idx := range dataResult.Info {
 			subResult := m[fmt.Sprint(dataResult.Info[idx][common.BKDefaultField])]
 			if len(subResult) >= 3 {
-				dataResult.Info[idx][subResult[1]] = util.FirstNotEmptyString(params.Lang.Language(subResult[0]), fmt.Sprint(dataResult.Info[idx][subResult[1]]), fmt.Sprint(dataResult.Info[idx][subResult[2]]))
+				dataResult.Info[idx][subResult[1]] = util.FirstNotEmptyString(lang.Language(subResult[0]), fmt.Sprint(dataResult.Info[idx][subResult[1]]), fmt.Sprint(dataResult.Info[idx][subResult[2]]))
 			}
 		}
 
 	}
-	return dataResult, err
+	ctx.RespEntity(dataResult)
 }
 
-func (s *coreService) DeleteModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.InstanceOperation().DeleteModelInstance(params, pathParams("bk_obj_id"), inputData)
+	ctx.RespEntityWithError(s.core.InstanceOperation().DeleteModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
-func (s *coreService) CascadeDeleteModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CascadeDeleteModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return s.core.InstanceOperation().CascadeDeleteModelInstance(params, pathParams("bk_obj_id"), inputData)
+	ctx.RespEntityWithError(s.core.InstanceOperation().CascadeDeleteModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }

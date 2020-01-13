@@ -139,7 +139,15 @@ func (f *Find) Fields(fields ...string) dal.Find {
 // Sort 查询排序
 func (f *Find) Sort(sort string) dal.Find {
 	if sort != "" {
-		f.sort = strings.Split(sort, ",")
+		sortArr := strings.Split(sort, ",")
+		for _, sortItem := range sortArr {
+			sortItemArr := strings.Split(sortItem, ":")
+			field := sortItemArr[0]
+			if len(sortItemArr) > 1 && (strings.TrimSpace(sortItemArr[1]) == "-1" || strings.TrimSpace(sortItemArr[1]) == "true") {
+				field = "-" + sortItemArr[0]
+			}
+			f.sort = append(f.sort, field)
+		}
 	}
 	return f
 }

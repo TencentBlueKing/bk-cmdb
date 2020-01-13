@@ -38,7 +38,7 @@ func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header ht
 	query := &metadata.QueryCondition{
 		Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKModuleNameField},
 		Condition: cond.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, query)
 	if err != nil {

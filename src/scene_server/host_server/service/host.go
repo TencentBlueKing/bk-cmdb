@@ -584,7 +584,7 @@ func (s *Service) getHostApplyRelatedFields(srvData *srvComm, hostIDArr []int64)
 	}
 	hostAttributesFilter := &meta.QueryCondition{
 		Fields: []string{common.BKPropertyIDField, common.BKFieldID},
-		Limit: meta.SearchLimit{
+		Page: meta.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: map[string]interface{}{
