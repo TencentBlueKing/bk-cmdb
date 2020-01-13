@@ -187,7 +187,10 @@
                     this.popoverWidth = this.$el.offsetWidth + 'px'
                     this.showPopoverContent = false
                     this.showPopover()
-                    const { users } = await this.$http.get(`${window.API_HOST}user/detail?fuzzy_lookups=${value}`, {
+                    const users = await this.$http.get(`${window.API_HOST}user/list`, {
+                        params: {
+                            fuzzy_lookups: value
+                        },
                         requestId: this.requestId,
                         cancelPrevious: true
                     })
@@ -213,8 +216,8 @@
                 })
             },
             setLocalValue () {
-                const value = (this.value || '').split(',')
-                const localValue = [...value]
+                const values = (this.value || '').split(',')
+                const localValue = values.map(value => String(value).trim()).filter(value => value.length)
                 this.localValue = localValue
             },
             calcEllipsis () {
