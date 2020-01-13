@@ -33,7 +33,6 @@ var _ = Describe("host abnormal test", func() {
 	Describe("test host apply", func() {
 
 		It("1. CreateBusiness", func() {
-			subPath := fmt.Sprintf("/biz/%s", supplierAccount)
 
 			input := map[string]interface{}{
 				"bk_biz_name":       util.RandSeq(16),
@@ -51,7 +50,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/biz/%s", supplierAccount).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -78,7 +77,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -110,7 +109,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -142,7 +141,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -173,7 +172,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -202,7 +201,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Put().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -230,7 +229,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Put().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -273,7 +272,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -314,7 +313,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -355,7 +354,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -386,7 +385,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -413,7 +412,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Put().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -440,7 +439,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Put().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -467,7 +466,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -499,7 +498,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -538,7 +537,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -583,7 +582,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -610,7 +609,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -637,7 +636,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -669,7 +668,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -713,7 +712,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -749,7 +748,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -792,7 +791,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -837,7 +836,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -866,7 +865,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Delete().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(subPath).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
