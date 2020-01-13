@@ -181,7 +181,7 @@
                     this.$router.push({
                         name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
-                            id: source['bk_host_id']
+                            id: source['bk_host_id'].toString().replace(/(\<\/?em\>)/g, '')
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
