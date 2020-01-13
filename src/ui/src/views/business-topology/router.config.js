@@ -56,7 +56,12 @@ export default [{
             relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
         layout: {
-            previous: { name: MENU_BUSINESS_HOST_AND_SERVICE }
+            previous: (view) => ({
+                name: MENU_BUSINESS_HOST_AND_SERVICE,
+                query: {
+                    node: view.$route.query.node
+                }
+            })
         }
     })
 }, {
@@ -100,7 +105,10 @@ export default [{
             relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
         layout: {
-            previous: { name: MENU_BUSINESS_HOST_AND_SERVICE }
+            previous: (view) => ({
+                name: MENU_BUSINESS_HOST_AND_SERVICE,
+                query: view.$route.query
+            })
         },
         checkAvailable: (to, from, app) => {
             return parseInt(to.params.business) === app.$store.getters['objectBiz/bizId']

@@ -21,6 +21,7 @@ export default [{
                 const params = {
                     name: query.form ? query.form : MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
+                        tab: 'serviceInstance',
                         node: 'module-' + view.routerParams.moduleId
                     }
                 }

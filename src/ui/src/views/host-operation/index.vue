@@ -209,6 +209,8 @@
                         tab.confirmed = false
                     }
                 })
+                const hasActiveTab = tabList.find(tab => tab === this.activeTab)
+                if (!hasActiveTab) this.tab.active = null
             },
             activeTab (tab) {
                 if (!tab) return
@@ -230,8 +232,9 @@
         beforeDestroy () {
             removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
         },
-        beforeRouteUpdate (to, from, next) {
+        async beforeRouteUpdate (to, from, next) {
             this.resolveData(to)
+            await this.getHostInfo()
             this.$nextTick(this.setBreadcrumbs)
             this.getPreviewData()
             next()
