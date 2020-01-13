@@ -355,17 +355,13 @@ func (ia *importAssociation) getInstDataByConds() error {
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 
 		if objID == common.BKInnerObjIDHost && len(valArr) > 0 {
-			_, ok := valArr[0][common.BKCloudIDField]
-			if !ok {
+			if ok := valArr[0].Exists(common.BKCloudIDField); !ok {
 				continue
 			}
-			strCloudID, ok := valArr[0][common.BKCloudIDField].(string)
-			if !ok {
-				continue
-			}
-			intCloudID, err := strconv.ParseInt(strCloudID, 10, 64)
+
+			intCloudID, err := valArr[0].Int64(common.BKCloudIDField)
 			if err != nil {
-				continue
+				return err
 			}
 			valArr[0][common.BKCloudIDField] = intCloudID
 		}
