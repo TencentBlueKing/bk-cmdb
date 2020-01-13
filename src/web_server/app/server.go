@@ -22,11 +22,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	websvc "configcenter/src/web_server/service"
-	"configcenter/src/common/types"
 
 	"github.com/holmeswang/contrib/sessions"
 )
@@ -165,4 +165,3 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 func (ccWeb *WebServer) Stop() error {
 	return nil
 }
-

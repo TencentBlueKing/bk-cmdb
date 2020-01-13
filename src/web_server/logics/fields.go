@@ -159,7 +159,7 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	inputParam := metadata.QueryCondition{
 		Page: metadata.BasePage{
 			Start: 0,
-			Limit:  common.BKNoLimit,
+			Limit: common.BKNoLimit,
 		},
 		Condition: mapstr.MapStr(map[string]interface{}{
 			common.BKObjIDField: objID,

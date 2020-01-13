@@ -72,8 +72,8 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 		condition = newCondtion
 	}
 	input := &meta.QueryCondition{
-		Fields:  strings.Split(query.Fields, ","),
-		Page:    meta.BasePage{Start: query.Start, Limit: query.Limit, Sort: query.Sort},
+		Fields: strings.Split(query.Fields, ","),
+		Page:   meta.BasePage{Start: query.Start, Limit: query.Limit, Sort: query.Sort},
 	}
 	rawObjID := objID
 	switch objID {
