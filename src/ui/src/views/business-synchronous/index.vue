@@ -470,6 +470,7 @@
                         active: 'instance'
                     },
                     query: {
+                        tab: 'serviceInstance',
                         node: 'module-' + this.routerParams.moduleId
                     }
                 })

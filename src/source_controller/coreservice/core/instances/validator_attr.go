@@ -28,7 +28,7 @@ import (
 // validTime valid object Attribute that is time type
 func (valid *validator) validTime(ctx context.Context, val interface{}, key string) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if nil == val || "" == val {
 		if valid.require[key] {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
@@ -54,7 +54,7 @@ func (valid *validator) validTime(ctx context.Context, val interface{}, key stri
 // validDate valid object Attribute that is date type
 func (valid *validator) validDate(ctx context.Context, val interface{}, key string) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if nil == val || "" == val {
 		if valid.require[key] {
 			blog.Errorf("params key: %s can not be null, rid: %s", key, rid)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
