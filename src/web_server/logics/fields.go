@@ -125,8 +125,9 @@ func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header
 
 func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metadata.Metadata) ([]Property, error) {
 	rid := util.GetHTTPCCRequestID(header)
-	sort := fmt.Sprintf("%s,-%s", common.BKPropertyIndexField, common.BKIsRequiredField)
+	sort := fmt.Sprintf("%s", common.BKPropertyIndexField)
 
+	// sortedFields 模型字段已经根据bk_property_index排序好了
 	sortedFields, err := lgc.getObjFieldIDsBySort(objID, sort, header, nil, meta)
 	if err != nil {
 		blog.Errorf("getObjFieldIDs, getObjFieldIDsBySort failed, sort: %s, rid: %s, err: %v", sort, rid, err)
@@ -142,17 +143,25 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metada
 	}
 
 	fields := make([]Property, 0)
+	noRequiredField := make([]Property, 0)
 	index := 0
-	for _, field := range sortedFields {
-		if field.IsRequire != true {
-			break
+	// 第一步，根据字段分组，对必填字段排序；并选出非必填字段
+	for _, group := range groups {
+		for _, field := range sortedFields {
+			if field.Group != group.ID {
+				continue
+			}
+			if field.IsRequire != true {
+				noRequiredField = append(noRequiredField, field)
+				continue
+			}
+			field.ExcelColIndex = index
+			index++
+			fields = append(fields, field)
 		}
-		field.ExcelColIndex = index
-		index++
-		fields = append(fields, field)
 	}
 
-	noRequiredField := sortedFields[index:]
+	// 第二步，根据字段分组，用必填字段使用的index，继续对非必填字段进行排序
 	for _, group := range groups {
 		for _, field := range noRequiredField {
 			if field.Group != group.ID {
