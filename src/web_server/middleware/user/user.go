@@ -13,8 +13,6 @@
 package user
 
 import (
-	"plugin"
-
 	"configcenter/src/common/backbone"
 	"configcenter/src/web_server/app/options"
 
@@ -22,13 +20,17 @@ import (
 	"gopkg.in/redis.v5"
 )
 
+// User 登录系统抽象出来接口
 type User interface {
+	// 判断用户是否登录
 	LoginUser(c *gin.Context) (isLogin bool)
+	//  拉取用户列表
 	GetUserList(c *gin.Context) (int, interface{})
+	// 获取登录系统的URL
 	GetLoginUrl(c *gin.Context) string
 }
 
 // NewUser return user instance by type
-func NewUser(config options.Config, engine *backbone.Engine, cacheCli *redis.Client, loginPlg *plugin.Plugin) User {
-	return &publicUser{config, engine, cacheCli, loginPlg}
+func NewUser(config options.Config, engine *backbone.Engine, cacheCli *redis.Client) User {
+	return &publicUser{config, engine, cacheCli}
 }

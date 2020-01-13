@@ -337,7 +337,6 @@ pwd = $es_pass
 version = v3
 [session]
 name = cc3
-skip = $skip
 defaultlanguage = zh-cn
 host = $redis_host
 port = $redis_port
@@ -355,12 +354,14 @@ full_text_search = $full_text_search
 [app]
 agent_app_url = ${agent_url}/console/?app=bk_agent_setup
 authscheme = $auth_scheme
+[login]
+version=$loginVersion
 '''
     template = FileTemplate(webserver_file_template_str)
-    skip = '1'
+    loginVersion = 'skip-login'
     if auth_enabled == "true":
-        skip = '0'
-    result = template.substitute(skip=skip, **context)
+        loginVersion = 'blueking'
+    result = template.substitute(loginVersion=loginVersion, **context)
     with open(output + "webserver.conf", 'w') as tmp_file:
         tmp_file.write(result)
 

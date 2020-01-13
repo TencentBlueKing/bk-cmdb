@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"plugin"
 	"strings"
 	"time"
 
@@ -109,14 +108,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.Logics = &logics.Logics{Engine: engine}
 	service.Config = &webSvr.Config
 
-	if webSvr.Config.LoginVersion != common.BKDefaultLoginUserPluginVersion && webSvr.Config.LoginVersion != "" {
-		service.VersionPlg, err = plugin.Open("login.so")
-		if nil != err {
-			service.VersionPlg = nil
-			return fmt.Errorf("load login so err: %v", err)
-		}
-	}
-
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
 	if err != nil {
 		return err
@@ -149,7 +140,6 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
 
 	w.Config.Session.Name = current.ConfigMap["session.name"]
-	w.Config.Session.Skip = current.ConfigMap["session.skip"]
 	w.Config.Session.Host = current.ConfigMap["session.host"]
 	w.Config.Session.Port = current.ConfigMap["session.port"]
 	w.Config.Session.Address = current.ConfigMap["session.address"]
