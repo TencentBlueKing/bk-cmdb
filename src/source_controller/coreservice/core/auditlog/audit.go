@@ -13,14 +13,15 @@
 package auditlog
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 
@@ -40,19 +41,19 @@ func New(dbProxy dal.RDB) core.AuditOperation {
 	}
 }
 
-func (m *auditManager) CreateAuditLog(ctx core.ContextParams, logs ...metadata.SaveAuditLogParams) error {
+func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.SaveAuditLogParams) error {
 
 	var logRows []interface{}
 	for _, content := range logs {
-		if instNotChange(ctx, content.Content) {
+		if instNotChange(kit.Ctx, content.Content) {
 			continue
 		}
 		row := &metadata.OperationLog{
-			OwnerID:       ctx.SupplierAccount,
+			OwnerID:       kit.SupplierAccount,
 			ApplicationID: content.BizID,
 			OpType:        int(content.OpType),
 			OpTarget:      content.Model,
-			User:          ctx.User,
+			User:          kit.User,
 			ExtKey:        content.ExtKey,
 			OpDesc:        content.OpDesc,
 			Content:       content.Content,
@@ -65,10 +66,10 @@ func (m *auditManager) CreateAuditLog(ctx core.ContextParams, logs ...metadata.S
 	if len(logRows) == 0 {
 		return nil
 	}
-	return m.dbProxy.Table(common.BKTableNameOperationLog).Insert(ctx, logRows)
+	return m.dbProxy.Table(common.BKTableNameOperationLog).Insert(kit.Ctx, logRows)
 }
 
-func (m *auditManager) SearchAuditLog(ctx core.ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error) {
+func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error) {
 	fields := param.Fields
 	condition := param.Condition
 	param.ConvTime()
@@ -76,15 +77,15 @@ func (m *auditManager) SearchAuditLog(ctx core.ContextParams, param metadata.Que
 	limit := param.Limit
 	fieldArr := strings.Split(fields, ",")
 	rows := make([]metadata.OperationLog, 0)
-	blog.V(5).Infof("Search table common.BKTableNameOperationLog with parameters: %+v, rid: %s", condition, ctx.ReqID)
-	err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Sort(param.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &rows)
+	blog.V(5).Infof("Search table common.BKTableNameOperationLog with parameters: %+v, rid: %s", condition, kit.Rid)
+	err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Sort(param.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(kit.Ctx, &rows)
 	if nil != err {
-		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, ctx.ReqID)
+		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
 		return nil, 0, err
 	}
-	cnt, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Count(ctx)
+	cnt, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, ctx.ReqID)
+		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
 		return nil, 0, err
 	}
 

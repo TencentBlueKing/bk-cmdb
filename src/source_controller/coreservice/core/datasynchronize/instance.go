@@ -14,8 +14,8 @@ package datasynchronize
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
 
@@ -37,111 +37,111 @@ func NewSynchronizeInstanceAdapter(s *metadata.SynchronizeParameter, dbProxy dal
 	}
 }
 
-func (inst *instance) PreSynchronizeFilter(ctx core.ContextParams) errors.CCError {
-	err := inst.preSynchronizeFilterBefore(ctx)
+func (inst *instance) PreSynchronizeFilter(kit *rest.Kit) errors.CCError {
+	err := inst.preSynchronizeFilterBefore(kit)
 	if err != nil {
 		return err
 	}
-	return inst.base.PreSynchronizeFilter(ctx)
+	return inst.base.PreSynchronizeFilter(kit)
 }
 
-func (inst *instance) GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
+func (inst *instance) GetErrorStringArr(kit *rest.Kit) ([]metadata.ExceptionResult, errors.CCError) {
 
 	if len(inst.base.errorArray) == 0 {
 		return nil, nil
 	}
 
-	return inst.base.GetErrorStringArr(ctx)
+	return inst.base.GetErrorStringArr(kit)
 
 }
 
-func (inst *instance) SaveSynchronize(ctx core.ContextParams) errors.CCError {
+func (inst *instance) SaveSynchronize(kit *rest.Kit) errors.CCError {
 	// Each model is written separately for subsequent expansion,
 	// each model may be processed differently.
 
 	switch inst.DataClassify {
 	case common.BKInnerObjIDApp:
-		return inst.saveSynchronizeAppInstance(ctx)
+		return inst.saveSynchronizeAppInstance(kit)
 	case common.BKInnerObjIDSet:
-		return inst.saveSynchronizeSetInstance(ctx)
+		return inst.saveSynchronizeSetInstance(kit)
 	case common.BKInnerObjIDModule:
-		return inst.saveSynchronizeModuleInstance(ctx)
+		return inst.saveSynchronizeModuleInstance(kit)
 	case common.BKInnerObjIDProc:
-		return inst.saveSynchronizeModuleInstance(ctx)
+		return inst.saveSynchronizeModuleInstance(kit)
 	case common.BKInnerObjIDPlat:
-		return inst.saveSynchronizePlatInstance(ctx)
+		return inst.saveSynchronizePlatInstance(kit)
 	case common.BKInnerObjIDHost:
-		return inst.saveSynchronizeHostInstance(ctx)
+		return inst.saveSynchronizeHostInstance(kit)
 	default:
-		return inst.saveSynchronizeObjectInstance(ctx)
+		return inst.saveSynchronizeObjectInstance(kit)
 	}
 }
 
-func (inst *instance) saveSynchronizeAppInstance(ctx core.ContextParams) errors.CCError {
+func (inst *instance) saveSynchronizeAppInstance(kit *rest.Kit) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	dbParam.tableName = common.BKTableNameBaseApp
 	dbParam.InstIDField = common.BKAppIDField
-	inst.base.saveSynchronize(ctx, dbParam)
+	inst.base.saveSynchronize(kit, dbParam)
 	return nil
 }
 
-func (inst *instance) saveSynchronizeSetInstance(ctx core.ContextParams) errors.CCError {
+func (inst *instance) saveSynchronizeSetInstance(kit *rest.Kit) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	dbParam.tableName = common.BKTableNameBaseSet
 	dbParam.InstIDField = common.BKSetIDField
-	inst.base.saveSynchronize(ctx, dbParam)
+	inst.base.saveSynchronize(kit, dbParam)
 	return nil
 }
 
-func (inst *instance) saveSynchronizeModuleInstance(ctx core.ContextParams) errors.CCError {
+func (inst *instance) saveSynchronizeModuleInstance(kit *rest.Kit) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	dbParam.tableName = common.BKTableNameBaseModule
 	dbParam.InstIDField = common.BKModuleIDField
-	inst.base.saveSynchronize(ctx, dbParam)
+	inst.base.saveSynchronize(kit, dbParam)
 	return nil
 }
 
-func (inst *instance) saveSynchronizeProcessInstance(ctx core.ContextParams) errors.CCError {
+func (inst *instance) saveSynchronizeProcessInstance(kit *rest.Kit) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	dbParam.tableName = common.BKTableNameBaseProcess
 	dbParam.InstIDField = common.BKProcIDField
-	inst.base.saveSynchronize(ctx, dbParam)
+	inst.base.saveSynchronize(kit, dbParam)
 	return nil
 }
 
-func (inst *instance) saveSynchronizePlatInstance(ctx core.ContextParams) errors.CCError {
+func (inst *instance) saveSynchronizePlatInstance(kit *rest.Kit) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	dbParam.tableName = common.BKTableNameBasePlat
 	dbParam.InstIDField = common.BKCloudIDField
-	inst.base.saveSynchronize(ctx, dbParam)
+	inst.base.saveSynchronize(kit, dbParam)
 	return nil
 }
 
-func (inst *instance) saveSynchronizeHostInstance(ctx core.ContextParams) errors.CCError {
+func (inst *instance) saveSynchronizeHostInstance(kit *rest.Kit) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	dbParam.tableName = common.BKTableNameBaseHost
 	dbParam.InstIDField = common.BKHostIDField
-	inst.base.saveSynchronize(ctx, dbParam)
+	inst.base.saveSynchronize(kit, dbParam)
 	return nil
 }
 
-func (inst *instance) saveSynchronizeObjectInstance(ctx core.ContextParams) errors.CCError {
+func (inst *instance) saveSynchronizeObjectInstance(kit *rest.Kit) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	dbParam.tableName = common.BKTableNameBaseInst
 	dbParam.InstIDField = common.BKInstIDField
-	inst.base.saveSynchronize(ctx, dbParam)
+	inst.base.saveSynchronize(kit, dbParam)
 	return nil
 }
 
-func (inst *instance) getErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
+func (inst *instance) getErrorStringArr(kit *rest.Kit) ([]metadata.ExceptionResult, errors.CCError) {
 
-	return inst.base.GetErrorStringArr(ctx)
+	return inst.base.GetErrorStringArr(kit)
 
 }
 
-func (inst *instance) preSynchronizeFilterBefore(ctx core.ContextParams) errors.CCError {
+func (inst *instance) preSynchronizeFilterBefore(kit *rest.Kit) errors.CCError {
 	return nil
 }
-func (inst *instance) preSynchronizeFilterEnd(ctx core.ContextParams) errors.CCError {
+func (inst *instance) preSynchronizeFilterEnd(kit *rest.Kit) errors.CCError {
 	return nil
 }

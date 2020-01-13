@@ -32,8 +32,7 @@ func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.Condition
 	query := &metadata.QueryCondition{
 		Condition: mapstr.NewFromMap(condc),
 		Fields:    []string{common.BKSetIDField},
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKSetIDField).ToSearchSortArr(),
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKSetIDField},
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, query)
@@ -62,7 +61,7 @@ func (lgc *Logics) GetSetMapByCond(ctx context.Context, fields []string, cond ma
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Fields:    fields,
-		SortArr:   metadata.NewSearchSortParse().String(common.BKSetIDField).ToSearchSortArr(),
+		Page:      metadata.BasePage{Sort: common.BKSetIDField},
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, query)

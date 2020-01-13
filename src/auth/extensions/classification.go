@@ -47,7 +47,7 @@ func (am *AuthManager) CollectClassificationByBusinessIDs(ctx context.Context, h
 	}
 	query := &metadata.QueryCondition{
 		Condition: cond,
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	result, err := am.clientSet.CoreService().Model().ReadModelClassification(ctx, header, query)
 	if err != nil {

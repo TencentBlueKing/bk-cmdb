@@ -19,48 +19,51 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
-
 	"github.com/rs/xid"
 )
 
-func (s *coreService) AddUserConfig(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) AddUserConfig(ctx *rest.Contexts) {
 	addQuery := new(meta.AddConfigQuery)
-	if err := data.MarshalJSONInto(addQuery); err != nil {
-		blog.Errorf("add user config failed, err: %v, rid: %s", err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(addQuery); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	if len(addQuery.Name) == 0 {
-		blog.Error("parameter Name is required, rid: %s", params.ReqID)
-		return nil, params.Error.CCErrorf(common.CCErrCommParamsNeedSet, "Name")
+		blog.Error("parameter Name is required, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "Name"))
+		return
 	}
 
 	if 0 >= addQuery.AppID {
-		blog.Error("add user config, parameter app id is required, rid: %s", params.ReqID)
-		return nil, params.Error.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+		blog.Error("add user config, parameter app id is required, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField))
+		return
 	}
 	if len(addQuery.CreateUser) == 0 {
-		blog.Error("add user config, parameter CreateUser is required, rid: %s", params.ReqID)
-		return nil, params.Error.CCErrorf(common.CCErrCommParamsNeedSet, "create_user")
+		blog.Error("add user config, parameter CreateUser is required, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "create_user"))
+		return
 	}
 
 	filter := common.KvMap{
 		"name":              addQuery.Name,
 		common.BKAppIDField: addQuery.AppID,
 	}
-	filter = util.SetModOwner(filter, params.SupplierAccount)
-	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(filter).Count(params.Context)
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
+	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(filter).Count(ctx.Kit.Ctx)
 	if nil != err {
-		blog.Errorf("add user config, query user api fail, error information is %s, params:%v, rid: %s", err.Error(), queryParams, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("add user config, query user api fail, error information is %s, filter: %v, rid: %s", err.Error(), filter, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 	if 0 != rowCount {
-		blog.Errorf("add user config, [%s] user api is exist, rid: %s", addQuery.Name, params.ReqID)
-		return nil, params.Error.CCErrorf(common.CCErrCommDuplicateItem, "")
+		blog.Errorf("add user config, [%s] user api is exist, rid: %s", addQuery.Name, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, ""))
+		return
 	}
 
 	id := xid.New().String()
@@ -71,47 +74,50 @@ func (s *coreService) AddUserConfig(params core.ContextParams, pathParams, query
 		ID:         id,
 		CreateTime: time.Now().UTC(),
 		CreateUser: addQuery.CreateUser,
-		OwnerID:    params.SupplierAccount,
+		OwnerID:    ctx.Kit.SupplierAccount,
 		ModifyUser: addQuery.CreateUser,
 		UpdateTime: time.Now().UTC(),
 	}
 
-	err = s.db.Table(common.BKTableNameUserAPI).Insert(params.Context, userQuery)
+	err = s.db.Table(common.BKTableNameUserAPI).Insert(ctx.Kit.Ctx, userQuery)
 	if err != nil {
-		blog.Errorf("add user config, create user query failed, query:%+v err:%v, rid: %s", userQuery, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBInsertFailed)
+		blog.Errorf("add user config, create user query failed, query:%+v err:%v, rid: %s", userQuery, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+		return
 	}
-
-	return meta.ID{ID: id}, nil
+	ctx.RespEntity(meta.ID{ID: id})
 }
 
-func (s *coreService) UpdateUserConfig(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	id := pathParams("id")
-	appID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
+func (s *coreService) UpdateUserConfig(ctx *rest.Contexts) {
+	id := ctx.Request.PathParameter("id")
+	appID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("update user[%s] config failed, invalid appid[%s], err: %v, rid: %s", id, common.BKAppIDField, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommParamsIsInvalid)
+		blog.Errorf("update user[%s] config failed, invalid appid[%s], err: %v, rid: %s", id, common.BKAppIDField, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		return
 	}
 
 	dat := new(meta.UserConfigMeta)
-	if err := data.MarshalJSONInto(dat); err != nil {
-		blog.Errorf("update user config failed, err: %v, rid: %s", err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(dat); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	filter := common.KvMap{
 		"id":                id,
 		common.BKAppIDField: appID,
 	}
-	filter = util.SetModOwner(filter, params.SupplierAccount)
-	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(filter).Count(params.Context)
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
+	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(filter).Count(ctx.Kit.Ctx)
 	if nil != err {
-		blog.Errorf("query user api fail, error information is %s, params:%v, rid: %s", err.Error(), params, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("query user api fail, error information is %s, ctx:%v, rid: %s", err.Error(), ctx, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 	if 1 != rowCount {
-		blog.V(5).Infof("update user api config not permissions or not exists, params:%v, rid: %s", params, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommNotFound)
+		blog.V(5).Infof("update user api config not permissions or not exists, ctx:%v, rid: %s", ctx, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
 	}
 
 	if len(dat.Name) != 0 {
@@ -120,65 +126,73 @@ func (s *coreService) UpdateUserConfig(params core.ContextParams, pathParams, qu
 			common.BKAppIDField: appID,
 			common.BKFieldID:    common.KvMap{common.BKDBNE: id},
 		}
-		dupParams = util.SetModOwner(dupParams, params.SupplierAccount)
-		rowCount, getErr := s.db.Table(common.BKTableNameUserAPI).Find(dupParams).Count(params.Context)
+		dupParams = util.SetModOwner(dupParams, ctx.Kit.SupplierAccount)
+		rowCount, getErr := s.db.Table(common.BKTableNameUserAPI).Find(dupParams).Count(ctx.Kit.Ctx)
 		if nil != getErr {
-			blog.Errorf("query user api validate name duplicate fail, error information is %s, params:%v, rid: %s", getErr.Error(), dupParams, params.ReqID)
-			return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+			blog.Errorf("query user api validate name duplicate fail, error information is %s, ctx:%v, rid: %s", getErr.Error(), dupParams, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+			return
 		}
 		if 0 < rowCount {
-			blog.V(5).Infof("host user api  name duplicate , params:%v, rid: %s", dupParams, params.ReqID)
-			return nil, params.Error.CCErrorf(common.CCErrCommDuplicateItem, "")
+			blog.V(5).Infof("host user api  name duplicate , ctx:%v, rid: %s", dupParams, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, ""))
+			return
 		}
 	}
 
 	dat.UpdateTime = time.Now().UTC()
-	dat.ModifyUser = util.GetUser(params.Header)
+	dat.ModifyUser = util.GetUser(ctx.Kit.Header)
 	dat.AppID = appID
-	dat.OwnerID = params.SupplierAccount
-	err = s.db.Table(common.BKTableNameUserAPI).Update(params.Context, filter, dat)
+	dat.OwnerID = ctx.Kit.SupplierAccount
+	err = s.db.Table(common.BKTableNameUserAPI).Update(ctx.Kit.Ctx, filter, dat)
 	if nil != err {
-		blog.Errorf("update user api fail, error information is %s, params:%v, rid: %s", err.Error(), params, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBUpdateFailed)
+		blog.Errorf("update user api fail, error information is %s, ctx:%v, rid: %s", err.Error(), ctx, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+		return
 	}
 
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) DeleteUserConfig(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	id := pathParams("id")
-	appID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
+func (s *coreService) DeleteUserConfig(ctx *rest.Contexts) {
+	id := ctx.Request.PathParameter("id")
+	appID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("update user[%s] config failed, invalid appid[%s], err: %v, rid: %s", id, common.BKAppIDField, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommParamsIsInvalid)
+		blog.Errorf("update user[%s] config failed, invalid appid[%s], err: %v, rid: %s", id, common.BKAppIDField, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		return
 	}
 
 	filter := common.KvMap{"id": id, common.BKAppIDField: appID}
-	filter = util.SetModOwner(filter, params.SupplierAccount)
-	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(filter).Count(params.Context)
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
+	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(filter).Count(ctx.Kit.Ctx)
 	if nil != err {
-		blog.Errorf("query user api fail, error information is %s, params:%v, rid: %s", err.Error(), filter, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("query user api fail, error information is %s, ctx:%v, rid: %s", err.Error(), filter, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 	if 1 != rowCount {
-		blog.V(5).Infof("host user api not permissions or not exists, params:%v, rid: %s", filter, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommNotFound)
+		blog.V(5).Infof("host user api not permissions or not exists, ctx:%v, rid: %s", filter, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
 	}
 
-	err = s.db.Table(common.BKTableNameUserAPI).Delete(params.Context, filter)
+	err = s.db.Table(common.BKTableNameUserAPI).Delete(ctx.Kit.Ctx, filter)
 	if nil != err {
-		blog.Errorf("delete user api fail, error information is %s, params:%v, rid: %s", err.Error(), filter, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBDeleteFailed)
+		blog.Errorf("delete user api fail, error information is %s, ctx:%v, rid: %s", err.Error(), filter, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
+		return
 	}
 
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) GetUserConfig(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) GetUserConfig(ctx *rest.Contexts) {
 	dat := new(meta.ObjQueryInput)
-	if err := data.MarshalJSONInto(dat); err != nil {
-		blog.Errorf("get user config failed with decode body, err: %v, rid: %s", err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(dat); err != nil {
+		blog.Errorf("get user config failed with decode body, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
 	condition := make(map[string]interface{})
@@ -199,101 +213,141 @@ func (s *coreService) GetUserConfig(params core.ContextParams, pathParams, query
 		sort = common.CreateTimeField
 	}
 
-	condition = util.SetModOwner(condition, params.SupplierAccount)
-	count, err := s.db.Table(common.BKTableNameUserAPI).Find(condition).Count(params.Context)
+	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
+	count, err := s.db.Table(common.BKTableNameUserAPI).Find(condition).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("get user api information failed, err:%v, rid: %s", err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("get user api information failed, err:%v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 	result := make([]interface{}, 0)
-	err = s.db.Table(common.BKTableNameUserAPI).Find(condition).Fields(fieldArr...).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(params.Context, &result)
+	err = s.db.Table(common.BKTableNameUserAPI).Find(condition).Fields(fieldArr...).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(ctx.Kit.Ctx, &result)
 	if err != nil {
-		blog.Errorf("get user api information failed, err: %v, rid: %s", err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("get user api information failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 
-	return meta.UserConfigResult{
+	ctx.RespEntity(meta.UserConfigResult{
 		Count: count,
 		Info:  result,
-	}, nil
+	})
 }
 
-func (s *coreService) UserConfigDetail(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	id := pathParams("id")
-	appID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
+func (s *coreService) UserConfigDetail(ctx *rest.Contexts) {
+	id := ctx.Request.PathParameter("id")
+	appID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("update user[%s] config failed, invalid appid[%s], err: %v, rid: %s", id, common.BKAppIDField, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommParamsIsInvalid)
+		blog.Errorf("update user[%s] config failed, invalid appid[%s], err: %v, rid: %s", id, common.BKAppIDField, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		return
 	}
 
 	filter := common.KvMap{
 		"id":                id,
 		common.BKAppIDField: appID,
 	}
-	filter = util.SetModOwner(filter, params.SupplierAccount)
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	result := new(meta.UserConfigMeta)
-	err = s.db.Table(common.BKTableNameUserAPI).Find(filter).One(params.Context, result)
+	err = s.db.Table(common.BKTableNameUserAPI).Find(filter).One(ctx.Kit.Ctx, result)
 	if err != nil && !s.db.IsNotFoundError(err) {
-		blog.Errorf("get user api information error,input:%v error:%v, rid: %s", id, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("get user api information error,input:%v error:%v, rid: %s", id, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 
-	return result, nil
+	ctx.RespEntity(result)
 
 }
 
-func (s *coreService) AddUserCustom(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) AddUserCustom(ctx *rest.Contexts) {
 	ID := xid.New()
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
 	data["id"] = ID.String()
-	data["bk_user"] = pathParams("bk_user")
-	data = util.SetModOwner(data, params.SupplierAccount)
-	err := s.db.Table(common.BKTableNameUserCustom).Insert(params.Context, data)
+	data["bk_user"] = ctx.Kit.User
+	data = util.SetModOwner(data, ctx.Kit.SupplierAccount)
+	err := s.db.Table(common.BKTableNameUserCustom).Insert(ctx.Kit.Ctx, data)
 	if nil != err {
-		blog.Errorf("Create  user custom fail, err: %v, params:%v, rid: %s", err, data, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCreateUserCustom)
+		blog.Errorf("Create  user custom fail, err: %v, ctx:%v, rid: %s", err, data, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCreateUserCustom))
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) UpdateUserCustomByID(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) UpdateUserCustomByID(ctx *rest.Contexts) {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
 	conditons := make(map[string]interface{})
-	conditons["id"] = pathParams("id")
-	conditons["bk_user"] = pathParams("bk_user")
-	conditons = util.SetModOwner(conditons, params.SupplierAccount)
-	err := s.db.Table(common.BKTableNameUserCustom).Update(params.Context, conditons, data)
+	conditons["id"] = ctx.Request.PathParameter("id")
+	conditons["bk_user"] = ctx.Request.PathParameter("bk_user")
+	conditons = util.SetModOwner(conditons, ctx.Kit.SupplierAccount)
+	err := s.db.Table(common.BKTableNameUserCustom).Update(ctx.Kit.Ctx, conditons, data)
 	if nil != err {
-		blog.Errorf("update  user custom failed, err: %v, data:%v, rid: %s", err, data, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBUpdateFailed)
+		blog.Errorf("update  user custom failed, err: %v, data:%v, rid: %s", err, data, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) GetUserCustomByUser(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) GetUserCustomByUser(ctx *rest.Contexts) {
 	conds := make(map[string]interface{})
-	conds["bk_user"] = pathParams("bk_user")
-	conds = util.SetModOwner(conds, params.SupplierAccount)
+	conds["bk_user"] = ctx.Kit.User
+	conds = util.SetModOwner(conds, ctx.Kit.SupplierAccount)
 
 	result := make(map[string]interface{})
-	err := s.db.Table(common.BKTableNameUserCustom).Find(conds).One(params.Context, &result)
+	err := s.db.Table(common.BKTableNameUserCustom).Find(conds).One(ctx.Kit.Ctx, &result)
 	if nil != err && !s.db.IsNotFoundError(err) {
-		blog.Errorf("add  user custom failed, err: %v, params:%v, rid: %s", err, conds, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("add  user custom failed, err: %v, ctx:%v, rid: %s", err, conds, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) GetDefaultUserCustom(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// GetDefaultUserCustom  find user custom set table heaher for any object
+func (s *coreService) GetDefaultUserCustom(ctx *rest.Contexts) {
 	conds := make(map[string]interface{})
-	conds["is_default"] = 1
-	conds = util.SetModOwner(conds, params.SupplierAccount)
+	conds[common.BKDefaultField] = 1
+	conds = util.SetModOwner(conds, ctx.Kit.SupplierAccount)
 
 	result := make(map[string]interface{})
-	err := s.db.Table(common.BKTableNameUserCustom).Find(conds).One(params.Context, &result)
+	err := s.db.Table(common.BKTableNameUserCustom).Find(conds).One(ctx.Kit.Ctx, &result)
 	if nil != err && !s.db.IsNotFoundError(err) {
-		blog.Errorf("get default user custom fail, err: %v, params:%v, rid: %s, rid: %s", err, conds, params.ReqID, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("get default user custom fail, err: %v, ctx:%v, rid: %s, rid: %s", err, conds, ctx.Kit.Rid, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 
-	return result, nil
+	ctx.RespEntity(result)
+}
+
+// UpdatDefaultUserCustom update user custom set table header for any object
+func (s *coreService) UpdatDefaultUserCustom(ctx *rest.Contexts) {
+	conditons := make(map[string]interface{})
+	conditons[common.BKDefaultField] = 1
+	conditons = util.SetModOwner(conditons, ctx.Kit.SupplierAccount)
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	data[common.ModifierField] = ctx.Kit.User
+	data[common.LastTimeField] = util.GetCurrentTimePtr()
+	err := s.db.Table(common.BKTableNameUserCustom).Upsert(ctx.Kit.Ctx, conditons, data)
+	if nil != err {
+		blog.Errorf("update  default custom failed, err: %v, data:%v, rid: %s", err, data, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+		return
+	}
+	ctx.RespEntity(nil)
 }

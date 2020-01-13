@@ -242,8 +242,7 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 
 	opt := &metadata.QueryCondition{
 		Condition: fCond,
-		Limit:     metadata.SearchLimit{Limit: limits, Offset: start},
-		SortArr:   metadata.NewSearchSortParse().String(sort).ToSearchSortArr(),
+		Page:      metadata.BasePage{Limit: int(limits), Start: int(start), Sort: sort},
 	}
 
 	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, opt)
