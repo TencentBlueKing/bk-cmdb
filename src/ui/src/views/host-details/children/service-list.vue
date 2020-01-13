@@ -234,17 +234,18 @@
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
                         || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
                     const data = await this.$store.dispatch('serviceInstance/getHostServiceInstances', {
-                        params: this.$injectMetadata({
+                        params: {
                             page: {
                                 start: (this.pagination.current - 1) * this.pagination.size,
                                 limit: this.pagination.size
                             },
                             bk_host_id: this.host.bk_host_id,
+                            bk_biz_id: this.info.biz[0].bk_biz_id,
                             search_key: searchKey
                                 ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
                                 : '',
                             selectors: this.getSelectorParams()
-                        }, { injectBizId: true })
+                        }
                     })
                     if (data.count && !data.info.length) {
                         this.pagination.current -= 1
@@ -305,7 +306,9 @@
             },
             async getHistoryLabel () {
                 const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
-                    params: this.$injectMetadata({}, { injectBizId: true }),
+                    params: {
+                        bk_biz_id: this.info.biz[0].bk_biz_id
+                    },
                     config: {
                         requestId: 'getHistoryLabel',
                         cancelPrevious: true
