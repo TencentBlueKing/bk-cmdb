@@ -80,6 +80,9 @@ func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]s
 	resp = &metadata.EsbListUserResponse{}
 	h.Set("Accept", "application/json")
 
+	if params == nil {
+		params = make(map[string]string)
+	}
 	if _, ok := params["fields"]; ok == false {
 		params["fields"] = "username,id,display_name"
 	}
