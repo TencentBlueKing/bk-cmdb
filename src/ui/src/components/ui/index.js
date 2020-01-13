@@ -32,6 +32,7 @@ import tableEmpty from './table-empty/table-empty.vue'
 import list from './form/list.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
 import user from './user/user.vue'
+import textButton from './button/text-button.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -67,7 +68,8 @@ const install = (Vue, opts = {}) => {
         tableEmpty,
         list,
         leaveConfirm,
-        user
+        user,
+        textButton
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -107,5 +109,6 @@ export default {
     auth,
     tableEmpty,
     list,
-    leaveConfirm
+    leaveConfirm,
+    textButton
 }
