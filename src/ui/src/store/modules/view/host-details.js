@@ -49,7 +49,10 @@ const getters = {
     source: state => state.association.source,
     target: state => state.association.target,
     sourceInstances: state => state.instances.source,
-    targetInstances: state => state.instances.target
+    targetInstances: state => state.instances.target,
+    isBusinessHost: state => {
+        return (state.info.biz || []).some(business => business.default === 0)
+    }
 }
 
 const mutations = {
