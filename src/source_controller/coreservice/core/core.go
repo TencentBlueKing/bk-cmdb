@@ -154,12 +154,6 @@ type HostOperation interface {
 	UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError
 	QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLockRequest) ([]metadata.HostLockData, errors.CCError)
 
-	// cloud sync
-	CreateCloudSyncTask(kit *rest.Kit, input *metadata.CloudTaskList) (uint64, error)
-	CreateResourceConfirm(kit *rest.Kit, input *metadata.ResourceConfirm) (uint64, error)
-	CreateCloudSyncHistory(kit *rest.Kit, input *metadata.CloudHistory) (uint64, error)
-	CreateConfirmHistory(kit *rest.Kit, input mapstr.MapStr) (uint64, error)
-
 	// host search
 	ListHosts(kit *rest.Kit, input metadata.ListHosts) (*metadata.ListHostResult, error)
 }

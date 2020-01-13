@@ -211,10 +211,10 @@ const (
 	// one argument: maxValue
 	CCErrExceedMaxOperationRecordsAtOnce = 1199081
 
-	CCErrCommListAuthorizedResourceFromIAMFailed = 1199082
-    CCErrCommModifyFieldForbidden                            = 1199083
-    CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
-	CCErrCommUnexpectedFieldType   = 1199085
+	CCErrCommListAuthorizedResourceFromIAMFailed             = 1199082
+	CCErrCommModifyFieldForbidden                            = 1199083
+	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
+	CCErrCommUnexpectedFieldType                             = 1199085
 
 	CCErrCommGetBusinessIDByHostIDFailed = 1199086
 
@@ -625,16 +625,6 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
-
-	CCErrCloudSyncCreateFail        = 1110031
-	CCErrCloudHistoryCreateFail     = 1110032
-	CCErrCloudConfirmCreateFail     = 1110033
-	CCErrCloudGetConfirmFail        = 1110034
-	CCErrCloudAddConfirmHistoryFail = 1110035
-	CCErrCloudGetTaskFail           = 1110036
-	CCErrCloudGetConfirmHistoryFail = 1110037
-	CCErrCloudTaskNameAlreadyExist  = 1110038
-	CCErrCloudSyncStartFail         = 1110039
 
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFailed       = 1110040

@@ -46,4 +46,3 @@ func (s *Server) onConfigUpdate(previous, current cc.ProcessConfig) {
 		s.config.Transaction.TransactionLifetimeSecond = current.ConfigMap["transaction.transactionLifetimeSecond"]
 	}
 }
-

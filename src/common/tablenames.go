@@ -80,12 +80,6 @@ const (
 
 	BKTableNameHostLock = "cc_HostLock"
 
-	// Cloud sync tables
-	BKTableNameCloudTask              = "cc_CloudTask"
-	BKTableNameCloudSyncHistory       = "cc_CloudSyncHistory"
-	BKTableNameCloudResourceConfirm   = "cc_CloudResourceConfirm"
-	BKTableNameResourceConfirmHistory = "cc_ResourceConfirmHistory"
-
 	// Operation tables
 	BKTableNameChartConfig   = "cc_ChartConfig"
 	BKTableNameChartPosition = "cc_ChartPosition"
@@ -147,10 +141,6 @@ var AllTables = []string{
 	BKTableNameTransaction,
 	BKTableNameIDgenerator,
 	BKTableNameHostLock,
-	BKTableNameCloudTask,
-	BKTableNameCloudSyncHistory,
-	BKTableNameCloudResourceConfirm,
-	BKTableNameResourceConfirmHistory,
 	BKTableNameObjUnique,
 	BKTableNameAsstDes,
 	BKTableNameServiceCategory,
