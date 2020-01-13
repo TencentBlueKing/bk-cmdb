@@ -15,7 +15,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -160,6 +159,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	language := util.GetLanguage(kit.Header)
 	lang := m.language.CreateDefaultCCLanguageIf(language)
 	if attribute.PropertyID != "" {
+		attribute.PropertyID = strings.TrimSpace(attribute.PropertyID)
 		if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
 		}
@@ -168,44 +168,23 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 			blog.Errorf("attribute.PropertyID:%s not SatisfyMongoFieldLimit", attribute.PropertyID)
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
 		}
-
-		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, attribute.PropertyID)
-		if nil != err || !match {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
-		}
 	}
 
-	if attribute.PropertyName != "" {
-		if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
-		}
-
-		attribute.PropertyName = strings.TrimSpace(attribute.PropertyName)
-		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.PropertyName)
-		if nil != err || !match {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyName)
-		}
+	if attribute.PropertyName = strings.TrimSpace(attribute.PropertyName); common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
 	}
 
 	if attribute.Placeholder != "" {
+		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
 		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
-		}
-		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
-		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
-		if nil != err || !match {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHoler)
 		}
 	}
 
 	if attribute.Unit != "" {
+		attribute.Unit = strings.TrimSpace(attribute.Unit)
 		if common.AttributeUnitMaxLength < utf8.RuneCountInString(attribute.Unit) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_uint"), common.AttributeUnitMaxLength)
-		}
-		attribute.Unit = strings.TrimSpace(attribute.Unit)
-		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.Unit)
-		if nil != err || !match {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldUnit)
 		}
 	}
 

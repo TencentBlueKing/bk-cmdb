@@ -15,6 +15,7 @@ package hostapplyrule
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -250,6 +251,10 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		}
 
 		// validate property value before update to host
+		if value, ok := firstValue.(string); ok {
+			firstValue = strings.TrimSpace(value)
+			targetRules[0].PropertyValue = firstValue
+		}
 		rawErr := attribute.Validate(kit.Ctx, firstValue, propertyIDField)
 		if rawErr.ErrCode != 0 {
 			err := rawErr.ToCCError(kit.CCError)
