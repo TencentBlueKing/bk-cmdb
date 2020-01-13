@@ -164,11 +164,16 @@ func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) 
 func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig) {
 	var err error
 
-	cfg := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-	o.Config = &options.Config{
-		Mongo: cfg,
-	}
+	o.Config = &options.Config{}
 	o.Config.ConfigMap = current.ConfigMap
+	o.Config.Timer, err = o.ParseTimerConfigFromKV("timer", current.ConfigMap)
+	if err != nil {
+		blog.Errorf("parse timer config failed, err: %v", err)
+		return
+	}
+
+	cfg := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+	o.Config.Mongo = cfg
 
 	o.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 	if err != nil {
@@ -176,11 +181,6 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 		return
 	}
 
-	o.Config.Timer, err = o.ParseTimerConfigFromKV("timer", current.ConfigMap)
-	if err != nil {
-		blog.Errorf("parse timer config failed, err: %v", err)
-		return
-	}
 }
 
 func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
@@ -190,13 +190,13 @@ func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[st
 	specStr, ok := configMap[prefix+".spec"]
 	if !ok {
 		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer, set timer-spec default value: 00:30")
-		return defaultSpec, goErr.New("missing 'spec' configuration for timer")
+		return defaultSpec, nil
 	}
 
 	spec, err := parseTimerConfig(specStr)
 	if err != nil || spec == "" {
 		blog.Errorf("parse timer config failed, set timer-spec default value: 00:30, err: %v", err)
-		return defaultSpec, err
+		return defaultSpec, nil
 	}
 
 	return spec, nil

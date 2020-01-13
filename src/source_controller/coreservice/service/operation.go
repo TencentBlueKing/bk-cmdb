@@ -221,6 +221,7 @@ func (s *coreService) TimerFreshData(params core.ContextParams, pathParams, quer
 	err = s.core.StatisticOperation().TimerFreshData(params)
 	if err != nil {
 		blog.Errorf("TimerFreshData fail, err: %v, rid: %v", err, params.ReqID)
+		return false, err
 	}
 
 	return true, nil

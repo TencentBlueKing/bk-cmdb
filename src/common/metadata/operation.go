@@ -56,13 +56,15 @@ type AggregateIntResponse struct {
 	Data     []IntIDCount `json:"data"`
 }
 
+// IntIDCount int类型字段做mongoDB聚合时使用
 type IntIDCount struct {
-	Id    int64 `json:"id" bson:"_id"`
+	ID    int64 `json:"id" bson:"_id"`
 	Count int64 `json:"count" bson:"count"`
 }
 
+// IntIDArrayCount int类型字段做mongoDB聚合，且结果为数组时使用
 type IntIDArrayCount struct {
-	Id    int64   `json:"id" bson:"_id"`
+	ID    int64   `json:"id" bson:"_id"`
 	Count []int64 `json:"count" bson:"count"`
 }
 
@@ -71,13 +73,14 @@ type AggregateStringResponse struct {
 	Data     []StringIDCount `json:"data"`
 }
 
+// StringIDCount string类型字段做mongoDB聚合时使用
 type StringIDCount struct {
-	Id    string `json:"id" bson:"_id"`
+	ID    string `json:"id" bson:"_id"`
 	Count int64  `json:"count" bson:"count"`
 }
 
 type UpdateInstCount struct {
-	Id    UpdateID `json:"id" bson:"_id"`
+	ID    UpdateID `json:"id" bson:"_id"`
 	Count int64    `json:"count" bson:"count"`
 }
 
@@ -87,20 +90,10 @@ type UpdateID struct {
 }
 
 type HostChangeChartData struct {
-	ReportType string                    `json:"report_type" bson:"report_type"`
-	Data       map[string][]BizHostChart `json:"data" bson:"data"`
-	OwnerID    string                    `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	LastTime   Time                      `json:"last_time" bson:"last_time"`
-}
-
-type BizHostChart struct {
-	Id    Time  `json:"id" bson:"id"`
-	Count int64 `json:"count" bson:"count"`
-}
-
-type IDStringCountInt64 struct {
-	Id    string `json:"id" bson:"id"`
-	Count int64  `json:"count" bson:"count"`
+	ReportType string          `json:"report_type" bson:"report_type"`
+	Data       []StringIDCount `json:"data" bson:"data"`
+	OwnerID    string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	CreateTime string          `json:"create_time" bson:"create_time"`
 }
 
 type ChartData struct {
@@ -108,6 +101,13 @@ type ChartData struct {
 	Data       interface{} `json:"data" data:"data"`
 	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	LastTime   time.Time   `json:"last_time" bson:"last_time"`
+}
+
+type ModelInstChartData struct {
+	ReportType string          `json:"report_type" bson:"report_type"`
+	Data       []StringIDCount `json:"data" data:"data"`
+	OwnerID    string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime   time.Time       `json:"last_time" bson:"last_time"`
 }
 
 type SearchChartResponse struct {
@@ -141,7 +141,7 @@ type CloudMapping struct {
 type AttributesOptions []AttributesOption
 
 type AttributesOption struct {
-	Id        string `json:"id" bson:"id"`
+	ID        string `json:"id" bson:"id"`
 	Name      string `json:"name" bson:"name"`
 	Type      string `json:"type" bson:"type"`
 	IsDefault string `json:"is_default" bson:"is_default"`
