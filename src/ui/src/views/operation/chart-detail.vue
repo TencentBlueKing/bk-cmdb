@@ -266,7 +266,7 @@
             else this.maxNum = 25
             this.initTitle()
             this.chartType = this.chartData.report_type === 'custom'
-            this.getDemList(this.chartData.bk_obj_id)
+            this.chartData.bk_obj_id && this.getDemList(this.chartData.bk_obj_id)
             if (this.chartType && this.chartData.bk_obj_id !== 'host') this.getStaList()
         },
         methods: {

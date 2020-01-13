@@ -14,7 +14,7 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, data
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -28,7 +28,7 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, data
 	err = p.client.Delete().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -42,7 +42,7 @@ func (p *process) SearchProcessTemplate(ctx context.Context, h http.Header, data
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -56,7 +56,7 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, data
 	err = p.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

@@ -216,6 +216,7 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 	cnt, err = m.checkUpdate(ctx, data, cond)
 	if err != nil {
+		blog.ErrorJSON("checkUpdate error. data:%s, cond:%s, rid:%s", data, cond, ctx.ReqID)
 		return cnt, err
 	}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
@@ -608,10 +609,11 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	for _, dbAttribute := range dbAttributeArr {
 		err = m.checkUnique(ctx, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName, attribute.Metadata)
 		if err != nil {
-			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, ctx.ReqID)
+			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), dbAttribute, ctx.ReqID)
 			return changeRow, err
 		}
 		if err = m.checkChangeField(ctx, dbAttribute, data); err != nil {
+			blog.ErrorJSON("save attribute check change unique field err:%s, input:%s, rid:%s", err.Error(), dbAttribute, ctx.ReqID)
 			return changeRow, err
 		}
 	}
@@ -729,7 +731,6 @@ func (m *modelAttribute) buildUpdateAttrIndexReturn(ctx core.ContextParams, objI
 }
 
 func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute metadata.Attribute) (int64, error) {
-
 	opt := make(map[string]interface{})
 	opt[common.BKObjIDField] = attribute.ObjectID
 	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
@@ -743,12 +744,15 @@ func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute meta
 		return 0, nil
 	}
 
-	attr := metadata.Attribute{}
+	attrs := make([]metadata.Attribute, 0)
 	sortCond := "-bk_property_index"
-	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).One(ctx, &attr); err != nil {
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(ctx, &attrs); err != nil {
 		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", ctx.ReqID, err)
 		return 0, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 
-	return attr.PropertyIndex + 1, nil
+	if len(attrs) <= 0 {
+		return 0, nil
+	}
+	return attrs[0].PropertyIndex + 1, nil
 }

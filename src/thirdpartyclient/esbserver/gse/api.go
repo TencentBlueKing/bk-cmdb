@@ -34,7 +34,7 @@ func (p *gse) OperateProcess(ctx context.Context, h http.Header, data *metadata.
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -57,7 +57,7 @@ func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskID 
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -79,7 +79,7 @@ func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data *metadata
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -102,7 +102,7 @@ func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data *metadat
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -125,7 +125,7 @@ func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header, data *metad
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
