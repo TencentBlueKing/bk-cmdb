@@ -36,7 +36,7 @@ func (l *label) AddLabel(ctx context.Context, h http.Header, tableName string, o
 	err := l.client.Post().
 		WithContext(ctx).
 		Body(body).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)
@@ -64,7 +64,7 @@ func (l *label) RemoveLabel(ctx context.Context, h http.Header, tableName string
 	err := l.client.Delete().
 		Body(body).
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(ret)

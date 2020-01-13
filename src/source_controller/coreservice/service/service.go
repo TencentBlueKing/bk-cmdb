@@ -44,8 +44,8 @@ import (
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/source_controller/coreservice/core/operation"
 	"configcenter/src/source_controller/coreservice/core/process"
-	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
+	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/remote"
@@ -116,7 +116,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	instance := instances.New(db, s, cache)
 	hostApplyRuleCore := hostapplyrule.New(db, instance)
 	s.core = core.New(
-		model.New(db, s),
+		model.New(db, s, cache),
 		instance,
 		association.New(db, s),
 		datasynchronize.New(db, s),

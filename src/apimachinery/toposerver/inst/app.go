@@ -14,7 +14,6 @@ package inst
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -24,12 +23,12 @@ import (
 
 func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header, params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
-	subPath := fmt.Sprintf("/app/%s", ownerID)
+	subPath := "/app/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -38,12 +37,12 @@ func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.H
 
 func (t *instanceClient) DeleteApp(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/app/%s/%s", ownerID, appID)
+	subPath := "/app/%s/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -52,11 +51,11 @@ func (t *instanceClient) DeleteApp(ctx context.Context, ownerID string, appID st
 
 func (t *instanceClient) UpdateApp(ctx context.Context, ownerID string, appID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/app/%s/%s", ownerID, appID)
+	subPath := "/app/%s/%s"
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -65,11 +64,11 @@ func (t *instanceClient) UpdateApp(ctx context.Context, ownerID string, appID st
 
 func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, appID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/app/%s/%s/%s", flag, ownerID, appID)
+	subPath := "/app/%s/%s/%s"
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, flag, ownerID, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -78,11 +77,11 @@ func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string
 
 func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := fmt.Sprintf("/app/search/%s", ownerID)
+	subPath := "/app/search/%s"
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -91,10 +90,10 @@ func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.H
 
 func (t *instanceClient) GetAppBasicInfo(ctx context.Context, h http.Header, bizID int64) (resp *metadata.AppBasicInfoResult, err error) {
 	resp = new(metadata.AppBasicInfoResult)
-	subPath := fmt.Sprintf("/app/%d/basic_info", bizID)
+	subPath := "/app/%d/basic_info"
 	err = t.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath, bizID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -103,11 +102,11 @@ func (t *instanceClient) GetAppBasicInfo(ctx context.Context, h http.Header, biz
 
 func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h http.Header) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := fmt.Sprintf("/app/default/%s/search", ownerID)
+	subPath := "/app/default/%s/search"
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -116,11 +115,11 @@ func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h ht
 
 func (t *instanceClient) CreateDefaultApp(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
-	subPath := fmt.Sprintf("/app/default/%s", ownerID)
+	subPath := "/app/default/%s"
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

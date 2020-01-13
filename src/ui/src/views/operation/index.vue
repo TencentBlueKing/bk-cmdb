@@ -120,7 +120,7 @@
                         text
                         v-bk-tooltips="$t('添加实例图表')"
                         :disabled="disabled"
-                        @click="openNew('add', 'inst')">
+                        @click="openNew('add', '')">
                         <i class="icon icon-cc-add-line"></i>
                     </bk-button>
                 </cmdb-auth>
@@ -149,7 +149,7 @@
                                 v-else
                                 @click="moveChart('inst', 'down', key, instData.disList)">
                             </i>
-                            <i class="icon icon-cc-edit-shape" @click="openNew('edit', 'inst', item, key)"></i>
+                            <i class="icon icon-cc-edit-shape" @click="openNew('edit', item.bk_obj_id, item, key)"></i>
                             <i class="icon icon-cc-tips-close"
                                 @click="deleteChart('inst', key, instData.disList, item)"></i>
                         </div>
