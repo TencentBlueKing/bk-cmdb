@@ -292,13 +292,18 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
 
 	sheet.Col(0).Width = 18
-	sheet.Col(0).SetStyle(colStyle)
 	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType, common.ExcelFirstColumnFieldID, common.ExcelFirstColumnInstData}
 	for index, field := range firstColFields {
 		cellName := sheet.Cell(index, 0)
 		fieldName := defLang.Language(field)
 		cellName.Value = fieldName
 		cellName.SetStyle(cellStyle)
+	}
+
+	// 给第一列剩下的空格设置颜色
+	for i := 3; i < 10000; i++ {
+		cellName := sheet.Cell(i, 0)
+		cellName.SetStyle(colStyle)
 	}
 
 	for _, field := range fields {
