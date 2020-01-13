@@ -82,14 +82,7 @@ func (m *associationKind) save(kit *rest.Kit, associationKind metadata.Associati
 func (m *associationKind) searchAssociationKind(kit *rest.Kit, inputParam metadata.QueryCondition) (results []metadata.AssociationKind, err error) {
 	results = []metadata.AssociationKind{}
 	instHandler := m.dbProxy.Table(common.BKTableNameAsstDes).Find(inputParam.Condition).Fields(inputParam.Fields...)
-	for _, sort := range inputParam.SortArr {
-		fileld := sort.Field
-		if sort.IsDsc {
-			fileld = "-" + fileld
-		}
-		instHandler = instHandler.Sort(fileld)
-	}
-	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(kit.Ctx, &results)
+	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).All(kit.Ctx, &results)
 
 	return results, err
 }

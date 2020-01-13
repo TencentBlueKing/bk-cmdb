@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -185,15 +184,6 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 }
 
 func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
-	if nil != err {
-		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, kit.Rid)
-		return &metadata.QueryResult{}, err
-	}
-	ownerIDArr := []string{kit.SupplierAccount, common.BKDefaultOwnerID}
-	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
-	inputParam.Condition = condition.ToMapStr()
-
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, kit.Rid)
 	instItems, err := m.searchInstance(kit, objID, inputParam)
 	if nil != err {
