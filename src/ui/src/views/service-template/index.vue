@@ -45,7 +45,8 @@
                     clearable
                     font-size="medium"
                     v-model.trim="filter.templateName"
-                    @enter="getTableData(true)">
+                    @enter="getTableData(true)"
+                    @clear="handlePageChange(1)">
                 </bk-input>
             </div>
         </div>
@@ -168,6 +169,9 @@
             },
             emptyText () {
                 return this.filter.mainClassification ? this.$t('没有二级分类') : this.$t('请选择一级分类')
+            },
+            hasFilter () {
+                return Object.values(this.filter).some(value => !!value)
             }
         },
         async created () {
@@ -199,13 +203,9 @@
                         const secondaryCategoryName = secondaryCategory ? secondaryCategory['name'] : '--'
                         const mainCategoryName = mainCategory ? mainCategory['name'] : '--'
                         result['service_category'] = `${mainCategoryName} / ${secondaryCategoryName}`
-
-                        if (event) {
-                            this.table.stuff.type = 'search'
-                        }
-
                         return result
                     })
+                    this.table.stuff.type = this.hasFilter ? 'search' : 'default'
                     this.table.list = this.table.allList
                 } catch ({ permission }) {
                     if (permission) {

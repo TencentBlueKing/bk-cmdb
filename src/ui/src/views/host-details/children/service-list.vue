@@ -72,10 +72,14 @@
             </service-instance-table>
         </div>
         <bk-table v-if="!instances.length" :data="[]" class="mb10">
-            <div slot="empty" class="empty-text">
-                <img src="../../../assets/images/empty-content.png" alt="">
-                <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
-            </div>
+            <cmdb-table-empty
+                slot="empty"
+                :stuff="emptyStuff">
+                <div class="empty-text">
+                    <img src="../../../assets/images/empty-content.png" alt="">
+                    <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
+                </div>
+            </cmdb-table-empty>
         </bk-table>
         <bk-pagination v-if="instances.length"
             class="pagination"
@@ -164,6 +168,12 @@
             ...mapState('hostDetails', ['info']),
             host () {
                 return this.info.host || {}
+            },
+            emptyStuff () {
+                return {
+                    type: this.searchSelectData.length ? 'search' : 'default',
+                    payload: {}
+                }
             }
         },
         watch: {
