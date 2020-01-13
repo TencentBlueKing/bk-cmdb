@@ -43,6 +43,7 @@
 ## Getting started
 * [下载与编译](docs/overview/source_compile.md)
 * [安装部署](docs/overview/installation.md)
+* [版本升级说明](docs/wiki/db_upgrade.md)
 * [API使用说明见这里](docs/apidoc/)
 * [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
 
