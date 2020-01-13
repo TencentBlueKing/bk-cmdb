@@ -46,11 +46,18 @@ export default new Vue({
             this.requestList = []
             this.updateList = []
             try {
-                const data = await $http.get(`${window.API_HOST}user/detail?exact_lookups=${requestList.join(',')}`, {
+                const users = await $http.get(`${window.API_HOST}user/list`, {
+                    params: {
+                        exact_lookups: requestList.join(',')
+                    },
                     globalError: false
                 })
-                data.users.forEach(user => {
-                    this.userMap[user.english_name] = `${user.english_name}(${user.chinese_name})`
+                users.forEach(user => {
+                    if (user.chinese_name) {
+                        this.userMap[user.english_name] = `${user.english_name}(${user.chinese_name})`
+                    } else {
+                        this.userMap[user.english_name] = user.english_name
+                    }
                 })
             } catch (_) {}
             for (const instance of updateList) {

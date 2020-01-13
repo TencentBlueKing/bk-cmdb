@@ -23,7 +23,8 @@
                     clearable
                     right-icon="icon-search"
                     v-model="searchName"
-                    @enter="handleFilterTemplate">
+                    @enter="handleFilterTemplate"
+                    @clear="handleClearFilter">
                 </bk-input>
             </div>
         </div>
@@ -201,8 +202,11 @@
                 this.list = this.searchName
                     ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
                     : originList
-
-                this.table.stuff.type = 'search'
+                this.table.stuff.type = this.searchName ? 'search' : 'default'
+            },
+            handleClearFilter () {
+                this.list = this.originList
+                this.table.stuff.type = 'default'
             },
             handleSelectable (row) {
                 return !row.set_instance_count
