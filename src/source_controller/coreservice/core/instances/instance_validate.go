@@ -230,7 +230,7 @@ func getHostRelatedBizID(ctx core.ContextParams, dbProxy dal.DB, hostID int64) (
 	filter := map[string]interface{}{
 		common.BKHostIDField: hostID,
 	}
-	hostConfig := make([]metadata.HostModuleConfig, 0)
+	hostConfig := make([]metadata.ModuleHost, 0)
 	if err := dbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).All(ctx.Context, &hostConfig); err != nil {
 		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
 		return 0, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
@@ -239,9 +239,9 @@ func getHostRelatedBizID(ctx core.ContextParams, dbProxy dal.DB, hostID int64) (
 		blog.Errorf("host module config empty, hostID: %d, rid: %s", hostID, rid)
 		return 0, ctx.Error.CCErrorf(common.CCErrHostModuleConfigFailed, hostID)
 	}
-	bizID = hostConfig[0].ApplicationID
+	bizID = hostConfig[0].AppID
 	for _, item := range hostConfig {
-		if item.ApplicationID != bizID {
+		if item.AppID != bizID {
 			blog.Errorf("getHostRelatedBizID failed, get multiple bizID, hostID: %d, hostConfig: %+v, rid: %s", hostID, hostConfig, rid)
 			return 0, ctx.Error.CCErrorf(common.CCErrCommGetMultipleObject)
 		}
