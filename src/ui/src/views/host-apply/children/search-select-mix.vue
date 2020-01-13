@@ -5,6 +5,7 @@
         :filter-menu-method="filterMenuMethod"
         :filter-children-method="filterChildrenMethod"
         :show-condition="false"
+        :show-popover-tag-change="false"
         :strink="false"
         v-model="searchValue"
         :placeholder="$t('关键字/字段值')"
@@ -48,7 +49,7 @@
         methods: {
             async initOptions () {
                 try {
-                    const properties = await this.$store.dispatch('hostApply/getProperties')
+                    const properties = await this.$store.dispatch('hostApply/getProperties', { params: this.$injectMetadata() })
                     const unsupportType = ['date', 'time', 'objuser']
                     const availableProperties = properties.filter(property => property.host_apply_enabled && !unsupportType.includes(property.bk_property_type))
                     this.searchOptions = availableProperties.map(property => {
