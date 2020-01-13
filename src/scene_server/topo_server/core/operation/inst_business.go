@@ -312,11 +312,7 @@ func (b *business) FindBusiness(params types.ContextParams, cond *metadata.Query
 	query := &metadata.QueryCondition{
 		Fields:    cond.Fields,
 		Condition: cond.Condition,
-		Limit: metadata.SearchLimit{
-			Limit:  int64(cond.Page.Limit),
-			Offset: int64(cond.Page.Start),
-		},
-		SortArr: metadata.NewSearchSortParse().String(cond.Page.Sort).ToSearchSortArr(),
+		Page:      cond.Page,
 	}
 
 	result, err := b.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDApp, query)
