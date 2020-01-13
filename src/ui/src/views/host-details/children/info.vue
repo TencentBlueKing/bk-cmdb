@@ -83,7 +83,7 @@
                     return {
                         id: instId,
                         path: item.topo_path.reverse().map(node => node.bk_inst_name).join(' / '),
-                        inInternal: module && module.default !== 0
+                        isInternal: module && module.default !== 0
                     }
                 })
             },

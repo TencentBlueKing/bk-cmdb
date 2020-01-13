@@ -172,7 +172,11 @@
                 this.table.filtering = true
                 this.$nextTick(() => {
                     if (this.table.filter) {
-                        this.table.data = this.table.backup.filter(row => row._path_.indexOf(this.table.filter) > -1)
+                        this.table.data = this.table.backup.filter(row => {
+                            const path = row._path_.replace(/\s*(\/)\s*/g, '$1')
+                            const filter = this.table.filter.replace(/\s*(\/)\s*/g, '$1')
+                            return path.indexOf(filter) > -1
+                        })
                     } else {
                         this.table.data = [...this.table.backup]
                     }

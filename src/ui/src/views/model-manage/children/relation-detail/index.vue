@@ -58,6 +58,7 @@
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
                 <cmdb-selector
                     class="bk-select-full-width"
+                    :searchable="true"
                     :disabled="relationInfo.ispre || isReadOnly || isEdit"
                     :list="usefulRelationList"
                     v-validate="'required'"

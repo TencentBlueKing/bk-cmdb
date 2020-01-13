@@ -168,7 +168,7 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if nil == val || "" == val {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -203,7 +203,7 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 // validDate valid object Attribute that is date type
 func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if nil == val || "" == val {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{

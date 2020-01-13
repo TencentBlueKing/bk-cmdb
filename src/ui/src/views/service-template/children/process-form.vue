@@ -32,6 +32,7 @@
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :disabled="getPropertyEditStatus(property)"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
+                                        :unit="property.unit"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
