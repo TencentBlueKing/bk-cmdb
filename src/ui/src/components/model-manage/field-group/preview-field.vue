@@ -26,6 +26,7 @@
                                                 :is="`cmdb-form-${property['bk_property_type']}`"
                                                 :class="{ error: errors.has(property['bk_property_id']) }"
                                                 :unit="property['unit']"
+                                                :row="2"
                                                 :disabled="checkDisabled(property)"
                                                 :options="property.option || []"
                                                 :data-vv-name="property['bk_property_id']"
@@ -155,42 +156,42 @@
 </script>
 
 <style lang="scss" scoped>
-    .form-layout{
+    .form-layout {
         height: 100%;
         @include scrollbar-y;
     }
-    .form-groups{
+    .form-groups {
         padding: 0 20px 20px;
     }
-    .property-group{
+    .property-group {
         padding: 7px 0 10px 0;
-        &:first-child{
+        &:first-child {
             padding: 28px 0 10px 0;
         }
     }
-    .group-name{
+    .group-name {
         font-size: 14px;
         line-height: 14px;
         color: #333948;
         overflow: visible;
     }
-    .property-list{
+    .property-list {
         padding: 4px 0;
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
-        .property-item{
+        .property-item {
             flex: 0 0 48%;
             margin: 8px 0 0;
             font-size: 12px;
-            .property-name{
+            .property-name {
                 display: block;
                 margin: 6px 0 9px;
                 color: $cmdbTextColor;
                 line-height: 16px;
                 font-size: 0;
             }
-            .property-name-text{
+            .property-name-text {
                 position: relative;
                 display: inline-block;
                 max-width: calc(100% - 20px);
@@ -198,7 +199,7 @@
                 vertical-align: middle;
                 font-size: 12px;
                 @include ellipsis;
-                &.required:after{
+                &.required:after {
                     position: absolute;
                     left: 100%;
                     top: 0;
@@ -207,7 +208,7 @@
                     color: #ff5656;
                 }
             }
-            .property-name-tooltips{
+            .property-name-tooltips {
                 display: inline-block;
                 vertical-align: middle;
                 width: 16px;
@@ -215,9 +216,7 @@
                 font-size: 16px;
                 color: #c3cdd7;
             }
-            .property-value{
-                height: 36px;
-                line-height: 36px;
+            .property-value {
                 font-size: 12px;
                 position: relative;
             }
