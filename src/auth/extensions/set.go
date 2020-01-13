@@ -36,7 +36,7 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 	cond.Field(common.BKAppIDField).Eq(businessID)
 	query := &metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, query)
 	if err != nil {

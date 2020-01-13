@@ -14,16 +14,16 @@ package model
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (g *modelAttributeGroup) groupIDIsExists(ctx core.ContextParams, objID, groupID string, meta metadata.Metadata) (oneResult metadata.Group, isExists bool, err error) {
+func (g *modelAttributeGroup) groupIDIsExists(kit *rest.Kit, objID, groupID string, meta metadata.Metadata) (oneResult metadata.Group, isExists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupID, Val: groupID})
-	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 	exist, bizID := meta.Label.Get(common.BKAppIDField)
 	if exist {
@@ -31,7 +31,7 @@ func (g *modelAttributeGroup) groupIDIsExists(ctx core.ContextParams, objID, gro
 		_, labelCond := metaCond.Embed(metadata.BKLabel)
 		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
-	groups, err := g.search(ctx, cond)
+	groups, err := g.search(kit, cond)
 	if nil != err {
 		return oneResult, isExists, err
 	}
@@ -43,11 +43,11 @@ func (g *modelAttributeGroup) groupIDIsExists(ctx core.ContextParams, objID, gro
 	return oneResult, isExists, nil
 }
 
-func (g *modelAttributeGroup) groupNameIsExists(ctx core.ContextParams, objID, groupName string, meta metadata.Metadata) (oneResult metadata.Group, isExists bool, err error) {
+func (g *modelAttributeGroup) groupNameIsExists(kit *rest.Kit, objID, groupName string, meta metadata.Metadata) (oneResult metadata.Group, isExists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupName, Val: groupName})
-	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 	exist, bizID := meta.Label.Get(common.BKAppIDField)
 	if exist {
@@ -55,7 +55,7 @@ func (g *modelAttributeGroup) groupNameIsExists(ctx core.ContextParams, objID, g
 		_, labelCond := metaCond.Embed(metadata.BKLabel)
 		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
-	groups, err := g.search(ctx, cond)
+	groups, err := g.search(kit, cond)
 	if nil != err {
 		return oneResult, isExists, err
 	}
@@ -67,14 +67,14 @@ func (g *modelAttributeGroup) groupNameIsExists(ctx core.ContextParams, objID, g
 	return oneResult, isExists, nil
 }
 
-func (g *modelAttributeGroup) hasAttributes(ctx core.ContextParams, objID string, groupIDS []string) (isExists bool, err error) {
+func (g *modelAttributeGroup) hasAttributes(kit *rest.Kit, objID string, groupIDS []string) (isExists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
-	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
 	cond.Element(&mongo.In{Key: metadata.AttributeFieldPropertyGroup, Val: groupIDS})
 
-	attrs, err := g.model.SearchModelAttributes(ctx, objID, metadata.QueryCondition{
+	attrs, err := g.model.SearchModelAttributes(kit, objID, metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 	})
 

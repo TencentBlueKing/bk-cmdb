@@ -72,7 +72,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 
 	setIDs := util.IntArrayUnique(option.SetIDs)
 	setFilter := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: mapstr.MapStr(map[string]interface{}{
@@ -106,7 +106,7 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	}
 
 	moduleFilter := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: mapstr.MapStr(map[string]interface{}{
@@ -346,7 +346,7 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(params types.ContextParams
 
 	filter := &metadata.QueryCondition{
 		Fields: []string{common.BKSetIDField, common.BKSetTemplateVersionField},
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: map[string]interface{}{

@@ -11,113 +11,115 @@
             ])
         }"
     >
-        <div class="template-info mb10 clearfix" v-if="( isSetNode || isModuleNode) && type === 'details'">
-            <template v-if="isModuleNode">
-                <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
-                    <span class="name fl">{{$t('服务模板')}}</span>
-                    <div class="value fl">
-                        <div class="template-value" v-if="withTemplate" @click="goServiceTemplate">
-                            <span class="text link">{{templateInfo.serviceTemplateName}}</span>
-                            <i class="icon-cc-share"></i>
-                        </div>
-                        <span class="text" v-else>{{templateInfo.serviceTemplateName}}</span>
-                    </div>
-                </div>
-                <div class="info-item fl" :title="`${$t('服务分类')} : ${templateInfo.serviceCategory || '--'}`">
-                    <span class="name fl">{{$t('服务分类')}}</span>
-                    <div class="value fl">
-                        <span class="text">{{templateInfo.serviceCategory || '--'}}</span>
-                    </div>
-                </div>
-            </template>
-            <template v-else-if="isSetNode">
-                <div class="info-item fl" :title="`${$t('集群模板')} : ${templateInfo.setTemplateName}`">
-                    <span class="name fl">{{$t('集群模板')}}</span>
-                    <div class="value fl">
-                        <template v-if="withSetTemplate">
-                            <div class="template-value set-template fl" @click="goSetTemplate">
-                                <span class="text link">{{templateInfo.setTemplateName}}</span>
+        <cmdb-permission v-if="permission" class="permission-tips" :permission="permission"></cmdb-permission>
+        <template v-else>
+            <div class="template-info mb10 clearfix" v-if="( isSetNode || isModuleNode) && type === 'details'">
+                <template v-if="isModuleNode">
+                    <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
+                        <span class="name fl">{{$t('服务模板')}}</span>
+                        <div class="value fl">
+                            <div class="template-value" v-if="withTemplate" @click="goServiceTemplate">
+                                <span class="text link">{{templateInfo.serviceTemplateName}}</span>
                                 <i class="icon-cc-share"></i>
                             </div>
-                            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
-                                <bk-button slot-scope="{ disabled }"
-                                    :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
-                                    :disabled="!hasChange || disabled"
-                                    @click="handleSyncSetTemplate">
-                                    {{$t('同步集群')}}
-                                </bk-button>
-                            </cmdb-auth>
-                        </template>
-                        <span class="text" v-else>{{templateInfo.setTemplateName}}</span>
+                            <span class="text" v-else>{{templateInfo.serviceTemplateName}}</span>
+                        </div>
                     </div>
-                </div>
-            </template>
-        </div>
-        <cmdb-details class="topology-details"
-            v-if="type === 'details'"
-            :class="{ pt10: !isSetNode && !isModuleNode }"
-            :properties="properties"
-            :property-groups="propertyGroups"
-            :inst="instance"
-            :show-options="modelId !== 'biz' && !isBlueking">
-            <template slot="details-options">
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
-                    <template slot-scope="{ disabled }">
-                        <bk-button class="button-edit"
-                            theme="primary"
-                            :disabled="disabled"
-                            @click="handleEdit">
-                            {{$t('编辑')}}
-                        </bk-button>
-                    </template>
-                </cmdb-auth>
-                <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
-                    <template slot-scope="{ disabled }">
-                        <span class="inline-block-middle" v-if="moduleFromSetTemplate"
-                            v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
-                            <bk-button class="btn-delete" hover-theme="danger" disabled>
-                                {{$t('删除节点')}}
-                            </bk-button>
-                        </span>
-                        <bk-button class="btn-delete" v-else
-                            hover-theme="danger"
-                            :disabled="disabled"
-                            @click="handleDelete">
-                            {{$t('删除节点')}}
-                        </bk-button>
-                    </template>
-                </cmdb-auth>
-            </template>
-        </cmdb-details>
-        <template v-else-if="type === 'update'">
-            <div class="service-category" v-if="!withTemplate && isModuleNode">
-                <span class="title">{{$t('服务分类')}}</span>
-                <div class="selector-item mt10 clearfix">
-                    <cmdb-selector class="category-selector fl"
-                        :list="firstCategories"
-                        v-model="first"
-                        @on-selected="handleChangeFirstCategory">
-                    </cmdb-selector>
-                    <cmdb-selector class="category-selector fl"
-                        :list="secondCategories"
-                        name="secondCategory"
-                        v-validate="'required'"
-                        v-model="second"
-                        @on-selected="handleChangeCategory">
-                    </cmdb-selector>
-                    <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
-                </div>
+                    <div class="info-item fl" :title="`${$t('服务分类')} : ${templateInfo.serviceCategory || '--'}`">
+                        <span class="name fl">{{$t('服务分类')}}</span>
+                        <div class="value fl">
+                            <span class="text">{{templateInfo.serviceCategory || '--'}}</span>
+                        </div>
+                    </div>
+                </template>
+                <template v-else-if="isSetNode">
+                    <div class="info-item fl" :title="`${$t('集群模板')} : ${templateInfo.setTemplateName}`">
+                        <span class="name fl">{{$t('集群模板')}}</span>
+                        <div class="value fl">
+                            <template v-if="withSetTemplate">
+                                <div class="template-value set-template fl" @click="goSetTemplate">
+                                    <span class="text link">{{templateInfo.setTemplateName}}</span>
+                                    <i class="icon-cc-share"></i>
+                                </div>
+                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                                    <bk-button slot-scope="{ disabled }"
+                                        :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
+                                        :disabled="!hasChange || disabled"
+                                        @click="handleSyncSetTemplate">
+                                        {{$t('同步集群')}}
+                                    </bk-button>
+                                </cmdb-auth>
+                            </template>
+                            <span class="text" v-else>{{templateInfo.setTemplateName}}</span>
+                        </div>
+                    </div>
+                </template>
             </div>
-            <cmdb-form class="topology-form"
-                ref="form"
+            <cmdb-details class="topology-details"
+                v-if="type === 'details'"
                 :properties="properties"
                 :property-groups="propertyGroups"
-                :disabled-properties="disabledProperties"
                 :inst="instance"
-                :type="type"
-                @on-submit="handleSubmit"
-                @on-cancel="handleCancel">
-            </cmdb-form>
+                :show-options="modelId !== 'biz' && !isBlueking">
+                <template slot="details-options">
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                        <template slot-scope="{ disabled }">
+                            <bk-button class="button-edit"
+                                theme="primary"
+                                :disabled="disabled"
+                                @click="handleEdit">
+                                {{$t('编辑')}}
+                            </bk-button>
+                        </template>
+                    </cmdb-auth>
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
+                        <template slot-scope="{ disabled }">
+                            <span class="inline-block-middle" v-if="moduleFromSetTemplate"
+                                v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
+                                <bk-button class="btn-delete" disabled>
+                                    {{$t('删除节点')}}
+                                </bk-button>
+                            </span>
+                            <bk-button class="btn-delete" v-else
+                                theme="default"
+                                :disabled="disabled"
+                                @click="handleDelete">
+                                {{$t('删除节点')}}
+                            </bk-button>
+                        </template>
+                    </cmdb-auth>
+                </template>
+            </cmdb-details>
+            <template v-else-if="type === 'update'">
+                <div class="service-category" v-if="!withTemplate && isModuleNode">
+                    <span class="title">{{$t('服务分类')}}</span>
+                    <div class="selector-item mt10 clearfix">
+                        <cmdb-selector class="category-selector fl"
+                            :list="firstCategories"
+                            v-model="first"
+                            @on-selected="handleChangeFirstCategory">
+                        </cmdb-selector>
+                        <cmdb-selector class="category-selector fl"
+                            :list="secondCategories"
+                            name="secondCategory"
+                            v-validate="'required'"
+                            v-model="second"
+                            @on-selected="handleChangeCategory">
+                        </cmdb-selector>
+                        <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
+                    </div>
+                </div>
+                <cmdb-form class="topology-form"
+                    ref="form"
+                    :properties="properties"
+                    :property-groups="propertyGroups"
+                    :disabled-properties="disabledProperties"
+                    :inst="instance"
+                    :type="type"
+                    @on-submit="handleSubmit"
+                    @on-cancel="handleCancel">
+                </cmdb-form>
+            </template>
         </template>
     </div>
 </template>
@@ -143,7 +145,8 @@
                     serviceCategory: '',
                     setTemplateName: this.$t('无')
                 },
-                refresh: null
+                refresh: null,
+                permission: null
             }
         },
         computed: {
@@ -317,20 +320,26 @@
                 }
             },
             async getBizInstance () {
-                const data = await this.$store.dispatch('objectBiz/searchBusiness', {
-                    params: {
-                        page: { start: 0, limit: 1 },
-                        fields: [],
-                        condition: {
-                            bk_biz_id: { $eq: this.selectedNode.data.bk_inst_id }
+                try {
+                    const data = await this.$store.dispatch('objectBiz/searchBusiness', {
+                        params: {
+                            page: { start: 0, limit: 1 },
+                            fields: [],
+                            condition: {
+                                bk_biz_id: { $eq: this.selectedNode.data.bk_inst_id }
+                            }
+                        },
+                        config: {
+                            requestId: 'getNodeInstance',
+                            cancelPrevious: true,
+                            globalPermission: false
                         }
-                    },
-                    config: {
-                        requestId: 'getNodeInstance',
-                        cancelPrevious: true
-                    }
-                })
-                return data.info[0]
+                    })
+                    return data.info[0]
+                } catch ({ permission }) {
+                    this.permission = permission
+                    return {}
+                }
             },
             async getSetInstance () {
                 const data = await this.$store.dispatch('objectSet/searchSet', {
@@ -718,6 +727,12 @@
 </script>
 
 <style lang="scss" scoped>
+    .permission-tips {
+        position: absolute;
+        top: 35%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
     .template-info {
         font-size: 14px;
         color: #63656e;

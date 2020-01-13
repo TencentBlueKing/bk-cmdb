@@ -41,9 +41,9 @@
             </div>
         </div>
         <div class="config-options clearfix">
-            <bk-button class="config-button fl" theme="primary" @click="handleApply">{{$t('应用')}}</bk-button>
+            <bk-button class="config-button fl" theme="primary" @click="handleApply">{{confirmText || $t('应用')}}</bk-button>
             <bk-button class="config-button fl" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <bk-button class="config-button fr" theme="default" @click="handleReset">{{$t('还原默认')}}</bk-button>
+            <bk-button class="config-button fr" theme="default" @click="handleReset" v-if="showReset">{{$t('还原默认')}}</bk-button>
         </div>
     </div>
 </template>
@@ -81,6 +81,14 @@
             max: {
                 type: Number,
                 default: 20
+            },
+            confirmText: {
+                type: String,
+                default: ''
+            },
+            showReset: {
+                type: Boolean,
+                default: true
             }
         },
         data () {

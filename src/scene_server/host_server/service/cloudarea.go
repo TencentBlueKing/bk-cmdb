@@ -15,7 +15,6 @@ package service
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
@@ -48,18 +47,8 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 
 	if input.Page.IsIllegal() {
 		blog.Errorf("FindManyCloudArea failed, parse plat page illegal, input:%#v,rid:%s", input, rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommPageLimitIsExceeded)})
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommPageLimitIsExceeded)})
 		return
-	}
-
-	sortArr := make([]metadata.SearchSort, 0)
-	if len(input.Page.Sort) != 0 {
-		for _, field := range strings.Split(input.Page.Sort, ",") {
-			sortArr = append(sortArr, metadata.SearchSort{
-				IsDsc: true,
-				Field: field,
-			})
-		}
 	}
 
 	filter := input.Condition
@@ -85,11 +74,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 	}
 	query := &metadata.QueryCondition{
 		Condition: filter,
-		Limit: metadata.SearchLimit{
-			Limit:  int64(input.Page.Limit),
-			Offset: int64(input.Page.Start),
-		},
-		SortArr: sortArr,
+		Page:      input.Page,
 	}
 
 	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, query)

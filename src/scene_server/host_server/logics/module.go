@@ -32,8 +32,7 @@ import (
 
 func (lgc *Logics) GetResourcePoolModuleID(ctx context.Context, condition mapstr.MapStr) (int64, errors.CCError) {
 	query := &metadata.QueryCondition{
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
+		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKModuleIDField},
 		Fields:    []string{common.BKModuleIDField},
 		Condition: condition,
 	}
@@ -57,8 +56,7 @@ func (lgc *Logics) GetResourcePoolModuleID(ctx context.Context, condition mapstr
 
 func (lgc *Logics) GetNormalModuleByModuleID(ctx context.Context, appID, moduleID int64) ([]mapstr.MapStr, errors.CCError) {
 	query := &metadata.QueryCondition{
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
+		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKModuleIDField},
 		Fields:    []string{common.BKModuleIDField},
 		Condition: hutil.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data(),
 	}
@@ -84,8 +82,7 @@ func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.Condit
 	}
 
 	query := &metadata.QueryCondition{
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKModuleIDField},
 		Fields:    []string{common.BKModuleIDField},
 		Condition: mapstr.NewFromMap(condc),
 	}
@@ -116,8 +113,7 @@ func (lgc *Logics) GetModuleMapByCond(ctx context.Context, fields []string, cond
 
 	query := &metadata.QueryCondition{
 		Condition: cond,
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKModuleIDField},
 		Fields:    fields,
 	}
 

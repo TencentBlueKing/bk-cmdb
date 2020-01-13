@@ -13,32 +13,41 @@
 package service
 
 import (
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateAuditLog(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateAuditLog(ctx *rest.Contexts) {
 	inputData := struct {
 		Data []metadata.SaveAuditLogParams `json:"data"`
 	}{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	return nil, s.core.AuditOperation().CreateAuditLog(params, inputData.Data...)
+	if err := s.core.AuditOperation().CreateAuditLog(ctx.Kit, inputData.Data...); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) SearchAuditLog(ctx core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchAuditLog(ctx *rest.Contexts) {
 	inputData := metadata.QueryInput{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	auditlogs, count, err := s.core.AuditOperation().SearchAuditLog(ctx, inputData)
-	return struct {
+	auditLogs, count, err := s.core.AuditOperation().SearchAuditLog(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(struct {
 		Count uint64                  `json:"count"`
 		Info  []metadata.OperationLog `json:"info"`
 	}{
 		Count: count,
-		Info:  auditlogs,
-	}, err
+		Info:  auditLogs,
+	})
 }
