@@ -13,8 +13,14 @@
 package model
 
 import (
+	"fmt"
+	"time"
+
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -31,15 +37,16 @@ type modelManager struct {
 	*modelClassification
 	*modelAttrUnique
 	dbProxy   dal.RDB
+	cache     *redis.Client
 	dependent OperationDependences
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB, dependent OperationDependences) core.ModelOperation {
+func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client) core.ModelOperation {
 
-	coreMgr := &modelManager{dbProxy: dbProxy, dependent: dependent}
+	coreMgr := &modelManager{dbProxy: dbProxy, dependent: dependent, cache: cache}
 
-	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr}
+	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr, cache: cache}
 	coreMgr.modelClassification = &modelClassification{dbProxy: dbProxy, model: coreMgr}
 	coreMgr.modelAttributeGroup = &modelAttributeGroup{dbProxy: dbProxy, model: coreMgr}
 	coreMgr.modelAttrUnique = &modelAttrUnique{dbProxy: dbProxy}
@@ -48,6 +55,22 @@ func New(dbProxy dal.RDB, dependent OperationDependences) core.ModelOperation {
 }
 
 func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
+
+	locker := lock.NewLocker(m.cache)
+	// fmt.Sprintf("coreservice:create:model:%s", inputParam.Spec.ObjectID)
+	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
+
+	looked, err := locker.Lock(redisKey, time.Second*35)
+	defer locker.Unlock()
+	if err != nil {
+		blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommRedisOPErr)
+	}
+	if !looked {
+		blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s)", inputParam.Spec.ObjectID))
+	}
+	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%s, rid:%s", redisKey, looked, err, ctx.ReqID)
 
 	dataResult := &metadata.CreateOneDataResult{}
 
