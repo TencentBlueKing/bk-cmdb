@@ -13,6 +13,8 @@
 package instances
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -137,33 +139,13 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, kit.Rid)
 			// return valid.errIf.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
-		fieldType := property.PropertyType
-		switch fieldType {
-		case common.FieldTypeSingleChar:
-			err = valid.validChar(kit.Ctx, val, key)
-		case common.FieldTypeLongChar:
-			err = valid.validLongChar(kit.Ctx, val, key)
-		case common.FieldTypeInt:
-			err = valid.validInt(kit.Ctx, val, key)
-		case common.FieldTypeFloat:
-			err = valid.validFloat(kit.Ctx, val, key)
-		case common.FieldTypeEnum:
-			err = valid.validEnum(kit.Ctx, val, key)
-		case common.FieldTypeDate:
-			err = valid.validDate(kit.Ctx, val, key)
-		case common.FieldTypeTime:
-			err = valid.validTime(kit.Ctx, val, key)
-		case common.FieldTypeTimeZone:
-			err = valid.validTimeZone(kit.Ctx, val, key)
-		case common.FieldTypeBool:
-			err = valid.validBool(kit.Ctx, val, key)
-		case common.FieldTypeList:
-			err = valid.validList(kit.Ctx, val, key)
-		default:
-			continue
+		if value, ok := val.(string); ok {
+			val = strings.TrimSpace(value)
+			instanceData[key] = val
 		}
-		if nil != err {
-			return err
+		rawErr := property.Validate(kit.Ctx, val, key)
+		if rawErr.ErrCode != 0 {
+			return rawErr.ToCCError(kit.CCError)
 		}
 	}
 	if instanceData.Exists(metadata.BKMetadata) {
@@ -288,33 +270,13 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			delete(instanceData, key)
 			continue
 		}
-		fieldType := property.PropertyType
-		switch fieldType {
-		case common.FieldTypeSingleChar:
-			err = valid.validChar(kit.Ctx, val, key)
-		case common.FieldTypeLongChar:
-			err = valid.validLongChar(kit.Ctx, val, key)
-		case common.FieldTypeInt:
-			err = valid.validInt(kit.Ctx, val, key)
-		case common.FieldTypeFloat:
-			err = valid.validFloat(kit.Ctx, val, key)
-		case common.FieldTypeEnum:
-			err = valid.validEnum(kit.Ctx, val, key)
-		case common.FieldTypeDate:
-			err = valid.validDate(kit.Ctx, val, key)
-		case common.FieldTypeTime:
-			err = valid.validTime(kit.Ctx, val, key)
-		case common.FieldTypeTimeZone:
-			err = valid.validTimeZone(kit.Ctx, val, key)
-		case common.FieldTypeBool:
-			err = valid.validBool(kit.Ctx, val, key)
-		case common.FieldTypeList:
-			err = valid.validList(kit.Ctx, val, key)
-		default:
-			continue
+		if value, ok := val.(string); ok {
+			val = strings.TrimSpace(value)
+			instanceData[key] = val
 		}
-		if nil != err {
-			return err
+		rawErr := property.Validate(kit.Ctx, val, key)
+		if rawErr.ErrCode != 0 {
+			return rawErr.ToCCError(kit.CCError)
 		}
 	}
 
