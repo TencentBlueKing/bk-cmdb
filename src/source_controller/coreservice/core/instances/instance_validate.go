@@ -139,7 +139,9 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		}
 		rawErr := property.Validate(ctx, val, key)
 		if rawErr.ErrCode > 0 {
-			return rawErr.ToCCError(valid.errif)
+			ccErr := rawErr.ToCCError(valid.errif)
+			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, ccErr.Error(), ctx.ReqID)
+			return ccErr
 		}
 	}
 	if instanceData.Exists(metadata.BKMetadata) {
