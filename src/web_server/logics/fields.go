@@ -243,7 +243,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		Name:          "",
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
-		ExcelColIndex: 0,
+		ExcelColIndex: 1, // why set ExcelColIndex=1? because ExcelColIndex=0 used by tip column
 	}
 
 	switch objID {
