@@ -27,7 +27,7 @@ func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.E
 
 	err = p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithHeaders(h).
 		Do().
@@ -78,7 +78,6 @@ func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]s
 		}
 	*/
 	resp = &metadata.EsbListUserResponse{}
-	subPath := "/v2/usermanage/list_users/"
 	h.Set("Accept", "application/json")
 
 	if _, ok := params["fields"]; ok == false {
@@ -87,8 +86,8 @@ func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]s
 	params["no_page"] = "true"
 	err = p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
 		WithParams(params).
+		SubResourcef("/v2/usermanage/list_users/").
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithHeaders(h).
 		Do().

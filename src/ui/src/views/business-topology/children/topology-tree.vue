@@ -269,6 +269,7 @@
                             globalError: false
                         }
                     })
+                    this.$store.commit('businessHost/setBlueKingEditable', this.editable)
                 } catch (_) {
                     this.editable = false
                 }
