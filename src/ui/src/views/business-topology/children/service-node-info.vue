@@ -59,7 +59,7 @@
             :properties="properties"
             :property-groups="propertyGroups"
             :inst="instance"
-            :show-options="modelId !== 'biz' && !isBlueking">
+            :show-options="modelId !== 'biz' && editable">
             <template slot="details-options">
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
                     <template slot-scope="{ disabled }">
@@ -196,6 +196,10 @@
             },
             moduleFromSetTemplate () {
                 return this.isModuleNode && !!this.selectedNode.parent.data.set_template_id
+            },
+            editable () {
+                const editable = this.$store.state.businessHost.blueKingEditable
+                return this.isBlueking ? this.isBlueking && editable : true
             }
         },
         watch: {

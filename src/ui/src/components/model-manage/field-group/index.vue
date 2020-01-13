@@ -69,8 +69,7 @@
                                 empty: !group.properties.length,
                                 disabled: !updateAuth || !isEditable(group.info)
                             }"
-                            @change="handleDragChange"
-                            @end="handleDragEnd">
+                            @change="handleDragChange">
                             <li class="property-item fl"
                                 v-for="(property, fieldIndex) in group.properties"
                                 :class="{ 'only-ready': !updateAuth || !isFieldEditable(property) }"
@@ -224,7 +223,6 @@
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 :group="slider.curGroup"
-                :property-index="slider.propertyIndex"
                 @save="handleFieldSave"
                 @cancel="handleSliderBeforeClose">
             </the-field-detail>
@@ -264,7 +262,6 @@
             return {
                 updateAuth: false,
                 groupedProperties: [],
-                shouldUpdatePropertyIndex: false,
                 previewShow: false,
                 groupState: {},
                 initGroupState: {},
@@ -307,7 +304,6 @@
                     curField: {},
                     curGroup: {},
                     group: {},
-                    propertyIndex: 0,
                     beforeClose: null,
                     index: null,
                     fieldIndex: null,
@@ -376,7 +372,8 @@
                 'updateGroup',
                 'deleteGroup',
                 'createGroup',
-                'updatePropertyGroup'
+                'updatePropertyGroup',
+                'updatePropertySort'
             ]),
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
@@ -424,14 +421,12 @@
                 group['info']['bk_group_index'] = index - 1
                 this.updateGroupIndex()
                 this.resortGroups()
-                this.updatePropertyIndex()
             },
             handleDropGroup (index, group) {
                 this.groupedProperties[index + 1]['info']['bk_group_index'] = index
                 group.info['bk_group_index'] = index + 1
                 this.updateGroupIndex()
                 this.resortGroups()
-                this.updatePropertyIndex()
             },
             async resetData (filedId) {
                 const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
@@ -578,7 +573,6 @@
                             group.properties = resortedProperties
                         }
                     })
-                    this.updatePropertyIndex()
                 }
                 this.handleCancelAddProperty()
             },
@@ -711,60 +705,49 @@
                     })
                 })
             },
-            handleDragChange (changeInfo) {
-                if (changeInfo.hasOwnProperty('moved')) {
-                    this.shouldUpdatePropertyIndex = changeInfo.moved.newIndex !== changeInfo.moved.oldIndex
-                } else {
-                    this.shouldUpdatePropertyIndex = true
+            handleDragChange (moveInfo) {
+                if (moveInfo.hasOwnProperty('moved') || moveInfo.hasOwnProperty('added')) {
+                    const info = moveInfo.moved ? { ...moveInfo.moved } : { ...moveInfo.added }
+                    this.updatePropertyIndex(info)
                 }
             },
-            handleDragEnd () {
-                if (this.shouldUpdatePropertyIndex) {
-                    this.updatePropertyIndex()
-                    this.shouldUpdatePropertyIndex = false
-                }
-            },
-            updatePropertyIndex () {
-                const updateProperties = []
-                let propertyIndex = 0
-                this.groupedProperties.forEach(group => {
-                    group.properties.forEach(property => {
-                        if (property['bk_property_index'] !== propertyIndex || property['bk_property_group'] !== group.info['bk_group_id']) {
-                            property['bk_property_index'] = propertyIndex
-                            property['bk_property_group'] = group.info['bk_group_id']
-                            updateProperties.push(property)
-                        }
-                        propertyIndex++
-                    })
-                })
-                if (!updateProperties.length) return
-                this.updatePropertyGroup({
-                    params: this.$injectMetadata({
-                        data: updateProperties.map(property => {
-                            return {
-                                condition: {
-                                    'bk_obj_id': this.objId,
-                                    'bk_property_id': property['bk_property_id'],
-                                    'bk_supplier_account': property['bk_supplier_account']
-                                },
-                                data: {
-                                    'bk_property_group': property['bk_property_group'],
-                                    'bk_property_index': property['bk_property_index']
-                                }
+            async updatePropertyIndex ({ element: property, newIndex }) {
+                let curIndex = 0
+                let curGroup = ''
+                for (const group of this.groupedProperties) {
+                    const len = group.properties.length
+                    for (const item of group.properties) {
+                        if (item.bk_property_id === property.bk_property_id) {
+                            // 取移动字段新位置的前一个字段 index + 1
+                            if (newIndex > 0) {
+                                // 拖拽插件bug 跨组拖动到最后的位置index会多1
+                                const index = newIndex === len ? newIndex - 2 : newIndex - 1
+                                curIndex = Number(group.properties[index].bk_property_index) + 1
                             }
-                        })
+                            curGroup = group.info.bk_group_id
+                            break
+                        }
+                    }
+                }
+                await this.updatePropertySort({
+                    objId: this.objId,
+                    propertyId: property.id,
+                    params: this.$injectMetadata({
+                        bk_property_group: curGroup,
+                        bk_property_index: curIndex
                     }, { inject: this.isInjectable }),
                     config: {
-                        requestId: `put_updatePropertyGroup_${this.objId}`,
+                        requestId: `updatePropertySort_${this.objId}`,
                         cancelWhenRouteChange: false
                     }
                 })
+                const properties = await this.getProperties()
+                this.init(properties, this.preview.groups)
             },
             handleAddField (group) {
                 this.slider.isEditField = false
                 this.slider.curField = {}
                 this.slider.curGroup = group.info
-                this.slider.propertyIndex = group.properties.length
                 this.slider.title = this.$t('新建字段')
                 this.slider.isShow = true
                 this.slider.beforeClose = this.handleSliderBeforeClose
