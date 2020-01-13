@@ -17,126 +17,138 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateServiceCategory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateServiceCategory(ctx *rest.Contexts) {
 	category := metadata.ServiceCategory{}
-	if err := mapstr.DecodeFromMapStr(&category, data); err != nil {
-		blog.Errorf("CreateServiceCategory failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
-		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(&category); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	result, err := s.core.ProcessOperation().CreateServiceCategory(params, category)
+	result, err := s.core.ProcessOperation().CreateServiceCategory(ctx.Kit, category)
 	if err != nil {
-		blog.Errorf("CreateServiceCategory failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("CreateServiceCategory failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) GetServiceCategory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceCategoryIDStr := pathParams(common.BKServiceCategoryIDField)
+func (s *coreService) GetServiceCategory(ctx *rest.Contexts) {
+	serviceCategoryIDStr := ctx.Request.PathParameter(common.BKServiceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
-		blog.Errorf("GetServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		blog.Errorf("GetServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
+		return
 	}
 
 	serviceCategoryID, err := strconv.ParseInt(serviceCategoryIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("GetServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceCategoryIDField, serviceCategoryIDStr, err, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		blog.Errorf("GetServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceCategoryIDField, serviceCategoryIDStr, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
+		return
 	}
 
-	result, err := s.core.ProcessOperation().GetServiceCategory(params, serviceCategoryID)
+	result, err := s.core.ProcessOperation().GetServiceCategory(ctx.Kit, serviceCategoryID)
 	if err != nil {
-		blog.Errorf("GetServiceCategory failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("GetServiceCategory failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) GetDefaultServiceCategory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	result, err := s.core.ProcessOperation().GetDefaultServiceCategory(params)
+func (s *coreService) GetDefaultServiceCategory(ctx *rest.Contexts) {
+	result, err := s.core.ProcessOperation().GetDefaultServiceCategory(ctx.Kit)
 	if err != nil {
-		blog.Errorf("GetServiceCategory failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("GetServiceCategory failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) ListServiceCategories(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) ListServiceCategories(ctx *rest.Contexts) {
 	// filter parameter
 	fp := struct {
 		BusinessID     int64 `json:"bk_biz_id" field:"bk_biz_id"`
 		WithStatistics bool  `json:"with_statistics" field:"with_statistics"`
 	}{}
 
-	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
-		blog.Errorf("ListServiceCategories failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
-		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(&fp); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	if fp.BusinessID == 0 {
-		blog.Errorf("ListServiceCategories failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id")
+		blog.Errorf("ListServiceCategories failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
 	}
 
-	result, err := s.core.ProcessOperation().ListServiceCategories(params, fp.BusinessID, fp.WithStatistics)
+	result, err := s.core.ProcessOperation().ListServiceCategories(ctx.Kit, fp.BusinessID, fp.WithStatistics)
 	if err != nil {
-		blog.Errorf("ListServiceCategories failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("ListServiceCategories failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) UpdateServiceCategory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceCategoryIDStr := pathParams(common.BKServiceCategoryIDField)
+func (s *coreService) UpdateServiceCategory(ctx *rest.Contexts) {
+	serviceCategoryIDStr := ctx.Request.PathParameter(common.BKServiceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
-		blog.Errorf("UpdateServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		blog.Errorf("UpdateServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
+		return
 	}
 
 	serviceCategoryID, err := strconv.ParseInt(serviceCategoryIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("UpdateServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceCategoryIDField, serviceCategoryIDStr, err, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		blog.Errorf("UpdateServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceCategoryIDField, serviceCategoryIDStr, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
+		return
 	}
 
 	category := metadata.ServiceCategory{}
-	if err := mapstr.DecodeFromMapStr(&category, data); err != nil {
-		blog.Errorf("UpdateServiceCategory failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
-		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(&category); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	result, err := s.core.ProcessOperation().UpdateServiceCategory(params, serviceCategoryID, category)
+	result, err := s.core.ProcessOperation().UpdateServiceCategory(ctx.Kit, serviceCategoryID, category)
 	if err != nil {
-		blog.Errorf("UpdateServiceCategory failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("UpdateServiceCategory failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) DeleteServiceCategory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceCategoryIDStr := pathParams(common.BKServiceCategoryIDField)
+func (s *coreService) DeleteServiceCategory(ctx *rest.Contexts) {
+	serviceCategoryIDStr := ctx.Request.PathParameter(common.BKServiceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
-		blog.Errorf("DeleteServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		blog.Errorf("DeleteServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
+		return
 	}
 
 	serviceCategoryID, err := strconv.ParseInt(serviceCategoryIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("DeleteServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceCategoryIDField, serviceCategoryIDStr, err, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		blog.Errorf("DeleteServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceCategoryIDField, serviceCategoryIDStr, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
+		return
 	}
 
-	if err := s.core.ProcessOperation().DeleteServiceCategory(params, serviceCategoryID); err != nil {
-		blog.Errorf("DeleteServiceCategory failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+	if err := s.core.ProcessOperation().DeleteServiceCategory(ctx.Kit, serviceCategoryID); err != nil {
+		blog.Errorf("DeleteServiceCategory failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return nil, nil
+	ctx.RespEntity(nil)
 }
