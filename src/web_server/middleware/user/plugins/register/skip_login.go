@@ -10,26 +10,8 @@
  * limitations under the License.
  */
 
-package service
+package manager
 
 import (
-	"configcenter/src/common/metadata"
-	"configcenter/src/web_server/middleware/user"
-
-	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
+	_ "configcenter/src/web_server/middleware/user/plugins/method/skip_login"
 )
-
-// LogOutUser log out user
-func (s *Service) LogOutUser(c *gin.Context) {
-	session := sessions.Default(c)
-	session.Clear()
-	c.Request.URL.Path = ""
-	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
-	loginURL := userManger.GetLoginUrl(c)
-	ret := metadata.LogoutResult{}
-	ret.BaseResp.Result = true
-	ret.Data.LogoutURL = loginURL
-	c.JSON(200, ret)
-	return
-}

@@ -954,7 +954,8 @@ const (
 )
 
 const (
-	BKDefaultLoginUserPluginVersion = "self"
+	// BKDefaultLoginUserPluginVersion 默认的登录方式
+	BKDefaultLoginUserPluginVersion = "blueking"
 	HTTPCookieBKToken               = "bk_token"
 
 	WEBSessionUinKey           = "username"

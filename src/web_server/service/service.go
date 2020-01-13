@@ -13,8 +13,6 @@
 package service
 
 import (
-	"plugin"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/metadata"
@@ -30,7 +28,6 @@ import (
 )
 
 type Service struct {
-	VersionPlg *plugin.Plugin
 	*options.ServerOption
 	Engine   *backbone.Engine
 	CacheCli *redis.Client
