@@ -56,8 +56,7 @@
             </div>
         </div>
         <div class="layout-footer">
-            <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <span class="footer-tips"
+            <span class="footer-tips mr10"
                 v-bk-tooltips="{
                     content: $t('模块相同提示'),
                     disabled: !checked.length || (checked.length && hasDifference)
@@ -68,6 +67,7 @@
                     {{confirmText || $t('下一步')}}
                 </bk-button>
             </span>
+            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
 </template>

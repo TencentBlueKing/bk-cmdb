@@ -2,7 +2,8 @@ import Meta from '@/router/meta'
 import {
     MENU_BUSINESS,
     MENU_BUSINESS_SERVICE,
-    MENU_BUSINESS_SET_TEMPLATE
+    MENU_BUSINESS_SET_TEMPLATE,
+    MENU_BUSINESS_HOST_AND_SERVICE
 } from '@/dictionary/menu-symbol'
 import {
     C_SET_TEMPLATE,
@@ -49,8 +50,16 @@ export default [{
             }
         },
         layout: {
-            previous: {
-                name: MENU_BUSINESS_SET_TEMPLATE
+            previous: (view) => {
+                const query = view.$route.query
+                let params = { name: MENU_BUSINESS_SET_TEMPLATE }
+                if (query.tab) {
+                    params = {
+                        name: MENU_BUSINESS_HOST_AND_SERVICE,
+                        query: query
+                    }
+                }
+                return params
             }
         }
     })
