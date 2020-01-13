@@ -217,6 +217,11 @@ const (
 
 	CCErrCommGetBusinessIDByHostIDFailed = 1199086
 
+    // CCErrCommOPInProgressErr have the same task[%s] in progress
+    CCErrCommOPInProgressErr = 1199087
+    // CCErrCommRedisOPErr operate redis error.
+    CCErrCommRedisOPErr = 1199088
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
