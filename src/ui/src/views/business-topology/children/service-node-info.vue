@@ -652,6 +652,10 @@
                     params: {
                         templateId: this.instance.service_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
+                    },
+                    query: {
+                        node: this.selectedNode.id,
+                        tab: 'nodeInfo'
                     }
                 })
             },
@@ -662,6 +666,10 @@
                         mode: 'view',
                         templateId: this.instance.set_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
+                    },
+                    query: {
+                        node: this.selectedNode.id,
+                        tab: 'nodeInfo'
                     }
                 })
             },

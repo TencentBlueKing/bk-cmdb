@@ -353,7 +353,8 @@
                 this.$router.replace({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        node: 'module-' + this.$route.params.moduleId
+                        node: 'module-' + this.$route.params.moduleId,
+                        tab: 'serviceInstance'
                     }
                 })
             }

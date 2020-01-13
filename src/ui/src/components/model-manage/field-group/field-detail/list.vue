@@ -12,7 +12,8 @@
                             v-validate="`required|enumName|repeat:${getOtherName(index)}`"
                             @input="handleInput"
                             :disabled="isReadOnly"
-                            :name="`name${index}`">
+                            :name="`name${index}`"
+                            :ref="`name${index}`">
                         </bk-input>
                         <p class="form-error">{{errors.first(`name${index}`)}}</p>
                     </div>
@@ -20,7 +21,7 @@
                 <bk-button text class="list-btn" @click="deleteList(index)" :disabled="list.length === 1 || isReadOnly">
                     <i class="bk-icon icon-minus-circle-shape"></i>
                 </bk-button>
-                <bk-button text class="list-btn" @click="addList" :disabled="isReadOnly" v-if="index === list.length - 1">
+                <bk-button text class="list-btn" @click="addList(index)" :disabled="isReadOnly" v-if="index === list.length - 1">
                     <i class="bk-icon icon-plus-circle-shape"></i>
                 </bk-button>
             </li>
@@ -79,8 +80,11 @@
                     }
                 })
             },
-            addList () {
+            addList (index) {
                 this.list.push({ name: '' })
+                this.$nextTick(() => {
+                    this.$refs[`name${index + 1}`] && this.$refs[`name${index + 1}`][0].focus()
+                })
             },
             deleteList (index) {
                 this.list.splice(index, 1)

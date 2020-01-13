@@ -9,39 +9,40 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list clearfix">
-                            <li class="property-item fl"
-                                v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                                v-if="checkEditable(property)"
-                                :key="propertyIndex">
-                                <div class="property-name">
-                                    <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                    <i class="property-name-tooltips icon-cc-tips"
-                                        v-if="property['placeholder']"
-                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
-                                    </i>
-                                </div>
-                                <div class="property-value clearfix">
-                                    <slot :name="property.bk_property_id">
-                                        <component class="form-component"
-                                            :is="`cmdb-form-${property['bk_property_type']}`"
-                                            :class="{ error: errors.has(property['bk_property_id']) }"
-                                            :unit="property['unit']"
-                                            :disabled="checkDisabled(property)"
-                                            :options="property.option || []"
-                                            :data-vv-name="property['bk_property_id']"
-                                            :data-vv-as="property['bk_property_name']"
-                                            :placeholder="getPlaceholder(property)"
-                                            :auto-select="false"
-                                            v-validate="getValidateRules(property)"
-                                            v-model.trim="values[property['bk_property_id']]">
-                                        </component>
-                                        <span class="form-error"
-                                            :title="errors.first(property['bk_property_id'])">
-                                            {{errors.first(property['bk_property_id'])}}
-                                        </span>
-                                    </slot>
-                                </div>
-                            </li>
+                            <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
+                                <li class="property-item fl"
+                                    v-if="checkEditable(property)"
+                                    :key="propertyIndex">
+                                    <div class="property-name">
+                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        <i class="property-name-tooltips icon-cc-tips"
+                                            v-if="property['placeholder']"
+                                            v-bk-tooltips="htmlEncode(property['placeholder'])">
+                                        </i>
+                                    </div>
+                                    <div class="property-value clearfix">
+                                        <slot :name="property.bk_property_id">
+                                            <component class="form-component"
+                                                :is="`cmdb-form-${property['bk_property_type']}`"
+                                                :class="{ error: errors.has(property['bk_property_id']) }"
+                                                :unit="property['unit']"
+                                                :disabled="checkDisabled(property)"
+                                                :options="property.option || []"
+                                                :data-vv-name="property['bk_property_id']"
+                                                :data-vv-as="property['bk_property_name']"
+                                                :placeholder="getPlaceholder(property)"
+                                                :auto-select="false"
+                                                v-validate="getValidateRules(property)"
+                                                v-model.trim="values[property['bk_property_id']]">
+                                            </component>
+                                            <span class="form-error"
+                                                :title="errors.first(property['bk_property_id'])">
+                                                {{errors.first(property['bk_property_id'])}}
+                                            </span>
+                                        </slot>
+                                    </div>
+                                </li>
+                            </template>
                         </ul>
                     </cmdb-collapse>
                 </div>

@@ -344,7 +344,8 @@
                         moduleId: this.currentNode.data.bk_inst_id
                     },
                     query: {
-                        title: this.instance.name
+                        title: this.instance.name,
+                        node: this.currentNode.id
                     }
                 })
             },
