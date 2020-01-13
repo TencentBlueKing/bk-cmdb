@@ -141,6 +141,10 @@
                 temp = null
                 return output
             },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             getValidateRules (property) {
                 return this.$tools.getValidateRules(property)
             },
@@ -217,8 +221,11 @@
                 color: #c3cdd7;
             }
             .property-value {
-                font-size: 12px;
+                font-size: 0;
                 position: relative;
+                .form-component {
+                    font-size: 14px;
+                }
             }
         }
     }

@@ -89,6 +89,12 @@ func (s *coreService) ListServiceCategories(params core.ContextParams, pathParam
 		blog.Errorf("ListServiceCategories failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
+	// translate
+	for index := range result.Info {
+		if result.Info[index].ServiceCategory.IsBuiltIn {
+			result.Info[index].ServiceCategory.Name = s.TranslateServiceCategory(params.Lang, &result.Info[index].ServiceCategory)
+		}
+	}
 	return result, nil
 }
 
