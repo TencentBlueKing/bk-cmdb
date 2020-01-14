@@ -150,18 +150,18 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 		blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", params, err, params.ReqID)
 		return nil, err
 	}
-	
-    if len(ruleIDs) > 0 {
-        deleteRuleOption := metadata.DeleteHostApplyRuleOption{
-            RuleIDs: ruleIDs,
-        }
-        if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(params.Context, params.Header, 0, deleteRuleOption); err != nil {
-            blog.Errorf("delete object attribute success, but DeleteHostApplyRule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err, params.ReqID)
-            return nil, err
-        }
-    }
 
-    return nil, err
+	if len(ruleIDs) > 0 {
+		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+			RuleIDs: ruleIDs,
+		}
+		if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(params.Context, params.Header, 0, deleteRuleOption); err != nil {
+			blog.Errorf("delete object attribute success, but DeleteHostApplyRule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err, params.ReqID)
+			return nil, err
+		}
+	}
+
+	return nil, err
 }
 
 func (s *Service) UpdateObjectAttributeIndex(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -188,11 +188,8 @@ func (s *Service) UpdateObjectAttributeIndex(params types.ContextParams, pathPar
 	return result, nil
 }
 
-
-
 // ListHostModelAttribute list host model's attributes
 func (s *Service) ListHostModelAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
 	if err := cond.Parse(data); nil != err {

@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -103,16 +104,20 @@ func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 	rspBody := metadata.LonginSystemUserListResult{}
 	rspBody.Result = true
 	httpStatus := http.StatusOK
-
-	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
-	userList, err = user.GetUserList(c, m.config.ConfigMap)
-	if nil != err {
-		blog.Error("GetUserList failed, err: %+v, rid: %s", err, rid)
-		rspBody.Code = common.CCErrCommHTTPDoRequestFailed
-		rspBody.ErrMsg = err.Error()
-		rspBody.Result = false
-		httpStatus = http.StatusInternalServerError
+	query := c.Request.URL.Query()
+	params := make(map[string]string)
+	for key, values := range query {
+		params[key] = strings.Join(values, ";")
 	}
+    user := plugins.CurrentPlugin(c, m.config.LoginVersion)
+    userList, err = user.GetUserList(c, m.config.ConfigMap, params)
+    if nil != err {
+        blog.Error("GetUserList failed, err: %+v, rid: %s", err, rid)
+        rspBody.Code = common.CCErrCommHTTPDoRequestFailed
+        rspBody.ErrMsg = err.Error()
+        rspBody.Result = false
+        httpStatus = http.StatusInternalServerError
+    }
 	rspBody.Result = true
 	rspBody.Data = userList
 	return httpStatus, rspBody

@@ -64,7 +64,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 }
 
 // GetUserList get user list from paas
-func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
+func (m *user) GetUserList(c *gin.Context, config map[string]string, params map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
 
 	adminData := []*metadata.LoginSystemUserInfo{
 		{

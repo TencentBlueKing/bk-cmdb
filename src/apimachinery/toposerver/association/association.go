@@ -13,7 +13,6 @@ package association
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -21,12 +20,12 @@ import (
 
 func (asst *Association) SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
 	resp = new(metadata.SearchAssociationTypeResult)
-	subPath := fmt.Sprintf("/topo/association/type/action/search")
+	subPath := "/topo/association/type/action/search"
 
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -41,7 +40,7 @@ func (asst *Association) CreateType(ctx context.Context, h http.Header, request 
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -50,12 +49,12 @@ func (asst *Association) CreateType(ctx context.Context, h http.Header, request 
 }
 func (asst *Association) UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
 	resp = new(metadata.UpdateAssociationTypeResult)
-	subPath := fmt.Sprintf("/topo/association/type/%d/action/update", asstTypeID)
+	subPath := "/topo/association/type/%d/action/update"
 
 	err = asst.client.Put().
 		WithContext(ctx).
 		Body(request).
-		SubResource(subPath).
+		SubResourcef(subPath, asstTypeID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -64,12 +63,12 @@ func (asst *Association) UpdateType(ctx context.Context, h http.Header, asstType
 
 func (asst *Association) DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
 	resp = new(metadata.DeleteAssociationTypeResult)
-	subPath := fmt.Sprintf("/topo/association/type/%d/action/delete", asstTypeID)
+	subPath := "/topo/association/type/%d/action/delete"
 
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, asstTypeID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -84,7 +83,7 @@ func (asst *Association) SearchObject(ctx context.Context, h http.Header, reques
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -99,7 +98,7 @@ func (asst *Association) CreateObject(ctx context.Context, h http.Header, reques
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -109,12 +108,12 @@ func (asst *Association) CreateObject(ctx context.Context, h http.Header, reques
 
 func (asst *Association) UpdateObject(ctx context.Context, h http.Header, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
 	resp = new(metadata.UpdateAssociationObjectResult)
-	subPath := fmt.Sprintf("/object/association/%d/action/update", asstID)
+	subPath := "/object/association/%d/action/update"
 
 	err = asst.client.Put().
 		WithContext(ctx).
 		Body(request).
-		SubResource(subPath).
+		SubResourcef(subPath, asstID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -124,12 +123,12 @@ func (asst *Association) UpdateObject(ctx context.Context, h http.Header, asstID
 
 func (asst *Association) DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
 	resp = new(metadata.DeleteAssociationObjectResult)
-	subPath := fmt.Sprintf("/object/association/%d/action/delete", asstID)
+	subPath := "/object/association/%d/action/delete"
 
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, asstID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -143,7 +142,7 @@ func (asst *Association) SearchInst(ctx context.Context, h http.Header, request 
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -157,7 +156,7 @@ func (asst *Association) CreateInst(ctx context.Context, h http.Header, request 
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -166,12 +165,12 @@ func (asst *Association) CreateInst(ctx context.Context, h http.Header, request 
 }
 func (asst *Association) DeleteInst(ctx context.Context, h http.Header, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
 	resp = new(metadata.DeleteAssociationInstResult)
-	subPath := fmt.Sprintf("/inst/association/%d/action/delete", assoID)
+	subPath := "/inst/association/%d/action/delete"
 
 	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, assoID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -186,7 +185,7 @@ func (asst *Association) SearchObjectAssoWithAssoKindList(ctx context.Context, h
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(assoKindIDs).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

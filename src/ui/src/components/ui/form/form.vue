@@ -8,40 +8,42 @@
                     <cmdb-collapse
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
-                        <ul class="property-list clearfix">
-                            <li class="property-item fl"
-                                v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                                v-if="checkEditable(property)"
-                                :key="propertyIndex">
-                                <div class="property-name">
-                                    <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                    <i class="property-name-tooltips icon-cc-tips"
-                                        v-if="property['placeholder']"
-                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
-                                    </i>
-                                </div>
-                                <div class="property-value clearfix">
-                                    <slot :name="property.bk_property_id">
-                                        <component class="form-component"
-                                            :is="`cmdb-form-${property['bk_property_type']}`"
-                                            :class="{ error: errors.has(property['bk_property_id']) }"
-                                            :unit="property['unit']"
-                                            :disabled="checkDisabled(property)"
-                                            :options="property.option || []"
-                                            :data-vv-name="property['bk_property_id']"
-                                            :data-vv-as="property['bk_property_name']"
-                                            :placeholder="getPlaceholder(property)"
-                                            :auto-select="false"
-                                            v-validate="getValidateRules(property)"
-                                            v-model.trim="values[property['bk_property_id']]">
-                                        </component>
-                                        <span class="form-error"
-                                            :title="errors.first(property['bk_property_id'])">
-                                            {{errors.first(property['bk_property_id'])}}
-                                        </span>
-                                    </slot>
-                                </div>
-                            </li>
+                        <ul class="property-list">
+                            <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
+                                <li class="property-item"
+                                    v-if="checkEditable(property)"
+                                    :key="propertyIndex">
+                                    <div class="property-name">
+                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        <i class="property-name-tooltips icon-cc-tips"
+                                            v-if="property['placeholder']"
+                                            v-bk-tooltips="htmlEncode(property['placeholder'])">
+                                        </i>
+                                    </div>
+                                    <div class="property-value clearfix">
+                                        <slot :name="property.bk_property_id">
+                                            <component class="form-component"
+                                                :is="`cmdb-form-${property['bk_property_type']}`"
+                                                :class="{ error: errors.has(property['bk_property_id']) }"
+                                                :unit="property['unit']"
+                                                :row="2"
+                                                :disabled="checkDisabled(property)"
+                                                :options="property.option || []"
+                                                :data-vv-name="property['bk_property_id']"
+                                                :data-vv-as="property['bk_property_name']"
+                                                :placeholder="getPlaceholder(property)"
+                                                :auto-select="false"
+                                                v-validate="getValidateRules(property)"
+                                                v-model.trim="values[property['bk_property_id']]">
+                                            </component>
+                                            <span class="form-error"
+                                                :title="errors.first(property['bk_property_id'])">
+                                                {{errors.first(property['bk_property_id'])}}
+                                            </span>
+                                        </slot>
+                                    </div>
+                                </li>
+                            </template>
                         </ul>
                     </cmdb-collapse>
                 </div>
@@ -241,11 +243,13 @@
     }
     .property-list{
         padding: 4px 0;
+        display: flex;
+        flex-wrap: wrap;
         .property-item{
-            width: 50%;
             margin: 12px 0 0;
             padding: 0 54px 0 0;
             font-size: 12px;
+            flex: 0 0 50%;
             .property-name{
                 display: block;
                 margin: 6px 0 10px;
@@ -279,8 +283,6 @@
                 color: #c3cdd7;
             }
             .property-value{
-                height: 32px;
-                line-height: 32px;
                 font-size: 0;
                 position: relative;
                 /deep/ .control-append-group {

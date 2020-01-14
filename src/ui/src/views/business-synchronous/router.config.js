@@ -16,8 +16,16 @@ export default [{
             relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
         layout: {
-            previous: {
-                name: MENU_BUSINESS_HOST_AND_SERVICE
+            previous: (view) => {
+                const query = view.$route.query
+                const params = {
+                    name: query.form ? query.form : MENU_BUSINESS_HOST_AND_SERVICE,
+                    query: {
+                        tab: 'serviceInstance',
+                        node: 'module-' + view.routerParams.moduleId
+                    }
+                }
+                return params
             }
         }
     })
@@ -32,8 +40,16 @@ export default [{
             relative: MENU_BUSINESS_SERVICE_TEMPLATE
         },
         layout: {
-            previous: {
-                name: MENU_BUSINESS_SERVICE_TEMPLATE
+            previous: (view) => {
+                const query = view.$route.query
+                const params = {
+                    name: query.form ? query.form : MENU_BUSINESS_SERVICE_TEMPLATE,
+                    params: {
+                        templateId: query.templateId,
+                        active: 'instance'
+                    }
+                }
+                return params
             }
         }
     })

@@ -35,6 +35,7 @@
             <comonent class="filter-value"
                 v-else
                 :is="`cmdb-form-${property['bk_property_type']}`"
+                :unit="property['unit']"
                 v-model.trim="value">
             </comonent>
         </div>

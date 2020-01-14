@@ -32,7 +32,7 @@ func (s *system) GetUserConfig(ctx context.Context, h http.Header) (*metadata.Re
 	httpDoErr := s.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

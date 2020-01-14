@@ -211,14 +211,18 @@ func (s *coreService) TimerFreshData(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("TimerFreshData, update timer chart data fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		ctx.RespEntity(false)
+        return
 	}
 	if !exist {
 		ctx.RespEntity(false)
+        return
 	}
 
 	err = s.core.StatisticOperation().TimerFreshData(ctx.Kit)
 	if err != nil {
 		blog.Errorf("TimerFreshData fail, err: %v, rid: %v", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+        return
 	}
 	ctx.RespEntity(true)
 }

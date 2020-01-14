@@ -17,7 +17,8 @@ const state = {
     selectedNode: null,
     selectedNodeInstance: null,
     hostSelectorVisible: false,
-    selectedHost: []
+    selectedHost: [],
+    blueKingEditable: false
 }
 
 const getters = {
@@ -44,6 +45,9 @@ const getters = {
 }
 
 const mutations = {
+    setBlueKingEditable (state, status) {
+        state.blueKingEditable = status
+    },
     setPropertyMap (state, propertyMap = {}) {
         state.propertyMap = propertyMap
     },
