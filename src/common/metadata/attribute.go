@@ -149,12 +149,8 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validChar(ctx, data, key)
 	case common.FieldTypeList:
 		rawError = attribute.validList(ctx, data, key)
-	// TODO implement validate for types below
-	// common.FieldTypeSingleLenChar
-	// common.FieldTypeLongLenChar
-	// common.FieldTypeStrictCharRegexp
-	// common.FieldTypeSingleCharRegexp
-	// common.FieldTypeLongCharRegexp
+	case "foreignkey", "singleasst", "multiasst":
+		// TODO what validation should do on these types
 	default:
 		rawError = errors.RawErrorInfo{
 			ErrCode: common.CCErrCommUnexpectedFieldType,
@@ -944,7 +940,8 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 		}
 		return "", fmt.Errorf("invalid value for list, value: %s, options: %+v", strVal, listOption)
 	default:
-		return "", fmt.Errorf("unexpected property type: %s", fieldType)
+		blog.V(3).Infof("unexpected property type: %s", fieldType)
+		return fmt.Sprintf("%#v", val), nil
 	}
 	return "", nil
 }
