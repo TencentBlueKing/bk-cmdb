@@ -19,7 +19,7 @@
             <bk-tab-panel name="status" :label="$t('实时状态')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tab-panel>
-            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="!isAdminView">
+            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="isBusinessHost">
                 <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
             </bk-tab-panel>
             <bk-tab-panel name="history" :label="$t('变更记录')">
@@ -53,8 +53,8 @@
             }
         },
         computed: {
-            ...mapState('hostDetails', ['info']),
-            ...mapGetters(['isAdminView']),
+            ...mapState('hostDetails', ['info', 'isBusinessHost']),
+            ...mapGetters('hostDetails', ['isBusinessHost']),
             id () {
                 return parseInt(this.$route.params.id)
             },
