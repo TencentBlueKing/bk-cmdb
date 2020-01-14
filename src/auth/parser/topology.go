@@ -103,7 +103,7 @@ func (ps *parseStream) business() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.Business,
-					Action: meta.SkipAction,
+					Action: meta.Create,
 				},
 			},
 		}
