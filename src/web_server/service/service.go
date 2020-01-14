@@ -64,7 +64,6 @@ func (s *Service) WebService() *gin.Engine {
 	// get current login user info
 	ws.GET("/userinfo", s.UserInfo)
 	ws.PUT("/user/current/supplier/:id", s.UpdateSupplier)
-	ws.GET("/user/detail", s.UserDetail)
 	ws.POST("/biz/search/web", s.SearchBusiness)
 
 	ws.GET("/healthz", s.Healthz)
