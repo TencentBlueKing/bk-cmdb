@@ -1,6 +1,9 @@
 <template>
     <div class="cloud-area-layout">
-        <bk-table :data="list">
+        <cmdb-tips class="cloud-area-tips">提示语</cmdb-tips>
+        <bk-table class="cloud-area-table"
+            :data="list"
+            :pagination="pagination">
             <bk-table-column :label="$t('云区域名称')" prop="xxxx" class-name="is-highlight"></bk-table-column>
             <bk-table-column :label="$t('状态')" prop="xxxx">
                 <div slot-scope="{ row }" class="row-status" v-bk-tooltips.right="'异常原因'">
@@ -31,7 +34,11 @@
     export default {
         data () {
             return {
-                list: [{}, {}]
+                list: [{}, {}],
+                pagination: {
+                    ...this.$tools.getDefaultPaginationConfig(),
+                    count: 2
+                }
             }
         },
         methods: {
@@ -45,6 +52,12 @@
 <style lang="scss" scoped>
     .cloud-area-layout {
         padding: 0 20px;
+    }
+    .cloud-area-tips {
+        margin-top: 10px;
+    }
+    .cloud-area-table {
+        margin-top: 10px;
     }
     .row-status {
         display: inline-block;
