@@ -239,7 +239,7 @@
                     this.$router.replace({
                         name: MENU_BUSINESS_HOST_AND_SERVICE,
                         query: {
-                            node: 'module-' + moduleId
+                            node: 'set-' + moduleId
                         }
                     })
                 } else {

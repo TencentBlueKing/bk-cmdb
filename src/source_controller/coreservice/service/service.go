@@ -104,7 +104,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 	instance := instances.New(db, s, cache, language)
 	hostApplyRuleCore := hostapplyrule.New(db, instance)
 	s.core = core.New(
-		model.New(db, s, language),
+		model.New(db, s, language, cache),
 		instance,
 		association.New(db, s),
 		datasynchronize.New(db, s),

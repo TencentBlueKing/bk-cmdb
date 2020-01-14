@@ -611,7 +611,7 @@ func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams
 
 	query := &metadata.QueryBusinessRequest{
 		Fields: fields,
-		Page:   metadata.BasePage{},
+		Page:   page,
 		Condition: mapstr.MapStr{
 			common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
 		},

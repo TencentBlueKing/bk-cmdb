@@ -27,7 +27,7 @@
                         v-if="isAdminView"
                         font-size="medium"
                         :popover-width="180"
-                        :searchable="businessList.length > 7"
+                        :searchable="true"
                         :disabled="!table.checked.length || disabled"
                         :clearable="false"
                         :placeholder="$t('分配到')"
@@ -80,6 +80,28 @@
                 </bk-tab-panel>
             </bk-tab>
         </bk-sideslider>
+        <bk-dialog
+            class="assign-dialog"
+            v-model="assignDialog.show"
+            :title="$t('确认分配到业务')"
+            :show-footer="false"
+            :esc-close="false"
+            @cancel="cancelAssignHosts">
+            <i18n class="assign-info" path="确认转移主机信息" tag="div">
+                <span place="num">{{table.checked.length}}</span>
+                <span place="name">{{assignDialog.business['bk_biz_name']}}</span>
+            </i18n>
+            <div class="assign-footer">
+                <bk-button
+                    class="mr10"
+                    theme="primary"
+                    :loading="$loading('transferResourcehostToIdleModule')"
+                    @click="assignHosts">
+                    {{$t('确定')}}
+                </bk-button>
+                <bk-button @click="cancelAssignHosts">{{$t('取消')}}</bk-button>
+            </div>
+        </bk-dialog>
     </div>
 </template>
 
@@ -117,7 +139,11 @@
                 },
                 isDropdownShow: false,
                 ready: false,
-                businessList: []
+                businessList: [],
+                assignDialog: {
+                    show: false,
+                    business: {}
+                }
             }
         },
         computed: {
@@ -251,16 +277,8 @@
                         this.assignBusiness = 'empty'
                     })
                 } else {
-                    this.$bkInfo({
-                        title: this.$t('确认分配到业务'),
-                        subHeader: this.getConfirmContent(business),
-                        confirmFn: () => {
-                            this.assignHosts(business)
-                        },
-                        cancelFn: () => {
-                            this.assignBusiness = 'empty'
-                        }
-                    })
+                    this.assignDialog.business = business
+                    this.assignDialog.show = true
                 }
             },
             hasSelectAssignedHost () {
@@ -269,38 +287,27 @@
                 const existAssigned = list.some(item => item['biz'].some(biz => biz.default !== 1))
                 return existAssigned
             },
-            assignHosts (business) {
+            cancelAssignHosts () {
+                this.assignBusiness = 'empty'
+                this.assignDialog.show = false
+            },
+            assignHosts () {
                 this.transferResourcehostToIdleModule({
                     params: {
-                        'bk_biz_id': business['bk_biz_id'],
+                        'bk_biz_id': this.assignDialog.business['bk_biz_id'],
                         'bk_host_id': this.table.checked
+                    },
+                    config: {
+                        requestId: 'transferResourcehostToIdleModule'
                     }
                 }).then(() => {
                     this.$success(this.$t('分配成功'))
-                    this.assignBusiness = 'empty'
                     this.$refs.resourceTable.table.checked = []
                     this.$refs.resourceTable.handlePageChange(1)
-                }).catch(e => {
+                }).finally(() => {
                     this.assignBusiness = 'empty'
+                    this.assignDialog.show = false
                 })
-            },
-            getConfirmContent (business) {
-                const render = this.$createElement
-                const content = render('i18n', {
-                    props: {
-                        path: '确认转移主机信息'
-                    }
-                }, [
-                    render('span', {
-                        attrs: { place: 'num' },
-                        style: { color: '#3c96ff' }
-                    }, this.table.checked.length),
-                    render('span', {
-                        attrs: { place: 'name' },
-                        style: { color: '#3c96ff' }
-                    }, business['bk_biz_name'])
-                ])
-                return content
             },
             handleChecked (checked) {
                 this.table.checked = checked
@@ -456,6 +463,22 @@
             }
             a{
                 color:#3c96ff;
+            }
+        }
+    }
+    .assign-dialog {
+        /deep/ .bk-dialog-body {
+            padding: 0 50px 40px;
+        }
+        .assign-info span {
+            color: #3c96ff;
+        }
+        .assign-footer {
+            padding-top: 20px;
+            font-size: 0;
+            text-align: center;
+            .bk-button-normal {
+                width: 96px;
             }
         }
     }

@@ -75,16 +75,16 @@ func (m *operationManager) SearchChartDataCommon(kit *rest.Kit, inputParam metad
 
 func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
 	commonCount := make([]metadata.StringIDCount, 0)
-	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
+	filterCondition := fmt.Sprintf("$%s", inputParam.Field)
 
 	if inputParam.ObjID == common.BKInnerObjIDHost {
-		pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+		pipeline := []M{{common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
 			blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, err, kit.Rid)
 			return nil, err
 		}
 	} else {
-		pipeline := []M{{"$match": M{"bk_obj_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+		pipeline := []M{{common.BKDBMatch: M{common.BKObjIDField: inputParam.ObjID}}, {common.BKDBGroup: M{"_id": filterCondition, "count": M{common.BKDBSum: 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(kit.Ctx, pipeline, &commonCount); err != nil {
 			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, kit.Rid)
 			return nil, err
@@ -137,17 +137,17 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 		return nil, err
 	}
 
-	respData := make([]metadata.IDStringCountInt64, 0)
+	respData := make([]metadata.StringIDCount, 0)
 	for _, opt := range option {
-		info := metadata.IDStringCountInt64{
-			Id:    opt.Name,
+		info := metadata.StringIDCount{
+			ID:    opt.Name,
 			Count: 0,
 		}
 		for _, count := range commonCount {
-			if count.Id == opt.ID {
+			if count.ID == opt.ID {
 				info.Count = count.Count
 			}
-			if opt.Name == common.OptionOther && count.Id == "" {
+			if opt.Name == common.OptionOther && count.ID == "" {
 				info.Count = count.Count
 			}
 		}
@@ -161,11 +161,41 @@ func (m *operationManager) SearchTimerChartData(kit *rest.Kit, inputParam metada
 	condition := mapstr.MapStr{}
 	condition[common.OperationReportType] = inputParam.ReportType
 
-	chartData := metadata.ChartData{}
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).One(kit.Ctx, &chartData); err != nil {
-		blog.Errorf("search chart data fail, chart name: %v err: %v, rid: %v", inputParam.Name, err, kit.Rid)
-		return nil, err
+	switch inputParam.ReportType {
+	case common.HostChangeBizChart:
+		chartData := make([]metadata.HostChangeChartData, 0)
+		if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).All(kit.Ctx, &chartData); err != nil {
+			blog.Errorf("search chart data fail, chart name: %v err: %v, rid: %v", inputParam.Name, err, kit.Rid)
+			return nil, err
+		}
+		result := make(map[string][]metadata.StringIDCount, 0)
+		for _, data := range chartData {
+			for _, info := range data.Data {
+				if _, ok := result[info.ID]; !ok {
+					result[info.ID] = make([]metadata.StringIDCount, 0)
+				}
+				result[info.ID] = append(result[info.ID], metadata.StringIDCount{
+					ID:    data.CreateTime,
+					Count: info.Count,
+				})
+			}
+		}
+		return result, nil
+	case common.ModelInstChart:
+		chartData := metadata.ModelInstChartData{}
+		if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).One(kit.Ctx, &chartData); err != nil {
+			blog.Errorf("search chart data fail, chart name: %v err: %v, rid: %v", inputParam.Name, err, kit.Rid)
+			return nil, err
+		}
+		return chartData.Data, nil
+	case common.ModelInstChangeChart:
+		chartData := metadata.ChartData{}
+		if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).One(kit.Ctx, &chartData); err != nil {
+			blog.Errorf("search chart data fail, chart name: %v err: %v, rid: %v", inputParam.Name, err, kit.Rid)
+			return nil, err
+		}
+		return chartData.Data, nil
 	}
 
-	return chartData.Data, nil
+	return nil, nil
 }

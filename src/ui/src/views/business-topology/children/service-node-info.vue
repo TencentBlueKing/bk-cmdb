@@ -55,6 +55,62 @@
                     </div>
                 </template>
             </div>
+        </template>
+        <cmdb-details class="topology-details"
+            v-if="type === 'details'"
+            :class="{ pt10: !isSetNode && !isModuleNode }"
+            :properties="properties"
+            :property-groups="propertyGroups"
+            :inst="instance"
+            :show-options="modelId !== 'biz' && editable">
+            <template slot="details-options">
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                    <template slot-scope="{ disabled }">
+                        <bk-button class="button-edit"
+                            theme="primary"
+                            :disabled="disabled"
+                            @click="handleEdit">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </template>
+                </cmdb-auth>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
+                    <template slot-scope="{ disabled }">
+                        <span class="inline-block-middle" v-if="moduleFromSetTemplate"
+                            v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
+                            <bk-button class="btn-delete" hover-theme="danger" disabled>
+                                {{$t('删除节点')}}
+                            </bk-button>
+                        </span>
+                        <bk-button class="btn-delete" v-else
+                            hover-theme="danger"
+                            :disabled="disabled"
+                            @click="handleDelete">
+                            {{$t('删除节点')}}
+                        </bk-button>
+                    </template>
+                </cmdb-auth>
+            </template>
+        </cmdb-details>
+        <template v-else-if="type === 'update'">
+            <div class="service-category" v-if="!withTemplate && isModuleNode">
+                <span class="title">{{$t('服务分类')}}</span>
+                <div class="selector-item mt10 clearfix">
+                    <cmdb-selector class="category-selector fl"
+                        :list="firstCategories"
+                        v-model="first"
+                        @on-selected="handleChangeFirstCategory">
+                    </cmdb-selector>
+                    <cmdb-selector class="category-selector fl"
+                        :list="secondCategories"
+                        name="secondCategory"
+                        v-validate="'required'"
+                        v-model="second"
+                        @on-selected="handleChangeCategory">
+                    </cmdb-selector>
+                    <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
+                </div>
+            </div>
             <cmdb-details class="topology-details"
                 v-if="type === 'details'"
                 :properties="properties"
@@ -199,6 +255,10 @@
             },
             moduleFromSetTemplate () {
                 return this.isModuleNode && !!this.selectedNode.parent.data.set_template_id
+            },
+            editable () {
+                const editable = this.$store.state.businessHost.blueKingEditable
+                return this.isBlueking ? this.isBlueking && editable : true
             }
         },
         watch: {
@@ -661,6 +721,10 @@
                     params: {
                         templateId: this.instance.service_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
+                    },
+                    query: {
+                        node: this.selectedNode.id,
+                        tab: 'nodeInfo'
                     }
                 })
             },
@@ -671,6 +735,10 @@
                         mode: 'view',
                         templateId: this.instance.set_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
+                    },
+                    query: {
+                        node: this.selectedNode.id,
+                        tab: 'nodeInfo'
                     }
                 })
             },

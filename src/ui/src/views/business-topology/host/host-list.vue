@@ -322,7 +322,8 @@
                         sourceModel: this.selectedNode.data.bk_obj_id,
                         sourceId: this.selectedNode.data.bk_inst_id,
                         targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-                        resources: this.table.selection.map(item => item.host.bk_host_id).join(',')
+                        resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
+                        node: this.selectedNode.id
                     }
                 })
             },

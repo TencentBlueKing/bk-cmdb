@@ -14,10 +14,12 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -25,11 +27,14 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+
+    redis "gopkg.in/redis.v5"
 )
 
 type modelAttribute struct {
-	model    *modelManager
-	dbProxy  dal.RDB
+	model   *modelManager
+	dbProxy dal.RDB
+	cache   *redis.Client
 	language language.CCLanguageIf
 }
 
@@ -58,6 +63,22 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 	}
 
 	for attrIdx, attr := range inputParam.Attributes {
+		// fmt.Sprintf("coreservice:create:model:%s:attr:%s", objID, attr.PropertyID)
+		redisKey := lock.GetLockKey(lock.CreateModuleAttrFormat, objID, attr.PropertyID)
+
+		locker := lock.NewLocker(m.cache)
+		looked, err := locker.Lock(redisKey, time.Second*35)
+		defer locker.Unlock()
+		if err != nil {
+			blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, kit.Rid)
+			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommRedisOPErr), &attr)
+			continue
+		}
+		if !looked {
+			blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, kit.Rid)
+			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)), &attr)
+			continue
+		}
 		if attr.IsPre {
 			if attr.PropertyID == common.BKInstNameField {
 				language := util.GetLanguage(kit.Header)
