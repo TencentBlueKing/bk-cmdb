@@ -134,7 +134,7 @@ func (s *Service) createSet(params types.ContextParams, bizID int64, obj model.O
 func (s *Service) CheckIsBuiltInSet(params types.ContextParams, setIDs ...int64) errors.CCErrorCoder {
 	// 检查是否时内置集群
 	filter := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: map[string]interface{}{

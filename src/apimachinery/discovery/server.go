@@ -131,12 +131,12 @@ func (s *server) updateServer(svrs []string) {
 			continue
 		}
 
-		if len(server.IP) == 0 {
+		if len(server.RegisterIP) == 0 {
 			blog.Errorf("invalid ip with zk path: %s", s.path)
 			continue
 		}
 
-		host := server.Address()
+		host := server.RegisterAddress()
 		newSvr = append(newSvr, host)
 	}
 

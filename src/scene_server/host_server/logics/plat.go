@@ -26,7 +26,7 @@ func (lgc *Logics) IsPlatExist(ctx context.Context, cond mapstr.MapStr) (bool, e
 
 	query := &metadata.QueryCondition{
 		Condition: cond,
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
+		Page:      metadata.BasePage{Start: 0, Limit: 1},
 		Fields:    []string{common.BKCloudIDField},
 	}
 

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package self
+package blueking
 
 import (
 	"encoding/json"
@@ -25,7 +25,6 @@ import (
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
-	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
 	"github.com/gin-gonic/gin"
@@ -195,19 +194,6 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 		return users, nil
 	}
 	session := sessions.Default(c)
-	skipLogin := session.Get(webCommon.IsSkipLogin)
-	skipLogins, ok := skipLogin.(string)
-	if ok && "1" == skipLogins {
-		blog.V(5).Infof("use skip login flag: %v, rid: %s", skipLogin, rid)
-		adminData := []*metadata.LoginSystemUserInfo{
-			{
-				CnName: "admin",
-				EnName: "admin",
-			},
-		}
-
-		return adminData, nil
-	}
 
 	token := session.Get(common.HTTPCookieBKToken)
 	getURL := fmt.Sprintf(accountURL, token)

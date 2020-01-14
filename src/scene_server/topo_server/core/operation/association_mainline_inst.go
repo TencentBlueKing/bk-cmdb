@@ -335,7 +335,7 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 		common.BKAppIDField: bizID,
 	}
 	moduleQueryCondition := &metadata.QueryCondition{
-		Limit: metadata.SearchLimit{
+		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: mapstr.MapStr(moduleFilter),

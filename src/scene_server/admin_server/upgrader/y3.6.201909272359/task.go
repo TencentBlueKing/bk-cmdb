@@ -63,7 +63,7 @@ func taskMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	for _, index := range indexArr {
 		err := db.Table(common.BKTableNameAPITask).CreateIndex(ctx, index)
-		if err != nil {
+		if err != nil && !db.IsDuplicatedError(err) {
 			blog.ErrorJSON("create table %s  index %s error. err:%s", common.BKTableNameAPITask, index, err.Error())
 			return err
 		}

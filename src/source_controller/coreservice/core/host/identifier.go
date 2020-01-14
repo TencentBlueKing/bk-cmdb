@@ -14,16 +14,16 @@ package host
 
 import (
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/host/identifier"
 )
 
-func (hm *hostManager) Identifier(ctx core.ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error) {
+func (hm *hostManager) Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error) {
 	identifier := identifier.NewIdentifier(hm.DbProxy)
-	host, err := identifier.Identifier(ctx, input.HostIDs)
+	host, err := identifier.Identifier(kit, input.HostIDs)
 	if err != nil {
-		blog.ErrorJSON("Identifier get host identifier error. input:%s, err:%s, rid:%s", input, err.Error(), ctx.ReqID)
+		blog.ErrorJSON("Identifier get host identifier error. input:%s, err:%s, rid:%s", input, err.Error(), kit.Rid)
 		return nil, err
 	}
 	return host, nil

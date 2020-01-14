@@ -13,19 +13,20 @@
 package instances
 
 import (
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/eventclient"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
+
+	redis "gopkg.in/redis.v5"
 )
 
 var _ core.InstanceOperation = (*instanceManager)(nil)
@@ -33,58 +34,59 @@ var _ core.InstanceOperation = (*instanceManager)(nil)
 type instanceManager struct {
 	dbProxy   dal.RDB
 	dependent OperationDependences
-	validator validator
+	language  language.CCLanguageIf
 	Cache     *redis.Client
 	EventCli  eventclient.Client
 }
 
 // New create a new instance manager instance
-func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client) core.InstanceOperation {
+func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client, language language.CCLanguageIf) core.InstanceOperation {
 	return &instanceManager{
 		dbProxy:   dbProxy,
 		dependent: dependent,
 		EventCli:  eventclient.NewClientViaRedis(cache, dbProxy),
+		language:  language,
 	}
 }
 
-func (m *instanceManager) instCnt(ctx core.ContextParams, objID string, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
+func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
 	tableName := common.GetInstTableName(objID)
-	cnt, err = m.dbProxy.Table(tableName).Find(cond).Count(ctx)
+	cnt, err = m.dbProxy.Table(tableName).Find(cond).Count(kit.Ctx)
 	exists = 0 != cnt
 	return cnt, exists, err
 }
 
-func (m *instanceManager) CreateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
+func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
+	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
-	err := m.validCreateInstanceData(ctx, objID, inputParam.Data)
+	err := m.validCreateInstanceData(kit, objID, inputParam.Data)
 	if nil != err {
 		blog.Errorf("CreateModelInstance failed, valid error: %+v, rid: %s", err, rid)
 		return nil, err
 	}
-	id, err := m.save(ctx, objID, inputParam.Data)
+	id, err := m.save(kit, objID, inputParam.Data)
 	if err != nil {
-		blog.ErrorJSON("CreateModelInstance create objID(%s) instance error. err:%s, data:%s, rid:%s", objID, err.Error(), inputParam.Data, ctx.ReqID)
+		blog.ErrorJSON("CreateModelInstance create objID(%s) instance error. err:%s, data:%s, rid:%s", objID, err.Error(), inputParam.Data, kit.Rid)
 		return nil, err
 	}
 
 	instIDFieldName := common.GetInstIDField(objID)
 	// 处理事件数据的
 	eh := m.NewEventClient(objID)
-	err = eh.SetCurDataAndPush(ctx, objID, metadata.EventActionCreate, mapstr.MapStr{instIDFieldName: id})
+	err = eh.SetCurDataAndPush(kit, objID, metadata.EventActionCreate, mapstr.MapStr{instIDFieldName: id})
 	if err != nil {
-		blog.ErrorJSON("CreateModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, id, ctx.ReqID)
+		blog.ErrorJSON("CreateModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, id, kit.Rid)
 		return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
 	}
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
 }
 
-func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
+func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
 	var newIDs []uint64
 	dataResult := &metadata.CreateManyDataResult{}
 	for itemIdx, item := range inputParam.Datas {
-		item.Set(common.BKOwnerIDField, ctx.SupplierAccount)
-		err := m.validCreateInstanceData(ctx, objID, item)
+		item.Set(common.BKOwnerIDField, kit.SupplierAccount)
+		err := m.validCreateInstanceData(kit, objID, item)
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     err.Error(),
@@ -94,8 +96,8 @@ func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID 
 			})
 			continue
 		}
-		item.Set(common.BKOwnerIDField, ctx.SupplierAccount)
-		id, err := m.save(ctx, objID, item)
+		item.Set(common.BKOwnerIDField, kit.SupplierAccount)
+		id, err := m.save(kit, objID, item)
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     err.Error(),
@@ -115,26 +117,26 @@ func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID 
 	instIDFieldName := common.GetInstIDField(objID)
 	// 处理事件数据的
 	eh := m.NewEventClient(objID)
-	err := eh.SetCurDataAndPush(ctx, objID, metadata.EventActionCreate, condition.CreateCondition().Field(instIDFieldName).In(newIDs).ToMapStr())
+	err := eh.SetCurDataAndPush(kit, objID, metadata.EventActionCreate, condition.CreateCondition().Field(instIDFieldName).In(newIDs).ToMapStr())
 	if err != nil {
-		blog.ErrorJSON("CreateManyModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, newIDs, ctx.ReqID)
+		blog.ErrorJSON("CreateManyModelInstance  event push instance current data error. err:%s, objID:%s inst id:%s, rid:%s", err, objID, newIDs, kit.Rid)
 		return dataResult, err
 	}
 	return dataResult, nil
 }
 
-func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	instIDFieldName := common.GetInstIDField(objID)
-	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
-	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
+	inputParam.Condition.Set(common.BKOwnerIDField, kit.SupplierAccount)
+	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("UpdateModelInstance failed, get inst failed, err: %v, rid:%s", err, ctx.ReqID)
+		blog.Errorf("UpdateModelInstance failed, get inst failed, err: %v, rid:%s", err, kit.Rid)
 		return nil, err
 	}
 
 	if len(origins) == 0 {
-		blog.Errorf("UpdateModelInstance failed, no instance found. model: %s, condition:%+v, rid:%s", objID, inputParam.Condition, ctx.ReqID)
-		return nil, ctx.Error.Error(common.CCErrCommNotFound)
+		blog.Errorf("UpdateModelInstance failed, no instance found. model: %s, condition:%+v, rid:%s", objID, inputParam.Condition, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommNotFound)
 	}
 
 	// 处理事件数据的
@@ -158,50 +160,41 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 	for _, origin := range origins {
 		instIDI := origin[instIDFieldName]
 		instID, _ := util.GetInt64ByInterface(instIDI)
-		err := m.validUpdateInstanceData(ctx, objID, inputParam.Data, instMedataData, uint64(instID))
+		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, uint64(instID))
 		if nil != err {
-			blog.Errorf("update model instance validate error :%v ,rid:%s", err, ctx.ReqID)
+			blog.Errorf("update model instance validate error :%v ,rid:%s", err, kit.Rid)
 			return nil, err
 		}
 		// 设置实例变更前数据
 		eh.SetPreData(instID, origin)
 	}
 
-	err = m.update(ctx, objID, inputParam.Data, inputParam.Condition)
+	err = m.update(kit, objID, inputParam.Data, inputParam.Condition)
 	if err != nil {
-		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, condition:%s, rid:%s", objID, inputParam.Condition, ctx.ReqID)
+		blog.ErrorJSON("UpdateModelInstance update objID(%s) inst error. err:%s, condition:%s, rid:%s", objID, inputParam.Condition, kit.Rid)
 		return nil, err
 	}
-	err = eh.SetCurDataAndPush(ctx, objID, metadata.EventActionUpdate, inputParam.Condition)
+	err = eh.SetCurDataAndPush(kit, objID, metadata.EventActionUpdate, inputParam.Condition)
 	if err != nil {
-		blog.ErrorJSON("UpdateModelInstance  event push instance current data error. err:%s, condition:%s, rid:%s", err, inputParam.Condition, ctx.ReqID)
+		blog.ErrorJSON("UpdateModelInstance  event push instance current data error. err:%s, condition:%s, rid:%s", err, inputParam.Condition, kit.Rid)
 		return nil, err
 	}
 
 	return &metadata.UpdatedCount{Count: uint64(len(origins))}, nil
 }
 
-func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, kit.Rid)
+	instItems, err := m.searchInstance(kit, objID, inputParam)
 	if nil != err {
-		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, ctx.ReqID)
-		return &metadata.QueryResult{}, err
-	}
-	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
-	inputParam.Condition = condition.ToMapStr()
-
-	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, ctx.ReqID)
-	instItems, err := m.searchInstance(ctx, objID, inputParam)
-	if nil != err {
-		blog.Errorf("search instance error [%v], rid: %s", err, ctx.ReqID)
+		blog.Errorf("search instance error [%v], rid: %s", err, kit.Rid)
 		return &metadata.QueryResult{}, err
 	}
 
 	dataResult := &metadata.QueryResult{}
-	dataResult.Count, err = m.countInstance(ctx, objID, inputParam.Condition)
+	dataResult.Count, err = m.countInstance(kit, objID, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("count instance error [%v], rid: %s", err, ctx.ReqID)
+		blog.Errorf("count instance error [%v], rid: %s", err, kit.Rid)
 		return &metadata.QueryResult{}, err
 	}
 	dataResult.Info = instItems
@@ -209,11 +202,11 @@ func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID stri
 	return dataResult, nil
 }
 
-func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
-	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
-	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
+	inputParam.Condition.Set(common.BKOwnerIDField, kit.SupplierAccount)
+	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
 	}
@@ -226,36 +219,36 @@ func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID stri
 		if nil != err {
 			return nil, err
 		}
-		exists, err := m.dependent.IsInstAsstExist(ctx, objID, uint64(instID))
+		exists, err := m.dependent.IsInstAsstExist(kit, objID, uint64(instID))
 		if nil != err {
 			return nil, err
 		}
 		if exists {
-			return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrorInstHasAsst)
+			return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrorInstHasAsst)
 		}
 		eh.SetPreData(instID, origin)
 	}
-	err = m.dbProxy.Table(tableName).Delete(ctx, inputParam.Condition)
+	err = m.dbProxy.Table(tableName).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
-		blog.ErrorJSON("DeleteModelInstance delete objID(%s) instance error. err:%s, coniditon:%s, rid:%s", objID, err.Error(), inputParam.Condition, ctx.ReqID)
+		blog.ErrorJSON("DeleteModelInstance delete objID(%s) instance error. err:%s, coniditon:%s, rid:%s", objID, err.Error(), inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
-	err = eh.Push(ctx, objID, metadata.EventActionDelete)
+	err = eh.Push(kit, objID, metadata.EventActionDelete)
 	if err != nil {
-		blog.ErrorJSON("DeleteModelInstance push delete objType(%s) instance to event server error. data:%s, rid:%s", objID, origins, ctx.ReqID)
-		return &metadata.DeletedCount{Count: uint64(len(origins))}, ctx.Error.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)
+		blog.ErrorJSON("DeleteModelInstance push delete objType(%s) instance to event server error. data:%s, rid:%s", objID, origins, kit.Rid)
+		return &metadata.DeletedCount{Count: uint64(len(origins))}, kit.CCError.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)
 
 	}
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
 
-func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
-	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
-	blog.V(5).Infof("cascade delete model instance get inst error:%v, rid: %s", origins, ctx.ReqID)
+	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
+	blog.V(5).Infof("cascade delete model instance get inst error:%v, rid: %s", origins, kit.Rid)
 	if nil != err {
-		blog.Errorf("cascade delete model instance get inst error:%v, rid: %s", err, ctx.ReqID)
+		blog.Errorf("cascade delete model instance get inst error:%v, rid: %s", err, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -264,13 +257,13 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 		if nil != err {
 			return &metadata.DeletedCount{}, err
 		}
-		err = m.dependent.DeleteInstAsst(ctx, objID, uint64(instID))
+		err = m.dependent.DeleteInstAsst(kit, objID, uint64(instID))
 		if nil != err {
 			return &metadata.DeletedCount{}, err
 		}
 	}
-	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
-	err = m.dbProxy.Table(tableName).Delete(ctx, inputParam.Condition)
+	inputParam.Condition.Set(common.BKOwnerIDField, kit.SupplierAccount)
+	err = m.dbProxy.Table(tableName).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
 	}
