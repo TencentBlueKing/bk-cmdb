@@ -1,3 +1,4 @@
+
 #!/bin/bash
 set -e
 
@@ -5,8 +6,7 @@ set -e
 localIp=`python ip.py`
 
 # 判断是否为IPV6，是则在地址两端加中括号
-result=$(echo ${localIp} | grep ":")
-if [[ "$result" != "" ]]
+if [[ ${localIp} =~ ":" ]]
 then
   localIp="[${localIp}]"
 fi
