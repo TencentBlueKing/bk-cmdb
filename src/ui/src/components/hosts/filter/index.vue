@@ -227,6 +227,7 @@
         },
         async created () {
             Bus.$on('toggle-host-filter', this.handleToggleFilter)
+            Bus.$on('reset-host-filter', this.handleReset)
             this.propertyPromise = new Promise((resolve, reject) => {
                 this.propertyResolver = () => {
                     this.propertyResolver = null
@@ -239,6 +240,7 @@
         },
         beforeDestroy () {
             Bus.$off('toggle-host-filter', this.handleToggleFilter)
+            Bus.$off('reset-host-filter', this.handleReset)
             this.$store.commit('hosts/clearFilter')
         },
         methods: {
