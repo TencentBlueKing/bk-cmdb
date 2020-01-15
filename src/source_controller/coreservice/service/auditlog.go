@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -26,7 +27,7 @@ func (s *coreService) CreateAuditLog(ctx *rest.Contexts) {
 		return
 	}
 	if err := s.core.AuditOperation().CreateAuditLog(ctx.Kit, inputData.Data...); nil != err {
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrAuditSaveLogFailed))
 		return
 	}
 	ctx.RespEntity(nil)
@@ -40,7 +41,7 @@ func (s *coreService) SearchAuditLog(ctx *rest.Contexts) {
 	}
 	auditLogs, count, err := s.core.AuditOperation().SearchAuditLog(ctx.Kit, inputData)
 	if err != nil {
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrAuditSelectFailed))
 		return
 	}
 	ctx.RespEntity(struct {
