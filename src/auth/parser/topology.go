@@ -103,7 +103,7 @@ func (ps *parseStream) business() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.Business,
-					Action: meta.SkipAction,
+					Action: meta.Create,
 				},
 			},
 		}
@@ -209,7 +209,7 @@ func (ps *parseStream) business() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.Business,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 				// we don't know if one or more business is to find, so we assume it's a find many
 				// business operation.
