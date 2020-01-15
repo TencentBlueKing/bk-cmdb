@@ -890,14 +890,14 @@ func (assoc *association) CreateInst(params types.ContextParams, request *metada
 		OpType: auditoplog.AuditOpTypeAdd,
 		BizID:  bizID,
 	}
-	auditresp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
+	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
 		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFailed)
 	}
-	if !auditresp.Result {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.New(auditresp.Code, auditresp.ErrMsg)
+	if !auditResp.Result {
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", auditResp.ErrMsg, params.ReqID)
+		return nil, params.Err.New(auditResp.Code, auditResp.ErrMsg)
 	}
 
 	return resp, err
@@ -969,14 +969,14 @@ func (assoc *association) DeleteInst(params types.ContextParams, assoID int64) (
 		OpType: auditoplog.AuditOpTypeDel,
 		BizID:  bizID,
 	}
-	auditresp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
+	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
-		blog.Errorf("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v, rid: %s", auditresp, err, params.ReqID)
+		blog.Errorf("DeleteInst finished, but save audit log failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFailed)
 	}
-	if !auditresp.Result {
-		blog.Errorf("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.New(auditresp.Code, auditresp.ErrMsg)
+	if !auditResp.Result {
+		blog.Errorf("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", auditResp.ErrMsg, params.ReqID)
+		return nil, params.Err.New(auditResp.Code, auditResp.ErrMsg)
 	}
 
 	return resp, err
