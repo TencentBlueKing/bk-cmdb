@@ -55,14 +55,14 @@ func (m *OwnerManager) SetHttpHeader(key, val string) {
 	m.header.Set(key, val)
 }
 
-func (m *OwnerManager) InitOwner() (errors.CCErrorCoder, []metadata.Permission) {
+func (m *OwnerManager) InitOwner() ([]metadata.Permission, errors.CCErrorCoder) {
 	rid := util.GetHTTPCCRequestID(m.header)
 	blog.V(5).Infof("init owner %s, rid: %s", m.OwnerID, rid)
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
 
 	exist, err, permissions := m.defaultAppIsExist()
 	if err != nil {
-		return err, permissions
+		return permissions, err
 	}
 	if !exist {
 		redisCli := m.CacheCli
@@ -70,7 +70,7 @@ func (m *OwnerManager) InitOwner() (errors.CCErrorCoder, []metadata.Permission) 
 			ok, err := redisCli.SetNX(common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
 			if nil != err {
 				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
-				return ccErr.CCError(common.CCErrCommNotFound), nil
+				return nil, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 			}
 			if ok {
 				break
@@ -84,12 +84,12 @@ func (m *OwnerManager) InitOwner() (errors.CCErrorCoder, []metadata.Permission) 
 		}()
 		exist, err, permissions = m.defaultAppIsExist()
 		if err != nil {
-			return err, permissions
+			return permissions, err
 		}
 		if !exist {
 			err, permissions = m.addDefaultApp()
 			if nil != err {
-				return err, permissions
+				return permissions, err
 			}
 		}
 	}
