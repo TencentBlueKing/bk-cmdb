@@ -264,6 +264,7 @@ func getPropertyTypeAliasName(propertyType string, defLang lang.DefaultCCLanguag
 	case common.FieldTypeDate:
 	case common.FieldTypeTime:
 	case common.FieldTypeUser:
+	case common.FieldTypeOrganization:
 	case common.FieldTypeBool:
 	case common.FieldTypeTimeZone:
 

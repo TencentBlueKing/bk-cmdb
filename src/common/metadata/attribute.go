@@ -149,6 +149,8 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validChar(ctx, data, key)
 	case common.FieldTypeList:
 		rawError = attribute.validList(ctx, data, key)
+	case common.FieldTypeOrganization:
+		rawError = attribute.validOrganization(ctx, data, key)
 	case "foreignkey", "singleasst", "multiasst":
 		// TODO what validation should do on these types
 	default:
@@ -627,6 +629,33 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 		ErrCode: common.CCErrCommParamsInvalid,
 		Args:    []interface{}{key},
 	}
+}
+
+// validBool valid object attribute that is bool type
+func (attribute *Attribute) validOrganization(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if nil == val {
+		if attribute.IsRequired {
+			blog.Errorf("params can not be null, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	switch val.(type) {
+	case []interface{}:
+	default:
+		blog.Errorf("params should be type organization, rid: %s", rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+	return errors.RawErrorInfo{}
 }
 
 // parseFloatOption  parse float data in option
