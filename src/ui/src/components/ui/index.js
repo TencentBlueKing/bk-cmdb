@@ -32,7 +32,7 @@ import tableEmpty from './table-empty/table-empty.vue'
 import list from './form/list.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
 import user from './user/user.vue'
-import textButton from './button/text-button.vue'
+import textButton from './button/link-button.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
