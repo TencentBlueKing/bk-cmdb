@@ -1,6 +1,6 @@
 <template>
     <component href="javascript:void(0)"
-        :class="['text-button', { 'disabled': disabled }]"
+        :class="['link-button', { 'disabled': disabled }]"
         :is="tag"
         @click="handleClick">
         <slot></slot>
@@ -9,7 +9,7 @@
 
 <script>
     export default {
-        name: 'text-button',
+        name: 'link-button',
         props: {
             disabled: Boolean,
             tag: {
@@ -33,7 +33,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .text-button {
+    .link-button {
         display: inline-block;
         vertical-align: middle;
         line-height: 32px;
