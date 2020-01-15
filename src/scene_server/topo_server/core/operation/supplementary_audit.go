@@ -120,9 +120,9 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 
 		}
 
-		headers := []Header{}
+		headers := make([]metadata.Header, 0)
 		for _, attr := range nonInnerAttributes {
-			headers = append(headers, Header{
+			headers = append(headers, metadata.Header{
 				PropertyID:   attr.Attribute().PropertyID,
 				PropertyName: attr.Attribute().PropertyName,
 			})
@@ -139,10 +139,10 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 			}
 		}
 
-		auditlog := metadata.SaveAuditLogParams{
+		auditLog := metadata.SaveAuditLogParams{
 			ID:    id,
 			Model: a.obj.GetObjectID(),
-			Content: Content{
+			Content: metadata.Content{
 				CurData: currDataTmp,
 				PreData: preDataTmp,
 				Headers: headers,
@@ -152,13 +152,13 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 			BizID:  bizID,
 		}
 
-		auditresp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.params.Header, auditlog)
+		auditResp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.params.Header, auditLog)
 		if err != nil {
-			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.params.ReqID)
+			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, resp: %v, rid: %s", auditLog, err.Error(), a.params.ReqID)
 			return
 		}
-		if !auditresp.Result {
-			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), resp info is %v, rid: %s", targetItem.GetValues(), auditresp, a.params.ReqID)
+		if !auditResp.Result {
+			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, rid: %s", auditLog, auditResp.ErrMsg, a.params.ReqID)
 			return
 		}
 	}
