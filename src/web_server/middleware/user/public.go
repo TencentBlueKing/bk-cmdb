@@ -72,7 +72,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		ownerM.Engine = m.engine
 		ownerM.SetHttpHeader(common.BKHTTPSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
 		// 初始化失败，不影响登录
-		err, _ := ownerM.InitOwner()
+		_, err := ownerM.InitOwner()
 		if nil != err {
 			blog.ErrorJSON("init onwer resource pool failed, err:%s, user:%s, rid: %s", err, userInfo, rid)
 		}
