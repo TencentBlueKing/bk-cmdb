@@ -7,7 +7,12 @@
             'is-unselected': unselected
         }"
         :data-placeholder="placeholder">
+        <i class="select-loading" v-if="$loading([searchRequestId])"></i>
         <i class="select-angle bk-icon icon-angle-down"></i>
+        <i class="select-clear bk-icon icon-close"
+            v-if="clearable && !unselected && !disabled && !readonly"
+            @click.prevent.stop="handleClear">
+        </i>
         <bk-popover class="select-dropdown"
             ref="selectDropdown"
             trigger="click"
@@ -76,6 +81,7 @@
             readonly: Boolean,
             multiple: Boolean,
             viewonly: Boolean,
+            clearable: Boolean,
             placeholder: {
                 type: String,
                 default: ''
@@ -363,6 +369,9 @@
                     console.error(e)
                 }
             }, 160),
+            handleClear () {
+                this.resetTree()
+            },
             handleCheckChange (ids, node) {
                 if (this.multiple) {
                     this.checked = ids
@@ -403,6 +412,7 @@
     .cmdb-organization-select {
         position: relative;
         border: 1px solid #c4c6cc;
+        background-color: #fff;
         border-radius: 2px;
         line-height: 30px;
         color: #63656e;
@@ -437,6 +447,12 @@
             pointer-events: none;
         }
 
+        &:hover {
+            .select-clear {
+                display: block;
+            }
+        }
+
         .select-angle {
             position: absolute;
             right: 12px;
@@ -444,6 +460,39 @@
             font-size: 12px;
             transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
+        }
+
+        .select-clear {
+            display: none;
+            position: absolute;
+            right: 11px;
+            top: 8px;
+            width: 14px;
+            height: 14px;
+            line-height: 14px;
+            background-color: #c4c6cc;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 12px;
+            color: #fff;
+            z-index: 100;
+            &:before {
+                display: block;
+                transform: scale(.7);
+            }
+            &:hover {
+                background-color: #979ba5;
+            }
+        }
+
+        .select-loading {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 16px;
+            height: 16px;
+            background-image: url("../../../assets/images/icon/loading.svg");
+            z-index: 1;
         }
 
         .select-dropdown {

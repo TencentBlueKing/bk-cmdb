@@ -15,14 +15,7 @@
                     <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
                         v-overflow-tips
                         v-show="property !== editState.property">
-                        <cmdb-form-organization
-                            v-if="property.bk_property_type === 'organization'"
-                            :viewonly="true"
-                            :value="host[property.bk_property_id] || []">
-                        </cmdb-form-organization>
-                        <template v-else>
-                            {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
-                        </template>
+                        <cmdb-property-value :value="host[property.bk_property_id]" :property="property" :show-title="false"></cmdb-property-value>
                     </span>
                     <template v-if="!loadingState.includes(property)">
                         <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">

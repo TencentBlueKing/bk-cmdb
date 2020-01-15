@@ -129,7 +129,10 @@
                 :fixed="column.id === 'bk_inst_name'"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
-                    <span>{{row[column.id] | formatter(column.property)}}</span>
+                    <cmdb-property-value
+                        :value="row[column.id]"
+                        :property="column.property">
+                    </cmdb-property-value>
                 </template>
             </bk-table-column>
             <cmdb-table-empty
