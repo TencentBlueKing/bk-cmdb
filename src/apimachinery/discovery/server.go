@@ -32,7 +32,7 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*
 	svr := &server{
 		path:         path,
 		name:         name,
-		servers:      make([]string, 0),
+		servers:      make([]*types.ServerInfo, 0),
 		discoverChan: discoverChan,
 	}
 
@@ -46,7 +46,8 @@ type server struct {
 	// server's name
 	name         string
 	path         string
-	servers      []string
+	servers      []*types.ServerInfo
+	uuids        []string
 	discoverChan <-chan *registerdiscover.DiscoverEvent
 }
 
@@ -64,22 +65,25 @@ func (s *server) GetServers() ([]string, error) {
 
 	if s.index < num-1 {
 		s.index = s.index + 1
-		return append(s.servers[s.index-1:], s.servers[:s.index-1]...), nil
+		s.servers = append(s.servers[s.index-1:], s.servers[:s.index-1]...)
 	} else {
 		s.index = 0
-		return append(s.servers[num-1:], s.servers[:num-1]...), nil
+		s.servers = append(s.servers[num-1:], s.servers[:num-1]...)
 	}
+
+	return s.GetRegAddrs(), nil
 }
 
 // IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
-func (s *server) IsMaster(strAddrs string) bool {
+// 注册地址不能作为区分标识，因为不同的机器可能用一样的域名作为注册地址，所以用uuid区分
+func (s *server) IsMaster(UUID string) bool {
 	if s == nil {
 		return false
 	}
 	s.RLock()
 	defer s.RUnlock()
 	if 0 < len(s.servers) {
-		return s.servers[0] == strAddrs
+		return s.servers[0].UUID == UUID
 	}
 	return false
 
@@ -109,11 +113,11 @@ func (s *server) run() {
 func (s *server) resetServer() {
 	s.Lock()
 	defer s.Unlock()
-	s.servers = make([]string, 0)
+	s.servers = make([]*types.ServerInfo, 0)
 }
 
 func (s *server) updateServer(svrs []string) {
-	newSvr := make([]string, 0)
+	servers := make([]*types.ServerInfo, 0)
 
 	for _, svr := range svrs {
 		server := new(types.ServerInfo)
@@ -136,15 +140,26 @@ func (s *server) updateServer(svrs []string) {
 			continue
 		}
 
-		host := server.RegisterAddress()
-		newSvr = append(newSvr, host)
+		servers = append(servers, server)
+
 	}
 
 	s.Lock()
 	defer s.Unlock()
 
-	if len(newSvr) != 0 {
-		s.servers = newSvr
-		blog.V(5).Infof("update component with new server instance[%s] about path: %s", strings.Join(newSvr, "; "), s.path)
+	if len(servers) != 0 {
+		s.servers = servers
+		regAddrs := s.GetRegAddrs()
+		blog.V(5).Infof("update component with new server instance[%s] about path: %s", strings.Join(regAddrs, "; "), s.path)
 	}
+}
+
+// 获取注册地址
+func (s *server) GetRegAddrs() []string {
+	regAddrs := make([]string, 0)
+	for _, server := range s.servers {
+		host := server.RegisterAddress()
+		regAddrs = append(regAddrs, host)
+	}
+	return regAddrs
 }
