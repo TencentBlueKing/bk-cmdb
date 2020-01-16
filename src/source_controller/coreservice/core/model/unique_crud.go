@@ -29,14 +29,7 @@ import (
 func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
 	results = []metadata.ObjectUnique{}
 	instHandler := m.dbProxy.Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
-	for _, sort := range inputParam.SortArr {
-		field := sort.Field
-		if sort.IsDsc {
-			field = "-" + field
-		}
-		instHandler = instHandler.Sort(field)
-	}
-	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(kit.Ctx, &results)
+	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).All(kit.Ctx, &results)
 
 	return results, err
 }
@@ -385,6 +378,10 @@ func getBasicDataType(propertyType string) (interface{}, error) {
 		return 0.0, nil
 	case common.FieldTypeUser:
 		return "", nil
+	case common.FieldTypeList:
+		return nil, nil
+	case common.FieldTypeOrganization:
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("unsupported type: %s", propertyType)
 	}

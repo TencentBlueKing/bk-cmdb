@@ -13,6 +13,8 @@
 package instances
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -135,35 +137,17 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			delete(instanceData, key)
 			continue
 			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, kit.Rid)
-			// return valid.errIf.CCErrorf(common.CCErrCommParamsIsInvalid, key)
+			// return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
-		fieldType := property.PropertyType
-		switch fieldType {
-		case common.FieldTypeSingleChar:
-			err = valid.validChar(kit.Ctx, val, key)
-		case common.FieldTypeLongChar:
-			err = valid.validLongChar(kit.Ctx, val, key)
-		case common.FieldTypeInt:
-			err = valid.validInt(kit.Ctx, val, key)
-		case common.FieldTypeFloat:
-			err = valid.validFloat(kit.Ctx, val, key)
-		case common.FieldTypeEnum:
-			err = valid.validEnum(kit.Ctx, val, key)
-		case common.FieldTypeDate:
-			err = valid.validDate(kit.Ctx, val, key)
-		case common.FieldTypeTime:
-			err = valid.validTime(kit.Ctx, val, key)
-		case common.FieldTypeTimeZone:
-			err = valid.validTimeZone(kit.Ctx, val, key)
-		case common.FieldTypeBool:
-			err = valid.validBool(kit.Ctx, val, key)
-		case common.FieldTypeList:
-			err = valid.validList(kit.Ctx, val, key)
-		default:
-			continue
-		}
-		if nil != err {
-			return err
+        if value, ok := val.(string); ok {
+            val = strings.TrimSpace(value)
+            instanceData[key] = val
+        }
+		
+		rawErr := property.Validate(kit.Ctx, val, key)
+		if rawErr.ErrCode != 0 {
+            blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
+            return rawErr.ToCCError(kit.CCError)
 		}
 	}
 	if instanceData.Exists(metadata.BKMetadata) {
@@ -230,7 +214,7 @@ func getHostRelatedBizID(kit *rest.Kit, dbProxy dal.DB, hostID int64) (bizID int
 	filter := map[string]interface{}{
 		common.BKHostIDField: hostID,
 	}
-	hostConfig := make([]metadata.HostModuleConfig, 0)
+	hostConfig := make([]metadata.ModuleHost, 0)
 	if err := dbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).All(kit.Ctx, &hostConfig); err != nil {
 		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -239,9 +223,9 @@ func getHostRelatedBizID(kit *rest.Kit, dbProxy dal.DB, hostID int64) (bizID int
 		blog.Errorf("host module config empty, hostID: %d, rid: %s", hostID, rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrHostModuleConfigFailed, hostID)
 	}
-	bizID = hostConfig[0].ApplicationID
+	bizID = hostConfig[0].AppID
 	for _, item := range hostConfig {
-		if item.ApplicationID != bizID {
+		if item.AppID != bizID {
 			blog.Errorf("getHostRelatedBizID failed, get multiple bizID, hostID: %d, hostConfig: %+v, rid: %s", hostID, hostConfig, rid)
 			return 0, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
 		}
@@ -288,33 +272,13 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			delete(instanceData, key)
 			continue
 		}
-		fieldType := property.PropertyType
-		switch fieldType {
-		case common.FieldTypeSingleChar:
-			err = valid.validChar(kit.Ctx, val, key)
-		case common.FieldTypeLongChar:
-			err = valid.validLongChar(kit.Ctx, val, key)
-		case common.FieldTypeInt:
-			err = valid.validInt(kit.Ctx, val, key)
-		case common.FieldTypeFloat:
-			err = valid.validFloat(kit.Ctx, val, key)
-		case common.FieldTypeEnum:
-			err = valid.validEnum(kit.Ctx, val, key)
-		case common.FieldTypeDate:
-			err = valid.validDate(kit.Ctx, val, key)
-		case common.FieldTypeTime:
-			err = valid.validTime(kit.Ctx, val, key)
-		case common.FieldTypeTimeZone:
-			err = valid.validTimeZone(kit.Ctx, val, key)
-		case common.FieldTypeBool:
-			err = valid.validBool(kit.Ctx, val, key)
-		case common.FieldTypeList:
-			err = valid.validList(kit.Ctx, val, key)
-		default:
-			continue
-		}
-		if nil != err {
-			return err
+        if value, ok := val.(string); ok {
+            val = strings.TrimSpace(value)
+            instanceData[key] = val
+        }
+		rawErr := property.Validate(kit.Ctx, val, key)
+		if rawErr.ErrCode != 0 {
+			return rawErr.ToCCError(kit.CCError)
 		}
 	}
 

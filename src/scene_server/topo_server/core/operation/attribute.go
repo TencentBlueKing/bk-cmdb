@@ -194,6 +194,10 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 		return nil, err
 	}
 	results := make([]*metadata.ObjAttDes, 0)
+	// if can't find any attribute of a obj, to return, for example, when the obj is not exist
+	if len(attrs) == 0 {
+		return results, nil
+	}
 	grpCond := condition.CreateCondition()
 	grpOrCond := grpCond.NewOR()
 	for _, attr := range attrs {
@@ -242,8 +246,7 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 
 	opt := &metadata.QueryCondition{
 		Condition: fCond,
-		Limit:     metadata.SearchLimit{Limit: limits, Offset: start},
-		SortArr:   metadata.NewSearchSortParse().String(sort).ToSearchSortArr(),
+		Page:      metadata.BasePage{Limit: int(limits), Start: int(start), Sort: sort},
 	}
 
 	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, opt)

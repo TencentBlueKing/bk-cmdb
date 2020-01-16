@@ -347,9 +347,9 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 	}
 	query := &metadata.QueryCondition{
 		Condition: filter,
-		Limit: metadata.SearchLimit{
-			Offset: 0,
-			Limit:  common.BKNoLimit,
+		Page: metadata.BasePage{
+			Start: 0,
+			Limit: common.BKNoLimit,
 		},
 	}
 	hResult, err := h.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.pheader, common.BKInnerObjIDHost, query)

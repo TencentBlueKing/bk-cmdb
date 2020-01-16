@@ -200,11 +200,8 @@ func queryClassification(t *testing.T, client *httpclient.HttpClient, classifica
 	cond.Element(mongo.Field(metadata.ClassFieldClassificationID).Eq(classificationID))
 	queryCond := metadata.QueryCondition{
 		Fields: []string{},
-		SortArr: []metadata.SearchSort{
-			metadata.SearchSort{
-				IsDsc: true,
-				Field: metadata.ClassFieldClassificationID,
-			},
+		Page: metadata.BasePage{
+			Sort: "-" + metadata.ClassFieldClassificationID,
 		},
 		Condition: cond.ToMapStr(),
 	}

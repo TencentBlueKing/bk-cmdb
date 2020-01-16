@@ -15,7 +15,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"configcenter/src/common"
@@ -23,7 +22,6 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/source_controller/coreservice/app/options"
 	coresvr "configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
@@ -48,7 +46,7 @@ func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfi
 
 // Run main function
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
@@ -99,31 +97,4 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	case <-ctx.Done():
 	}
 	return nil
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

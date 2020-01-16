@@ -15,7 +15,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -160,6 +159,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	language := util.GetLanguage(kit.Header)
 	lang := m.language.CreateDefaultCCLanguageIf(language)
 	if attribute.PropertyID != "" {
+		attribute.PropertyID = strings.TrimSpace(attribute.PropertyID)
 		if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
 		}
@@ -168,51 +168,30 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 			blog.Errorf("attribute.PropertyID:%s not SatisfyMongoFieldLimit", attribute.PropertyID)
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
 		}
-
-		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, attribute.PropertyID)
-		if nil != err || !match {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
-		}
 	}
 
-	if attribute.PropertyName != "" {
-		if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
-		}
-
-		attribute.PropertyName = strings.TrimSpace(attribute.PropertyName)
-		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.PropertyName)
-		if nil != err || !match {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyName)
-		}
+	if attribute.PropertyName = strings.TrimSpace(attribute.PropertyName); common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
 	}
 
 	if attribute.Placeholder != "" {
+		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
 		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
-		}
-		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
-		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
-		if nil != err || !match {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHoler)
 		}
 	}
 
 	if attribute.Unit != "" {
+		attribute.Unit = strings.TrimSpace(attribute.Unit)
 		if common.AttributeUnitMaxLength < utf8.RuneCountInString(attribute.Unit) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_uint"), common.AttributeUnitMaxLength)
-		}
-		attribute.Unit = strings.TrimSpace(attribute.Unit)
-		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, attribute.Unit)
-		if nil != err || !match {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldUnit)
 		}
 	}
 
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
-			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
+			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization,common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
 		default:
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
@@ -230,6 +209,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 	cnt, err = m.checkUpdate(kit, data, cond)
 	if err != nil {
+		blog.ErrorJSON("checkUpdate error. data:%s, cond:%s, rid:%s", data, cond, kit.Rid)
 		return cnt, err
 	}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(kit.Ctx, cond.ToMapStr(), data)
@@ -251,14 +231,7 @@ func (m *modelAttribute) searchWithSort(kit *rest.Kit, cond metadata.QueryCondit
 	resultAttrs = []metadata.Attribute{}
 
 	instHandler := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.Condition)
-	for _, sort := range cond.SortArr {
-		field := sort.Field
-		if sort.IsDsc {
-			field = "-" + field
-		}
-		instHandler = instHandler.Sort(field)
-	}
-	err = instHandler.Start(uint64(cond.Limit.Offset)).Limit(uint64(cond.Limit.Limit)).All(kit.Ctx, &resultAttrs)
+	err = instHandler.Start(uint64(cond.Page.Start)).Limit(uint64(cond.Page.Limit)).Sort(cond.Page.Sort).All(kit.Ctx, &resultAttrs)
 
 	return resultAttrs, err
 }
@@ -745,7 +718,6 @@ func (m *modelAttribute) buildUpdateAttrIndexReturn(kit *rest.Kit, objID, proper
 }
 
 func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attribute) (int64, error) {
-
 	opt := make(map[string]interface{})
 	opt[common.BKObjIDField] = attribute.ObjectID
 	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
@@ -759,12 +731,15 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 		return 0, nil
 	}
 
-	attr := metadata.Attribute{}
+	attrs := make([]metadata.Attribute, 0)
 	sortCond := "-bk_property_index"
-	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).One(kit.Ctx, &attr); err != nil {
-		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", kit.Rid, err)
-		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
-	}
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx, &attrs); err != nil {
+		blog.Error("GetAttrLastIndex, database operation is failed, err: %v, rid: %s", err, kit.Rid)
+        return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+    }
 
-	return attr.PropertyIndex + 1, nil
+	if len(attrs) <= 0 {
+		return 0, nil
+	}
+	return attrs[0].PropertyIndex + 1, nil
 }

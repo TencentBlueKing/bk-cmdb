@@ -214,28 +214,6 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-func (s *coreService) initCloudSync(web *restful.WebService) {
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.engine.CCErr,
-		Language: s.engine.Language,
-	})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/sync/task", Handler: s.CreateCloudSyncTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/sync/task/{taskID}", Handler: s.DeleteCloudSyncTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/cloud/sync/task", Handler: s.UpdateCloudSyncTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/cloud/sync/task", Handler: s.SearchCloudSyncTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/confirm", Handler: s.CreateConfirm})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/check/cloud/task/name", Handler: s.CheckTaskNameUnique})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/confirm/{taskID}", Handler: s.DeleteConfirm})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/cloud/confirm", Handler: s.SearchConfirm})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/sync/history", Handler: s.CreateSyncHistory})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/cloud/sync/history", Handler: s.SearchSyncHistory})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/confirm/history", Handler: s.CreateConfirmHistory})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/cloud/confirm/history", Handler: s.SearchConfirmHistory})
-
-	utility.AddToRestfulWebService(web)
-}
-
 func (s *coreService) audit(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -318,7 +296,6 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.audit(web)
 	s.initProcess(web)
 	s.initOperation(web)
-	s.initCloudSync(web)
 	s.label(web)
 	s.topographics(web)
 	s.ccSystem(web)

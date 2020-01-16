@@ -13,8 +13,6 @@
 package service
 
 import (
-	"plugin"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/metadata"
@@ -30,7 +28,6 @@ import (
 )
 
 type Service struct {
-	VersionPlg *plugin.Plugin
 	*options.ServerOption
 	Engine   *backbone.Engine
 	CacheCli *redis.Client
@@ -60,11 +57,12 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportObject)
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportObject)
 	ws.GET("/user/list", s.GetUserList)
+	ws.GET("/user/department", s.GetDepartment)
+	ws.GET("/user/departmentprofile", s.GetDepartmentProfile)
 	ws.GET("/user/language/:language", s.UpdateUserLanguage)
 	// get current login user info
 	ws.GET("/userinfo", s.UserInfo)
 	ws.PUT("/user/current/supplier/:id", s.UpdateSupplier)
-	ws.GET("/user/detail", s.UserDetail)
 	ws.POST("/biz/search/web", s.SearchBusiness)
 
 	ws.GET("/healthz", s.Healthz)

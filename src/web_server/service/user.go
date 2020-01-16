@@ -13,19 +13,15 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"strconv"
-	"time"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/user"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
@@ -56,8 +52,24 @@ var getUserFailData = userDataResult{
 
 // GetUserList get user list
 func (s *Service) GetUserList(c *gin.Context) {
-	user := user.NewUser(*s.Config, s.Engine, s.CacheCli, s.VersionPlg)
+	user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
 	code, data := user.GetUserList(c)
+	c.JSON(code, data)
+	return
+}
+
+// GetDepartment get department info
+func (s *Service) GetDepartment(c *gin.Context) {
+	user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+	code, data := user.GetDepartment(c)
+	c.JSON(code, data)
+	return
+}
+
+// GetDepartmentProfile get department info
+func (s *Service) GetDepartmentProfile(c *gin.Context) {
+	user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+	code, data := user.GetDepartmentProfile(c)
 	c.JSON(code, data)
 	return
 }
@@ -189,111 +201,5 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	ret.Data.ID = ownerID
 
 	c.JSON(200, ret)
-	return
-}
-
-// UserDetail 用户信息查询接口（根据用户名查询用户的详细信息，比如中文名，电话之类的）
-// Note: 该接口仅用于前端页面将用户英文名转成中文名，因此，任何出错的情况均直接忽略错误，并返回空
-func (s *Service) UserDetail(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
-
-	result := struct {
-		Users    []metadata.LoginSystemUserInfo `json:"users"`
-		Count    int                            `json:"count"`
-		Next     interface{}                    `json:"next"`
-		Previous interface{}                    `json:"previous"`
-	}{}
-	result.Users = make([]metadata.LoginSystemUserInfo, 0)
-
-	// construct request url
-	esbUrl, ok := s.Config.ConfigMap["esb.addr"]
-	if ok == false {
-		blog.Errorf("UserDetail failed, esb.addr not set, rid: %s", rid)
-		c.JSON(http.StatusOK, metadata.NewSuccessResponse(result))
-		return
-	}
-	targetUrl, err := url.Parse(esbUrl)
-	if err != nil {
-		blog.Errorf("UserDetail failed, parse login url failed, err: %+v, rid: %s", err, rid)
-		c.JSON(http.StatusOK, metadata.NewSuccessResponse(result))
-		return
-	}
-	frontUrl, err := url.Parse(c.Request.RequestURI)
-	if err != nil {
-		blog.Errorf("UserDetail failed, parse front url failed, err: %+v, rid: %s", err, rid)
-		c.JSON(http.StatusOK, metadata.NewSuccessResponse(result))
-		return
-	}
-	targetUrl.Path = "/o/bk_user_manage/api/v2/profiles/"
-	targetUrl.RawQuery = frontUrl.RawQuery
-	requestUrl := targetUrl.String()
-	blog.V(5).Infof("request user detail by url: %s, rid: %s", requestUrl, rid)
-
-	// do http request
-	timeout := time.Duration(5 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
-	rq := &http.Request{
-		Method: c.Request.Method,
-		URL:    targetUrl,
-		Header: c.Request.Header,
-	}
-	// 删除 Accept-Encoding 避免返回值被压缩
-	rq.Header.Del("Accept-Encoding")
-	rq.Header.Add("Accept", "application/json; nested=true")
-	response, err := client.Do(rq)
-	if err != nil {
-		blog.Errorf("UserDetail failed, http get failed, err: %+v, rid: %s", err, rid)
-		c.JSON(http.StatusOK, metadata.NewSuccessResponse(result))
-		return
-	}
-
-	// decode response body
-	data, err := ioutil.ReadAll(response.Body)
-	blog.V(5).Infof("response body: %s, rid: %s", data, rid)
-	if err != nil {
-		blog.Errorf("UserDetail failed, read response body failed, err: %+v, rid: %s", err, rid)
-		c.JSON(http.StatusOK, metadata.NewSuccessResponse(result))
-		return
-	}
-	if data == nil {
-		blog.Errorf("UserDetail failed, response body empty, err: %+v, rid: %s", err, rid)
-		c.JSON(http.StatusOK, metadata.NewSuccessResponse(result))
-		return
-	}
-	type UserDetail struct {
-		Username    string `json:"username"`
-		Qq          string `json:"qq"`
-		UserType    string `json:"user_type"`
-		DisplayName string `json:"display_name"`
-		Email       string `json:"email"`
-	}
-	type ResponseData struct {
-		Count    int          `json:"count"`
-		Next     interface{}  `json:"next"`
-		Previous interface{}  `json:"previous"`
-		Results  []UserDetail `json:"results"`
-	}
-	responseData := ResponseData{}
-	if err = json.Unmarshal(data, &responseData); err != nil {
-		blog.Errorf("UserDetail failed, decode response data into struct failed, data: %s, err: %+v, rid: %s", data, err, rid)
-		c.JSON(http.StatusOK, metadata.NewSuccessResponse(result))
-		return
-	}
-	for _, item := range responseData.Results {
-		result.Users = append(result.Users, metadata.LoginSystemUserInfo{
-			CnName: item.DisplayName,
-			EnName: item.Username,
-		})
-	}
-	result.Count = responseData.Count
-	result.Previous = responseData.Previous
-	result.Next = responseData.Next
-
-	if blog.V(5) {
-		blog.InfoJSON("login url: %s, rid: %s", targetUrl, rid)
-	}
-	c.JSON(http.StatusOK, metadata.NewSuccessResponse(result))
 	return
 }

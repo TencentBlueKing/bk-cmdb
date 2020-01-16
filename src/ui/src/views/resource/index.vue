@@ -127,4 +127,20 @@
             overflow: hidden;
         }
     }
+    .assign-dialog {
+        /deep/ .bk-dialog-body {
+            padding: 0 50px 40px;
+        }
+        .assign-info span {
+            color: #3c96ff;
+        }
+        .assign-footer {
+            padding-top: 20px;
+            font-size: 0;
+            text-align: center;
+            .bk-button-normal {
+                width: 96px;
+            }
+        }
+    }
 </style>

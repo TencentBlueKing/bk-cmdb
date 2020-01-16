@@ -366,6 +366,7 @@
                 }
                 if (this.isHostSearch) {
                     this.scope = 'all'
+                    this.$store.commit('hosts/setIsHostSearch', false)
                 }
             } catch (e) {
                 console.log(e)

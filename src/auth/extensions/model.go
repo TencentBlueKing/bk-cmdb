@@ -51,8 +51,7 @@ func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header ht
 			common.BKIsPre,
 			common.BKClassificationIDField,
 		},
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
-		SortArr:   nil,
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: cond,
 	}
 	models, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, query)

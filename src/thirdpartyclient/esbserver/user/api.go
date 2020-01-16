@@ -27,7 +27,7 @@ func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.E
 
 	err = p.client.Get().
 		WithContext(ctx).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithHeaders(h).
 		Do().
@@ -36,7 +36,7 @@ func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.E
 	return
 }
 
-func (p *user) ListUsers(ctx context.Context, h http.Header) (resp *metadata.EsbListUserResponse, err error) {
+func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]string) (resp *metadata.EsbListUserResponse, err error) {
 	// response demo
 	/*
 		{
@@ -78,14 +78,65 @@ func (p *user) ListUsers(ctx context.Context, h http.Header) (resp *metadata.Esb
 		}
 	*/
 	resp = &metadata.EsbListUserResponse{}
-	subPath := "/v2/usermanage/list_users/"
+	h.Set("Accept", "application/json")
+
+	if params == nil {
+		params = make(map[string]string)
+	}
+	if _, ok := params["fields"]; ok == false {
+		params["fields"] = "username,id,display_name"
+	}
+	params["no_page"] = "true"
+	err = p.client.Get().
+		WithContext(ctx).
+		WithParams(params).
+		SubResourcef("/v2/usermanage/list_users/").
+		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+// get department from pass
+func (p *user) GetDepartment(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentResponse, err error) {
+	resp = &metadata.EsbDepartmentResponse{}
+	subPath := "/v2/usermanage/list_departments/"
+	h := q.Header
 	h.Set("Accept", "application/json")
 
 	err = p.client.Get().
 		WithContext(ctx).
-		WithParam("fields", "username,id").
-		WithParam("no_page", "true").
-		SubResource(subPath).
+		// 通过WithParamsFromURL中的url参数指定page_size可以覆盖此默认的page_size
+		WithParam("page_size", "500").
+		WithParamsFromURL(q.URL).
+		// 确保只使用分页查找，指定一个大page_size同样能达到不分页的效果
+		WithParam("no_page", "false").
+		SubResourcef(subPath).
+		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+// get department profile from pass
+func (p *user) GetDepartmentProfile(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentProfileResponse, err error) {
+	resp = &metadata.EsbDepartmentProfileResponse{}
+	subPath := "/v2/usermanage/list_department_profiles/"
+	h := q.Header
+	h.Set("Accept", "application/json")
+
+	err = p.client.Get().
+		WithContext(ctx).
+		// 通过WithParamsFromURL中的url参数指定page_size可以覆盖此默认的page_size
+		WithParam("page_size", "500").
+		WithParamsFromURL(q.URL).
+		// 确保只使用分页查找，指定一个大page_size同样能达到不分页的效果
+		WithParam("no_page", "false").
+		SubResourcef(subPath).
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithHeaders(h).
 		Do().
