@@ -259,20 +259,17 @@ func (m *associationKind) CascadeDeleteAssociationKind(ctx core.ContextParams, i
 	return &metadata.DeletedCount{Count: uint64(len(associationKindItems))}, nil
 }
 
-func (m *associationKind) SearchAssociationKind(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	associationKindItems, err := m.searchAssociationKind(ctx, inputParam)
+func (m *associationKind) SearchAssociationKind(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.SearchAssociationKindResult, error) {
+	dataResult := &metadata.SearchAssociationKindResult{}
+	var err error
+	dataResult.Info, err = m.searchAssociationKind(ctx, inputParam)
 	if nil != err {
-		return &metadata.QueryResult{}, err
+		return &metadata.SearchAssociationKindResult{}, err
 	}
 
-	dataResult := &metadata.QueryResult{}
 	dataResult.Count, err = m.countInstanceAssociation(ctx, inputParam.Condition)
-	dataResult.Info = make([]mapstr.MapStr, 0)
 	if nil != err {
-		return &metadata.QueryResult{}, err
-	}
-	for _, item := range associationKindItems {
-		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
+		return &metadata.SearchAssociationKindResult{}, err
 	}
 
 	return dataResult, nil

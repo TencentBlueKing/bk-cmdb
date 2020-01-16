@@ -196,6 +196,12 @@ type QueryModelClassificationDataResult struct {
 	Info  []Classification `json:"info"`
 }
 
+// SearchAssociationKindResult search association kind result definition
+type SearchAssociationKindResult struct {
+	Count uint64            `json:"count"`
+	Info  []AssociationKind `json:"info"`
+}
+
 // ReadModelAttrResult  read model attribute api http response return result struct
 type ReadModelAttrResult struct {
 	BaseResp `json:",inline"`
