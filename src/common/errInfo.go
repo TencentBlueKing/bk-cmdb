@@ -597,7 +597,8 @@ const (
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
-	CCErrAuditTakeSnapshotFailed = 1109001
+	CCErrAuditTakeSnapshotFailed = 1109002
+	CCErrAuditSelectFailed       = 1109003
 
 	// host server
 	CCErrHostGetFail              = 1110001
