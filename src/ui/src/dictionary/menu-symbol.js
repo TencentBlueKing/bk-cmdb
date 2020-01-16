@@ -61,4 +61,6 @@ export const MENU_BUSINESS_DELETE_SERVICE = 'menu_business_delete_service'
 // 云区域
 export const MENU_RESOURCE_CLOUD_AREA = 'menu_resource_cloud_area'
 // 云账户
-export const MENU_RESOURCE_CLOUD_ACCOUNT = 'menu_resource_coud_account'
+export const MENU_RESOURCE_CLOUD_ACCOUNT = 'menu_resource_cloud_account'
+// 云资源发现
+export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'

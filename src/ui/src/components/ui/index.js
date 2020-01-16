@@ -33,6 +33,7 @@ import list from './form/list.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
 import user from './user/user.vue'
 import textButton from './button/link-button.vue'
+import stickyLayout from './other/sticky-layout.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -69,7 +70,8 @@ const install = (Vue, opts = {}) => {
         list,
         leaveConfirm,
         user,
-        textButton
+        textButton,
+        stickyLayout
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -110,5 +112,6 @@ export default {
     tableEmpty,
     list,
     leaveConfirm,
-    textButton
+    textButton,
+    stickyLayout
 }

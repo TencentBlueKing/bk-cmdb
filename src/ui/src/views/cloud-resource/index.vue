@@ -10,34 +10,39 @@
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @cell-click="handleCellClick">
-            <bk-table-column :label="$t('账户名称')" prop="name" class-name="is-highlight" id="name"></bk-table-column>
-            <bk-table-column :label="$t('账号类型')" prop="type"></bk-table-column>
-            <bk-table-column :label="$t('修改人')" prop="updator"></bk-table-column>
-            <bk-table-column :label="$t('修改时间')" prop="last_time"></bk-table-column>
+            <bk-table-column :label="$t('任务名称')" prop="name" class-name="is-highlight"></bk-table-column>
+            <bk-table-column :label="$t('资源')" prop="resource"></bk-table-column>
+            <bk-table-column :label="$t('账户名称')" prop="account_name"></bk-table-column>
+            <bk-table-column :label="$t('账户类型')" prop="account_type"></bk-table-column>
+            <bk-table-column :label="$t('最近同步状态')" prop="status">
+                <div class="row-status"
+                    slot-scope="{ row }"
+                    v-bk-tooltips.right="{
+                        disabled: !row.error,
+                        content: '异常原因'
+                    }">
+                    <i :class="['status', { 'is-error': row.error }]"></i>
+                    异常
+                </div>
+            </bk-table-column>
+            <bk-table-column :label="$t('最近同步时间')" prop="last_time"></bk-table-column>
+            <bk-table-column :label="$t('最近编辑人')" prop="account_type"></bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <link-button class="mr10" @click="handleView(row)">{{$t('查看')}}</link-button>
-                    <link-button
-                        :disabled="row.pending"
-                        v-bk-tooltips="{
-                            disabled: !row.pending,
-                            content: '发现任务正在进行中，不能删除'
-                        }"
-                        @click="handleDelete(row)">
-                        {{$t('删除')}}
-                    </link-button>
+                    <link-button class="mr10" @click="handleEdit(row)">{{$t('编辑')}}</link-button>
+                    <link-button @click="handleDelete(row)">{{$t('删除')}}</link-button>
                 </template>
             </bk-table-column>
         </bk-table>
-        <account-sideslider ref="accountSideslider" @request-refresh="getData"></account-sideslider>
+        <resource-sideslider ref="resourceSideslider"></resource-sideslider>
     </div>
 </template>
 
 <script>
-    import AccountSideslider from './children/account-sideslider.vue'
+    import ResourceSideslider from './children/resource-sideslider.vue'
     export default {
         components: {
-            AccountSideslider
+            ResourceSideslider
         },
         data () {
             return {
@@ -53,9 +58,9 @@
         },
         methods: {
             handleCreate () {
-                this.$refs.accountSideslider.show({
+                this.$refs.resourceSideslider.show({
                     type: 'form',
-                    title: this.$t('新建账户'),
+                    title: this.$t('新建发现任务'),
                     props: {
                         mode: 'create'
                     }
@@ -84,6 +89,7 @@
                     }
                 })
             },
+            handleEdit (row) {},
             async handleDelete (row) {
                 try {
                     await Promise.resolve()
