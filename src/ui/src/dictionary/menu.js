@@ -17,6 +17,7 @@ import {
     MENU_RESOURCE_MANAGEMENT,
     MENU_RESOURCE_CLOUD_AREA,
     MENU_RESOURCE_CLOUD_ACCOUNT,
+    MENU_RESOURCE_CLOUD_RESOURCE,
 
     MENU_MODEL_MANAGEMENT,
     MENU_MODEL_TOPOLOGY,
@@ -129,6 +130,11 @@ const menus = [{
         i18n: '云账户',
         icon: 'icon-cc-square',
         route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_ACCOUNT, 'resource')
+    }, {
+        id: MENU_RESOURCE_CLOUD_RESOURCE,
+        i18n: '云资源发现',
+        icon: 'icon-cc-square',
+        route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_RESOURCE, 'resource')
     }, {
         id: MENU_RESOURCE_EVENTPUSH,
         i18n: '事件订阅',
