@@ -1,5 +1,5 @@
 <template>
-    <div v-if="!viewonly" class="cmdb-organization-select"
+    <div class="cmdb-organization-select"
         :class="{
             'is-focus': focus,
             'is-disabled': disabled,
@@ -7,7 +7,7 @@
             'is-unselected': unselected
         }"
         :data-placeholder="placeholder">
-        <i class="select-loading" v-if="$loading([searchRequestId])"></i>
+        <i class="select-loading" v-if="$loading([searchRequestId]) && searchValue === undefined"></i>
         <i class="select-angle bk-icon icon-angle-down"></i>
         <i class="select-clear bk-icon icon-close"
             v-if="clearable && !unselected && !disabled && !readonly"
@@ -42,14 +42,8 @@
                 </div>
                 <bk-big-tree class="org-tree"
                     ref="tree"
-                    v-bkloading="{
-                        isLoading: $loading([searchRequestId])
-                    }"
-                    :show-checkbox="true"
-                    :check-on-click="false"
-                    :check-strictly="false"
-                    :lazy-method="lazyMethod"
-                    :lazy-disabled="lazyDisabled"
+                    v-bkloading="{ isLoading: $loading([searchRequestId]) }"
+                    v-bind="treeProps"
                     @check-change="handleCheckChange">
                     <div class="tree-node" slot-scope="{ node, data: nodeData }"
                         :class="{ 'is-selected': node.selected }"
@@ -59,9 +53,6 @@
                 </bk-big-tree>
             </div>
         </bk-popover>
-    </div>
-    <div class="cmdb-organization-view" v-else>
-        {{viewName}}
     </div>
 </template>
 
@@ -80,7 +71,6 @@
             },
             readonly: Boolean,
             multiple: Boolean,
-            viewonly: Boolean,
             clearable: Boolean,
             placeholder: {
                 type: String,
@@ -98,9 +88,16 @@
                 checked: this.value || [],
                 popoverWidth: 0,
                 searchRequestId: Symbol('orgSearch'),
-                searchValue: '',
+                searchValue: undefined,
                 displayName: '',
-                viewName: ''
+                viewName: '',
+                treeProps: {
+                    showCheckbox: true,
+                    checkOnClick: false,
+                    checkStrictly: false,
+                    lazyMethod: this.lazyMethod,
+                    lazyDisabled: this.lazyDisabled
+                }
             }
         },
         computed: {
@@ -113,24 +110,20 @@
                 this.checked = value
             },
             checked (checked) {
-                if (!this.viewonly) {
-                    this.$emit('input', checked)
-                    this.$emit('on-checked', checked)
-                    this.setDisplayName()
-                } else {
-                    this.setViewData()
-                }
+                this.$emit('input', checked)
+                this.$emit('on-checked', checked)
+                this.setDisplayName()
             }
         },
         created () {
-            if (!this.viewonly) {
-                this.initTree()
-            } else {
-                this.setViewData()
-            }
+            this.initTree()
         },
         methods: {
             async initTree () {
+                await this.loadTree()
+                this.setDisplayName()
+            },
+            async loadTree () {
                 const { data: topData } = await this.getLazyData()
                 const defaultChecked = this.checked
                 const tree = this.$refs.tree
@@ -164,8 +157,6 @@
                 } else {
                     tree.setData(topData)
                 }
-
-                this.setDisplayName()
             },
             async setViewData () {
                 if (!this.checked.length) {
@@ -186,11 +177,15 @@
                         lookup_field: 'level',
                         exact_lookups: 0
                     }
+                    const config = {
+                        fromCache: !parentId,
+                        requestId: `get_org_department_${!parentId ? '0' : parentId}`
+                    }
                     if (parentId) {
                         params.lookup_field = 'parent'
                         params.exact_lookups = parentId
                     }
-                    const res = await this.$store.dispatch('organization/getDepartment', { params })
+                    const res = await this.$store.dispatch('organization/getDepartment', { params, ...config })
                     const data = res.results || []
                     return { data }
                 } catch (e) {
@@ -203,10 +198,9 @@
                     requestId: this.searchRequestId
                 })
             },
-            async resetTree () {
-                const { data } = await this.getLazyData()
-                this.$refs.tree.setData(data)
+            resetTree () {
                 this.checked = []
+                this.loadTree()
             },
             lazyMethod (node) {
                 return this.getLazyData(node.id)
@@ -362,8 +356,7 @@
                         const data = res.results || []
                         this.setTreeSearchData(data)
                     } else {
-                        // 待优化为保持状态
-                        this.resetTree()
+                        this.loadTree()
                     }
                 } catch (e) {
                     console.error(e)
@@ -376,9 +369,11 @@
                 if (this.multiple) {
                     this.checked = ids
                 } else {
-                    this.$refs.tree.removeChecked({ emitEvent: false })
-                    this.$refs.tree.setChecked(node.id, { emitEvent: false })
+                    const tree = this.$refs.tree
+                    tree.removeChecked({ emitEvent: false })
+                    tree.setChecked(node.id, { emitEvent: false })
                     this.checked = [node.id]
+                    this.$refs.selectDropdown.instance.hide()
                 }
             },
             handleDropdownShow () {
@@ -455,9 +450,10 @@
 
         .select-angle {
             position: absolute;
-            right: 12px;
-            top: 10px;
-            font-size: 12px;
+            right: 2px;
+            top: 4px;
+            font-size: 22px;
+            color: #979ba5;
             transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
         }
@@ -465,7 +461,7 @@
         .select-clear {
             display: none;
             position: absolute;
-            right: 11px;
+            right: 6px;
             top: 8px;
             width: 14px;
             height: 14px;
@@ -473,7 +469,7 @@
             background-color: #c4c6cc;
             border-radius: 50%;
             text-align: center;
-            font-size: 12px;
+            font-size: 14px;
             color: #fff;
             z-index: 100;
             &:before {

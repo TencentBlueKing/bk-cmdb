@@ -67,14 +67,16 @@
                     </bk-option>
                 </bk-select>
                 <component class="filter-value fl"
-                    v-if="['enum', 'list'].includes(filter.type)"
+                    v-if="['enum', 'list', 'organization'].includes(filter.type)"
                     :is="`cmdb-form-${filter.type}`"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
+                    :clearable="true"
                     :auto-select="false"
                     v-model="filter.value"
                     font-size="medium"
-                    @on-selected="handlePageChange(1, true)">
+                    @on-selected="handlePageChange(1, true)"
+                    @on-checked="handlePageChange(1, true)">
                 </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
@@ -109,7 +111,7 @@
             </div>
         </div>
         <bk-table class="models-table" ref="table"
-            v-bkloading="{ isLoading: $loading() }"
+            v-bkloading="{ isLoading: $loading('^=post_searchInst_') }"
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 190"
@@ -522,7 +524,7 @@
                     } else if (filterType === 'float') {
                         filterValue = isNaN(parseFloat(filterValue)) ? filterValue : parseFloat(filterValue)
                     }
-                    if (['bool', 'int', 'enum', 'float'].includes(filterType)) {
+                    if (['bool', 'int', 'enum', 'float', 'organization'].includes(filterType)) {
                         params.condition[this.objId].push({
                             field: this.filter.id,
                             operator: '$eq',
