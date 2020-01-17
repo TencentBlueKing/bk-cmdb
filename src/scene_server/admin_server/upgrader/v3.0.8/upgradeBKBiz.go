@@ -14,8 +14,6 @@ package v3v0v8
 
 import (
 	"context"
-	"fmt"
-
 	"strings"
 	"time"
 
@@ -221,46 +219,12 @@ func addBKProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID 
 		}
 
 		filled := fillEmptyFields(procModelData, ProcRow())
-		var preData map[string]interface{}
-		processID, preData, err := upgrader.Upsert(ctx, db, "cc_Process", procModelData, common.BKProcessIDField, []string{common.BKProcessNameField, common.BKAppIDField, common.BKOwnerIDField}, append(filled, common.BKProcessIDField))
+		processID, _, err := upgrader.Upsert(ctx, db, "cc_Process", procModelData, common.BKProcessIDField, []string{common.BKProcessNameField, common.BKAppIDField, common.BKOwnerIDField}, append(filled, common.BKProcessIDField))
 		if err != nil {
 			blog.Error("add addBKProcess error ", err.Error())
 			return err
 		}
 		procName2ID[procName] = processID
-
-		// add audit log
-		headers := []metadata.Header{}
-		for _, item := range ProcRow() {
-			headers = append(headers, metadata.Header{
-				PropertyID:   item.PropertyID,
-				PropertyName: item.PropertyName,
-			})
-		}
-		auditContent := metadata.Content{
-			CurData: procModelData,
-			Headers: headers,
-		}
-		logRow := &metadata.OperationLog{
-			OwnerID:       conf.OwnerID,
-			ApplicationID: int64(bizID),
-			OpType:        int(auditoplog.AuditOpTypeAdd),
-			OpTarget:      "process",
-			User:          conf.User,
-			ExtKey:        "",
-			OpDesc:        "create process",
-			Content:       auditContent,
-			CreateTime:    time.Now(),
-			InstID:        int64(processID),
-		}
-		if preData != nil {
-			logRow.OpDesc = "update process"
-			logRow.OpType = int(auditoplog.AuditOpTypeModify)
-		}
-		if err = db.Table(logRow.TableName()).Insert(ctx, logRow); err != nil {
-			blog.Error("add audit log error ", err.Error())
-			return err
-		}
 
 	}
 
@@ -404,31 +368,6 @@ func addModule2Process(ctx context.Context, db dal.RDB, conf *upgrader.Config, p
 
 		if _, _, err = upgrader.Upsert(ctx, db, "cc_Proc2Module", module2Process, "", []string{common.BKModuleNameField, common.BKAppIDField, common.BKProcessIDField}, nil); err != nil {
 			blog.Error("add addModuleInSet error ", err.Error())
-			return err
-		}
-
-		// add audit log
-		headers := []metadata.Header{}
-		for _, item := range ModuleRow() {
-			headers = append(headers, metadata.Header{
-				PropertyID:   item.PropertyID,
-				PropertyName: item.PropertyName,
-			})
-		}
-		logRow := &metadata.OperationLog{
-			OwnerID:       conf.OwnerID,
-			ApplicationID: int64(bizID),
-			OpType:        int(auditoplog.AuditOpTypeModify),
-			OpTarget:      "module",
-			User:          conf.User,
-			ExtKey:        "",
-			OpDesc:        fmt.Sprintf("bind module [%s]", moduleName),
-			Content:       "",
-			CreateTime:    time.Now(),
-			InstID:        int64(bizID),
-		}
-		if err = db.Table(logRow.TableName()).Insert(ctx, logRow); err != nil {
-			blog.Error("add audit log error ", err.Error())
 			return err
 		}
 	}
