@@ -65,10 +65,6 @@ func (f *FieldValid) ValidName(params types.ContextParams, value string) error {
 			params.Lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
 	}
 	value = strings.TrimSpace(value)
-	match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
-	if nil != err || !match {
-		return params.Err.Errorf(common.CCErrCommParamsIsInvalid, value)
-	}
 	return nil
 }
 

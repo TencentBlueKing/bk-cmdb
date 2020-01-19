@@ -92,6 +92,7 @@
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', [
@@ -104,6 +105,9 @@
             customColumns () {
                 const customColumnKey = this.$route.meta.customInstanceColumn
                 return this.usercustom[customColumnKey] || []
+            },
+            globalCustomColumns () {
+                return this.globalUsercustom['host_global_custom_table_columns'] || []
             }
         },
         watch: {
@@ -131,9 +135,10 @@
         },
         methods: {
             setTableHeader () {
+                const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
                 const properties = this.$tools.getHeaderProperties(
                     this.columnsConfigProperties,
-                    this.customColumns,
+                    customColumns,
                     this.columnsConfig.fixedColumns
                 )
                 this.table.header = properties
@@ -317,7 +322,8 @@
                         sourceModel: this.selectedNode.data.bk_obj_id,
                         sourceId: this.selectedNode.data.bk_inst_id,
                         targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-                        resources: this.table.selection.map(item => item.host.bk_host_id).join(',')
+                        resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
+                        node: this.selectedNode.id
                     }
                 })
             },

@@ -318,9 +318,6 @@
             },
             checked () {
                 this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
-            },
-            searchSelectData (searchSelectData) {
-                if (!searchSelectData.length && this.inSearch) this.inSearch = false
             }
         },
         async created () {
@@ -440,6 +437,10 @@
                     this.isExpandAll = false
                     this.instances = data.info
                     this.pagination.count = data.count
+                    if (!this.searchSelectData.length && this.inSearch) this.inSearch = false
+                    this.$nextTick(() => {
+                        data.info.length && this.handleCheckALL(false)
+                    })
                 } catch (e) {
                     console.error(e)
                     this.instances = []
@@ -732,19 +733,19 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        title: this.currentNode.data.bk_inst_name
+                        title: this.currentNode.data.bk_inst_name,
+                        node: this.currentNode.id,
+                        tab: 'serviceInstance'
                     }
                 })
             },
             handleCheckALL (checked) {
-                this.searchSelectData = []
                 this.isCheckAll = checked
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.checked = checked
                 })
             },
             handleExpandAll (expanded) {
-                this.searchSelectData = []
                 this.isExpandAll = expanded
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.localExpanded = expanded

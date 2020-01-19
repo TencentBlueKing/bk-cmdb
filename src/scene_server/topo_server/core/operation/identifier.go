@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"strings"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -64,36 +63,10 @@ func (g *identifier) SearchIdentifier(params types.ContextParams, objType string
 		param.Page.Limit = common.BKMaxPageSize
 	}
 
-	sortArr := make([]metadata.SearchSort, 0)
-	if len(param.Page.Sort) != 0 {
-		for _, field := range strings.Split(param.Page.Sort, ",") {
-			field = strings.TrimSpace(field)
-			if field == "" {
-				continue
-			}
-			var isDesc bool
-			switch field[0] {
-			case '-':
-				field = strings.TrimLeft(field, "-")
-				isDesc = true
-			case '+':
-				field = strings.TrimLeft(field, "+")
-			}
-			sortArr = append(sortArr, metadata.SearchSort{
-				IsDsc: isDesc,
-				Field: field,
-			})
-		}
-	}
-
 	hostQuery := &metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 		Fields:    []string{common.BKHostIDField},
-		Limit: metadata.SearchLimit{
-			Offset: int64(param.Page.Start),
-			Limit:  int64(param.Page.Limit),
-		},
-		SortArr: sortArr,
+		Page:      param.Page,
 	}
 	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, common.BKInnerObjIDHost, hostQuery)
 	if nil != err {

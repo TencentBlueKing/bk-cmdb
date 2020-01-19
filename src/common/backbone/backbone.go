@@ -98,7 +98,6 @@ func validateParameter(input *BackboneParameter) error {
 	if input.SrvInfo.Port <= 0 || input.SrvInfo.Port > 65535 {
 		return fmt.Errorf("addrport port must be 1-65535")
 	}
-
 	if input.ConfigUpdate == nil {
 		return fmt.Errorf("service config change funcation can not be emtpy")
 	}

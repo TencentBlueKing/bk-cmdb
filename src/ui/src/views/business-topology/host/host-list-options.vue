@@ -335,7 +335,8 @@
                     query: {
                         sourceModel: this.selectedNode.data.bk_obj_id,
                         sourceId: this.selectedNode.data.bk_inst_id,
-                        resources: this.$parent.table.selection.map(item => item.host.bk_host_id).join(',')
+                        resources: this.$parent.table.selection.map(item => item.host.bk_host_id).join(','),
+                        node: this.selectedNode.id
                     }
                 })
             },
@@ -408,7 +409,8 @@
                     },
                     query: {
                         resources: selected.map(item => item.host.bk_host_id).join(','),
-                        title: this.selectedNode.data.bk_inst_name
+                        title: this.selectedNode.data.bk_inst_name,
+                        node: this.selectedNode.id
                     }
                 })
             },

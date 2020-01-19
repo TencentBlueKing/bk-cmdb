@@ -89,8 +89,8 @@ const actions = {
      * @param {Number} bizId 业务id
      * @return {promises} promises 对象
      */
-    recoveryBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${params['bk_biz_id']}`, {}, config)
+    recoveryBusiness ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+        return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${bizId}`, params, config)
     },
 
     /**

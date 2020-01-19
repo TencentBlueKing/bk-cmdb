@@ -43,7 +43,7 @@ type serviceRegister struct {
 }
 
 func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
-	if c.IP == "0.0.0.0" {
+	if c.RegisterIP == "0.0.0.0" {
 		return errors.New("register ip can not be 0.0.0.0")
 	}
 

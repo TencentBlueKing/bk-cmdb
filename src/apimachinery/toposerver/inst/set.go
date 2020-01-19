@@ -14,7 +14,6 @@ package inst
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/mapstr"
@@ -24,12 +23,12 @@ import (
 
 func (t *instanceClient) CreateSet(ctx context.Context, appID string, h http.Header, dat mapstr.MapStr) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
-	subPath := fmt.Sprintf("/set/%s", appID)
+	subPath := "/set/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
+		SubResourcef(subPath, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -38,12 +37,12 @@ func (t *instanceClient) CreateSet(ctx context.Context, appID string, h http.Hea
 
 func (t *instanceClient) DeleteSet(ctx context.Context, appID string, setID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/set/%s/%s", appID, setID)
+	subPath := "/set/%s/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, appID, setID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -52,12 +51,12 @@ func (t *instanceClient) DeleteSet(ctx context.Context, appID string, setID stri
 
 func (t *instanceClient) UpdateSet(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/set/%s/%s", appID, setID)
+	subPath := "/set/%s/%s"
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
+		SubResourcef(subPath, appID, setID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -66,12 +65,12 @@ func (t *instanceClient) UpdateSet(ctx context.Context, appID string, setID stri
 
 func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := fmt.Sprintf("/set/search/%s/%s", ownerID, appID)
+	subPath := "/set/search/%s/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

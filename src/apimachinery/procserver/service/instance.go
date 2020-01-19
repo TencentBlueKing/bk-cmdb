@@ -14,7 +14,7 @@ func (s *service) CreateServiceInstance(ctx context.Context, h http.Header, data
 	err = s.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -28,7 +28,7 @@ func (s *service) DeleteServiceInstance(ctx context.Context, h http.Header, data
 	err = s.client.Delete().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -42,7 +42,7 @@ func (s *service) SearchServiceInstance(ctx context.Context, h http.Header, data
 	err = s.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -56,7 +56,7 @@ func (s *service) DiffServiceInstanceWithTemplate(ctx context.Context, h http.He
 	err = s.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -70,7 +70,7 @@ func (s *service) SyncServiceInstanceByTemplate(ctx context.Context, h http.Head
 	err = s.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -84,7 +84,7 @@ func (s *service) ServiceInstanceAddLabels(ctx context.Context, h http.Header, d
 	err = s.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -98,7 +98,7 @@ func (s *service) ServiceInstanceRemoveLabels(ctx context.Context, h http.Header
 	err = s.client.Delete().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -112,7 +112,7 @@ func (s *service) ServiceInstanceFindLabels(ctx context.Context, h http.Header, 
 	err = s.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

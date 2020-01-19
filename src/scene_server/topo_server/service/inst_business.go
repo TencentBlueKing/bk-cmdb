@@ -117,6 +117,11 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 
 // UpdateBusinessStatus update the business status
 func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	updateOption := metadata.UpdateBusinessStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &updateOption); err != nil {
+		blog.Errorf("[api-business]failed, parse request body failed, data: %+v, err: %s, rid: %s", data, err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -129,7 +134,6 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
-	data = mapstr.New()
 	query := &metadata.QueryBusinessRequest{
 		Condition: mapstr.MapStr{common.BKAppIDField: bizID},
 	}
@@ -137,7 +141,13 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 	if len(bizs) <= 0 {
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
-	data = mapstr.New()
+	biz := metadata.BizBasicInfo{}
+	if err := mapstruct.Decode2Struct(bizs[0], &biz); err != nil {
+		blog.Errorf("[api-business]failed, parse biz failed, biz: %+v, err: %s, rid: %s", bizs[0], err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommParseDBFailed)
+	}
+
+	updateData := mapstr.New()
 	switch common.DataStatusFlag(pathParams("flag")) {
 	case common.DataStatusDisabled:
 		if err := s.Core.AssociationOperation().CheckAssociation(params, obj, obj.Object().ObjectID, bizID); nil != err {
@@ -152,24 +162,22 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 		if has {
 			return nil, params.Err.Error(common.CCErrTopoArchiveBusinessHasHost)
 		}
-
-		data.Set(common.BKDataStatusField, pathParams("flag"))
+		achieveBizName, err := s.Core.BusinessOperation().GenerateAchieveBusinessName(params, biz.BizName)
+		if err != nil {
+			return nil, err
+		}
+		updateData.Set(common.BKAppNameField, achieveBizName)
+		updateData.Set(common.BKDataStatusField, pathParams("flag"))
 	case common.DataStatusEnable:
-		name, err := bizs[0].String(common.BKAppNameField)
-		if nil != err {
-			return nil, params.Err.Error(common.CCErrCommNotFound)
+		if len(updateOption.BizName) > 0 {
+			updateData.Set(common.BKAppNameField, updateOption.BizName)
 		}
-		name = name + common.BKDataRecoverSuffix
-		if len(name) >= common.FieldTypeSingleLenChar {
-			name = name[:common.FieldTypeSingleLenChar]
-		}
-		data.Set(common.BKAppNameField, name)
-		data.Set(common.BKDataStatusField, pathParams("flag"))
+		updateData.Set(common.BKDataStatusField, pathParams("flag"))
 	default:
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, pathParams("flag"))
 	}
 
-	err = s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
+	err = s.Core.BusinessOperation().UpdateBusiness(params, updateData, obj, bizID)
 	if err != nil {
 		blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
@@ -603,7 +611,7 @@ func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams
 
 	query := &metadata.QueryBusinessRequest{
 		Fields: fields,
-		Page:   metadata.BasePage{},
+		Page:   page,
 		Condition: mapstr.MapStr{
 			common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
 		},

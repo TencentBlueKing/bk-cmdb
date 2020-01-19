@@ -39,7 +39,7 @@
                                     :disabled="disabled"
                                     @click="$emit('create')"
                                 >
-                                    {{`立即${action}`}}
+                                    {{$i18n.locale === 'en' ? `${action} now` : `立即${action}`}}
                                 </bk-button>
                             </cmdb-auth>
                         </span>

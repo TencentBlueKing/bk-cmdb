@@ -222,7 +222,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapState, mapGetters, mapActions } from 'vuex'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -287,6 +287,7 @@
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
@@ -301,7 +302,10 @@
                 return `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
             },
             customColumns () {
-                return this.usercustom[this.customConfigKey]
+                return this.usercustom[this.customConfigKey] || []
+            },
+            globalCustomColumns () {
+                return this.globalUsercustom[`${this.objId}_global_custom_table_columns`] || []
             },
             url () {
                 const prefix = `${window.API_HOST}insts/owner/${this.supplierAccount}/object/${this.objId}/`
@@ -435,7 +439,8 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.columnProperties, this.customColumns, this.columnsConfig.disabledColumns)
+                    const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
+                    const headerProperties = this.$tools.getHeaderProperties(this.columnProperties, customColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.updateTableHeader(properties)

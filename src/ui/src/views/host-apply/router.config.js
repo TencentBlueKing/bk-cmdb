@@ -8,6 +8,9 @@ import {
     MENU_BUSINESS_HOST_APPLY_CONFLICT,
     MENU_BUSINESS_HOST_APPLY_FAILED
 } from '@/dictionary/menu-symbol'
+import {
+    U_HOST_APPLY
+} from '@/dictionary/auth'
 
 export default [{
     name: MENU_BUSINESS_HOST_APPLY,
@@ -18,6 +21,11 @@ export default [{
         menu: {
             i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST
+        },
+        auth: {
+            operation: {
+                U_HOST_APPLY
+            }
         }
     })
 }, {
@@ -29,6 +37,11 @@ export default [{
         menu: {
             i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
+        },
+        auth: {
+            operation: {
+                U_HOST_APPLY
+            }
         },
         layout: {
             previous (view) {
@@ -60,6 +73,11 @@ export default [{
             i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
         },
+        auth: {
+            operation: {
+                U_HOST_APPLY
+            }
+        },
         layout: {
             previous (view) {
                 const config = {
@@ -83,6 +101,11 @@ export default [{
             i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
         },
+        auth: {
+            operation: {
+                U_HOST_APPLY
+            }
+        },
         layout: {
             previous (view) {
                 return {
@@ -103,6 +126,11 @@ export default [{
         menu: {
             i18n: '主机属性自动应用',
             parent: MENU_BUSINESS_HOST_APPLY
+        },
+        auth: {
+            operation: {
+                U_HOST_APPLY
+            }
         },
         layout: {
             previous: {

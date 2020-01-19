@@ -42,6 +42,7 @@
                 <div class="cmdb-form-item">
                     <bk-select
                         class="bk-select-full-width"
+                        searchable
                         :clearable="false"
                         v-model="fieldInfo.bk_property_type"
                         :disabled="isEditField">
@@ -131,10 +132,6 @@
             isEditField: {
                 type: Boolean,
                 default: false
-            },
-            propertyIndex: {
-                type: Number,
-                default: 0
             },
             isMainLineModel: {
                 type: Boolean,
@@ -304,7 +301,6 @@
                     const otherParams = {
                         creator: this.userName,
                         bk_property_group: this.group.bk_group_id || groupId,
-                        bk_property_index: this.propertyIndex || 0,
                         bk_obj_id: this.group.bk_obj_id,
                         bk_supplier_account: this.supplierAccount
                     }

@@ -15,7 +15,6 @@ package operation
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
@@ -589,23 +588,7 @@ func (assoc *association) SearchObjectAssocWithAssocKindList(params types.Contex
 func (assoc *association) SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
 	input := metadata.QueryCondition{
 		Condition: request.Condition,
-		Limit:     metadata.SearchLimit{Limit: int64(request.Limit), Offset: int64(request.Start)},
-	}
-
-	for _, key := range strings.Split(request.Sort, ",") {
-		key = strings.TrimSpace(key)
-		if key == "" {
-			continue
-		}
-		var isDesc bool
-		switch key[0] {
-		case '-':
-			key = strings.TrimLeft(key, "-")
-			isDesc = true
-		case '+':
-			key = strings.TrimLeft(key, "+")
-		}
-		input.SortArr = append(input.SortArr, metadata.SearchSort{IsDsc: isDesc, Field: key})
+		Page:      metadata.BasePage{Limit: request.Limit, Start: request.Start, Sort: request.Sort},
 	}
 
 	return assoc.clientSet.CoreService().Association().ReadAssociationType(context.Background(), params.Header, &input)
@@ -907,14 +890,14 @@ func (assoc *association) CreateInst(params types.ContextParams, request *metada
 		OpType: auditoplog.AuditOpTypeAdd,
 		BizID:  bizID,
 	}
-	auditresp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
+	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
 		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFailed)
 	}
-	if !auditresp.Result {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.New(auditresp.Code, auditresp.ErrMsg)
+	if !auditResp.Result {
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", auditResp.ErrMsg, params.ReqID)
+		return nil, params.Err.New(auditResp.Code, auditResp.ErrMsg)
 	}
 
 	return resp, err
@@ -986,14 +969,14 @@ func (assoc *association) DeleteInst(params types.ContextParams, assoID int64) (
 		OpType: auditoplog.AuditOpTypeDel,
 		BizID:  bizID,
 	}
-	auditresp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
+	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
-		blog.Errorf("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v, rid: %s", auditresp, err, params.ReqID)
+		blog.Errorf("DeleteInst finished, but save audit log failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFailed)
 	}
-	if !auditresp.Result {
-		blog.Errorf("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.New(auditresp.Code, auditresp.ErrMsg)
+	if !auditResp.Result {
+		blog.Errorf("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", auditResp.ErrMsg, params.ReqID)
+		return nil, params.Err.New(auditResp.Code, auditResp.ErrMsg)
 	}
 
 	return resp, err
@@ -1051,9 +1034,9 @@ func (assoc *association) SearchInstAssociationUIList(params types.ContextParams
 		cond.Field(idField).In(instIDArr)
 		input := &metadata.QueryCondition{
 			Condition: cond.ToMapStr(),
-			Limit: metadata.SearchLimit{
-				Offset: 0,
-				Limit:  common.BKNoLimit,
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: common.BKNoLimit,
 			},
 			Fields: []string{metadata.GetInstNameFieldName(instObjID), idField},
 		}
@@ -1121,9 +1104,9 @@ func (assoc *association) SearchInstAssociationSingleObjectInstInfo(params types
 	cond.Field(idField).In(objIDInstIDArr)
 	input := &metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
-		Limit: metadata.SearchLimit{
-			Offset: 0,
-			Limit:  common.BKNoLimit,
+		Page: metadata.BasePage{
+			Start: 0,
+			Limit: common.BKNoLimit,
 		},
 		Fields: []string{nameField, idField},
 	}

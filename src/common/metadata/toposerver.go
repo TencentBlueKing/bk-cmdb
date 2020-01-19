@@ -69,3 +69,7 @@ type QueryBusinessRequest struct {
 	Page      BasePage      `json:"page"`
 	Condition mapstr.MapStr `json:"condition"`
 }
+
+type UpdateBusinessStatusOption struct {
+	BizName string `json:"bk_biz_name" mapstructure:"bk_biz_name"`
+}
