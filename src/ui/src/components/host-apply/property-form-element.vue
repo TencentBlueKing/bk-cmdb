@@ -3,6 +3,7 @@
         <component
             :is="`cmdb-form-${property.bk_property_type}`"
             :class="['form-element-item', property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
+            :unit="property.unit"
             :options="property.option || []"
             :data-vv-name="property.bk_property_id"
             :data-vv-as="property.bk_property_name"

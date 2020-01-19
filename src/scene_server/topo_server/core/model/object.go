@@ -41,6 +41,7 @@ type Object interface {
 	SetRecordID(id int64)
 	GetMainlineParentObject() (Object, error)
 	GetMainlineChildObject() (Object, error)
+	GetSetObject() (Object, error)
 
 	GetParentObject() ([]ObjectAssoPair, error)
 	GetChildObject() ([]ObjectAssoPair, error)
@@ -210,6 +211,26 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 
 	}
 
+	return nil, io.EOF
+}
+
+func (o *object) GetSetObject() (Object, error) {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDSet)
+	rspRst, err := o.search(cond)
+	if nil != err {
+		blog.Errorf("[model-obj] failed to search the object(%s)'s child, error info is %s, rid: %s", common.BKInnerObjIDSet, err.Error(), o.params.ReqID)
+		return nil, err
+	}
+
+	objItems := CreateObject(o.params, o.clientSet, rspRst)
+	if len(objItems) > 1 {
+		blog.Errorf("[model-obj] get multiple(%d) children for object(%s), rid: %s", len(objItems), common.BKInnerObjIDSet, o.params.ReqID)
+	}
+	for _, item := range objItems {
+		// only one child in the main-line
+		return item, nil
+	}
 	return nil, io.EOF
 }
 

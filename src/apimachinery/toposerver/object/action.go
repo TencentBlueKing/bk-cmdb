@@ -14,7 +14,6 @@ package object
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -27,7 +26,7 @@ func (t *object) CreateModel(ctx context.Context, h http.Header, model *metadata
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(model).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -36,12 +35,12 @@ func (t *object) CreateModel(ctx context.Context, h http.Header, model *metadata
 
 func (t *object) DeleteModel(ctx context.Context, ownerID string, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/topo/model/mainline/owners/%s/objectids/%s", ownerID, objID)
+	subPath := "/topo/model/mainline/owners/%s/objectids/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -50,12 +49,12 @@ func (t *object) DeleteModel(ctx context.Context, ownerID string, objID string, 
 
 func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *metadata.MainlineObjectTopoResult, err error) {
 	resp = new(metadata.MainlineObjectTopoResult)
-	subPath := fmt.Sprintf("/topo/model/%s", ownerID)
+	subPath := "/topo/model/%s"
 
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -64,12 +63,12 @@ func (t *object) SelectModel(ctx context.Context, ownerID string, h http.Header)
 
 func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/topo/model/%s/%s/%s", ownerID, clsID, objID)
+	subPath := "/topo/model/%s/%s/%s"
 
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, clsID, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -78,12 +77,12 @@ func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID s
 
 func (t *object) SelectInst(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/topo/inst/%s/%s", ownerID, appID)
+	subPath := "/topo/inst/%s/%s"
 
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -92,12 +91,12 @@ func (t *object) SelectInst(ctx context.Context, ownerID string, appID string, h
 
 func (t *object) SelectInstChild(ctx context.Context, ownerID string, objID string, appID string, instID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/topo/inst/child/%s/%s/%s/%s", ownerID, objID, appID, instID)
+	subPath := "/topo/inst/child/%s/%s/%s/%s"
 
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
+		SubResourcef(subPath, ownerID, objID, appID, instID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

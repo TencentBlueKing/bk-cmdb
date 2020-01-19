@@ -302,7 +302,6 @@ func (ia *importAssociation) parseImportDataPrimary() {
 				ia.queryInstConds[ia.objID] = make([]mapstr.MapStr, 0)
 			}
 			ia.queryInstConds[ia.objID] = append(ia.queryInstConds[ia.objID], srcCond)
-
 		}
 		dstCond, err := ia.parseImportDataPrimaryItem(associationInst.AsstObjID, info.DstPrimary)
 		if err != nil {
@@ -313,7 +312,6 @@ func (ia *importAssociation) parseImportDataPrimary() {
 				ia.queryInstConds[associationInst.AsstObjID] = make([]mapstr.MapStr, 0)
 			}
 			ia.queryInstConds[associationInst.AsstObjID] = append(ia.queryInstConds[associationInst.AsstObjID], dstCond)
-
 		}
 	}
 
@@ -322,7 +320,6 @@ func (ia *importAssociation) parseImportDataPrimary() {
 }
 
 func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item string) (mapstr.MapStr, error) {
-
 	keyValMap := mapstr.New()
 	primaryArr := strings.Split(item, common.ExcelAsstPrimaryKeySplitChar)
 
@@ -354,13 +351,23 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 }
 
 func (ia *importAssociation) getInstDataByConds() error {
-
 	for objID, valArr := range ia.queryInstConds {
-
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
+
+		if objID == common.BKInnerObjIDHost && len(valArr) > 0 {
+			if ok := valArr[0].Exists(common.BKCloudIDField); !ok {
+				continue
+			}
+
+			intCloudID, err := valArr[0].Int64(common.BKCloudIDField)
+			if err != nil {
+				return err
+			}
+			valArr[0][common.BKCloudIDField] = intCloudID
+		}
+
 		conds := condition.CreateCondition()
 		conds.NewOR().MapStrArr(valArr)
-
 		instArr, err := ia.getInstDataByObjIDConds(objID, instIDKey, conds)
 		if err != nil {
 			return err

@@ -234,8 +234,8 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 	}
 	if len(logContents) > 0 {
 		auditResult, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logContents...)
-		if err != nil || (err == nil && !auditResult.Result) {
-			blog.Errorf("delete host in batch, but add host audit log failed, err: %v, result err: %v,rid:%s", err, auditResult.ErrMsg, srvData.rid)
+		if err != nil || !auditResult.Result {
+			blog.ErrorJSON("delete host in batch, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrAuditSaveLogFailed)})
 			return
 		}
@@ -584,7 +584,7 @@ func (s *Service) getHostApplyRelatedFields(srvData *srvComm, hostIDArr []int64)
 	}
 	hostAttributesFilter := &meta.QueryCondition{
 		Fields: []string{common.BKPropertyIDField, common.BKFieldID},
-		Limit: meta.SearchLimit{
+		Page: meta.BasePage{
 			Limit: common.BKNoLimit,
 		},
 		Condition: map[string]interface{}{
@@ -928,7 +928,7 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 	auditResp, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, auditLogs...)
 	if err != nil {
 		blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}
 	if !auditResp.Result {

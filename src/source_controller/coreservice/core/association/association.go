@@ -27,7 +27,7 @@ type associationManager struct {
 }
 
 // New create a new association manager instance
-func New(dbProxy dal.RDB, dependent OperationDependences) core.AssociationOperation {
+func New(dbProxy dal.RDB, dependent OperationDependencies) core.AssociationOperation {
 	asstModel := &associationModel{dbProxy: dbProxy}
 	asstKind := &associationKind{
 		dbProxy:          dbProxy,

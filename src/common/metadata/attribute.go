@@ -149,12 +149,10 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validChar(ctx, data, key)
 	case common.FieldTypeList:
 		rawError = attribute.validList(ctx, data, key)
-	// TODO implement validate for types below
-	// common.FieldTypeSingleLenChar
-	// common.FieldTypeLongLenChar
-	// common.FieldTypeStrictCharRegexp
-	// common.FieldTypeSingleCharRegexp
-	// common.FieldTypeLongCharRegexp
+	case common.FieldTypeOrganization:
+		rawError = attribute.validOrganization(ctx, data, key)
+	case "foreignkey", "singleasst", "multiasst":
+		// TODO what validation should do on these types
 	default:
 		rawError = errors.RawErrorInfo{
 			ErrCode: common.CCErrCommUnexpectedFieldType,
@@ -168,7 +166,7 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if nil == val || "" == val {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -203,7 +201,7 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 // validDate valid object Attribute that is date type
 func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if nil == val || "" == val {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -268,22 +266,17 @@ func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key 
 			Args:    []interface{}{key},
 		}
 	}
-	match := false
 	for _, k := range enumOption {
 		if k.ID == valStr {
-			match = true
-			break
+			return errors.RawErrorInfo{}
 		}
 	}
-	if !match {
-		blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption, attribute.Option, val, rid)
-		blog.Errorf("params %s not valid , enum value: %#v, rid: %s", key, val, rid)
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{key},
-		}
+	blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption, attribute.Option, val, rid)
+	blog.Errorf("params %s not valid , enum value: %#v, rid: %s", key, val, rid)
+	return errors.RawErrorInfo{
+		ErrCode: common.CCErrCommParamsInvalid,
+		Args:    []interface{}{key},
 	}
-	return errors.RawErrorInfo{}
 }
 
 // validBool valid object attribute that is bool type
@@ -480,34 +473,23 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 			return errors.RawErrorInfo{}
 		}
 
-		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, value)
-		if nil != err || !match {
-			blog.Errorf(`params "%s" not match longchar regexp, rid:  %s`, val, rid)
+		option, ok := attribute.Option.(string)
+		if !ok {
+			break
+		}
+		strReg, err := regexp.Compile(option)
+		if nil != err {
+			blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{key},
+				Args:    []interface{}{option},
 			}
 		}
-
-		if "" != val {
-			option, ok := attribute.Option.(string)
-			if !ok {
-				break
-			}
-			strReg, err := regexp.Compile(option)
-			if nil != err {
-				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
-			}
-			if !strReg.MatchString(value) {
-				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
+		if !strReg.MatchString(value) {
+			blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrFieldRegValidFailed,
+				Args:    []interface{}{key},
 			}
 		}
 	default:
@@ -521,10 +503,10 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 	return errors.RawErrorInfo{}
 }
 
-// validChar valid object attribute that is  char type
+// validChar valid object attribute that is char type
 func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val || "" == val {
+	if nil == val {
 		if attribute.IsRequired {
 			blog.Errorf("params in need, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -536,6 +518,7 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 	}
 	switch value := val.(type) {
 	case string:
+		value = strings.TrimSpace(value)
 		if len(value) > common.FieldTypeSingleLenChar {
 			blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
 			return errors.RawErrorInfo{
@@ -554,35 +537,37 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 
-		value = strings.TrimSpace(value)
-		match, err := regexp.MatchString(common.FieldTypeSingleCharRegexp, value)
-		if nil != err || !match {
-			blog.Errorf(`params "%s" not match singlechar regexp, rid:  %s`, val, rid)
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{key},
+		if key == common.BKAppNameField || key == common.BKSetNameField || key == common.BKModuleNameField {
+			if strings.Contains(value, "##") {
+				blog.ErrorJSON("params %s contains TopoModuleName's split flag ##, rid: %s", value, rid)
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsInvalid,
+					Args:    []interface{}{value},
+				}
 			}
 		}
 
-		if "" != val {
-			option, ok := attribute.Option.(string)
-			if !ok {
-				break
+		if "" == val {
+			return errors.RawErrorInfo{}
+		}
+
+		option, ok := attribute.Option.(string)
+		if !ok {
+			break
+		}
+		strReg, err := regexp.Compile(option)
+		if nil != err {
+            blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
+            return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{option},
 			}
-			strReg, err := regexp.Compile(option)
-			if nil != err {
-				blog.Errorf(`params "%s" not match regexp "%s", rid:  %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
-			}
-			if !strReg.MatchString(value) {
-				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrFieldRegValidFailed,
-					Args:    []interface{}{key},
-				}
+		}
+		if !strReg.MatchString(value) {
+			blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, option, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrFieldRegValidFailed,
+				Args:    []interface{}{key},
 			}
 		}
 	default:
@@ -619,14 +604,13 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 	}
 
 	listOption, ok := attribute.Option.([]interface{})
-	if false == ok {
+	if !ok {
 		blog.Errorf("option %v invalid, not string type list option", attribute.Option)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}
-	match := false
 	for _, inVal := range listOption {
 		inValStr, ok := inVal.(string)
 		if !ok {
@@ -637,12 +621,35 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 			}
 		}
 		if strVal == inValStr {
-			match = true
-			break
+			return errors.RawErrorInfo{}
 		}
 	}
-	if !match {
-		blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, attribute, val)
+	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, attribute, val)
+	return errors.RawErrorInfo{
+		ErrCode: common.CCErrCommParamsInvalid,
+		Args:    []interface{}{key},
+	}
+}
+
+// validBool valid object attribute that is bool type
+func (attribute *Attribute) validOrganization(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if nil == val {
+		if attribute.IsRequired {
+			blog.Errorf("params can not be null, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	switch val.(type) {
+	case []interface{}:
+	default:
+		blog.Errorf("params should be type organization, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
@@ -925,8 +932,35 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
 		}
 		return strconv.FormatBool(value), nil
+	case common.FieldTypeUser:
+		value, ok := val.(string)
+		if ok == false {
+			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
+		}
+		return value, nil
+	case common.FieldTypeList:
+		strVal, ok := val.(string)
+		if !ok {
+			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
+		}
+
+		listOption, ok := attribute.Option.([]interface{})
+		if false == ok {
+			return "", fmt.Errorf("parse options for list type failed, option not slice type, option: %+v", attribute.Option)
+		}
+		for _, inVal := range listOption {
+			inValStr, ok := inVal.(string)
+			if !ok {
+				return "", fmt.Errorf("parse list option failed, item not string, item: %+v", inVal)
+			}
+			if strVal == inValStr {
+				return strVal, nil
+			}
+		}
+		return "", fmt.Errorf("invalid value for list, value: %s, options: %+v", strVal, listOption)
 	default:
-		return "", fmt.Errorf("unexpected property type: %s", fieldType)
+		blog.V(3).Infof("unexpected property type: %s", fieldType)
+		return fmt.Sprintf("%#v", val), nil
 	}
 	return "", nil
 }
@@ -938,9 +972,9 @@ var HostApplyFieldMap = map[string]bool{
 	common.BKBakOperatorField: true,
 	common.BKAssetIDField:     false,
 	common.BKSNField:          false,
-	"bk_comment":              true,
+	"bk_comment":              false,
 	"bk_service_term":         false,
-	"bk_sla":                  false,
+	"bk_sla":                  true,
 	common.BKCloudIDField:     false,
 	"bk_state_name":           false,
 	"bk_province_name":        false,

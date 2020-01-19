@@ -33,7 +33,6 @@ var _ = Describe("host abnormal test", func() {
 	Describe("test host apply", func() {
 
 		It("1. CreateBusiness", func() {
-			subPath := fmt.Sprintf("/biz/%s", supplierAccount)
 
 			input := map[string]interface{}{
 				"bk_biz_name":       util.RandSeq(16),
@@ -51,7 +50,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/biz/%s", supplierAccount).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -63,7 +62,6 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		It("2. CreateAttributeGroup", func() {
-			subPath := "/create/objectattgroup"
 
 			input := map[string]interface{}{
 				"bk_group_id":         util.RandSeq(16),
@@ -78,7 +76,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/create/objectattgroup").
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -88,7 +86,6 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		It("3. CreateAttribute", func() {
-			subPath := "/create/objectattr"
 
 			input := map[string]interface{}{
 				"bk_property_name":    util.RandSeq(16),
@@ -110,7 +107,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/create/objectattr").
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -121,11 +118,6 @@ var _ = Describe("host abnormal test", func() {
 
 		It("4. CreateSet", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			templateContext := map[string]interface{}{
-				"value1": value1,
-			}
-			subPath := util.RenderTemplate(templateContext, "/set/{{.value1}}")
-
 			input := map[string]interface{}{
 				"bk_set_name":         util.RandSeq(16),
 				"bk_set_desc":         "",
@@ -142,7 +134,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/set/%d", value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -154,11 +146,6 @@ var _ = Describe("host abnormal test", func() {
 		It("5. CreateModule", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_97c8a2eacfe243b7b910bbbb15299641", "name:$.data.bk_set_id", "{.data.bk_set_id}")
-			templateContext := map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-			}
-			subPath := util.RenderTemplate(templateContext, "/module/{{.value1}}/{{.value2}}")
 
 			input := map[string]interface{}{
 				"bk_module_name":      util.RandSeq(16),
@@ -173,7 +160,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/module/%d/%d", value1, value2).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -186,13 +173,6 @@ var _ = Describe("host abnormal test", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_97c8a2eacfe243b7b910bbbb15299641", "name:$.data.bk_set_id", "{.data.bk_set_id}")
 			value3 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-			}
-			urlTemplate := "/module/{{.value1}}/{{.value2}}/{{.value3}}"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
 
 			input := map[string]interface{}{
 				"host_apply_enabled": true,
@@ -202,7 +182,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Put().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/module/%d/%d/%d", value1, value2, value3).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -214,13 +194,6 @@ var _ = Describe("host abnormal test", func() {
 		It("5. SetModuleHostApplyStatus", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-			}
-			urlTemplate := "/module/host_apply_enable_status/bk_biz_id/{{.value1}}/bk_module_id/{{.value2}}/"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
-
 			input := map[string]interface{}{
 				"host_apply_enabled": true,
 				"clear_rules":        false,
@@ -230,7 +203,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Put().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/module/host_apply_enable_status/bk_biz_id/%d/bk_module_id/%d/", value1, value2).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -241,11 +214,6 @@ var _ = Describe("host abnormal test", func() {
 
 		It("5.1 ImportHosts", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-			}
-			urlTemplate := "/hosts/add"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
 
 			input := map[string]interface{}{
 				"bk_biz_id":  value1,
@@ -273,7 +241,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/hosts/add").
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -284,11 +252,6 @@ var _ = Describe("host abnormal test", func() {
 
 		It("5.2 ListBizHosts", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-			}
-			urlTemplate := "/hosts/app/{{.value1}}/list_hosts"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
 
 			input := map[string]interface{}{
 				"host_property_filter": map[string]interface{}{
@@ -314,7 +277,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/hosts/app/%d/list_hosts", value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -328,14 +291,7 @@ var _ = Describe("host abnormal test", func() {
 			value2 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a", "name:$.data.info[0].bk_host_id", "{.data.info[0].bk_host_id}")
 			value3 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a", "name:$.data.info[1].bk_host_id", "{.data.info[1].bk_host_id}")
 			value4 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-				"value4": value4,
-			}
-			urlTemplate := "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{{.value1}}"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/host/transfer_with_auto_clear_service_instance/bk_biz_id/%d"
 
 			input := map[string]interface{}{
 				"bk_host_ids": []interface{}{
@@ -355,7 +311,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -368,13 +324,7 @@ var _ = Describe("host abnormal test", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
 			value3 := util.JsonPathExtractInt(responses, "req_269f039e70864ca29c0ca7bfce344ed5", "name:$.data.id", "{.data.id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-			}
-			urlTemplate := "/create/host_apply_rule/bk_biz_id/{{.value1}}"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/create/host_apply_rule/bk_biz_id/%d"
 
 			input := map[string]interface{}{
 				"bk_module_id":      value2,
@@ -386,7 +336,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -398,12 +348,6 @@ var _ = Describe("host abnormal test", func() {
 		It("7. UpdateHostApplyRule", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_d0479d956b6c40b5aedb6c2fbb5451d5", "name:$.data.id", "{.data.id}")
 			value2 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-			}
-			urlTemplate := "/update/host_apply_rule/{{.value1}}/bk_biz_id/{{.value2}}"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
 
 			input := map[string]interface{}{
 				"bk_property_value": "value",
@@ -413,7 +357,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Put().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef("/update/host_apply_rule/%d/bk_biz_id/%d", value1, value2).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -425,12 +369,7 @@ var _ = Describe("host abnormal test", func() {
 		It("7. UpdateHostApplyRule", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_d0479d956b6c40b5aedb6c2fbb5451d5", "name:$.data.id", "{.data.id}")
 			value2 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-			}
-			urlTemplate := "/update/host_apply_rule/{{.value1}}/bk_biz_id/{{.value2}}"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/update/host_apply_rule/%d/bk_biz_id/%d"
 
 			input := map[string]interface{}{
 				"bk_property_value": "value",
@@ -440,7 +379,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Put().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1, value2).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -452,12 +391,7 @@ var _ = Describe("host abnormal test", func() {
 		It("9. ListHostApplyRule", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-			}
-			urlTemplate := "/findmany/host_apply_rule/bk_biz_id/{{.value1}}"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/findmany/host_apply_rule/bk_biz_id/%d"
 
 			input := map[string]interface{}{
 				"bk_module_ids": []interface{}{value2},
@@ -467,7 +401,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -480,13 +414,7 @@ var _ = Describe("host abnormal test", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a", "name:$.data.info[0].bk_host_id", "{.data.info[0].bk_host_id}")
 			value3 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a", "name:$.data.info[1].bk_host_id", "{.data.info[1].bk_host_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-			}
-			urlTemplate := "/findmany/host_apply_rule/bk_biz_id/{{.value1}}/host_related_rules"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/findmany/host_apply_rule/bk_biz_id/%d/host_related_rules"
 
 			input := map[string]interface{}{
 				"bk_host_ids": []interface{}{
@@ -499,7 +427,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -510,13 +438,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("10. CreateAttribute", func() {
 			value1 := util.JsonPathExtract(responses, "req_b41cdfeea4134d06b1eb558ec7cb71ac", "name:$.data.bk_group_id", "{.data.bk_group_id}")
-			value2 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-			}
 			urlTemplate := "/create/objectattr"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
 
 			input := map[string]interface{}{
 				"bk_property_name":    util.RandSeq(16),
@@ -538,7 +460,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -553,15 +475,7 @@ var _ = Describe("host abnormal test", func() {
 			value3 := util.JsonPathExtractInt(responses, "req_269f039e70864ca29c0ca7bfce344ed5", "name:$.data.id", "{.data.id}")
 			value4 := util.JsonPathExtractInt(responses, "req_d0479d956b6c40b5aedb6c2fbb5451d5", "name:$.data.id", "{.data.id}")
 			value5 := util.JsonPathExtractInt(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.id", "{.data.id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-				"value4": value4,
-				"value5": value5,
-			}
-			urlTemplate := "/createmany/host_apply_rule/bk_biz_id/{{.value1}}/batch_create_or_update"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/createmany/host_apply_rule/bk_biz_id/%d/batch_create_or_update"
 
 			input := map[string]interface{}{
 				"host_apply_rules": []map[string]interface{}{
@@ -583,7 +497,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -595,12 +509,7 @@ var _ = Describe("host abnormal test", func() {
 		It("12. GenerateHostApplyPlan", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-			}
-			urlTemplate := "/createmany/host_apply_plan/bk_biz_id/{{.value1}}/preview"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/createmany/host_apply_plan/bk_biz_id/%d/preview"
 
 			input := map[string]interface{}{
 				"bk_module_ids": []interface{}{value2},
@@ -610,7 +519,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -622,12 +531,7 @@ var _ = Describe("host abnormal test", func() {
 		It("12. RunHostApplyPlan", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-			}
-			urlTemplate := "/updatemany/host_apply_plan/bk_biz_id/{{.value1}}/run"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/updatemany/host_apply_plan/bk_biz_id/%d/run"
 
 			input := map[string]interface{}{
 				"bk_module_ids": []interface{}{value2},
@@ -637,7 +541,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -649,12 +553,7 @@ var _ = Describe("host abnormal test", func() {
 		It("13. CreateModule", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_97c8a2eacfe243b7b910bbbb15299641", "name:$.data.bk_set_id", "{.data.bk_set_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-			}
-			urlTemplate := "/module/{{.value1}}/{{.value2}}"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/module/%d/%d"
 
 			input := map[string]interface{}{
 				"bk_module_name":      util.RandSeq(16),
@@ -669,7 +568,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1, value2).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -684,15 +583,7 @@ var _ = Describe("host abnormal test", func() {
 			value3 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a", "name:$.data.info[1].bk_host_id", "{.data.info[1].bk_host_id}")
 			value4 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
 			value5 := util.JsonPathExtractInt(responses, "req_4a6d78e1316a44fe90dab8c55f31a941", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-				"value4": value4,
-				"value5": value5,
-			}
-			urlTemplate := "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{{.value1}}"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/host/transfer_with_auto_clear_service_instance/bk_biz_id/%d"
 
 			input := map[string]interface{}{
 				"bk_host_ids": []interface{}{
@@ -713,7 +604,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -726,13 +617,7 @@ var _ = Describe("host abnormal test", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.id", "{.data.id}")
 			value3 := util.JsonPathExtractInt(responses, "req_4a6d78e1316a44fe90dab8c55f31a941", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-			}
-			urlTemplate := "/createmany/host_apply_rule/bk_biz_id/{{.value1}}/batch_create_or_update"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/createmany/host_apply_rule/bk_biz_id/%d/batch_create_or_update"
 
 			input := map[string]interface{}{
 				"host_apply_rules": []map[string]interface{}{
@@ -749,7 +634,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -761,18 +646,9 @@ var _ = Describe("host abnormal test", func() {
 		It("16. GenerateHostApplyPlan", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a724ff1", "name:$.data.bk_module_id", "{.data.bk_module_id}")
-			value3 := util.JsonPathExtractInt(responses, "req_d3a0e99e1865429d883029dc1df44b6d", "name:$.data.items[0].rule.id", "{.data.items[0].rule.id}")
 			value4 := util.JsonPathExtractInt(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.id", "{.data.id}")
 			value5 := util.JsonPathExtractInt(responses, "req_ad1c416acb594b8a924163dad615df7a", "name:$.data.info[0].bk_host_id", "{.data.info[0].bk_host_id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-				"value4": value4,
-				"value5": value5,
-			}
-			urlTemplate := "/createmany/host_apply_plan/bk_biz_id/{{.value1}}/preview"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/createmany/host_apply_plan/bk_biz_id/%d/preview"
 
 			input := map[string]interface{}{
 				"bk_module_ids": []interface{}{
@@ -792,7 +668,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -806,14 +682,7 @@ var _ = Describe("host abnormal test", func() {
 			value2 := util.JsonPathExtract(responses, "req_97c8a2eacfe243b7b910bbbb15299641", "name:$.data.bk_set_name", "{.data.bk_set_name}")
 			value3 := util.JsonPathExtractInt(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.id", "{.data.id}")
 			value4 := util.JsonPathExtract(responses, "req_9a5a5cc52e624951a6954ee2e1c6d512", "name:$.data.bk_property_name", "{.data.bk_property_name}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-				"value4": value4,
-			}
-			urlTemplate := "/find/topoinst/bk_biz_id/{{.value1}}/host_apply_rule_related"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/find/topoinst/bk_biz_id/%d/host_apply_rule_related"
 
 			input := map[string]interface{}{
 				"query_filter": map[string]interface{}{
@@ -837,7 +706,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)
@@ -850,13 +719,7 @@ var _ = Describe("host abnormal test", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			value2 := util.JsonPathExtractInt(responses, "req_d0479d956b6c40b5aedb6c2fbb5451d5", "name:$.data.id", "{.data.id}")
 			value3 := util.JsonPathExtractInt(responses, "req_19a5ec9ae86f47dcbe1c9f17d12e3fc2", "name:$.data.items[1].rule.id", "{.data.items[1].rule.id}")
-			var templateContext = map[string]interface{}{
-				"value1": value1,
-				"value2": value2,
-				"value3": value3,
-			}
-			urlTemplate := "/deletemany/host_apply_rule/bk_biz_id/{{.value1}}"
-			subPath := util.RenderTemplate(templateContext, urlTemplate)
+			urlTemplate := "/deletemany/host_apply_rule/bk_biz_id/%d"
 
 			input := map[string]interface{}{
 				"host_apply_rule_ids": []interface{}{value2, value3},
@@ -866,7 +729,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Delete().
 				WithContext(ctx).
 				Body(input).
-				SubResource(subPath).
+				SubResourcef(urlTemplate, value1).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponse(rsp)

@@ -40,13 +40,13 @@ type audit struct {
 func (a *audit) Query(params types.ContextParams, query metadata.QueryInput) (interface{}, error) {
 	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), params.Header, query)
 	if nil != err {
-		blog.Errorf("[audit] failed request audit controller, error info is %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("[audit] failed to request core service, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[audit] failed request audit controller, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
-		return nil, params.Err.New(common.CCErrAuditTakeSnapshotFailed, rsp.ErrMsg)
+		blog.Errorf("[audit] search audit log failed, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
+		return nil, params.Err.CCError(common.CCErrAuditSelectFailed)
 	}
 
 	for index := range rsp.Data.Info {

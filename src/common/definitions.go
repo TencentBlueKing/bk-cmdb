@@ -732,6 +732,9 @@ const (
 	// FieldTypeList the lis type
 	FieldTypeList string = "list"
 
+	// FieldTypeOrganization the organization field type
+	FieldTypeOrganization string = "organization"
+
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
 
@@ -740,12 +743,6 @@ const (
 
 	//FieldTypeStrictCharRegexp the single char regex expression
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
-
-	//FieldTypeSingleCharRegexp the single char regex expression
-	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
-
-	//FieldTypeLongCharRegexp the single char regex expression
-	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
 )
 
 const (
@@ -960,7 +957,8 @@ const (
 )
 
 const (
-	BKDefaultLoginUserPluginVersion = "self"
+	// BKDefaultLoginUserPluginVersion 默认的登录方式
+	BKDefaultLoginUserPluginVersion = "blueking"
 	HTTPCookieBKToken               = "bk_token"
 
 	WEBSessionUinKey           = "username"
@@ -1129,13 +1127,4 @@ const (
 	SyncSetTaskName      = "sync-settemplate2set"
 
 	BKHostState = "bk_state"
-)
-
-// 云同步
-const (
-	CloudSyncTaskID            = "bk_task_id"
-	CloudSyncTaskName          = "bk_task_name"
-	CloudSyncResourceConfirmID = "bk_resource_id"
-	CloudSyncConfirmTime       = "confirm_time"
-	CloudSyncConfirmHistoryID  = "confirm_history_id"
 )
