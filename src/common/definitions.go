@@ -419,23 +419,20 @@ const (
 	// BKOptionField the option field
 	BKOptionField = "option"
 
-	// BKContentField the content field
-	BKContentField = "content"
+	// BKAuditTypeField the audit type field
+	BKAuditTypeField = "audit_type"
 
-	// BKExtKeyField the ext key field
-	BKExtKeyField = "ext_key"
+	// BKResourceTypeField the audit resource type field
+	BKResourceTypeField = "resource_type"
 
-	// BKOpDescField the op desc field
-	BKOpDescField = "op_desc"
+	// BKOperateFromField the platform where operation from field
+	BKOperateFromField = "operate_from"
 
-	// BKOpTypeField the op type field
-	BKOpTypeField = "op_type"
+	// BKOperationDetailField the audit operation detail field
+	BKOperationDetailField = "operation_detail"
 
-	// BKOpTargetField the op target field
-	BKOpTargetField = "op_target"
-
-	// BKOpTimeField the op time field
-	BKOpTimeField = "op_time"
+	// BKOperationTimeField the audit operation time field
+	BKOperationTimeField = "operation_time"
 
 	// BKSetEnvField the set env field
 	BKSetEnvField = "bk_set_env"
