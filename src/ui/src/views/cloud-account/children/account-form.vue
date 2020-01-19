@@ -15,6 +15,7 @@
                 <bk-select class="create-form-meta"
                     :placeholder="$t('请选择xx', { name: $t('账户类型') })"
                     :data-vv-as="$t('账户类型')"
+                    :readonly="!isCreateMode"
                     data-vv-name="type"
                     v-model="form.type"
                     v-validate="'required'">
@@ -110,8 +111,13 @@
                 testState: null
             }
         },
+        computed: {
+            isCreateMode () {
+                return this.mode === 'create'
+            }
+        },
         created () {
-            if (this.mode === 'edit') {
+            if (!this.isCreateMode) {
                 this.form = Object.assign({}, DEFAULT_FORM, this.account)
             }
         },
@@ -124,7 +130,7 @@
                 if (!valid) {
                     return false
                 }
-                if (this.mode === 'create') {
+                if (this.isCreateMode) {
                     this.doCreate()
                 } else {
                     this.doUpdate()
@@ -134,7 +140,7 @@
                 try {
                     await Promise.resolve()
                     this.$success('新建成功')
-                    this.handleHide('create-success')
+                    this.handleHide('request-refresh')
                 } catch (e) {
                     console.error(e)
                 }
@@ -143,13 +149,13 @@
                 try {
                     await Promise.resolve({})
                     this.$success('修改成功')
-                    this.handleCancel()
+                    this.handleCancel('request-refresh')
                 } catch (e) {
                     console.error(e)
                 }
             },
-            handleCancel () {
-                if (this.mode === 'edit') {
+            handleCancel (eventType) {
+                if (!this.isCreateMode) {
                     this.container.show({
                         type: 'details',
                         title: `${this.$t('账户详情')} 【${this.account.name}】`,
@@ -158,7 +164,7 @@
                         }
                     })
                 } else {
-                    this.handleHide(null)
+                    this.handleHide(eventType)
                 }
             },
             handleHide (eventType) {

@@ -7,23 +7,19 @@
                 hideOnClick: false,
                 onHidden: handleHidden
             }">
-            <i class="icon-cc-batch-update" @click="handleClick"></i>
+            <i class="icon-cc-batch-update"
+                v-bk-tooltips="{
+                    content: $t('请选择xx', { name: 'VPC' }),
+                    disabled: !disabled
+                }"
+                :class="{ 'is-disabled': disabled }"
+                @click="handleClick">
+            </i>
             <bk-form form-type="vertical" slot="content">
                 <bk-form-item :label="$t('批量编辑')">
-                    <bk-select class="form-table-selector"
-                        searchable
-                        :placeholder="$t('请选择xx', { name: $t('资源目录') })"
+                    <cloud-resource-folder-selector class="folder-selector"
                         v-model="selected">
-                        <bk-option v-for="folder in folders"
-                            :key="folder.id"
-                            :id="folder.id"
-                            :name="folder.name">
-                        </bk-option>
-                        <a href="javascript:void(0)" class="extension-link" slot="extension">
-                            <i class="bk-icon icon-plus-circle"></i>
-                            {{ $t('申请其他目录权限') }}
-                        </a>
-                    </bk-select>
+                    </cloud-resource-folder-selector>
                     <div class="selector-options">
                         <link-button class="selector-link-button" @click="handleConfirm">{{$t('确定')}}</link-button>
                         <link-button class="selector-link-button ml10" @click="handleCancel">{{$t('取消')}}</link-button>
@@ -35,7 +31,12 @@
 </template>
 
 <script>
+    import CloudResourceFolderSelector from './resource-folder-selector.vue'
     export default {
+        name: 'cloud-resource-custom-header',
+        components: {
+            CloudResourceFolderSelector
+        },
         props: {
             data: {
                 type: Object,
@@ -48,7 +49,8 @@
             batchSelectHandler: {
                 type: Function,
                 required: true
-            }
+            },
+            disabled: Boolean
         },
         data () {
             return {
@@ -85,9 +87,12 @@
             &:hover {
                 color: #1964E1;
             }
+            &.is-disabled {
+                color: #c4c6cc;
+            }
         }
     }
-    .form-table-selector {
+    .folder-selector {
         width: 235px;
     }
     .selector-options {

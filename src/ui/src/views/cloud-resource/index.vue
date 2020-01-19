@@ -34,15 +34,22 @@
                 </template>
             </bk-table-column>
         </bk-table>
-        <resource-sideslider ref="resourceSideslider"></resource-sideslider>
+        <resource-create-sideslider ref="resourceCreateSideslider"
+            @request-refresh="getData">
+        </resource-create-sideslider>
+        <resource-details-sideslider ref="resourceDetailsSideslider"
+            @request-refresh="getData">
+        </resource-details-sideslider>
     </div>
 </template>
 
 <script>
-    import ResourceSideslider from './children/resource-sideslider.vue'
+    import ResourceCreateSideslider from './children/resource-sideslider.vue'
+    import ResourceDetailsSideslider from './children/resource-details-sideslider.vue'
     export default {
         components: {
-            ResourceSideslider
+            ResourceCreateSideslider,
+            ResourceDetailsSideslider
         },
         data () {
             return {
@@ -58,7 +65,7 @@
         },
         methods: {
             handleCreate () {
-                this.$refs.resourceSideslider.show({
+                this.$refs.resourceCreateSideslider.show({
                     type: 'form',
                     title: this.$t('新建发现任务'),
                     props: {
@@ -81,9 +88,9 @@
                 }
             },
             handleView (row) {
-                this.$refs.accountSideslider.show({
+                this.$refs.resourceDetailsSideslider.show({
                     type: 'details',
-                    title: `${this.$t('账户详情')} 【${row.name}】`,
+                    title: `${this.$t('任务详情')} 【${row.name}】`,
                     props: {
                         id: row.id
                     }

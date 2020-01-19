@@ -8,21 +8,9 @@
         <bk-table-column :label="$t('主机数量')" prop="host_count"></bk-table-column>
         <bk-table-column :label="$t('主机录入到')" prop="folder" width="250" :render-header="folderHeaderRender">
             <template slot-scope="{ row }" v-if="isSelected(row)">
-                <bk-select class="form-table-selector"
-                    searchable
-                    size="small"
-                    :placeholder="$t('请选择xx', { name: $t('资源目录') })"
-                    @selected="handleSelected(...arguments, row)">
-                    <bk-option v-for="folder in folders"
-                        :key="folder.id"
-                        :id="folder.id"
-                        :name="folder.name">
-                    </bk-option>
-                    <a href="javascript:void(0)" class="extension-link" slot="extension">
-                        <i class="bk-icon icon-plus-circle"></i>
-                        {{$t('申请其他目录权限')}}
-                    </a>
-                </bk-select>
+                <cloud-resource-folder-selector class="form-table-selector"
+                    v-model="folderSelection[row.id]">
+                </cloud-resource-folder-selector>
             </template>
         </bk-table-column>
     </bk-table>
@@ -30,12 +18,17 @@
 
 <script>
     import CloudResourceFormCustomHeader from './resource-form-custom-header.vue'
+    import CloudResourceFolderSelector from './resource-folder-selector.vue'
     export default {
         name: 'cloud-resource-form-custom',
+        components: {
+            CloudResourceFolderSelector
+        },
         data () {
             return {
-                list: [{}, {}, {}, {}],
+                list: ['', '', '', ''].map((_, index) => ({ id: index, vpc: 'vpc' + index })),
                 selection: [],
+                folderSelection: {},
                 folders: [{
                     id: 'a',
                     name: '资源池 / LOL新录入'
@@ -47,11 +40,21 @@
                 return this.selection.includes(row)
             },
             handleSelectionChange (selection) {
+                const folderSelection = {}
+                selection.forEach(row => {
+                    if (this.folderSelection.hasOwnProperty(row.id)) {
+                        folderSelection[row.id] = this.folderSelection[row.id]
+                    } else {
+                        folderSelection[row.id] = ''
+                    }
+                })
+                this.folderSelection = folderSelection
                 this.selection = selection
             },
-            handleSelected () {},
             handleMultipleSelected (value) {
-                console.log(value)
+                Object.keys(this.folderSelection).forEach(id => {
+                    this.folderSelection[id] = value
+                })
             },
             folderHeaderRender (h, data) {
                 return h('div', [
@@ -59,7 +62,8 @@
                         props: {
                             data: data,
                             folders: this.folders,
-                            batchSelectHandler: this.handleMultipleSelected
+                            batchSelectHandler: this.handleMultipleSelected,
+                            disabled: !this.selection.length
                         }
                     })
                 ])

@@ -7,19 +7,16 @@
         <component slot="content" ref="component"
             class="slider-content"
             :is="component"
-            :container="this"
-            v-bind="componentProps">
+            :container="this">
         </component>
     </bk-sideslider>
 </template>
 
 <script>
     import ResourceForm from './resource-form.vue'
-    import ResourceDetails from './resource-details.vue'
     export default {
         components: {
-            [ResourceForm.name]: ResourceForm,
-            [ResourceDetails.name]: ResourceDetails
+            [ResourceForm.name]: ResourceForm
         },
         data () {
             return {
@@ -31,12 +28,7 @@
         },
         methods: {
             show (options) {
-                this.componentProps = options.props || {}
-                if (options.type === 'form') {
-                    this.component = ResourceForm.name
-                } else if (options.type === 'details') {
-                    this.component = ResourceDetails.name
-                }
+                this.component = ResourceForm.name
                 this.title = options.title
                 this.isShow = true
             },
@@ -46,7 +38,6 @@
             },
             handleHidden () {
                 this.component = null
-                this.componentProps = {}
             }
         }
     }
