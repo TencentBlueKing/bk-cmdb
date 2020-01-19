@@ -14,6 +14,7 @@
             <bk-form-item class="form-item" :label="$t('账户名称')" required>
                 <bk-select class="form-meta"
                     :searchable="true"
+                    :readonly="!isCreateMode"
                     :placeholder="$t('请选择xx', { name: $t('账户名称') })"
                     :data-vv-as="$t('账户名称')"
                     data-vv-name="account_name"
@@ -73,11 +74,26 @@
     import { MENU_RESOURCE_CLOUD_ACCOUNT } from '@/dictionary/menu-symbol'
     import ResourceFormCustom from './resource-form-custom.vue'
     import ResourceFormAll from './resource-form-all.vue'
+    import CloudResourceDetailsInfo from './resource-details-info.vue'
     export default {
         name: 'cloud-resource-form',
         components: {
             [ResourceFormCustom.name]: ResourceFormCustom,
             [ResourceFormAll.name]: ResourceFormAll
+        },
+        props: {
+            mission: {
+                type: Object,
+                default: null
+            },
+            mode: {
+                type: String,
+                default: 'create'
+            },
+            container: {
+                type: Object,
+                required: true
+            }
         },
         data () {
             return {
@@ -92,6 +108,11 @@
                     custom: ResourceFormCustom.name,
                     all: ResourceFormAll.name
                 }
+            }
+        },
+        computed: {
+            isCreateMode () {
+                return this.mode === 'create'
             }
         },
         watch: {
@@ -112,8 +133,46 @@
             handleAccountSelected (value) {
                 this.form.setting = this.settingComponents.custom
             },
-            handleSumbit () {},
-            handleCancel () {}
+            handleSumbit () {
+                if (this.isCreateMode) {
+                    this.doCreate()
+                } else {
+                    this.doUpdate()
+                }
+            },
+            async doCreate () {
+                try {
+                    await Promise.resolve()
+                    this.container.hide('request-refresh')
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            async doUpdate () {
+                try {
+                    await Promise.resolve()
+                    this.container.show({
+                        detailsComponent: CloudResourceDetailsInfo.name,
+                        props: {
+                            mission: this.mission
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleCancel () {
+                if (this.isCreateMode) {
+                    this.container.hide()
+                } else {
+                    this.container.show({
+                        detailsComponent: CloudResourceDetailsInfo.name,
+                        props: {
+                            mission: this.mission
+                        }
+                    })
+                }
+            }
         }
     }
 </script>

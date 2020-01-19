@@ -11,7 +11,7 @@
                 <div class="row-status"
                     slot-scope="{ row }"
                     v-bk-tooltips.right="{
-                        disabled: !row.error,
+                        disabled: row.error,
                         content: '异常原因'
                     }">
                     <i :class="['status', { 'is-error': row.error }]"></i>
