@@ -15,6 +15,7 @@ package v3v0v8
 import (
 	"context"
 
+	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 
@@ -22,18 +23,18 @@ import (
 )
 
 func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	for tablename, indexs := range tables {
-		exists, err := db.HasTable(tablename)
+	for tableName, indexes := range tables {
+		exists, err := db.HasTable(tableName)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err = db.CreateTable(tablename); err != nil && !mgo.IsDup(err) {
+			if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
 				return err
 			}
 		}
-		for index := range indexs {
-			if err = db.Table(tablename).CreateIndex(ctx, indexs[index]); err != nil && !db.IsDuplicatedError(err) {
+		for index := range indexes {
+			if err = db.Table(tableName).CreateIndex(ctx, indexes[index]); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}
@@ -42,102 +43,101 @@ func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err er
 }
 
 var tables = map[string][]dal.Index{
-	"cc_ApplicationBase": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_biz_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_biz_name": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"default": 1}, Background: true},
+	common.BKTableNameBaseApp: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKAppIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKAppNameField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKDefaultField: 1}, Background: true},
 	},
 
-	"cc_HostBase": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_host_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_host_name": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_host_innerip": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_host_outerip": 1}, Background: true},
+	common.BKTableNameBaseHost: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKHostIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKHostNameField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKHostInnerIPField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKHostOuterIPField: 1}, Background: true},
 	},
-	"cc_ModuleBase": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_module_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_module_name": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"default": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_biz_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_set_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_parent_id": 1}, Background: true},
+	common.BKTableNameBaseModule: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKModuleIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKModuleNameField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKDefaultField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKAppIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKSetIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKParentIDField: 1}, Background: true},
 	},
-	"cc_ModuleHostConfig": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_biz_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_host_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_module_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_set_id": 1}, Background: true},
+	common.BKTableNameModuleHostConfig: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKAppIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKHostIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKModuleIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKSetIDField: 1}, Background: true},
 	},
-	"cc_ObjAsst": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_asst_obj_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
+	common.BKTableNameObjAsst: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKObjIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKAsstObjIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
 	},
-	"cc_ObjAttDes": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"id": 1}, Background: true},
+	common.BKTableNameObjAttDes: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKObjIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKFieldID: 1}, Background: true},
 	},
-	"cc_ObjClassification": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_classification_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_classification_name": 1}, Background: true},
+	common.BKTableNameObjClassification: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKClassificationIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKClassificationNameField: 1}, Background: true},
 	},
-	"cc_ObjDes": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_classification_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_name": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
+	common.BKTableNameObjDes: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKObjIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKClassificationIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKObjNameField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
 	},
-	"cc_ObjectBase": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_inst_id": 1}, Background: true},
+	common.BKTableNameBaseInst: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKObjIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKInstIDField: 1}, Background: true},
 	},
-	"cc_OperationLog": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"op_target": 1, "inst_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_biz_id": 1, "bk_supplier_account": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"ext_key": 1, "bk_supplier_account": 1}, Background: true},
+	common.BKTableNameAuditLog: {
+		{Name: "index_bk_supplier_account", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
+		{Name: "index_audit_type", Keys: map[string]int32{common.BKAuditTypeField: 1}, Background: true},
+		{Name: "index_action", Keys: map[string]int32{common.BKActionField: 1}, Background: true},
 	},
-	"cc_PlatBase": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
+	common.BKTableNameBasePlat: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
 	},
-	"cc_Proc2Module": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_biz_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_process_id": 1}, Background: true},
+	common.BKTableNameProcModule: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKAppIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKProcIDField: 1}, Background: true},
 	},
-	"cc_Process": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_process_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_biz_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
+	common.BKTableNameBaseProcess: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKProcIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKAppIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
 	},
-	"cc_PropertyGroup": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_group_id": 1}, Background: true},
+	common.BKTableNamePropertyGroup: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKObjIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKPropertyGroupIDField: 1}, Background: true},
 	},
-	"cc_SetBase": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_set_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_parent_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_biz_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]int32{"bk_set_name": 1}, Background: true},
+	common.BKTableNameBaseSet: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKSetIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKParentIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKAppIDField: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{common.BKSetNameField: 1}, Background: true},
 	},
-	"cc_Subscription": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"subscription_id": 1}, Background: true},
+	common.BKTableNameSubscription: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKSubscriptionIDField: 1}, Background: true},
 	},
-	"cc_TopoGraphics": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"scope_type": 1, "scope_id": 1, "node_type": 1, "bk_obj_id": 1, "bk_inst_id": 1}, Background: true, Unique: true},
+	common.BKTableNameTopoGraphics: {
+		dal.Index{Name: "", Keys: map[string]int32{"scope_type": 1, "scope_id": 1, "node_type": 1, common.BKObjIDField: 1, common.BKInstIDField: 1}, Background: true, Unique: true},
 	},
-	"cc_InstAsst": []dal.Index{
-		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1, "bk_inst_id": 1}, Background: true},
+	common.BKTableNameInstAsst: {
+		dal.Index{Name: "", Keys: map[string]int32{common.BKObjIDField: 1, common.BKInstIDField: 1}, Background: true},
 	},
 
-	"cc_History":            []dal.Index{},
-	"cc_HostFavourite":      []dal.Index{},
-	"cc_UserAPI":            []dal.Index{},
-	"cc_UserCustom":         []dal.Index{},
-	"cc_idgenerator":        []dal.Index{},
-	"cc_System":             []dal.Index{},
+	common.BKTableNameHistory:      {},
+	common.BKTableNameHostFavorite: {},
+	common.BKTableNameUserAPI:      {},
+	common.BKTableNameUserCustom:   {},
+	common.BKTableNameIDgenerator:  {},
+	common.BKTableNameSystem:       {},
 }
