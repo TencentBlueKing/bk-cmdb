@@ -149,7 +149,7 @@ namespaces里面配置要同步的mongo里的table，false代表不同步，true
         "cmdb.cc_ObjectBase": true,
         "cmdb.cc_ObjDes": true,
         "cmdb.cc_ApplicationBase": true,
-        "cmdb.cc_OperationLog": false
+        "cmdb.cc_AuditLog": false
     },
 
     "docManagers": [
