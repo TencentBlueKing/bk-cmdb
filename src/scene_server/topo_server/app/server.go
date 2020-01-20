@@ -29,10 +29,9 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 )
 
@@ -57,6 +56,9 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 	}
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+
+	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
+
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
@@ -101,16 +103,29 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	var txn dal.Transcation
-	if server.Config.Mongo.Enable == "true" {
-		txn, err = local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
-	} else {
-		txn, err = remote.NewWithDiscover(engine)
+	cache, err := redis.NewFromConfig(server.Config.Redis)
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %v", err)
+		return err
 	}
+
+	db, err := local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
 	if err != nil {
 		blog.Errorf("failed to connect the txc server, error info is %v", err)
 		return err
 	}
+	err = db.InitTxnManager(cache)
+	if err != nil {
+		blog.Errorf("failed to init txn manager, error info is %v", err)
+		return err
+	}
+
+	enableTxn := false
+	if server.Config.Mongo.TxnEnabled == "true" {
+		enableTxn = true
+	}
+	blog.Infof("enableTxn is %t", enableTxn)
+
 
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
@@ -136,7 +151,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Es:          essrv,
 		Core:        core.New(engine.CoreAPI, authManager),
 		Error:       engine.CCErr,
-		Txn:         txn,
+		DB:         db,
+		EnableTxn:   enableTxn,
 		Config:      server.Config,
 	}
 

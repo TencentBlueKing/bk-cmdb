@@ -28,12 +28,9 @@ import (
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/storage/rpc"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -71,17 +68,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return fmt.Errorf("connect tmserver failed, err: %s", err.Error())
 		}
 
-		var db dal.RDB
-		var rpcCli rpc.Client
-		if process.Config.MongoDB.Enable == "true" {
-			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
-		} else {
-			rpcCli, err = rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
-			if err != nil {
-				return fmt.Errorf("connect rpc server failed, err: %s", err.Error())
-			}
-			db, err = remote.NewWithDiscover(process.Core)
-		}
+		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
 		}
@@ -110,7 +97,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}()
 
 		go func() {
-			errCh <- distribution.Start(ctx, cache, db, rpcCli)
+			errCh <- distribution.Start(ctx, cache, db)
 		}()
 
 		break
@@ -153,8 +140,6 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 		redisConf := redis.ParseConfigFromKV("redis", current.ConfigMap)
 		h.Config.Redis = redisConf
-
-		h.Config.RPC.Address = current.ConfigMap["rpc.address"]
 
 		h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 		if err != nil {

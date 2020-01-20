@@ -17,7 +17,10 @@ import (
 )
 
 var Concurrent int
-var SustainSeconds int
+var SustainSeconds float64
+
+// if TotalRequest is set,it has higher priority than SustainSecond
+var TotalRequest int64
 
 type Status struct {
 	CostDuration time.Duration
@@ -25,17 +28,21 @@ type Status struct {
 }
 
 func FireLoadTest(f func() error) Metrics {
+	start := time.Now()
 	limiter := NewStreamLimiter(Concurrent)
 	timeout := make(chan bool)
-	go func() {
-		select {
-		case <-time.After(time.Duration(SustainSeconds) * time.Second):
-			close(timeout)
-		}
-	}()
+	if TotalRequest == 0 {
+		go func() {
+			select {
+			case <-time.After(time.Duration(SustainSeconds) * time.Second):
+				close(timeout)
+			}
+		}()
+	}
 
 	stats := new(Statistic)
 	stats.SustainSecond = SustainSeconds
+	stats.Concurrent = Concurrent
 	ch := make(chan *Status, 3000)
 	done := make(chan bool)
 	go func() {
@@ -51,8 +58,24 @@ func FireLoadTest(f func() error) Metrics {
 			}
 		}
 	outer:
+		// if TotalRequest is set, just need to wait the request left in channel to finish
+		if TotalRequest > 0 {
+			for {
+				if len(ch) > 0 {
+					s := <-ch
+					stats.CollectStatus(s)
+				}
+				if limiter.IsEmpty() && len(ch) == 0 {
+					break
+				}
+				time.Sleep(time.Millisecond)
+			}
+			done <- true
+			return
+		}
 		// delay 5 seconds to wait for the requests on the fly.
 		delay := time.After(5 * time.Second)
+
 		// fmt.Println("wait for request on the fly.")
 		for {
 			select {
@@ -76,10 +99,18 @@ exitFor:
 			limiter.Execute(ch, f)
 			stats.IncreaseRequest()
 			// time.Sleep(2 * time.Millisecond)
+			if TotalRequest > 0 && stats.TotalRequest == TotalRequest {
+				close(timeout)
+			}
 		}
 	}
 
 	<-done
+	duration := time.Since(start).Seconds()
+
+	if TotalRequest > 0 {
+		stats.SustainSecond = duration
+	}
 	// it's time to calculate the metrics
 	return stats.CalculateMetrics()
 }

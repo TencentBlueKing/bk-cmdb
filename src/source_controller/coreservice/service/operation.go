@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -207,7 +208,7 @@ func (s *coreService) SearchChartCommon(ctx *rest.Contexts) {
 }
 
 func (s *coreService) TimerFreshData(ctx *rest.Contexts) {
-	exist, err := s.db.HasTable(common.BKTableNameChartData)
+	exist, err := s.db.HasTable(context.Background(), common.BKTableNameChartData)
 	if err != nil {
 		blog.Errorf("TimerFreshData, update timer chart data fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		ctx.RespEntity(false)

@@ -37,7 +37,6 @@ import (
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 	dalredis "configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
@@ -79,13 +78,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		s.language = language
 	}
 
-	var dbErr error
-	var db dal.RDB
-	if s.cfg.Mongo.Enable == "true" {
-		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
-	} else {
-		db, dbErr = remote.NewWithDiscover(s.engine)
-	}
+	db, dbErr := local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 		return dbErr
@@ -95,6 +88,12 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 	if cacheRrr != nil {
 		blog.Errorf("new redis client failed, err: %v", cacheRrr)
 		return cacheRrr
+	}
+
+	initErr := db.InitTxnManager(cache)
+	if initErr != nil {
+		blog.Errorf("failed to init txn manager, error info is %v", initErr)
+		return initErr
 	}
 
 	s.db = db

@@ -22,12 +22,12 @@ import (
 
 func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	for tablename, indexs := range tables {
-		exists, err := db.HasTable(tablename)
+		exists, err := db.HasTable(ctx, tablename)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err = db.CreateTable(tablename); err != nil && !db.IsDuplicatedError(err) {
+			if err = db.CreateTable(ctx, tablename); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}
