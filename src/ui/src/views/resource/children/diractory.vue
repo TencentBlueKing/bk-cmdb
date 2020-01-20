@@ -1,41 +1,63 @@
 <template>
     <div class="diractory-layout">
+        <bk-input class="dir-search" v-model="dirSearch" :placeholder="$t('分组目录')"></bk-input>
         <div class="dir-header">
             <span class="title">{{$t('资源池')}}</span>
-            <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click="handleCreateDir"></i>
+            <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleCreateDir"></i>
         </div>
         <ul class="dir-list">
-            <li class="dir-item edit-status" v-if="createDir">
+            <li class="dir-item" :class="{ 'selected': curActiveDir === -1 }" @click="handleSearchHost(-1)">
+                <i class="icon-cc-memory"></i>
+                <span class="dir-name" :title="$t('默认')">{{$t('默认')}}</span>
+                <span class="host-count">999+</span>
+            </li>
+            <li class="dir-item edit-status" v-if="createDir.active">
                 <bk-input
                     ref="createdDir"
                     v-click-outside="hanldeCancelCreateDir"
                     class="reset-name"
                     :placeholder="$t('请输入目录名称，回车结束')"
+                    v-model="createDir.name"
                     @enter="handleConfirm">
                 </bk-input>
             </li>
-            <cmdb-auth style="display: block;" tag="li" :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
+            <cmdb-auth
+                style="display: block;"
+                tag="li"
+                :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })"
+                v-for="(dir, index) in dirList"
+                :key="index">
                 <template slot-scope="{ disabled }">
-                    <div class="dir-item" :class="{ 'edit-status': resetName, 'disabled': disabled }" @click="handleSearchHost">
-                        <template v-if="resetName">
+                    <div
+                        class="dir-item"
+                        :class="{
+                            'edit-status': editDir.id === dir.id,
+                            'disabled': disabled,
+                            'selected': curActiveDir === dir.id && !disabled
+                        }"
+                        @click="handleSearchHost(dir.id)">
+                        <template v-if="editDir.id === dir.id">
                             <bk-input
                                 class="reset-name"
                                 v-click-outside="hanldeCancelEdit"
                                 :placeholder="$t('请输入目录名称，回车结束')"
-                                @enter="handleConfirm">
+                                :ref="`dir-node-${dir.id}`"
+                                v-model="editDir.name"
+                                @enter="handleConfirm"
+                                @click.native.stop>
                             </bk-input>
                         </template>
                         <template v-else>
                             <i class="icon-cc-memory"></i>
-                            <span class="dir-name" :title="66666">6666</span>
-                            <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop>
+                            <span class="dir-name" :title="dir.name">{{dir.name}}</span>
+                            <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
                                 <div class="dot-content">
                                     <cmdb-auth :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
                                         <bk-button slot-scope="{ disabled: btnDisabled }"
                                             class="menu-btn"
                                             :disabled="btnDisabled"
                                             :text="true"
-                                            @click="handleResetName">
+                                            @click="handleResetName(dir)">
                                             {{$t('重命名')}}
                                         </bk-button>
                                     </cmdb-auth>
@@ -56,7 +78,7 @@
                                 </div>
                             </cmdb-dot-menu>
                             <i v-if="disabled" class="icon-cc-lock" v-bk-tooltips.top="$t('无权限')"></i>
-                            <span class="host-count" v-else>999+</span>
+                            <span class="host-count" v-else>{{dir.count}}</span>
                         </template>
                     </div>
                 </template>
@@ -70,31 +92,69 @@
     export default {
         data () {
             return {
+                dirSearch: '',
                 resetName: false,
-                createDir: false
+                createDir: {
+                    active: false,
+                    name: ''
+                },
+                editDir: {
+                    id: null,
+                    name: ''
+                },
+                curActiveDir: -1,
+                dirList: [{
+                    id: 0,
+                    name: 'test1',
+                    count: 99
+                }, {
+                    id: 1,
+                    name: 'test2',
+                    count: 99
+                }, {
+                    id: 2,
+                    name: 'test3',
+                    count: 99
+                }, {
+                    id: 3,
+                    name: 'test4',
+                    count: 99
+                }]
             }
         },
         methods: {
-            handleSearchHost () {
+            handleSearchHost (activeId) {
                 Bus.$emit('refresh-list')
+                this.curActiveDir = activeId
             },
             hanldeCancelCreateDir () {
-                this.createDir = false
+                this.createDir.active = false
+                this.createDir.name = ''
             },
             handleCreateDir () {
-                this.createDir = true
+                this.createDir.active = true
                 this.$nextTick(() => {
                     this.$refs.createdDir.$refs.input.focus()
                 })
             },
             hanldeCancelEdit () {
-
+                this.editDir.id = null
+                this.editDir.name = ''
             },
             handleConfirm () {
-
+                this.$success(this.$t('新建成功'))
+                this.hanldeCancelCreateDir()
             },
-            handleResetName () {
-                this.resetName = true
+            handleResetName (dir) {
+                this.editDir.id = dir.id
+                this.editDir.name = dir.name
+                this.$nextTick(() => {
+                    this.$refs[`dir-node-${dir.id}`][0].$refs.input.focus()
+                })
+            },
+            handleCloseInput () {
+                this.hanldeCancelCreateDir()
+                this.hanldeCancelEdit()
             },
             handleRemoveDir () {
                 this.$bkInfo({
@@ -112,7 +172,11 @@
 
 <style lang="scss" scoped>
     .diractory-layout {
+        height: 100%;
         overflow: hidden;
+        .dir-search {
+            padding: 18px 20px 14px;
+        }
         .dir-header {
             @include space-between;
             padding: 0 20px;
@@ -140,6 +204,11 @@
                 cursor: pointer;
             }
         }
+        .dir-list {
+            height: calc(100% - 106px);
+            padding-bottom: 10px;
+            @include scrollbar-y;
+        }
         .dir-item {
             display: flex;
             align-items: center;
@@ -147,7 +216,11 @@
             padding: 0 20px;
             margin: 6px 0;
             cursor: pointer;
-            &:not(.edit-status):not(.disabled):hover {
+            &:first-child {
+                margin-top: 0;
+            }
+            &:not(.edit-status):not(.disabled):hover,
+            &:not(.edit-status).selected {
                 background-color: #E1ECFF;
                 .icon-cc-memory {
                     color: #3A84FF;

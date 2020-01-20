@@ -92,7 +92,6 @@
             position: relative;
             width: 280px;
             height: 100%;
-            padding-top: 10px;
             border-right: 1px solid $cmdbLayoutBorderColor;
             &.is-collapse {
                 width: 0 !important;
