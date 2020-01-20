@@ -166,8 +166,8 @@ type AssociationOperation interface {
 }
 
 type AuditOperation interface {
-	CreateAuditLog(kit *rest.Kit, logs ...metadata.SaveAuditLogParams) error
-	SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
+	CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error
+	SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.AuditLog, uint64, error)
 }
 
 type StatisticOperation interface {

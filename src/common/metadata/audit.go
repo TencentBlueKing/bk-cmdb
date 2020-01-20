@@ -64,13 +64,38 @@ type BasicOpDetail struct {
 	Details *BasicContent `json:"details" bson:"details"`
 }
 
+func (op *BasicOpDetail) WithName() string {
+	return "BasicDetail"
+}
+
 type InstanceOpDetail struct {
-	BasicOpDetail
+	*BasicOpDetail
 	ModelID string `json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
-func (Op *BasicOpDetail) WithName() string {
-	return "BasicDetail"
+func (op *InstanceOpDetail) WithName() string {
+	return "InstanceOpDetail"
+}
+
+type HostTransferOpDetail struct {
+	HostID                 int64                     `json:"bk_host_id" bson:"bk_host_id"`
+	HostInnerIP            string                    `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	PreMainlineAssociation MainlineAssociationDetail `json:"pre_mainline_asst" bson:"pre_mainline_asst"`
+	CurMainlineAssociation MainlineAssociationDetail `json:"cur_mainline_asst" bson:"cur_mainline_asst"`
+}
+
+type MainlineAssociationDetail struct {
+	BizID      int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	BizName    string `json:"bk_biz_name" bson:"bk_biz_name"`
+	SetID      int64  `json:"bk_set_id" bson:"bk_set_id"`
+	SetName    string `json:"bk_set_name" bson:"bk_set_name"`
+	ModuleID   int64  `json:"bk_module_id" bson:"bk_module_id"`
+	ModuleName string `json:"bk_module_name" bson:"bk_module_name"`
+	Layer      *Layer `json:"layer"`
+}
+
+func (op *HostTransferOpDetail) WithName() string {
+	return "HostTransferOpDetail"
 }
 
 type AssociationOpDetail struct {
@@ -80,16 +105,24 @@ type AssociationOpDetail struct {
 	TargetModelID   string `json:"target_model_id" bson:"target_model_id"`
 }
 
+func (ao *AssociationOpDetail) WithName() string {
+	return "AssociationOpDetail"
+}
+
 type InstanceAssociationOpDetail struct {
-	AssociationOpDetail
-	SourceInstanceID   string `json:"src_instance_id" bson:"src_instance_id"`
+	*AssociationOpDetail
+	SourceInstanceID   int64  `json:"src_instance_id" bson:"src_instance_id"`
 	SourceInstanceName string `json:"src_instance_name" bson:"src_instance_name"`
-	TargetInstanceID   string `json:"target_instance_id" bson:"target_instance_id"`
+	TargetInstanceID   int64  `json:"target_instance_id" bson:"target_instance_id"`
 	TargetInstanceName string `json:"target_instance_name" bson:"target_instance_name"`
 }
 
+func (ao *InstanceAssociationOpDetail) WithName() string {
+	return "InstanceAssociationOpDetail"
+}
+
 type ModelAssociationOpDetail struct {
-	AssociationOpDetail
+	*AssociationOpDetail
 	AssociationName string                    `json:"asst_name" bson:"asst_name"`
 	Mapping         AssociationMapping        `json:"mapping" bson:"mapping"`
 	OnDelete        AssociationOnDeleteAction `json:"on_delete" bson:"on_delete"`
@@ -98,8 +131,8 @@ type ModelAssociationOpDetail struct {
 	TargetModelName int64                     `json:"target_model_name" bson:"target_model_name"`
 }
 
-func (ao *AssociationOpDetail) WithName() string {
-	return "AssociationOpDetail"
+func (ao *ModelAssociationOpDetail) WithName() string {
+	return "ModelAssociationOpDetail"
 }
 
 // Content contains the details information with in a user's operation.
