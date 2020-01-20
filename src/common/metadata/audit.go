@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common"
 )
 
-// AuditQueryResult add single host log paramm
+// AuditQueryResult add single host log param
 type AuditQueryResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -46,7 +46,7 @@ type AuditLog struct {
 	// OperationTime is the time that user do the operation.
 	OperationTime Time `json:"operation_time" bson:"operation_time"`
 	// for special scene like categorize if the resource belongs to biz topo or service instance
-	Label map[string]string `json:"operation_time" bson:"operation_time"`
+	Label map[string]string `json:"label" bson:"label"`
 }
 
 type DetailFactory interface {
@@ -62,6 +62,11 @@ type BasicOpDetail struct {
 	ResourceName string `json:"resource_name" bson:"resource_name"`
 	// Details contains all the details information about a user's operation
 	Details *BasicContent `json:"details" bson:"details"`
+}
+
+type InstanceOpDetail struct {
+	BasicOpDetail
+	ModelID string `json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
 func (Op *BasicOpDetail) WithName() string {

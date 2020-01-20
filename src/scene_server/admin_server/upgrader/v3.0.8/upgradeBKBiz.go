@@ -326,7 +326,7 @@ func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, modu
 			AuditType:       metadata.BusinessResourceType,
 			SupplierAccount: conf.OwnerID,
 			User:            conf.User,
-			ResourceType:    metadata.ModelRes,
+			ResourceType:    metadata.ModuleRes,
 			Action:          metadata.AuditCreate,
 			OperateFrom:     metadata.FromCCSystem,
 			OperationDetail: &metadata.BasicOpDetail{

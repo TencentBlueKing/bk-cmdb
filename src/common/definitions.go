@@ -434,6 +434,9 @@ const (
 	// BKOperationTimeField the audit operation time field
 	BKOperationTimeField = "operation_time"
 
+	// BKResourceIDField the audit resource ID field
+	BKResourceIDField = "resource_id"
+
 	// BKSetEnvField the set env field
 	BKSetEnvField = "bk_set_env"
 

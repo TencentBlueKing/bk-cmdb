@@ -13,15 +13,15 @@
 package operation
 
 import (
-    "fmt"
-    "sync"
-    "time"
+	"fmt"
+	"sync"
+	"time"
 
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/http/rest"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 )
 
 func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
@@ -322,52 +322,85 @@ func (m *operationManager) UpdateInnerChartData(kit *rest.Kit, reportType string
 func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.StatisticInstOperation, error) {
 	lastTime := time.Now().AddDate(0, 0, -30)
 
-	innerObject := []string{common.BKInnerObjIDHost, common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
-	opt := mapstr.MapStr{}
-	opt[common.OperationDescription] = common.CreateObject
-	createCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(kit.Ctx)
-	if err != nil {
-		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, kit.Rid)
-		return nil, err
+	createPipe := []M{
+		{
+			common.BKDBMatch: M{
+				common.BKActionField: metadata.AuditCreate,
+				common.BKOperationTimeField: M{
+					common.BKDBGTE: lastTime,
+				},
+				common.BKAuditTypeField:    metadata.ModelInstanceType,
+				common.BKResourceTypeField: metadata.ModelInstanceRes,
+			},
+		},
+		{
+			common.BKDBGroup: M{
+				"_id": "$" + common.BKOperationDetailField + "." + common.BKObjIDField,
+				"count": M{
+					common.BKDBSum: 1,
+				},
+			},
+		},
 	}
 	createInstCount := make([]metadata.StringIDCount, 0)
-	if createCount > 0 {
-		createPipe := []M{{common.BKDBMatch: M{"op_type": 1, "op_time": M{common.BKDBGTE: lastTime}, "op_target": M{common.BKDBNIN: innerObject}}}, {common.BKDBGroup: M{"_id": "$op_target", "count": M{common.BKDBSum: 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(kit.Ctx, createPipe, &createInstCount); err != nil {
-			blog.Errorf("aggregate: count create object fail, err: %v, rid", err, kit.Rid)
-			return nil, err
-		}
-	}
-
-	opt[common.OperationDescription] = common.DeleteObject
-	deleteCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(kit.Ctx)
-	if err != nil {
-		blog.Errorf("aggregate: count delete object fail, err: %v, rid", err, kit.Rid)
-		return nil, err
-	}
-	deleteInstCount := make([]metadata.StringIDCount, 0)
-	if deleteCount > 0 {
-		deletePipe := []M{{common.BKDBMatch: M{"op_type": 3, "op_time": M{common.BKDBGTE: lastTime}, "op_target": M{common.BKDBNIN: innerObject}}}, {common.BKDBGroup: M{"_id": "$op_target", "count": M{common.BKDBSum: 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(kit.Ctx, deletePipe, &deleteInstCount); err != nil {
-			blog.Errorf("aggregate: count delete object fail, err: %v, rid: %v", err, kit.Rid)
-			return nil, err
-		}
-	}
-
-	opt[common.OperationDescription] = common.UpdateObject
-	updateCount, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(opt).Count(kit.Ctx)
-	if err != nil {
+	if err := m.dbProxy.Table(common.BKTableNameAuditLog).AggregateAll(kit.Ctx, createPipe, &createInstCount); err != nil {
 		blog.Errorf("aggregate: count create object fail, err: %v, rid", err, kit.Rid)
 		return nil, err
 	}
+
+	deleteInstCount := make([]metadata.StringIDCount, 0)
+	deletePipe := []M{
+		{
+			common.BKDBMatch: M{
+				common.BKActionField: metadata.AuditDelete,
+				common.BKOperationTimeField: M{
+					common.BKDBGTE: lastTime,
+				},
+				common.BKAuditTypeField:    metadata.ModelInstanceType,
+				common.BKResourceTypeField: metadata.ModelInstanceRes,
+			},
+		},
+		{
+			common.BKDBGroup: M{
+				"_id": "$" + common.BKOperationDetailField + "." + common.BKObjIDField,
+				"count": M{
+					common.BKDBSum: 1,
+				},
+			},
+		},
+	}
+	if err := m.dbProxy.Table(common.BKTableNameAuditLog).AggregateAll(kit.Ctx, deletePipe, &deleteInstCount); err != nil {
+		blog.Errorf("aggregate: count delete object fail, err: %v, rid: %v", err, kit.Rid)
+		return nil, err
+	}
+
 	updateInstCount := make([]metadata.UpdateInstCount, 0)
-	if updateCount > 0 {
-		updatePipe := []M{{common.BKDBMatch: M{"op_type": 2, "op_time": M{common.BKDBGTE: lastTime}, "op_target": M{common.BKDBNIN: innerObject}}},
-			{common.BKDBGroup: M{"_id": M{common.BKObjIDField: "$op_target", "inst_id": "$inst_id"}, "count": M{common.BKDBSum: 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameOperationLog).AggregateAll(kit.Ctx, updatePipe, &updateInstCount); err != nil {
-			blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, kit.Rid)
-			return nil, err
-		}
+	updatePipe := []M{
+		{
+			common.BKDBMatch: M{
+				common.BKActionField: metadata.AuditUpdate,
+				common.BKOperationTimeField: M{
+					common.BKDBGTE: lastTime,
+				},
+				common.BKAuditTypeField:    metadata.ModelInstanceType,
+				common.BKResourceTypeField: metadata.ModelInstanceRes,
+			},
+		},
+		{
+			common.BKDBGroup: M{
+				"_id": M{
+					common.BKResourceTypeField: "$" + common.BKOperationDetailField + "." + common.BKObjIDField,
+					common.BKInstIDField:       "$" + common.BKOperationDetailField + "." + common.BKResourceIDField,
+				},
+				"count": M{
+					common.BKDBSum: 1,
+				},
+			},
+		},
+	}
+	if err := m.dbProxy.Table(common.BKTableNameAuditLog).AggregateAll(kit.Ctx, updatePipe, &updateInstCount); err != nil {
+		blog.Errorf("aggregate: count update object fail, err: %v, rid: %v", err, kit.Rid)
+		return nil, err
 	}
 
 	result := &metadata.StatisticInstOperation{

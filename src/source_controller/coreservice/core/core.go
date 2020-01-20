@@ -171,13 +171,13 @@ type AuditOperation interface {
 }
 
 type StatisticOperation interface {
-	SearchInstCount(kit *rest.Kit, inputParam mapstr.MapStr) (uint64, error)
+	SearchInstCount(kit *rest.Kit, inputParam map[string]interface{}) (uint64, error)
 	SearchChartDataCommon(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
 	SearchOperationChart(kit *rest.Kit, inputParam interface{}) (*metadata.ChartClassification, error)
 	CreateOperationChart(kit *rest.Kit, inputParam metadata.ChartConfig) (uint64, error)
 	UpdateChartPosition(kit *rest.Kit, inputParam interface{}) (interface{}, error)
 	DeleteOperationChart(kit *rest.Kit, id int64) (interface{}, error)
-	UpdateOperationChart(kit *rest.Kit, inputParam mapstr.MapStr) (interface{}, error)
+	UpdateOperationChart(kit *rest.Kit, inputParam map[string]interface{}) (interface{}, error)
 	SearchTimerChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
 	TimerFreshData(kit *rest.Kit) error
 }
