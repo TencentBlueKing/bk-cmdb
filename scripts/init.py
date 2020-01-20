@@ -14,7 +14,7 @@ class FileTemplate(Template):
 
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v,
-        redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v,
+        redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, txn_enabled_v,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip
 ):
@@ -25,6 +25,7 @@ def generate_config_file(
         mongo_host=mongo_ip_v,
         mongo_pass=mongo_pass_v,
         mongo_port=mongo_port_v,
+        txn_enabled=txn_enabled_v,
         redis_host=redis_ip_v,
         redis_pass=redis_pass_v,
         redis_port=redis_port_v,
@@ -66,14 +67,14 @@ appSecret = $auth_app_secret
     datacollection_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
 mechanism = SCRAM-SHA-1
-enable = true
+txnEnabled = $txn_enabled
 
 [snap-redis]
 host = $redis_host
@@ -114,20 +115,20 @@ appSecret = $auth_app_secret
     eventserver_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
+txnEnabled = $txn_enabled
 
 [redis]
 host = $redis_host
 port = $redis_port
 pwd = $redis_pass
 database = 0
-port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 '''
@@ -148,7 +149,6 @@ host = $redis_host
 port = $redis_port
 pwd = $redis_pass
 database = 0
-port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 [auth]
@@ -173,14 +173,14 @@ usr =
 pwd =
 [mongodb]
 host =$mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
-enable=true
+txnEnabled = $txn_enabled
 
 [confs]
 dir = $configures_dir
@@ -206,21 +206,20 @@ syncIntervalMinutes = $auth_sync_interval_minutes
     coreservice_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
-enable = true
+txnEnabled = $txn_enabled
 
 [redis]
 host = $redis_host
 port = $redis_port
 pwd = $redis_pass
 database = 0
-port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 '''
@@ -232,6 +231,11 @@ maxIDleConns = 1000
 
     # proc.conf
     proc_file_template_str = '''
+[redis]
+host = $redis_host
+port = $redis_port
+pwd = $redis_pass
+database = 0
 
 [auth]
 address = $auth_address
@@ -240,13 +244,13 @@ appSecret = $auth_app_secret
 
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
-enable = true
+txnEnabled = $txn_enabled
 '''
     template = FileTemplate(proc_file_template_str)
     result = template.substitute(**context)
@@ -257,13 +261,13 @@ enable = true
     operation_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
-enable = true
+txnEnabled = $txn_enabled
 
 [timer]
 spec = 00:30  # 00:00 - 23:59
@@ -278,39 +282,26 @@ appSecret = $auth_app_secret
     with open(output + "operation.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # txc.conf
-    txcserver_file_template_str = '''
-[mongodb]
-host = $mongo_host
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-port = $mongo_port
-maxOpenConns = 3000
-maxIDleConns = 1000
-
-[transaction]
-enable = false
-transactionLifetimeSecond = 60
-'''
-
-    template = FileTemplate(txcserver_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "txc.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
     # topo.conf
     topo_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
-enable = true
+txnEnabled = $txn_enabled
+
+[redis]
+host = $redis_host
+port = $redis_port
+pwd = $redis_pass
+database = 0
+maxOpenConns = 3000
+maxIDleConns = 1000
 
 [level]
 businessTopoMax = 7
@@ -369,14 +360,14 @@ version=$loginVersion
     taskserver_file_template_str = '''
 [mongodb]
 host = $mongo_host
+port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
 mechanism = SCRAM-SHA-1
-enable = true
+txnEnabled = $txn_enabled
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
 [redis]
@@ -384,7 +375,6 @@ host = $redis_host
 port = $redis_port
 pwd = $redis_pass
 database = 0
-port = $redis_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 '''
@@ -444,6 +434,7 @@ def main(argv):
     mongo_port = 27017
     mongo_user = ''
     mongo_pass = ''
+    txn_enabled = 'false'
     cc_url = ''
     paas_url = 'http://127.0.0.1'
     auth = {
@@ -471,7 +462,6 @@ def main(argv):
         "cmdb_hostserver": 60001,
         "cmdb_coreservice": 50009,
         "cmdb_procserver": 60003,
-        "cmdb_tmserver": 60008,
         "cmdb_toposerver": 60002,
         "cmdb_webserver": 8083,
         "cmdb_synchronizeserver": 60010,
@@ -481,7 +471,7 @@ def main(argv):
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
         "redis_pass=", "mongo_ip=", "mongo_port=",
-        "mongo_user=", "mongo_pass=", "blueking_cmdb_url=",
+        "mongo_user=", "mongo_pass=", "txn_enabled=", "blueking_cmdb_url=",
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip="
@@ -497,6 +487,7 @@ def main(argv):
       --mongo_port         <mongo_port>           the mongo port, eg:27017
       --mongo_user         <mongo_user>           the mongo user name, default:cc
       --mongo_pass         <mongo_pass>           the mongo password
+      --txn_enabled        <txn_enabled>          txn_enabled, true or false
       --blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --listen_port        <listen_port>          the cmdb_webserver listen port, should be the port as same as -c <blueking_cmdb_url> specified, default:8083
@@ -524,6 +515,7 @@ def main(argv):
       --mongo_port         27017 \\
       --mongo_user         cc \\
       --mongo_pass         cc \\
+      --txn_enabled        false \\
       --blueking_cmdb_url  http://127.0.0.1:8080/ \\
       --blueking_paas_url  http://paas.domain.com \\
       --listen_port        8080 \\
@@ -584,6 +576,9 @@ def main(argv):
         elif opt in ("-S", "--mongo_pass"):
             mongo_pass = arg
             print('mongo_pass:', mongo_pass)
+        elif opt in ("--txn_enabled",):
+            txn_enabled = arg
+            print('txn_enabled:', txn_enabled)
         elif opt in ("-u", "--blueking_cmdb_url"):
             cc_url = arg
             print('blueking_cmdb_url:', cc_url)
@@ -670,6 +665,10 @@ def main(argv):
         print('blueking cmdb url not start with http://')
         sys.exit()
 
+    if txn_enabled not in ["true", "false"]:
+        print('txn_enabled value invalid, can only be `true` or `false`')
+        sys.exit()
+
     if full_text_search not in ["off", "on"]:
         print('full_text_search can only be off or on')
         sys.exit()
@@ -714,6 +713,7 @@ def main(argv):
         mongo_port_v=mongo_port,
         mongo_user_v=mongo_user,
         mongo_pass_v=mongo_pass,
+        txn_enabled_v=txn_enabled,
         cc_url_v=cc_url,
         paas_url_v=paas_url,
         full_text_search=full_text_search,

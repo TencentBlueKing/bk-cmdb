@@ -30,10 +30,8 @@ import (
 	"configcenter/src/scene_server/admin_server/authsynchronizer"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -83,12 +81,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		var db dal.RDB
-		if process.Config.MongoDB.Enable == "true" {
-			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
-		} else {
-			db, err = remote.NewWithDiscover(process.Core)
-		}
+
+		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
