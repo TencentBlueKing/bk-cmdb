@@ -204,7 +204,9 @@ func (f *Find) Limit(limit uint64) dal.Find {
 func (f *Find) All(ctx context.Context, result interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo find-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo find-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -250,7 +252,9 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 func (f *Find) One(ctx context.Context, result interface{}) error {
 	start := time.Now()
 	rid := ctx.Value(common.ContextRequestIDField)
-	defer blog.V(4).InfoDepthf(1, "mongo find-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo find-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -299,7 +303,9 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 func (f *Find) Count(ctx context.Context) (uint64, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -326,7 +332,9 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo insert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo insert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -351,7 +359,9 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo update cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo update cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -378,7 +388,9 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo upsert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo upsert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -408,7 +420,9 @@ func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interfac
 func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo update-multi-model cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo update-multi-model cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -439,7 +453,9 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, up
 func (c *Collection) UpdateModifyCount(ctx context.Context, filter dal.Filter, doc interface{}) (int64, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo update-modify-count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo update-modify-count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -466,7 +482,9 @@ func (c *Collection) UpdateModifyCount(ctx context.Context, filter dal.Filter, d
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo delete cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo delete cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -489,7 +507,9 @@ func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo next-sequence cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo next-sequence cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 直接使用新的context，确保不会用到事务,不会因为context含有session而使用分布式事务，防止产生相同的序列号
 	ctx = context.Background()
@@ -734,7 +754,9 @@ func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
 func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo add-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo add-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	selector := types.Document{column: types.Document{"$exists": false}}
 	datac := types.Document{"$set": types.Document{column: value}}
@@ -746,7 +768,9 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo rename-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo rename-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, types.Document{}, datac)
@@ -757,7 +781,9 @@ func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo drop-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo drop-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	datac := types.Document{"$unset": types.Document{field: ""}}
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, types.Document{}, datac)
@@ -779,7 +805,9 @@ func (c *Collection) DropColumns(ctx context.Context, filter dal.Filter, fields 
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo aggregate-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo aggregate-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
@@ -806,7 +834,9 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
-	defer blog.V(4).InfoDepthf(1, "mongo aggregate-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo aggregate-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
