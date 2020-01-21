@@ -49,11 +49,5 @@ func (a *audit) Query(params types.ContextParams, query metadata.QueryInput) (in
 		return nil, params.Err.CCError(common.CCErrAuditSelectFailed)
 	}
 
-	for index := range rsp.Data.Info {
-		if desc := params.Lang.Language("auditlog_" + rsp.Data.Info[index].OpDesc); len(desc) > 0 {
-			rsp.Data.Info[index].OpDesc = desc
-		}
-	}
-
 	return rsp.Data, nil
 }
