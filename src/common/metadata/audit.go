@@ -78,20 +78,16 @@ func (op *InstanceOpDetail) WithName() string {
 }
 
 type HostTransferOpDetail struct {
-	HostID                 int64                     `json:"bk_host_id" bson:"bk_host_id"`
-	HostInnerIP            string                    `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	PreMainlineAssociation MainlineAssociationDetail `json:"pre_mainline_asst" bson:"pre_mainline_asst"`
-	CurMainlineAssociation MainlineAssociationDetail `json:"cur_mainline_asst" bson:"cur_mainline_asst"`
+	HostID      int64         `json:"bk_host_id" bson:"bk_host_id"`
+	HostInnerIP string        `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	PreData     []HostBizTopo `json:"pre_data" bson:"pre_data"`
+	CurData     []HostBizTopo `json:"cur_data" bson:"cur_data"`
 }
 
-type MainlineAssociationDetail struct {
-	BizID      int64  `json:"bk_biz_id" bson:"bk_biz_id"`
-	BizName    string `json:"bk_biz_name" bson:"bk_biz_name"`
-	SetID      int64  `json:"bk_set_id" bson:"bk_set_id"`
-	SetName    string `json:"bk_set_name" bson:"bk_set_name"`
-	ModuleID   int64  `json:"bk_module_id" bson:"bk_module_id"`
-	ModuleName string `json:"bk_module_name" bson:"bk_module_name"`
-	Layer      *Layer `json:"layer"`
+type HostBizTopo struct {
+	BizID   int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	BizName string `json:"bk_biz_name" bson:"bk_biz_name"`
+	Set     []Topo `json:"set" bson:"set"`
 }
 
 func (op *HostTransferOpDetail) WithName() string {

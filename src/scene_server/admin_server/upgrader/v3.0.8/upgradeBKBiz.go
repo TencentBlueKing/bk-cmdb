@@ -115,18 +115,21 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		ResourceType:    metadata.BusinessRes,
 		Action:          metadata.AuditCreate,
 		OperateFrom:     metadata.FromCCSystem,
-		OperationDetail: &metadata.BasicOpDetail{
-			BusinessID:   int64(bizID),
-			ResourceID:   int64(bizID),
-			ResourceName: common.BKAppName,
-			Details: &metadata.BasicContent{
-				PreData:    preData,
-				CurData:    appModelData,
-				Properties: properties,
+		OperationDetail: &metadata.InstanceOpDetail{
+			BasicOpDetail: &metadata.BasicOpDetail{
+				BusinessID:   int64(bizID),
+				ResourceID:   int64(bizID),
+				ResourceName: common.BKAppName,
+				Details: &metadata.BasicContent{
+					PreData:    preData,
+					CurData:    appModelData,
+					Properties: properties,
+				},
 			},
+			ModelID: common.BKInnerObjIDApp,
 		},
 		OperationTime: metadata.Now(),
-		Label: nil,
+		Label:         nil,
 	}
 	if preData != nil {
 		log.Action = metadata.AuditUpdate
@@ -266,18 +269,21 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 			ResourceType:    metadata.SetRes,
 			Action:          metadata.AuditCreate,
 			OperateFrom:     metadata.FromCCSystem,
-			OperationDetail: &metadata.BasicOpDetail{
-				BusinessID:   int64(bizID),
-				ResourceID:   int64(setID),
-				ResourceName: setName,
-				Details: &metadata.BasicContent{
-					PreData:    preData,
-					CurData:    setModelData,
-					Properties: properties,
+			OperationDetail: &metadata.InstanceOpDetail{
+				BasicOpDetail: &metadata.BasicOpDetail{
+					BusinessID:   int64(bizID),
+					ResourceID:   int64(setID),
+					ResourceName: setName,
+					Details: &metadata.BasicContent{
+						PreData:    preData,
+						CurData:    setModelData,
+						Properties: properties,
+					},
 				},
+				ModelID: common.BKInnerObjIDSet,
 			},
 			OperationTime: metadata.Now(),
-			Label: map[string]string{metadata.LabelBizTopology: ""},
+			Label:         map[string]string{metadata.LabelBizTopology: ""},
 		}
 		if preData != nil {
 			log.Action = metadata.AuditUpdate
@@ -329,18 +335,21 @@ func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, modu
 			ResourceType:    metadata.ModuleRes,
 			Action:          metadata.AuditCreate,
 			OperateFrom:     metadata.FromCCSystem,
-			OperationDetail: &metadata.BasicOpDetail{
-				BusinessID:   int64(bizID),
-				ResourceID:   int64(moduleID),
-				ResourceName: moduleName,
-				Details: &metadata.BasicContent{
-					PreData:    preData,
-					CurData:    moduleModelData,
-					Properties: properties,
+			OperationDetail: &metadata.InstanceOpDetail{
+				BasicOpDetail: &metadata.BasicOpDetail{
+					BusinessID:   int64(bizID),
+					ResourceID:   int64(moduleID),
+					ResourceName: moduleName,
+					Details: &metadata.BasicContent{
+						PreData:    preData,
+						CurData:    moduleModelData,
+						Properties: properties,
+					},
 				},
+				ModelID: common.BKInnerObjIDModule,
 			},
 			OperationTime: metadata.Now(),
-			Label: map[string]string{metadata.LabelBizTopology: ""},
+			Label:         map[string]string{metadata.LabelBizTopology: ""},
 		}
 		if preData != nil {
 			log.Action = metadata.AuditUpdate

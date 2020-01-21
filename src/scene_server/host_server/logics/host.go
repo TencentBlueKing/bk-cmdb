@@ -14,11 +14,9 @@ package logics
 
 import (
 	"context"
-	"strconv"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -27,7 +25,7 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, businessMedatadata *metadata.Metadata) ([]metadata.Header, error) {
+func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, businessMedatadata *metadata.Metadata) ([]metadata.Property, error) {
 	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
 	if businessMedatadata != nil {
 		searchOp.Set(common.MetadataField, businessMedatadata)
@@ -45,12 +43,12 @@ func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, busine
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	headers := make([]metadata.Header, 0)
+	headers := make([]metadata.Property, 0)
 	for _, p := range result.Data.Info {
 		if p.PropertyID == common.BKChildStr {
 			continue
 		}
-		headers = append(headers, metadata.Header{
+		headers = append(headers, metadata.Property{
 			PropertyID:   p.PropertyID,
 			PropertyName: p.PropertyName,
 		})
@@ -152,21 +150,10 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		}
 		// add create host log
 		audit := lgc.NewHostLog(ctx, ownerID)
-		if err := audit.WithPrevious(ctx, strconv.FormatInt(hostID, 10), nil); err != nil {
+		if err := audit.WithCurrent(ctx, hostID, nil); err != nil {
 			return err
 		}
-		content := audit.GetContent(hostID)
-		log := metadata.SaveAuditLogParams{
-			ID:      hostID,
-			Model:   common.BKInnerObjIDHost,
-			Content: content,
-			OpDesc:  "enter ip host",
-			OpType:  auditoplog.AuditOpTypeAdd,
-			ExtKey:  audit.ip,
-			BizID:   appID,
-		}
-
-		aResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, log)
+		aResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, audit.AuditLog(ctx, hostID, appID, metadata.AuditCreate))
 		if err != nil {
 			blog.Errorf("EnterIP AddHostLog http do error, err:%s, rid:%s", err.Error(), lgc.rid)
 			return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -219,15 +206,11 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		return lgc.ccErr.New(hmResult.Code, hmResult.ErrMsg)
 	}
 
-	audit := lgc.NewHostLog(ctx, ownerID)
-	if err := audit.WithPrevious(ctx, strconv.FormatInt(hostID, 10), nil); err != nil {
-		return err
-	}
 	hmAudit := lgc.NewHostModuleLog([]int64{hostID})
 	if err := hmAudit.WithPrevious(ctx); err != nil {
 		return err
 	}
-	if err := hmAudit.SaveAudit(ctx, appID, util.GetUser(lgc.header), "host module change"); err != nil {
+	if err := hmAudit.SaveAudit(ctx); err != nil {
 		return err
 	}
 	return nil
@@ -353,7 +336,7 @@ func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dst
 		return lgc.ccErr.New(delRet.Code, delRet.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(ctx, srcBizID, lgc.user, "host to other bussiness module"); err != nil {
+	if err := audit.SaveAudit(ctx); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, lgc.rid)
 		return lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 
@@ -400,7 +383,7 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 		return result.Data, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(ctx, bizID, lgc.user, "delete host from business"); err != nil {
+	if err := audit.SaveAudit(ctx); err != nil {
 		blog.Errorf("DeleteHostFromBusiness, get prev module host config failed, err: %v,appID:%d, hostID:%#v,rid:%s", err, bizID, hostIDArr, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}

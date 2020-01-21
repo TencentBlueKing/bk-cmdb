@@ -22,7 +22,6 @@ import (
 	"configcenter/src/auth/authcenter"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -161,6 +160,8 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 		}
 	}
 
+	iHostIDArr = util.IntArrayUnique(iHostIDArr)
+
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Delete, iHostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
@@ -170,10 +171,10 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 		}
 		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Delete, iHostIDArr)
 		if err != nil {
-			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
-		resp.WriteEntity(perm)
+		_ = resp.WriteEntity(perm)
 		return
 	}
 
@@ -198,16 +199,16 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 		return
 	}
 
-	logContentMap := make(map[int64]meta.SaveAuditLogParams, 0)
+	logContentMap := make(map[int64]meta.AuditLog, 0)
 	for _, hostID := range iHostIDArr {
 		logger := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
-		if err := logger.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
+		if err := logger.WithPrevious(srvData.ctx, hostID, hostFields); err != nil {
 			blog.Errorf("delete host batch, but get pre host data failed, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
 
-		logContentMap[hostID] = logger.AuditLog(srvData.ctx, hostID)
+		logContentMap[hostID] = logger.AuditLog(srvData.ctx, hostID, appID, meta.AuditDelete)
 	}
 
 	input := &meta.DeleteHostRequest{
@@ -225,11 +226,8 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 	for _, ex := range delResult.Data {
 		delete(logContentMap, ex.OriginIndex)
 	}
-	var logContents []meta.SaveAuditLogParams
+	var logContents []meta.AuditLog
 	for _, item := range logContentMap {
-		item.Model = common.BKInnerObjIDHost
-		item.OpDesc = "delete host"
-		item.OpType = auditoplog.AuditOpTypeDel
 		logContents = append(logContents, item)
 	}
 	if len(logContents) > 0 {
@@ -685,22 +683,16 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	logPreContents := make(map[int64]meta.SaveAuditLogParams, 0)
-	for _, id := range strings.Split(hostIDStr, ",") {
-		hostID, err := strconv.ParseInt(id, 10, 64)
-		if err != nil {
-			blog.Errorf("update host batch, but got invalid host id[%s], err: %v,rid:%s", id, err, srvData.rid)
-			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
-			return
-		}
+	logPreContents := make(map[int64]*logics.HostLog, 0)
+	for _, hostID := range hostIDArr {
 		audit := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
-		if err := audit.WithPrevious(srvData.ctx, id, hostFields); err != nil {
+		if err := audit.WithPrevious(srvData.ctx, hostID, hostFields); err != nil {
 			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v, rid: %s", id, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 			return
 		}
 
-		logPreContents[hostID] = audit.AuditLog(srvData.ctx, hostID)
+		logPreContents[hostID] = audit
 	}
 
 	hasHostUpdateWithoutHostApplyFiled := false
@@ -762,47 +754,30 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		}
 	}
 
-	logLastContents := make([]meta.SaveAuditLogParams, 0)
+	hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: hostIDArr})
+	if err != nil {
+		blog.Errorf("update host batch GetConfigByCond failed, hostIDArr[%v], err: %v,input:%+v,rid:%s", hostIDArr, err, data, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	appIDMap := make(map[int64]int64)
+	for _, hostModule := range hostModuleConfig {
+		appIDMap[hostModule.HostID] = hostModule.AppID
+	}
+
+	logLastContents := make([]meta.AuditLog, 0)
 	for _, hostID := range hostIDArr {
-		audit := srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
-		if err := audit.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
+		audit, ok := logPreContents[hostID]
+		if !ok {
+			audit = srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
+		}
+		if err := audit.WithCurrent(srvData.ctx, hostID, hostFields); err != nil {
 			blog.Errorf("update host batch, but get host[%v] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 			return
 		}
-		logContent := audit.Content
-		logContent.CurData = logContent.PreData
-		preLogContent, ok := logPreContents[hostID]
-		if ok {
-			content, ok := preLogContent.Content.(*meta.Content)
-			if ok {
-				logContent.PreData = content.PreData
-			}
-		}
 
-		hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: []int64{hostID}})
-		if err != nil {
-			blog.Errorf("update host batch GetConfigByCond failed, id[%v], err: %v,input:%+v,rid:%s", hostID, err, data, srvData.rid)
-			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
-			return
-		}
-		var appID int64
-		if len(hostModuleConfig) > 0 {
-			appID = hostModuleConfig[0].AppID
-		}
-
-		logLastContents = append(logLastContents,
-			meta.SaveAuditLogParams{
-				ID:      hostID,
-				Model:   common.BKInnerObjIDHost,
-				Content: logContent,
-				OpDesc:  "update host",
-				OpType:  auditoplog.AuditOpTypeModify,
-				ExtKey:  preLogContent.ExtKey,
-				BizID:   appID,
-			},
-		)
-
+		logLastContents = append(logLastContents, audit.AuditLog(srvData.ctx, hostID, appIDMap[hostID], meta.AuditUpdate))
 	}
 	auditResp, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logLastContents...)
 	if err != nil {
@@ -865,9 +840,8 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	auditLogs := make([]meta.SaveAuditLogParams, 0)
+	auditLogs := make([]meta.AuditLog, 0)
 	for _, update := range parameter.Update {
-		id := strconv.FormatInt(update.HostID, 10)
 		cond := mapstr.New()
 		cond.Set(common.BKHostIDField, update.HostID)
 		data, err := mapstr.NewFromInterface(update.Properties)
@@ -884,8 +858,8 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 			Data:      data,
 		}
 		hostLog := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
-		if err := hostLog.WithPrevious(srvData.ctx, id, hostFields); err != nil {
-			blog.Errorf("update host property batch, but get host[%s] pre data for audit failed, err: %v, rid: %s", id, err, srvData.rid)
+		if err := hostLog.WithPrevious(srvData.ctx, update.HostID, hostFields); err != nil {
+			blog.Errorf("update host property batch, but get host[%d] pre data for audit failed, err: %v, rid: %s", update.HostID, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
@@ -901,8 +875,8 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 			return
 		}
 
-		if err := hostLog.WithCurrent(srvData.ctx, id); err != nil {
-			blog.Errorf("update host property batch, but get host[%s] pre data for audit failed, err: %v, rid: %s", id, err, srvData.rid)
+		if err := hostLog.WithCurrent(srvData.ctx, update.HostID, nil); err != nil {
+			blog.Errorf("update host property batch, but get host[%d] pre data for audit failed, err: %v, rid: %s", update.HostID, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
@@ -917,11 +891,7 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 		if len(hostModuleConfig) > 0 {
 			appID = hostModuleConfig[0].AppID
 		}
-		auditLog := hostLog.AuditLog(srvData.ctx, update.HostID)
-		auditLog.Model = common.BKInnerObjIDHost
-		auditLog.OpType = auditoplog.AuditOpTypeModify
-		auditLog.BizID = appID
-		auditLog.OpDesc = "update host"
+		auditLog := hostLog.AuditLog(srvData.ctx, update.HostID, appID, meta.AuditUpdate)
 		auditLogs = append(auditLogs, auditLog)
 	}
 
@@ -1224,7 +1194,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 	}
 
-	if err := audit.SaveAudit(srvData.ctx, data.ApplicationID, srvData.user, "host to empty module"); err != nil {
+	if err := audit.SaveAudit(srvData.ctx); err != nil {
 		blog.Errorf("SaveAudit failed, err: %s, rid: %s", err.Error(), srvData.rid)
 	}
 

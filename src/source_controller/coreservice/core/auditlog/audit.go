@@ -95,7 +95,7 @@ func instNotChange(ctx context.Context, content metadata.DetailFactory) bool {
 		basicContent = instanceContent.BasicOpDetail
 	case "HostTransferOpDetail":
 		hostTransferContent := content.(*metadata.HostTransferOpDetail)
-		bl := cmp.Equal(hostTransferContent.PreMainlineAssociation, hostTransferContent.CurMainlineAssociation)
+		bl := cmp.Equal(hostTransferContent.PreData, hostTransferContent.CurData)
 		if bl {
 			blog.V(5).Infof("inst data same, %+v, rid: %s", content, rid)
 		}

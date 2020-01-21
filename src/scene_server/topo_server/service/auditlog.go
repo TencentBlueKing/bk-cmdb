@@ -25,8 +25,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-const CCTimeTypeParseFlag = "cc_time_type"
-
 // AuditQuery search audit logs
 func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	query := metadata.QueryInput{}
@@ -37,20 +35,20 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 
 	queryCondition := query.Condition
 	if nil == queryCondition {
-		query.Condition = common.KvMap{common.BKOwnerIDField: params.SupplierAccount}
+		query.Condition = map[string]interface{}{common.BKOwnerIDField: params.SupplierAccount}
 	} else {
 		cond := queryCondition.(map[string]interface{})
-		times, ok := cond[common.BKOpTimeField].([]interface{})
+		times, ok := cond[common.BKOperationTimeField].([]interface{})
 		if ok {
 			if 2 != len(times) {
 				blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, params.ReqID)
 				return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 			}
 
-			cond[common.BKOpTimeField] = common.KvMap{
-				common.BKDBGTE:      times[0],
-				common.BKDBLTE:      times[1],
-				CCTimeTypeParseFlag: "1",
+			cond[common.BKOperationTimeField] = map[string]interface{}{
+				common.BKDBGTE:             times[0],
+				common.BKDBLTE:             times[1],
+				common.BKTimeTypeParseFlag: "1",
 			}
 		}
 		cond[common.BKOwnerIDField] = params.SupplierAccount
@@ -71,8 +69,8 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		businessID = id
 	}
 
-    // switch between two different control mechanism
-    // TODO use global authorization for now, need more specific auth control
+	// switch between two different control mechanism
+	// TODO use global authorization for now, need more specific auth control
 	if s.AuthManager.RegisterAuditCategoryEnabled == false {
 		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, 0); err != nil {
 			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v, rid: %s", err, params.ReqID)
@@ -117,10 +115,10 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
 
-	objectID := pathParams("bk_obj_id")
+	objectID := pathParams(common.BKObjIDField)
 	if len(objectID) == 0 {
-		blog.Errorf("InstanceAuditQuery failed, host audit query condition can't be empty, query: %+v, rid: %s", query, params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "bk_obj_id")
+		blog.Errorf("InstanceAuditQuery failed, object ID can't be empty, rid: %s", params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
 	}
 
 	queryCondition := query.Condition
@@ -130,21 +128,22 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	}
 
 	cond := queryCondition.(map[string]interface{})
-	times, ok := cond[common.BKOpTimeField].([]interface{})
+	times, ok := cond[common.BKOperationTimeField].([]interface{})
 	if ok {
 		if 2 != len(times) {
 			blog.Errorf("InstanceAuditQuery failed, search operation log input params times error, info: %v, rid: %s", times, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "op_time")
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
 		}
 
-		cond[common.BKOpTimeField] = common.KvMap{
-			"$gte":              times[0],
-			"$lte":              times[1],
-			CCTimeTypeParseFlag: "1",
+		cond[common.BKOperationTimeField] = map[string]interface{}{
+			common.BKDBGTE:             times[0],
+			common.BKDBLTE:             times[1],
+			common.BKTimeTypeParseFlag: "1",
 		}
 	}
 	cond[common.BKOwnerIDField] = params.SupplierAccount
-	cond[common.BKOpTargetField] = objectID
+	cond[common.BKAuditTypeField] = metadata.GetAuditTypeByObjID(objectID)
+	cond[common.BKResourceTypeField] = metadata.GetResourceTypeByObjID(objectID)
 	query.Condition = cond
 	if 0 == query.Limit {
 		query.Limit = common.BKDefaultLimit
