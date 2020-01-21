@@ -42,6 +42,7 @@ func NewClient(c *TLSClientConfig) (*http.Client, error) {
 			Timeout:   5 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).Dial,
+		MaxIdleConnsPerHost:   100,
 		ResponseHeaderTimeout: 10 * time.Minute,
 	}
 
