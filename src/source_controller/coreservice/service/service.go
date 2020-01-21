@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
@@ -133,10 +132,7 @@ func (s *coreService) WebService() *restful.Container {
 	container := restful.NewContainer()
 
 	api := new(restful.WebService)
-	getErrFunc := func() errors.CCErrorIf {
-		return s.err
-	}
-	api.Path("/api/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/api/v3").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	// init service actions
 	s.initService(api)
