@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 func (s *coreService) CreateManyModelClassification(ctx *rest.Contexts) {
@@ -91,8 +90,7 @@ func (s *coreService) SearchModelClassification(ctx *rest.Contexts) {
 	}
 
 	// translate language
-	language := util.GetLanguage(ctx.Kit.Header)
-	lang := s.language.CreateDefaultCCLanguageIf(language)
+	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
 		dataResult.Info[index].ClassificationName = s.TranslateClassificationName(lang, &dataResult.Info[index])
 	}
@@ -165,8 +163,7 @@ func (s *coreService) SearchModel(ctx *rest.Contexts) {
 	}
 
 	// translate
-	language := util.GetLanguage(ctx.Kit.Header)
-	lang := s.language.CreateDefaultCCLanguageIf(language)
+	lang := s.Language(ctx.Kit.Header)
 	for modelIdx := range dataResult.Info {
 		dataResult.Info[modelIdx].Spec.ObjectName = s.TranslateObjectName(lang, &dataResult.Info[modelIdx].Spec)
 		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
@@ -307,8 +304,8 @@ func (s *coreService) SearchModelAttributeGroup(ctx *rest.Contexts) {
 		ctx.RespEntityWithError(dataResult, err)
 		return
 	}
-	language := util.GetLanguage(ctx.Kit.Header)
-	lang := s.language.CreateDefaultCCLanguageIf(language)
+
+	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
 		dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(lang, &dataResult.Info[index])
 	}
@@ -327,8 +324,7 @@ func (s *coreService) SearchModelAttributeGroupByCondition(ctx *rest.Contexts) {
 		ctx.RespEntityWithError(dataResult, err)
 		return
 	}
-	language := util.GetLanguage(ctx.Kit.Header)
-	lang := s.language.CreateDefaultCCLanguageIf(language)
+	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
 		dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(lang, &dataResult.Info[index])
 	}
@@ -433,8 +429,7 @@ func (s *coreService) SearchModelAttributesByCondition(ctx *rest.Contexts) {
 	}
 
 	// translate
-	language := util.GetLanguage(ctx.Kit.Header)
-	lang := s.language.CreateDefaultCCLanguageIf(language)
+	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
 		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
@@ -461,8 +456,7 @@ func (s *coreService) SearchModelAttributes(ctx *rest.Contexts) {
 	}
 
 	// translate 主机内置字段bk_state不做翻译
-	language := util.GetLanguage(ctx.Kit.Header)
-	lang := s.language.CreateDefaultCCLanguageIf(language)
+	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
 		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])

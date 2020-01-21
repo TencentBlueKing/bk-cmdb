@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
@@ -36,8 +37,12 @@ import (
 type BusinessOperationInterface interface {
 	CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error
+	// Deprecated:
 	// FindBusiness(params types.ContextParams, fields []string, cond condition.Condition) (count int, results []mapstr.MapStr, err error)
 	FindBusiness(params types.ContextParams, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
+	// new find business function
+	// TODO: delete FindBusiness later.
+	FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error)
 	GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error)
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
 	HasHosts(params types.ContextParams, bizID int64) (bool, error)
@@ -323,6 +328,27 @@ func (b *business) FindBusiness(params types.ContextParams, cond *metadata.Query
 
 	if !result.Result {
 		return 0, nil, params.Err.Errorf(result.Code, result.ErrMsg)
+	}
+
+	return result.Data.Count, result.Data.Info, err
+}
+func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryBusinessRequest) (count int, results []mapstr.MapStr, err error) {
+
+	cond.Condition[common.BKDefaultField] = 0
+	query := &metadata.QueryCondition{
+		Fields:    cond.Fields,
+		Condition: cond.Condition,
+		Page:      cond.Page,
+	}
+
+	result, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, query)
+	if err != nil {
+		blog.ErrorJSON("failed to find business by query condition: %s, err: %s, rid: %s", query, err.Error(), kit.Rid)
+		return 0, nil, err
+	}
+
+	if !result.Result {
+		return 0, nil, kit.CCError.Errorf(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Count, result.Data.Info, err

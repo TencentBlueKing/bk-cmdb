@@ -92,8 +92,7 @@ func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 		return
 	}
 	// translate language for default name
-	language := util.GetLanguage(ctx.Kit.Header)
-	lang := s.language.CreateDefaultCCLanguageIf(language)
+	lang := s.Language(ctx.Kit.Header)
 	if m, ok := defaultNameLanguagePkg[ctx.Request.PathParameter(common.BKObjIDField)]; ok {
 		for idx := range dataResult.Info {
 			subResult := m[fmt.Sprint(dataResult.Info[idx][common.BKDefaultField])]

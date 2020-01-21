@@ -226,8 +226,7 @@ func (s *coreService) getObjectByCondition(ctx *rest.Contexts, objType string, f
 	}
 
 	// translate language for default name
-	language := util.GetLanguage(ctx.Kit.Header)
-	lang := s.language.CreateDefaultCCLanguageIf(language)
+	lang := s.Language(ctx.Kit.Header)
 	if m, ok := defaultNameLanguagePkg[objType]; nil != lang && ok {
 		for index, info := range results {
 			l := m[fmt.Sprint(info["default"])]

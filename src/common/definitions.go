@@ -850,18 +850,6 @@ const (
 )
 
 const (
-	BKSTRIDPrefix = "cc"
-)
-
-const (
-	// LocalHostName the local host name definition
-	LocalHostName = "localhost"
-
-	// LocalHostIP the local host ip definition
-	LocalHostIP = "127.0.0.1"
-)
-
-const (
 	// BKHTTPHeaderUser current request http request header fields name for login user
 	BKHTTPHeaderUser = "BK_User"
 	// BKHTTPLanguage the language key word
@@ -970,8 +958,7 @@ const (
 	WEBSessionOwnerUinListeKey = "owner_uin_list"
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
-	//WEBSessionLanguageKey      = "language"
-	WEBSessionSupplierID = "supplier_id"
+	WEBSessionSupplierID       = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
@@ -1127,4 +1114,12 @@ const (
 	SyncSetTaskName      = "sync-settemplate2set"
 
 	BKHostState = "bk_state"
+)
+
+// multiple language support
+type LanguageType string
+
+const (
+	Chinese LanguageType = "zh-cn"
+	English LanguageType = "en"
 )
