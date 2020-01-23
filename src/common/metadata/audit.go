@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"encoding/json"
+
 	"configcenter/src/common"
 )
 
@@ -53,6 +55,69 @@ type DetailFactory interface {
 	WithName() string
 }
 
+func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
+	type copyType struct {
+		AuditType AuditType `json:"audit_type" bson:"audit_type"`
+		SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+		User string `json:"user" bson:"user"`
+		ResourceType ResourceType `json:"resource_type" bson:"resource_type"`
+		Action ActionType `json:"action" bson:"action"`
+		OperateFrom OperateFromType `json:"operate_from" bson:"operate_from"`
+		OperationDetail json.RawMessage `json:"operation_detail" bson:"operation_detail"`
+		OperationTime Time `json:"operation_time" bson:"operation_time"`
+		Label map[string]string `json:"label" bson:"label"`
+	}
+	audit := copyType{}
+	if err := json.Unmarshal(data, &audit); err != nil {
+		return err
+	}
+	auditLog = &AuditLog{
+		AuditType:       audit.AuditType,
+		SupplierAccount: audit.SupplierAccount,
+		User:            audit.User,
+		ResourceType:    audit.ResourceType,
+		Action:          audit.Action,
+		OperateFrom:     audit.OperateFrom,
+		OperationTime:   audit.OperationTime,
+		Label:           audit.Label,
+	}
+	if audit.Action == AuditTransferHost {
+		operationDetail := new(HostTransferOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+		return nil
+	}
+	switch audit.ResourceType {
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes:
+		operationDetail := new(InstanceOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case InstanceAssociationRes:
+		operationDetail := new(InstanceAssociationOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case ModelAssociationRes:
+		operationDetail := new(ModelAssociationOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	default:
+		operationDetail := new(BasicOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	}
+	return nil
+}
+
 type BasicOpDetail struct {
 	// the business id of the resource if it belongs to a business.
 	BusinessID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
@@ -69,7 +134,7 @@ func (op *BasicOpDetail) WithName() string {
 }
 
 type InstanceOpDetail struct {
-	*BasicOpDetail
+	BasicOpDetail
 	ModelID string `json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
@@ -101,12 +166,8 @@ type AssociationOpDetail struct {
 	TargetModelID   string `json:"target_model_id" bson:"target_model_id"`
 }
 
-func (ao *AssociationOpDetail) WithName() string {
-	return "AssociationOpDetail"
-}
-
 type InstanceAssociationOpDetail struct {
-	*AssociationOpDetail
+	AssociationOpDetail
 	SourceInstanceID   int64  `json:"src_instance_id" bson:"src_instance_id"`
 	SourceInstanceName string `json:"src_instance_name" bson:"src_instance_name"`
 	TargetInstanceID   int64  `json:"target_instance_id" bson:"target_instance_id"`
@@ -118,7 +179,7 @@ func (ao *InstanceAssociationOpDetail) WithName() string {
 }
 
 type ModelAssociationOpDetail struct {
-	*AssociationOpDetail
+	AssociationOpDetail
 	AssociationName string                    `json:"asst_name" bson:"asst_name"`
 	Mapping         AssociationMapping        `json:"mapping" bson:"mapping"`
 	OnDelete        AssociationOnDeleteAction `json:"on_delete" bson:"on_delete"`

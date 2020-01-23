@@ -254,7 +254,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 				ResourceType: metadata.GetResourceTypeByObjID(objID),
 				Action:       metadata.AuditCreate,
 				OperationDetail: &metadata.InstanceOpDetail{
-					BasicOpDetail: &metadata.BasicOpDetail{
+					BasicOpDetail: metadata.BasicOpDetail{
 						BusinessID:   bizID,
 						ResourceID:   instID,
 						ResourceName: instName,
@@ -393,7 +393,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			ResourceType: metadata.GetResourceTypeByObjID(objID),
 			Action:       metadata.AuditUpdate,
 			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: &metadata.BasicOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   bizID,
 					ResourceID:   instID,
 					ResourceName: instName,

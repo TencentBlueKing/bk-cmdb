@@ -126,7 +126,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 			ResourceType: metadata.GetResourceTypeByObjID(objID),
 			Action:       action,
 			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: &metadata.BasicOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   bizID,
 					ResourceID:   id,
 					ResourceName: instName,

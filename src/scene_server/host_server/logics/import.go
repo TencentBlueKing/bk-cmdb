@@ -157,7 +157,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			ResourceType: metadata.HostRes,
 			Action:       action,
 			OperationDetail: &metadata.InstanceOpDetail{
-				BasicOpDetail: &metadata.BasicOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   appID,
 					ResourceID:   intHostID,
 					ResourceName: innerIP,

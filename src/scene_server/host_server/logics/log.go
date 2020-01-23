@@ -93,7 +93,7 @@ func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, actio
 		ResourceType: metadata.HostRes,
 		Action:       action,
 		OperationDetail: &metadata.InstanceOpDetail{
-			BasicOpDetail: &metadata.BasicOpDetail{
+			BasicOpDetail: metadata.BasicOpDetail{
 				BusinessID:   bizID,
 				ResourceID:   hostID,
 				ResourceName: h.ip,

@@ -92,7 +92,7 @@ func instNotChange(ctx context.Context, content metadata.DetailFactory) bool {
 		basicContent = content.(*metadata.BasicOpDetail)
 	case "InstanceOpDetail":
 		instanceContent := content.(*metadata.InstanceOpDetail)
-		basicContent = instanceContent.BasicOpDetail
+		basicContent = &instanceContent.BasicOpDetail
 	case "HostTransferOpDetail":
 		hostTransferContent := content.(*metadata.HostTransferOpDetail)
 		bl := cmp.Equal(hostTransferContent.PreData, hostTransferContent.CurData)

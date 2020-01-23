@@ -855,7 +855,7 @@ func (assoc *association) CreateInst(params types.ContextParams, request *metada
 		ResourceType: metadata.InstanceAssociationRes,
 		Action:       metadata.AuditCreate,
 		OperationDetail: &metadata.InstanceAssociationOpDetail{
-			AssociationOpDetail: &metadata.AssociationOpDetail{
+			AssociationOpDetail: metadata.AssociationOpDetail{
 				AssociationID:   objectAsst.AsstObjID,
 				AssociationKind: objectAsst.AsstKindID,
 				SourceModelID:   objID,
@@ -940,7 +940,7 @@ func (assoc *association) DeleteInst(params types.ContextParams, assoID int64) (
 		ResourceType: metadata.InstanceAssociationRes,
 		Action:       metadata.AuditDelete,
 		OperationDetail: &metadata.InstanceAssociationOpDetail{
-			AssociationOpDetail: &metadata.AssociationOpDetail{
+			AssociationOpDetail: metadata.AssociationOpDetail{
 				AssociationID:   instanceAssociation.AsstObjectID,
 				AssociationKind: instanceAssociation.AssociationKindID,
 				SourceModelID:   instanceAssociation.ObjectID,
