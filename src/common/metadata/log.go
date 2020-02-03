@@ -36,17 +36,17 @@ func (OperationLog) TableName() string {
 }
 
 type Content struct {
-	PreData interface{} `json:"pre_data"`
-	CurData interface{} `json:"cur_data"`
-	Headers []Header    `json:"header"`
+	PreData interface{} `json:"pre_data" bson:"pre_data"`
+	CurData interface{} `json:"cur_data" bson:"cur_data"`
+	Headers []Header    `json:"header"   bson:"header"`
 }
 
 type Header struct {
-	PropertyID   string `json:"bk_property_id"`
-	PropertyName string `json:"bk_property_name"`
+	PropertyID   string `json:"bk_property_id"   bson:"bk_property_id"`
+	PropertyName string `json:"bk_property_name" bson:"bk_property_name"`
 }
 
 type Ref struct {
-	RefID   int64  `json:"ref_id"`
-	RefName string `json:"ref_name"`
+	RefID   int64  `json:"ref_id"   bson:"ref_id"`
+	RefName string `json:"ref_name" bson:"ref_name"`
 }

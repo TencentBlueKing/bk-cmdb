@@ -100,7 +100,7 @@ type AssociationKind interface {
 	UpdateAssociationKind(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteAssociationKind(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteAssociationKind(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	SearchAssociationKind(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	SearchAssociationKind(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.SearchAssociationKindResult, error)
 }
 
 // ModelAssociation manager model association
