@@ -47,7 +47,6 @@ type Service struct {
 	registry        prometheus.Registerer
 	requestTotal    *prometheus.CounterVec
 	requestDuration *prometheus.HistogramVec
-	requestInflight *Gauge
 }
 
 // NewService returns new metrics service
@@ -73,15 +72,6 @@ func NewService(conf Config) *Service {
 		[]string{LabelHandler},
 	)
 	register.MustRegister(srv.requestDuration)
-
-	srv.requestInflight = NewGauge(
-		prometheus.GaugeOpts{
-			Name: ns + "http_request_in_flight",
-			Help: "current number of request being served.",
-		},
-	)
-	register.MustRegister(srv.requestInflight)
-
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	register.MustRegister(prometheus.NewGoCollector())
 
@@ -129,8 +119,6 @@ func (s *Service) RestfulWebService() *restful.WebService {
 // HTTPMiddleware is the http middleware for go-restful framework
 func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.requestInflight.Inc()
-		defer s.requestInflight.Dec()
 
 		if r.RequestURI == "/metrics" || r.RequestURI == "/metrics/" {
 			s.ServeHTTP(w, r)

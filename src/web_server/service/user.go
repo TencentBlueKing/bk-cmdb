@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	webcom "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
 	"encoding/json"
 	"fmt"
@@ -153,6 +154,7 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 
 	strOwnerUinList, ok := session.Get(common.WEBSessionOwnerUinListeKey).(string)
 	if "" == strOwnerUinList {
+		blog.ErrorJSON("session not owner info, rid:%s", rid)
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
 			Result: false,
 			Code:   common.CCErrCommNotFound,
@@ -183,6 +185,7 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	}
 
 	if nil == supplier {
+		blog.ErrorJSON("session not owner info. owner:%s, ownerlist:%s, rid:%s", ownerID, ownerUinList, rid)
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
 			Result: false,
 			Code:   common.CCErrCommNotFound,
@@ -196,6 +199,26 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	if err := session.Save(); err != nil {
 		blog.Errorf("save session failed, err: %+v, rid: %s", err, rid)
 	}
+
+	// not user, notice not privilege
+	uin, _ := session.Get(common.WEBSessionUinKey).(string)
+	language := webcom.GetLanguageByHTTPRequest(c)
+
+	ownerM := user.NewOwnerManager(uin, supplier.OwnerID, language)
+	ownerM.CacheCli = s.CacheCli
+	ownerM.Engine = s.Engine
+	permissions, err := ownerM.InitOwner()
+	if nil != err {
+		blog.Errorf("InitOwner error: %v, rid:%s", err, rid)
+		c.JSON(http.StatusBadRequest, metadata.BaseResp{
+			Result:      false,
+			Code:        err.GetCode(),
+			ErrMsg:      err.Error(),
+			Permissions: permissions,
+		})
+		return
+	}
+
 	ret := metadata.LoginChangeSupplierResult{}
 	ret.Result = true
 	ret.Data.ID = ownerID
