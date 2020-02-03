@@ -259,21 +259,19 @@ func (m *associationKind) CascadeDeleteAssociationKind(kit *rest.Kit, inputParam
 	return &metadata.DeletedCount{Count: uint64(len(associationKindItems))}, nil
 }
 
-func (m *associationKind) SearchAssociationKind(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+func (m *associationKind) SearchAssociationKind(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.SearchAssociationKindResult, error) {
 	associationKindItems, err := m.searchAssociationKind(kit, inputParam)
 	if nil != err {
-		return &metadata.QueryResult{}, err
+		return nil, err
 	}
 
-	dataResult := &metadata.QueryResult{}
-	dataResult.Count, err = m.countInstanceAssociation(kit, inputParam.Condition)
-	dataResult.Info = make([]mapstr.MapStr, 0)
+	count, err := m.countInstanceAssociation(kit, inputParam.Condition)
 	if nil != err {
-		return &metadata.QueryResult{}, err
-	}
-	for _, item := range associationKindItems {
-		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
+		return nil, err
 	}
 
-	return dataResult, nil
+	return &metadata.SearchAssociationKindResult{
+	    Count:count,
+	    Info:associationKindItems,
+    }, nil
 }

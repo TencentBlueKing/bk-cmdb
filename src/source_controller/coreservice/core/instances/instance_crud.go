@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 )
@@ -76,28 +75,6 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID ui
 		return nil, err
 	}
 	return origin, nil
-}
-
-func (m *instanceManager) searchInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (results []mapstr.MapStr, err error) {
-	results = []mapstr.MapStr{}
-	tableName := common.GetInstTableName(objID)
-	cond := inputParam.Condition
-	results = make([]mapstr.MapStr, 0)
-	if tableName == common.BKTableNameBaseInst {
-		objIDCond, ok := cond[common.BKObjIDField]
-		if ok && objIDCond != objID {
-			blog.V(9).Infof("searchInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, kit.Rid)
-			return results, nil
-		}
-		cond[common.BKObjIDField] = objID
-	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %#v, rid:%s", tableName, inputParam, kit.Rid)
-	instHandler := m.dbProxy.Table(tableName).Find(cond)
-	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).Fields(inputParam.Fields...).All(kit.Ctx, &results)
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v, rid: %s", tableName, inputParam, results, kit.Rid)
-
-	return results, err
 }
 
 func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr.MapStr) (count uint64, err error) {

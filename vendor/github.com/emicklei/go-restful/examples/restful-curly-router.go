@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/emicklei/go-restful"
 	"log"
 	"net/http"
+
+	"github.com/emicklei/go-restful"
 )
 
 // This example has the same service definition as restful-user-resource
@@ -57,8 +58,8 @@ func (u UserResource) findUser(request *restful.Request, response *restful.Respo
 	}
 }
 
-// POST http://localhost:8080/users
-// <User><Id>1</Id><Name>Melissa Raspberry</Name></User>
+// PUT http://localhost:8080/users/1
+// <User><Id>1</Id><Name>Melissa</Name></User>
 //
 func (u *UserResource) updateUser(request *restful.Request, response *restful.Response) {
 	usr := new(User)
@@ -72,16 +73,15 @@ func (u *UserResource) updateUser(request *restful.Request, response *restful.Re
 	}
 }
 
-// PUT http://localhost:8080/users/1
-// <User><Id>1</Id><Name>Melissa</Name></User>
+// POST http://localhost:8080/users
+// <User><Id>1</Id><Name>Melissa Raspberry</Name></User>
 //
 func (u *UserResource) createUser(request *restful.Request, response *restful.Response) {
 	usr := User{Id: request.PathParameter("user-id")}
 	err := request.ReadEntity(&usr)
 	if err == nil {
 		u.users[usr.Id] = usr
-		response.WriteHeader(http.StatusCreated)
-		response.WriteEntity(usr)
+		response.WriteHeaderAndEntity(http.StatusCreated, usr)
 	} else {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
@@ -101,7 +101,7 @@ func main() {
 	u := UserResource{map[string]User{}}
 	u.Register(wsContainer)
 
-	log.Printf("start listening on localhost:8080")
+	log.Print("start listening on localhost:8080")
 	server := &http.Server{Addr: ":8080", Handler: wsContainer}
 	log.Fatal(server.ListenAndServe())
 }
