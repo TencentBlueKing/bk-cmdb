@@ -436,8 +436,8 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	return
 }
 
-// search archived business by condition
-func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// SearchOwnerResourcePoolBusiness search archived business by condition
+func (s *Service) SearchOwnerResourcePoolBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	supplierAccount := pathParams("owner_id")
 	query := metadata.QueryBusinessRequest{
@@ -447,23 +447,13 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 		},
 	}
 
-	if s.AuthManager.Enabled() {
-		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
-		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
-		if err != nil {
-			blog.Errorf("[api-biz] SearchArchivedBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
-			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
-		}
-		// sort for prepare to find business with page.
-		sort.Sort(util.Int64Slice(appList))
-		// user can only find business that is already authorized.
-		query.Condition[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: appList}
-	}
-
 	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, &query)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
 		return nil, err
+	}
+	if cnt == 0 {
+		blog.InfoJSON("cond:%s, header:%s, rid:%s", query, params.Header, params.ReqID)
 	}
 	result := mapstr.MapStr{}
 	result.Set("count", cnt)
