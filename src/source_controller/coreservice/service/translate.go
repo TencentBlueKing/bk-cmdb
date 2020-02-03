@@ -77,6 +77,11 @@ func (s *coreService) TranslateOperationChartName(defLang language.DefaultCCLang
 	return util.FirstNotEmptyString(defLang.Language("operation_chart_"+att.ReportType), att.Name, att.ReportType)
 }
 
+func (s *coreService) TranslateAssociationType(defLang language.DefaultCCLanguageIf, assKind *metadata.AssociationKind) {
+	assKind.AssociationKindName = util.FirstNotEmptyString(defLang.Language("unique_kind_name_"+assKind.AssociationKindID), assKind.AssociationKindName)
+	assKind.SourceToDestinationNote = util.FirstNotEmptyString(defLang.Language("unique_kind_src_to_dest_"+assKind.AssociationKindID), assKind.SourceToDestinationNote)
+	assKind.DestinationToSourceNote = util.FirstNotEmptyString(defLang.Language("unique_kind_dest_to_src_"+assKind.AssociationKindID), assKind.DestinationToSourceNote)
+}
 func (s *coreService) TranslateServiceCategory(defLang language.DefaultCCLanguageIf, att *metadata.ServiceCategory) string {
 	return util.FirstNotEmptyString(defLang.Language("service_category_"+strings.Replace(att.Name, " ", "_", -1)), att.Name)
 }
