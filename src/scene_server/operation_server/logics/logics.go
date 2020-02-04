@@ -25,9 +25,9 @@ import (
 	"github.com/robfig/cron"
 )
 
-func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
+func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.StringIDCount, error) {
 	cond := metadata.QueryCondition{}
-	data := make([]metadata.IDStringCountInt64, 0)
+	data := make([]metadata.StringIDCount, 0)
 	target := [2]string{common.BKInnerObjIDApp, common.BKInnerObjIDHost}
 
 	for _, obj := range target {
@@ -41,12 +41,12 @@ func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64
 			blog.Errorf("search %v count failed, err: %v, rid: %v", obj, err, kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
 		}
-		info := metadata.IDStringCountInt64{}
+		info := metadata.StringIDCount{}
 		if obj == common.BKInnerObjIDApp {
-			info.Id = obj
+			info.ID = obj
 			info.Count = int64(result.Data.Count) - 1
 		} else {
-			info.Id = obj
+			info.ID = obj
 			info.Count = int64(result.Data.Count)
 		}
 		data = append(data, info)
@@ -55,7 +55,7 @@ func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64
 	return data, nil
 }
 
-func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
+func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.StringIDCount, error) {
 	cond := &metadata.QueryCondition{}
 	condition := mapstr.MapStr{
 		"ispre":       false,
@@ -68,9 +68,9 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCount
 		return nil, err
 	}
 
-	info := make([]metadata.IDStringCountInt64, 0)
-	info = append(info, metadata.IDStringCountInt64{
-		Id:    "model",
+	info := make([]metadata.StringIDCount, 0)
+	info = append(info, metadata.StringIDCount{
+		ID:    "model",
 		Count: result.Data.Count, // 去除内置的模型(主机、集群等)
 	})
 
@@ -80,8 +80,8 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCount
 		blog.Errorf("GetModelAndInstCount fail, get instance count fail, err: %v, rid: %v", err, kit.Rid)
 		return nil, err
 	}
-	info = append(info, metadata.IDStringCountInt64{
-		Id:    "inst",
+	info = append(info, metadata.StringIDCount{
+		ID:    "inst",
 		Count: int64(resp.Data),
 	})
 

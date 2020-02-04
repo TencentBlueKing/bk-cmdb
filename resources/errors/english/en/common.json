@@ -80,8 +80,10 @@
     "1199082": "list authorized resources from iam failed",
     "1199083": "modify field %s forbidden",
     "1199084": "forbidden operate inner model instance with common instance API",
-    
-    
+    "1199086": "get business id by host id failed",
+    "1199087": "The same task [%s] is already in progress",
+    "1199088": "Failed to operate Redis cache",
+
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",
     "":""

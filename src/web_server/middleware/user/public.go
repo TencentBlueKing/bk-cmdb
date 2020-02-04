@@ -71,10 +71,10 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		ownerM.CacheCli = m.cacheCli
 		ownerM.Engine = m.engine
 		ownerM.SetHttpHeader(common.BKHTTPSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
-		err := ownerM.InitOwner()
+		// 初始化失败，不影响登录
+		_, err := ownerM.InitOwner()
 		if nil != err {
-			blog.Errorf("InitOwner error: %v, rid: %s", err, rid)
-			return false
+			blog.ErrorJSON("init onwer resource pool failed, err:%s, user:%s, rid: %s", err, userInfo, rid)
 		}
 	}
 	strOwnerUinList := []byte("")
