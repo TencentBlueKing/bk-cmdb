@@ -15,10 +15,12 @@ package instances
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 var updateIgnoreKeys = []string{
@@ -155,7 +157,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			err = valid.validTimeZone(ctx.Context, val, key)
 		case common.FieldTypeBool:
 			err = valid.validBool(ctx.Context, val, key)
-	    case common.FieldTypeList:
+		case common.FieldTypeList:
 			err = valid.validList(ctx.Context, val, key)
 		default:
 			continue
@@ -222,16 +224,50 @@ func (m *instanceManager) validateModuleCreate(ctx core.ContextParams, instanceD
 	return nil
 }
 
+// getHostRelatedBizID 根据主机ID获取所属业务ID
+func getHostRelatedBizID(ctx core.ContextParams, dbProxy dal.DB, hostID int64) (bizID int64, ccErr errors.CCErrorCoder) {
+	rid := ctx.ReqID
+	filter := map[string]interface{}{
+		common.BKHostIDField: hostID,
+	}
+	hostConfig := make([]metadata.ModuleHost, 0)
+	if err := dbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).All(ctx.Context, &hostConfig); err != nil {
+		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
+		return 0, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if len(hostConfig) == 0 {
+		blog.Errorf("host module config empty, hostID: %d, rid: %s", hostID, rid)
+		return 0, ctx.Error.CCErrorf(common.CCErrHostModuleConfigFailed, hostID)
+	}
+	bizID = hostConfig[0].AppID
+	for _, item := range hostConfig {
+		if item.AppID != bizID {
+			blog.Errorf("getHostRelatedBizID failed, get multiple bizID, hostID: %d, hostConfig: %+v, rid: %s", hostID, hostConfig, rid)
+			return 0, ctx.Error.CCErrorf(common.CCErrCommGetMultipleObject)
+		}
+	}
+	return bizID, nil
+}
+
 func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
 	updateData, err := m.getInstDataByID(ctx, objID, instID, m)
 	if err != nil {
 		blog.ErrorJSON("validUpdateInstanceData failed, getInstDataByID failed, err: %s, objID: %s, instID: %s, rid: %s", err, instID, objID, ctx.ReqID)
 		return err
 	}
-	bizID, err := FetchBizIDFromInstance(objID, updateData)
-	if err != nil {
-		blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+	var bizID int64
+	if objID != common.BKInnerObjIDHost {
+		bizID, err = FetchBizIDFromInstance(objID, updateData)
+		if err != nil {
+			blog.ErrorJSON("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %s, data: %s, rid: %s", err, updateData, ctx.ReqID)
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+		}
+	} else {
+		bizID, err = getHostRelatedBizID(ctx, m.dbProxy, int64(instID))
+		if err != nil {
+			blog.ErrorJSON("validUpdateInstanceData failed, getHostRelatedBizID failed, hostID: %d, err: %s, rid: %s", instID, err, ctx.ReqID)
+			return ctx.Error.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
+		}
 	}
 
 	valid, err := NewValidator(ctx, m.dependent, objID, bizID)

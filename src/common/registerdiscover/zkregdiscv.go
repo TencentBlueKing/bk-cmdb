@@ -131,6 +131,35 @@ func (zkRD *ZkRegDiscv) Discover(path string) (<-chan *DiscoverEvent, error) {
 
 	go zkRD.loopDiscover(discvCtx, path, env)
 
+	// loop compare server info in case watch encountered error
+	go func() {
+		var oldServer map[string]bool
+		for {
+			event := zkRD.getServerInfoByPath(path)
+			isUpdated := false
+			newServer := make(map[string]bool)
+			if len(event.Server) != len(oldServer) {
+				isUpdated = true
+			}
+			for _, server := range event.Server {
+				if !isUpdated && !oldServer[server] {
+					isUpdated = true
+				}
+				newServer[server] = true
+			}
+			oldServer = newServer
+			if isUpdated {
+				env <- event
+			}
+			select {
+			case <-discvCtx.Done():
+				return
+			default:
+				time.Sleep(time.Second)
+			}
+		}
+	}()
+
 	return env, nil
 }
 
