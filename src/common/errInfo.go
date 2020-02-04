@@ -15,7 +15,6 @@ package common
 // CC error number defined in this file
 // Errno name is composed of the following format CCErr[XXX]
 const (
-
 	// the system code
 
 	// CCSystemBusy the system is busy
@@ -216,6 +215,13 @@ const (
 	CCErrCommModifyFieldForbidden                            = 1199083
 	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
 
+	CCErrCommGetBusinessIDByHostIDFailed = 1199086
+
+    // CCErrCommOPInProgressErr have the same task[%s] in progress
+    CCErrCommOPInProgressErr = 1199087
+    // CCErrCommRedisOPErr operate redis error.
+    CCErrCommRedisOPErr = 1199088
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
@@ -335,7 +341,7 @@ const (
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
 	CCErrTopoBizTopoLevelOverLimit = 1101035
-	// CCErrTopoInstHasBeenAssociation the mainline topo level over limit
+	// CCErrTopoInstHasBeenAssociation the instance has been associated
 	CCErrTopoInstHasBeenAssociation = 1101036
 	// it is forbidden to delete , that has some insts
 	CCErrTopoObjectHasSomeInstsForbiddenToDelete = 1101037

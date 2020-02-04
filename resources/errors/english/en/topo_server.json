@@ -55,7 +55,7 @@
 	"1101033": "query business failed",
 	"1101034": "query module failed,%s",
 	"1101035": "Business topology level exceeds the limit",
-	"1101036": "the instance has been associated, could not be delete or archived",
+	"1101036": "the instance [instance ID: %d] has been associated, could not be delete or archived",
 	"1101037": "the object [%s] has been instantiated and cannot be deleted",
 	"1101038": "the associations %s->%s already exist",
     "1101039": "the source association object does not exist",

@@ -1,9 +1,9 @@
-![](docs/resource/img/bk-cmdb.png)
+![](docs/resource/img/bk-cmdb-en.png)
 ---
 [![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/Tencent/bk-cmdb/blob/master/LICENSE.txt)
 [![Release Version](https://img.shields.io/badge/release-3.2.19-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
-[![BK Pipelines Status](https://api.bkdevops.qq.com/process/api/external/pipelines/projects/cc/p-c02db56ac633447eb2e740b3fd0b6d2b/badge?X-DEVOPS-PROJECT-ID=cc)](http://***REMOVED***/process/api-html/user/builds/projects/cc/pipelines/p-c02db56ac633447eb2e740b3fd0b6d2b/latestFinished?X-DEVOPS-PROJECT-ID=cc)
+[![BK Pipelines Status](https://api.bkdevops.qq.com/process/api/external/pipelines/projects/cc/p-c02db56ac633447eb2e740b3fd0b6d2b/badge?X-DEVOPS-PROJECT-ID=cc)](http://api.devops.oa.com/process/api-html/user/builds/projects/cc/pipelines/p-c02db56ac633447eb2e740b3fd0b6d2b/latestFinished?X-DEVOPS-PROJECT-ID=cc)
 [![Build Status](https://travis-ci.org/Tencent/bk-cmdb.svg?branch=master)](https://travis-ci.org/Tencent/bk-cmdb)
 
 > **Note**: The `master` branch may be in an *unstable or even broken state* during development.
@@ -59,8 +59,8 @@ If you want to know more about the above features, please refer to the [Function
  orchestration and management for micro-service business.
 - [BK-BCS-SaaS](https://github.com/Tencent/bk-bcs-saas)：a SaaS provides users with highly scalable
 , flexible and easy-to-use container products and services.
-- [BK-PaaS](https://github.com/Tencent/bk-PaaS)：is an development platform that allows developers to create, develop, deploy and manage SaaS applications easily and quickly.
-- [BK-SOPS](https://github.com/Tencent/bk-sops)：is an lightweight scheduling SaaS  for task flow
+- [BK-PaaS](https://github.com/Tencent/bk-PaaS)：an development platform that allows developers to create, develop, deploy and manage SaaS applications easily and quickly.
+- [BK-SOPS](https://github.com/Tencent/bk-sops)：an lightweight scheduling SaaS  for task flow
  scheduling and execution through a visual graphical interface. 
 
 ## Contributing
