@@ -30,6 +30,7 @@ type HostApplyRuleInterface interface {
 	GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder)
 	SearchRuleRelatedModules(ctx context.Context, header http.Header, bizID int64, option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder)
 	BatchUpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder)
+	RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
 func NewHostApplyRuleClient(client rest.ClientInterface) HostApplyRuleInterface {

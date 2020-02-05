@@ -3,8 +3,17 @@
         <div class="config-body">
             <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]">
                 <div class="choose-hd">
-                    <span class="label">{{$t('自动应用字段：')}}</span>
-                    <bk-button theme="default" icon="plus" @click="handleChooseField">选择字段</bk-button>
+                    <span class="label">{{$t('自动应用字段')}}</span>
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                        <bk-button
+                            icon="plus"
+                            slot-scope="{ disabled }"
+                            :disabled="disabled"
+                            @click="handleChooseField"
+                        >
+                            {{$t('选择字段')}}
+                        </bk-button>
+                    </cmdb-auth>
                 </div>
                 <div class="choose-bd" v-show="checkedPropertyIdList.length">
                     <property-config-table
@@ -16,8 +25,17 @@
                     </property-config-table>
                 </div>
                 <div class="choose-ft">
-                    <bk-button theme="primary" :disabled="nextButtonDisabled" @click="handleNextStep">下一步</bk-button>
-                    <bk-button theme="default" @click="handleCancel">取消</bk-button>
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                        <bk-button
+                            theme="primary"
+                            slot-scope="{ disabled }"
+                            :disabled="nextButtonDisabled || disabled"
+                            @click="handleNextStep"
+                        >
+                            {{$t('下一步')}}
+                        </bk-button>
+                    </cmdb-auth>
+                    <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
                 </div>
             </div>
         </div>
@@ -29,10 +47,10 @@
         <leave-confirm
             :id="leaveConfirmConfig.id"
             :active="leaveConfirmConfig.active"
-            title="是否放弃？"
-            content="启用步骤未完成，是否放弃当前配置"
-            ok-text="留在当前页"
-            cancel-text="确认放弃"
+            :title="$t('是否放弃')"
+            :content="$t('启用步骤未完成，是否放弃当前配置')"
+            :ok-text="$t('留在当前页')"
+            :cancel-text="$t('确认放弃')"
         >
         </leave-confirm>
     </div>
@@ -43,7 +61,10 @@
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import hostPropertyModal from './host-property-modal'
     import propertyConfigTable from './property-config-table'
-    import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_APPLY,
+        MENU_BUSINESS_HOST_APPLY_CONFIRM
+    } from '@/dictionary/menu-symbol'
     export default {
         name: 'single-module-config',
         components: {
@@ -154,7 +175,10 @@
                 this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
                     this.$router.push({
-                        name: 'hostApplyConfirm'
+                        name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
+                        query: {
+                            mid: this.$route.query.mid
+                        }
                     })
                 })
             },
@@ -191,13 +215,6 @@
             flex: auto;
         }
     }
-    .config-title {
-        height: 32px;
-        line-height: 32px;
-        font-size: 14px;
-        color: #313238;
-        font-weight: 700;
-    }
 
     .choose-field {
         padding: 16px 2px;
@@ -225,6 +242,16 @@
         &.not-choose {
             .choose-ft {
                 margin-left: 111px;
+            }
+        }
+    }
+
+    [bk-language="en"] {
+        .choose-field {
+            &.not-choose {
+                .choose-ft {
+                    margin-left: 95px;
+                }
             }
         }
     }

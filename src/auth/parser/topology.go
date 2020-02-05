@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+
 	"github.com/tidwall/gjson"
 )
 
@@ -1371,7 +1372,6 @@ func (ps *parseStream) object() *parseStream {
 		return ps
 	}
 
-	// find object's topology graphic operation.
 	if ps.hitRegexp(findObjectTopologyGraphicRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
@@ -1784,6 +1784,13 @@ func (ps *parseStream) objectAttribute() *parseStream {
 			return ps
 		}
 
+		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -1792,6 +1799,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: attrID,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1807,6 +1815,13 @@ func (ps *parseStream) objectAttribute() *parseStream {
 		attrID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object attribute, but got invalid attribute id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
 			return ps
 		}
 
@@ -1833,6 +1848,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 					Action:     meta.Update,
 					InstanceID: attrID,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1864,6 +1880,7 @@ var (
 	createModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
 	deleteModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
 	updateModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	updateModuleHostApplyStatusRegexp = regexp.MustCompile(`^/api/v3/module/host_apply_enable_status/bk_biz_id/([0-9]+)/bk_module_id/([0-9]+)/?$`)
 	findModuleRegexp                  = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/(?P<bk_biz_id>[0-9]+)/service_template_id/(?P<service_template_id>[0-9]+)/?$`)
 )
@@ -1994,6 +2011,29 @@ func (ps *parseStream) objectModule() *parseStream {
 						Name:       "set",
 						InstanceID: setID,
 					},
+				},
+			},
+		}
+		return ps
+	}
+	if ps.hitRegexp(updateModuleHostApplyStatusRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = errors.New("update module host apply enabled status, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("update module host apply enabled status, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostApply,
+					Action: meta.Update,
 				},
 			},
 		}

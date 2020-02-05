@@ -22,7 +22,7 @@
     "1113022": "delete processe [%s] created by template forbidden",
     "1113023": "delete [%s] data from multiple models",
     "1113024": "fields in unique checksums are not allowed to be deleted",
-    "1113025": "the model needs at least one set of unique checksums",
+    "1113025": "Modify description of attributes that are not allowed to be modified",
     "1113026": "model [%s] does not allow create required fields",
     "1113027": "model [%s] does not allow modification of required fields",
     "1113028": "model [%s] does not allow create fields",

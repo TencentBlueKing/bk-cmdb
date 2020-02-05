@@ -260,6 +260,10 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 				},
 			},
 		},
+		Page: metadata.BasePage{
+			Start: 0,
+			Limit: 1,
+		},
 	}
 	resp, err := s.CoreAPI.ApiServer().ListHostWithoutApp(ctx, c.Request.Header, option)
 	if err != nil {

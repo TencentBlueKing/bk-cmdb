@@ -1,7 +1,7 @@
 <template>
     <div class="search-layout" ref="searchLayout" :style="{ 'background-color': setStyle.backgroundColor }">
         <div :class="{ 'sticky-layout': result.isShow }" :style="{ 'padding-top': (setStyle.paddingTop) + 'px' }">
-            <div class="search-bar">
+            <div class="search-bar" @keydown="handleSelectedKeywords($event)">
                 <div class="search-box" v-if="result.isShow">
                     <div :class="['search-tab', { 'is-focus': isFocus }]">
                         <span :class="['tab-item', { 'active': activeName === 'host' }]"
@@ -59,21 +59,25 @@
                             <template v-for="(item, index) in lenovoList">
                                 <li :key="index" v-if="item.type === 'host'"
                                     :title="item.source.bk_host_innerip"
+                                    :class="{ 'selected': selectIndex === index }"
                                     @click="handleGoResource(item.source)">
-                                    <span class="lenovo-name">{{item.source.bk_host_innerip}}</span>
+                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_host_innerip}}</span>
                                     <span>({{$t('主机')}})</span>
                                 </li>
                                 <li :key="index" v-else-if="item.type === 'object'"
                                     :title="item.source.bk_inst_name"
+                                    :class="{ 'selected': selectIndex === index }"
                                     @click="handleGoInstace(item.source)">
-                                    <span class="lenovo-name">{{item.source.bk_inst_name}}</span>
+                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_inst_name}}</span>
                                     <span>({{getShowModelName(item.source)}})</span>
                                 </li>
                                 <li :key="index" v-else-if="item.type === 'biz'"
                                     :title="item.source.bk_biz_name"
+                                    :class="{ 'selected': selectIndex === index }"
                                     @click="handleGoBusiness(item.source)">
-                                    <span class="lenovo-name">{{item.source.bk_biz_name}}</span>
+                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_biz_name}}</span>
                                     <span>({{$t('业务')}})</span>
+                                    <i class="disabled-mark" v-if="item.source.bk_data_status === 'disabled'">{{$t('已归档')}}</i>
                                 </li>
                             </template>
                         </ul>
@@ -91,7 +95,9 @@
                         </div>
                         <ul class="history-list">
                             <li v-for="(history, index) in historyList"
+                                ref="historyItem"
                                 :key="index"
+                                :class="{ 'selected': selectIndex === index }"
                                 @click="handleHistorySearch(history)">
                                 {{history}}
                             </li>
@@ -141,7 +147,12 @@
     import searchResult from './full-text-search'
     import hostSearch from './host-search'
     import { mapGetters } from 'vuex'
-    import { MENU_INDEX, MENU_RESOURCE_INSTANCE, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
+    import {
+        MENU_INDEX, MENU_RESOURCE_INSTANCE,
+        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_HOST_DETAILS,
+        MENU_RESOURCE_BUSINESS_HISTORY
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             searchResult,
@@ -155,6 +166,8 @@
         },
         data () {
             return {
+                selectedStatus: false,
+                selectIndex: -1,
                 isFocus: false,
                 activeName: 'fullText',
                 toggleTips: null,
@@ -206,7 +219,7 @@
                 return this.isFullTextSearch ? this.$t('请输入关键字，点击或回车搜索') : this.$t('请输入IP开始搜索')
             },
             params () {
-                const keywords = this.keywords
+                const keywords = this.keywords.length > 32 ? this.keywords.slice(0, 32) : this.keywords
                 const notZhCn = keywords.replace(/\w\.?/g, '').length === 0
                 const singleSpecial = /[!"#$%&'()\*,-\./:;<=>?@\[\\\]^_`{}\|~]{1}/
                 const queryString = keywords.length === 1 ? keywords.replace(singleSpecial, '') : keywords
@@ -272,6 +285,7 @@
                 }
             },
             keywords (keywords) {
+                if (this.selectedStatus) return
                 if (this.query.trigger === 'input') {
                     this.query.objId = ''
                 }
@@ -284,6 +298,12 @@
                 } else {
                     this.handleHideLenovo()
                 }
+            },
+            showLenovo (flag) {
+                if (!flag) this.selectIndex = -1
+            },
+            showHistory (flag) {
+                if (!flag) this.selectIndex = -1
             }
         },
         created () {
@@ -412,9 +432,13 @@
                 this.handleHideLenovo()
             },
             resetIndex () {
-                // this.$refs.searchInput.$refs.input.focus()
                 this.$router.replace({
                     name: MENU_INDEX
+                })
+                const timer = setTimeout(() => {
+                    this.$refs.searchInput.$refs.input.focus()
+                    this.$emit('focus', true)
+                    clearTimeout(timer)
                 })
             },
             async handleShowResult () {
@@ -488,8 +512,9 @@
                 })
             },
             handleGoBusiness (source) {
+                const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS
                 this.$router.push({
-                    name: MENU_RESOURCE_BUSINESS,
+                    name: name,
                     params: {
                         bizName: source['bk_biz_name']
                     }
@@ -517,6 +542,7 @@
                 this.getFullTextSearch()
             },
             handleInputSearch (value) {
+                this.selectedStatus = false
                 if (value.length === 32) {
                     this.toggleTips && this.toggleTips.destroy()
                     this.toggleTips = this.$bkPopover(this.$refs.searchInput.$el, {
@@ -536,8 +562,37 @@
             },
             handleClear () {
                 this.$refs.searchInput.$refs.input.focus()
+                this.$emit('focus', true)
                 this.keywords = ''
                 this.toggleTips && this.toggleTips.hide()
+            },
+            handleSelectedKeywords (event) {
+                const showLenovo = this.showLenovo && this.lenovoList.length
+                if (!showLenovo && !this.showHistory) return
+                this.selectedStatus = true
+                const itemList = showLenovo ? this.$refs.lenovoItem : this.$refs.historyItem
+                const len = itemList.length
+                const keyCode = event.keyCode
+                const code = {
+                    'enter': 13,
+                    'up': 38,
+                    'down': 40
+                }
+                let index = this.selectIndex
+                if (code.up === keyCode || code.down === keyCode) {
+                    if (code.up === keyCode) {
+                        index = index <= 0 ? index : index - 1
+                    } else {
+                        index = index >= len - 1 ? len - 1 : index + 1
+                    }
+                    if (index < 0) return
+                    this.selectIndex = index
+                    const item = itemList[index]
+                    this.keywords = item.innerText
+                } else if (code.enter === keyCode && this.keywords) {
+                    this.showHistory = false
+                    this.handleShowResult()
+                }
             }
         }
     }
@@ -659,7 +714,7 @@
                     padding: 0 20px;
                     line-height: 40px;
                     cursor: pointer;
-                    &:hover {
+                    &:hover, &.selected {
                         color: #3A84FF;
                         background-color: #E1ECFF;
                     }
@@ -667,6 +722,7 @@
             }
             .lenovo-result li{
                 display: flex;
+                align-items: center;
                 .lenovo-name {
                     max-width: 86%;
                     @include ellipsis;
@@ -674,6 +730,18 @@
                 span:not(.lenovo-name) {
                     padding-left: 10px;
                     color: #C4C6CC;
+                }
+                .disabled-mark {
+                    height: 18px;
+                    line-height: 16px;
+                    padding: 0 4px;
+                    font-style: normal;
+                    font-size: 12px;
+                    color: #979BA5;
+                    border: 1px solid #C4C6CC;
+                    background-color: #FAFBFD;
+                    border-radius: 2px;
+                    margin-left: 4px;
                 }
             }
             .history-title {

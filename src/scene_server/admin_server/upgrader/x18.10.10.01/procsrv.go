@@ -72,7 +72,7 @@ func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.C
 	return nil
 }
 func addProcInstanceDetailTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tableName := common.BKTableNameProcInstaceDetail
+	tableName := common.BKTableNameProcInstanceDetail
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return err

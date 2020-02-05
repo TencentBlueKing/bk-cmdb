@@ -162,6 +162,11 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 
 // UpdateBusinessStatus update the business status
 func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	updateOption := metadata.UpdateBusinessStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &updateOption); err != nil {
+		blog.Errorf("[api-business]failed, parse request body failed, data: %+v, err: %s, rid: %s", data, err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -174,7 +179,6 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 		blog.Errorf("[api-business]failed to parse the biz id, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
-	data = mapstr.New()
 	query := &metadata.QueryBusinessRequest{
 		Condition: mapstr.MapStr{common.BKAppIDField: bizID},
 	}
@@ -182,13 +186,16 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 	if len(bizs) <= 0 {
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
-	data = mapstr.New()
+	biz := metadata.BizBasicInfo{}
+	if err := mapstruct.Decode2Struct(bizs[0], &biz); err != nil {
+		blog.Errorf("[api-business]failed, parse biz failed, biz: %+v, err: %s, rid: %s", bizs[0], err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommParseDBFailed)
+	}
+
+	updateData := mapstr.New()
 	switch common.DataStatusFlag(pathParams("flag")) {
 	case common.DataStatusDisabled:
-		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(obj.Object().ObjectID)
-		innerCond.Field(common.BKAsstInstIDField).Eq(bizID)
-		if err := s.Core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
+		if err := s.Core.AssociationOperation().CheckAssociation(params, obj, obj.Object().ObjectID, bizID); nil != err {
 			return nil, err
 		}
 
@@ -200,24 +207,22 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 		if has {
 			return nil, params.Err.Error(common.CCErrTopoArchiveBusinessHasHost)
 		}
-
-		data.Set(common.BKDataStatusField, pathParams("flag"))
+		achieveBizName, err := s.Core.BusinessOperation().GenerateAchieveBusinessName(params, biz.BizName)
+		if err != nil {
+			return nil, err
+		}
+		updateData.Set(common.BKAppNameField, achieveBizName)
+		updateData.Set(common.BKDataStatusField, pathParams("flag"))
 	case common.DataStatusEnable:
-		name, err := bizs[0].String(common.BKAppNameField)
-		if nil != err {
-			return nil, params.Err.Error(common.CCErrCommNotFound)
+		if len(updateOption.BizName) > 0 {
+			updateData.Set(common.BKAppNameField, updateOption.BizName)
 		}
-		name = name + common.BKDataRecoverSuffix
-		if len(name) >= common.FieldTypeSingleLenChar {
-			name = name[:common.FieldTypeSingleLenChar]
-		}
-		data.Set(common.BKAppNameField, name)
-		data.Set(common.BKDataStatusField, pathParams("flag"))
+		updateData.Set(common.BKDataStatusField, pathParams("flag"))
 	default:
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, pathParams("flag"))
 	}
 
-	err = s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
+	err = s.Core.BusinessOperation().UpdateBusiness(params, updateData, obj, bizID)
 	if err != nil {
 		blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
@@ -233,9 +238,20 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 // 1. have any authorized resources in a business.
 // 2. only returned with a few field for this business info.
 func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	page := metadata.BasePage{
+		Limit: common.BKNoLimit,
+	}
+	sortParam := queryParams("sort")
+	if len(sortParam) > 0 {
+		page.Sort = sortParam
+	}
+	if errKey, err := page.Validate(true); err != nil {
+		blog.Errorf("[api-biz] SearchReducedBusinessList failed, page parameter invalid, errKey: %s, err: %s, rid: %s", errKey, err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, errKey)
+	}
 	query := &metadata.QueryBusinessRequest{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField, "business_dept_id", "business_dept_name"},
-		Page:   metadata.BasePage{},
+		Page:   page,
 		Condition: mapstr.MapStr{
 			common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
 			common.BKDefaultField:    0,
@@ -339,12 +355,14 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 				}
 				output[common.BKDBOR] = exactOr
 			} else {
-				output[i] = targetStr
+				attrVal := gparams.SpecialCharChange(targetStr)
+				output[i] = map[string]interface{}{"$regex": attrVal, "$options": "i"}
 			}
 		default:
 			output[i] = j
 		}
 	}
+
 	return output
 }
 
@@ -553,6 +571,28 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 	for _, item := range innerAppTopo.Module {
 		moduleIDArr = append(moduleIDArr, item.ModuleID)
 	}
+
+	// count host apply rules
+	listApplyRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: moduleIDArr,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostApplyRules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(params.Context, params.Header, bizID, listApplyRuleOption)
+	if err != nil {
+		blog.Errorf("fillStatistics failed, ListHostApplyRule failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, listApplyRuleOption, err, params.ReqID)
+		return nil, err
+	}
+	moduleRuleCount := make(map[int64]int64)
+	for _, item := range hostApplyRules.Info {
+		if _, exist := moduleRuleCount[item.ModuleID]; exist == false {
+			moduleRuleCount[item.ModuleID] = 0
+		}
+		moduleRuleCount[item.ModuleID] += 1
+	}
+
+	// count hosts
 	listHostOption := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		SetIDArr:      []int64{innerAppTopo.SetID},
@@ -576,10 +616,6 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 		moduleHostIDs[relation.ModuleID] = append(moduleHostIDs[relation.ModuleID], relation.HostID)
 	}
 	set := mapstr.NewFromStruct(innerAppTopo, "field")
-	if err != nil {
-		blog.Errorf("GetInternalModuleWithStatistics failed, convert innerAppTopo to map failed, innerAppTopo: %+v, err: %s, rid: %s", innerAppTopo, e.Error(), params.ReqID)
-		return nil, e
-	}
 	set["host_count"] = len(util.IntArrayUnique(setHostIDs))
 	modules := make([]mapstr.MapStr, 0)
 	for _, module := range innerAppTopo.Module {
@@ -588,14 +624,30 @@ func (s *Service) GetInternalModuleWithStatistics(params types.ContextParams, pa
 		if hostIDs, ok := moduleHostIDs[module.ModuleID]; ok == true {
 			moduleItem["host_count"] = len(util.IntArrayUnique(hostIDs))
 		}
+		moduleItem["host_apply_rule_count"] = 0
+		if ruleCount, ok := moduleRuleCount[module.ModuleID]; ok == true {
+			moduleItem["host_apply_rule_count"] = ruleCount
+		}
 		modules = append(modules, moduleItem)
 	}
 	set["module"] = modules
+
 	return set, nil
 }
 
 // ListAllBusinessSimplify list all businesses with return only several fields
 func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	page := metadata.BasePage{
+		Limit: common.BKNoLimit,
+	}
+	sortParam := queryParams("sort")
+	if len(sortParam) > 0 {
+		page.Sort = sortParam
+	}
+	if errKey, err := page.Validate(true); err != nil {
+		blog.Errorf("[api-biz] ListAllBusinessSimplify failed, page parameter invalid, errKey: %s, err: %s, rid: %s", errKey, err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, errKey)
+	}
 
 	fields := []string{
 		common.BKAppIDField,
@@ -604,7 +656,7 @@ func (s *Service) ListAllBusinessSimplify(params types.ContextParams, pathParams
 
 	query := &metadata.QueryBusinessRequest{
 		Fields: fields,
-		Page:   metadata.BasePage{},
+		Page:   page,
 		Condition: mapstr.MapStr{
 			common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
 		},

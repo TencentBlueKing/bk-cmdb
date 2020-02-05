@@ -14,14 +14,24 @@ package service
 
 import (
 	"net/http"
+
+	"configcenter/src/common/http/rest"
+
+	"github.com/emicklei/go-restful"
 )
 
-func (s *coreService) initDataSynchronize() {
+func (s *coreService) initDataSynchronize(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
 
-	s.addAction(http.MethodPost, "/set/synchronize/instance", s.SynchronizeInstance, nil)
-	s.addAction(http.MethodPost, "/set/synchronize/model", s.SynchronizeModel, nil)
-	s.addAction(http.MethodPost, "/set/synchronize/association", s.SynchronizeAssociation, nil)
-	s.addAction(http.MethodPost, "/read/synchronize", s.SynchronizeFind, nil)
-	s.addAction(http.MethodDelete, "/clear/synchronize/data", s.SynchronizeClearData, nil)
-	s.addAction(http.MethodPost, "/set/synchronize/identifier/flag", s.SetIdentifierFlag, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/synchronize/instance", Handler: s.SynchronizeInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/synchronize/model", Handler: s.SynchronizeModel})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/synchronize/association", Handler: s.SynchronizeAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/synchronize", Handler: s.SynchronizeFind})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/clear/synchronize/data", Handler: s.SynchronizeClearData})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/synchronize/identifier/flag", Handler: s.SetIdentifierFlag})
+
+	utility.AddToRestfulWebService(web)
 }

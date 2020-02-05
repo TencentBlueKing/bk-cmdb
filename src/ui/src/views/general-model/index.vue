@@ -34,6 +34,7 @@
                 </div>
                 <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST, parent_layers: parentLayers })">
                     <bk-button slot-scope="{ disabled }"
+                        hover-theme="danger"
                         class="models-button button-delete"
                         :disabled="!table.checked.length || disabled"
                         @click="handleMultipleDelete">
@@ -65,15 +66,16 @@
                         :name="option.name">
                     </bk-option>
                 </bk-select>
-                <cmdb-form-enum class="filter-value fl"
-                    v-if="filter.type === 'enum'"
+                <component class="filter-value fl"
+                    v-if="['enum', 'list'].includes(filter.type)"
+                    :is="`cmdb-form-${filter.type}`"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :auto-select="false"
-                    font-size="medium"
                     v-model="filter.value"
+                    font-size="medium"
                     @on-selected="getTableData(true)">
-                </cmdb-form-enum>
+                </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
@@ -123,7 +125,7 @@
                 :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
                 :fixed="column.id === 'bk_inst_name'">
                 <template slot-scope="{ row }">
-                    <span>{{row[column.id] | addUnit(getPropertyUnit(column.id))}}</span>
+                    <span>{{row[column.id] | formatter(column.property)}}</span>
                 </template>
             </bk-table-column>
             <cmdb-table-empty
@@ -220,21 +222,12 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapState, mapGetters, mapActions } from 'vuex'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
     import cmdbImport from '@/components/import/import'
-    import { MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
     export default {
-        filters: {
-            addUnit (value, unit) {
-                if (value === '--' || !unit) {
-                    return value
-                }
-                return value + unit
-            }
-        },
         components: {
             cmdbColumnsConfig,
             cmdbAuditHistory,
@@ -250,7 +243,6 @@
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         count: 0,
                         current: 1,
@@ -295,6 +287,7 @@
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
@@ -309,7 +302,10 @@
                 return `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
             },
             customColumns () {
-                return this.usercustom[this.customConfigKey]
+                return this.usercustom[this.customConfigKey] || []
+            },
+            globalCustomColumns () {
+                return this.globalUsercustom[`${this.objId}_global_custom_table_columns`] || []
             },
             url () {
                 const prefix = `${window.API_HOST}insts/owner/${this.supplierAccount}/object/${this.objId}/`
@@ -383,21 +379,6 @@
             ]),
             setDynamicBreadcrumbs () {
                 this.$store.commit('setTitle', this.model.bk_obj_name)
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('资源目录'),
-                    route: {
-                        name: MENU_RESOURCE_MANAGEMENT
-                    }
-                }, {
-                    label: this.model.bk_obj_name
-                }])
-            },
-            getPropertyUnit (propertyId) {
-                const property = this.properties.find(property => property.bk_property_id === propertyId)
-                if (!property) {
-                    return ''
-                }
-                return property.unit || ''
             },
             async reload () {
                 try {
@@ -428,7 +409,6 @@
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         count: 0,
                         current: 1,
@@ -459,7 +439,8 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.columnProperties, this.customColumns, this.columnsConfig.disabledColumns)
+                    const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
+                    const headerProperties = this.$tools.getHeaderProperties(this.columnProperties, customColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.updateTableHeader(properties)
@@ -478,18 +459,11 @@
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {
                     return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name']
+                        id: property.bk_property_id,
+                        name: this.$tools.getHeaderPropertyName(property),
+                        property
                     }
                 })
-            },
-            async handleCheckAll (type) {
-                if (type === 'current') {
-                    this.table.checked = this.table.list.map(inst => inst['bk_inst_id'])
-                } else {
-                    const allData = await this.getAllInstList()
-                    this.table.checked = allData.info.map(inst => inst['bk_inst_id'])
-                }
             },
             handleRowClick (item) {
                 this.slider.show = true
@@ -519,43 +493,14 @@
                     config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
                 })
             },
-            getAllInstList () {
-                return this.searchInst({
-                    objId: this.objId,
-                    params: this.$injectMetadata({
-                        ...this.getSearchParams(),
-                        page: {}
-                    }, { inject: !this.isPublicModel }),
-                    config: {
-                        requestId: `${this.objId}AllList`,
-                        cancelPrevious: true
-                    }
-                }).then(data => {
-                    this.table.allList = data.info
-                    return data
-                })
-            },
-            setAllHostList (list) {
-                const newList = []
-                list.forEach(item => {
-                    const existItem = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
-                    if (existItem) {
-                        Object.assign(existItem, item)
-                    } else {
-                        newList.push(item)
-                    }
-                })
-                this.table.allList = [...this.table.allList, ...newList]
-            },
             getTableData (event) {
                 this.getInstList({ cancelPrevious: true, globalPermission: false }).then(data => {
                     if (data.count && !data.info.length) {
                         this.table.pagination.current -= 1
                         this.getTableData()
                     }
-                    this.table.list = this.$tools.flattenList(this.properties, data.info)
+                    this.table.list = data.info
                     this.table.pagination.count = data.count
-                    this.setAllHostList(data.info)
 
                     if (event) {
                         this.table.stuff.type = 'search'
@@ -624,6 +569,7 @@
                         })
                     }
                 } else if (this.$route.params.instId) {
+                    // 配合全文检索过滤列表
                     params.condition[this.objId].push({
                         field: 'bk_inst_id',
                         operator: '$in',
@@ -633,10 +579,8 @@
                 }
                 return params
             },
-            async handleEdit (flattenItem) {
-                const list = await this.getInstList({ fromCache: true })
-                const inst = list.info.find(item => item['bk_inst_id'] === flattenItem['bk_inst_id'])
-                this.attribute.inst.edit = inst
+            async handleEdit (item) {
+                this.attribute.inst.edit = item
                 this.attribute.type = 'update'
             },
             handleCreate () {
@@ -671,13 +615,7 @@
                         params: this.$injectMetadata(values, { inject: !this.isPublicModel })
                     }).then(() => {
                         this.getTableData()
-                        this.searchInstById({
-                            objId: this.objId,
-                            instId: originalValues['bk_inst_id'],
-                            params: this.$injectMetadata({}, { inject: !this.isPublicModel })
-                        }).then(item => {
-                            this.attribute.inst.details = this.$tools.flattenItem(this.properties, item)
-                        })
+                        this.attribute.inst.details = Object.assign({}, originalValues, values)
                         this.handleCancel()
                         this.$success(this.$t('修改成功'))
                     })
@@ -824,7 +762,7 @@
 
 <style lang="scss" scoped>
     .models-layout {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .options-filter{
         position: relative;
@@ -853,14 +791,6 @@
         position: relative;
         &:hover{
             z-index: 1;
-            &.button-delete {
-                color: $cmdbDangerColor;
-                border-color: $cmdbDangerColor;
-            }
-            /deep/ &.bk-button.bk-default[disabled] {
-                border-color: #dcdee5 !important;
-                color: #c4c6cc !important;
-            }
         }
     }
     .models-table{

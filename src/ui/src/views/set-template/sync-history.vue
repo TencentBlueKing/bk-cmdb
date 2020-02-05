@@ -65,7 +65,6 @@
 </template>
 
 <script>
-    import { MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -141,28 +140,6 @@
             this.getData()
         },
         methods: {
-            setBreadcrumbs () {
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('集群模板'),
-                    route: {
-                        name: MENU_BUSINESS_SET_TEMPLATE
-                    }
-                }, {
-                    label: this.templateName,
-                    route: {
-                        name: 'setTemplateConfig',
-                        params: {
-                            mode: 'view',
-                            templateId: this.templateId
-                        },
-                        query: {
-                            tab: 'instance'
-                        }
-                    }
-                }, {
-                    label: this.$t('同步历史')
-                }])
-            },
             getTopoPath (row) {
                 const topoPath = this.$tools.clone(row.topo_path)
                 if (topoPath.length) {
@@ -191,7 +168,6 @@
                         setTemplateId: this.templateId
                     })
                     this.templateName = info.name
-                    this.setBreadcrumbs()
                 } catch (e) {
                     console.error(e)
                 }
@@ -259,7 +235,7 @@
 
 <style lang="scss" scoped>
     .sync-history-layout {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .options {
         padding-bottom: 15px;

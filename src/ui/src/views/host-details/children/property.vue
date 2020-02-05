@@ -62,17 +62,21 @@
                                 </bk-button>
                             </cmdb-auth>
                             <div class="property-form" v-if="property === editState.property">
-                                <component class="form-component"
-                                    :is="`cmdb-form-${property.bk_property_type}`"
-                                    :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
-                                    :options="property.option || []"
-                                    :data-vv-name="property.bk_property_id"
-                                    :data-vv-as="property.bk_property_name"
-                                    :placeholder="getPlaceholder(property)"
-                                    :auto-check="false"
-                                    v-validate="$tools.getValidateRules(property)"
-                                    v-model.trim="editState.value">
-                                </component>
+                                <div class="form-component">
+                                    <component
+                                        :is="`cmdb-form-${property.bk_property_type}`"
+                                        :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
+                                        :unit="property.unit"
+                                        :options="property.option || []"
+                                        :data-vv-name="property.bk_property_id"
+                                        :data-vv-as="property.bk_property_name"
+                                        :placeholder="getPlaceholder(property)"
+                                        :auto-check="false"
+                                        v-validate="$tools.getValidateRules(property)"
+                                        v-model.trim="editState.value"
+                                        :ref="`component-${property.bk_property_id}`">
+                                    </component>
+                                </div>
                                 <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                                 <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
                                 <span class="form-error"
@@ -193,6 +197,10 @@
                 const value = this.host[property.bk_property_id]
                 this.editState.value = value === null ? '' : value
                 this.editState.property = property
+                this.$nextTick(() => {
+                    const component = this.$refs[`component-${property.bk_property_id}`]
+                    component[0] && component[0].focus && component[0].focus()
+                })
             },
             async confirm () {
                 const { property, value } = this.editState
@@ -427,6 +435,7 @@
             margin: 0 4px 0 0;
             &.bool {
                 width: 42px;
+                height: 24px;
             }
         }
     }

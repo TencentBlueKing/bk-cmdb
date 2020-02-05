@@ -15,15 +15,15 @@
             <bk-table-column type="selection" width="50"></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 :key="column.bk_property_id"
-                :label="column.bk_property_name"
+                :label="$tools.getHeaderPropertyName(column)"
                 :sortable="getColumnSortable(column)"
                 :prop="column.bk_property_id"
                 :width="column.bk_property_id === 'bk_host_innerip' ? 130 : 'auto'"
                 :fixed="column.bk_property_id === 'bk_host_innerip'"
                 :class-name="column.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <div slot-scope="{ row }"
-                    :title="row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) | unit(column.unit)">
-                    {{ row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) | unit(column.unit) }}
+                    :title="row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column)">
+                    {{ row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) }}
                 </div>
             </bk-table-column>
         </bk-table>
@@ -92,6 +92,7 @@
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', [
@@ -104,6 +105,9 @@
             customColumns () {
                 const customColumnKey = this.$route.meta.customInstanceColumn
                 return this.usercustom[customColumnKey] || []
+            },
+            globalCustomColumns () {
+                return this.globalUsercustom['host_global_custom_table_columns'] || []
             }
         },
         watch: {
@@ -131,9 +135,10 @@
         },
         methods: {
             setTableHeader () {
+                const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
                 const properties = this.$tools.getHeaderProperties(
                     this.columnsConfigProperties,
-                    this.customColumns,
+                    customColumns,
                     this.columnsConfig.fixedColumns
                 )
                 this.table.header = properties
@@ -224,10 +229,25 @@
             },
             handleTransfer (type) {
                 if (['idle', 'business'].includes(type)) {
-                    this.dialog.props = {
-                        moduleType: type,
-                        title: type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块')
+                    const props = {
+                        moduleType: type
                     }
+                    if (type === 'idle') {
+                        props.title = this.$t('转移主机到空闲模块')
+                    } else {
+                        props.title = this.$t('转移主机到业务模块')
+                        const selection = this.table.selection
+                        const firstSelectionModules = selection[0].module.map(module => module.bk_module_id).sort()
+                        const firstSelectionModulesStr = firstSelectionModules.join(',')
+                        const allSame = selection.slice(1).every(item => {
+                            const modules = item.module.map(module => module.bk_module_id).sort().join(',')
+                            return modules === firstSelectionModulesStr
+                        })
+                        if (allSame) {
+                            props.previousModules = firstSelectionModules
+                        }
+                    }
+                    this.dialog.props = props
                     this.dialog.width = 720
                     this.dialog.height = 460
                     this.dialog.component = ModuleSelector.name
@@ -302,7 +322,8 @@
                         sourceModel: this.selectedNode.data.bk_obj_id,
                         sourceId: this.selectedNode.data.bk_inst_id,
                         targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-                        resources: this.table.selection.map(item => item.host.bk_host_id).join(',')
+                        resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
+                        node: this.selectedNode.id
                     }
                 })
             },

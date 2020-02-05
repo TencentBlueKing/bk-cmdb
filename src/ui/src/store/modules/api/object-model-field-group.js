@@ -93,6 +93,10 @@ const actions = {
      */
     deleteObjectPropertyGroup ({ commit, state, dispatch }, { objId, propertyId, groupId }) {
         return $http.delete(`delete/objectattgroupasst/object/${objId}/property/${propertyId}/group/${groupId}`)
+    },
+
+    updatePropertySort ({ commit }, { objId, propertyId, params, config }) {
+        return $http.post(`update/objectattr/index/${objId}/${propertyId}`, params, config)
     }
 }
 

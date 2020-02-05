@@ -1,11 +1,6 @@
 <template>
     <div class="category-wrapper">
-        <feature-tips
-            :feature-name="'category'"
-            :show-tips="showFeatureTips"
-            :desc="$t('服务分类功能提示')"
-            @close-tips="showFeatureTips = false">
-        </feature-tips>
+        <cmdb-tips class="mb10" tips-key="categoryTips">{{$t('服务分类功能提示')}}</cmdb-tips>
         <div class="category-list">
             <div class="category-item bgc-white" v-for="(mainCategory, index) in list" :key="index">
                 <div class="category-title" :style="{ 'background-color': mainCategory['editStatus'] ? '#f0f1f5' : '' }">
@@ -166,12 +161,10 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
-    import featureTips from '@/components/feature-tips/index'
+    import { mapActions } from 'vuex'
     import categoryInput from './children/category-input'
     export default {
         components: {
-            featureTips,
             categoryInput
         },
         data () {
@@ -183,7 +176,6 @@
                     content: this.$t('请先清空二级分类'),
                     placements: ['right']
                 },
-                showFeatureTips: false,
                 showAddMianCategory: false,
                 showAddChildCategory: false,
                 editMainStatus: null,
@@ -195,11 +187,7 @@
                 list: []
             }
         },
-        computed: {
-            ...mapGetters(['featureTipsParams'])
-        },
         created () {
-            this.showFeatureTips = this.featureTipsParams['category']
             this.getCategoryList()
         },
         methods: {
@@ -376,7 +364,7 @@
 
 <style lang="scss" scoped>
     .category-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
         .category-list {
             display: flex;
             flex-flow: row wrap;

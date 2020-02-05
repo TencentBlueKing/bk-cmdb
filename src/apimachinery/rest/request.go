@@ -92,6 +92,17 @@ func (r *Request) WithParams(params map[string]string) *Request {
 	return r
 }
 
+func (r *Request) WithParamsFromURL(u *url.URL) *Request {
+	if r.params == nil {
+		r.params = make(url.Values)
+	}
+	params := u.Query()
+	for paramName, value := range params {
+		r.params[paramName] = append(r.params[paramName], value...)
+	}
+	return r
+}
+
 func (r *Request) WithParam(paramName, value string) *Request {
 	if r.params == nil {
 		r.params = make(url.Values)
@@ -131,10 +142,10 @@ func (r *Request) WithTimeout(d time.Duration) *Request {
 
 func (r *Request) SubResourcef(subPath string, args ...interface{}) *Request {
 	r.subPathArgs = args
-	return r.SubResource(subPath)
+	return r.subResource(subPath)
 }
 
-func (r *Request) SubResource(subPath string) *Request {
+func (r *Request) subResource(subPath string) *Request {
 	subPath = strings.TrimLeft(subPath, "/")
 	r.subPath = subPath
 	return r
@@ -272,6 +283,8 @@ func (r *Request) Do() *Result {
 			if len(req.Header) == 0 {
 				req.Header = make(http.Header)
 			}
+			// 删除 Accept-Encoding 避免返回值被压缩
+			req.Header.Del("Accept-Encoding")
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
 
@@ -286,11 +299,9 @@ func (r *Request) Do() *Result {
 				// Which means that we can retry it. And so does the GET operation.
 				// While the other "write" operation can not simply retry it again, because they are not idempotent.
 
+				blog.Errorf("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
-					if r.peek {
-						blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
-					}
 					return result
 				}
 
@@ -315,8 +326,8 @@ func (r *Request) Do() *Result {
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s\nresponse status: %s, response body: %s, rid: %s",
-                time.Since(start).Nanoseconds() / int64(time.Millisecond), string(r.verb), url, r.body, resp.Status, body, rid)
+			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s, response status: %s, response body: %s, rid: %s",
+				time.Since(start).Nanoseconds()/int64(time.Millisecond), string(r.verb), url, r.body, resp.Status, body, rid)
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status

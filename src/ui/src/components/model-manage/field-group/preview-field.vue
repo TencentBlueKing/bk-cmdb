@@ -9,36 +9,39 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list">
-                            <li class="property-item"
-                                v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                                v-if="checkEditable(property)"
-                                :key="propertyIndex">
-                                <div class="property-name">
-                                    <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
-                                    <i class="property-name-tooltips icon-cc-tips"
-                                        v-if="property['placeholder']"
-                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
-                                    </i>
-                                </div>
-                                <div class="property-value clearfix">
-                                    <slot :name="property.bk_property_id">
-                                        <component class="form-component"
-                                            :is="`cmdb-form-${property['bk_property_type']}`"
-                                            :class="{ error: errors.has(property['bk_property_id']) }"
-                                            :disabled="checkDisabled(property)"
-                                            :options="property.option || []"
-                                            :data-vv-name="property['bk_property_id']"
-                                            :data-vv-as="property['bk_property_name']"
-                                            v-validate="getValidateRules(property)"
-                                            v-model.trim="values[property['bk_property_id']]">
-                                        </component>
-                                        <span class="form-error"
-                                            :title="errors.first(property['bk_property_id'])">
-                                            {{errors.first(property['bk_property_id'])}}
-                                        </span>
-                                    </slot>
-                                </div>
-                            </li>
+                            <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
+                                <li class="property-item"
+                                    v-if="checkEditable(property)"
+                                    :key="propertyIndex">
+                                    <div class="property-name">
+                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        <i class="property-name-tooltips icon-cc-tips"
+                                            v-if="property['placeholder']"
+                                            v-bk-tooltips="htmlEncode(property['placeholder'])">
+                                        </i>
+                                    </div>
+                                    <div class="property-value clearfix">
+                                        <slot :name="property.bk_property_id">
+                                            <component class="form-component"
+                                                :is="`cmdb-form-${property['bk_property_type']}`"
+                                                :class="{ error: errors.has(property['bk_property_id']) }"
+                                                :unit="property['unit']"
+                                                :row="2"
+                                                :disabled="checkDisabled(property)"
+                                                :options="property.option || []"
+                                                :data-vv-name="property['bk_property_id']"
+                                                :data-vv-as="property['bk_property_name']"
+                                                v-validate="getValidateRules(property)"
+                                                v-model.trim="values[property['bk_property_id']]">
+                                            </component>
+                                            <span class="form-error"
+                                                :title="errors.first(property['bk_property_id'])">
+                                                {{errors.first(property['bk_property_id'])}}
+                                            </span>
+                                        </slot>
+                                    </div>
+                                </li>
+                            </template>
                         </ul>
                     </cmdb-collapse>
                 </div>
@@ -110,11 +113,8 @@
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
-                this.values = this.$tools.getInstFormValues(this.properties, this.inst)
-                const timer = setTimeout(() => {
-                    this.refrenceValues = this.$tools.clone(this.values)
-                    clearTimeout(timer)
-                })
+                this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
+                this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
                 const availabelProperties = properties.filter(property => {
@@ -141,6 +141,10 @@
                 temp = null
                 return output
             },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             getValidateRules (property) {
                 return this.$tools.getValidateRules(property)
             },
@@ -156,42 +160,42 @@
 </script>
 
 <style lang="scss" scoped>
-    .form-layout{
+    .form-layout {
         height: 100%;
         @include scrollbar-y;
     }
-    .form-groups{
+    .form-groups {
         padding: 0 20px 20px;
     }
-    .property-group{
+    .property-group {
         padding: 7px 0 10px 0;
-        &:first-child{
+        &:first-child {
             padding: 28px 0 10px 0;
         }
     }
-    .group-name{
+    .group-name {
         font-size: 14px;
         line-height: 14px;
         color: #333948;
         overflow: visible;
     }
-    .property-list{
+    .property-list {
         padding: 4px 0;
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
-        .property-item{
+        .property-item {
             flex: 0 0 48%;
             margin: 8px 0 0;
             font-size: 12px;
-            .property-name{
+            .property-name {
                 display: block;
                 margin: 6px 0 9px;
                 color: $cmdbTextColor;
                 line-height: 16px;
                 font-size: 0;
             }
-            .property-name-text{
+            .property-name-text {
                 position: relative;
                 display: inline-block;
                 max-width: calc(100% - 20px);
@@ -199,7 +203,7 @@
                 vertical-align: middle;
                 font-size: 12px;
                 @include ellipsis;
-                &.required:after{
+                &.required:after {
                     position: absolute;
                     left: 100%;
                     top: 0;
@@ -208,7 +212,7 @@
                     color: #ff5656;
                 }
             }
-            .property-name-tooltips{
+            .property-name-tooltips {
                 display: inline-block;
                 vertical-align: middle;
                 width: 16px;
@@ -216,11 +220,12 @@
                 font-size: 16px;
                 color: #c3cdd7;
             }
-            .property-value{
-                height: 36px;
-                line-height: 36px;
-                font-size: 12px;
+            .property-value {
+                font-size: 0;
                 position: relative;
+                .form-component {
+                    font-size: 14px;
+                }
             }
         }
     }

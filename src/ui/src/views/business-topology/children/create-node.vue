@@ -17,6 +17,7 @@
                 </label>
                 <component v-if="!['longchar'].includes(property['bk_property_type'])" :is="`cmdb-form-${property['bk_property_type']}`"
                     style="display: block;"
+                    :unit="property['unit']"
                     :data-vv-name="property['bk_property_id']"
                     :data-vv-as="property['bk_property_name']"
                     :options="property.option || []"

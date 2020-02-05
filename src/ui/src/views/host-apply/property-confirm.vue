@@ -1,15 +1,19 @@
 <template>
     <div class="host-apply-confirm">
         <div class="caption">
-            <div class="title">请确认以下主机应用信息：</div>
+            <div class="title">{{$t('请确认以下主机应用信息')}}</div>
             <div class="stat">
                 <span class="conflict-item">
                     <span v-bk-tooltips="{ content: $t('当一台主机同属多个模块时，且模块配置了不同的属性'), width: 185 }">
                         <i class="bk-cc-icon icon-cc-tips"></i>
                     </span>
-                    属性冲突<em class="conflict-num">{{conflictNum}}</em>台
+                    <i18n path="属性冲突N台">
+                        <em place="num" class="conflict-num">{{conflictNum}}</em>
+                    </i18n>
                 </span>
-                <span>总检测<em class="check-num">{{table.total}}</em>台</span>
+                <i18n path="总检测N台">
+                    <em place="num" class="check-num">{{table.total}}</em>
+                </i18n>
             </div>
         </div>
         <property-confirm-table
@@ -20,17 +24,26 @@
         </property-confirm-table>
         <div :class="['bottom-actionbar', { 'is-sticky': hasScrollbar }]">
             <div class="actionbar-inner">
-                <bk-button theme="default" @click="handlePrevStep">上一步</bk-button>
-                <bk-button theme="primary" :disabled="applyButtonDisabled" @click="handleApply">保存并应用</bk-button>
-                <bk-button theme="default" @click="handleCancel">取消</bk-button>
+                <bk-button theme="default" @click="handlePrevStep">{{$t('上一步')}}</bk-button>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                    <bk-button
+                        theme="primary"
+                        slot-scope="{ disabled }"
+                        :disabled="applyButtonDisabled || disabled"
+                        @click="handleApply"
+                    >
+                        {{$t('保存并应用')}}
+                    </bk-button>
+                </cmdb-auth>
+                <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
             </div>
         </div>
         <leave-confirm
             v-bind="leaveConfirmConfig"
-            title="是否放弃？"
-            content="启用步骤未完成，是否放弃当前配置"
-            ok-text="留在当前页"
-            cancel-text="确认放弃"
+            :title="$t('是否放弃')"
+            :content="$t('启用步骤未完成，是否放弃当前配置')"
+            :ok-text="$t('留在当前页')"
+            :cancel-text="$t('确认放弃')"
         >
         </leave-confirm>
         <apply-status-modal
@@ -47,9 +60,14 @@
 <script>
     import { mapGetters, mapState, mapActions } from 'vuex'
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
-    import propertyConfirmTable from './children/property-confirm-table'
+    import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
     import applyStatusModal from './children/apply-status'
-    import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_HOST_APPLY,
+        MENU_BUSINESS_HOST_APPLY_EDIT,
+        MENU_BUSINESS_HOST_APPLY_FAILED
+    } from '@/dictionary/menu-symbol'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         components: {
@@ -88,7 +106,7 @@
             removeResizeListener(this.$refs.propertyConfirmTable.$el, this.resizeHandler)
         },
         beforeRouteLeave (to, from, next) {
-            if (to.name !== 'hostApplyEdit') {
+            if (to.name !== MENU_BUSINESS_HOST_APPLY_EDIT) {
                 this.$store.commit('hostApply/clearRuleDraft')
             }
             next()
@@ -131,14 +149,6 @@
             setBreadcrumbs () {
                 const title = this.isBatch ? '批量应用属性' : '应用属性'
                 this.$store.commit('setTitle', this.$t(title))
-                this.$store.commit('setBreadcrumbs', [{
-                    label: this.$t('主机属性自动应用'),
-                    route: {
-                        name: MENU_BUSINESS_HOST_APPLY
-                    }
-                }, {
-                    label: this.$t(title)
-                }])
             },
             goBack () {
                 this.$store.commit('hostApply/clearRuleDraft')
@@ -195,7 +205,7 @@
                 } else {
                     this.$bkInfo({
                         title: this.$t('确认应用'),
-                        subTitle: this.$t('您还有无法自动应用的主机属性需确认，是要保留主机原有属性值不做修改吗？'),
+                        subTitle: this.$t('您还有无法自动应用的主机属性需确认'),
                         confirmFn: () => {
                             this.saveAndApply()
                         }
@@ -213,13 +223,19 @@
                 this.goBack()
             },
             handleViewHost () {
+                const query = {}
+                if (!this.isBatch) {
+                    query.node = `module-${this.propertyConfig.bk_module_ids[0]}`
+                }
                 this.$router.push({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query
                 })
             },
             handleViewFailed () {
                 this.$router.push({
-                    name: 'hostApplyFailed'
+                    name: MENU_BUSINESS_HOST_APPLY_FAILED,
+                    query: this.$route.query
                 })
             }
         }
@@ -228,7 +244,7 @@
 
 <style lang="scss" scoped>
     .host-apply-confirm {
-        padding: 0 20px;
+        padding: 15px 20px 0;
 
         .caption {
             display: flex;
@@ -253,7 +269,8 @@
                 .conflict-num,
                 .check-num {
                     font-style: normal;
-                    font-weight:bold;
+                    font-weight: bold;
+                    margin: 0 .2em;
                 }
                 .conflict-num {
                     color: #ff5656;
@@ -275,6 +292,7 @@
         .actionbar-inner {
             padding: 20px 0 0 0;
             .bk-button {
+                margin-right: 4px;
                 min-width: 86px;
             }
         }

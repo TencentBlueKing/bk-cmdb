@@ -133,7 +133,7 @@
     
     "bk_firewall_property_bk_asset_id":"asset id",
     "bk_firewall_property_bk_sn":"SN",
-  "bk_firewall_property_bk_inst_name": "name",
+    "bk_firewall_property_bk_inst_name": "name",
     "bk_firewall_property_bk_func":"purpose",
     "bk_firewall_property_bk_vendor":"vendor",
     "bk_firewall_property_bk_model":"model",
@@ -142,6 +142,6 @@
     "bk_firewall_property_bk_os_detail":"os detail",
     "bk_firewall_property_bk_detail":"detail",
     "bk_firewall_property_bk_biz_status":"business status",
-  
+
     "": ""
 }

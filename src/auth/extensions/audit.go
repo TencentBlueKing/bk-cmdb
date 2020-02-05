@@ -62,7 +62,7 @@ func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, hea
 			blog.Errorf("parse audit category simplify failed, category: %+v, err: %+v, rid: %s", category, err, rid)
 			continue
 		}
-		if _, exist := modelIDFound[category.BKOpTargetField]; exist == false {
+		if _, exist := modelIDFound[category.BKOpTargetField]; !exist {
 			categories = append(categories, *category)
 			modelIDFound[category.BKOpTargetField] = true
 		}
@@ -110,7 +110,7 @@ func (am *AuthManager) MakeResourcesByAuditCategories(ctx context.Context, heade
 }
 
 func (am *AuthManager) RegisterAuditCategories(ctx context.Context, header http.Header, categories ...AuditCategorySimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -188,7 +188,7 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 	cond = make([]mapstr.MapStr, 0)
 
 	// extract authorization on any business
-	if _, ok := authorizedBusinessModelMap[0]; ok == true {
+	if _, ok := authorizedBusinessModelMap[0]; ok {
 		if len(authorizedBusinessModelMap[0]) > 0 {
 			hasAuthorization = true
 			item := condition.CreateCondition()
@@ -214,7 +214,7 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 }
 
 func (am *AuthManager) AuthorizeAuditRead(ctx context.Context, header http.Header, businessID int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -264,8 +264,8 @@ func (am *AuthManager) GenAuthorizeAuditReadNoPermissionsResponse(ctx context.Co
 			}},
 		}
 	}
-    p.ResourceType = p.Resources[0][0].ResourceType
-    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
 }

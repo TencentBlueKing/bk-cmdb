@@ -235,6 +235,8 @@ func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys 
 				valData[field.PropertyID] = nil
 			case common.FieldTypeUser:
 				valData[field.PropertyID] = nil
+			case common.FieldTypeOrganization:
+				valData[field.PropertyID] = nil
 			case common.FieldTypeTimeZone:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeBool:

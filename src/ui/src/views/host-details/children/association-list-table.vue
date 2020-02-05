@@ -24,12 +24,13 @@
         </div>
         <bk-table class="association-table"
             v-show="expanded"
-            :data="flattenList"
+            :data="list"
             :max-height="462">
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
@@ -114,9 +115,6 @@
                 }
                 return this.$authResources({ type: this.$OPERATION.U_HOST })
             },
-            flattenList () {
-                return this.$tools.flattenList(this.properties, this.list)
-            },
             hostId () {
                 return parseInt(this.$route.params.id)
             },
@@ -176,7 +174,8 @@
                 const header = headerProperties.map(property => {
                     return {
                         id: property.bk_property_id,
-                        name: property.bk_property_name
+                        name: this.$tools.getHeaderPropertyName(property),
+                        property
                     }
                 })
                 return header

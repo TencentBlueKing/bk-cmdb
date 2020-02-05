@@ -51,8 +51,7 @@ func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header ht
 			common.BKIsPre,
 			common.BKClassificationIDField,
 		},
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
-		SortArr:   nil,
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: cond,
 	}
 	models, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, query)
@@ -132,7 +131,7 @@ func (am *AuthManager) ExtractBusinessIDFromObject(object metadata.Object) (int6
 }
 
 func (am *AuthManager) ExtractBusinessIDFromObjects(objects ...metadata.Object) (map[int64]int64, error) {
-	objID2BizIDMap := make(map[int64]int64, 0)
+	objID2BizIDMap := make(map[int64]int64)
 	for _, object := range objects {
 		bizID, err := am.ExtractBusinessIDFromObject(object)
 		if err != nil {
@@ -256,7 +255,7 @@ func (am *AuthManager) MakeGlobalModelAsBizResources(ctx context.Context, header
 // }
 
 func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -273,7 +272,7 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 }
 
 func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -292,7 +291,7 @@ func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, o
 }
 
 func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.Header, businessID int64, objects ...metadata.Object) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -310,7 +309,7 @@ func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.
 	return nil
 }
 func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, header http.Header, businessID int64, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -328,7 +327,7 @@ func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, head
 }
 
 func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -347,7 +346,7 @@ func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) RegisterMainlineObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -355,7 +354,7 @@ func (am *AuthManager) RegisterMainlineObject(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterMainlineModelByObjectID(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -370,7 +369,7 @@ func (am *AuthManager) DeregisterMainlineModelByObjectID(ctx context.Context, he
 }
 
 func (am *AuthManager) MakeResourcesByObjectIDs(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) ([]meta.ResourceAttribute, error) {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil, nil
 	}
 

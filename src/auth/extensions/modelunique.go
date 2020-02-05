@@ -14,6 +14,7 @@ package extensions
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -34,8 +35,8 @@ func (am *AuthManager) collectUniqueByUniqueIDs(ctx context.Context, header http
 
 	// get model by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(uniqueIDs)
-	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjUnique, queryCond)
+	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
+	resp, err := am.clientSet.CoreService().Model().ReadModelAttrUnique(ctx, header, queryCond)
 	// resp, err := am.clientSet.CoreService().Model().ReadModelAttrUnique(ctx, header, queryCond)
 	if err != nil {
 		return nil, fmt.Errorf("get model unique by id: %+v failed, err: %+v", uniqueIDs, err)
@@ -50,12 +51,17 @@ func (am *AuthManager) collectUniqueByUniqueIDs(ctx context.Context, header http
 	uniques := make([]ModelUniqueSimplify, 0)
 	for _, item := range resp.Data.Info {
 		unique := ModelUniqueSimplify{}
-		u, err := unique.Parse(item)
+		data, err := json.Marshal(item)
 		if err != nil {
-			blog.Errorf("collectUniqueByUniqueIDs %+v failed, parse unique %+v failed, err: %+v, rid: %s", uniqueIDs, item, err, rid)
-			return nil, fmt.Errorf("parse unique from db data failed, err: %+v", err)
+			blog.ErrorJSON("get model unique by id %s failed, parse unique %s failed, err: %s, rid: %s", uniqueIDs, item, err, rid)
+			return nil, fmt.Errorf("get model unique marshel json %+v failed, err: %+v", item, err)
 		}
-		uniques = append(uniques, *u)
+		err = json.Unmarshal(data, &unique)
+		if err != nil {
+			blog.ErrorJSON("get model unique by id %s failed, parse unique %s failed, err: %s, rid: %s", uniqueIDs, string(data), err, rid)
+			return nil, fmt.Errorf("get user api unmarshel json %s failed, err: %+v", string(data), err)
+		}
+		uniques = append(uniques, unique)
 	}
 	blog.V(5).Infof("collectUniqueByUniqueIDs result: %+v", uniques)
 	return uniques, nil
@@ -163,14 +169,14 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniques) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -183,14 +189,14 @@ func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniques) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -203,14 +209,14 @@ func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) DeregisterModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniqueIDs) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -235,14 +241,14 @@ func (am *AuthManager) DeregisterModelUniqueByID(ctx context.Context, header htt
 // }
 
 func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniques) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -255,14 +261,14 @@ func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header h
 }
 
 func (am *AuthManager) UpdateRegisteredModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniqueIDs) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 
@@ -376,14 +382,14 @@ func (am *AuthManager) UpdateRegisteredModelUniqueByID(ctx context.Context, head
 // }
 
 func (am *AuthManager) RegisterModuleUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
 	if len(uniqueIDs) == 0 {
 		return nil
 	}
-	if am.RegisterModelUniqueEnabled == false {
+	if !am.RegisterModelUniqueEnabled {
 		return nil
 	}
 

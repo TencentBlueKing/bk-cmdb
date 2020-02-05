@@ -257,6 +257,57 @@ type EsbUserListResponse struct {
 	Data            []UserInfo `json:"data"`
 }
 
+type EsbListUserResponse struct {
+	EsbBaseResponse `json:",inline"`
+	Data            []ListUserItem `json:"data"`
+}
+
+type ListUserItem struct {
+	ID          int64  `json:"id"`
+	Username    string `json:"username"`
+	DisplayName string `json:"display_name"`
+}
+
+type EsbDepartmentResponse struct {
+	EsbBaseResponse `json:",inline"`
+	Data            DepartmentData `json:"data"`
+}
+
+type DepartmentData struct {
+	Count   int64            `json:"count"`
+	Results []DepartmentItem `json:"results"`
+}
+
+type DepartmentItem struct {
+	ID          int64  `json:"id"`
+	Parent      int64  `json:"parent"`
+	Name        string `json:"name"`
+	FullName    string `json:"full_name"`
+	Level       int    `json:"level"`
+	HasChildren bool   `json:"has_children"`
+	Ancestors []Ancestor `json:"ancestors"`
+}
+
+type Ancestor struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+}
+
+type EsbDepartmentProfileResponse struct {
+	EsbBaseResponse `json:",inline"`
+	Data            DepartmentProfileData `json:"data"`
+}
+
+type DepartmentProfileData struct {
+	Count   int64            `json:"count"`
+	Results []DepartmentProfileItem `json:"results"`
+}
+
+type DepartmentProfileItem struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"username"`
+}
+
 type EsbBaseResponse struct {
 	Result       bool   `json:"result"`
 	Code         int    `json:"code"`

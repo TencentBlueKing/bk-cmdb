@@ -8,8 +8,8 @@
                     <cmdb-collapse
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
-                        <ul class="property-list clearfix">
-                            <li class="property-item fl"
+                        <ul class="property-list">
+                            <li class="property-item"
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
                                 v-if="!uneditableProperties.includes(property.bk_property_id)"
                                 :key="propertyIndex">
@@ -33,9 +33,11 @@
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
                                         :unit="property['unit']"
+                                        :row="2"
                                         :disabled="!editable[property['bk_property_id']]"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
+                                        :auto-select="false"
                                         :placeholder="getPlaceholder(property)"
                                         v-validate="getValidateRules(property)"
                                         v-model.trim="values[property['bk_property_id']]">
@@ -163,7 +165,7 @@
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
-                this.values = this.$tools.getInstFormValues(this.properties, {})
+                this.values = this.$tools.getInstFormValues(this.properties, {}, false)
                 this.refrenceValues = this.$tools.clone(this.values)
             },
             initEditableStatus () {
@@ -202,7 +204,7 @@
                         multipleValues[propertyId] = this.values[propertyId]
                     }
                 }
-                return multipleValues
+                return this.$tools.formatValues(multipleValues, this.properties)
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
@@ -249,11 +251,13 @@
     }
     .property-list{
         padding: 4px 0;
+        display: flex;
+        flex-wrap: wrap;
         .property-item{
-            width: 50%;
             margin: 12px 0 0;
             padding: 0 54px 0 0;
             font-size: 12px;
+            flex: 0 0 50%;
             .property-name{
                 display: block;
                 margin: 6px 0 10px;
@@ -290,8 +294,6 @@
                 color: #c3cdd7;
             }
             .property-value{
-                height: 32px;
-                line-height: 32px;
                 font-size: 0;
                 position: relative;
                 /deep/ .control-append-group {

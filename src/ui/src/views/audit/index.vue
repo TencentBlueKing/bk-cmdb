@@ -16,11 +16,11 @@
             <div class="group-content">
                 <span class="title-name" title="IP">IP</span>
                 <div class="selector-content">
-                    <bk-input class="cmdb-form-input" type="text"
-                        font-size="medium"
-                        :placeholder="$t('使用逗号分隔')"
+                    <cmdb-search-input
+                        class="ip-input"
+                        :placeholder="$t('使用换行分隔')"
                         v-model.trim="filter.bkIP">
-                    </bk-input>
+                    </cmdb-search-input>
                 </div>
             </div>
             <div class="group-content">
@@ -73,7 +73,7 @@
             v-bkloading="{ isLoading: $loading('getOperationLog') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 190"
+            :max-height="$APP.height - 200"
             :row-style="{ cursor: 'pointer' }"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
@@ -246,7 +246,7 @@
                 this.setParams(params.condition, 'op_target', this.filter.classify)
                 if (this.filter.bkIP) { // 将IP分隔成查询数组
                     const ipArray = []
-                    this.filter.bkIP.split(',').map((ip, index) => {
+                    this.filter.bkIP.split('\n').map((ip, index) => {
                         if (ip) {
                             ipArray.push(ip.trim())
                         }
@@ -273,7 +273,7 @@
             }
         },
         created () {
-            this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+            this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name')
         },
         mounted () {
             this.initDate()
@@ -351,7 +351,7 @@
 
 <style lang="scss" scoped>
     .audit-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .title-content{
         padding: 0 0 14px 0;
@@ -376,6 +376,9 @@
                 width: calc(100% - 40px);
                 .bk-select {
                     width: 100%;
+                }
+                .ip-input {
+                    height: 32px;
                 }
             }
             .search-btn{

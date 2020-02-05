@@ -4,7 +4,7 @@
 
 * ZooKeeper >= 3.4.11
 * Redis   >= 3.2.11
-* MongoDB >= 2.8.0
+* MongoDB >= 3.6.0
 * Elasticsearch >= 5.0.0 & < 7 (用于全文检索功能，推荐使用5.x的版本)
 * Mongo-connector >= 2.5.0 (用于全文检索功能，推荐3.1.1)
 
@@ -51,7 +51,7 @@
 
 请参考官方资料 [MongoDB](https://docs.mongodb.com/manual/installation/)
 
-推荐版本下载：[MongoDB 2.8.0](http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel70-2.8.0-rc5.tgz?_ga=2.109966917.1194957577.1522583108-162706957.1522583108)
+推荐版本下载：[MongoDB 3.6.0](http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel70-3.6.0-rc5.tgz?_ga=2.109966917.1194957577.1522583108-162706957.1522583108)
 
 ### 4. Release包下载
 
@@ -276,6 +276,7 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 |--auth_app_code      | cmdb项目在蓝鲸权限中心的应用编码 | auth_enabled 为真时必填 | bk_cmdb |
 |--auth_app_secret    | cmdb项目在蓝鲸权限中心的应用密钥 | auth_enabled 为真时必填 | xxxxxxx |
 |--log_level          | 日志级别0-9, 9日志最详细 | 否 | 3  |
+|--register_ip        | 进程注册到zookeeper上的IP地址，可以是域名 |  否 | 无 |
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 
@@ -303,7 +304,8 @@ python init.py  \
   --auth_app_secret    xxxxxxx \
   --full_text_search   off \
   --es_url             http://127.0.0.1:9200 \
-  --log_level          3
+  --log_level          3 \
+  --register_ip         cmdb.domain.com
 ```
 
 

@@ -14,14 +14,20 @@ package types
 
 import (
 	"fmt"
+	"os"
+
+	"configcenter/src/common/core/cc/config"
+	"configcenter/src/common/version"
+
+	"github.com/rs/xid"
 )
 
 // zk path
 const (
-	CC_SERV_BASEPATH      = "/cc/services/endpoints"
-	CC_SERVCONF_BASEPATH  = "/cc/services/config"
-	CC_SERVERROR_BASEPATH = "/cc/services/errors"
-	CC_SERVLANG_BASEPATH  = "/cc/services/language"
+	CC_SERV_BASEPATH       = "/cc/services/endpoints"
+	CC_SERVCONF_BASEPATH   = "/cc/services/config"
+	CC_SERVERROR_BASEPATH  = "/cc/services/errors"
+	CC_SERVLANG_BASEPATH   = "/cc/services/language"
 	CC_SERVNOTICE_BASEPATH = "/cc/services/notice"
 
 	CC_DISCOVERY_PREFIX = "cc_"
@@ -72,12 +78,51 @@ const (
 
 // ServerInfo define base server information
 type ServerInfo struct {
-	IP       string `json:"ip"`
-	Port     uint   `json:"port"`
-	HostName string `json:"hostname"`
-	Scheme   string `json:"scheme"`
-	Version  string `json:"version"`
-	Pid      int    `json:"pid"`
+	IP         string `json:"ip"`
+	Port       uint   `json:"port"`
+	RegisterIP string `json:"registerip"`
+	HostName   string `json:"hostname"`
+	Scheme     string `json:"scheme"`
+	Version    string `json:"version"`
+	Pid        int    `json:"pid"`
+	// UUID is used to distinguish which service is master in zookeeper
+	UUID       string `json:"uuid"`
+}
+
+// NewServerInfo new a ServerInfo object
+func NewServerInfo(conf *config.CCAPIConfig) (*ServerInfo, error) {
+	ip, err := conf.GetAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := conf.GetPort()
+	if err != nil {
+		return nil, err
+	}
+
+	registerIP := conf.RegisterIP
+	// if no registerIP is set, default to be the ip
+	if registerIP == "" {
+		registerIP = ip
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
+	info := &ServerInfo{
+		IP:         ip,
+		Port:       port,
+		RegisterIP: registerIP,
+		HostName:   hostname,
+		Scheme:     "http",
+		Version:    version.GetVersion(),
+		Pid:        os.Getpid(),
+		UUID:       xid.New().String(),
+	}
+	return info, nil
 }
 
 // APIServerServInfo apiserver informaiton
@@ -146,11 +191,11 @@ type EventServInfo struct {
 }
 
 // Address convert struct to host address
-func (s *ServerInfo) Address() string {
+func (s *ServerInfo) RegisterAddress() string {
 	if s == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.IP, s.Port)
+	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.RegisterIP, s.Port)
 }
 
 func (s *ServerInfo) Instance() string {

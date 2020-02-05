@@ -1,11 +1,11 @@
 <template>
     <div class="create-node-layout">
-        <h2 class="node-create-title">{{$t('新增集群')}}</h2>
+        <h2 class="node-create-title">{{$t('新建集群')}}</h2>
         <div class="node-create-path" :title="topoPath">{{$t('添加节点已选择')}}：{{topoPath}}</div>
         <div class="node-create-form">
             <bk-radio-group class="form-item mb20" v-model="withTemplate">
-                <bk-radio :value="true">{{$t('从集群模板创建')}}</bk-radio>
-                <bk-radio :value="false">{{$t('直接创建')}}</bk-radio>
+                <bk-radio :value="true">{{$t('从模板新建')}}</bk-radio>
+                <bk-radio :value="false">{{$t('直接新建')}}</bk-radio>
             </bk-radio-group>
             <div class="form-item" v-if="withTemplate">
                 <label>{{$t('集群模板')}}</label>
@@ -29,11 +29,14 @@
                 <span class="form-error" v-if="errors.has('setTemplate')">{{errors.first('setTemplate')}}</span>
             </div>
             <div class="form-item">
-                <label>{{$t('集群名称')}}</label>
+                <label>
+                    {{$t('集群名称')}}
+                    <font color="red">*</font>
+                </label>
                 <bk-input class="form-textarea"
                     type="textarea"
                     data-vv-name="setName"
-                    v-validate="'required|singlechar|emptySetName|setNameMap|length:256'"
+                    v-validate="'required|longchar|emptySetName|setNameMap|setNameLen'"
                     v-model="setName"
                     :rows="rows"
                     :placeholder="$t('集群多个创建提示')"

@@ -584,7 +584,7 @@
                         this.getProperties(),
                         this.getPropertyGroups()
                     ])
-                    this.details.inst = this.$tools.flattenItem(properties, inst)
+                    this.details.inst = inst
                     this.details.properties = properties
                     this.details.propertyGroups = propertyGroups
                     this.details.show = true

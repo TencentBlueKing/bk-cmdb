@@ -1,26 +1,10 @@
 <template>
     <div class="template-layout">
-        <cmdb-tips v-if="featureTips"
-            class="tips-layout"
-            :tips-style="{
-                overflow: 'unset',
-                fontSize: '12px',
-                height: 'auto',
-                minHeight: '32px',
-                lineHeight: 'normal'
-            }"
-            :icon-style="{
-                color: '#3a84ff',
-                fontSize: '16px',
-                lineHeight: 'normal'
-            }">
-            <div class="tips-main">
-                <i18n path="集群模板功能提示" class="tips-text">
-                    <a class="tips-link" href="javascript:void(0)" @click="handleGoBusinessTopo" place="topo">{{$t('业务拓扑')}}</a>
-                    <a class="tips-link" href="javascript:void(0)" @click="handleGoServiceTemplate" place="template">{{$t('服务模板')}}</a>
-                </i18n>
-                <i class="icon-cc-tips-close fr" @click="handleCloseTips"></i>
-            </div>
+        <cmdb-tips class="mb10" tips-key="showSetTips">
+            <i18n path="集群模板功能提示" class="tips-text">
+                <a class="tips-link" href="javascript:void(0)" @click="handleGoBusinessTopo" place="topo">{{$t('业务拓扑')}}</a>
+                <a class="tips-link" href="javascript:void(0)" @click="handleGoServiceTemplate" place="template">{{$t('服务模板')}}</a>
+            </i18n>
         </cmdb-tips>
         <div class="options clearfix">
             <div class="fl">
@@ -28,8 +12,7 @@
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         :disabled="disabled"
-                        @click="handleCreate"
-                    >
+                        @click="handleCreate">
                         {{$t('新建')}}
                     </bk-button>
                 </cmdb-auth>
@@ -40,7 +23,8 @@
                     clearable
                     right-icon="icon-search"
                     v-model="searchName"
-                    @enter="handleFilterTemplate">
+                    @enter="handleFilterTemplate"
+                    @clear="handleClearFilter">
                 </bk-input>
             </div>
         </div>
@@ -48,7 +32,12 @@
             :data="list"
             :row-style="{ cursor: 'pointer' }"
             @row-click="handleRowClick">
-            <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight"></bk-table-column>
+            <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight">
+                <div slot-scope="{ row }"
+                    :class="['template-name', { 'need-sync': row._need_sync_ }]">
+                    {{row.name}}
+                </div>
+            </bk-table-column>
             <bk-table-column :label="$t('应用数量')" prop="set_instance_count"></bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="modifier"></bk-table-column>
             <bk-table-column :label="$t('修改时间')" prop="last_time">
@@ -106,7 +95,6 @@
     import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
     export default {
         data () {
-            const showSetTips = window.localStorage.getItem('showSetTips')
             return {
                 list: [],
                 originList: [],
@@ -118,13 +106,17 @@
                             resource: this.$t('集群模板')
                         }
                     }
-                },
-                featureTips: showSetTips === null
+                }
             }
         },
         computed: {
             business () {
                 return this.$store.state.objectBiz.bizId
+            }
+        },
+        watch: {
+            originList () {
+                this.getSyncStatus()
             }
         },
         async created () {
@@ -141,10 +133,31 @@
                 })
                 const list = (data.info || []).map(item => ({
                     set_instance_count: item.set_instance_count,
-                    ...item.set_template
+                    ...item.set_template,
+                    _need_sync_: false
                 }))
                 this.list = list
                 this.originList = list
+            },
+            async getSyncStatus () {
+                try {
+                    if (this.originList.length) {
+                        const data = await this.$store.dispatch('setTemplate/getSetTemplateStatus', {
+                            bizId: this.business,
+                            params: {
+                                set_template_ids: this.originList.map(item => item.id)
+                            }
+                        })
+                        this.originList.map(item => {
+                            const syncStatus = data.find(status => status.set_template_id === item.id)
+                            if (syncStatus) {
+                                this.$set(item, '_need_sync_', syncStatus.need_sync)
+                            }
+                        })
+                    }
+                } catch (e) {
+                    console.error(e)
+                }
             },
             handleCreate () {
                 this.$router.push({
@@ -189,8 +202,11 @@
                 this.list = this.searchName
                     ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
                     : originList
-
-                this.table.stuff.type = 'search'
+                this.table.stuff.type = this.searchName ? 'search' : 'default'
+            },
+            handleClearFilter () {
+                this.list = this.originList
+                this.table.stuff.type = 'default'
             },
             handleSelectable (row) {
                 return !row.set_instance_count
@@ -217,10 +233,6 @@
                 this.$router.push({
                     name: MENU_BUSINESS_SERVICE_TEMPLATE
                 })
-            },
-            handleCloseTips () {
-                this.featureTips = false
-                window.localStorage.setItem('showSetTips', false)
             }
         }
     }
@@ -228,37 +240,12 @@
 
 <style lang="scss" scoped>
     .template-layout {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
-    .tips-layout {
-        padding: 6px 16px;
-        margin-bottom: 10px;
-        align-items: center;
-        /deep/ .tips-content {
-            width: 100%;
-            text-overflow: unset !important;
-            white-space: unset !important;
-        }
-    }
-    .tips-main {
-        display: flex;
-        align-items: center;
-        .tips-text {
-            flex: 1;
-        }
-        .icon-cc-tips-close {
-            font-size: 14px;
-            color: #979ba5;
-            cursor: pointer;
-            &:hover {
-                color: #7d8088;
-            }
-        }
-        .tips-link {
-            color: #3a84ff;
-            &:hover {
-                text-decoration: underline;
-            }
+    .tips-link {
+        color: #3a84ff;
+        &:hover {
+            text-decoration: underline;
         }
     }
     .options {
@@ -266,5 +253,24 @@
     }
     .template-table {
         margin-top: 16px;
+        .template-name {
+            position: relative;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 40px;
+            padding-right: 10px;
+            max-width: 100%;
+            @include ellipsis;
+            &.need-sync:after {
+                content: "";
+                position: absolute;
+                top: 10px;
+                right: 2px;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background-color: $dangerColor;
+            }
+        }
     }
 </style>

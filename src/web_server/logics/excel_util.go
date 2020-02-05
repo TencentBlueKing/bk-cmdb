@@ -93,15 +93,13 @@ func checkExcelHealer(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 // setExcelRowDataByIndex insert  map[string]interface{}  to excel row by index,
 // mapHeaderIndex:Correspondence between head and field
 // fields each field description,  field type, isrequire, validate role
-func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex int, fields []Property) []PropertyPrimaryVal {
+func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex int, fields map[string]Property) []PropertyPrimaryVal {
 
 	primaryKeyArr := make([]PropertyPrimaryVal, 0)
 
-	for index, property := range fields {
-		val, ok := rowMap[property.ID]
-		//}
-		//for id, val := range rowMap {
-		//	property, ok := fields[id]
+	// 非模型字段导出是没有field中没有ID 字段，因为导入的时候，第二行是作为Property
+	for id, property := range fields {
+		val, ok := rowMap[id]
 		if false == ok {
 			continue
 		}
@@ -116,7 +114,7 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 			continue
 		}
 
-		cell := sheet.Cell(rowIndex, index)
+		cell := sheet.Cell(rowIndex, property.ExcelColIndex)
 		//cell.NumFmt = "@"
 
 		switch property.PropertyType {
@@ -286,13 +284,6 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 // ProductExcelHeader Excel文件头部，
 func productExcelHealer(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-
-	type excelHeader struct {
-		first  string
-		second string
-		third  string
-	}
-
 	styleCell := getHeaderCellGeneralStyle()
 
 	for _, field := range fields {
@@ -301,6 +292,7 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
 		if true == skip || field.NotExport {
 			// 不需要用户输入的类型continue
+			sheet.Col(index).Hidden = true
 			continue
 		}
 		isRequire := ""
@@ -427,94 +419,4 @@ func getPrimaryKey(val interface{}) string {
 		return fmt.Sprintf("%v", val)
 
 	}
-}
-
-// ProductExcelHealer Excel文件头部，
-func productExcelHeader(ctx context.Context, fields []Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	styleCell := getHeaderCellGeneralStyle()
-
-	for index, field := range fields {
-		sheet.Col(index).Width = 18
-		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
-		if true == skip || field.NotExport {
-			// 不需要用户输入的类型continue
-			sheet.Col(index).Hidden = true
-			continue
-		}
-		isRequire := ""
-		if field.IsRequire {
-			// "(必填)"
-			isRequire = defLang.Language("web_excel_header_required")
-		}
-		if util.Contains(filter, field.ID) {
-			continue
-		}
-		cellName := sheet.Cell(0, index)
-		cellName.Value = field.Name + isRequire
-		cellName.SetStyle(getHeaderFirstRowCellStyle(field.IsRequire))
-
-		cellType := sheet.Cell(1, index)
-		cellType.Value = fieldTypeName
-		cellType.SetStyle(styleCell)
-
-		cellEnName := sheet.Cell(2, index)
-		cellEnName.Value = field.ID
-		cellEnName.SetStyle(styleCell)
-
-		switch field.PropertyType {
-		case common.FieldTypeInt:
-			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
-		case common.FieldTypeFloat:
-			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
-		case common.FieldTypeEnum:
-			option := field.Option
-			optionArr, ok := option.([]interface{})
-
-			if ok {
-				enumVals := getEnumNames(optionArr)
-				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-				if err := dd.SetDropList(enumVals); err != nil {
-					blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
-				}
-				sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
-
-			}
-			sheet.Col(index).SetType(xlsx.CellTypeString)
-
-		case common.FieldTypeBool:
-			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-			if err := dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse}); err != nil {
-				blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
-			}
-			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
-			sheet.Col(index).SetType(xlsx.CellTypeString)
-		default:
-			sheet.Col(index).SetType(xlsx.CellTypeString)
-		}
-
-	}
-
-}
-
-// SortByIsRequired 把bk_inst_id，bk_host_id放最前面，必填字段其次，其他字段最后
-func SortByIsRequired(fields map[string]Property) []Property {
-	isRequired := make([]Property, 0)
-	normalField := make([]Property, 0)
-	first := make([]Property, 0)
-	for _, field := range fields {
-		if field.IsRequire {
-			isRequired = append(isRequired, field)
-		} else if field.ID == common.BKInstIDField {
-			first = append(first, field)
-		} else if field.ID == common.BKHostIDField {
-			first = append(first, field)
-		} else {
-			normalField = append(normalField, field)
-		}
-	}
-	sortedFields := append(first, isRequired...)
-	sortedFields = append(sortedFields, normalField...)
-
-	return sortedFields
 }

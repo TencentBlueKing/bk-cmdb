@@ -15,7 +15,6 @@ package common
 // CC error number defined in this file
 // Errno name is composed of the following format CCErr[XXX]
 const (
-
 	// the system code
 
 	// CCSystemBusy the system is busy
@@ -201,21 +200,28 @@ const (
 	CCErrCommValExceedMaxFailed          = 1199073
 	CCErrCommGlobalCCErrorNotInitialized = 1199074
 
-	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI   = 1199075
-	CCErrTopoUpdateBuiltInCloudForbidden                     = 1199076
-	
-	// CCErrTopoModuleNotFoundError module [%s] does not exist in the business topology
-    CCErrCommTopoModuleNotFoundError = 1199078
-    // CCErrBizNotFoundError business [%s] does not exist
-    CCErrCommBizNotFoundError = 1199079
-    CCErrParseAttrOptionListFailed = 1199080
-    // one argument: maxValue
-    CCErrExceedMaxOperationRecordsAtOnce = 1199081
+	CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI = 1199075
+	CCErrTopoUpdateBuiltInCloudForbidden                   = 1199076
 
-	CCErrCommListAuthorizedResourceFromIAMFailed = 1199082
-    CCErrCommModifyFieldForbidden                            = 1199083
-    CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
-	CCErrCommUnexpectedFieldType   = 1199085
+	// CCErrTopoModuleNotFoundError module [%s] does not exist in the business topology
+	CCErrCommTopoModuleNotFoundError = 1199078
+	// CCErrBizNotFoundError business [%s] does not exist
+	CCErrCommBizNotFoundError      = 1199079
+	CCErrParseAttrOptionListFailed = 1199080
+	// one argument: maxValue
+	CCErrExceedMaxOperationRecordsAtOnce = 1199081
+
+	CCErrCommListAuthorizedResourceFromIAMFailed             = 1199082
+	CCErrCommModifyFieldForbidden                            = 1199083
+	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
+	CCErrCommUnexpectedFieldType                             = 1199085
+
+	CCErrCommGetBusinessIDByHostIDFailed = 1199086
+
+    // CCErrCommOPInProgressErr have the same task[%s] in progress
+    CCErrCommOPInProgressErr = 1199087
+    // CCErrCommRedisOPErr operate redis error.
+    CCErrCommRedisOPErr = 1199088
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -336,7 +342,7 @@ const (
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
 	CCErrTopoBizTopoLevelOverLimit = 1101035
-	// CCErrTopoInstHasBeenAssociation the mainline topo level over limit
+	// CCErrTopoInstHasBeenAssociation the instance has been associated
 	CCErrTopoInstHasBeenAssociation = 1101036
 	// it is forbidden to delete , that has some insts
 	CCErrTopoObjectHasSomeInstsForbiddenToDelete = 1101037
@@ -450,6 +456,8 @@ const (
 	CCErrorTopoForbiddenDeleteBuiltInSetModule                  = 1101098
 	CCErrorTopoModuleNameDuplicated                             = 1101099
 
+	CCErrorTopoPathParamPaserFailed                = 1101100
+	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -589,7 +597,8 @@ const (
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFailed      = 1109001
-	CCErrAuditTakeSnapshotFailed = 1109001
+	CCErrAuditTakeSnapshotFailed = 1109002
+	CCErrAuditSelectFailed       = 1109003
 
 	// host server
 	CCErrHostGetFail              = 1110001
@@ -622,16 +631,6 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
-
-	CCErrCloudSyncCreateFail        = 1110031
-	CCErrCloudHistoryCreateFail     = 1110032
-	CCErrCloudConfirmCreateFail     = 1110033
-	CCErrCloudGetConfirmFail        = 1110034
-	CCErrCloudAddConfirmHistoryFail = 1110035
-	CCErrCloudGetTaskFail           = 1110036
-	CCErrCloudGetConfirmHistoryFail = 1110037
-	CCErrCloudTaskNameAlreadyExist  = 1110038
-	CCErrCloudSyncStartFail         = 1110039
 
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFailed       = 1110040

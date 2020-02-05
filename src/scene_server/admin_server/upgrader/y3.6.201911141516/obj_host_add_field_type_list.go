@@ -13,11 +13,11 @@
 package y3_6_201911141516
 
 import (
-	"configcenter/src/common"
 	"context"
 	"fmt"
 	"time"
 
+	"configcenter/src/common"
 	com "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -50,7 +50,7 @@ type Attribute struct {
 }
 
 func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	attrID, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
+	attrID, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 
 	if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, hostListTypeField); err != nil {
-		return fmt.Errorf("upgrade y3_6_201911141516, bug insert host list type field failed, err: %v", err)
+		return fmt.Errorf("upgrade y3_6_201911141516, but insert host list type field failed, err: %v", err)
 	}
 
 	return nil

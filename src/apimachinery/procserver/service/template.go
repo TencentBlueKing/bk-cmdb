@@ -14,7 +14,7 @@ func (s *service) CreateServiceTemplate(ctx context.Context, h http.Header, data
 	err = s.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -28,7 +28,7 @@ func (s *service) DeleteServiceTemplate(ctx context.Context, h http.Header, data
 	err = s.client.Delete().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -42,7 +42,7 @@ func (s *service) SearchServiceTemplate(ctx context.Context, h http.Header, data
 	err = s.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -56,7 +56,7 @@ func (s *service) UpdateServiceTemplate(ctx context.Context, h http.Header, data
 	err = s.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -70,7 +70,7 @@ func (s *service) RemoveTemplateBindingOnModule(ctx context.Context, h http.Head
 	err = s.client.Delete().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

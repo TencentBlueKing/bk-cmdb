@@ -55,7 +55,7 @@
 	"1101033": "query business failed",
 	"1101034": "query module failed,%s",
 	"1101035": "Business topology level exceeds the limit",
-	"1101036": "the instance has been associated by [%s], coule not be delete or archived",
+	"1101036": "the instance [instance ID: %d] has been associated, could not be delete or archived",
 	"1101037": "the object [%s] has been instantiated and cannot be deleted",
 	"1101038": "the associations %s->%s already exist",
     "1101039": "the source association object does not exist",
@@ -119,6 +119,8 @@
     "1101097": "forbidden add/remove module on set initialized by set template",
     "1101098": "forbidden remove built in set or module",
     "1101099": "instance of a mainline model, which is not allowed to be operated by excel import",
-    
+
+	"1101100": "parse url params failed",
+	"1101101": "Query model attributes failed, please refresh the page",
     "": "" 
 }

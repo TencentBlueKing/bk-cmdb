@@ -32,7 +32,7 @@ export const PROCESS_BIND_MODULE = 'process.boundModuleToProcess'
 export const PROCESS_UNBIND_MODULE = 'process.unboundModelToProcess'
 export const PROCESS_SEARCH_MODULE = 'process.findBoundModuleProcess'
 
-// 服务拓扑
+// 业务拓扑
 export const C_TOPO = 'mainlineInstance.create'
 export const U_TOPO = 'mainlineInstance.update'
 export const D_TOPO = 'mainlineInstance.delete'
@@ -120,6 +120,9 @@ export const C_SET_TEMPLATE = 'setTemplate.create'
 export const U_SET_TEMPLATE = 'setTemplate.update'
 export const D_SET_TEMPLATE = 'setTemplate.delete'
 
+// 主机属性自动应用
+export const U_HOST_APPLY = 'hostApply.update'
+
 export const RESOURCE_TYPE_NAME = {
     modelClassification: i18n.t('模型分类'),
     model: i18n.t('模型'),
@@ -139,9 +142,10 @@ export const RESOURCE_TYPE_NAME = {
     processServiceCategory: i18n.t('服务分类'),
     processServiceTemplate: i18n.t('服务模板'),
     processServiceInstance: i18n.t('服务实例'),
-    mainlineInstance: i18n.t('服务拓扑'),
+    mainlineInstance: i18n.t('业务拓扑'),
     operationStatistic: i18n.t('运营统计'),
-    setTemplate: i18n.t('集群模板')
+    setTemplate: i18n.t('集群模板'),
+    hostApply: i18n.t('主机属性自动应用')
 }
 
 export const RESOURCE_ACTION_NAME = {

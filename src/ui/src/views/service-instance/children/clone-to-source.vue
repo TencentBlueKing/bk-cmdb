@@ -9,13 +9,14 @@
             </bk-button>
         </div>
         <bk-table class="source-table"
-            :data="flattenList"
+            :data="cloneProcesses"
             @selection-change="handleSelectChange">
             <bk-table-column type="selection" align="center" width="60" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name">
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
@@ -116,13 +117,11 @@
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
-                        name: property.bk_property_name
+                        name: this.$tools.getHeaderPropertyName(property),
+                        property
                     }
                 })
                 return header
-            },
-            flattenList () {
-                return this.$tools.flattenList(this.properties, this.cloneProcesses)
             },
             norepeatProperties () {
                 const unique = this.propertyUnique.find(unique => unique.must_check) || {}
@@ -231,7 +230,7 @@
                 this.processForm.instance = {}
                 this.processForm.show = true
                 this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance, false)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -246,10 +245,10 @@
                 this.getInstanceIpByHost(this.hostId)
                 this.processForm.type = 'single'
                 this.processForm.title = `${this.$t('编辑进程')}${item.bk_process_name}`
-                this.processForm.instance = this.cloneProcesses.find(target => target.bk_process_id === item.bk_process_id)
+                this.processForm.instance = item
                 this.processForm.show = true
                 this.$nextTick(() => {
-                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance)['bind_ip']
+                    this.bindIp = this.$tools.getInstFormValues(this.properties, this.processForm.instance, false)['bind_ip']
                     const { processForm } = this.$refs
                     this.processForm.unwatch = processForm.$watch(() => {
                         return processForm.values.bk_func_name
@@ -354,7 +353,8 @@
                 this.$router.replace({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        node: 'module-' + this.$route.params.moduleId
+                        node: 'module-' + this.$route.params.moduleId,
+                        tab: 'serviceInstance'
                     }
                 })
             }

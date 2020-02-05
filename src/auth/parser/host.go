@@ -10,6 +10,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
@@ -28,8 +29,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		hostFavorite().
 		cloudResourceSync().
 		hostSnapshot().
-		findObjectIdentifier()
-
+		findObjectIdentifier().
+		HostApply()
 	return ps
 }
 
@@ -206,9 +207,10 @@ func (ps *parseStream) userAPI() *parseStream {
 }
 
 var (
-	saveUserCustomPattern       = `/api/v3/usercustom`
-	searchUserCustomPattern     = `/api/v3/usercustom/user/search`
-	getUserDefaultCustomPattern = `/api/v3/usercustom/default/search`
+	saveUserCustomPattern         = `/api/v3/usercustom`
+	searchUserCustomPattern       = `/api/v3/usercustom/user/search`
+	getModelDefaultCustomPattern  = `/api/v3/usercustom/default/model`
+	saveModelDefaultCustomPattern = regexp.MustCompile(`^/api/v3/usercustom/default/model/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) userCustom() *parseStream {
@@ -243,14 +245,53 @@ func (ps *parseStream) userCustom() *parseStream {
 
 	}
 
-	// delete host user custom query operation.
-	if ps.hitPattern(getUserDefaultCustomPattern, http.MethodPost) {
+	// get default model list header
+	if ps.hitPattern(getModelDefaultCustomPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.UserCustom,
 					Action: meta.Find,
 				},
+			},
+		}
+		return ps
+
+	}
+
+	// set default  model list header
+	if ps.hitRegexp(saveModelDefaultCustomPattern, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("search object instance, but got invalid url")
+			return ps
+		}
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.UserCustom,
+					Action: meta.Create,
+					Name:   ps.RequestCtx.Elements[5],
+				},
+			},
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelAttribute,
+					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -285,6 +326,9 @@ const (
 
 	// 特殊接口，给蓝鲸业务使用
 	hostInstallPattern = "/api/v3/host/install/bk"
+
+	// cc system user config
+	systemUserConfig = "/api/v3/system/config/user_config/blueking_modify"
 )
 
 var (
@@ -779,6 +823,18 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.InstallBK,
 					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(systemUserConfig, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.SystemConfig,
+					Action: meta.FindMany,
 				},
 			},
 		}

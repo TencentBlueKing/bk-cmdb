@@ -140,5 +140,5 @@ func (d *discover) TaskServer() Interface {
 
 // IsMaster check whether current is master
 func (d *discover) IsMaster() bool {
-	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().Address())
+	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().UUID)
 }

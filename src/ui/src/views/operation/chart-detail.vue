@@ -77,8 +77,9 @@
                             </span>
                         </div>
                         <div class="content-item">
-                            <label class="label-text">
+                            <label class="label-text" :style="{ marginRight: '47px' }">
                                 {{$t('统计维度')}}
+                                <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('模型中需包含枚举字段才可以作为维度统计')"></i>
                             </label>
                             <span class="cmdb-form-item">
                                 <bk-select v-model="chartData.field"
@@ -123,7 +124,7 @@
                             <span class="cmdb-radio-text">100%</span>
                         </label>
                     </div>
-                    <div class="content-item">
+                    <div class="content-item" v-if="chartData.chart_type !== 'pie' && chartData.report_type !== 'host_change_biz_chart'">
                         <label class="label-text-x">
                             {{$t('横轴坐标数量')}}
                             <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('图标可视区横轴坐标数量，建议不超过20个')"></i>
@@ -134,9 +135,9 @@
                                     v-validate="'required|number'" name="chartNumber"
                                     v-model="chartData.x_axis_count">
                                 <i class="bk-icon icon-angle-down" @click="calculate('down')"></i>
-                                <i class="bk-icon icon-angle-up" @click="calculate('up')" v-if="maxNum !== chartData.x_axis_count"></i>
-                                <bk-popover class="tool-tip" placement="right" :content="$t('已经超出可显示的最大数量')" v-if="maxNum <= chartData.x_axis_count">
-                                    <i class="bk-icon icon-angle-up" @click="calculate('up')"></i>
+                                <i class="bk-icon icon-angle-up" @click="calculate('up')" v-if="maxNum > chartData.x_axis_count"></i>
+                                <bk-popover class="tool-tip" placement="right" :content="$t('已经超出可显示的最大数量')" v-else>
+                                    <i class="bk-icon icon-angle-up"></i>
                                 </bk-popover>
                             </div>
                             <span class="form-error">{{errors.first('chartNumber')}}</span>
@@ -223,7 +224,7 @@
                 staList: [],
                 chartType: true,
                 showDia: true,
-                hostFilter: ['host', 'module', 'biz', 'set', 'process'],
+                hostFilter: ['host', 'module', 'biz', 'set', 'process', 'plat'],
                 editTitle: '',
                 maxNum: 0
             }
@@ -265,7 +266,7 @@
             else this.maxNum = 25
             this.initTitle()
             this.chartType = this.chartData.report_type === 'custom'
-            this.getDemList(this.chartData.bk_obj_id)
+            this.chartData.bk_obj_id && this.getDemList(this.chartData.bk_obj_id)
             if (this.chartType && this.chartData.bk_obj_id !== 'host') this.getStaList()
         },
         methods: {

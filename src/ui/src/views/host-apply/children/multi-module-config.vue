@@ -2,10 +2,18 @@
     <div class="multi-module-config">
         <div class="config-bd">
             <div class="config-item">
-                <div class="item-label">已选择 {{moduleIds.length}} 个模块：</div>
+                <div class="item-label">
+                    <i18n path="已选择N个模块：">
+                        <span place="count">{{moduleIds.length}}</span>
+                    </i18n>
+                </div>
                 <div class="item-content">
                     <div :class="['module-list', { 'show-more': showMore.isMoreModuleShowed }]" ref="moduleList">
-                        <div class="module-item" :title="getModulePath(id)" v-for="(id, index) in moduleIds" :key="index">
+                        <div
+                            v-for="(id, index) in moduleIds" :key="index"
+                            class="module-item"
+                            v-bk-tooltips="getModulePath(id)"
+                        >
                             <span class="module-icon">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
                             {{$parent.getModuleName(id)}}
                         </div>
@@ -14,7 +22,7 @@
                             :style="{ left: `${showMore.linkLeft}px` }"
                             v-show="showMore.showLink" @click="handleShowMore"
                         >
-                            {{showMore.isMoreModuleShowed ? '收起' : '展开更多'}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
+                            {{showMore.isMoreModuleShowed ? $t('收起') : $t('展开更多')}}<i class="bk-cc-icon icon-cc-arrow-down"></i>
                         </div>
                     </div>
                 </div>
@@ -24,9 +32,18 @@
                     {{$t(isDel ? '请勾选要删除的字段：' : '已配置的字段：')}}
                 </div>
                 <div class="item-content">
-                    <div class="choose-toolbar">
-                        <bk-button theme="default" icon="plus" @click="handleChooseField" v-if="!isDel">选择字段</bk-button>
-                        <span class="tips"><i class="bk-cc-icon icon-cc-tips"></i><span>此功能可以批量设置字段的自动应用，不需要批量变更的字段需点击“删除”从列表中移除</span></span>
+                    <div class="choose-toolbar" v-if="!isDel">
+                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                            <bk-button
+                                icon="plus"
+                                slot-scope="{ disabled }"
+                                :disabled="disabled"
+                                @click="handleChooseField"
+                            >
+                                {{$t('选择字段')}}
+                            </bk-button>
+                        </cmdb-auth>
+                        <span class="tips"><i class="bk-cc-icon icon-cc-tips"></i>{{$t('批量设置字段的自动应用功能提示')}}</span>
                     </div>
                     <div class="config-table" v-show="checkedPropertyIdList.length">
                         <property-config-table
@@ -46,9 +63,27 @@
             </div>
         </div>
         <div class="config-ft">
-            <bk-button theme="primary" :disabled="nextButtonDisabled" @click="handleNextStep" v-if="!isDel">下一步</bk-button>
-            <bk-button theme="primary" :disabled="delButtonDisabled" @click="handleDel" v-else>确定删除</bk-button>
-            <bk-button theme="default" @click="handleCancel">取消</bk-button>
+            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })" v-if="!isDel">
+                <bk-button
+                    theme="primary"
+                    slot-scope="{ disabled }"
+                    :disabled="nextButtonDisabled || disabled"
+                    @click="handleNextStep"
+                >
+                    {{$t('下一步')}}
+                </bk-button>
+            </cmdb-auth>
+            <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })" v-else>
+                <bk-button
+                    theme="primary"
+                    slot-scope="{ disabled }"
+                    :disabled="delButtonDisabled || disabled"
+                    @click="handleDel"
+                >
+                    {{$t('确定删除按钮')}}
+                </bk-button>
+            </cmdb-auth>
+            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
 
         <host-property-modal
@@ -58,10 +93,10 @@
         </host-property-modal>
         <leave-confirm
             v-bind="leaveConfirmConfig"
-            title="是否放弃？"
-            content="启用步骤未完成，是否放弃当前配置"
-            ok-text="留在当前页"
-            cancel-text="确认放弃"
+            :title="$t('是否放弃')"
+            :content="$t('启用步骤未完成，是否放弃当前配置')"
+            :ok-text="$t('留在当前页')"
+            :cancel-text="$t('确认放弃')"
         >
         </leave-confirm>
     </div>
@@ -71,7 +106,10 @@
     import leaveConfirm from '@/components/ui/dialog/leave-confirm'
     import hostPropertyModal from './host-property-modal'
     import propertyConfigTable from './property-config-table'
-    import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_APPLY,
+        MENU_BUSINESS_HOST_APPLY_CONFIRM
+    } from '@/dictionary/menu-symbol'
     export default {
         name: 'multi-module-config',
         components: {
@@ -228,9 +266,10 @@
                 this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
                     this.$router.push({
-                        name: 'hostApplyConfirm',
+                        name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
                         query: {
-                            batch: 1
+                            batch: 1,
+                            mid: this.$route.query.mid
                         }
                     })
                 })
@@ -238,7 +277,7 @@
             handleDel () {
                 this.$bkInfo({
                     title: this.$t('确认删除自动应用字段？'),
-                    subTitle: this.$t('删除后，将会移除字段在对应模块中的配置'),
+                    subTitle: this.$t('删除后将会移除字段在对应模块中的配置'),
                     confirmFn: async () => {
                         const ruleIds = this.selectedPropertyRow.reduce((acc, cur) => acc.concat(cur.__extra__.ruleList.map(item => item.id)), [])
                         try {
@@ -281,6 +320,7 @@
 <style lang="scss" scoped>
     .multi-module-config {
         // width: 1066px;
+        padding-top: 15px;
         --labelWidth: 180px;
         .config-item {
             display: flex;
@@ -306,6 +346,8 @@
                     margin-left: 8px;
                     .icon-cc-tips {
                         margin-right: 8px;
+                        margin-top: -2px;
+                        font-size: 14px;
                     }
                 }
             }
@@ -343,6 +385,15 @@
         font-size: 12px;
         cursor: default;
         @include ellipsis;
+
+        &:hover {
+            border-color: $primaryColor;
+            color: $primaryColor;
+            .module-icon {
+                background-color: $primaryColor;
+            }
+        }
+
         .module-icon {
             position: absolute;
             left: 2px;
@@ -367,8 +418,9 @@
             cursor: pointer;
             color: #3a84ff;
             font-size: 14px;
-            text-align: center;
-            padding: 0;
+            text-align: left;
+            padding: 0 0 0 .1em;
+            line-height: 26px;
             .bk-cc-icon {
                 font-size: 22px;
             }

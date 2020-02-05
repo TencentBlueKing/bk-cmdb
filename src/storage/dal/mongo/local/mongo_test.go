@@ -718,6 +718,8 @@ func TestColumn(t *testing.T) {
 		},
 		map[string]interface{}{
 			"a2": "a2",
+			"delete_col1": "delete_col1",
+			"delete_col2": "delete_col2",
 		},
 	}
 	err = table.Insert(ctx, insertDataMany)
@@ -764,6 +766,30 @@ func TestColumn(t *testing.T) {
 	require.NoError(t, err)
 	if cnt != 0 {
 		t.Errorf("DropColumn error. name  column already exist")
+		return
+	}
+
+	cnt, err = table.Find(map[string]string{"delete_col1": "delete_col1"}).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 1 {
+		t.Errorf("delete_col1 exist failure")
+		return
+	}
+
+	err = table.DropColumns(ctx, map[string]string{"a2": "a2"}, []string{"delete_col1", "delete_col2"})
+	require.NoError(t, err)
+
+	cnt, err = table.Find(map[string]string{"delete_col1": "delete_col1"}).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 0 {
+		t.Errorf("DropColumns error. name column already exist")
+		return
+	}
+
+	cnt, err = table.Find(map[string]string{"delete_col2": "delete_col2"}).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 0 {
+		t.Errorf("DropColumns error. name  column already exist")
 		return
 	}
 }

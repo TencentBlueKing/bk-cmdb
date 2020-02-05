@@ -134,7 +134,7 @@ func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Actio
 }
 
 func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, action meta.Action, plats ...PlatSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -151,7 +151,7 @@ func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, 
 }
 
 func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Header, action meta.Action, platIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -163,7 +163,7 @@ func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Heade
 }
 
 func (am *AuthManager) UpdateRegisteredPlat(ctx context.Context, header http.Header, plats ...PlatSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -190,7 +190,7 @@ func (am *AuthManager) UpdateRegisteredPlat(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) UpdateRegisteredPlatByID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -206,7 +206,7 @@ func (am *AuthManager) UpdateRegisteredPlatByID(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredPlatByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -222,7 +222,7 @@ func (am *AuthManager) UpdateRegisteredPlatByRawID(ctx context.Context, header h
 }
 
 func (am *AuthManager) DeregisterPlatByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -238,7 +238,7 @@ func (am *AuthManager) DeregisterPlatByRawID(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) RegisterPlat(ctx context.Context, header http.Header, plats ...PlatSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -259,7 +259,7 @@ func (am *AuthManager) RegisterPlat(ctx context.Context, header http.Header, pla
 }
 
 func (am *AuthManager) RegisterPlatByID(ctx context.Context, header http.Header, platIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -275,7 +275,7 @@ func (am *AuthManager) RegisterPlatByID(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) DeregisterPlat(ctx context.Context, header http.Header, plats ...PlatSimplify) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -296,7 +296,7 @@ func (am *AuthManager) DeregisterPlat(ctx context.Context, header http.Header, p
 }
 
 func (am *AuthManager) DeregisterPlatByID(ctx context.Context, header http.Header, platIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 

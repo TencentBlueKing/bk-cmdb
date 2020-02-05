@@ -2,7 +2,8 @@ import Meta from '@/router/meta'
 import {
     MENU_BUSINESS,
     MENU_BUSINESS_SERVICE,
-    MENU_BUSINESS_SET_TEMPLATE
+    MENU_BUSINESS_SET_TEMPLATE,
+    MENU_BUSINESS_HOST_AND_SERVICE
 } from '@/dictionary/menu-symbol'
 import {
     C_SET_TEMPLATE,
@@ -47,6 +48,19 @@ export default [{
                 D_SET_TEMPLATE,
                 U_TOPO
             }
+        },
+        layout: {
+            previous: (view) => {
+                const query = view.$route.query
+                let params = { name: MENU_BUSINESS_SET_TEMPLATE }
+                if (query.tab) {
+                    params = {
+                        name: MENU_BUSINESS_HOST_AND_SERVICE,
+                        query: query
+                    }
+                }
+                return params
+            }
         }
     })
 }, {
@@ -58,6 +72,17 @@ export default [{
         menu: {
             i18n: '同步历史',
             relative: MENU_BUSINESS_SET_TEMPLATE
+        },
+        layout: {
+            previous () {
+                return {
+                    name: 'setTemplateConfig',
+                    params: {
+                        mode: 'view',
+                        templateId: window.CMDB_APP.$route.params.templateId
+                    }
+                }
+            }
         }
     })
 }]

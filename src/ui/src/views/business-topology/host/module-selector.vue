@@ -1,5 +1,5 @@
 <template>
-    <div class="layout"
+    <div class="module-selector-layout"
         v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="wrapper">
             <div class="wrapper-column wrapper-left">
@@ -25,7 +25,7 @@
                         <span :class="['node-checkbox fr', { 'is-checked': checked.includes(node) }]"
                             v-if="moduleType === 'idle' && data.bk_obj_id === 'module'">
                         </span>
-                        <span class="node-name">{{node.name}}</span>
+                        <span class="node-name" :title="node.name">{{node.name}}</span>
                     </template>
                 </bk-big-tree>
             </div>
@@ -56,12 +56,18 @@
             </div>
         </div>
         <div class="layout-footer">
-            <bk-button class="mr10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-            <bk-button theme="primary"
-                :disabled="!checked.length"
-                @click="handleNextStep">
-                {{confirmText || $t('下一步')}}
-            </bk-button>
+            <span class="footer-tips mr10"
+                v-bk-tooltips="{
+                    content: $t('模块相同提示'),
+                    disabled: !checked.length || (checked.length && hasDifference)
+                }">
+                <bk-button theme="primary"
+                    :disabled="!checked.length || !hasDifference"
+                    @click="handleNextStep">
+                    {{confirmText || $t('下一步')}}
+                </bk-button>
+            </span>
+            <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
 </template>
@@ -91,6 +97,10 @@
             confirmText: {
                 type: String,
                 default: ''
+            },
+            previousModules: {
+                type: Array,
+                default: () => ([])
             }
         },
         data () {
@@ -118,6 +128,10 @@
                     map[model.bk_obj_id] = model
                 })
                 return map
+            },
+            hasDifference () {
+                const checkedModules = this.checked.map(node => node.data.bk_inst_id).sort()
+                return checkedModules.join(',') !== this.previousModules.join(',')
             }
         },
         watch: {
@@ -267,7 +281,7 @@
 
 <style lang="scss" scoped>
     $leftPadding: 0 12px 0 23px;
-    .layout {
+    .module-selector-layout {
         height: 460px;
         min-height: 300px;
         padding: 0 0 50px;
@@ -284,6 +298,10 @@
             text-align: right;
             font-size: 0;
             z-index: 100;
+            .footer-tips {
+                display: inline-block;
+                vertical-align: middle;
+            }
         }
     }
     .wrapper {
@@ -293,6 +311,7 @@
             flex: 1;
         }
         .wrapper-left {
+            max-width: 380px;
             border-right: 1px solid $borderColor;
             .title {
                 margin-top: 15px;

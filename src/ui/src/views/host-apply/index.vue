@@ -1,20 +1,11 @@
 <template>
-    <div :class="['host-apply', { 'show-feature-tips': showFeatureTips }]">
-        <feature-tips
-            class-name="top-tips"
-            feature-name="hostApply"
-            :show-tips="showFeatureTips"
-            :desc="$t('主机属性自动应用功能提示')"
-            @close-tips="showFeatureTips = false"
-        >
-        </feature-tips>
+    <div class="host-apply">
         <div class="main-wrapper">
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
                 :handler-offset="3"
                 :min="300"
-                :max="480"
-            >
+                :max="480">
                 <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
             </cmdb-resize-layout>
             <div class="main-content">
@@ -23,7 +14,7 @@
                         <div class="config-head">
                             <h2 class="config-title">
                                 <span class="module-name">{{currentModule.bk_inst_name}}</span>
-                                <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}：{{ruleLastEditTime}} )</small>
+                                <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}{{ruleLastEditTime}} )</small>
                             </h2>
                         </div>
                         <div class="config-body">
@@ -43,16 +34,39 @@
                                         </div>
                                     </div>
                                     <div class="view-ft">
-                                        <bk-button theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
-                                        <bk-button theme="default" :disabled="!hasConflict" @click="handleViewConflict">
-                                            <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
-                                                {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
-                                            </span>
-                                            <span v-else>
-                                                {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
-                                            </span>
-                                        </bk-button>
-                                        <bk-button theme="default" @click="handleCloseApply">{{$t('关闭自动应用')}}</bk-button>
+                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                            <bk-button
+                                                slot-scope="{ disabled }"
+                                                theme="primary"
+                                                :disabled="disabled"
+                                                @click="handleEdit"
+                                            >
+                                                {{$t('编辑')}}
+                                            </bk-button>
+                                        </cmdb-auth>
+                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                            <bk-button
+                                                slot-scope="{ disabled }"
+                                                :disabled="!hasConflict || disabled"
+                                                @click="handleViewConflict"
+                                            >
+                                                <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
+                                                    {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
+                                                </span>
+                                                <span v-else>
+                                                    {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
+                                                </span>
+                                            </bk-button>
+                                        </cmdb-auth>
+                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                            <bk-button
+                                                slot-scope="{ disabled }"
+                                                :disabled="disabled"
+                                                @click="handleCloseApply"
+                                            >
+                                                {{$t('关闭自动应用')}}
+                                            </bk-button>
+                                        </cmdb-auth>
                                     </div>
                                 </div>
                             </template>
@@ -63,7 +77,17 @@
                                         <span>{{$t('当前模块未启用自动应用策略')}}</span>
                                     </div>
                                     <div class="action">
-                                        <bk-button theme="primary" :outline="true" @click="handleEdit">立即启用</bk-button>
+                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                            <bk-button
+                                                outline
+                                                theme="primary"
+                                                slot-scope="{ disabled }"
+                                                :disabled="disabled"
+                                                @click="handleEdit"
+                                            >
+                                                {{$t('立即启用')}}
+                                            </bk-button>
+                                        </cmdb-auth>
                                     </div>
                                 </div>
                                 <div class="view-field" v-else>
@@ -85,7 +109,17 @@
                                                         <span>{{$t('该模块已关闭属性自动应用')}}</span>
                                                     </div>
                                                     <div class="action">
-                                                        <bk-button theme="primary" :outline="true" @click="handleEdit">{{$t('重新启用')}}</bk-button>
+                                                        <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                                            <bk-button
+                                                                outline
+                                                                theme="primary"
+                                                                slot-scope="{ disabled }"
+                                                                :disabled="disabled"
+                                                                @click="handleEdit"
+                                                            >
+                                                                {{$t('重新启用')}}
+                                                            </bk-button>
+                                                        </cmdb-auth>
                                                     </div>
                                                 </div>
                                             </div>
@@ -99,7 +133,7 @@
                 <div class="empty" v-else>
                     <div class="desc">
                         <i class="bk-cc-icon icon-cc-tips"></i>
-                        <span>{{$t('暂无业务模块，无法启用属性自动应用，可跳转业务拓扑创建')}}</span>
+                        <span>{{$t('主机属性自动应用暂无业务模块')}}</span>
                     </div>
                     <div class="action">
                         <bk-button
@@ -118,14 +152,16 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import featureTips from '@/components/feature-tips/index'
     import sidebar from './children/sidebar.vue'
     import propertyConfigTable from './children/property-config-table'
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+    import {
+        MENU_BUSINESS_HOST_AND_SERVICE,
+        MENU_BUSINESS_HOST_APPLY_EDIT,
+        MENU_BUSINESS_HOST_APPLY_CONFLICT
+    } from '@/dictionary/menu-symbol'
     export default {
         components: {
             sidebar,
-            featureTips,
             propertyConfigTable
         },
         data () {
@@ -136,14 +172,12 @@
                 conflictNum: 0,
                 clearRules: false,
                 hasRule: false,
-                showFeatureTips: false,
                 batchAction: false,
                 hostAndServiceRouteName: MENU_BUSINESS_HOST_AND_SERVICE
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters(['featureTipsParams']),
             applyEnabled () {
                 return this.currentModule.host_apply_enabled
             },
@@ -160,7 +194,6 @@
             }
         },
         created () {
-            this.showFeatureTips = this.featureTipsParams['hostApply']
             this.getHostPropertyList()
         },
         methods: {
@@ -210,8 +243,11 @@
             async getHostPropertyList () {
                 try {
                     const properties = await this.$store.dispatch('hostApply/getProperties', {
-                        requestId: 'getHostPropertyList',
-                        fromCache: true
+                        params: this.$injectMetadata(),
+                        config: {
+                            requestId: 'getHostPropertyList',
+                            fromCache: true
+                        }
                     })
                     this.$store.commit('hostApply/setPropertyList', properties)
                 } catch (e) {
@@ -225,10 +261,10 @@
             handleCloseApply () {
                 const h = this.$createElement
                 this.$bkInfo({
-                    title: this.$t('确认关闭？'),
+                    title: this.$t('确认关闭'),
                     extCls: 'close-apply-confirm-modal',
                     subHeader: h('div', { class: 'content' }, [
-                        h('p', { class: 'tips' }, this.$t('关闭后转入模块的主机属性不再自动被应用')),
+                        h('p', { class: 'tips' }, this.$t('确认关闭当前模块的主机属性自动应用')),
                         h('bk-checkbox', {
                             props: {
                                 checked: true,
@@ -238,7 +274,7 @@
                             on: {
                                 change: (value) => (this.clearRules = !value)
                             }
-                        }, '保留当前自动应用策略')
+                        }, this.$t('保留当前自动应用策略'))
                     ]),
                     confirmFn: async () => {
                         try {
@@ -264,7 +300,7 @@
             },
             handleViewConflict () {
                 this.$router.push({
-                    name: 'hostApplyConflict',
+                    name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
                     query: {
                         mid: this.moduleId
                     }
@@ -272,7 +308,7 @@
             },
             handleEdit () {
                 this.$router.push({
-                    name: 'hostApplyEdit',
+                    name: MENU_BUSINESS_HOST_APPLY_EDIT,
                     query: {
                         mid: this.moduleId
                     }
@@ -290,21 +326,8 @@
 </script>
 
 <style lang="scss" scoped>
-    .host-apply {
-        .top-tips {
-            margin: 0 20px 10px;
-        }
-
-        &.show-feature-tips {
-            .main-wrapper {
-                height: calc(100% - 42px);
-            }
-        }
-    }
     .main-wrapper {
         height: 100%;
-        border-top: 1px solid $cmdbLayoutBorderColor;
-
     }
     .tree-layout {
         width: 300px;
@@ -326,6 +349,10 @@
             .desc {
                 font-size: 14px;
                 color: #63656e;
+
+                .icon-cc-tips {
+                    margin-top: -2px;
+                }
             }
             .action {
                 margin-top: 18px;
@@ -347,11 +374,10 @@
         }
 
         .config-title {
-            height: 32px;
-            line-height: 32px;
             font-size: 14px;
             color: #313238;
             font-weight: 700;
+            margin-top: 20px;
 
             .last-edit-time {
                 font-size: 12px;
@@ -383,6 +409,7 @@
             .view-ft {
                 margin: 20px 0;
                 .bk-button {
+                    margin-right: 4px;
                     min-width: 86px;
                 }
             }

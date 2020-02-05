@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -27,7 +26,6 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
@@ -58,9 +56,9 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 	}
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+
 	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
-	t.Config.FullTextSearch = current.ConfigMap["es.full_text_search"]
-	t.Config.EsUrl = current.ConfigMap["es.url"]
+
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
@@ -69,11 +67,16 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	if err != nil {
 		blog.Warnf("parse auth center config failed: %v", err)
 	}
+
+	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse es config failed: %v", err)
+	}
 }
 
 // Run main function
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
@@ -131,14 +134,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	essrv := new(elasticsearch.EsSrv)
-	if server.Config.FullTextSearch == "on" {
-		// if use https, config tls.Config{xxx}, and instead NewEsClient param nil
-		esclient, err := elasticsearch.NewEsClient(server.Config.EsUrl, nil)
+	if server.Config.Es.FullTextSearch == "on" {
+		esClient, err := elasticsearch.NewEsClient(server.Config.Es)
 		if err != nil {
 			blog.Errorf("failed to create elastic search client, err:%s", err.Error())
 			return fmt.Errorf("new es client failed, err: %v", err)
 		}
-		essrv.Client = esclient
+		essrv.Client = esClient
 	}
 
 	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)
@@ -177,31 +179,4 @@ func (t *TopoServer) CheckForReadiness() error {
 		return nil
 	}
 	return errors.New("wait for topology server configuration timeout")
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

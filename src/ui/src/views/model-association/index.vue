@@ -1,12 +1,11 @@
 <template>
     <div class="relation-wrapper">
-        <feature-tips
-            :feature-name="'association'"
-            :show-tips="showFeatureTips"
-            :desc="$t('关联关系提示')"
-            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'"
-            @close-tips="showFeatureTips = false">
-        </feature-tips>
+        <cmdb-tips
+            class="mb10"
+            tips-key="associationTips"
+            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'">
+            {{$t('关联关系提示')}}
+        </cmdb-tips>
         <p class="operation-box">
             <cmdb-auth v-if="isAdminView"
                 class="inline-block-middle"
@@ -105,17 +104,14 @@
 </template>
 
 <script>
-    import featureTips from '@/components/feature-tips/index'
     import theRelation from './_detail'
     import { mapActions, mapGetters } from 'vuex'
     export default {
         components: {
-            theRelation,
-            featureTips
+            theRelation
         },
         data () {
             return {
-                showFeatureTips: false,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -144,7 +140,7 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'featureTipsParams']),
+            ...mapGetters(['isAdminView']),
             searchParams () {
                 const params = {
                     page: {
@@ -167,7 +163,6 @@
         },
         created () {
             this.searchRelation()
-            this.showFeatureTips = this.featureTipsParams['association']
         },
         methods: {
             ...mapActions('objectAssociation', [
@@ -291,7 +286,7 @@
 
 <style lang="scss" scoped>
     .relation-wrapper {
-        padding: 0 20px;
+        padding: 15px 20px 0;
     }
     .operation-box {
         margin: 0 0 14px 0;

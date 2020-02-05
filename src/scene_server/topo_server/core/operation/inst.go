@@ -131,30 +131,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 	}
 
-	// 2. 检查批量数据中实例名称是否重复
-	instNameMap := make(map[string]bool)
-	for line, inst := range batchInfo.BatchInfo {
-		iName, exist := inst[common.BKInstNameField]
-		if !exist {
-			blog.Errorf("create object[%s] instance batch failed, because missing bk_inst_name field., rid: %s", object.ObjectID, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceMissingInstanceNameField, line)
-		}
-
-		name, can := iName.(string)
-		if !can {
-			blog.Errorf("create object[%s] instance batch failed, because  bk_inst_name value type is not string., rid: %s", object.ObjectID, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoInvalidObjectInstanceNameFieldValue, line)
-		}
-
-		// check if this instance name is already exist.
-		if _, ok := instNameMap[name]; ok {
-			blog.Errorf("create object[%s] instance batch, but bk_inst_name %s is duplicated., rid: %s", object.ObjectID, name, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrorTopoMultipleObjectInstanceName, name)
-		}
-
-		instNameMap[name] = true
-	}
-
 	nonInnerAttributes, err := obj.GetNonInnerAttributes()
 	if err != nil {
 		blog.Errorf("[audit]failed to get the object(%s)' attribute, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), params.ReqID)
@@ -425,7 +401,6 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst, c
 
 func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error {
 	object := obj.Object()
-	objID := object.ID
 	objectID := object.ObjectID
 
 	cond := condition.CreateCondition()
@@ -461,21 +436,8 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		preAudit := NewSupplementary().Audit(params, c.clientSet, delInst.obj, c).CreateSnapshot(delInst.instID, auditFilter)
 
 		// if this instance has been bind to a instance by the association, then this instance should not be deleted.
-		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(objID)
-		innerCond.Field(common.BKAsstInstIDField).Eq(delInst.instID)
-		err := c.asst.CheckBeAssociation(params, obj, innerCond)
+		err := c.asst.CheckAssociation(params, obj, objectID, delInst.instID)
 		if nil != err {
-			return err
-		}
-
-		// this instance has not be bind to another instance, we can delete all the associations it created
-		// by the association with other instances.
-		innerCond = condition.CreateCondition()
-		innerCond.Field(common.BKObjIDField).Eq(objID)
-		innerCond.Field(common.BKInstIDField).Eq(delInst.instID)
-		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
-			blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s, rid: %s", err.Error(), params.ReqID)
 			return err
 		}
 
@@ -483,7 +445,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		delCond := condition.CreateCondition()
 		delCond.Field(delInst.obj.GetInstIDFieldName()).In(delInst.instID)
 		if delInst.obj.IsCommon() {
-			delCond.Field(common.BKObjIDField).Eq(objID)
+			delCond.Field(common.BKObjIDField).Eq(objectID)
 		}
 		// clear association
 		dc := &metadata.DeleteOption{Condition: delCond.ToMapStr()}
@@ -508,23 +470,8 @@ func (c *commonInst) DeleteMainlineInstWithID(params types.ContextParams, obj mo
 	object := obj.Object()
 	preAudit := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(instID, condition.CreateCondition().ToMapStr())
 	// if this instance has been bind to a instance by the association, then this instance should not be deleted.
-	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKAsstObjIDField).Eq(object.ObjectID)
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	innerCond.Field(common.BKAsstInstIDField).Eq(instID)
-	err := c.asst.CheckBeAssociation(params, obj, innerCond)
+	err := c.asst.CheckAssociation(params, obj, object.ObjectID, instID)
 	if nil != err {
-		return err
-	}
-
-	// this instance has not be bind to another instance, we can delete all the associations it created
-	// by the association with other instances.
-	innerCond = condition.CreateCondition()
-	innerCond.Field(common.BKObjIDField).Eq(object.ObjectID)
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	innerCond.Field(common.BKInstIDField).Eq(instID)
-	if err = c.asst.DeleteInstAssociation(params, innerCond); nil != err {
-		blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s", err.Error())
 		return err
 	}
 
@@ -1022,14 +969,13 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
 	switch obj.Object().ObjectID {
 	case common.BKInnerObjIDHost:
-		rsp, err := c.clientSet.CoreService().Host().GetHosts(context.Background(), params.Header, cond)
+		rsp, err := c.clientSet.CoreService().Host().GetHosts(params.Context, params.Header, cond)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-
 			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
@@ -1039,11 +985,11 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 	default:
 		queryCond, err := mapstr.NewFromInterface(cond.Condition)
 		input := &metadata.QueryCondition{Condition: queryCond}
-		input.Limit.Offset = int64(cond.Start)
-		input.Limit.Limit = int64(cond.Limit)
+		input.Page.Start = cond.Start
+		input.Page.Limit = cond.Limit
+		input.Page.Sort = cond.Sort
 		input.Fields = strings.Split(cond.Fields, ",")
-		input.SortArr = metadata.NewSearchSortParse().String(cond.Sort).ToSearchSortArr()
-		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), input)
+		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, obj.GetObjectID(), input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

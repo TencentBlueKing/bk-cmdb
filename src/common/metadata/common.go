@@ -67,7 +67,7 @@ func NewSuccessResp(data interface{}) *Response {
 
 type Response struct {
 	BaseResp `json:",inline"`
-	Data     interface{} `json:"data"`
+	Data     interface{} `json:"data" mapstructure:"data"`
 }
 
 type BoolResponse struct {

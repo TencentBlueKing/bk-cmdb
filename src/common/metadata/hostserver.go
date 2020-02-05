@@ -15,7 +15,6 @@ package metadata
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"configcenter/src/common"
@@ -83,6 +82,12 @@ type HostsModuleRelation struct {
 	IsIncrement   bool    `json:"is_increment"`
 }
 
+type HostModuleConfig struct {
+	ApplicationID int64   `json:"bk_biz_id" bson:"bk_biz_id"`
+	HostID        []int64 `json:"bk_host_id" bson:"bk_host_id"`
+	ModuleID      []int64 `json:"bk_module_id" bson:"bk_module_id"`
+}
+
 type RemoveHostsFromModuleOption struct {
 	ApplicationID int64 `json:"bk_biz_id"`
 	HostID        int64 `json:"bk_host_id"`
@@ -125,7 +130,7 @@ type ListHostsParameter struct {
 }
 
 func (option ListHostsParameter) Validate() (string, error) {
-	if key, err := option.Page.Validate(); err != nil {
+	if key, err := option.Page.Validate(false); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
@@ -147,7 +152,7 @@ type ListHostsWithNoBizParameter struct {
 }
 
 func (option ListHostsWithNoBizParameter) Validate() (string, error) {
-	if key, err := option.Page.Validate(); err != nil {
+	if key, err := option.Page.Validate(false); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
@@ -180,8 +185,11 @@ type ListHosts struct {
 	Page               BasePage                  `json:"page"`
 }
 
-func (option ListHosts) Validate() (string, error) {
-	if key, err := option.Page.Validate(); err != nil {
+// Validate whether ListHosts is valid
+// errKey: invalid key
+// er: detail reason why errKey in invalid
+func (option ListHosts) Validate() (errKey string, err error) {
+	if key, err := option.Page.Validate(true); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
@@ -298,102 +306,6 @@ type CloneHostPropertyParams struct {
 	OrgIP   string `json:"bk_org_ip"`
 	DstIP   string `json:"bk_dst_ip"`
 	CloudID int64  `json:"bk_cloud_id"`
-}
-
-type CloudTaskList struct {
-	User            string `json:"bk_user" bson:"bk_user"`
-	TaskName        string `json:"bk_task_name" bson:"bk_task_name"`
-	TaskID          int64  `json:"bk_task_id" bson:"bk_task_id"`
-	AccountType     string `json:"bk_account_type" bson:"bk_account_type"`
-	AccountAdmin    string `json:"bk_account_admin" bson:"bk_account_admin"`
-	PeriodType      string `json:"bk_period_type" bson:"bk_period_type"`
-	Period          string `json:"bk_period" bson:"bk_period"`
-	LastSyncTime    string `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
-	ObjID           string `json:"bk_obj_id" bson:"bk_obj_id"`
-	Status          bool   `json:"bk_status" bson:"bk_status"`
-	ResourceConfirm bool   `json:"bk_confirm" bson:"bk_confirm"`
-	AttrConfirm     bool   `json:"bk_attr_confirm" bson:"bk_attr_confirm"`
-	SecretID        string `json:"bk_secret_id" bson:"bk_secret_id"`
-	SecretKey       string `json:"bk_secret_key" bson:"bk_secret_key"`
-	OwnerID         string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type ResourceConfirm struct {
-	ObjID        string          `json:"bk_obj_id"`
-	ResourceName []mapstr.MapStr `json:"bk_resource_name"`
-	SourceType   string          `json:"bk_source_type"`
-	SourceName   string          `json:"bk_source_name"`
-	CreateTime   time.Time       `json:"create_time"`
-	TaskID       string          `json:"bk_task_id"`
-	ResourceID   int64           `json:"bk_resource_id"`
-	ConfirmType  string          `json:"bk_confirm_type"`
-	InCharge     string          `json:"bk_in_charge"`
-	OwnerID      string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type CloudHistory struct {
-	ObjID       string `json:"bk_obj_id" bson:"bk_obj_id"`
-	Status      string `json:"bk_status" bson:"bk_status"`
-	TimeConsume string `json:"bk_time_consume" bson:"bk_time_consume"`
-	NewAdd      int    `json:"new_add" bson:"new_add"`
-	AttrChanged int    `json:"attr_changed" bson:"attr_changed"`
-	StartTime   string `json:"bk_start_time" bson:"bk_start_time"`
-	TaskID      int64  `json:"bk_task_id" bson:"bk_task_id"`
-	HistoryID   int64  `json:"bk_history_id" bson:"bk_history_id"`
-	FailReason  string `json:"fail_reason" bson:"fail_reason"`
-	OwnerID     string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type DeleteCloudTask struct {
-	TaskID int64 `json:"bk_task_id"`
-}
-
-type RegionResponse struct {
-	Response RegionSet `json:"Response"`
-}
-
-type RegionSet struct {
-	Data []Region `json:"RegionSet"`
-}
-
-type Region struct {
-	Region string `json:"Region"`
-}
-
-type HostResponse struct {
-	HostResponse InstanceSet `json:"Response"`
-}
-
-type InstanceSet struct {
-	InstanceSet []CloudHostInfo `json:"InstanceSet"`
-}
-
-type CloudHostInfo struct {
-	PrivateIpAddresses []string `json:"PrivateIpAddresses"`
-	PublicIpAddresses  []string `json:"PublicIpAddresses"`
-	OsName             string   `json:"OsName"`
-}
-
-type TaskInfo struct {
-	Args        CloudTaskInfo
-	Method      string
-	NextTrigger int64
-}
-
-type CloudSyncRedisPendingStart struct {
-	NewHeader    http.Header `json:"new_header"`
-	TaskID       int64       `json:"bk_task_id"`
-	TaskItemInfo TaskInfo    `json:"task_item_info"`
-	OwnerID      string      `json:"bk_supplier_account"`
-	Update       bool        `json:"update"`
-}
-
-type CloudSyncRedisAlreadyStarted struct {
-	LastSyncTime time.Time   `json:"last_sync_time"`
-	NewHeader    http.Header `json:"new_header"`
-	TaskID       int64       `json:"bk_task_id"`
-	TaskItemInfo TaskInfo    `json:"task_item_info"`
-	OwnerID      string      `json:"bk_supplier_account"`
 }
 
 // TransferHostAcrossBusinessParameter Transfer host across business request parameter

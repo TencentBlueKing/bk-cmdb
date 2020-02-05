@@ -15,31 +15,33 @@ package instances
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
 type validator struct {
-	errif         errors.DefaultCCErrorIf
-	propertys     map[string]metadata.Attribute
+	errIf         errors.DefaultCCErrorIf
+	properties    map[string]metadata.Attribute
 	idToProperty  map[int64]metadata.Attribute
-	propertyslice []metadata.Attribute
+	propertySlice []metadata.Attribute
 	require       map[string]bool
-	requirefields []string
+	requireFields []string
 	dependent     OperationDependences
 	objID         string
+	language      language.CCLanguageIf
 }
 
 // Init init
-func NewValidator(ctx core.ContextParams, dependent OperationDependences, objID string, bizID int64) (*validator, error) {
+func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, bizID int64, language language.CCLanguageIf) (*validator, error) {
 	valid := &validator{}
-	valid.propertys = make(map[string]metadata.Attribute)
+	valid.properties = make(map[string]metadata.Attribute)
 	valid.idToProperty = make(map[int64]metadata.Attribute)
-	valid.propertyslice = make([]metadata.Attribute, 0)
+	valid.propertySlice = make([]metadata.Attribute, 0)
 	valid.require = make(map[string]bool)
-	valid.requirefields = make([]string, 0)
-	valid.errif = ctx.Error
-	result, err := dependent.SelectObjectAttWithParams(ctx, objID, bizID)
+	valid.requireFields = make([]string, 0)
+	valid.errIf = kit.CCError
+	result, err := dependent.SelectObjectAttWithParams(kit, objID, bizID)
 	if nil != err {
 		return valid, err
 	}
@@ -47,15 +49,16 @@ func NewValidator(ctx core.ContextParams, dependent OperationDependences, objID 
 		if attr.PropertyID == common.BKChildStr || attr.PropertyID == common.BKParentStr {
 			continue
 		}
-		valid.propertys[attr.PropertyID] = attr
+		valid.properties[attr.PropertyID] = attr
 		valid.idToProperty[attr.ID] = attr
-		valid.propertyslice = append(valid.propertyslice, attr)
+		valid.propertySlice = append(valid.propertySlice, attr)
 		if attr.IsRequired {
 			valid.require[attr.PropertyID] = true
-			valid.requirefields = append(valid.requirefields, attr.PropertyID)
+			valid.requireFields = append(valid.requireFields, attr.PropertyID)
 		}
 	}
 	valid.objID = objID
 	valid.dependent = dependent
+	valid.language = language
 	return valid, nil
 }

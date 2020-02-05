@@ -7,9 +7,9 @@
                     :key="index"
                     v-if="!['model'].includes(source['hitsType'])">
                     <template v-if="source['hitsType'] === 'object'">
-                        <div class="results-title"
-                            v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"
-                            @click="jumpPage(source)"></div>
+                        <div class="results-title" @click="jumpPage(source)">
+                            <span v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"></span>
+                        </div>
                         <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]" @click="jumpPage(source)">
                             <span class="desc-item" v-html="`${$t('实例ID')}：${source['bk_inst_id']}`"> </span>
                             <span class="desc-item"
@@ -21,9 +21,9 @@
                         </div>
                     </template>
                     <template v-else-if="source.hitsType === 'host'">
-                        <div class="results-title"
-                            v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"
-                            @click="jumpPage(source)"></div>
+                        <div class="results-title" @click="jumpPage(source)">
+                            <span v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"></span>
+                        </div>
                         <div class="results-desc" v-if="propertyMap['host']" @click="jumpPage(source)">
                             <span class="desc-item" v-html="`${$t('主机ID')}${source['bk_host_id']}`"> </span>
                             <span class="desc-item"
@@ -35,9 +35,10 @@
                         </div>
                     </template>
                     <template v-else-if="source.hitsType === 'biz'">
-                        <div class="results-title"
-                            v-html="`${modelClassifyName['biz']} - ${source.bk_biz_name.toString()}`"
-                            @click="jumpPage(source)"></div>
+                        <div class="results-title" @click="jumpPage(source)">
+                            <span v-html="`${modelClassifyName['biz']} - ${source.bk_biz_name.toString()}`"></span>
+                            <i class="disabled-mark" v-if="source.bk_data_status === 'disabled'">{{$t('已归档')}}</i>
+                        </div>
                         <div class="results-desc" v-if="propertyMap['biz']" @click="jumpPage(source)">
                             <span class="desc-item"
                                 v-for="(property, childIndex) in propertyMap['biz']"
@@ -58,7 +59,12 @@
 </template>
 
 <script>
-    import { MENU_RESOURCE_INSTANCE, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
+    import {
+        MENU_RESOURCE_INSTANCE,
+        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_HOST_DETAILS,
+        MENU_RESOURCE_BUSINESS_HISTORY
+    } from '@/dictionary/menu-symbol'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         props: {
@@ -175,7 +181,7 @@
                     this.$router.push({
                         name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
-                            id: source['bk_host_id']
+                            id: source['bk_host_id'].toString().replace(/(\<\/?em\>)/g, '')
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
@@ -202,8 +208,9 @@
                         }
                     })
                 } else if (source['hitsType'] === 'biz') {
+                    const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS
                     this.$router.push({
-                        name: MENU_RESOURCE_BUSINESS,
+                        name: name,
                         params: {
                             bizName: source['bk_biz_name'].toString().replace(/(\<\/?em\>)/g, '')
                         }
@@ -251,8 +258,23 @@
                         margin-bottom: 4px;
                         cursor: pointer;
                         &:hover {
-                            color: #3a84ff;
-                            text-decoration: underline;
+                            span {
+                                color: #3a84ff;
+                                text-decoration: underline;
+                            }
+                        }
+                        .disabled-mark {
+                            height: 18px;
+                            line-height: 16px;
+                            padding: 0 4px;
+                            font-style: normal;
+                            font-size: 12px;
+                            color: #979BA5;
+                            border: 1px solid #C4C6CC;
+                            background-color: #FAFBFD;
+                            border-radius: 2px;
+                            margin-left: 4px;
+                            text-decoration: none;
                         }
                     }
                     .results-desc {

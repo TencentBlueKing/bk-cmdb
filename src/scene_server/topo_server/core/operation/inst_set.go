@@ -107,6 +107,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 
 	// TODO: run in transaction
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
+	data.Set(common.BKSetTemplateVersionField, setTemplate.Version)
 	data.Remove(common.MetadataField)
 	setInstance, err := s.inst.CreateInst(params, obj, data)
 	if err != nil {
@@ -212,6 +213,8 @@ func (s *set) UpdateSet(params types.ContextParams, data mapstr.MapStr, obj mode
 	data.Remove(common.MetadataField)
 	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
+	data.Remove(common.BKSetTemplateIDField)
+	data.Remove(common.BKSetTemplateVersionField)
 
 	return s.inst.UpdateInst(params, data, obj, innerCond, setID)
 }

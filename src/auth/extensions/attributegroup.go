@@ -14,6 +14,7 @@ package extensions
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -33,8 +34,8 @@ func (am *AuthManager) collectAttributesGroupByIDs(ctx context.Context, header h
 
 	// get attribute group by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(agIDs)
-	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNamePropertyGroup, queryCond)
+	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
+	resp, err := am.clientSet.CoreService().Model().ReadAttributeGroupByCondition(ctx, header, queryCond)
 	if err != nil {
 		return nil, fmt.Errorf("get model attribute group by id: %+v failed, err: %+v", agIDs, err)
 	}
@@ -48,10 +49,15 @@ func (am *AuthManager) collectAttributesGroupByIDs(ctx context.Context, header h
 	pgs := make([]metadata.Group, 0)
 	for _, item := range resp.Data.Info {
 		pg := metadata.Group{}
-		_, err := pg.Parse(item)
+		data, err := json.Marshal(item)
 		if err != nil {
-			blog.Errorf("collectAttributesGroupByAttributeIDs %+v failed, parse attribute group %+v failed, err: %+v, rid: %s", agIDs, item, err, rid)
-			return nil, fmt.Errorf("parse attribute group from db data failed, err: %+v", err)
+			blog.ErrorJSON("collectAttributesGroupByIDs %s failed, parse attribute group %s failed, err: %s, rid: %s", agIDs, item, err, rid)
+			return nil, fmt.Errorf("collectAttributesGroupByIDs marshel json %+v failed, err: %+v", item, err)
+		}
+		err = json.Unmarshal(data, &pg)
+		if err != nil {
+			blog.Errorf("collectAttributesGroupByIDs %+v failed, parse attribute group %s failed, err: %s, rid: %s", agIDs, string(data), err, rid)
+			return nil, fmt.Errorf("collectAttributesGroupByIDs unmarshel json %s failed, err: %+v", string(data), err)
 		}
 		pgs = append(pgs, pg)
 	}
@@ -164,7 +170,7 @@ func (am *AuthManager) ExtractBusinessIDFromAttributeGroup(attributeGroups ...me
 }
 
 func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -172,7 +178,7 @@ func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header h
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 
@@ -185,7 +191,7 @@ func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header h
 }
 
 func (am *AuthManager) DeregisterModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -193,7 +199,7 @@ func (am *AuthManager) DeregisterModelAttributeGroup(ctx context.Context, header
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 
@@ -206,7 +212,7 @@ func (am *AuthManager) DeregisterModelAttributeGroup(ctx context.Context, header
 }
 
 func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, header http.Header, groupIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -214,7 +220,7 @@ func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, he
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 
@@ -252,7 +258,7 @@ func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, he
 // }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -260,7 +266,7 @@ func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, 
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 	resources, err := am.makeResourceByAttributeGroup(ctx, header, meta.EmptyAction, attributeGroups...)
@@ -279,7 +285,7 @@ func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, 
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroupByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
-	if am.Enabled() == false {
+	if !am.Enabled() {
 		return nil
 	}
 
@@ -287,7 +293,7 @@ func (am *AuthManager) UpdateRegisteredModelAttributeGroupByID(ctx context.Conte
 		return nil
 	}
 
-	if am.RegisterModelAttributeEnabled == false {
+	if !am.RegisterModelAttributeEnabled {
 		return nil
 	}
 	attributeGroups, err := am.collectAttributesGroupByIDs(ctx, header, attributeIDs...)

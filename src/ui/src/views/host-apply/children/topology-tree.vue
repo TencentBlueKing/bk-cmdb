@@ -14,7 +14,7 @@
                 nameKey: 'bk_inst_name',
                 childrenKey: 'child'
             }"
-            selectable
+            :check-on-click="true"
             :before-select="beforeSelect"
             :filter-method="filterMethod"
             @select-change="handleSelectChange"
@@ -22,11 +22,15 @@
         >
             <div
                 class="node-info clearfix"
-                :title="(data.host_apply_rule_count === 0 && isDel) ? '暂无规则' : ''"
+                :title="(data.host_apply_rule_count === 0 && isDel) ? $t('暂无策略') : ''"
                 :class="{ 'is-selected': node.selected }"
                 slot-scope="{ node, data }"
             >
-                <i class="node-model-icon fl"
+                <i class="internal-node-icon fl"
+                    v-if="data.default !== 0"
+                    :class="getInternalNodeClass(node, data)">
+                </i>
+                <i class="node-icon fl" v-else
                     :class="{
                         'is-selected': node.selected,
                         'is-template': isTemplate(node),
@@ -38,6 +42,9 @@
                 <div class="info-content">
                     <span class="node-name">{{data.bk_inst_name}}</span>
                 </div>
+            </div>
+            <div slot="empty" class="empty">
+                <span>{{$t('bk.bigTree.emptyText')}}</span>
             </div>
         </bk-big-tree>
     </div>
@@ -71,12 +78,16 @@
                 },
                 request: {
                     searchNode: Symbol('searchNode')
+                },
+                nodeIconMap: {
+                    1: 'icon-cc-host-free-pool',
+                    2: 'icon-cc-host-breakdown',
+                    default: 'icon-cc-host-free-pool'
                 }
             }
         },
         computed: {
             ...mapGetters(['supplierAccount', 'isAdminView']),
-            ...mapGetters(['featureTipsParams']),
             ...mapState('hostApply', ['ruleDraft']),
             business () {
                 return this.$store.state.objectBiz.bizId
@@ -99,8 +110,7 @@
                 return this.action === 'batch-del'
             },
             treeHeight () {
-                const showFeatureTips = this.featureTipsParams['hostApply']
-                return this.$APP.height - 160 - (showFeatureTips ? 42 : 0) + 'px'
+                return this.$APP.height - 160 + 'px'
             }
         },
         watch: {
@@ -114,6 +124,18 @@
                 this.getTopologyData(),
                 this.getMainLine()
             ])
+
+            // 将空闲机池放到顶部
+            const root = data[0] || {}
+            const children = root.child || []
+            const idleIndex = children.findIndex(item => item.default === 1)
+            if (idleIndex !== -1) {
+                const idlePool = children[idleIndex]
+                idlePool.child.sort((a, b) => a.bk_inst_id - b.bk_inst_id)
+                children.splice(idleIndex, 1)
+                children.unshift(idlePool)
+            }
+
             this.treeData = data
             this.mainLine = mainLine
             this.treeStat = this.getTreeStat()
@@ -206,7 +228,9 @@
                 return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
                     bizId: this.business,
                     config: {
-                        requestId: 'getTopologyWithStatData'
+                        params: {
+                            with_default: 1
+                        }
                     }
                 })
             },
@@ -232,6 +256,14 @@
             async beforeSelect (node) {
                 return this.isModule(node)
             },
+            getInternalNodeClass (node, data) {
+                const clazz = []
+                clazz.push(this.nodeIconMap[data.default] || this.nodeIconMap.default)
+                if (node.selected) {
+                    clazz.push('is-selected')
+                }
+                return clazz
+            },
             handleSelectChange (node) {
                 this.$emit('selected', node)
             },
@@ -249,7 +281,7 @@
         @include scrollbar-y(6px);
 
         .node-info {
-            .node-model-icon {
+            .node-icon {
                 width: 22px;
                 height: 22px;
                 line-height: 21px;
@@ -270,27 +302,10 @@
                     margin-left: 2px;
                 }
             }
-            .node-button {
-                height: 24px;
-                padding: 0 6px;
-                margin: 0 20px 0 4px;
-                line-height: 22px;
-                border-radius: 4px;
-                font-size: 12px;
-                min-width: auto;
-                &.set-template-button {
-                    @include inlineBlock;
-                    font-style: normal;
-                    background-color: #dcdee5;
-                    color: #ffffff;
-                    outline: none;
-                    cursor: not-allowed;
-                }
-            }
             .config-icon {
                 position: relative;
                 top: 6px;
-                right: 20px;
+                right: 4px;
                 padding: 0 5px;
                 height: 18px;
                 line-height: 17px;
@@ -298,6 +313,16 @@
                 font-size: 26px;
                 text-align: center;
                 color: #2dcb56;
+            }
+            .internal-node-icon{
+                width: 20px;
+                height: 20px;
+                line-height: 20px;
+                text-align: center;
+                margin: 8px 4px 8px 0;
+                &.is-selected {
+                    color: #ffb400;
+                }
             }
             .info-content {
                 display: flex;
@@ -309,6 +334,15 @@
                     margin-right: 8px;
                 }
             }
+        }
+
+        .empty {
+            position: absolute;
+            display: flex;
+            height: calc(100% - 30px);
+            width: 100%;
+            justify-content: center;
+            align-items: center;
         }
     }
 </style>

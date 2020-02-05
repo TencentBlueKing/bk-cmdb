@@ -22,29 +22,6 @@ export function getFullName (names) {
     return fullNames.join(',')
 }
 
-export function flattenList (properties, list) {
-    if (!list.length) return list
-    const flattenedList = clone(list)
-    flattenedList.forEach((item, index) => {
-        flattenedList[index] = flattenItem(properties, item)
-    })
-    return flattenedList
-}
-
-/**
- * 拍平实例具体的属性
- * @param {Object} properties - 模型具体属性
- * @param {Object} item - 模型实例
- * @return {Object} 拍平后的模型实例
- */
-export function flattenItem (properties, item) {
-    const flattenedItem = clone(item)
-    properties.forEach(property => {
-        flattenedItem[property['bk_property_id']] = getPropertyText(property, flattenedItem)
-    })
-    return flattenedItem
-}
-
 /**
  * 获取实例中某个属性的展示值
  * @param {Object} property - 模型具体属性
@@ -85,46 +62,21 @@ export function getPropertyText (property, item) {
 }
 
 /**
- * 拍平主机列表
- * @param {Object} properties - 模型属性,eg: {host: [], biz: []}
- * @param {Array} list - 模型实例列表
- * @return {Array} 拍平后的模型实例列表
- */
-export function flattenHostList (properties, list) {
-    if (!list.length) return list
-    const flattenedList = clone(list)
-    flattenedList.forEach((item, index) => {
-        flattenedList[index] = flattenHostItem(properties, item)
-    })
-    return flattenedList
-}
-
-/**
- * 拍平主机实例具体的属性
- * @param {Object} property - 模型具体属性
- * @param {Object} item - 模型实例
- * @return {Object} 拍平后的模型实例
- */
-export function flattenHostItem (properties, item) {
-    const flattenedItem = clone(item)
-    for (const objId in properties) {
-        properties[objId].forEach(property => {
-            const originalValue = item[objId] instanceof Array ? item[objId] : [item[objId]]
-            originalValue.forEach(value => {
-                value[property['bk_property_id']] = getPropertyText(property, value)
-            })
-        })
-    }
-    return flattenedItem
-}
-
-/**
  * 获取实例的真实值
  * @param {Array} properties - 模型属性
  * @param {Object} inst - 原始实例
  * @return {Object} 实例真实值
  */
-export function getInstFormValues (properties, inst = {}) {
+
+function getDefaultOptionValue (property) {
+    const defaultOption = (property.option || []).find(option => option.is_default)
+    if (defaultOption) {
+        return defaultOption.id
+    }
+    return ''
+}
+
+export function getInstFormValues (properties, inst = {}, autoSelect = true) {
     const values = {}
     properties.forEach(property => {
         const propertyId = property['bk_property_id']
@@ -136,16 +88,30 @@ export function getInstFormValues (properties, inst = {}) {
             const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
             values[propertyId] = formatedTime || null
         } else if (['int', 'float'].includes(propertyType)) {
-            values[propertyId] = ['', undefined].includes(inst[propertyId]) ? null : inst[propertyId]
+            values[propertyId] = [null, undefined].includes(inst[propertyId]) ? '' : inst[propertyId]
         } else if (['bool'].includes(propertyType)) {
             values[propertyId] = !!inst[propertyId]
         } else if (['enum'].includes(propertyType)) {
-            values[propertyId] = [null].includes(inst[propertyId]) ? '' : inst[propertyId]
+            values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
+        } else if (['timezone'].includes(propertyType)) {
+            values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
         } else {
             values[propertyId] = inst.hasOwnProperty(propertyId) ? inst[propertyId] : ''
         }
     })
     return values
+}
+
+export function formatValues (values, properties) {
+    const formatted = { ...values }
+    const convertProperties = properties.filter(property => ['enum', 'int', 'float', 'list'].includes(property.bk_property_type))
+    convertProperties.forEach(property => {
+        const key = property.bk_property_id
+        if (formatted.hasOwnProperty(key) && ['', undefined].includes(formatted[key])) {
+            formatted[key] = null
+        }
+    })
+    return formatted
 }
 
 /**
@@ -258,6 +224,13 @@ export function getHeaderProperties (properties, customColumns, fixedPropertyIds
     return headerProperties
 }
 
+export function getHeaderPropertyName (property) {
+    if (property.unit) {
+        return `${property.bk_property_name}(${property.unit})`
+    }
+    return property.bk_property_name
+}
+
 /**
  * 深拷贝
  * @param {Object} object - 需拷贝的对象
@@ -290,7 +263,7 @@ export function getValidateRules (property) {
         rules.required = true
     }
     if (option) {
-        if (propertyType === 'int') {
+        if (['int', 'float'].includes(propertyType)) {
             if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
                 rules['min_value'] = option.min
             }
@@ -369,13 +342,11 @@ export default {
     getDefaultHeaderProperties,
     getCustomHeaderProperties,
     getHeaderProperties,
-    flattenList,
-    flattenItem,
-    flattenHostList,
-    flattenHostItem,
+    getHeaderPropertyName,
     formatTime,
     clone,
     getInstFormValues,
+    formatValues,
     getMetadataBiz,
     getValidateRules,
     getSort,

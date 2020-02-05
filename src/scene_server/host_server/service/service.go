@@ -111,7 +111,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/").To(s.TransferHostWithAutoClearServiceInstancePreview))
 	api.Route(api.POST("/usercustom").To(s.SaveUserCustom))
 	api.Route(api.POST("/usercustom/user/search").To(s.GetUserCustom))
-	api.Route(api.POST("/usercustom/default/search").To(s.GetDefaultCustom))
+	api.Route(api.POST("/usercustom/default/model").To(s.GetModelDefaultCustom))
+	api.Route(api.POST("/usercustom/default/model/{obj_id}").To(s.SaveModelDefaultCustom))
 	api.Route(api.POST("/hosts/search").To(s.SearchHost))
 	api.Route(api.POST("/hosts/search/asstdetail").To(s.SearchHostWithAsstDetail))
 	api.Route(api.PUT("/hosts/batch").To(s.UpdateHostBatch))
@@ -129,6 +130,7 @@ func (s *Service) WebService() *restful.Container {
 	// next generation host search api
 	api.Route(api.POST("/hosts/list_hosts_without_app").To(s.ListHostsWithNoBiz))
 	api.Route(api.POST("/hosts/app/{appid}/list_hosts").To(s.ListBizHosts))
+	api.Route(api.POST("/hosts/list_resource_pool_hosts").To(s.ListResourcePoolHosts))
 	api.Route(api.POST("/hosts/app/{bk_biz_id}/list_hosts_topo").To(s.ListBizHostsTopo))
 
 	api.Route(api.POST("/userapi").To(s.AddUserCustomQuery))
@@ -144,20 +146,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/count_by_topo_node/bk_biz_id/{bk_biz_id}").To(s.CountTopoNodeHosts))
 
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
-
-	// cloud sync
-	api.Route(api.POST("/hosts/cloud/add").To(s.AddCloudTask))
-	api.Route(api.DELETE("/hosts/cloud/delete/{taskID}").To(s.DeleteCloudTask))
-	api.Route(api.POST("/hosts/cloud/search").To(s.SearchCloudTask))
-	api.Route(api.PUT("/hosts/cloud/update").To(s.UpdateCloudTask))
-	api.Route(api.POST("/hosts/cloud/startSync").To(s.StartCloudSync))
-	api.Route(api.POST("/hosts/cloud/resourceConfirm").To(s.CreateResourceConfirm))
-	api.Route(api.POST("/hosts/cloud/searchConfirm").To(s.SearchConfirm))
-	api.Route(api.POST("/hosts/cloud/confirmHistory/add").To(s.AddConfirmHistory))
-	api.Route(api.POST("/hosts/cloud/confirmHistory/search").To(s.SearchConfirmHistory))
-	api.Route(api.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
-	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.SearchCloudSyncHistory))
-
 	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
@@ -165,6 +153,8 @@ func (s *Service) WebService() *restful.Container {
 
 	// first install use api
 	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
+
+	api.Route(api.POST("/system/config/user_config/blueking_modify").To(s.FindSystemUserConfigBKSwitch))
 
 	// 主机属性自动应用
 	api.Route(api.POST("/create/host_apply_rule/bk_biz_id/{bk_biz_id}").To(s.CreateHostApplyRule))
@@ -228,16 +218,4 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	resp.Header().Set("Content-Type", "application/json")
 	_ = resp.WriteEntity(answer)
-}
-
-func (s *Service) InitBackground() {
-	header := make(http.Header, 0)
-	if "" == util.GetOwnerID(header) {
-		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
-		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
-	}
-	s.CacheDB.FlushDb()
-
-	srvData := s.newSrvComm(header)
-	go srvData.lgc.TimerTriggerCheckStatus(srvData.ctx)
 }

@@ -24,6 +24,15 @@ export default [{
                 D_SERVICE_INSTANCE,
                 R_SERVICE_INSTANCE
             }
+        },
+        layout: {
+            previous: (view) => ({
+                name: MENU_BUSINESS_HOST_AND_SERVICE,
+                query: {
+                    node: view.$route.query.node,
+                    tab: view.$route.query.tab
+                }
+            })
         }
     })
 }, {
@@ -44,6 +53,15 @@ export default [{
                 D_SERVICE_INSTANCE,
                 R_SERVICE_INSTANCE
             }
+        },
+        layout: {
+            previous: (view) => ({
+                name: MENU_BUSINESS_HOST_AND_SERVICE,
+                query: {
+                    node: view.$route.query.node,
+                    tab: 'serviceInstance'
+                }
+            })
         }
     })
 }]

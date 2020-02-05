@@ -11,8 +11,30 @@
                             <i class="bk-cc-icon icon-cc-menu"></i>
                         </div>
                         <ul class="bk-dropdown-list" slot="dropdown-content">
-                            <li><a href="javascript:;" @click="handleBatchAction('batch-edit')">批量编辑</a></li>
-                            <li><a href="javascript:;" @click="handleBatchAction('batch-del')">批量删除</a></li>
+                            <li>
+                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                    <a
+                                        href="javascript:;"
+                                        slot-scope="{ disabled }"
+                                        :class="{ disabled }"
+                                        @click="handleBatchAction('batch-edit')"
+                                    >
+                                        {{$t('批量编辑')}}
+                                    </a>
+                                </cmdb-auth>
+                            </li>
+                            <li>
+                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_HOST_APPLY })">
+                                    <a
+                                        href="javascript:;"
+                                        slot-scope="{ disabled }"
+                                        :class="{ disabled }"
+                                        @click="handleBatchAction('batch-del')"
+                                    >
+                                        {{$t('批量删除')}}
+                                    </a>
+                                </cmdb-auth>
+                            </li>
                         </ul>
                     </bk-dropdown-menu>
                 </div>
@@ -28,8 +50,10 @@
         <div class="checked-list" v-show="showCheckedPanel">
             <div class="panel-hd">
                 <div class="panel-title">
-                    已选择<em class="checked-num">{{checkedList.length}}</em>模块
-                    <a href="javascript:;" class="clear-all" @click="handleClearChecked">清空</a>
+                    <i18n path="已选择N个模块">
+                        <em class="checked-num" place="count">{{checkedList.length}}</em>
+                    </i18n>
+                    <a href="javascript:;" class="clear-all" @click="handleClearChecked">{{$t('清空')}}</a>
                 </div>
             </div>
             <div class="panel-bd">
@@ -37,7 +61,7 @@
                     <div class="module-item" v-for="item in checkedList" :key="item.bk_inst_id">
                         <dt class="module-name">{{item.bk_inst_name}}</dt>
                         <dd class="module-path" :title="item.path.join(' / ')">{{item.path.join(' / ')}}</dd>
-                        <dd class="module-icon"><span>模</span></dd>
+                        <dd class="module-icon"><span>{{$i18n.locale === 'en' ? 'M' : '模'}}</span></dd>
                         <dd class="action-icon">
                             <a href="javascript:;" @click="handleRemoveChecked(item.bk_inst_id)">
                                 <i class="bk-icon icon-close"></i>
@@ -48,9 +72,9 @@
             </div>
             <div class="panel-ft">
                 <bk-button theme="primary" :disabled="!checkedList.length" @click="handleGoEdit">
-                    {{$t(actionMode === 'batch-del' ? '下一步' : '去编辑')}}
+                    {{$t(actionMode === 'batch-del' ? '去删除' : '去编辑')}}
                 </bk-button>
-                <bk-button theme="default" @click="handleCancelEdit">取消</bk-button>
+                <bk-button theme="default" @click="handleCancelEdit">{{$t('取消')}}</bk-button>
             </div>
         </div>
     </div>
@@ -59,17 +83,18 @@
 <script>
     import searchSelectMix from './search-select-mix'
     import topologyTree from './topology-tree'
+    import { MENU_BUSINESS_HOST_APPLY_EDIT } from '@/dictionary/menu-symbol'
     export default {
         components: {
             searchSelectMix,
             topologyTree
         },
-        props: {
-        },
         data () {
             return {
                 treeOptions: {
-                    showCheckbox: false
+                    showCheckbox: false,
+                    selectable: true,
+                    checkOnClick: false
                 },
                 actionMode: '',
                 showCheckedPanel: false,
@@ -98,6 +123,8 @@
                 this.actionMode = actionMode
                 this.showCheckedPanel = true
                 this.treeOptions.showCheckbox = true
+                this.treeOptions.selectable = false
+                this.treeOptions.checkOnClick = true
             },
             handleTreeSelected (node) {
                 this.$emit('module-selected', node.data)
@@ -132,7 +159,7 @@
             handleGoEdit () {
                 const checkedIds = this.checkedList.map(item => item.bk_inst_id)
                 this.$router.push({
-                    name: 'hostApplyEdit',
+                    name: MENU_BUSINESS_HOST_APPLY_EDIT,
                     query: {
                         mid: checkedIds.join(','),
                         batch: 1,
@@ -142,6 +169,8 @@
             },
             handleCancelEdit () {
                 this.treeOptions.showCheckbox = false
+                this.treeOptions.selectable = true
+                this.treeOptions.checkOnClick = false
                 this.showCheckedPanel = false
                 this.actionMode = ''
                 this.removeChecked()
@@ -188,7 +217,7 @@
                     color: #3a84ff;
                 }
                 .icon-cc-menu {
-                    color: #c4c6cc;
+                    color: #979ba5;
                     font-size: 20px;
                     vertical-align: unset;
                 }
@@ -232,7 +261,7 @@
                 font-style: normal;
                 font-weight: bold;
                 color: #2dcb56;
-                padding: .1em;
+                margin: .1em;
             }
 
             .clear-all {
@@ -292,10 +321,41 @@
                 }
                 .action-icon {
                     position: absolute;
-                    right: 12px;
-                    top: 12px;
+                    right: 8px;
+                    top: 10px;
+                    width: 28px;
+                    height: 28px;
+                    text-align: center;
+                    line-height: 28px;
+
+                    a {
+                        color: #c4c6cc;
+                        &:hover {
+                            color: #979ba5;
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    .bk-dropdown-list > li a {
+        display: block;
+        height: 32px;
+        line-height: 33px;
+        padding: 0 16px;
+        color: #63656e;
+        font-size: 12px;
+        text-decoration: none;
+        white-space: nowrap;
+
+        &:hover {
+            background-color: #eaf3ff;
+            color: #3a84ff;
+        }
+
+        &.disabled {
+            color: #c4c6cc;
         }
     }
 </style>

@@ -17,7 +17,6 @@ import (
 
 	"configcenter/src/apimachinery/coreservice/association"
 	"configcenter/src/apimachinery/coreservice/auditlog"
-	"configcenter/src/apimachinery/coreservice/cloudsync"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/hostapplyrule"
 	"configcenter/src/apimachinery/coreservice/instance"
@@ -28,6 +27,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/settemplate"
 	"configcenter/src/apimachinery/coreservice/synchronize"
+	ccSystem "configcenter/src/apimachinery/coreservice/system"
 	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
@@ -43,11 +43,11 @@ type CoreServiceClientInterface interface {
 	Audit() auditlog.AuditClientInterface
 	Process() process.ProcessInterface
 	Operation() operation.OperationClientInterface
-	Cloud() cloudsync.CloudSyncClientInterface
 	Label() label.LabelInterface
 	TopoGraphics() topographics.TopoGraphicsInterface
 	SetTemplate() settemplate.SetTemplateInterface
 	HostApplyRule() hostapplyrule.HostApplyRuleInterface
+	System() ccSystem.SystemClientInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -98,16 +98,16 @@ func (c *coreService) Operation() operation.OperationClientInterface {
 	return operation.NewOperationClientInterface(c.restCli)
 }
 
-func (c *coreService) Cloud() cloudsync.CloudSyncClientInterface {
-	return cloudsync.NewCloudSyncClientInterface(c.restCli)
-}
-
 func (c *coreService) Label() label.LabelInterface {
 	return label.NewLabelInterfaceClient(c.restCli)
 }
 
 func (c *coreService) TopoGraphics() topographics.TopoGraphicsInterface {
 	return topographics.NewTopoGraphicsInterface(c.restCli)
+}
+
+func (c *coreService) System() ccSystem.SystemClientInterface {
+	return ccSystem.NewSystemClientInterface(c.restCli)
 }
 
 func (c *coreService) SetTemplate() settemplate.SetTemplateInterface {

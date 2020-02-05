@@ -14,6 +14,9 @@ package operation
 
 import (
 	"context"
+	"fmt"
+	"regexp"
+	"strings"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
@@ -39,6 +42,7 @@ type BusinessOperationInterface interface {
 	UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error
 	HasHosts(params types.ContextParams, bizID int64) (bool, error)
 	SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface)
+	GenerateAchieveBusinessName(params types.ContextParams, bizName string) (achieveName string, err error)
 }
 
 // NewBusinessOperation create a business instance
@@ -308,11 +312,7 @@ func (b *business) FindBusiness(params types.ContextParams, cond *metadata.Query
 	query := &metadata.QueryCondition{
 		Fields:    cond.Fields,
 		Condition: cond.Condition,
-		Limit: metadata.SearchLimit{
-			Limit:  int64(cond.Page.Limit),
-			Offset: int64(cond.Page.Start),
-		},
-		SortArr: metadata.NewSearchSortParse().String(cond.Page.Sort).ToSearchSortArr(),
+		Page:      cond.Page,
 	}
 
 	result, err := b.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDApp, query)
@@ -326,6 +326,68 @@ func (b *business) FindBusiness(params types.ContextParams, cond *metadata.Query
 	}
 
 	return result.Data.Count, result.Data.Info, err
+}
+
+var (
+	NumRegex = regexp.MustCompile(`^\d+$`)
+)
+
+/*
+GenerateAchieveBusinessName 生成归档后的业务名称
+	- 业务归档的时候，自动重命名为"foo-archived"
+	- 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
+*/
+func (b *business) GenerateAchieveBusinessName(params types.ContextParams, bizName string) (achieveName string, err error) {
+	queryBusinessRequest := &metadata.QueryBusinessRequest{
+		Fields: []string{common.BKAppNameField},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKAppNameField: map[string]interface{}{
+				common.BKDBLIKE: fmt.Sprintf(`^%s-archived`, regexp.QuoteMeta(bizName)),
+			},
+		},
+	}
+	count, data, err := b.FindBusiness(params, queryBusinessRequest)
+	if err != nil {
+		return "", err
+	}
+	if count == 0 {
+		return fmt.Sprintf("%s-archived", bizName), nil
+	}
+	existNums := make([]int64, 0)
+	for _, item := range data {
+		biz := metadata.BizBasicInfo{}
+		if err := mapstruct.Decode2Struct(item, &biz); err != nil {
+			blog.Errorf("GenerateBusinessAchieveName failed, Decode2Struct failed, biz: %+v, err: %+v, rid: %s", item, err, params.ReqID)
+			return "", params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+		}
+		parts := strings.Split(biz.BizName, fmt.Sprintf("%s-archived-", bizName))
+		if len(parts) != 2 {
+			continue
+		}
+		numPart := parts[1]
+		if !NumRegex.MatchString(numPart) {
+			continue
+		}
+		num, err := util.GetInt64ByInterface(numPart)
+		if err != nil {
+			blog.Errorf("GenerateBusinessAchieveName failed, GetInt64ByInterface failed, numPart: %s, err: %+v, rid: %s", numPart, err, params.ReqID)
+			return "", params.Err.CCError(common.CCErrCommParseDataFailed)
+		}
+		existNums = append(existNums, num)
+	}
+	// 空数组时默认填充
+	existNums = append(existNums, 0)
+	maxNum := existNums[0]
+	for _, num := range existNums {
+		if num > maxNum {
+			maxNum = num
+		}
+	}
+
+	return fmt.Sprintf("%s-archived-%d", bizName, maxNum+1), nil
 }
 
 func (b *business) GetInternalModule(params types.ContextParams, obj model.Object, bizID int64) (count int, result *metadata.InnterAppTopo, err error) {
@@ -387,9 +449,10 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 			return 0, nil, params.Err.CCError(common.CCErrCommParseDBFailed)
 		}
 		result.Module = append(result.Module, metadata.InnerModule{
-			ModuleID:   module.ModuleID,
-			ModuleName: module.ModuleName,
-			Default:    module.Default,
+			ModuleID:         module.ModuleID,
+			ModuleName:       module.ModuleName,
+			Default:          module.Default,
+			HostApplyEnabled: module.HostApplyEnabled,
 		})
 	}
 

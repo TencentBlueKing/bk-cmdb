@@ -11,8 +11,8 @@
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list clearfix">
                             <li class="property-item clearfix fl"
-                                v-for="(property, propertyIndex) in $groupedProperties[groupIndex]"
-                                :key="propertyIndex">
+                                v-for="property in $groupedProperties[groupIndex]"
+                                :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
                                 <span class="property-name fl" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                                 <slot :name="property['bk_property_id']">
                                     <span class="property-value clearfix fl"
@@ -45,8 +45,8 @@
                 </cmdb-auth>
                 <cmdb-auth v-if="showDelete" class="inline-block-middle" :auth="authResources(deleteAuth)">
                     <bk-button slot-scope="{ disabled }"
+                        hover-theme="danger"
                         class="button-delete"
-                        theme="danger"
                         :disabled="disabled"
                         @click="handleDelete">
                         {{deleteText}}
@@ -60,6 +60,7 @@
 <script>
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
+    import Formatter from '@/filters/formatter.js'
     export default {
         name: 'cmdb-details',
         mixins: [formMixins],
@@ -135,8 +136,7 @@
                 return `${property['bk_property_name']}: ${inst[property['bk_property_id']] || '--'} ${property.unit}`
             },
             getValue (property) {
-                const value = this.inst[property['bk_property_id']]
-                return String(value).length ? value : '--'
+                return Formatter(this.inst[property.bk_property_id], property)
             },
             handleEdit () {
                 this.$emit('on-edit', this.inst)
@@ -236,11 +236,6 @@
         }
         .button-delete{
             min-width: 76px;
-            background-color: #fff;
-            color: #ff5656;
-            &:disabled {
-                color: #dcdee5 !important;
-            }
         }
     }
 </style>

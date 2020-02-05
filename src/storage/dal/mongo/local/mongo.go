@@ -179,7 +179,6 @@ func (f *Find) Sort(sort string) dal.Find {
 				}
 			}
 		}
-
 	}
 
 	return f
@@ -203,6 +202,12 @@ func (f *Find) Limit(limit uint64) dal.Find {
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo find-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if f.HasSession(ctx) {
@@ -216,7 +221,6 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 		ctx = se.ContextWithSession(ctx, f.sess)
 	}
 
-	start := time.Now()
 	findOpts := &options.FindOptions{}
 	if len(f.projection) != 0 {
 		findOpts.Projection = f.projection
@@ -240,14 +244,18 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 		return err
 	}
 	defer cursor.Close(ctx)
-	rid := ctx.Value(common.ContextRequestIDField)
-	defer blog.V(5).InfoDepthf(1, "Find all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 
 	return decodeCusorIntoSlice(ctx, cursor, result)
 }
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
+	start := time.Now()
+	rid := ctx.Value(common.ContextRequestIDField)
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo find-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if f.HasSession(ctx) {
@@ -260,10 +268,6 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	} else if f.sess != nil {
 		ctx = se.ContextWithSession(ctx, f.sess)
 	}
-
-	start := time.Now()
-	rid := ctx.Value(common.ContextRequestIDField)
-	defer blog.V(5).InfoDepthf(1, "Find one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 
 	findOpts := &options.FindOptions{}
 	if len(f.projection) != 0 {
@@ -297,6 +301,12 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 
 // Count 统计数量(非事务)
 func (f *Find) Count(ctx context.Context) (uint64, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if f.HasSession(ctx) {
@@ -320,6 +330,12 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo insert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if c.HasSession(ctx) {
@@ -337,11 +353,16 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
 	return err
-
 }
 
 // Update 更新数据
 func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo update cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if c.HasSession(ctx) {
@@ -365,6 +386,12 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 
 // Upsert 数据存在更新数据，否则新加数据
 func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo upsert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if c.HasSession(ctx) {
@@ -391,6 +418,12 @@ func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interfac
 
 // UpdateMultiModel 根据不同的操作符去更新数据
 func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo update-multi-model cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if c.HasSession(ctx) {
@@ -418,6 +451,12 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, up
 
 // UpdateModifyCount 更新数据,返回更新的条数
 func (c *Collection) UpdateModifyCount(ctx context.Context, filter dal.Filter, doc interface{}) (int64, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo update-modify-count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if c.HasSession(ctx) {
@@ -441,6 +480,12 @@ func (c *Collection) UpdateModifyCount(ctx context.Context, filter dal.Filter, d
 
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo delete cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if c.HasSession(ctx) {
@@ -460,6 +505,12 @@ func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 
 // NextSequence 获取新序列号(非事务), TODO test
 func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo next-sequence cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 直接使用新的context，确保不会用到事务,不会因为context含有session而使用分布式事务，防止产生相同的序列号
 	ctx = context.Background()
 
@@ -656,7 +707,6 @@ func (c *Mongo) DB(collName string) dal.RDB {
 
 // CreateIndex 创建索引
 func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
-
 	createIndexOpt := &options.IndexOptions{
 		Background: &index.Background,
 		Unique:     &index.Unique,
@@ -664,6 +714,7 @@ func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
 	if index.Name != "" {
 		createIndexOpt.Name = &index.Name
 	}
+
 	createIndexInfo := mongo.IndexModel{
 		Keys:    index.Keys,
 		Options: createIndexOpt,
@@ -701,15 +752,26 @@ func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
 
 // AddColumn add a new column for the collection
 func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo add-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	selector := types.Document{column: types.Document{"$exists": false}}
 	datac := types.Document{"$set": types.Document{column: value}}
-
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, selector, datac)
 	return err
 }
 
 // RenameColumn rename a column for the collection
 func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo rename-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, types.Document{}, datac)
 	return err
@@ -717,13 +779,36 @@ func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string
 
 // DropColumn remove a column by the name
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo drop-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	datac := types.Document{"$unset": types.Document{field: ""}}
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, types.Document{}, datac)
 	return err
 }
 
+// DropColumns remove many columns by the name
+func (c *Collection) DropColumns(ctx context.Context, filter dal.Filter, fields []string) error {
+	unsetFields := make(map[string]interface{})
+	for _, field := range fields {
+		unsetFields[field] = ""
+	}
+	datac := types.Document{"$unset": unsetFields}
+	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
+	return err
+}
+
 // AggregateAll aggregate all operation
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo aggregate-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if c.HasSession(ctx) {
@@ -747,6 +832,12 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 
 // AggregateOne aggregate one operation
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo aggregate-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	}()
+
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
 	if c.HasSession(ctx) {

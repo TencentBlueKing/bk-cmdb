@@ -37,6 +37,7 @@ type AttributeOperationInterface interface {
 	FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error)
 	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error)
 	UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error
+	UpdateObjectAttributeIndex(params types.ContextParams, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error)
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface, grp GroupOperationInterface)
 }
@@ -189,27 +190,42 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error) {
 	attrs, err := a.FindObjectAttribute(params, cond)
 	if nil != err {
+		blog.ErrorJSON("FindObjectAttribute failed, err: %s, cond: %s", err, cond.ToMapStr())
 		return nil, err
 	}
 	results := make([]*metadata.ObjAttDes, 0)
+	// if can't find any attribute of a obj, to return, for example, when the obj is not exist
+	if len(attrs) == 0 {
+		return results, nil
+	}
+	grpCond := condition.CreateCondition()
+	grpOrCond := grpCond.NewOR()
 	for _, attr := range attrs {
-		result := &metadata.ObjAttDes{Attribute: *attr.Attribute()}
-
 		attribute := attr.Attribute()
-		grpCond := condition.CreateCondition()
-		grpCond.Field(metadata.GroupFieldGroupID).Eq(attribute.PropertyGroup)
-		grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attribute.OwnerID)
-		grpCond.Field(metadata.GroupFieldObjectID).Eq(attribute.ObjectID)
-		grps, err := a.grp.FindObjectGroup(params, grpCond)
-		if nil != err {
-			return nil, err
+		grpOrCond.Item(map[string]interface{}{
+			metadata.GroupFieldGroupID:         attribute.PropertyGroup,
+			metadata.GroupFieldSupplierAccount: attribute.OwnerID,
+			metadata.GroupFieldObjectID:        attribute.ObjectID,
+		})
+	}
+	grps, err := a.grp.FindObjectGroup(params, grpCond)
+	if nil != err {
+		blog.ErrorJSON("FindObjectGroup failed, err: %s, grpCond: %s", err, grpCond.ToMapStr())
+		return nil, err
+	}
+	grpMap := make(map[string]string)
+	for _, grp := range grps {
+		grpMap[grp.Group().GroupID] = grp.Group().GroupName
+	}
+	for _, attr := range attrs {
+		attribute := attr.Attribute()
+		result := &metadata.ObjAttDes{Attribute: *attribute}
+		grpName, ok := grpMap[attribute.PropertyGroup]
+		if !ok {
+			blog.ErrorJSON("attribute [%s] has an invalid bk_property_group %s", *attribute, attribute.PropertyGroup)
+			return nil, params.Err.CCErrorf(common.CCErrCommParamsIsInvalid, "attribute.bk_property_group: "+attribute.PropertyGroup)
 		}
-
-		for _, grp := range grps {
-			// should be only one
-			result.PropertyGroupName = grp.Group().GroupName
-		}
-
+		result.PropertyGroupName = grpName
 		results = append(results, result)
 	}
 
@@ -217,6 +233,9 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 }
 
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error) {
+	limits := cond.GetLimit()
+	sort := cond.GetSort()
+	start := cond.GetStart()
 	fCond := cond.ToMapStr()
 	if nil != params.MetaData {
 		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
@@ -225,7 +244,12 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
+	opt := &metadata.QueryCondition{
+		Condition: fCond,
+		Page:      metadata.BasePage{Limit: int(limits), Start: int(start), Sort: sort},
+	}
+
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, opt)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -283,4 +307,24 @@ func (a *attribute) isMainlineModel(head http.Header, modelID string) (bool, err
 	}
 
 	return false, nil
+}
+
+func (a *attribute) UpdateObjectAttributeIndex(params types.ContextParams, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error) {
+	input := metadata.UpdateOption{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),
+		Data:      data,
+	}
+
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsIndex(context.Background(), params.Header, objID, &input)
+	if nil != err {
+		blog.Errorf("[operation-attr] failed to request object CoreService, error info is %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-attr] failed to update the attribute index by the attr-id(%d), error info is %s, rid: %s", attID, rsp.ErrMsg, params.ReqID)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return rsp.Data, nil
 }

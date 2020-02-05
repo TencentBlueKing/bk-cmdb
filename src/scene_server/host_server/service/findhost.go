@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstruct"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -50,6 +51,77 @@ func (s *Service) FindModuleHost(req *restful.Request, resp *restful.Response) {
 	})
 }
 
+func (s *Service) ListResourcePoolHosts(req *restful.Request, resp *restful.Response) {
+	header := req.Request.Header
+	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.ExtractRequestIDFromContext(ctx)
+	srvData := s.newSrvComm(header)
+	defErr := srvData.ccErr
+
+	parameter := meta.ListHostsParameter{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&parameter); err != nil {
+		blog.Errorf("ListResourcePoolHosts failed, decode body failed, err: %#v, rid:%s", err, rid)
+		ccErr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
+	filter := &meta.QueryCondition{
+		Fields: []string{common.BKAppIDField, common.BKAppNameField},
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKDefaultField: common.DefaultAppFlag,
+		},
+	}
+	appResult, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, filter)
+	if err != nil {
+		blog.Errorf("ListResourcePoolHosts failed, ReadInstance of default app failed, filter: %+v, err: %#v, rid:%s", filter, err, rid)
+		ccErr := defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+	if ccErr := appResult.CCError(); ccErr != nil {
+		blog.ErrorJSON("ListResourcePoolHosts failed, ReadInstance of default app failed, filter: %s, result: %s, rid:%s", filter, appResult, rid)
+		ccErr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+	if appResult.Data.Count == 0 {
+		blog.Errorf("ListResourcePoolHosts failed, get default app failed, not found, rid: %s", rid)
+		ccErr := defErr.Error(common.CCErrCommBizNotFoundError)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+	if appResult.Data.Count > 1 {
+		blog.Errorf("ListResourcePoolHosts failed, get multiple default app, result: %+v, rid: %s", appResult, rid)
+		ccErr := defErr.Error(common.CCErrCommGetMultipleObject)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	// parse biz data
+	bizData := appResult.Data.Info[0]
+	biz := meta.BizBasicInfo{}
+	if err := mapstruct.Decode2Struct(bizData, &biz); err != nil {
+		blog.ErrorJSON("ListResourcePoolHosts failed, parse app data failed, bizData: %s, err: %s, rid: %s", bizData, err.Error(), rid)
+		ccErr := defErr.Error(common.CCErrCommParseDataFailed)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	// do host search
+	bizID := biz.BizID
+	hostResult, ccErr := s.listBizHosts(req.Request.Header, bizID, parameter)
+	if ccErr != nil {
+		blog.ErrorJSON("ListResourcePoolHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, rid:%s", bizID, parameter, ccErr.Error(), rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
+	result := meta.NewSuccessResponse(hostResult)
+	_ = resp.WriteEntity(result)
+}
+
 // ListHosts list host under business specified by path parameter
 func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 	header := req.Request.Header
@@ -58,10 +130,11 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(header)
 	defErr := srvData.ccErr
 
-	parameter := &meta.ListHostsParameter{}
-	if err := json.NewDecoder(req.Request.Body).Decode(parameter); err != nil {
-		blog.Errorf("ListBizHosts failed, decode body failed, err: %#v, rid:%s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	parameter := meta.ListHostsParameter{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&parameter); err != nil {
+		blog.Errorf("ListBizHosts failed, decode body failed, err: %#v, rid:%s", err, rid)
+		ccErr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
 	if key, err := parameter.Validate(); err != nil {
@@ -72,35 +145,50 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 	}
 	bizID, err := util.GetInt64ByInterface(req.PathParameter("appid"))
 	if err != nil {
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
+		ccErr := defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
 	if bizID == 0 {
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
+		ccErr := defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
+	hostResult, ccErr := s.listBizHosts(req.Request.Header, bizID, parameter)
+	if ccErr != nil {
+		blog.ErrorJSON("ListBizHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, rid:%s", bizID, parameter, ccErr.Error(), rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
+	result := meta.NewSuccessResponse(hostResult)
+	_ = resp.WriteEntity(result)
+}
+
+func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.ListHostsParameter) (result meta.ListHostResult, ccErr errors.CCErrorCoder) {
+	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.ExtractRequestIDFromContext(ctx)
+	srvData := s.newSrvComm(header)
+	defErr := srvData.ccErr
 
 	if parameter.Page.IsIllegal() {
 		blog.Errorf("ListBizHosts failed, page limit %d illegal, rid:%s", parameter.Page.Limit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "page.limit")})
-		return
+		return result, defErr.CCErrorf(common.CCErrCommParamsInvalid, "page.limit")
 	}
 
 	if parameter.SetIDs != nil && len(parameter.SetIDs) != 0 && parameter.SetCond != nil && len(parameter.SetCond) != 0 {
 		blog.Errorf("ListBizHosts failed, bk_set_ids and set_cond can't both be set, rid:%s", srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, "bk_set_ids and set_cond can't both be set")})
-		return
+		return result, defErr.CCErrorf(common.CCErrCommParamsInvalid, "bk_set_ids and set_cond can't both be set")
 	}
 
 	var setIDs []int64
+	var err error
 	if parameter.SetIDs != nil {
 		setIDs = parameter.SetIDs
 	} else {
 		setIDs, err = srvData.lgc.GetSetIDByCond(srvData.ctx, parameter.SetCond)
 		if err != nil {
 			blog.ErrorJSON("ListBizHosts failed, GetSetIDByCond %s failed, error: %s, rid:%s", parameter.SetCond, err.Error(), srvData.rid)
-			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPDoRequestFailed, err.Error())})
-			return
+			return result, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 	}
 
@@ -111,15 +199,12 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,
 	}
-	host, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
+	hostResult, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
 	if err != nil {
 		blog.Errorf("find host failed, err: %s, input:%#v, rid:%s", err.Error(), parameter, rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
-		return
+		return result, defErr.CCError(common.CCErrHostGetFail)
 	}
-
-	result := meta.NewSuccessResponse(host)
-	_ = resp.WriteEntity(result)
+	return hostResult, nil
 }
 
 // ListHostsWithNoBiz list host for no biz case merely
