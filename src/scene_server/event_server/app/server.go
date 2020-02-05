@@ -108,10 +108,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	select {
 	case <-ctx.Done():
-	case err = <-errCh:
-		blog.V(3).Infof("distribution routine stopped, err: %v", err)
-	}
-	blog.V(3).Infof("process stopped")
+    case err = <-errCh:
+        blog.Errorf("distribution routine stopped, err: %v", err)
+        return err
+    }
 
 	return nil
 }
