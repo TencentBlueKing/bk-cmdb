@@ -19,7 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/redis.v5"
+    "configcenter/src/common/mapstr"
+    "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -87,10 +88,14 @@ func migrateIDToMongo(ctx context.Context, cache *redis.Client, db dal.RDB) erro
 		"SequenceID": id,
 	}
 
-	err = db.Table(common.BKTableNameIDgenerator).Insert(ctx, docs)
-	if err != nil && !db.IsDuplicatedError(err) {
-		return err
-	}
+    filter := mapstr.MapStr{
+        "_id":        common.EventCacheEventIDKey,
+    }
+
+    err = db.Table(common.BKTableNameIDgenerator).Upsert(ctx, filter, docs)
+    if err != nil {
+        return err
+    }
 
 	return cache.Del(common.EventCacheEventIDKey).Err()
 }
