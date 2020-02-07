@@ -50,13 +50,13 @@ func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 	if nil != err {
 		return nil, err
 	}
-	
+
 	minIdle := uint64(100)
 	maxIdle := uint64(3000)
 	conOpt := options.ClientOptions{
-        MaxPoolSize:            &maxIdle,
-        MinPoolSize:            &minIdle,
-    }
+		MaxPoolSize: &maxIdle,
+		MinPoolSize: &minIdle,
+	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(uri), &conOpt)
 	if nil != err {
@@ -109,9 +109,9 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 		if strings.Contains(err.Error(), "There's already an index with name") {
 			return true
 		}
-        if strings.Contains(err.Error(), "E11000 duplicate") {
-            return true
-        }
+		if strings.Contains(err.Error(), "E11000 duplicate") {
+			return true
+		}
 	}
 	return err == dal.ErrDuplicated
 }
@@ -253,9 +253,6 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 	if err != nil {
 		return err
 	}
-	// defer cursor.Close(ctx)
-    // 
-	// return decodeCusorIntoSlice(ctx, cursor, result)
 	return cursor.All(ctx, result)
 }
 
