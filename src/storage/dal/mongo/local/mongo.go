@@ -51,7 +51,14 @@ func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 		return nil, err
 	}
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
+	minIdle := uint64(100)
+	maxIdle := uint64(3000)
+	conOpt := options.ClientOptions{
+		MaxPoolSize: &maxIdle,
+		MinPoolSize: &minIdle,
+	}
+
+	client, err := mongo.NewClient(options.Client().ApplyURI(uri), &conOpt)
 	if nil != err {
 		return nil, err
 	}
@@ -102,9 +109,9 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 		if strings.Contains(err.Error(), "There's already an index with name") {
 			return true
 		}
-        if strings.Contains(err.Error(), "E11000 duplicate") {
-            return true
-        }
+		if strings.Contains(err.Error(), "E11000 duplicate") {
+			return true
+		}
 	}
 	return err == dal.ErrDuplicated
 }
@@ -133,7 +140,7 @@ func (c *Collection) Find(filter dal.Filter) dal.Find {
 	return &Find{
 		Collection: c,
 		filter:     filter,
-		projection: map[string]interface{}{"_id": 0},
+		projection: map[string]int{"_id": 0},
 	}
 }
 
@@ -141,7 +148,7 @@ func (c *Collection) Find(filter dal.Filter) dal.Find {
 type Find struct {
 	*Collection
 
-	projection map[string]interface{}
+	projection map[string]int
 	filter     dal.Filter
 	start      int64
 	limit      int64
@@ -246,9 +253,7 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer cursor.Close(ctx)
-
-	return decodeCusorIntoSlice(ctx, cursor, result)
+	return cursor.All(ctx, result)
 }
 
 // One 查询一个
@@ -548,7 +553,6 @@ type Idgen struct {
 // HasSession 判断context里是否有session信息
 func (c *Mongo) HasSession(ctx context.Context) bool {
 	v, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
-	//blog.Infof("Has session, joinoption:%#v", v)
 	return ok == true && v.SessionID != ""
 }
 
