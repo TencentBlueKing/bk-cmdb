@@ -21,7 +21,9 @@ import (
 
 type Statistic struct {
 	// the total seconds of this statistic
-	SustainSecond int
+	SustainSecond float64
+	// the count of goroutines to run
+	Concurrent int
 	// total request that has been send.
 	TotalRequest int64
 	// success request number
@@ -61,7 +63,7 @@ func (s *Statistic) IncreaseFailed() {
 
 // only update success request data
 func (s *Statistic) UpdateCostDuration(t time.Duration) {
-	mt := float64(t / time.Millisecond)
+	mt := t.Seconds() * 1000
 	s.TotalCostDuration += mt
 	if s.Values == nil {
 		s.Values = make([]float64, 0)
@@ -84,7 +86,8 @@ func (s *Statistic) UpdateCostDuration(t time.Duration) {
 }
 
 type Metrics struct {
-	SustainSeconds int
+	SustainSeconds float64
+	Concurrent     int
 	QPS            float64
 	// in millisecond
 	MaxDuration       float64
@@ -104,6 +107,7 @@ func (m *Metrics) Format() string {
 	var f string
 	f = SetYellow("Load test metrics:\n--------------------\n")
 	f += fmt.Sprintf("  Sustain: %ss\n", SetGreen(m.SustainSeconds))
+	f += fmt.Sprintf("  Cocurrent: %s\n", SetGreen(m.Concurrent))
 	f += fmt.Sprintf("  Total:   %s\n", SetGreen(m.TotalRequest))
 	f += fmt.Sprintf("  Succeed: %s\n", SetGreen(m.SucceedRequest))
 	f += fmt.Sprintf("  Failed:  %s\n", SetRed(m.FailedRequest))
@@ -123,20 +127,26 @@ func (s *Statistic) CalculateMetrics() Metrics {
 
 	var m Metrics
 	m.SustainSeconds = s.SustainSecond
-	m.QPS = float64(len(s.Values) / s.SustainSecond)
+	m.Concurrent = s.Concurrent
+	m.QPS = float64(float64(len(s.Values)) / s.SustainSecond)
 	m.MaxDuration = s.MaxCostDuration
 	m.MinDuration = s.MinCostDuration
 
 	// sort the data.
 	sort.Float64s(s.Values)
 
-	// The median of an even number of values is the average of the middle two.
-	if (s.TotalSucceed & 0x01) == 0 {
-		m.MedianDuration = (s.Values[s.TotalSucceed/2-1] + s.Values[s.TotalSucceed/2]) / 2 / float64(time.Millisecond)
+	if s.TotalSucceed == 0 {
+		m.MedianDuration = 0
+		m.AverageDuration = 0
 	} else {
-		m.MedianDuration = s.Values[s.TotalSucceed/2]
+		// The median of an even number of values is the average of the middle two.
+		if (s.TotalSucceed & 0x01) == 0 {
+			m.MedianDuration = (s.Values[s.TotalSucceed/2-1] + s.Values[s.TotalSucceed/2]) / 2 / float64(time.Millisecond)
+		} else {
+			m.MedianDuration = s.Values[s.TotalSucceed/2]
+		}
+		m.AverageDuration = s.TotalCostDuration / float64(s.TotalSucceed)
 	}
-	m.AverageDuration = s.TotalCostDuration / float64(s.TotalSucceed)
 	m.Percent85Duration = s.percent(0.85)
 	m.Percent95Duration = s.percent(0.95)
 

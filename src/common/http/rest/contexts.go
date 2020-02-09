@@ -67,9 +67,7 @@ func (c *Contexts) RespEntity(data interface{}) {
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
-	if err := c.resp.WriteAsJson(metadata.NewSuccessResp(data)); err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
-	}
+	c.writeAsJson(metadata.NewSuccessResp(data))
 }
 
 func (c *Contexts) RespEntityWithError(data interface{}, err error) {
@@ -100,9 +98,7 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 	} else {
 		resp.BaseResp = metadata.SuccessBaseResp
 	}
-	if err := c.resp.WriteAsJson(resp); err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
-	}
+	c.writeAsJson(&resp)
 }
 
 type CountInfo struct {
@@ -123,9 +119,7 @@ func (c *Contexts) RespEntityWithCount(count int64, info interface{}) {
 			Info:  info,
 		},
 	}
-	if err := c.resp.WriteAsJson(resp); err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
-	}
+	c.writeAsJson(&resp)
 }
 
 func (c *Contexts) WithStatusCode(statusCode int) *Contexts {
@@ -180,10 +174,7 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 		Data: nil,
 	}
 
-	if err := c.resp.WriteAsJson(body); err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request with error failed, err: %v", c.Kit.Rid, err))
-		return
-	}
+	c.writeAsJson(&body)
 }
 
 func (c *Contexts) RespAutoError(err error) {
@@ -215,10 +206,7 @@ func (c *Contexts) RespAutoError(err error) {
 		Data: "",
 	}
 
-	if err := c.resp.WriteAsJson(body); err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request with error failed, err: %v", c.Kit.Rid, err))
-		return
-	}
+	c.writeAsJson(&body)
 }
 
 // WriteErrorf used to write a error response to the request client.
@@ -241,11 +229,7 @@ func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interfac
 		},
 		Data: "",
 	}
-
-	if err := c.resp.WriteAsJson(body); err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request with error failed, err: %v", c.Kit.Rid, err))
-		return
-	}
+	c.writeAsJson(&body)
 }
 
 func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interface{}) {
@@ -265,8 +249,17 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 		Data: "",
 	}
 
-	if err := c.resp.WriteAsJson(body); err != nil {
-		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request with error failed, err: %v", c.Kit.Rid, err))
+	c.writeAsJson(&body)
+}
+
+func (c *Contexts) writeAsJson(resp *metadata.Response) {
+	body, err := json.Marshal(resp)
+	if err != nil {
+		blog.ErrorfDepth(2, fmt.Sprintf("rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err))
+		return
+	}
+	if _, err := c.resp.Write(body); err != nil {
+		blog.ErrorfDepth(2, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
 		return
 	}
 }

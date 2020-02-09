@@ -101,7 +101,7 @@ type AssociationKind interface {
 	UpdateAssociationKind(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteAssociationKind(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteAssociationKind(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	SearchAssociationKind(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	SearchAssociationKind(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.SearchAssociationKindResult, error)
 }
 
 // ModelAssociation manager model association

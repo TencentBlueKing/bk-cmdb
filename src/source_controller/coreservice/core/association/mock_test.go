@@ -24,7 +24,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/model"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/stretchr/testify/require"

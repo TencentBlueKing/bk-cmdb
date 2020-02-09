@@ -13,13 +13,15 @@
 package service
 
 import (
+	"net/http"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
-	"configcenter/src/common/rdapi"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
@@ -37,7 +39,6 @@ import (
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 	dalredis "configcenter/src/storage/dal/redis"
 
 	"github.com/emicklei/go-restful"
@@ -57,16 +58,17 @@ func New() CoreServiceInterface {
 
 // coreService topo service
 type coreService struct {
-	engine   *backbone.Engine
-	language language.CCLanguageIf
-	err      errors.CCErrorIf
-	cfg      options.Config
-	core     core.Core
-	db       dal.RDB
-	cache    *redis.Client
+	engine      *backbone.Engine
+	langFactory map[common.LanguageType]language.DefaultCCLanguageIf
+	language    language.CCLanguageIf
+	err         errors.CCErrorIf
+	cfg         options.Config
+	core        core.Core
+	db          dal.RDB
+	cache       *redis.Client
 }
 
-func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
+func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
 
 	s.cfg = cfg
 	s.engine = engine
@@ -75,17 +77,13 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		s.err = err
 	}
 
-	if nil != language {
-		s.language = language
+	if nil != lang {
+		s.langFactory = make(map[common.LanguageType]language.DefaultCCLanguageIf)
+		s.langFactory[common.Chinese] = lang.CreateDefaultCCLanguageIf(string(common.Chinese))
+		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
 	}
 
-	var dbErr error
-	var db dal.RDB
-	if s.cfg.Mongo.Enable == "true" {
-		db, dbErr = local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
-	} else {
-		db, dbErr = remote.NewWithDiscover(s.engine)
-	}
+	db, dbErr := local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 		return dbErr
@@ -97,14 +95,20 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		return cacheRrr
 	}
 
+	initErr := db.InitTxnManager(cache)
+	if initErr != nil {
+		blog.Errorf("failed to init txn manager, error info is %v", initErr)
+		return initErr
+	}
+
 	s.db = db
 	s.cache = cache
 
 	// connect the remote mongodb
-	instance := instances.New(db, s, cache, language)
+	instance := instances.New(db, s, cache, lang)
 	hostApplyRuleCore := hostapplyrule.New(db, instance)
 	s.core = core.New(
-		model.New(db, s, language, cache),
+		model.New(db, s, lang, cache),
 		instance,
 		association.New(db, s),
 		datasynchronize.New(db, s),
@@ -127,10 +131,7 @@ func (s *coreService) WebService() *restful.Container {
 	container := restful.NewContainer()
 
 	api := new(restful.WebService)
-	getErrFunc := func() errors.CCErrorIf {
-		return s.err
-	}
-	api.Path("/api/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/api/v3").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	// init service actions
 	s.initService(api)
@@ -141,4 +142,13 @@ func (s *coreService) WebService() *restful.Container {
 	container.Add(healthzAPI)
 
 	return container
+}
+
+func (s *coreService) Language(header http.Header) language.DefaultCCLanguageIf {
+	lang := util.GetLanguage(header)
+	l, exist := s.langFactory[common.LanguageType(lang)]
+	if !exist {
+		return s.langFactory[common.Chinese]
+	}
+	return l
 }

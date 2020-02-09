@@ -75,11 +75,6 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 			return
 		}
 
-		if 1 < len(fchain.Filters) {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
-
 		fchain.ProcessFilter(req, resp)
 		return
 	}

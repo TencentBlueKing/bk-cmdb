@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -109,8 +110,7 @@ func (s *coreService) SearchChartWithPosition(ctx *rest.Contexts) {
 		return
 	}
 
-	language := util.GetLanguage(ctx.Kit.Header)
-	lang := s.language.CreateDefaultCCLanguageIf(language)
+	lang := s.Language(ctx.Kit.Header)
 	for index, chart := range result.Host {
 		result.Host[index].Name = s.TranslateOperationChartName(lang, chart)
 	}
@@ -207,22 +207,22 @@ func (s *coreService) SearchChartCommon(ctx *rest.Contexts) {
 }
 
 func (s *coreService) TimerFreshData(ctx *rest.Contexts) {
-	exist, err := s.db.HasTable(common.BKTableNameChartData)
+	exist, err := s.db.HasTable(context.Background(), common.BKTableNameChartData)
 	if err != nil {
 		blog.Errorf("TimerFreshData, update timer chart data fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		ctx.RespEntity(false)
-        return
+		return
 	}
 	if !exist {
 		ctx.RespEntity(false)
-        return
+		return
 	}
 
 	err = s.core.StatisticOperation().TimerFreshData(ctx.Kit)
 	if err != nil {
 		blog.Errorf("TimerFreshData fail, err: %v, rid: %v", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
-        return
+		return
 	}
 	ctx.RespEntity(true)
 }

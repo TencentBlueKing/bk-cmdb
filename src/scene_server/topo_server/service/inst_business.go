@@ -19,11 +19,11 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
@@ -34,8 +34,51 @@ import (
 
 // CreateBusiness create a new business
 func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	var txnErr error
+	// 判断是否使用事务
+	if s.EnableTxn {
+		sess, err := s.DB.StartSession()
+		if err != nil {
+			txnErr = err
+			blog.Errorf("StartSession err: %s, rid: %s", err.Error(), params.ReqID)
+			return nil, err
+		}
+		// 获取事务信息，将其存入context中
+		txnInfo, err := sess.TxnInfo()
+		if err != nil {
+			txnErr = err
+			blog.Errorf("TxnInfo err: %+v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+		params.Header = txnInfo.IntoHeader(params.Header)
+		params.Context = util.TnxIntoContext(params.Context, txnInfo)
+		err = sess.StartTransaction(params.Context)
+		if err != nil {
+			txnErr = err
+			blog.Errorf("StartTransaction err: %+v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+		defer func() {
+			if txnErr == nil {
+				err = sess.CommitTransaction(params.Context)
+				if err != nil {
+					blog.Errorf("CommitTransaction err: %+v", err)
+				}
+			} else {
+				blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
+				err = sess.AbortTransaction(params.Context)
+				if err != nil {
+					blog.Errorf("AbortTransaction err: %+v", err)
+				}
+			}
+			sess.EndSession(params.Context)
+		}()
+	}
+
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
+		txnErr = err
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
@@ -43,22 +86,24 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
 	if err != nil {
+		txnErr = err
 		blog.Errorf("create business failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
 	businessID, err := business.GetInstID()
 	if err != nil {
+		txnErr = err
 		blog.Errorf("unexpected error, create business success, but get id failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 
 	// auth: register business to iam
 	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
+		txnErr = err
 		blog.Errorf("create business success, but register to iam failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
-
 	return business, nil
 }
 
@@ -322,26 +367,29 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 }
 
 // SearchBusiness search the business by condition
-func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	searchCond := new(metadata.QueryBusinessRequest)
-	if err := data.MarshalJSONInto(&searchCond); nil != err {
-		blog.Errorf("failed to parse the params, error info is %s, rid: %s", err.Error(), params.ReqID)
-		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+	if err := ctx.DecodeInto(&searchCond); nil != err {
+		blog.Errorf("failed to parse the params, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
+		return
 	}
 
 	attrCond := condition.CreateCondition()
-	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(ctx.Kit.SupplierAccount)
 	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
 	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
-	attrArr, err := s.Core.AttributeOperation().FindObjectAttribute(params, attrCond)
+	attrArr, err := s.Core.AttributeOperation().FindBusinessAttribute(ctx.Kit, attrCond.ToMapStr())
 	if nil != err {
-		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), util.GetHTTPCCRequestID(params.Header))
-		return nil, err
+		blog.Errorf("failed get the business attribute, %s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 	// userFieldArr Fields in the business are user-type fields
 	var userFields []string
-	for _, attrInterface := range attrArr {
-		userFields = append(userFields, attrInterface.Attribute().PropertyID)
+	for _, attribute := range attrArr {
+		userFields = append(userFields, attribute.PropertyID)
 	}
 
 	searchCond.Condition = handleSpecialBusinessFieldSearchCond(searchCond.Condition, userFields)
@@ -355,7 +403,8 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		if bizcond, ok := biz.(map[string]interface{}); ok {
 			if cond, ok := bizcond["$eq"]; ok {
 				if reflect.TypeOf(cond).ConvertibleTo(reflect.TypeOf(int64(1))) == false {
-					return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+					ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "", common.BKAppIDField)
+					return
 				}
 				bizIDs = []int64{int64(cond.(float64))}
 			}
@@ -363,7 +412,8 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 				if conds, ok := cond.([]interface{}); ok {
 					for _, c := range conds {
 						if reflect.TypeOf(c).ConvertibleTo(reflect.TypeOf(int64(1))) == false {
-							return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+							ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "", common.BKAppIDField)
+							return
 						}
 						bizIDs = append(bizIDs, int64(c.(float64)))
 					}
@@ -372,16 +422,18 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 		} else if reflect.TypeOf(biz).ConvertibleTo(reflect.TypeOf(int64(1))) {
 			bizIDs = []int64{int64(searchCond.Condition[common.BKAppIDField].(float64))}
 		} else {
-			return nil, params.Err.New(common.CCErrCommParamsInvalid, common.BKAppIDField)
+			ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "", common.BKAppIDField)
+			return
 		}
 	}
 
 	if s.AuthManager.Enabled() {
-		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
-		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
+		user := authmeta.UserInfo{UserName: ctx.Kit.User, SupplierAccount: ctx.Kit.SupplierAccount}
+		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(ctx.Kit.Ctx, user)
 		if err != nil {
-			blog.Errorf("[api-biz] SearchBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
-			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
+			blog.Errorf("[api-biz] SearchBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), ctx.Kit.Rid)
+			ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
+			return
 		}
 
 		if len(bizIDs) > 0 {
@@ -389,11 +441,13 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 			// now we check if he has this authority.
 			for _, bizID := range bizIDs {
 				if !util.InArray(bizID, appList) {
-					noAuthResp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(params.Context, params.Header, bizID)
+					noAuthResp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
 					if err != nil {
-						return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
+						ctx.RespErrorCodeOnly(common.CCErrTopoAppSearchFailed, "")
+						return
 					}
-					return noAuthResp, auth.NoAuthorizeError
+					ctx.RespEntity(noAuthResp)
+					return
 				}
 			}
 			// now you have the authority.
@@ -412,21 +466,23 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 	// can only find normal business, but not resource pool business
 	searchCond.Condition[common.BKDefaultField] = 0
 
-	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, searchCond)
+	cnt, instItems, err := s.Core.BusinessOperation().FindBiz(ctx.Kit, searchCond)
 	if nil != err {
-		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
-		return nil, err
+		blog.Errorf("find business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
 	result := mapstr.MapStr{}
 	result.Set("count", cnt)
 	result.Set("info", instItems)
 
-	return result, nil
+	ctx.RespEntity(result)
+	return
 }
 
-// search archived business by condition
-func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// SearchOwnerResourcePoolBusiness search archived business by condition
+func (s *Service) SearchOwnerResourcePoolBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	supplierAccount := pathParams("owner_id")
 	query := metadata.QueryBusinessRequest{
@@ -436,23 +492,13 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 		},
 	}
 
-	if s.AuthManager.Enabled() {
-		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
-		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
-		if err != nil {
-			blog.Errorf("[api-biz] SearchArchivedBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), params.ReqID)
-			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
-		}
-		// sort for prepare to find business with page.
-		sort.Sort(util.Int64Slice(appList))
-		// user can only find business that is already authorized.
-		query.Condition[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: appList}
-	}
-
 	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, &query)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s, rid: %s", pathParams("obj_id"), err.Error(), params.ReqID)
 		return nil, err
+	}
+	if cnt == 0 {
+		blog.InfoJSON("cond:%s, header:%s, rid:%s", query, params.Header, params.ReqID)
 	}
 	result := mapstr.MapStr{}
 	result.Set("count", cnt)
