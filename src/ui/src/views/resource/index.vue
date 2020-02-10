@@ -31,7 +31,7 @@
 </template>
 
 <script>
-    import resourceDiractory from './children/diractory.vue'
+    import resourceDiractory from './children/directory.vue'
     import resourceHosts from './children/host-list.vue'
     import Bus from '@/utils/bus.js'
     export default {
