@@ -103,23 +103,7 @@
                     name: ''
                 },
                 curActiveDir: -1,
-                dirList: [{
-                    id: 0,
-                    name: 'test1',
-                    count: 99
-                }, {
-                    id: 1,
-                    name: 'test2',
-                    count: 99
-                }, {
-                    id: 2,
-                    name: 'test3',
-                    count: 99
-                }, {
-                    id: 3,
-                    name: 'test4',
-                    count: 99
-                }]
+                dirList: []
             }
         },
         methods: {
