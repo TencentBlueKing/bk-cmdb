@@ -269,6 +269,21 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 		}
 
 		curData := make([]metadata.HostBizTopo, 0)
+		for bizID, setModuleMap := range curHostRelationMap[hostID] {
+			sets := make([]metadata.Topo, 0)
+			for setID, modules := range setModuleMap {
+				sets = append(sets, metadata.Topo{
+					SetID:   setID,
+					SetName: setNameMap[setID],
+					Module:  modules,
+				})
+			}
+			curData = append(curData, metadata.HostBizTopo{
+				BizID:   bizID,
+				BizName: appIDNameMap[bizID],
+				Set:     sets,
+			})
+		}
 
 		logs = append(logs, metadata.AuditLog{
 			AuditType:    metadata.HostType,

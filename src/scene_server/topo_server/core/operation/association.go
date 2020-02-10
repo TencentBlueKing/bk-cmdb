@@ -851,12 +851,12 @@ func (assoc *association) CreateInst(params types.ContextParams, request *metada
 		return nil, params.Err.Error(common.CCErrAuditTakeSnapshotFailed)
 	}
 	auditLog := metadata.AuditLog{
-		AuditType:    metadata.AssociationKindType,
+		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.InstanceAssociationRes,
 		Action:       metadata.AuditCreate,
 		OperationDetail: &metadata.InstanceAssociationOpDetail{
 			AssociationOpDetail: metadata.AssociationOpDetail{
-				AssociationID:   objectAsst.AsstObjID,
+				AssociationID:   objectAsst.AssociationName,
 				AssociationKind: objectAsst.AsstKindID,
 				SourceModelID:   objID,
 				TargetModelID:   asstObjID,
@@ -936,12 +936,12 @@ func (assoc *association) DeleteInst(params types.ContextParams, assoID int64) (
 		return nil, params.Err.Error(common.CCErrAuditTakeSnapshotFailed)
 	}
 	auditLog := metadata.AuditLog{
-		AuditType:    metadata.AssociationKindType,
+		AuditType:    metadata.ModelInstanceType,
 		ResourceType: metadata.InstanceAssociationRes,
 		Action:       metadata.AuditDelete,
 		OperationDetail: &metadata.InstanceAssociationOpDetail{
 			AssociationOpDetail: metadata.AssociationOpDetail{
-				AssociationID:   instanceAssociation.AsstObjectID,
+				AssociationID:   instanceAssociation.ObjectAsstID,
 				AssociationKind: instanceAssociation.AssociationKindID,
 				SourceModelID:   instanceAssociation.ObjectID,
 				TargetModelID:   instanceAssociation.AsstObjectID,

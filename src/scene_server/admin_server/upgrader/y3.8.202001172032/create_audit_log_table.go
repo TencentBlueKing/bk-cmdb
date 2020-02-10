@@ -28,7 +28,7 @@ func createAuditLogTable(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 		return err
 	}
 	if !exists {
-		if err = db.CreateTable(common.BKTableNameAuditLog); err != nil && !db.IsDuplicatedError(err) {
+		if err = db.CreateTable(ctx, common.BKTableNameAuditLog); err != nil && !db.IsDuplicatedError(err) {
 			blog.ErrorJSON("create audit log table error, err:%s", err.Error())
 			return err
 		}
@@ -37,7 +37,7 @@ func createAuditLogTable(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 }
 
 func addAuditLogTableIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	idxArr, err := db.Table(ctx, common.BKTableNameAuditLog).Indexes(ctx)
+	idxArr, err := db.Table(common.BKTableNameAuditLog).Indexes(ctx)
 	if err != nil {
 		blog.Errorf("get table %s index error. err:%s", common.BKTableNameAuditLog, err.Error())
 		return err

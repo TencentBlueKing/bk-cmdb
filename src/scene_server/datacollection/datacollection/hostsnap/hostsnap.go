@@ -164,6 +164,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 		AuditType:    metadata.HostType,
 		ResourceType: metadata.HostRes,
 		Action:       metadata.AuditUpdate,
+		OperateFrom:  metadata.FromDataCollection,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
 				BusinessID:   bizID,

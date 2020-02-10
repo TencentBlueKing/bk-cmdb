@@ -253,6 +253,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 				AuditType:    metadata.GetAuditTypeByObjID(objID),
 				ResourceType: metadata.GetResourceTypeByObjID(objID),
 				Action:       metadata.AuditCreate,
+				OperateFrom:  metadata.FromDataCollection,
 				OperationDetail: &metadata.InstanceOpDetail{
 					BasicOpDetail: metadata.BasicOpDetail{
 						BusinessID:   bizID,
@@ -290,7 +291,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return nil
 	}
 
-	preUpdatedData:=make(map[string]interface{})
+	preUpdatedData := make(map[string]interface{})
 	for key, value := range inst {
 		preUpdatedData[key] = value
 	}
@@ -392,6 +393,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			AuditType:    metadata.GetAuditTypeByObjID(objID),
 			ResourceType: metadata.GetResourceTypeByObjID(objID),
 			Action:       metadata.AuditUpdate,
+			OperateFrom:  metadata.FromDataCollection,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   bizID,
