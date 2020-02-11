@@ -51,10 +51,10 @@
                                                 @click="handleViewConflict"
                                             >
                                                 <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
-                                                    {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
+                                                    {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
                                                 </span>
                                                 <span v-else>
-                                                    {{$t('失效列表')}}<em class="conflict-num">{{conflictNum}}</em>
+                                                    {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
                                                 </span>
                                             </bk-button>
                                         </cmdb-auth>

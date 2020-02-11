@@ -101,7 +101,7 @@
                 }
             },
             setBreadcrumbs () {
-                this.$store.commit('setTitle', this.$t('策略失效列表'))
+                this.$store.commit('setTitle', this.$t('策略失效主机'))
             },
             goBack () {
                 this.$router.push({
