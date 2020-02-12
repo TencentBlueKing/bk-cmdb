@@ -187,9 +187,7 @@ func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID stri
 		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, ctx.ReqID)
 		return &metadata.QueryResult{}, err
 	}
-	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
-	inputParam.Condition = condition.ToMapStr()
+	inputParam.Condition = util.SetQueryOwner(condition.ToMapStr(), ctx.SupplierAccount)
 
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, ctx.ReqID)
 	instItems, err := m.searchInstance(ctx, objID, inputParam)
