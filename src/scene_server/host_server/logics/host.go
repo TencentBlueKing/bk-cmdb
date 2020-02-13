@@ -22,13 +22,15 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, businessMedatadata *metadata.Metadata) ([]metadata.Property, error) {
-	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
+	searchOp := map[string]interface{}{
+		common.BKObjIDField: common.BKInnerObjIDHost,
+		common.BkSupplierAccount: ownerID,
+	}
 	if businessMedatadata != nil {
-		searchOp.Set(common.MetadataField, businessMedatadata)
+		searchOp[common.MetadataField]=businessMedatadata
 	}
 	query := &metadata.QueryCondition{
 		Condition: searchOp,
