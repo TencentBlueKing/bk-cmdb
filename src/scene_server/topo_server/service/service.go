@@ -44,7 +44,7 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	DB         dal.RDB
+	DB          dal.RDB
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
@@ -66,7 +66,7 @@ func (s *Service) WebService() *restful.Container {
 	}
 
 	api := new(restful.WebService)
-	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	healthz := new(restful.WebService).Produces(restful.MIME_JSON)
 
