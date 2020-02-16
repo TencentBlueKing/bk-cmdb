@@ -100,6 +100,11 @@ const (
 
 	// rule for host property auto apply
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
+
+	// cloud sync tables
+	BKTableNameCloudSyncTask = "cc_CloudSyncTask"
+	BKTableNameCloudAccount  = "cc_CloudAccount"
+	BKTableNameCloudArea     = "cc_CloudArea"
 )
 
 // AllTables alltables
