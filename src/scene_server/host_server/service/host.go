@@ -1348,3 +1348,211 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	}
 	_ = resp.WriteEntity(result)
 }
+
+// UpdateImportHosts update excel import hosts
+func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	hostList := new(meta.HostList)
+	if err := json.NewDecoder(req.Request.Body).Decode(hostList); err != nil {
+		blog.Errorf("UpdateImportHosts failed with decode body err: %v,rid:%s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	if hostList.HostInfo == nil {
+		blog.Errorf("UpdateImportHosts, but host info is nil.input:%+v,rid:%s", hostList, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
+		return
+	}
+
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	if err != nil {
+		blog.Errorf("UpdateImportHosts, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+
+	updateFailedHosts := make([]interface{}, 0)
+	// check authorization
+	hostIDArr := make([]int64, 0)
+	hosts := make(map[int64]map[string]interface{}, 0)
+	for _, hostInfo := range hostList.HostInfo {
+		var intHostID int64
+		hostID, ok := hostInfo[common.BKHostIDField]
+		if !ok {
+			blog.Errorf("UpdateImportHosts failed, because bk_host_id field not exits innerIp: %v, rid: %v", hostInfo[common.BKHostInnerIPField], srvData.rid)
+			updateFailedHosts = append(updateFailedHosts, hostInfo[common.BKHostInnerIPField])
+			continue
+		}
+		switch hostID.(type) {
+		case int64:
+			intHostID = hostID.(int64)
+		case string:
+			stringID := hostID.(string)
+			intHostID, err = strconv.ParseInt(stringID, 10, 64)
+			if err != nil {
+				blog.Errorf("UpdateImportHosts failed, host id convert from string to int64 failed, innerIp: %v, rid: %v", hostInfo[common.BKHostInnerIPField], srvData.rid)
+				updateFailedHosts = append(updateFailedHosts, hostInfo[common.BKHostInnerIPField])
+				continue
+			}
+		default:
+			blog.Errorf("UpdateImportHosts failed, got invalid host id(%v) data type,rid:%s", hostID, srvData.rid)
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "bk_host_id")})
+			return
+		}
+		hostIDArr = append(hostIDArr, intHostID)
+		hosts[intHostID] = hostInfo
+	}
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, srvData.rid)
+		if err != nil && err != auth.NoAuthorizeError {
+			blog.ErrorJSON("check host authorization failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Edit, hostIDArr)
+		if err != nil && err != auth.NoAuthorizeError {
+			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
+			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(perm)
+		return
+	}
+
+	logPreContents := make(map[int64]meta.SaveAuditLogParams, 0)
+	for _, hostID := range hostIDArr {
+		stringID := strconv.FormatInt(hostID, 10)
+		if err != nil {
+			blog.Errorf("UpdateImportHosts, but got invalid host id[%s], err: %v,rid:%s", stringID, err, srvData.rid)
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
+			return
+		}
+		audit := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
+		if err := audit.WithPrevious(srvData.ctx, stringID, hostFields); err != nil {
+			blog.Errorf("UpdateImportHosts, but get host[%s] pre data for audit failed, err: %v, rid: %s", stringID, err, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
+			return
+		}
+
+		logPreContents[hostID] = audit.AuditLog(srvData.ctx, hostID)
+	}
+
+	hasHostUpdateWithoutHostApplyFiled := false
+	// 功能开关：更新主机属性时是否剔除自动应用字段
+	if meta.HostUpdateWithoutHostApplyFiled == true {
+		hostProperties, hasRules, err := s.getHostApplyRelatedFields(srvData, hostIDArr)
+		if err != nil {
+			blog.Errorf("UpdateImportHosts failed, getHostApplyRelatedFields failed, hostIDArr: %+v, err: %v, rid:%s", hostIDArr, err, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
+		// get host attributes
+		if hasRules == true {
+			hasHostUpdateWithoutHostApplyFiled = true
+			for hostID, hostInfo := range hosts {
+				delete(hostInfo, common.BKHostIDField)
+				updateData := make(map[string]interface{})
+				for key, value := range hostInfo {
+					properties, ok := hostProperties[hostID]
+					if ok == true && util.InStrArr(properties, key) {
+						continue
+					}
+					updateData[key] = value
+				}
+				opt := &meta.UpdateOption{
+					Condition: mapstr.MapStr{common.BKHostIDField: hostID},
+					Data:      mapstr.NewFromMap(updateData),
+				}
+				result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
+				if err != nil {
+					blog.Errorf("UpdateImportHosts UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, srvData.rid)
+					_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+					return
+				}
+				if !result.Result {
+					blog.ErrorJSON("UpdateImportHosts failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
+					_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+					return
+				}
+			}
+		}
+	}
+
+	if hasHostUpdateWithoutHostApplyFiled == false {
+		for hostID, hostInfo := range hosts {
+			delete(hostInfo, common.BKHostIDField)
+			opt := &meta.UpdateOption{
+				Condition: mapstr.MapStr{common.BKHostIDField: hostID},
+				Data:      mapstr.NewFromMap(hostInfo),
+			}
+			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
+			if err != nil {
+				blog.Errorf("UpdateImportHosts UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, srvData.rid)
+				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+				return
+			}
+			if !result.Result {
+				blog.ErrorJSON("UpdateImportHosts failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
+				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+				return
+			}
+		}
+	}
+
+	logLastContents := make([]meta.SaveAuditLogParams, 0)
+	for _, hostID := range hostIDArr {
+		audit := srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
+		if err := audit.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
+			blog.Errorf("UpdateImportHosts, but get host[%v] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
+			return
+		}
+		logContent := audit.Content
+		logContent.CurData = logContent.PreData
+		preLogContent, ok := logPreContents[hostID]
+		if ok {
+			content, ok := preLogContent.Content.(*meta.Content)
+			if ok {
+				logContent.PreData = content.PreData
+			}
+		}
+
+		hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: []int64{hostID}})
+		if err != nil {
+			blog.Errorf("UpdateImportHosts GetConfigByCond failed, id[%v], err: %v,input:%+v,rid:%s", hostID, err, hostList.HostInfo, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
+		var appID int64
+		if len(hostModuleConfig) > 0 {
+			appID = hostModuleConfig[0].AppID
+		}
+
+		logLastContents = append(logLastContents,
+			meta.SaveAuditLogParams{
+				ID:      hostID,
+				Model:   common.BKInnerObjIDHost,
+				Content: logContent,
+				OpDesc:  "update host",
+				OpType:  auditoplog.AuditOpTypeModify,
+				ExtKey:  preLogContent.ExtKey,
+				BizID:   appID,
+			},
+		)
+
+	}
+	auditResp, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logLastContents...)
+	if err != nil {
+		blog.Errorf("UpdateImportHosts, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	if !auditResp.Result {
+		blog.Errorf("UpdateImportHosts, but add host[%v] audit failed, err: %v, rid:%s", hostIDArr, auditResp.ErrMsg, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(auditResp.Code, auditResp.ErrMsg)})
+		return
+	}
+
+	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
+}
