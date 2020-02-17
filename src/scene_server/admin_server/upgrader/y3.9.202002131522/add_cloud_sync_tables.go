@@ -47,12 +47,12 @@ var CreateTableOptions = []struct {
 }
 
 func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableName string, indices []dal.Index) error {
-	exists, err := db.HasTable(tableName)
+	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return fmt.Errorf("check HasTable failed, tableName: %s, err: %+v", tableName, err)
 	}
 	if exists == false {
-		if err = db.CreateTable(tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
 			return fmt.Errorf("CreateTable failed, tableName: %s, err: %+v", tableName, err)
 		}
 	}
