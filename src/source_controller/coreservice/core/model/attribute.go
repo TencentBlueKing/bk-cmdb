@@ -331,33 +331,28 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inpu
 }
 
 func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
-
-	dataResult := &metadata.QueryModelAttributeDataResult{
-		Info: []metadata.Attribute{},
-	}
-
+    
 	if err := m.model.isValid(kit, objID); nil != err {
 		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", kit.Rid, objID, err.Error())
-		return &metadata.QueryModelAttributeDataResult{}, err
+		return nil, err
 	}
-
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
-		return &metadata.QueryModelAttributeDataResult{}, err
-	}
-	attrArr := []string{kit.SupplierAccount, common.BKDefaultOwnerID}
-	cond.Element(&mongo.In{Key: metadata.AttributeFieldSupplierAccount, Val: attrArr})
-	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
-	attrResult, err := m.search(kit, cond)
+	
+	suppliers := []string{kit.SupplierAccount, common.BKDefaultOwnerID}
+	inputParam.Condition[metadata.AttributeFieldSupplierAccount] = mapstr.MapStr{
+	    common.BKDBIN: suppliers,
+    }
+    inputParam.Condition[common.BKObjIDField] = objID
+    
+	attrResult, err := m.newSearch(kit, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", kit.Rid, objID, err.Error())
-		return &metadata.QueryModelAttributeDataResult{}, err
+		return nil, err
 	}
-
-	dataResult.Count = int64(len(attrResult))
-	dataResult.Info = attrResult
-	return dataResult, nil
+	
+	return &metadata.QueryModelAttributeDataResult{
+	    Count: int64(len(attrResult)),
+        Info: attrResult,
+    }, nil
 }
 
 func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {

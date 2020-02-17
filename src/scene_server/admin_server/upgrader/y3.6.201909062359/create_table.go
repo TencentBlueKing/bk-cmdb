@@ -28,7 +28,7 @@ func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	}
 
 	for _, tableName := range tables {
-		exists, err := db.HasTable(tableName)
+		exists, err := db.HasTable(ctx, tableName)
 		if err != nil {
 			return err
 		}
@@ -37,7 +37,7 @@ func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Con
 		}
 
 		// add table
-		if err = db.CreateTable(tableName); err != nil && !db.IsDuplicatedError(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !db.IsDuplicatedError(err) {
 			return err
 		}
 	}

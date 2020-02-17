@@ -303,7 +303,7 @@ func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
 	from, to := rootPath, statisticsRoot
 
 	switch {
-	case strings.Contains(string(*u), "/operation/"):
+	case strings.HasPrefix(string(*u), rootPath+"/operation/"):
 		from, to, isHit = rootPath, statisticsRoot, true
 
 	default:
@@ -323,7 +323,7 @@ func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
 	from, to := rootPath, statisticsRoot
 
 	switch {
-	case strings.Contains(string(*u), "/task/"):
+	case strings.HasPrefix(string(*u), rootPath+"/task/"):
 		from, to, isHit = rootPath, statisticsRoot, true
 
 	default:

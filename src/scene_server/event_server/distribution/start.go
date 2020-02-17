@@ -19,17 +19,17 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/redis.v5"
+    "configcenter/src/common/mapstr"
+    "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/rpc"
 )
 
-func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) error {
+func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
 	chErr := make(chan error, 1)
 	err := migrateIDToMongo(ctx, cache, db)
 	if err != nil {
@@ -53,17 +53,15 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 
 	go cleanExpiredEvents(cache)
 
-	if rc != nil {
-		th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, committed: make(chan string, 100), shouldClose: util.NewBool(false)}
-		go func() {
-			for {
-				if err := th.Run(); err != nil {
-					blog.Errorf("TxnHandler stopped with error: %v, we will try 1s later", err)
-				}
-				time.Sleep(time.Second)
+	th := &TxnHandler{cache: cache, db: db, ctx: ctx, committed: make(chan string, 100), shouldClose: util.NewBool(false)}
+	go func() {
+		for {
+			if err := th.Run(); err != nil {
+				blog.Errorf("TxnHandler stopped with error: %v, we will try 1s later", err)
 			}
-		}()
-	}
+			time.Sleep(time.Second)
+		}
+	}()
 
 	return <-chErr
 }
@@ -90,10 +88,14 @@ func migrateIDToMongo(ctx context.Context, cache *redis.Client, db dal.RDB) erro
 		"SequenceID": id,
 	}
 
-	err = db.Table(common.BKTableNameIDgenerator).Insert(ctx, docs)
-	if err != nil && !db.IsDuplicatedError(err) {
-		return err
-	}
+    filter := mapstr.MapStr{
+        "_id":        common.EventCacheEventIDKey,
+    }
+
+    err = db.Table(common.BKTableNameIDgenerator).Upsert(ctx, filter, docs)
+    if err != nil {
+        return err
+    }
 
 	return cache.Del(common.EventCacheEventIDKey).Err()
 }
@@ -106,7 +108,6 @@ type DistHandler struct {
 }
 
 type TxnHandler struct {
-	rc          rpc.Client
 	cache       *redis.Client
 	db          dal.RDB
 	ctx         context.Context

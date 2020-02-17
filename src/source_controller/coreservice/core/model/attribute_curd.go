@@ -221,6 +221,12 @@ func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universa
 	return cnt, err
 }
 
+func (m *modelAttribute) newSearch(kit *rest.Kit, cond mapstr.MapStr) (resultAttrs []metadata.Attribute, err error) {
+	resultAttrs = []metadata.Attribute{}
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &resultAttrs)
+	return resultAttrs, err
+}
+
 func (m *modelAttribute) search(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []metadata.Attribute, err error) {
 	resultAttrs = []metadata.Attribute{}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(kit.Ctx, &resultAttrs)
