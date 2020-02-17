@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 )
 
 // Config config
@@ -35,7 +34,7 @@ type Config struct {
 	Mechanism    string
 	MaxOpenConns string
 	MaxIdleConns string
-	Enable       string
+	TxnEnabled   string
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -87,28 +86,21 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) Config {
 		MaxOpenConns: configmap[prefix+".maxOpenConns"],
 		MaxIdleConns: configmap[prefix+".maxIDleConns"],
 		Mechanism:    configmap[prefix+".mechanism"],
-		Enable:       configmap[prefix+".enable"],
+		TxnEnabled:   configmap[prefix+".txnEnabled"],
 	}
 }
 
 func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) {
-	if c.Enable == "true" {
-		db, err = local.NewMgo(c.BuildURI(), time.Minute)
-	} else {
-		db, err = remote.NewWithDiscover(engine)
-	}
+	db, err = local.NewMgo(c.BuildURI(), time.Minute)
 	if err != nil {
 		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
 	return
 }
 
-func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transcation, err error) {
-	if c.Enable == "true" {
-		client, err = local.NewMgo(c.BuildURI(), time.Minute)
-	} else {
-		client, err = remote.NewWithDiscover(engine)
-	}
+func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transaction, err error) {
+	client, err = local.NewMgo(c.BuildURI(), time.Minute)
+
 	if err != nil {
 		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
 	}

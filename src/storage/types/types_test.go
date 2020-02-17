@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rentiansheng/bk_bson/bson"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestDocuments_Decode(t *testing.T) {

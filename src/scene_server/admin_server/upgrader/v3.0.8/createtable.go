@@ -23,12 +23,12 @@ import (
 
 func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	for tablename, indexs := range tables {
-		exists, err := db.HasTable(tablename)
+		exists, err := db.HasTable(ctx, tablename)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err = db.CreateTable(tablename); err != nil && !mgo.IsDup(err) {
+			if err = db.CreateTable(ctx, tablename); err != nil && !mgo.IsDup(err) {
 				return err
 			}
 		}
@@ -134,10 +134,10 @@ var tables = map[string][]dal.Index{
 		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1, "bk_inst_id": 1}, Background: true},
 	},
 
-	"cc_History":            []dal.Index{},
-	"cc_HostFavourite":      []dal.Index{},
-	"cc_UserAPI":            []dal.Index{},
-	"cc_UserCustom":         []dal.Index{},
-	"cc_idgenerator":        []dal.Index{},
-	"cc_System":             []dal.Index{},
+	"cc_History":       []dal.Index{},
+	"cc_HostFavourite": []dal.Index{},
+	"cc_UserAPI":       []dal.Index{},
+	"cc_UserCustom":    []dal.Index{},
+	"cc_idgenerator":   []dal.Index{},
+	"cc_System":        []dal.Index{},
 }

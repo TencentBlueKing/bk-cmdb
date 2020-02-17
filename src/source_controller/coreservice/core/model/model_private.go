@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
@@ -35,13 +36,14 @@ func (m *modelManager) isExists(kit *rest.Kit, cond universalsql.Condition) (one
 
 func (m *modelManager) isValid(kit *rest.Kit, objID string) error {
 
-	checkCond := mongo.NewCondition()
-	//	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: kit.SupplierAccount})
-	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
+	cond := mapstr.MapStr{
+		metadata.ModelFieldObjectID: objID,
+		metadata.ModelFieldOwnerID:  kit.SupplierAccount,
+	}
 
-	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(kit.Ctx)
+	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database count operation on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, checkCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute database count operation on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, cond, err.Error())
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 

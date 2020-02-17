@@ -141,9 +141,12 @@ func GetDBContext(parent context.Context, header http.Header) context.Context {
 	user := GetUser(header)
 	owner := GetOwnerID(header)
 	ctx := context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{
-		RequestID: rid,
-		TxnID:     header.Get(common.BKHTTPCCTransactionID),
-		TMAddr:    header.Get(common.BKHTTPCCTxnTMServerAddr),
+		RequestID:    rid,
+		TxnID:        header.Get(common.BKHTTPCCTransactionID),
+		TMAddr:       header.Get(common.BKHTTPCCTxnTMServerAddr),
+		SessionID:    header.Get(common.BKHTTPCCTxnSessionID),
+		SessionState: header.Get(common.BKHTTPCCTxnSessionState),
+		TxnNumber:    header.Get(common.BKHTTPCCTransactionNumber),
 	})
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)

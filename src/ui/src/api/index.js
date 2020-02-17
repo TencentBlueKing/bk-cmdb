@@ -136,7 +136,7 @@ async function getPromise (method, url, data, userConfig = {}) {
     }).catch(error => {
         return handleReject(error, config)
     }).finally(() => {
-        $http.queue.delete(config.requestId)
+        $http.queue.delete(config.requestId, config.requestSymbol)
     })
     // 添加请求队列
     $http.queue.set(config)
@@ -216,6 +216,7 @@ function popupPermissionModal (permission = []) {
  * @param {userConfig} 用户配置，包含axios的配置与本系统自定义配置
  * @return {Promise} 本次http请求的Promise
  */
+
 function initConfig (method, url, userConfig) {
     if (userConfig.hasOwnProperty('requestGroup')) {
         userConfig.requestGroup = userConfig.requestGroup instanceof Array ? userConfig.requestGroup : [userConfig.requestGroup]
@@ -225,6 +226,7 @@ function initConfig (method, url, userConfig) {
         // http请求默认id
         requestId: md5(method + url),
         requestGroup: [],
+        requestSymbol: Symbol('requestSymbol'),
         // 是否全局捕获异常
         globalError: true,
         // 是否直接复用缓存的请求

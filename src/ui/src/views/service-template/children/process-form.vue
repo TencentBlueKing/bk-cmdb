@@ -9,8 +9,8 @@
                     <cmdb-collapse
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
-                        <ul class="property-list clearfix">
-                            <li class="property-item fl"
+                        <ul class="property-list">
+                            <li class="property-item"
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
                                 v-if="checkEditable(property)"
                                 :key="propertyIndex">
@@ -32,6 +32,8 @@
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :disabled="getPropertyEditStatus(property)"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
+                                        :unit="property.unit"
+                                        :row="2"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
@@ -389,10 +391,13 @@
     }
     .property-list{
         padding: 4px 0;
+        display: flex;
+        flex-wrap: wrap;
         .property-item{
             width: 50%;
             margin: 12px 0 0;
             font-size: 12px;
+            flex: 0 0 50%;
             &:nth-child(odd) {
                 padding-right: 30px;
             }
@@ -434,8 +439,6 @@
                 color: #c3cdd7;
             }
             .property-value{
-                height: 32px;
-                line-height: 32px;
                 font-size: 0;
                 position: relative;
                 /deep/ .control-append-group {

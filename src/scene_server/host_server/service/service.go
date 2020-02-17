@@ -130,6 +130,7 @@ func (s *Service) WebService() *restful.Container {
 	// next generation host search api
 	api.Route(api.POST("/hosts/list_hosts_without_app").To(s.ListHostsWithNoBiz))
 	api.Route(api.POST("/hosts/app/{appid}/list_hosts").To(s.ListBizHosts))
+	api.Route(api.POST("/hosts/list_resource_pool_hosts").To(s.ListResourcePoolHosts))
 	api.Route(api.POST("/hosts/app/{bk_biz_id}/list_hosts_topo").To(s.ListBizHostsTopo))
 
 	api.Route(api.POST("/userapi").To(s.AddUserCustomQuery))

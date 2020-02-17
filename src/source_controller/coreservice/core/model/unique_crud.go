@@ -378,6 +378,10 @@ func getBasicDataType(propertyType string) (interface{}, error) {
 		return 0.0, nil
 	case common.FieldTypeUser:
 		return "", nil
+	case common.FieldTypeList:
+		return nil, nil
+	case common.FieldTypeOrganization:
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("unsupported type: %s", propertyType)
 	}

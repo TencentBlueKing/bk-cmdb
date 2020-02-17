@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -60,10 +61,10 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		ownerM.CacheCli = m.cacheCli
 		ownerM.Engine = m.engine
 		ownerM.SetHttpHeader(common.BKHTTPSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
-		err := ownerM.InitOwner()
+		// 初始化失败，不影响登录
+		_, err := ownerM.InitOwner()
 		if nil != err {
-			blog.Errorf("InitOwner error: %v, rid: %s", err, rid)
-			return false
+			blog.ErrorJSON("init onwer resource pool failed, err:%s, user:%s, rid: %s", err, userInfo, rid)
 		}
 	}
 	strOwnerUinList := []byte("")
@@ -102,20 +103,23 @@ func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 	var userList []*metadata.LoginSystemUserInfo
 	rspBody := metadata.LonginSystemUserListResult{}
 	rspBody.Result = true
-	httpStatus := http.StatusOK
-
+	query := c.Request.URL.Query()
+	params := make(map[string]string)
+	for key, values := range query {
+		params[key] = strings.Join(values, ";")
+	}
 	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
-	userList, err = user.GetUserList(c, m.config.ConfigMap)
+	userList, err = user.GetUserList(c, m.config.ConfigMap, params)
 	if nil != err {
 		blog.Error("GetUserList failed, err: %+v, rid: %s", err, rid)
 		rspBody.Code = common.CCErrCommHTTPDoRequestFailed
 		rspBody.ErrMsg = err.Error()
 		rspBody.Result = false
-		httpStatus = http.StatusInternalServerError
+		return http.StatusInternalServerError, rspBody
 	}
 	rspBody.Result = true
 	rspBody.Data = userList
-	return httpStatus, rspBody
+	return http.StatusOK, rspBody
 }
 
 func (m *publicUser) GetLoginUrl(c *gin.Context) string {
@@ -132,4 +136,46 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
 	return user.GetLoginUrl(c, m.config.ConfigMap, params)
 
+}
+
+// GetDepartment get department info from PaaS
+func (m *publicUser) GetDepartment(c *gin.Context) (int, interface{}) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	var err error
+	var departments *metadata.DepartmentData
+	rspBody := metadata.DepartmentResult{}
+	rspBody.Result = true
+	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
+	departments, err = user.GetDepartment(c, m.config.ConfigMap)
+	if nil != err {
+		blog.Error("GetDepartment failed, err: %+v, rid: %s", err, rid)
+		rspBody.Code = common.CCErrCommHTTPDoRequestFailed
+		rspBody.ErrMsg = err.Error()
+		rspBody.Result = false
+		return http.StatusInternalServerError, rspBody
+	}
+	rspBody.Result = true
+	rspBody.Data = departments
+	return http.StatusOK, rspBody
+}
+
+// GetDepartmentProfile get department profile from PaaS
+func (m *publicUser) GetDepartmentProfile(c *gin.Context) (int, interface{}) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	var err error
+	var departmentprofile *metadata.DepartmentProfileData
+	rspBody := metadata.DepartmentProfileResult{}
+	rspBody.Result = true
+	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
+	departmentprofile, err = user.GetDepartmentProfile(c, m.config.ConfigMap)
+	if nil != err {
+		blog.Error("GetDepartmentProfile failed, err: %+v, rid: %s", err, rid)
+		rspBody.Code = common.CCErrCommHTTPDoRequestFailed
+		rspBody.ErrMsg = err.Error()
+		rspBody.Result = false
+		return http.StatusInternalServerError, rspBody
+	}
+	rspBody.Result = true
+	rspBody.Data = departmentprofile
+	return http.StatusOK, rspBody
 }

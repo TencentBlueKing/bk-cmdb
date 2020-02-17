@@ -95,6 +95,13 @@ func (s *coreService) ListServiceCategories(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	lang := s.Language(ctx.Kit.Header)
+	// translate
+	for index := range result.Info {
+		if result.Info[index].ServiceCategory.IsBuiltIn {
+			result.Info[index].ServiceCategory.Name = s.TranslateServiceCategory(lang, &result.Info[index].ServiceCategory)
+		}
+	}
 	ctx.RespEntity(result)
 }
 

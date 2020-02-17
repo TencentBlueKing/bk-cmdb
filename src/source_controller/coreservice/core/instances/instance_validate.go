@@ -137,14 +137,16 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			delete(instanceData, key)
 			continue
 			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, kit.Rid)
-			// return valid.errIf.CCErrorf(common.CCErrCommParamsIsInvalid, key)
+			// return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		if value, ok := val.(string); ok {
 			val = strings.TrimSpace(value)
 			instanceData[key] = val
 		}
+
 		rawErr := property.Validate(kit.Ctx, val, key)
 		if rawErr.ErrCode != 0 {
+			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
 	}
@@ -212,7 +214,7 @@ func getHostRelatedBizID(kit *rest.Kit, dbProxy dal.DB, hostID int64) (bizID int
 	filter := map[string]interface{}{
 		common.BKHostIDField: hostID,
 	}
-	hostConfig := make([]metadata.HostModuleConfig, 0)
+	hostConfig := make([]metadata.ModuleHost, 0)
 	if err := dbProxy.Table(common.BKTableNameModuleHostConfig).Find(filter).All(kit.Ctx, &hostConfig); err != nil {
 		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -221,9 +223,9 @@ func getHostRelatedBizID(kit *rest.Kit, dbProxy dal.DB, hostID int64) (bizID int
 		blog.Errorf("host module config empty, hostID: %d, rid: %s", hostID, rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrHostModuleConfigFailed, hostID)
 	}
-	bizID = hostConfig[0].ApplicationID
+	bizID = hostConfig[0].AppID
 	for _, item := range hostConfig {
-		if item.ApplicationID != bizID {
+		if item.AppID != bizID {
 			blog.Errorf("getHostRelatedBizID failed, get multiple bizID, hostID: %d, hostConfig: %+v, rid: %s", hostID, hostConfig, rid)
 			return 0, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
 		}

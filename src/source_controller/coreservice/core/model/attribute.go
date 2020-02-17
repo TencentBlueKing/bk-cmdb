@@ -14,22 +14,27 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+
+	redis "gopkg.in/redis.v5"
 )
 
 type modelAttribute struct {
 	model    *modelManager
 	dbProxy  dal.RDB
+	cache    *redis.Client
 	language language.CCLanguageIf
 }
 
@@ -58,6 +63,22 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 	}
 
 	for attrIdx, attr := range inputParam.Attributes {
+		// fmt.Sprintf("coreservice:create:model:%s:attr:%s", objID, attr.PropertyID)
+		redisKey := lock.GetLockKey(lock.CreateModuleAttrFormat, objID, attr.PropertyID)
+
+		locker := lock.NewLocker(m.cache)
+		looked, err := locker.Lock(redisKey, time.Second*35)
+		defer locker.Unlock()
+		if err != nil {
+			blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, kit.Rid)
+			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommRedisOPErr), &attr)
+			continue
+		}
+		if !looked {
+			blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, kit.Rid)
+			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)), &attr)
+			continue
+		}
 		if attr.IsPre {
 			if attr.PropertyID == common.BKInstNameField {
 				language := util.GetLanguage(kit.Header)
@@ -311,32 +332,27 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inpu
 
 func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
 
-	dataResult := &metadata.QueryModelAttributeDataResult{
-		Info: []metadata.Attribute{},
-	}
-
 	if err := m.model.isValid(kit, objID); nil != err {
 		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", kit.Rid, objID, err.Error())
-		return &metadata.QueryModelAttributeDataResult{}, err
+		return nil, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
-		return &metadata.QueryModelAttributeDataResult{}, err
+	suppliers := []string{kit.SupplierAccount, common.BKDefaultOwnerID}
+	inputParam.Condition[metadata.AttributeFieldSupplierAccount] = mapstr.MapStr{
+		common.BKDBIN: suppliers,
 	}
-	attrArr := []string{kit.SupplierAccount, common.BKDefaultOwnerID}
-	cond.Element(&mongo.In{Key: metadata.AttributeFieldSupplierAccount, Val: attrArr})
-	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
-	attrResult, err := m.search(kit, cond)
+	inputParam.Condition[common.BKObjIDField] = objID
+
+	attrResult, err := m.newSearch(kit, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", kit.Rid, objID, err.Error())
-		return &metadata.QueryModelAttributeDataResult{}, err
+		return nil, err
 	}
 
-	dataResult.Count = int64(len(attrResult))
-	dataResult.Info = attrResult
-	return dataResult, nil
+	return &metadata.QueryModelAttributeDataResult{
+		Count: int64(len(attrResult)),
+		Info:  attrResult,
+	}, nil
 }
 
 func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {

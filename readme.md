@@ -3,7 +3,7 @@
 [![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/Tencent/bk-cmdb/blob/master/LICENSE.txt)
 [![Release Version](https://img.shields.io/badge/release-3.2.19-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
-[![BK Pipelines Status](https://api.bkdevops.qq.com/process/api/external/pipelines/projects/cc/p-c02db56ac633447eb2e740b3fd0b6d2b/badge?X-DEVOPS-PROJECT-ID=cc)](http://api.devops.oa.com/process/api-html/user/builds/projects/cc/pipelines/p-c02db56ac633447eb2e740b3fd0b6d2b/latestFinished?X-DEVOPS-PROJECT-ID=cc)
+[![BK Pipelines Status](https://api.bkdevops.qq.com/process/api/external/pipelines/projects/cc/p-c02db56ac633447eb2e740b3fd0b6d2b/badge?X-DEVOPS-PROJECT-ID=cc)](http://api.bkdevops.qq.com/process/api-html/user/builds/projects/cc/pipelines/p-c02db56ac633447eb2e740b3fd0b6d2b/latestFinished?X-DEVOPS-PROJECT-ID=cc)
 [![Build Status](https://travis-ci.org/Tencent/bk-cmdb.svg?branch=master)](https://travis-ci.org/Tencent/bk-cmdb)
 
 
@@ -43,8 +43,10 @@
 ## Getting started
 * [下载与编译](docs/overview/source_compile.md)
 * [安装部署](docs/overview/installation.md)
+* [版本升级说明](docs/wiki/db_upgrade.md)
 * [API使用说明见这里](docs/apidoc/)
 * [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
+* [使用Helm部署CMDB到K8S环境](helm/README.md)
 
 ## Roadmap
 * [版本规划](docs/VERSION.md)

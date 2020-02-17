@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -43,7 +44,7 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn         dal.Transcation
+	DB          dal.RDB
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
@@ -51,6 +52,7 @@ type Service struct {
 	Error       errors.CCErrorIf
 	Language    language.CCLanguageIf
 	actions     []action
+	EnableTxn   bool
 }
 
 // WebService the web service
@@ -87,6 +89,7 @@ func (s *Service) WebService() *restful.Container {
 			blog.Errorf(" the url (%s), the http method (%s) is not supported", actionItem.Path, actionItem.Verb)
 		}
 	}
+	s.newTopoService(api)
 	container := restful.NewContainer().Add(api)
 	container.Add(healthz)
 
@@ -297,4 +300,15 @@ func (s *Service) Actions() []*httpserver.Action {
 
 type MetaShell struct {
 	Metadata *metadata.Metadata `json:"metadata"`
+}
+
+func (s *Service) newTopoService(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/app/search/{owner_id}", Handler: s.SearchBusiness})
+
+	utility.AddToRestfulWebService(web)
 }

@@ -732,6 +732,9 @@ const (
 	// FieldTypeList the lis type
 	FieldTypeList string = "list"
 
+	// FieldTypeOrganization the organization field type
+	FieldTypeOrganization string = "organization"
+
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
 
@@ -857,18 +860,6 @@ const (
 )
 
 const (
-	BKSTRIDPrefix = "cc"
-)
-
-const (
-	// LocalHostName the local host name definition
-	LocalHostName = "localhost"
-
-	// LocalHostIP the local host ip definition
-	LocalHostIP = "127.0.0.1"
-)
-
-const (
 	// BKHTTPHeaderUser current request http request header fields name for login user
 	BKHTTPHeaderUser = "BK_User"
 	// BKHTTPLanguage the language key word
@@ -885,10 +876,13 @@ const (
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime     = "Cc_Request_Time"
-	BKHTTPCCTransactionID   = "Cc_Txn_Id"
-	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
+	BKHTTPOtherRequestID      = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime       = "Cc_Request_Time"
+	BKHTTPCCTransactionID     = "Cc_Txn_Id"
+	BKHTTPCCTxnTMServerAddr   = "Cc_Txn_Tm_addr-Ip"
+	BKHTTPCCTransactionNumber = "Cc_Txn_Number"
+	BKHTTPCCTxnSessionID      = "Cc_Txn_Session_ID"
+	BKHTTPCCTxnSessionState   = "Cc_Txn_Session_State"
 )
 
 type CCContextKey string
@@ -977,8 +971,7 @@ const (
 	WEBSessionOwnerUinListeKey = "owner_uin_list"
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
-	//WEBSessionLanguageKey      = "language"
-	WEBSessionSupplierID = "supplier_id"
+	WEBSessionSupplierID       = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
@@ -1134,4 +1127,12 @@ const (
 	SyncSetTaskName      = "sync-settemplate2set"
 
 	BKHostState = "bk_state"
+)
+
+// multiple language support
+type LanguageType string
+
+const (
+	Chinese LanguageType = "zh-cn"
+	English LanguageType = "en"
 )

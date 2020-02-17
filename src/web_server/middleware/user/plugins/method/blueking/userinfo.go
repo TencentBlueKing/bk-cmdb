@@ -14,6 +14,7 @@ package blueking
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -168,20 +169,20 @@ func (m *user) getEsbClient(config map[string]string) (esbserver.EsbClientInterf
 }
 
 // GetUserList get user list from paas
-func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
+func (m *user) GetUserList(c *gin.Context, config map[string]string, params map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
 	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
 	accountURL, ok := config["site.bk_account_url"]
 	if !ok {
 		// try to use esb user list api
 		esbClient, err := m.getEsbClient(config)
 		if err != nil {
-			blog.Warnf("get esb client failed, err: %+v, rid: %s", err, rid)
-			return nil, fmt.Errorf("config site.bk_account_url not found")
+			blog.Errorf("get esb client failed, err: %+v, rid: %s", err, rid)
+			return nil, fmt.Errorf("get esb client failed, err: %+v", err)
 		}
-		result, err := esbClient.User().ListUsers(c.Request.Context(), c.Request.Header)
+		result, err := esbClient.User().ListUsers(c.Request.Context(), c.Request.Header, params)
 		if err != nil {
-			blog.Warnf("get users by esb client failed, http failed, err: %+v, rid: %s", err, rid)
-			return nil, fmt.Errorf("get users by esb client failed, http failed")
+			blog.Errorf("get users by esb client failed, http failed, err: %+v, rid: %s", err, rid)
+			return nil, fmt.Errorf("get users by esb client failed, http failed, err: %+v", err)
 		}
 		users := make([]*metadata.LoginSystemUserInfo, 0)
 		for _, userInfo := range result.Data {
@@ -200,7 +201,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	httpClient := httpclient.NewHttpClient()
 
 	if err := httpClient.SetTlsNoVerity(); err != nil {
-		blog.Warnf("httpClient.SetTlsNoVerity failed, err: %s, rid: %s", err.Error(), rid)
+		blog.Errorf("httpClient.SetTlsNoVerity failed, err: %s, rid: %s", err.Error(), rid)
 	}
 	reply, err := httpClient.GET(getURL, nil, nil)
 
@@ -213,7 +214,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	err = json.Unmarshal([]byte(reply), &result)
 	if nil != err || false == result.Result {
 		blog.Errorf("get user list error：%v, error code:%s, error message: %s, rid: %s", err, result.Code, result.Message, rid)
-		return nil, fmt.Errorf("get user list reply error")
+		return nil, fmt.Errorf("get user list error：%v", err)
 	}
 	userListArr := make([]*metadata.LoginSystemUserInfo, 0)
 	for _, user := range result.Data {
@@ -257,4 +258,60 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	}
 	loginURL = fmt.Sprintf(loginURL, appCode, fmt.Sprintf("%s%s", siteURL, c.Request.URL.String()))
 	return loginURL
+}
+
+// GetDepartment get department info from paas
+func (m *user) GetDepartment(c *gin.Context, config map[string]string) (*metadata.DepartmentData, error) {
+	// if no esb config, return
+	if _, ok := config["esb.addr"]; !ok {
+		return &metadata.DepartmentData{}, nil
+	}
+
+	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
+
+	// use esb api
+	esbClient, err := m.getEsbClient(config)
+	if err != nil {
+		blog.Errorf("get esb client failed, err: %+v, rid: %s", err, rid)
+		return nil, fmt.Errorf("get esb client failed, err: %+v", err)
+	}
+	result, err := esbClient.User().GetDepartment(c.Request.Context(), c.Request)
+	if err != nil {
+		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", err, rid)
+		return nil, fmt.Errorf("get department by esb client failed, http failed, err: %+v", err)
+	}
+	if !result.Result {
+		blog.Errorf("get department by esb client failed, result is false, err: %+v, rid: %s", err, rid)
+		err = errors.New(result.Message)
+		return &metadata.DepartmentData{}, err
+	}
+	return &result.Data, nil
+}
+
+// GetDepartmentProfile get department profile from paas
+func (m *user) GetDepartmentProfile(c *gin.Context, config map[string]string) (*metadata.DepartmentProfileData, error) {
+	// if no esb config, return
+	if _, ok := config["esb.addr"]; !ok {
+		return &metadata.DepartmentProfileData{}, nil
+	}
+
+	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
+
+	// use esb api
+	esbClient, err := m.getEsbClient(config)
+	if err != nil {
+		blog.Errorf("get esb client failed, err: %+v, rid: %s", err, rid)
+		return nil, fmt.Errorf("get esb client failed, err: %+v", err)
+	}
+	result, err := esbClient.User().GetDepartmentProfile(c.Request.Context(), c.Request)
+	if err != nil {
+		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", err, rid)
+		return nil, fmt.Errorf("get department by esb client failed, http failed, err: %+v", err)
+	}
+	if !result.Result {
+		blog.Errorf("get department by esb client failed, result is false, err: %+v, rid: %s", err, rid)
+		err = errors.New(result.Message)
+		return &metadata.DepartmentProfileData{}, err
+	}
+	return &result.Data, nil
 }

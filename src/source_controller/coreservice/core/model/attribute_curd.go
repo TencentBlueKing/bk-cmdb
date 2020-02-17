@@ -191,7 +191,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
-			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
+			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
 		default:
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
@@ -209,6 +209,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 	cnt, err = m.checkUpdate(kit, data, cond)
 	if err != nil {
+		blog.ErrorJSON("checkUpdate error. data:%s, cond:%s, rid:%s", data, cond, kit.Rid)
 		return cnt, err
 	}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(kit.Ctx, cond.ToMapStr(), data)
@@ -218,6 +219,12 @@ func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universa
 	}
 
 	return cnt, err
+}
+
+func (m *modelAttribute) newSearch(kit *rest.Kit, cond mapstr.MapStr) (resultAttrs []metadata.Attribute, err error) {
+	resultAttrs = []metadata.Attribute{}
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &resultAttrs)
+	return resultAttrs, err
 }
 
 func (m *modelAttribute) search(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []metadata.Attribute, err error) {
@@ -717,7 +724,6 @@ func (m *modelAttribute) buildUpdateAttrIndexReturn(kit *rest.Kit, objID, proper
 }
 
 func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attribute) (int64, error) {
-
 	opt := make(map[string]interface{})
 	opt[common.BKObjIDField] = attribute.ObjectID
 	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
@@ -731,12 +737,15 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 		return 0, nil
 	}
 
-	attr := metadata.Attribute{}
+	attrs := make([]metadata.Attribute, 0)
 	sortCond := "-bk_property_index"
-	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).One(kit.Ctx, &attr); err != nil {
-		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", kit.Rid, err)
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx, &attrs); err != nil {
+		blog.Error("GetAttrLastIndex, database operation is failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
-	return attr.PropertyIndex + 1, nil
+	if len(attrs) <= 0 {
+		return 0, nil
+	}
+	return attrs[0].PropertyIndex + 1, nil
 }

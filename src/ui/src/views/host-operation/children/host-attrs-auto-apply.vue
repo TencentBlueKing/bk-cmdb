@@ -15,7 +15,7 @@
             }">
             {{$t('转移属性变化确认提示')}}
         </cmdb-tips>
-        <property-confirm-table
+        <property-confirm-table class="mt10"
             ref="confirmTable"
             max-height="auto"
             :list="list"

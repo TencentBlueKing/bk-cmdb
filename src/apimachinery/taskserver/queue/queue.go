@@ -24,7 +24,7 @@ func (tq *taskQueue) Post(ctx context.Context, header http.Header, path string, 
 	err = tq.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(path).
+		SubResourcef(path).
 		WithHeaders(header).
 		Do().
 		Into(resp)

@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -38,6 +39,8 @@ type AttributeOperationInterface interface {
 	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error)
 	UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error
 	UpdateObjectAttributeIndex(params types.ContextParams, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error)
+
+	FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Attribute, error)
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface, grp GroupOperationInterface)
 }
@@ -194,6 +197,10 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 		return nil, err
 	}
 	results := make([]*metadata.ObjAttDes, 0)
+	// if can't find any attribute of a obj, to return, for example, when the obj is not exist
+	if len(attrs) == 0 {
+		return results, nil
+	}
 	grpCond := condition.CreateCondition()
 	grpOrCond := grpCond.NewOR()
 	for _, attr := range attrs {
@@ -226,6 +233,23 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 	}
 
 	return results, nil
+}
+
+func (a *attribute) FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Attribute, error) {
+	opt := &metadata.QueryCondition{
+		Condition: cond,
+	}
+	resp, err := a.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDApp, opt)
+	if err != nil {
+		blog.Errorf("find business attributes failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !resp.Result {
+		blog.Errorf("find business attributes failed, err: %s rid: %s", resp.ErrMsg, kit.Rid)
+		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data.Info, nil
 }
 
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error) {

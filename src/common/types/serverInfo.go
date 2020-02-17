@@ -18,6 +18,8 @@ import (
 
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/version"
+
+	"github.com/rs/xid"
 )
 
 // zk path
@@ -83,6 +85,8 @@ type ServerInfo struct {
 	Scheme     string `json:"scheme"`
 	Version    string `json:"version"`
 	Pid        int    `json:"pid"`
+	// UUID is used to distinguish which service is master in zookeeper
+	UUID string `json:"uuid"`
 }
 
 // NewServerInfo new a ServerInfo object
@@ -116,6 +120,7 @@ func NewServerInfo(conf *config.CCAPIConfig) (*ServerInfo, error) {
 		Scheme:     "http",
 		Version:    version.GetVersion(),
 		Pid:        os.Getpid(),
+		UUID:       xid.New().String(),
 	}
 	return info, nil
 }

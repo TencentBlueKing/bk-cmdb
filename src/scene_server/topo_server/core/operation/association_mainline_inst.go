@@ -232,12 +232,14 @@ func (assoc *association) SearchMainlineAssociationInstTopo(params types.Context
 	}
 
 	results := make([]*metadata.TopoInstRst, 0)
+	instIDs := make([]int64, 0)
 	for _, biz := range bizInsts {
 		instID, err := biz.GetInstID()
 		if nil != err {
 			blog.Errorf("[SearchMainlineAssociationInstTopo] GetInstID for %+v failed: %v, rid: %s", biz, err, params.ReqID)
 			return nil, err
 		}
+		instIDs = append(instIDs, instID)
 		instName, err := biz.GetInstName()
 		if nil != err {
 			blog.Errorf("[SearchMainlineAssociationInstTopo] GetInstName for %+v failed: %v, rid: %s", biz, err, params.ReqID)
@@ -254,9 +256,50 @@ func (assoc *association) SearchMainlineAssociationInstTopo(params types.Context
 		results = append(results, tmp)
 	}
 
-	if err = assoc.fillMainlineChildInst(params, obj, results, withDefault); err != nil {
+	childObj, err := obj.GetMainlineChildObject()
+	if err == io.EOF {
+		return nil, nil
+	}
+	if err != nil {
+		blog.Errorf("[fillMainlineChildInst] GetMainlineChildObject for %+v failed: %v, rid: %s", obj, err, params.ReqID)
+		return nil, err
+	}
+
+	childFilter := map[string]interface{}{
+		common.BKInstParentStr: map[string]interface{}{
+			common.BKDBIN: instIDs,
+		},
+	}
+	if childObj.IsCommon() {
+		childFilter[common.BKObjIDField] = childObj.Object().ObjectID
+	}
+	// 不包含内置节点时
+	if withDefault == false || childObj.Object().ObjectID != common.BKInnerObjIDSet {
+		if childObj.Object().ObjectID == common.BKInnerObjIDSet {
+			childFilter[common.BKDefaultField] = map[string]interface{}{
+				common.BKDBNE: common.DefaultResSetFlag,
+			}
+		}
+	}
+	if err = assoc.fillMainlineChildInst(params, childObj, results, withDefault, childFilter); err != nil {
 		blog.Errorf("[SearchMainlineAssociationInstTopo] fillMainlineChildInst for %+v failed: %v, rid: %s", results, err, params.ReqID)
 		return nil, err
+	}
+
+	if withDefault == true &&
+		obj.Object().ObjectID == common.BKInnerObjIDApp &&
+		childObj.Object().ObjectID != common.BKInnerObjIDSet {
+		// 追加空闲机集群
+		delete(childFilter, common.BKObjIDField)
+		childFilter[common.BKDefaultField] = common.DefaultResSetFlag
+		setObj, err := obj.GetSetObject()
+		if nil != err {
+			return nil, err
+		}
+		if err = assoc.fillMainlineChildInst(params, setObj, results, withDefault, childFilter); err != nil {
+			blog.Errorf("[SearchMainlineAssociationInstTopo] fillMainlineChildInst of idle set for %+v failed: %v, rid: %s", results, err, params.ReqID)
+			return nil, err
+		}
 	}
 	if withStatistics && len(bizInsts) > 0 {
 		instance := bizInsts[0]
@@ -462,53 +505,32 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	return nil
 }
 
-func (assoc *association) fillMainlineChildInst(params types.ContextParams, object model.Object, parentInsts []*metadata.TopoInstRst, withDefault bool) error {
-	childObj, err := object.GetMainlineChildObject()
-	if err == io.EOF {
-		return nil
-	}
-	if err != nil {
-		blog.Errorf("[fillMainlineChildInst] GetMainlineChildObject for %+v failed: %v, rid: %s", object, err, params.ReqID)
-		return err
-	}
-
-	parentIDs := make([]int64, 0)
-	for index := range parentInsts {
-		parentIDs = append(parentIDs, parentInsts[index].InstID)
-	}
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKInstParentStr).In(parentIDs)
-	if childObj.IsCommon() {
-		cond.Field(common.BKObjIDField).Eq(childObj.Object().ObjectID)
-	}
-
-	// 不包含内置节点时
-	if withDefault == false {
-		if childObj.Object().ObjectID == common.BKInnerObjIDSet {
-			cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
-		}
-	}
-
+// fillMainlineChildInst 将每个parentInsts实例的childObj类型子节点追加到Child字段
+func (assoc *association) fillMainlineChildInst(params types.ContextParams, childObj model.Object, parentInsts []*metadata.TopoInstRst, withDefault bool, cond map[string]interface{}) error {
 	filter := &metadata.QueryInput{
-		Condition: cond.ToMapStr(),
+		Condition: cond,
 		Sort:      "default:1",
 	}
 	_, childInsts, err := assoc.inst.FindInst(params, childObj, filter, false)
 	if err != nil {
-		blog.Errorf("[fillMainlineChildInst] FindInst for %+v failed: %v, rid: %s", cond.ToMapStr(), err, params.ReqID)
+		blog.Errorf("[fillMainlineChildInst] FindInst for %+v failed: %v, rid: %s", cond, err, params.ReqID)
 		return err
+	}
+	if len(childInsts) == 0 {
+		return nil
 	}
 
 	// parentID mapping to child topo instances
 	childInstMap := map[int64][]*metadata.TopoInstRst{}
 	childTopoInsts := make([]*metadata.TopoInstRst, 0)
+	childInstIDs := make([]int64, 0)
 	for _, childInst := range childInsts {
 		childInstID, err := childInst.GetInstID()
 		if err != nil {
 			blog.Errorf("[fillMainlineChildInst] GetInstID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
 			return err
 		}
+		childInstIDs = append(childInstIDs, childInstID)
 		childInstName, err := childInst.GetInstName()
 		if nil != err {
 			blog.Errorf("[fillMainlineChildInst] GetInstName for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
@@ -556,5 +578,33 @@ func (assoc *association) fillMainlineChildInst(params types.ContextParams, obje
 		parentInst.Child = append(parentInst.Child, childInstMap[parentInst.InstID]...)
 	}
 
-	return assoc.fillMainlineChildInst(params, childObj, childTopoInsts, withDefault)
+	// get next level object ID
+	nextLevelObj, err := childObj.GetMainlineChildObject()
+	if err == io.EOF {
+		return nil
+	}
+	if err != nil {
+		blog.Errorf("[fillMainlineChildInst] GetMainlineChildObject for %+v failed: %v, rid: %s", childObj, err, params.ReqID)
+		return err
+	}
+
+	// next level instance filter
+	childFilter := map[string]interface{}{
+		common.BKInstParentStr: map[string]interface{}{
+			common.BKDBIN: childInstIDs,
+		},
+	}
+	if nextLevelObj.IsCommon() {
+		childFilter[common.BKObjIDField] = nextLevelObj.Object().ObjectID
+	}
+	// 不包含内置节点时
+	if nextLevelObj.Object().ObjectID == common.BKInnerObjIDSet {
+		if withDefault == false || childObj.Object().ObjectID != common.BKInnerObjIDApp {
+			childFilter[common.BKDefaultField] = map[string]interface{}{
+				common.BKDBNE: common.DefaultResSetFlag,
+			}
+		}
+	}
+
+	return assoc.fillMainlineChildInst(params, nextLevelObj, childTopoInsts, withDefault, childFilter)
 }
