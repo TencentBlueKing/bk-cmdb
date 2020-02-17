@@ -14,29 +14,16 @@ package y3_9_202002131522
 
 import (
 	"context"
+	"fmt"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func init() {
-	upgrader.RegistUpgrader("y3.9.202002131522", upgrade)
-}
-
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	shouldRemoveTables := []string{"cc_CloudResourceConfirm", "cc_CloudSyncHistory", "cc_CloudTask", "cc_ResourceConfirmHistory"}
-	err = removeOldTables(ctx, db, shouldRemoveTables)
-	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002131522] removeOldTables error  %s", err.Error())
-		return err
-	}
-
-	blog.Infof("start execute y3.9.202002131522")
-	err = CreateTables(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002131522] addChartDataTable error  %s", err.Error())
-		return err
+func removeOldTables(ctx context.Context, db dal.RDB, tableNames []string) error {
+	for _, tableName := range tableNames {
+		if err := db.DropTable(tableName); err != nil {
+			return fmt.Errorf("removeOldTables failed, tableName: %s, err: %+v", tableName, err)
+		}
 	}
 
 	return nil
