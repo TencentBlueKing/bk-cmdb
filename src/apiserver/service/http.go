@@ -13,16 +13,16 @@
 package service
 
 import (
-	"fmt"
-	"io"
-	"net/http"
-	"time"
+    "fmt"
+    "io"
+    "net/http"
+    "time"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/metadata"
 
-	"github.com/emicklei/go-restful"
+    "github.com/emicklei/go-restful"
 )
 
 func (s *service) Get(req *restful.Request, resp *restful.Response) {
@@ -43,7 +43,7 @@ func (s *service) Delete(req *restful.Request, resp *restful.Response) {
 
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
 	start := time.Now()
-	url := fmt.Sprintf("%s://%s%s", req.Request.URL.Scheme, req.Request.URL.Host, req.Request.RequestURI)
+	url := req.Request.URL.Scheme + "://" + req.Request.URL.Host + req.Request.RequestURI
 	proxyReq, err := http.NewRequest(req.Request.Method, url, req.Request.Body)
 	if err != nil {
 		blog.Errorf("new proxy request[%s] failed, err: %v", url, err)
@@ -76,23 +76,22 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		}
 		return
 	}
-	blog.V(5).Infof("success [%s] do request[%s url: %s]  ", response.Status, req.Request.Method, url)
+	
+    for k, v := range response.Header {
+        if len(v) > 0 {
+            resp.Header().Set(k, v[0])
+        }
+    }
 
-	defer response.Body.Close()
+    resp.ResponseWriter.WriteHeader(response.StatusCode)
 
-	for k, v := range response.Header {
-		if len(v) > 0 {
-			resp.Header().Set(k, v[0])
-		}
-	}
-
-	resp.ResponseWriter.WriteHeader(response.StatusCode)
-
-	if _, err := io.Copy(resp, response.Body); err != nil {
-		blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
-		return
-	}
-	blog.V(4).Infof("request id: %s, cost: %dms, action: %s, status code: %d, url: %s",
+    if _, err := io.Copy(resp, response.Body); err != nil {
+        response.Body.Close()
+        blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+        return
+    }
+    response.Body.Close()
+    blog.V(4).Infof("request id: %s, cost: %dms, action: %s, status code: %d, url: %s",
 		req.Request.Header.Get(common.BKHTTPCCRequestID),
 		time.Since(start).Nanoseconds()/int64(time.Millisecond),
 		req.Request.Method, response.StatusCode, url)

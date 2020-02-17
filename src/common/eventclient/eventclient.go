@@ -109,7 +109,7 @@ func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst
 			// TODO save to disk if possible
 			c.pending = nil
 			var ok bool
-			for i := 0; i < 200; i-- {
+			for i := 0; i < 200; i++ {
 				_, ok = <-c.queue
 				if !ok {
 					break

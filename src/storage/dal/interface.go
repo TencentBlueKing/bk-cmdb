@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	ccErr "configcenter/src/common/errors"
-	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/types"
 )
 
@@ -29,6 +28,7 @@ var (
 	ErrDocumentNotFound    = errors.New("document not found")
 	ErrNotImplemented      = errors.New("not implemented")
 	ErrDuplicated          = errors.New("duplicated")
+	ErrSessionNotStarted   = errors.New("session is not started")
 
 	UpdateOpAddToSet = "addToSet"
 	UpdateOpPull     = "pull"
@@ -50,28 +50,42 @@ type DB interface {
 	Ping() error // 健康检查
 
 	// HasTable 判断是否存在集合
-	HasTable(tablename string) (bool, error)
+	HasTable(ctx context.Context, tablename string) (bool, error)
 	// DropTable 移除集合
-	DropTable(tablename string) error
+	DropTable(ctx context.Context, tablename string) error
 	// CreateTable 创建集合
-	CreateTable(tablename string) error
+	CreateTable(ctx context.Context, tablename string) error
 
 	IsDuplicatedError(error) bool
 	IsNotFoundError(error) bool
 
 	Close() error
+
+	//StartSession 开启会话
+	StartSession() (DB, error)
+	// EndSession 结束会话
+	EndSession(ctx context.Context) error
+
+	Transaction
 }
 
 // Transcation db transcation interface
-type Transcation interface {
+type Transaction interface {
+	// StartTransaction 开启新事务
+	StartTransaction(context.Context) error
+	// CommitTransaction 提交事务
+	CommitTransaction(context.Context) error
+	// AbortTransaction 取消事务
+	AbortTransaction(context.Context) error
+
 	// Start 开启新事务
-	Start(ctx context.Context) (Transcation, error)
+	Start(ctx context.Context) (Transaction, error)
 	// Commit 提交事务
 	Commit(context.Context) error
 	// Abort 取消事务
 	Abort(context.Context) error
 	// TxnInfo 当前事务信息，用于事务发起者往下传递
-	TxnInfo() *types.Transaction
+	TxnInfo() (*types.Transaction, error)
 
 	// AutoRun Interface for automatic processing of encapsulated transactions
 	// f func return error, abort commit, other commit transcation. transcation commit can be error.
@@ -94,6 +108,9 @@ type Table interface {
 	Upsert(ctx context.Context, filter Filter, doc interface{}) error
 	// UpdateMultiModel  data based on operators.
 	UpdateMultiModel(ctx context.Context, filter Filter, updateModel ...ModeUpdate) error
+	// UpdateModifyCount 更新数据,返回更新的条数
+	UpdateModifyCount(ctx context.Context, filter Filter, doc interface{}) (int64, error)
+
 	// Delete 删除数据
 	Delete(ctx context.Context, filter Filter) error
 
@@ -121,6 +138,11 @@ type JoinOption struct {
 	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 
 	TMAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
+
+	SessionID    string // 会话ID
+	SessionState string // 会话状态
+	TxnNumber    string // 事务Number
+
 }
 
 type TxnWrapperOption struct {
@@ -147,7 +169,12 @@ type Find interface {
 }
 
 // Index define the DB index struct
-type Index mongodb.Index
+type Index struct {
+	Keys       map[string]int32 `json:"keys" bson:"key"`
+	Name       string           `json:"name" bson:"name"`
+	Unique     bool             `json:"unique" bson:"unique"`
+	Background bool             `json:"background" bson:"background"`
+}
 
 // ModeUpdate  根据不同的操作符去更新数据
 type ModeUpdate struct {

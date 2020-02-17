@@ -44,7 +44,7 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn         dal.Transcation
+	DB          dal.RDB
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
@@ -52,6 +52,7 @@ type Service struct {
 	Error       errors.CCErrorIf
 	Language    language.CCLanguageIf
 	actions     []action
+	EnableTxn   bool
 }
 
 // WebService the web service
@@ -65,7 +66,7 @@ func (s *Service) WebService() *restful.Container {
 	}
 
 	api := new(restful.WebService)
-	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	healthz := new(restful.WebService).Produces(restful.MIME_JSON)
 
