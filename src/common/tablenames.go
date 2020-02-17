@@ -102,9 +102,10 @@ const (
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
 
 	// cloud sync tables
-	BKTableNameCloudSyncTask = "cc_CloudSyncTask"
-	BKTableNameCloudAccount  = "cc_CloudAccount"
-	BKTableNameCloudArea     = "cc_CloudArea"
+	BKTableNameCloudSyncTask    = "cc_CloudSyncTask"
+	BKTableNameCloudAccount     = "cc_CloudAccount"
+	BKTableNameCloudArea        = "cc_CloudArea"
+	BKTableNameCloudSyncHistory = "cc_CloudSyncHistory"
 )
 
 // AllTables alltables
