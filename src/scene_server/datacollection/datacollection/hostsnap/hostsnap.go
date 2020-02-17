@@ -160,6 +160,13 @@ func (h *HostSnap) Analyze(mesg string) error {
 	if len(moduleHost.Data.Info) > 0 {
 		bizID = moduleHost.Data.Info[0].AppID
 	}
+	bizName := ""
+	if bizID > 0 {
+		bizName, err = audit.GetInstNameByID(common.BKInnerObjIDApp, bizID)
+		if err != nil {
+			return err
+		}
+	}
 	auditLog := metadata.AuditLog{
 		AuditType:    metadata.HostType,
 		ResourceType: metadata.HostRes,
@@ -168,6 +175,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
 				BusinessID:   bizID,
+				BusinessName: bizName,
 				ResourceID:   hostIdInt64,
 				ResourceName: innerIp,
 				Details: &metadata.BasicContent{

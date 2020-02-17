@@ -13,15 +13,15 @@
 package service
 
 import (
-	"configcenter/src/auth"
+	"encoding/json"
 	"fmt"
 
+	"configcenter/src/auth"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -33,40 +33,187 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
 
+	var businessID int64
+
 	queryCondition := query.Condition
 	if nil == queryCondition {
-		query.Condition = map[string]interface{}{common.BKOwnerIDField: params.SupplierAccount}
+		query.Condition = make(map[string]interface{})
 	} else {
-		cond := queryCondition.(map[string]interface{})
-		times, ok := cond[common.BKOperationTimeField].([]interface{})
-		if ok {
+		condition := metadata.AuditQueryCondition{}
+		js, err := json.Marshal(queryCondition)
+		if nil != err {
+			return nil, params.Err.New(common.CCErrCommJSONMarshalFailed, err.Error())
+		}
+		err = json.Unmarshal(js, &condition)
+		if err != nil {
+			return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
+		}
+
+		cond := make(map[string]interface{})
+		auditTypeCond := make(map[string]interface{})
+		if condition.AuditType != "" {
+			auditTypeCond[common.BKAuditTypeField] = condition.AuditType
+		}
+		if condition.User != "" {
+			cond[common.BKUser] = condition.User
+		}
+		if condition.OperateFrom != "" {
+			cond[common.BKOperateFromField] = condition.OperateFrom
+		}
+		if condition.Action != nil && len(condition.Action) > 0 {
+			cond[common.BKActionField] = map[string]interface{}{
+				common.BKDBIN: condition.Action,
+			}
+		}
+
+		if condition.OperationTime != nil && len(condition.OperationTime) > 0 {
+			times := condition.OperationTime
 			if 2 != len(times) {
 				blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, params.ReqID)
-				return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+				return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
 			}
-
 			cond[common.BKOperationTimeField] = map[string]interface{}{
 				common.BKDBGTE:             times[0],
 				common.BKDBLTE:             times[1],
 				common.BKTimeTypeParseFlag: "1",
 			}
 		}
-		cond[common.BKOwnerIDField] = params.SupplierAccount
+
+		andCond := make([]map[string]interface{}, 0)
+
+		// add auth filter condition
+		if condition.BizID != 0 {
+			businessID = condition.BizID
+			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
+				{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: businessID},
+				{common.BKOperationDetailField + "." + common.BKAppIDField: businessID},
+			}})
+		}
+
+		if condition.ResourceID != 0 {
+			resourceID := condition.ResourceID
+			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
+				{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceIDField: resourceID},
+				{common.BKOperationDetailField + "." + common.BKResourceIDField: resourceID},
+				{common.BKOperationDetailField + "." + common.BKHostIDField: resourceID},
+				{common.BKOperationDetailField + ".src_instance_id": resourceID},
+				{common.BKOperationDetailField + ".target_instance_id": resourceID},
+			}})
+		}
+
+		if condition.ResourceName != "" {
+			resourceNameCond := map[string]interface{}{
+				common.BKDBLIKE: condition.ResourceName,
+			}
+			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
+				{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceNameField: resourceNameCond},
+				{common.BKOperationDetailField + "." + common.BKResourceNameField: resourceNameCond},
+				{common.BKOperationDetailField + "." + common.BKHostInnerIPField: resourceNameCond},
+				{common.BKOperationDetailField + ".src_instance_name": resourceNameCond},
+				{common.BKOperationDetailField + ".target_instance_name": resourceNameCond},
+			}})
+		}
+
+		if condition.Category != "" {
+			auditTypes := metadata.GetAuditTypesByCategory(condition.Category)
+			if condition.AuditType != "" {
+				flag := false
+				if condition.AuditType != metadata.HostType || (condition.Category != "business" && condition.Category != "resource") {
+					for _, audit := range auditTypes {
+						if condition.AuditType == audit {
+							flag = true
+						}
+					}
+					if !flag {
+						return map[string]interface{}{"count": 0, "info": []interface{}{}}, nil
+					}
+				}
+			} else {
+				auditTypeCond[common.BKAuditTypeField] = map[string]interface{}{
+					common.BKDBIN: auditTypes,
+				}
+			}
+			biz, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDApp, &metadata.QueryCondition{
+				Fields: []string{common.BKAppIDField},
+				Page: metadata.BasePage{
+					Limit: 1,
+					Start: 0,
+				},
+				Condition: mapstr.MapStr{
+					common.BKDefaultField: common.DefaultAppFlag,
+				},
+			})
+			if nil != err {
+				blog.Errorf("find default biz failed, err: %v, rid: %s", err, params.ReqID)
+				return nil, err
+			}
+			if len(biz.Data.Info) == 0 {
+				blog.Errorf("find default biz get no result, rid: %s", params.ReqID)
+				return nil, params.Err.CCErrorf(common.CCErrCommBizNotFoundError, "default")
+			}
+			defaultBizID := biz.Data.Info[0][common.BKAppIDField]
+			switch condition.Category {
+			case "business":
+				andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
+					auditTypeCond,
+					{
+						common.BKAuditTypeField: metadata.HostType,
+						common.BKActionField:    map[string]interface{}{common.BKDBNE: metadata.AuditAssignHost},
+						common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBNE: defaultBizID},
+					},
+				}})
+			case "resource":
+				andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
+					auditTypeCond,
+					{
+						common.BKAuditTypeField: metadata.HostType,
+						common.BKActionField:    map[string]interface{}{common.BKDBEQ: metadata.AuditAssignHost},
+					},
+					{
+						common.BKAuditTypeField: metadata.HostType,
+						common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBEQ: defaultBizID},
+					},
+				}})
+			default:
+				cond[common.BKAuditTypeField] = auditTypeCond[common.BKAuditTypeField]
+			}
+		}
+
+		labelCond := make([]map[string]interface{}, 0)
+		if condition.Label != nil {
+			for _, label := range condition.Label {
+				labelCond = append(labelCond, map[string]interface{}{
+					common.BKLabelField + "." + label: map[string]interface{}{
+						common.BKDBExists: true,
+						common.BKDBNE:     nil,
+					},
+				})
+			}
+		}
+		if condition.ResourceType != nil && len(condition.ResourceType) > 0 {
+			if len(labelCond) > 0 {
+				labelCond = append(labelCond, map[string]interface{}{
+					common.BKResourceTypeField: map[string]interface{}{
+						common.BKDBIN: condition.ResourceType,
+					},
+				})
+				andCond = append(andCond, map[string]interface{}{
+					common.BKDBOR: labelCond,
+				})
+			} else {
+				cond[common.BKResourceTypeField] = map[string]interface{}{
+					common.BKDBIN: condition.ResourceType,
+				}
+			}
+		}
+
+		if len(andCond) > 0 {
+			cond[common.BKDBAND] = andCond
+		}
 		query.Condition = cond
 	}
 	if 0 == query.Limit {
 		query.Limit = common.BKDefaultLimit
-	}
-
-	// add auth filter condition
-	var businessID int64
-	bizID, exist := query.Condition.(map[string]interface{})[common.BKAppIDField]
-	if exist == true {
-		id, err := util.GetInt64ByInterface(bizID)
-		if err != nil {
-			blog.Errorf("%s field in query condition but parse int failed, err: %+v, rid: %s", common.BKAppIDField, err, params.ReqID)
-		}
-		businessID = id
 	}
 
 	// switch between two different control mechanism
@@ -126,62 +273,91 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		blog.Errorf("InstanceAuditQuery failed, host audit query condition can't be empty, query: %+v, rid: %s", query, params.ReqID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "condition")
 	}
+	condition := metadata.AuditQueryCondition{}
+	js, err := json.Marshal(queryCondition)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrCommJSONMarshalFailed, err.Error())
+	}
+	err = json.Unmarshal(js, &condition)
+	if err != nil {
+		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
+	}
 
-	cond := queryCondition.(map[string]interface{})
-	times, ok := cond[common.BKOperationTimeField].([]interface{})
-	if ok {
-		if 2 != len(times) {
-			blog.Errorf("InstanceAuditQuery failed, search operation log input params times error, info: %v, rid: %s", times, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
+	cond := make(map[string]interface{})
+	if condition.User != "" {
+		cond[common.BKUser] = condition.User
+	}
+	if condition.OperateFrom != "" {
+		cond[common.BKOperateFromField] = condition.OperateFrom
+	}
+	if condition.Action != nil && len(condition.Action) > 0 {
+		cond[common.BKActionField] = map[string]interface{}{
+			common.BKDBIN: condition.Action,
 		}
+	}
 
+	if condition.OperationTime != nil && len(condition.OperationTime) > 0 {
+		times := condition.OperationTime
+		if 2 != len(times) {
+			blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, params.ReqID)
+			return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
+		}
 		cond[common.BKOperationTimeField] = map[string]interface{}{
 			common.BKDBGTE:             times[0],
 			common.BKDBLTE:             times[1],
 			common.BKTimeTypeParseFlag: "1",
 		}
 	}
-	cond[common.BKOwnerIDField] = params.SupplierAccount
-	cond[common.BKAuditTypeField] = metadata.GetAuditTypeByObjID(objectID)
-	cond[common.BKResourceTypeField] = metadata.GetResourceTypeByObjID(objectID)
-	query.Condition = cond
+
+	andCond := make([]map[string]interface{}, 0)
+
+	// auth: check authorization on instance
+	var businessID int64
+	if condition.BizID != 0 {
+		businessID = condition.BizID
+		andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
+			{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: businessID},
+			{common.BKOperationDetailField + "." + common.BKAppIDField: businessID},
+		}})
+	}
+
+	if condition.ResourceID == 0 {
+		blog.Errorf("InstanceAuditQuery failed, instance audit query condition condition.resource_id not exist, query: %+v, rid: %s", query, params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKResourceIDField)
+	}
+
+	instanceID := condition.ResourceID
+	if objectID == common.BKInnerObjIDApp {
+		businessID = instanceID
+	}
+	orCond := []map[string]interface{}{
+		{
+			common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceIDField: instanceID,
+			common.BKResourceTypeField: metadata.GetResourceTypeByObjID(objectID),
+		},
+		{
+			common.BKOperationDetailField + ".src_instance_id": instanceID,
+			common.BKResourceTypeField:                         metadata.InstanceAssociationRes,
+		},
+		{
+			common.BKOperationDetailField + ".target_instance_id": instanceID,
+			common.BKResourceTypeField:                            metadata.InstanceAssociationRes,
+		},
+	}
+	if objectID == common.BKInnerObjIDHost {
+		orCond = append(orCond, map[string]interface{}{
+			common.BKOperationDetailField + "." + common.BKHostIDField: instanceID,
+			common.BKResourceTypeField:                                 metadata.HostRes,
+		})
+	}
+	andCond = append(andCond, map[string]interface{}{common.BKDBOR: orCond})
+
 	if 0 == query.Limit {
 		query.Limit = common.BKDefaultLimit
 	}
 
-	// auth: check authorization on instance
-	var businessID int64
-	bizID, exist := query.Condition.(map[string]interface{})[common.BKAppIDField]
-	if exist == true {
-		id, err := util.GetInt64ByInterface(bizID)
-		if err != nil {
-			blog.Errorf("InstanceAuditQuery failed, %s field in query condition but parse int failed, err: %+v, rid: %s", common.BKAppIDField, err, params.ReqID)
-			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
-		}
-		businessID = id
-	}
-
-	instID, exist := queryCondition.(map[string]interface{})["inst_id"]
-	if exist == false {
-		blog.Errorf("InstanceAuditQuery failed, instance audit query condition condition.ext_key not exist, query: %+v, rid: %s", query, params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "inst_id")
-	}
-	instanceID, err := util.GetInt64ByInterface(instID)
-	if err != nil {
-		blog.Errorf("InstanceAuditQuery failed, instance audit query condition instanceID in condition.ext_key.$in invalid, instanceID: %+v, query: %+v, rid: %s", instID, query, params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "inst_id")
-	}
-
-	opTarget, exist := queryCondition.(map[string]interface{})["op_target"]
-	if exist {
-		target, ok := opTarget.(string)
-		if !ok {
-			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "op_target")
-		}
-		if target == "biz" {
-			businessID = instanceID
-		}
-	}
+	cond[common.BKDBAND] = andCond
+	query.Condition = cond
 
 	action := meta.Find
 	switch objectID {
@@ -192,7 +368,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		if err != nil && err == auth.NoAuthorizeError {
 			resp, err := s.AuthManager.GenProcessNoPermissionResp(params.Context, params.Header, businessID)
 			if err != nil {
-				return nil, params.Err.Errorf(common.CCErrTopoGetAppFailed, bizID)
+				return nil, params.Err.Errorf(common.CCErrTopoGetAppFailed, businessID)
 			}
 			return resp, auth.NoAuthorizeError
 		}

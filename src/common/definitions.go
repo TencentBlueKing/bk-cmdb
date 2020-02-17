@@ -431,11 +431,20 @@ const (
 	// BKOperationDetailField the audit operation detail field
 	BKOperationDetailField = "operation_detail"
 
+	// BKOperationDetailField the audit operation detail field
+	BKBasicDetailField = "basic_detail"
+
 	// BKOperationTimeField the audit operation time field
 	BKOperationTimeField = "operation_time"
 
 	// BKResourceIDField the audit resource ID field
 	BKResourceIDField = "resource_id"
+
+	// BKResourceNameField the audit resource name field
+	BKResourceNameField = "resource_name"
+
+	// BKLabelField the audit resource name field
+	BKLabelField = "label"
 
 	// BKSetEnvField the set env field
 	BKSetEnvField = "bk_set_env"

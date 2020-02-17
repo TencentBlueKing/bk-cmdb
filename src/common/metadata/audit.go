@@ -29,6 +29,20 @@ type AuditQueryResult struct {
 	} `json:"data"`
 }
 
+type AuditQueryCondition struct {
+	AuditType     AuditType       `json:"audit_type"`
+	User          string          `json:"user"`
+	ResourceType  []ResourceType  `json:"resource_type" `
+	Action        []ActionType    `json:"action"`
+	OperateFrom   OperateFromType `json:"operate_from"`
+	BizID         int64           `json:"bk_biz_id"`
+	ResourceID    int64           `json:"resource_id"`
+	ResourceName  string          `json:"resource_name"`
+	OperationTime []string        `json:"operation_time"`
+	Label         []string        `json:"label"`
+	Category      string          `json:"category"`
+}
+
 type AuditLog struct {
 	// AuditType is a high level abstract of the resource managed by this cmdb.
 	// Each kind of concept, resource must belongs to one of the resource type.
@@ -93,7 +107,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	auditLog.OperateFrom = audit.OperateFrom
 	auditLog.OperationTime = audit.OperationTime
 	auditLog.Label = audit.Label
-	if audit.Action == AuditTransferHost {
+	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -143,7 +157,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	auditLog.OperateFrom = audit.OperateFrom
 	auditLog.OperationTime = audit.OperationTime
 	auditLog.Label = audit.Label
-	if audit.Action == AuditTransferHost {
+	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -204,6 +218,8 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 type BasicOpDetail struct {
 	// the business id of the resource if it belongs to a business.
 	BusinessID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	// the business name of the resource if it belongs to a business.
+	BusinessName string `json:"bk_biz_name" bson:"bk_biz_name"`
 	// ResourceID is the id of the resource instance. which is a unique id.
 	ResourceID int64 `json:"resource_id" bson:"resource_id"`
 	// ResourceName is the name of the resource, such as a switch model has a name "switch"
@@ -226,10 +242,13 @@ func (op *InstanceOpDetail) WithName() string {
 }
 
 type HostTransferOpDetail struct {
-	HostID      int64         `json:"bk_host_id" bson:"bk_host_id"`
-	HostInnerIP string        `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	PreData     []HostBizTopo `json:"pre_data" bson:"pre_data"`
-	CurData     []HostBizTopo `json:"cur_data" bson:"cur_data"`
+	// the business id of the previous biz if the host transfers to the resource pool, otherwise is the current biz
+	BusinessID   int64       `json:"bk_biz_id" bson:"bk_biz_id"`
+	BusinessName string      `json:"bk_biz_name" bson:"bk_biz_name"`
+	HostID       int64       `json:"bk_host_id" bson:"bk_host_id"`
+	HostInnerIP  string      `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	PreData      HostBizTopo `json:"pre_data" bson:"pre_data"`
+	CurData      HostBizTopo `json:"cur_data" bson:"cur_data"`
 }
 
 type HostBizTopo struct {
@@ -389,9 +408,16 @@ const (
 	AuditUpdate ActionType = "update"
 	// delete a resource
 	AuditDelete ActionType = "delete"
-	// transfer a host from to resource pool or
-	// transfer host to a business.
-	AuditTransferHost ActionType = "transfer_host"
+	// transfer a host from resource pool to biz
+	AuditAssignHost ActionType = "assign_host"
+	// transfer a host from biz to resource pool
+	AuditUnassignHost ActionType = "unassign_host"
+	// transfer host to another module
+	AuditTransferHostModule ActionType = "transfer_host_module"
+	// archive a resource
+	AuditArchive ActionType = "archive"
+	// recover a resource
+	AuditRecover ActionType = "recover"
 )
 
 const (
@@ -441,4 +467,16 @@ func GetResourceTypeByObjID(objID string) ResourceType {
 	default:
 		return ModelInstanceRes
 	}
+}
+
+func GetAuditTypesByCategory(category string) []AuditType {
+	switch category {
+	case "business":
+		return []AuditType{BusinessResourceType}
+	case "resource":
+		return []AuditType{BusinessType, ModelInstanceType, CloudResourceType}
+	case "other":
+		return []AuditType{ModelType, AssociationKindType, EventPushType}
+	}
+	return []AuditType{}
 }

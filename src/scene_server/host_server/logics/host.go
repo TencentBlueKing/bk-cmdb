@@ -26,11 +26,11 @@ import (
 
 func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, businessMedatadata *metadata.Metadata) ([]metadata.Property, error) {
 	searchOp := map[string]interface{}{
-		common.BKObjIDField: common.BKInnerObjIDHost,
+		common.BKObjIDField:      common.BKInnerObjIDHost,
 		common.BkSupplierAccount: ownerID,
 	}
 	if businessMedatadata != nil {
-		searchOp[common.MetadataField]=businessMedatadata
+		searchOp[common.MetadataField] = businessMedatadata
 	}
 	query := &metadata.QueryCondition{
 		Condition: searchOp,
@@ -155,7 +155,11 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		if err := audit.WithCurrent(ctx, hostID, nil); err != nil {
 			return err
 		}
-		aResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, audit.AuditLog(ctx, hostID, appID, metadata.AuditCreate))
+		auditLog, err := audit.AuditLog(ctx, hostID, appID, metadata.AuditCreate)
+		if err != nil {
+			return err
+		}
+		aResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, auditLog)
 		if err != nil {
 			blog.Errorf("EnterIP AddHostLog http do error, err:%s, rid:%s", err.Error(), lgc.rid)
 			return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -189,6 +193,10 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 
 	}
 
+	hmAudit := lgc.NewHostModuleLog([]int64{hostID})
+	if err := hmAudit.WithPrevious(ctx); err != nil {
+		return err
+	}
 	params := &metadata.HostsModuleRelation{
 		ApplicationID: appID,
 		HostID:        []int64{hostID},
@@ -208,10 +216,6 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		return lgc.ccErr.New(hmResult.Code, hmResult.ErrMsg)
 	}
 
-	hmAudit := lgc.NewHostModuleLog([]int64{hostID})
-	if err := hmAudit.WithPrevious(ctx); err != nil {
-		return err
-	}
 	if err := hmAudit.SaveAudit(ctx); err != nil {
 		return err
 	}
@@ -365,10 +369,26 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
-	audit := lgc.NewHostModuleLog(hostIDArr)
-	if err := audit.WithPrevious(ctx); err != nil {
-		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
+
+	hostFields, err := lgc.GetHostAttributes(ctx, lgc.ownerID, nil)
+	if err != nil {
+		blog.ErrorJSON("DeleteHostFromBusiness get host attribute failed, err: %s, rid:%s", err, lgc.rid)
+		return nil, err
+	}
+
+	logContentMap := make(map[int64]metadata.AuditLog, 0)
+	for _, hostID := range hostIDArr {
+		logger := lgc.NewHostLog(ctx, lgc.ownerID)
+		if err := logger.WithPrevious(ctx, hostID, hostFields); err != nil {
+			blog.ErrorJSON("DeleteHostFromBusiness get pre host data failed, err: %s, host id: %s, rid: %s", err, hostID, lgc.rid)
+			return nil, err
+		}
+
+		logContentMap[hostID], err = logger.AuditLog(ctx, hostID, bizID, metadata.AuditDelete)
+		if err != nil {
+			blog.ErrorJSON("DeleteHostFromBusiness get host[%d] biz[%d] data failed, err: %v, rid:%s", hostID, bizID, err, lgc.rid)
+			return nil, err
+		}
 	}
 
 	input := &metadata.DeleteHostRequest{
@@ -385,15 +405,20 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 		return result.Data, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(ctx); err != nil {
-		blog.Errorf("DeleteHostFromBusiness, get prev module host config failed, err: %v,appID:%d, hostID:%#v,rid:%s", err, bizID, hostIDArr, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
+	// ensure delete host add log
+	for _, ex := range result.Data {
+		delete(logContentMap, ex.OriginIndex)
 	}
-
-	// auth: register host
-	if err := lgc.AuthManager.RegisterHostsByID(ctx, lgc.header, hostIDArr...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrCommRegistResourceToIAMFailed)
+	var logContents []metadata.AuditLog
+	for _, item := range logContentMap {
+		logContents = append(logContents, item)
+	}
+	if len(logContents) > 0 {
+		auditResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(ctx, lgc.header, logContents...)
+		if err != nil || !auditResult.Result {
+			blog.ErrorJSON("delete host in batch, but add host audit log failed, err: %s, result: %s,rid:%s", err, auditResult, lgc.rid)
+			return nil, lgc.ccErr.Error(common.CCErrAuditSaveLogFailed)
+		}
 	}
 	return nil, nil
 }

@@ -208,7 +208,12 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 			return
 		}
 
-		logContentMap[hostID] = logger.AuditLog(srvData.ctx, hostID, appID, meta.AuditDelete)
+		logContentMap[hostID], err = logger.AuditLog(srvData.ctx, hostID, appID, meta.AuditDelete)
+		if err != nil {
+			blog.Errorf("delete host batch, but get host[%d] biz[%d] data failed, err: %v, rid:%s", hostID, appID, err, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
 	}
 
 	input := &meta.DeleteHostRequest{
@@ -777,7 +782,13 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 			return
 		}
 
-		logLastContents = append(logLastContents, audit.AuditLog(srvData.ctx, hostID, appIDMap[hostID], meta.AuditUpdate))
+		auditLog, err := audit.AuditLog(srvData.ctx, hostID, appIDMap[hostID], meta.AuditUpdate)
+		if err != nil {
+			blog.Errorf("update host batch, but get host[%v] biz[%v] data for audit failed, err: %v, rid: %s", hostID, appIDMap[hostID], err, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
+		logLastContents = append(logLastContents, auditLog)
 	}
 	auditResp, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logLastContents...)
 	if err != nil {
@@ -891,7 +902,12 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 		if len(hostModuleConfig) > 0 {
 			appID = hostModuleConfig[0].AppID
 		}
-		auditLog := hostLog.AuditLog(srvData.ctx, update.HostID, appID, meta.AuditUpdate)
+		auditLog, err := hostLog.AuditLog(srvData.ctx, update.HostID, appID, meta.AuditUpdate)
+		if err != nil {
+			blog.Errorf("update host property batch, but get host[%d] biz[%d] data for audit failed, err: %v, rid: %s", update.HostID, appID, err, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
 		auditLogs = append(auditLogs, auditLog)
 	}
 

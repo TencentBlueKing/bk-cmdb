@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -87,7 +88,15 @@ func (h *HostLog) WithCurrent(ctx context.Context, hostID int64, properties []me
 	return nil
 }
 
-func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, action metadata.ActionType) metadata.AuditLog {
+func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, action metadata.ActionType) (metadata.AuditLog, error) {
+	bizName := ""
+	var err error
+	if bizID > 0 {
+		bizName, err = auditlog.NewAudit(h.logic.CoreAPI, ctx, h.header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
+		if err != nil {
+			return metadata.AuditLog{}, err
+		}
+	}
 	return metadata.AuditLog{
 		AuditType:    metadata.HostType,
 		ResourceType: metadata.HostRes,
@@ -95,13 +104,14 @@ func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, actio
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
 				BusinessID:   bizID,
+				BusinessName: bizName,
 				ResourceID:   hostID,
 				ResourceName: h.ip,
 				Details:      h.Content,
 			},
 			ModelID: common.BKInnerObjIDHost,
 		},
-	}
+	}, nil
 }
 
 type HostModuleLog struct {
@@ -152,6 +162,12 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 		return err
 	}
 
+	defaultBizID, err := h.logic.GetDefaultAppID(ctx)
+	if err != nil {
+		blog.ErrorJSON("save audit GetDefaultAppID failed, err: %s, rid: %s", err, h.logic.rid)
+		return h.logic.ccErr.Error(common.CCErrAuditSaveLogFailed)
+	}
+
 	var setIDs, moduleIDs, appIDs []int64
 	for _, val := range h.pre {
 		setIDs = append(setIDs, val.SetID)
@@ -198,25 +214,23 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 		}
 	}
 
-	preHostRelationMap := make(map[int64]map[int64]map[int64][]metadata.Module)
+	preHostRelationMap := make(map[int64]map[int64][]metadata.Module)
+	preHostAppMap := make(map[int64]int64)
 	for _, val := range h.pre {
 		if _, ok := preHostRelationMap[val.HostID]; false == ok {
-			preHostRelationMap[val.HostID] = make(map[int64]map[int64][]metadata.Module)
+			preHostRelationMap[val.HostID] = make(map[int64][]metadata.Module)
 		}
-		if _, ok := preHostRelationMap[val.HostID][val.AppID]; false == ok {
-			preHostRelationMap[val.HostID][val.AppID] = make(map[int64][]metadata.Module)
-		}
-		preHostRelationMap[val.HostID][val.AppID][val.SetID] = append(preHostRelationMap[val.HostID][val.AppID][val.SetID], metadata.Module{ModuleID: val.ModuleID, ModuleName: moduleNameMap[val.ModuleID]})
+		preHostAppMap[val.HostID] = val.AppID
+		preHostRelationMap[val.HostID][val.SetID] = append(preHostRelationMap[val.HostID][val.SetID], metadata.Module{ModuleID: val.ModuleID, ModuleName: moduleNameMap[val.ModuleID]})
 	}
-	curHostRelationMap := make(map[int64]map[int64]map[int64][]metadata.Module)
+	curHostRelationMap := make(map[int64]map[int64][]metadata.Module)
+	curHostAppMap := make(map[int64]int64)
 	for _, val := range h.cur {
 		if _, ok := curHostRelationMap[val.HostID]; false == ok {
-			curHostRelationMap[val.HostID] = make(map[int64]map[int64][]metadata.Module)
+			curHostRelationMap[val.HostID] = make(map[int64][]metadata.Module)
 		}
-		if _, ok := curHostRelationMap[val.HostID][val.AppID]; false == ok {
-			curHostRelationMap[val.HostID][val.AppID] = make(map[int64][]metadata.Module)
-		}
-		curHostRelationMap[val.HostID][val.AppID][val.SetID] = append(curHostRelationMap[val.HostID][val.AppID][val.SetID], metadata.Module{ModuleID: val.ModuleID, ModuleName: moduleNameMap[val.ModuleID]})
+		curHostAppMap[val.HostID] = val.AppID
+		curHostRelationMap[val.HostID][val.SetID] = append(curHostRelationMap[val.HostID][val.SetID], metadata.Module{ModuleID: val.ModuleID, ModuleName: moduleNameMap[val.ModuleID]})
 	}
 
 	appInfoArr, err := h.getApps(ctx, appIDs)
@@ -251,49 +265,60 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 			return err
 		}
 
-		preData := make([]metadata.HostBizTopo, 0)
-		for bizID, setModuleMap := range preHostRelationMap[hostID] {
-			sets := make([]metadata.Topo, 0)
-			for setID, modules := range setModuleMap {
-				sets = append(sets, metadata.Topo{
-					SetID:   setID,
-					SetName: setNameMap[setID],
-					Module:  modules,
-				})
-			}
-			preData = append(preData, metadata.HostBizTopo{
-				BizID:   bizID,
-				BizName: appIDNameMap[bizID],
-				Set:     sets,
+		sets := make([]metadata.Topo, 0)
+		for setID, modules := range preHostRelationMap[hostID] {
+			sets = append(sets, metadata.Topo{
+				SetID:   setID,
+				SetName: setNameMap[setID],
+				Module:  modules,
 			})
 		}
+		preBizID := preHostAppMap[hostID]
+		preData := metadata.HostBizTopo{
+			BizID:   preBizID,
+			BizName: appIDNameMap[preBizID],
+			Set:     sets,
+		}
 
-		curData := make([]metadata.HostBizTopo, 0)
-		for bizID, setModuleMap := range curHostRelationMap[hostID] {
-			sets := make([]metadata.Topo, 0)
-			for setID, modules := range setModuleMap {
-				sets = append(sets, metadata.Topo{
-					SetID:   setID,
-					SetName: setNameMap[setID],
-					Module:  modules,
-				})
-			}
-			curData = append(curData, metadata.HostBizTopo{
-				BizID:   bizID,
-				BizName: appIDNameMap[bizID],
-				Set:     sets,
+		sets = make([]metadata.Topo, 0)
+		for setID, modules := range curHostRelationMap[hostID] {
+			sets = append(sets, metadata.Topo{
+				SetID:   setID,
+				SetName: setNameMap[setID],
+				Module:  modules,
 			})
+		}
+		curBizID := curHostAppMap[hostID]
+		curData := metadata.HostBizTopo{
+			BizID:   curBizID,
+			BizName: appIDNameMap[curBizID],
+			Set:     sets,
+		}
+
+		var action metadata.ActionType
+		var bizID int64
+		if preBizID != curBizID && preBizID == defaultBizID {
+			action = metadata.AuditAssignHost
+			bizID = curBizID
+		} else if preBizID != curBizID && curBizID == defaultBizID {
+			action = metadata.AuditUnassignHost
+			bizID = preBizID
+		} else {
+			action = metadata.AuditTransferHostModule
+			bizID = curBizID
 		}
 
 		logs = append(logs, metadata.AuditLog{
 			AuditType:    metadata.HostType,
 			ResourceType: metadata.HostRes,
-			Action:       metadata.AuditTransferHost,
+			Action:       action,
 			OperationDetail: &metadata.HostTransferOpDetail{
-				HostID:      hostID,
-				HostInnerIP: hostIP,
-				PreData:     preData,
-				CurData:     curData,
+				BusinessID:   bizID,
+				BusinessName: appIDNameMap[bizID],
+				HostID:       hostID,
+				HostInnerIP:  hostIP,
+				PreData:      preData,
+				CurData:      curData,
 			},
 		})
 	}

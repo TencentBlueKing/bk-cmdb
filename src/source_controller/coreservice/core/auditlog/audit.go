@@ -62,7 +62,12 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 
 func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.AuditLog, uint64, error) {
 	fields := param.Fields
-	condition := param.Condition
+	condition, ok := param.Condition.(map[string]interface{})
+	if !ok {
+		blog.Errorf("SearchAuditLog failed, condition should be map[string]interface{}, rid: %s", kit.Rid)
+		return nil, 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "condition")
+	}
+	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
 	param.ConvTime()
 	skip := param.Start
 	limit := param.Limit

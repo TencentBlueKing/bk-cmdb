@@ -51,7 +51,12 @@ func NewAudit(clientSet apimachinery.ClientSetInterface, ctx context.Context, he
 func (a *auditLog) GetInstNameByID(objID string, instID int64) (string, error) {
 	switch objID {
 	case common.BKInnerObjIDHost:
-		rsp, err := a.clientSet.CoreService().Host().GetHosts(a.ctx, a.header, &metadata.QueryInput{Condition: map[string]interface{}{common.BKHostIDField: instID}})
+		rsp, err := a.clientSet.CoreService().Host().GetHosts(a.ctx, a.header, &metadata.QueryInput{
+			Fields: common.BKHostInnerIPField,
+			Condition: map[string]interface{}{
+				common.BKHostIDField: instID,
+			},
+		})
 		if nil != err || !rsp.Result {
 			blog.ErrorfDepth(1, "GetInstNameByID %d GetHosts failed, err: %v, rsp: %+v, rid: %s", instID, err, rsp, a.rid)
 			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
@@ -67,7 +72,12 @@ func (a *auditLog) GetInstNameByID(objID string, instID int64) (string, error) {
 		}
 		return ip, nil
 	default:
-		rsp, err := a.clientSet.CoreService().Instance().ReadInstance(a.ctx, a.header, objID, &metadata.QueryCondition{Condition: map[string]interface{}{common.GetInstIDField(objID): instID}})
+		rsp, err := a.clientSet.CoreService().Instance().ReadInstance(a.ctx, a.header, objID, &metadata.QueryCondition{
+			Fields: []string{common.GetInstNameField(objID)},
+			Condition: map[string]interface{}{
+				common.GetInstIDField(objID): instID,
+			},
+		})
 		if nil != err || !rsp.Result {
 			blog.ErrorfDepth(1, "GetInstNameByID %s %d ReadInstance failed, err: %v, rsp: %+v, rid: %s", objID, instID, err, rsp, a.rid)
 			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)

@@ -244,6 +244,13 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 				}
 				return err
 			}
+			bizName := ""
+			if bizID > 0 {
+				bizName, err = audit.GetInstNameByID(common.BKInnerObjIDApp, bizID)
+				if err != nil {
+					return err
+				}
+			}
 			bodyData[instIDField] = instID
 			instName, ok := bodyData[common.GetInstNameField(objID)].(string)
 			if !ok {
@@ -257,6 +264,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 				OperationDetail: &metadata.InstanceOpDetail{
 					BasicOpDetail: metadata.BasicOpDetail{
 						BusinessID:   bizID,
+						BusinessName: bizName,
 						ResourceID:   instID,
 						ResourceName: instName,
 						Details: &metadata.BasicContent{
@@ -370,6 +378,13 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			}
 			return err
 		}
+		bizName := ""
+		if bizID > 0 {
+			bizName, err = audit.GetInstNameByID(common.BKInnerObjIDApp, bizID)
+			if err != nil {
+				return err
+			}
+		}
 		qc := metadata.QueryCondition{
 			Condition: map[string]interface{}{
 				common.BKInstIDField: instID,
@@ -397,6 +412,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   bizID,
+					BusinessName: bizName,
 					ResourceID:   instID,
 					ResourceName: instName,
 					Details: &metadata.BasicContent{

@@ -117,6 +117,7 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
 				BusinessID:   int64(bizID),
+				BusinessName: common.BKAppName,
 				ResourceID:   int64(bizID),
 				ResourceName: common.BKAppName,
 				Details: &metadata.BasicContent{
@@ -271,6 +272,7 @@ func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   int64(bizID),
+					BusinessName: common.BKAppName,
 					ResourceID:   int64(setID),
 					ResourceName: setName,
 					Details: &metadata.BasicContent{
@@ -337,6 +339,7 @@ func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, modu
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   int64(bizID),
+					BusinessName: common.BKAppName,
 					ResourceID:   int64(moduleID),
 					ResourceName: moduleName,
 					Details: &metadata.BasicContent{

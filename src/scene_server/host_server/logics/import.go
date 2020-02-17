@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
@@ -151,6 +152,14 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 
+		bizName := ""
+		if appID > 0 {
+			bizName, err = auditlog.NewAudit(lgc.CoreAPI, ctx, lgc.header).GetInstNameByID(common.BKInnerObjIDApp, appID)
+			if err != nil {
+				return nil, nil, nil, nil, err
+			}
+		}
+
 		// add audit log
 		logContents = append(logContents, metadata.AuditLog{
 			AuditType:    metadata.HostType,
@@ -159,6 +168,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   appID,
+					BusinessName: bizName,
 					ResourceID:   intHostID,
 					ResourceName: innerIP,
 					Details: &metadata.BasicContent{

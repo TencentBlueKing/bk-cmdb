@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
@@ -114,12 +115,29 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 				}
 			}
 		}
+		bizName := ""
+		if bizID > 0 {
+			bizName, err = auditlog.NewAudit(a.client, a.params.Context, a.params.Header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
+			if err != nil {
+				return
+			}
+		}
 
 		objID := targetItem.GetObject().GetObjectID()
 		instName, err := targetItem.GetInstName()
 		if err != nil {
 			blog.V(3).Infof("[audit] failed to get the inst name from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.params.ReqID)
 			return
+		}
+		if action == metadata.AuditUpdate {
+			if currDataTmp[common.BKDataStatusField] != preDataTmp[common.BKDataStatusField] {
+				switch currDataTmp[common.BKDataStatusField] {
+				case string(common.DataStatusDisabled):
+					action = metadata.AuditArchive
+				case string(common.DataStatusEnable):
+					action = metadata.AuditRecover
+				}
+			}
 		}
 		auditLog := metadata.AuditLog{
 			AuditType:    metadata.GetAuditTypeByObjID(objID),
@@ -128,6 +146,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   bizID,
+					BusinessName: bizName,
 					ResourceID:   id,
 					ResourceName: instName,
 					Details: &metadata.BasicContent{
@@ -146,12 +165,14 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 			blog.V(3).Infof("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, a.params.ReqID)
 			return
 		}
-		for _, mainline := range asst.Data.Info {
-			if mainline.ObjectID == objID || mainline.AsstObjID == objID {
-				auditLog.Label = map[string]string{
-					metadata.LabelBizTopology: "",
+		if objID != common.BKInnerObjIDApp {
+			for _, mainline := range asst.Data.Info {
+				if mainline.ObjectID == objID || mainline.AsstObjID == objID {
+					auditLog.Label = map[string]string{
+						metadata.LabelBizTopology: "",
+					}
+					break
 				}
-				break
 			}
 		}
 
