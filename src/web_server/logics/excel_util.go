@@ -97,11 +97,9 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 
 	primaryKeyArr := make([]PropertyPrimaryVal, 0)
 
-	for _, property := range fields {
-		val, ok := rowMap[property.ID]
-		//}
-		//for id, val := range rowMap {
-		//	property, ok := fields[id]
+	// 非模型字段导出是没有field中没有ID 字段，因为导入的时候，第二行是作为Property
+	for id, property := range fields {
+		val, ok := rowMap[id]
 		if false == ok {
 			continue
 		}
