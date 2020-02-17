@@ -1384,8 +1384,9 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 			continue
 		}
 		switch hostID.(type) {
-		case int64:
-			intHostID = hostID.(int64)
+		case float64:
+			floatID := hostID.(float64)
+			intHostID = int64(floatID)
 		case string:
 			stringID := hostID.(string)
 			intHostID, err = strconv.ParseInt(stringID, 10, 64)
@@ -1554,5 +1555,8 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	_ = resp.WriteEntity(meta.NewSuccessResp(nil))
+	retData := map[string]interface{}{
+		"update_fail_hosts": updateFailedHosts,
+	}
+	_ = resp.WriteEntity(meta.NewSuccessResp(retData))
 }
