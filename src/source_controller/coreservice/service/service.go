@@ -120,16 +120,16 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		instance,
 		association.New(db, s),
 		datasynchronize.New(db, s),
-		mainline.New(db),
+		mainline.New(db, s.language),
 		host.New(db, cache, s, hostApplyRuleCore),
 		auditlog.New(db),
 		process.New(db, s, cache),
 		label.New(db),
-        settemplate.New(db),
-        operation.New(db),
-        hostApplyRuleCore,
-		dbSystem.New(db),  
-)
+		settemplate.New(db),
+		operation.New(db),
+		hostApplyRuleCore,
+		dbSystem.New(db),
+	)
 	return nil
 }
 
