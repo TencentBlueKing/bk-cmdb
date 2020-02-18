@@ -192,7 +192,6 @@ func getObjAttDescData(ownerID string) []*Attribute {
 	predataRows = append(predataRows, ModuleRow()...)
 	predataRows = append(predataRows, HostRow()...)
 	predataRows = append(predataRows, ProcRow()...)
-	predataRows = append(predataRows, PlatRow()...)
 
 	dataRows := SwitchRow()
 	dataRows = append(dataRows, RouterRow()...)

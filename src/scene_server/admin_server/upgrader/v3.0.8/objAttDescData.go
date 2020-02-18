@@ -97,16 +97,6 @@ func ModuleRow() []*Attribute {
 	return dataRows
 }
 
-// PlatRow plat structure
-func PlatRow() []*Attribute {
-	objID := common.BKInnerObjIDPlat
-	dataRows := []*Attribute{
-		&Attribute{ObjectID: objID, PropertyID: common.BKCloudNameField, PropertyName: "云区域", IsRequired: true, IsOnly: true, IsPre: true, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
-		&Attribute{ObjectID: objID, PropertyID: common.BKOwnerIDField, PropertyName: "供应商", IsRequired: true, IsOnly: true, IsPre: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
-	}
-	return dataRows
-}
-
 // HostRow host structure
 func HostRow() []*Attribute {
 	objID := common.BKInnerObjIDHost
