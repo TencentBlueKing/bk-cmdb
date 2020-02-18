@@ -37,7 +37,7 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 
 	queryCondition := query.Condition
 	if nil == queryCondition {
-		query.Condition = common.KvMap{common.BKOwnerIDField: params.SupplierAccount}
+		query.Condition = common.KvMap{}
 	} else {
 		cond := queryCondition.(map[string]interface{})
 		times, ok := cond[common.BKOpTimeField].([]interface{})
@@ -53,7 +53,6 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 				CCTimeTypeParseFlag: "1",
 			}
 		}
-		cond[common.BKOwnerIDField] = params.SupplierAccount
 		query.Condition = cond
 	}
 	if 0 == query.Limit {
@@ -143,7 +142,6 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 			CCTimeTypeParseFlag: "1",
 		}
 	}
-	cond[common.BKOwnerIDField] = params.SupplierAccount
 	cond[common.BKOpTargetField] = objectID
 	query.Condition = cond
 	if 0 == query.Limit {

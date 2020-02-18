@@ -38,8 +38,8 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 	}
 
 	objCond := map[string]interface{}{
-		common.BKOwnerIDField:          util.GetOwnerID(pheader),
-		common.BKClassificationIDField: common.BKNetwork}
+		common.BKClassificationIDField: common.BKNetwork,
+	}
 
 	if "" != objName {
 		objCond[common.BKObjNameField] = objName
@@ -83,7 +83,6 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 	}
 
 	propertyCond := map[string]interface{}{
-		common.BKOwnerIDField: util.GetOwnerID(pheader),
 		common.BKObjIDField:   netDeviceObjID}
 
 	if "" != propertyName {

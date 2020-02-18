@@ -118,7 +118,6 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 	}
 
 	cond := condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldID).Eq(id)
 
 	data.Remove(metadata.BKMetadata)
