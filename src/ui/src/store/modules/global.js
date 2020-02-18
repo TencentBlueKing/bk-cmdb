@@ -1,13 +1,5 @@
 import { language } from '@/i18n'
 import $http from '@/api'
-const createBusinessPromise = state => {
-    state.businessSelectorPromise = new Promise(resolve => {
-        state.businessSelectorResolver = val => {
-            createBusinessPromise(state)
-            resolve(val)
-        }
-    })
-}
 
 const state = {
     site: window.Site,
@@ -139,6 +131,11 @@ const mutations = {
     setBusinessSelectorVisible (state, visible) {
         state.businessSelectorVisible = visible
     },
+    createBusinessSelectorPromise (state) {
+        state.businessSelectorPromise = new Promise(resolve => {
+            state.businessSelectorResolver = resolve
+        })
+    },
     resolveBusinessSelectorPromise (state, val) {
         state.businessSelectorResolver && state.businessSelectorResolver(val)
     },
@@ -146,8 +143,6 @@ const mutations = {
         Object.assign(state.scrollerState, scrollerState)
     }
 }
-
-createBusinessPromise(state)
 
 export default {
     namespaced: true,
