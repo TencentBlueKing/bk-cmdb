@@ -125,7 +125,7 @@ func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID 
 
 func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	instIDFieldName := common.GetInstIDField(objID)
-	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
+	inputParam.Condition = util.SetModOwner(inputParam.Condition, ctx.SupplierAccount)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("UpdateModelInstance failed, get inst failed, err: %v, rid:%s", err, ctx.ReqID)
@@ -210,7 +210,7 @@ func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID stri
 func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
-	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
+	inputParam.Condition = util.SetModOwner(inputParam.Condition, ctx.SupplierAccount)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
@@ -267,7 +267,7 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 			return &metadata.DeletedCount{}, err
 		}
 	}
-	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
+	inputParam.Condition = util.SetModOwner(inputParam.Condition, ctx.SupplierAccount)
 	err = m.dbProxy.Table(tableName).Delete(ctx, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err

@@ -342,8 +342,6 @@ func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID str
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
-	attrArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	cond.Element(&mongo.In{Key: metadata.AttributeFieldSupplierAccount, Val: attrArr})
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	attrResult, err := m.search(ctx, cond)
 	if nil != err {
@@ -362,14 +360,7 @@ func (m *modelAttribute) SearchModelAttributesByCondition(ctx core.ContextParams
 		Info: []metadata.Attribute{},
 	}
 
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), parse condition  error [%#v]", ctx.ReqID, inputParam, err)
-		return &metadata.QueryModelAttributeDataResult{}, err
-	}
-	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
-	inputParam.Condition = condition.ToMapStr()
+	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, ctx.SupplierAccount)
 
 	attrResult, err := m.searchWithSort(ctx, inputParam)
 	if nil != err {
