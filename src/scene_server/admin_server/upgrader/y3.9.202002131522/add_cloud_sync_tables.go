@@ -39,12 +39,6 @@ var CreateTableOptions = []struct {
 		},
 	},
 	{
-		TableName: common.BKTableNameCloudArea,
-		TableIndex: []dal.Index{
-			{Name: "bk_cloud_id", Keys: map[string]int32{"bk_cloud_id": 1}, Background: true},
-		},
-	},
-	{
 		TableName: common.BKTableNameCloudSyncHistory,
 		TableIndex: []dal.Index{
 			{Name: "bk_history_id", Keys: map[string]int32{"bk_history_id": 1}, Background: true},
