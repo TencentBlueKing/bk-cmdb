@@ -25,6 +25,8 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.9.202002131522")
+
 	shouldRemoveTables := []string{"cc_CloudResourceConfirm", "cc_CloudSyncHistory", "cc_CloudTask", "cc_ResourceConfirmHistory"}
 	err = removeOldTables(ctx, db, shouldRemoveTables)
 	if err != nil {
@@ -32,10 +34,9 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
-	blog.Infof("start execute y3.9.202002131522")
 	err = CreateTables(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002131522] addChartDataTable error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202002131522] CreateTables error  %s", err.Error())
 		return err
 	}
 
