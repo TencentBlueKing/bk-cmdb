@@ -13,37 +13,23 @@
 package y3_9_202002181444
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"context"
+	"fmt"
 
-	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func init() {
-	upgrader.RegistUpgrader("y3.9.202002181444", upgrade)
-}
-
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-
-	blog.Infof("start execute y3.9.202002181444")
-	err = removeOldPlatAttrs(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002181444] removeOldPlatAttrs failed, error  %s", err.Error())
-		return err
+func removeOldPlatAttrs(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	cond := mapstr.MapStr{
+		common.BKObjIDField: common.BKInnerObjIDPlat,
 	}
 
-	err = initPlatAttr(ctx, db, conf)
+	err := db.Table(common.BKTableNameObjAttDes).Delete(ctx, cond)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002181444] initPlatAttr failed, error  %s", err.Error())
-		return err
+		return fmt.Errorf("upgrade y3.9.202002181444, remove old plat attrs failed, err: %v", err)
 	}
-
-	err = updatePlatUniqueKey(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002181444] updatePlatUniqueKey failed, error  %s", err.Error())
-		return err
-	}
-
 	return nil
 }
