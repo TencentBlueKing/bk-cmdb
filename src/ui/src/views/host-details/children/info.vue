@@ -71,7 +71,7 @@
                 return (this.host.bk_cloud_id || []).map(cloud => {
                     // 下面用了一个全角的空格
                     /* eslint-disable-next-line */
-                    return `ID：${cloud.bk_inst_id}　${cloud.bk_inst_name}`
+                    return `${this.$t('云区域')} ID：${cloud.bk_inst_id}　${cloud.bk_inst_name}`
                 }).join('\n')
             },
             topology () {
