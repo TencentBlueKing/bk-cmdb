@@ -45,5 +45,11 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
+	err = upgradeCloudArea(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202002181444] upgradeCloudArea failed, error  %s", err.Error())
+		return err
+	}
+
 	return nil
 }
