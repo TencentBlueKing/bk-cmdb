@@ -69,9 +69,7 @@
             },
             cloudArea () {
                 return (this.host.bk_cloud_id || []).map(cloud => {
-                    // 下面用了一个全角的空格
-                    /* eslint-disable-next-line */
-                    return `${this.$t('云区域')} ID：${cloud.bk_inst_id}　${cloud.bk_inst_name}`
+                    return `${this.$t('云区域')}：${cloud.bk_inst_name} (ID：${cloud.bk_inst_id})`
                 }).join('\n')
             },
             topology () {
@@ -167,10 +165,17 @@
             color: #333948;
         }
         .info-area {
-            display: inline-block;
+             display: inline-block;
             vertical-align: middle;
+            height: 18px;
+            margin-left: 10px;
+            padding: 0 3px;
+            line-height:16px;
             font-size: 12px;
-            color: $textColor;
+            color: #979BA5;
+            border: 1px solid #C4C6CC;
+            border-radius: 2px;
+            background-color: #fff;
         }
     }
     .info-topology {
