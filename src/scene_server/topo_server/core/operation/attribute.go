@@ -206,7 +206,6 @@ func (a *attribute) FindObjectAttributeWithDetail(kit *rest.Kit, cond condition.
 		attribute := attr.Attribute()
 		grpOrCond.Item(map[string]interface{}{
 			metadata.GroupFieldGroupID:         attribute.PropertyGroup,
-			metadata.GroupFieldSupplierAccount: attribute.OwnerID,
 			metadata.GroupFieldObjectID:        attribute.ObjectID,
 		})
 	}

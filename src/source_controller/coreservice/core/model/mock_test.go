@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/model"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/stretchr/testify/require"
@@ -54,11 +53,11 @@ func newModel(t *testing.T) core.ModelOperation {
 
 	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", time.Minute)
 	require.NoError(t, err)
-	return model.New(db, &mockDependences{})
+	return model.New(db, &mockDependences{}, nil)
 }
 
 var defaultCtx = func() core.ContextParams {
-	err, _ := errors.New("../../../../../resources/errors/")
+	err, _ := errors.NewFactory("../../../../../resources/errors/")
 	lan, _ := language.New("../../../../../resources/language/")
 	return core.ContextParams{
 		Context:         context.Background(),

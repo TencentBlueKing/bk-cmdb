@@ -235,9 +235,18 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 					return err
 				}
 
+				procName := ""
+				if oldInst.ProcessName != nil {
+					procName = *oldInst.ProcessName
+				}
+				if procName == "" && oldInst.FuncName != nil {
+					procName = *oldInst.FuncName
+				}
+
 				procTemplate := ProcessTemplate{
 					Metadata:          metadata.NewMetadata(bizID),
 					ID:                int64(procTemplateID),
+					ProcessName:       procName,
 					ServiceTemplateID: serviceTemplate.ID,
 					Property:          procInstToProcTemplate(oldInst),
 					Creator:           conf.User,
@@ -386,6 +395,10 @@ func procInstToProcTemplate(inst Process) *metadata.ProcessProperty {
 	}
 	if inst.FuncName != nil && len(*inst.FuncName) > 0 {
 		template.FuncName.Value = inst.FuncName
+		template.FuncName.AsDefaultValue = &True
+	} else if inst.ProcessName != nil && len(*inst.ProcessName) > 0 {
+		// FuncName empty, try use ProcessName
+		template.FuncName.Value = inst.ProcessName
 		template.FuncName.AsDefaultValue = &True
 	}
 	if inst.WorkPath != nil && len(*inst.WorkPath) > 0 {

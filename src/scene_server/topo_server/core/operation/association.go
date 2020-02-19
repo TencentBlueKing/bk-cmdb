@@ -437,7 +437,6 @@ func (assoc *association) UpdateAssociation(kit *rest.Kit, data mapstr.MapStr, a
 
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldAssociationId).Eq(assoID)
-	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(kit.SupplierAccount)
 
 	rsp, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
@@ -645,7 +644,6 @@ func (assoc *association) DeleteType(kit *rest.Kit, asstTypeID int64) (resp *met
 	}
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
-	cond.Field(common.BKOwnerIDField).Eq(kit.SupplierAccount)
 	query := &metadata.SearchAssociationTypeRequest{
 		Condition: cond.ToMapStr(),
 	}

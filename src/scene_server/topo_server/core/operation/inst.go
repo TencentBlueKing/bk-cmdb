@@ -481,7 +481,6 @@ func (c *commonInst) DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, i
 
 	// delete this instance now.
 	delCond := condition.CreateCondition()
-	delCond.Field(common.BKOwnerIDField).Eq(kit.SupplierAccount)
 	delCond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	if obj.IsCommon() {
 		delCond.Field(common.BKObjIDField).Eq(object.ObjectID)

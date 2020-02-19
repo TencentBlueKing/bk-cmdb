@@ -36,9 +36,9 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 
 	queryCondition := query.Condition
 	if nil == queryCondition {
-		query.Condition = common.KvMap{common.BKOwnerIDField: ctx.Kit.SupplierAccount}
+		query.Condition = common.KvMap{}
 	} else {
-		cond := queryCondition.(map[string]interface{})
+		cond := queryCondition
 		times, ok := cond[common.BKOpTimeField].([]interface{})
 		if ok {
 			if 2 != len(times) {
@@ -53,7 +53,6 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 				CCTimeTypeParseFlag: "1",
 			}
 		}
-		cond[common.BKOwnerIDField] = ctx.Kit.SupplierAccount
 		query.Condition = cond
 	}
 	if 0 == query.Limit {
@@ -62,7 +61,7 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 
 	// add auth filter condition
 	var businessID int64
-	bizID, exist := query.Condition.(map[string]interface{})[common.BKAppIDField]
+	bizID, exist := query.Condition[common.BKAppIDField]
 	if exist == true {
 		id, err := util.GetInt64ByInterface(bizID)
 		if err != nil {
@@ -95,7 +94,7 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 			}
 
 			if hasAuthorization == true {
-				query.Condition.(map[string]interface{})[common.BKDBOR] = authCondition
+				query.Condition[common.BKDBOR] = authCondition
 				blog.V(5).Infof("AuditQuery, auth condition is: %+v, rid: %s", authCondition, ctx.Kit.Rid)
 				hasAuthorize = hasAuthorization
 				break
@@ -140,7 +139,7 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := queryCondition.(map[string]interface{})
+	cond := queryCondition
 	times, ok := cond[common.BKOpTimeField].([]interface{})
 	if ok {
 		if 2 != len(times) {
@@ -155,7 +154,6 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 			CCTimeTypeParseFlag: "1",
 		}
 	}
-	cond[common.BKOwnerIDField] = ctx.Kit.SupplierAccount
 	cond[common.BKOpTargetField] = objectID
 	query.Condition = cond
 	if 0 == query.Limit {
@@ -164,7 +162,7 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 
 	// auth: check authorization on instance
 	var businessID int64
-	bizID, exist := query.Condition.(map[string]interface{})[common.BKAppIDField]
+	bizID, exist := query.Condition[common.BKAppIDField]
 	if exist == true {
 		id, err := util.GetInt64ByInterface(bizID)
 		if err != nil {
@@ -175,7 +173,7 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 		businessID = id
 	}
 
-	instID, exist := queryCondition.(map[string]interface{})["inst_id"]
+	instID, exist := queryCondition["inst_id"]
 	if exist == false {
 		blog.Errorf("InstanceAuditQuery failed, instance audit query condition condition.ext_key not exist, query: %+v, rid: %s", query, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "inst_id"))
@@ -188,7 +186,7 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 		return
 	}
 
-	opTarget, exist := queryCondition.(map[string]interface{})["op_target"]
+	opTarget, exist := queryCondition["op_target"]
 	if exist {
 		target, ok := opTarget.(string)
 		if !ok {

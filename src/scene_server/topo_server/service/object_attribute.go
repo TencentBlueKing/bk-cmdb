@@ -152,7 +152,6 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 	}
 
 	cond := condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(ctx.Kit.SupplierAccount)
 	cond.Field(metadata.AttributeFieldID).Eq(id)
 
 	listRuleOption := metadata.ListHostApplyRuleOption{
