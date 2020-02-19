@@ -337,11 +337,8 @@ func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inpu
 		return nil, err
 	}
 	
-	suppliers := []string{kit.SupplierAccount, common.BKDefaultOwnerID}
-	inputParam.Condition[metadata.AttributeFieldSupplierAccount] = mapstr.MapStr{
-	    common.BKDBIN: suppliers,
-    }
     inputParam.Condition[common.BKObjIDField] = objID
+    inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
     
 	attrResult, err := m.newSearch(kit, inputParam.Condition)
 	if nil != err {
@@ -361,14 +358,7 @@ func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputPa
 		Info: []metadata.Attribute{},
 	}
 
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), parse condition  error [%#v]", kit.Rid, inputParam, err)
-		return &metadata.QueryModelAttributeDataResult{}, err
-	}
-	ownerIDArr := []string{kit.SupplierAccount, common.BKDefaultOwnerID}
-	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
-	inputParam.Condition = condition.ToMapStr()
+	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
 	attrResult, err := m.searchWithSort(kit, inputParam)
 	if nil != err {

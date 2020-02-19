@@ -151,9 +151,14 @@
                 this.$store.commit('setTitle', this.$t(title))
             },
             goBack () {
+                const query = {}
+                if (!this.isBatch) {
+                    query.module = this.propertyConfig.bk_module_ids[0]
+                }
                 this.$store.commit('hostApply/clearRuleDraft')
                 this.$router.push({
-                    name: MENU_BUSINESS_HOST_APPLY
+                    name: MENU_BUSINESS_HOST_APPLY,
+                    query
                 })
             },
             resizeHandler (a, b, c) {

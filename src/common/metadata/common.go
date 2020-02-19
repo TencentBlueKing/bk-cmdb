@@ -108,25 +108,21 @@ type ResponseDataMapStr struct {
 }
 
 type QueryInput struct {
-	Condition interface{} `json:"condition"`
-	Fields    string      `json:"fields,omitempty"`
-	Start     int         `json:"start,omitempty"`
-	Limit     int         `json:"limit,omitempty"`
-	Sort      string      `json:"sort,omitempty"`
+	Condition map[string]interface{} `json:"condition"`
+	Fields    string                 `json:"fields,omitempty"`
+	Start     int                    `json:"start,omitempty"`
+	Limit     int                    `json:"limit,omitempty"`
+	Sort      string                 `json:"sort,omitempty"`
 }
 
 // ConvTime cc_type key
 func (o *QueryInput) ConvTime() error {
-	conds, ok := o.Condition.(map[string]interface{})
-	if true != ok && nil != conds {
-		return nil
-	}
-	for key, item := range conds {
+	for key, item := range o.Condition {
 		convItem, err := o.convTimeItem(item)
 		if nil != err {
 			continue
 		}
-		conds[key] = convItem
+		o.Condition[key] = convItem
 	}
 
 	return nil
