@@ -15,110 +15,158 @@ package service
 import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"strconv"
 )
 
 // CreateClassification create a new object classification
-func (s *Service) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	cls, err := s.Core.ClassificationOperation().CreateClassification(params, data)
+func (s *Service) CreateClassification(ctx *rest.Contexts) {
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	cls, err := s.Core.ClassificationOperation().CreateClassification(ctx.Kit, data)
 	if nil != err {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return cls.ToMapStr()
+	ctx.RespEntity(cls.ToMapStr())
 }
 
 // SearchClassificationWithObjects search the classification with objects
-func (s *Service) SearchClassificationWithObjects(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchClassificationWithObjects(ctx *rest.Contexts) {
+	dataWithMetadata := MapStrWithMetadata{}
+	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	data := dataWithMetadata.Data
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
-
 		page, err := data.MapStr(metadata.PageName)
 		if nil != err {
-			blog.Errorf("failed to get the page , error info is %s, rid: %s", err.Error(), params.ReqID)
-			return nil, err
+			blog.Errorf("failed to get the page , error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
 		}
 
 		if err = cond.SetPage(page); nil != err {
-			blog.Errorf("failed to parse the page, error info is %s, rid: %s", err.Error(), params.ReqID)
-			return nil, err
+			blog.Errorf("failed to parse the page, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
 		}
 
 		data.Remove(metadata.PageName)
 	}
 
 	if err := cond.Parse(data); nil != err {
-		blog.Errorf("failed to parse the condition, error info is %s, rid: %s", err.Error(), params.ReqID)
-		return nil, err
+		blog.Errorf("failed to parse the condition, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return s.Core.ClassificationOperation().FindClassificationWithObjects(params, cond)
+	resp, err := s.Core.ClassificationOperation().FindClassificationWithObjects(ctx.Kit, cond, dataWithMetadata.Metadata)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }
 
 // SearchClassification search the classifications
-func (s *Service) SearchClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchClassification(ctx *rest.Contexts) {
+	dataWithMetadata := MapStrWithMetadata{}
+	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	data := dataWithMetadata.Data
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
 
 		page, err := data.MapStr(metadata.PageName)
 		if nil != err {
-			blog.Errorf("failed to get the page , error info is %s, rid: %s", err.Error(), params.ReqID)
-			return nil, err
+			blog.Errorf("failed to get the page , error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
 		}
 
 		if err = cond.SetPage(page); nil != err {
-			blog.Errorf("failed to parse the page, error info is %s, rid: %s", err.Error(), params.ReqID)
-			return nil, err
+			blog.Errorf("failed to parse the page, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
 		}
 
 		data.Remove(metadata.PageName)
 	}
 	if err := cond.Parse(data); err != nil {
-		blog.Errorf("parse condition from data failed, err: %s, rid: %s", err.Error(), params.ReqID)
-		return nil, err
+		blog.Errorf("parse condition from data failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return s.Core.ClassificationOperation().FindClassification(params, cond)
+	resp, err := s.Core.ClassificationOperation().FindClassification(ctx.Kit, cond, dataWithMetadata.Metadata)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }
 
 // UpdateClassification update the object classification
-func (s *Service) UpdateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateClassification(ctx *rest.Contexts) {
+	data := make(mapstr.MapStr)
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 
 	cond := condition.CreateCondition()
 	paramPath := mapstr.MapStr{}
-	paramPath.Set("id", pathParams("id"))
+	paramPath.Set("id", ctx.Request.PathParameter("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
-		return nil, err
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 	data.Remove(metadata.BKMetadata)
 
-	err = s.Core.ClassificationOperation().UpdateClassification(params, data, id, cond)
+	err = s.Core.ClassificationOperation().UpdateClassification(ctx.Kit, data, id, cond)
 	if err != nil {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return nil, err
+	ctx.RespEntity(nil)
 }
 
 // DeleteClassification delete the object classification
-func (s *Service) DeleteClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *Service) DeleteClassification(ctx *rest.Contexts) {
 	cond := condition.CreateCondition()
-	paramPath := mapstr.MapStr{}
-	paramPath.Set("id", pathParams("id"))
-	id, err := paramPath.Int64("id")
+	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
-		return nil, err
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	// data.Remove(metadata.BKMetadata)
-	err = s.Core.ClassificationOperation().DeleteClassification(params, id, data, cond)
-	return nil, err
+	md := new(MetaShell)
+	if err := ctx.DecodeInto(md); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	err = s.Core.ClassificationOperation().DeleteClassification(ctx.Kit, id, cond, md.Metadata)
+	if nil != err {
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
 }

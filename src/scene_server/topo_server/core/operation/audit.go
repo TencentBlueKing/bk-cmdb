@@ -18,39 +18,43 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/common/util"
 )
 
 type AuditOperationInterface interface {
-	Query(params types.ContextParams, query metadata.QueryInput) (interface{}, error)
+	Query(kit *rest.Kit, query metadata.QueryInput) (interface{}, error)
 }
 
 // NewAuditOperation create a new inst operation instance
-func NewAuditOperation(client apimachinery.ClientSetInterface) AuditOperationInterface {
+func NewAuditOperation(client apimachinery.ClientSetInterface, languageIf language.CCLanguageIf) AuditOperationInterface {
 	return &audit{
 		clientSet: client,
+		language:  languageIf,
 	}
 }
 
 type audit struct {
 	clientSet apimachinery.ClientSetInterface
+	language  language.CCLanguageIf
 }
 
-func (a *audit) Query(params types.ContextParams, query metadata.QueryInput) (interface{}, error) {
-	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), params.Header, query)
+func (a *audit) Query(kit *rest.Kit, query metadata.QueryInput) (interface{}, error) {
+	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), kit.Header, query)
 	if nil != err {
-		blog.Errorf("[audit] failed to request core service, error info is %s, rid: %s", err.Error(), params.ReqID)
-		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		blog.Errorf("[audit] failed to request core service, error info is %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[audit] search audit log failed, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
-		return nil, params.Err.CCError(common.CCErrAuditSelectFailed)
+		blog.Errorf("[audit] search audit log failed, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrAuditSelectFailed)
 	}
 
 	for index := range rsp.Data.Info {
-		if desc := params.Lang.Language("auditlog_" + rsp.Data.Info[index].OpDesc); len(desc) > 0 {
+		if desc := a.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language("auditlog_" + rsp.Data.Info[index].OpDesc); len(desc) > 0 {
 			rsp.Data.Info[index].OpDesc = desc
 		}
 	}
