@@ -13,16 +13,15 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"strconv"
 )
 
 // 新建云账户
 func (s *coreService) CreateAccount(ctx *rest.Contexts) {
-
 	account := metadata.CloudAccount{}
 	if err := ctx.DecodeInto(&account); err != nil {
 		ctx.RespAutoError(err)
@@ -31,7 +30,6 @@ func (s *coreService) CreateAccount(ctx *rest.Contexts) {
 
 	result, err := s.core.CloudOperation().CreateAccount(ctx.Kit, &account)
 	if err != nil {
-		blog.Errorf("CreateAccount failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -48,7 +46,6 @@ func (s *coreService) SearchAccount(ctx *rest.Contexts) {
 
 	result, err := s.core.CloudOperation().SearchAccount(ctx.Kit, &option)
 	if err != nil {
-		blog.Errorf("SearchAccount failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -59,15 +56,8 @@ func (s *coreService) SearchAccount(ctx *rest.Contexts) {
 func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
 	//get accountID
 	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
-	if len(accountIDStr) == 0 {
-		blog.Errorf("UpdateAccount failed, path parameter `%s` empty, rid: %s", common.BKCloudAccountIDField, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
-		return
-	}
-
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("UpdateAccount failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKCloudAccountIDField, accountIDStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
 		return
 	}
@@ -77,9 +67,9 @@ func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	result, err := s.core.CloudOperation().UpdateAccount(ctx.Kit, accountID, &account)
 	if err != nil {
-		blog.Errorf("UpdateAccount failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -90,22 +80,14 @@ func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
 func (s *coreService) DeleteAccount(ctx *rest.Contexts) {
 	//get accountID
 	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
-	if len(accountIDStr) == 0 {
-		blog.Errorf("DeleteAccount failed, path parameter `%s` empty, rid: %s", common.BKCloudAccountIDField, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
-		return
-	}
-
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("DeleteAccount failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKCloudAccountIDField, accountIDStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
 		return
 	}
 
 	err = s.core.CloudOperation().DeleteAccount(ctx.Kit, accountID)
 	if err != nil {
-		blog.Errorf("DeleteAccount failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

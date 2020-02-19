@@ -50,6 +50,7 @@ const (
 	CC_MODULE_SYNCHRONZESERVER = "sync"
 	CC_MODULE_OPERATION        = "operation"
 	CC_MODULE_TASK             = "task"
+	CC_MODULE_CLOUD            = "cloud"
 )
 
 // AllModule all cc module
@@ -67,6 +68,7 @@ var AllModule = map[string]bool{
 	CC_MODULE_SYNCHRONZESERVER: true,
 	CC_MODULE_OPERATION:        true,
 	CC_MODULE_TASK:             true,
+	CC_MODULE_CLOUD:            true,
 }
 
 // cc functionality define
@@ -86,7 +88,7 @@ type ServerInfo struct {
 	Version    string `json:"version"`
 	Pid        int    `json:"pid"`
 	// UUID is used to distinguish which service is master in zookeeper
-	UUID       string `json:"uuid"`
+	UUID string `json:"uuid"`
 }
 
 // NewServerInfo new a ServerInfo object
