@@ -11,7 +11,6 @@ import {
     C_TOPO,
     U_TOPO,
     D_TOPO,
-    R_TOPO,
 
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
@@ -28,7 +27,6 @@ export const OPERATION = {
     C_TOPO,
     U_TOPO,
     D_TOPO,
-    R_TOPO,
 
     C_SERVICE_INSTANCE,
     U_SERVICE_INSTANCE,
