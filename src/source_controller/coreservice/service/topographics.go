@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -33,8 +34,8 @@ func (s *coreService) SearchTopoGraphics(params core.ContextParams, pathParams, 
 	cond := mapstr.MapStr{
 		"scope_type":          selector.ScopeType,
 		"scope_id":            selector.ScopeID,
-		"bk_supplier_account": params.SupplierAccount,
 	}
+	cond = util.SetQueryOwner(cond, params.SupplierAccount)
 	_, err := selector.Metadata.Label.GetBusinessID()
 	if nil == err {
 		cond.Merge(meta.PublicAndBizCondition(selector.Metadata))
@@ -68,8 +69,8 @@ func (s *coreService) UpdateTopoGraphics(params core.ContextParams, pathParams, 
 			"node_type":           inputBody.Data[index].NodeType,
 			"bk_obj_id":           inputBody.Data[index].ObjID,
 			"bk_inst_id":          inputBody.Data[index].InstID,
-			"bk_supplier_account": params.SupplierAccount,
 		}
+		cond = util.SetQueryOwner(cond, params.SupplierAccount)
 
 		cnt, err := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).Count(params.Context)
 		if nil != err {

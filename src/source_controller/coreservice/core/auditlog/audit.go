@@ -71,6 +71,7 @@ func (m *auditManager) CreateAuditLog(ctx core.ContextParams, logs ...metadata.S
 func (m *auditManager) SearchAuditLog(ctx core.ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error) {
 	fields := param.Fields
 	condition := param.Condition
+	condition = util.SetQueryOwner(condition, ctx.SupplierAccount)
 	param.ConvTime()
 	skip := param.Start
 	limit := param.Limit

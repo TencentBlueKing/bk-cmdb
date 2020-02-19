@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -90,9 +91,8 @@ func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID st
 
 // SearchUnique search unique attribute
 func (s *coreService) SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
-	cond := mongo.NewCondition()
-	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	cond.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
+	condMap := util.SetQueryOwner(make(map[string]interface{}), ctx.SupplierAccount)
+	cond, _ := mongo.NewConditionFromMapStr(condMap)
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	queryCond := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),

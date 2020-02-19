@@ -264,7 +264,7 @@ func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condit
 	resultAttrs := make([]metadata.Attribute, 0)
 	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKObjIDField, common.MetadataField}
 
-	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
+	condMap := util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).Fields(fields...).All(ctx, &resultAttrs)
 	if nil != err {
 		blog.Errorf("request(%s): database count operation is failed, error info is %s", ctx.ReqID, err.Error())
@@ -389,9 +389,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 				common.BKObjIDField: object,
 			}
 		}
-		cond[common.BkSupplierAccount] = mapstr.MapStr{
-			"$in": []string{ownerID, common.BKDefaultOwnerID},
-		}
+		cond = util.SetQueryOwner(cond, ownerID)
 
 		collectionName := common.GetInstTableName(object)
 		wg.Add(1)
@@ -431,9 +429,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 		cond := mapstr.MapStr{
 			common.BKAppIDField: ele.bizID,
 		}
-		cond[common.BkSupplierAccount] = mapstr.MapStr{
-			"$in": []string{ownerID, common.BKDefaultOwnerID},
-		}
+		cond = util.SetQueryOwner(cond, ownerID)
 
 		collectionName := common.GetInstTableName(ele.object)
 		wg.Add(1)
@@ -459,9 +455,7 @@ const pageSize = 500
 
 func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID string, info bizObjectFields) error {
 	cond := mapstr.MapStr{}
-	cond[common.BkSupplierAccount] = mapstr.MapStr{
-		"$in": []string{ownerID, common.BKDefaultOwnerID},
-	}
+	cond = util.SetQueryOwner(cond, ownerID)
 	// biz id = 0 means all the hosts.
 	// TODO: optimize when the filed is a public filed in all the host instances. handle with page
 	if info.bizID != 0 {
@@ -736,7 +730,7 @@ func (m *modelAttribute) GetAttrLastIndex(ctx core.ContextParams, attribute meta
 	opt := make(map[string]interface{})
 	opt[common.BKObjIDField] = attribute.ObjectID
 	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
-	opt[common.BkSupplierAccount] = attribute.OwnerID
+	opt = util.SetModOwner(opt, attribute.OwnerID)
 	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Count(ctx)
 	if err != nil {
 		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", ctx.ReqID, err)

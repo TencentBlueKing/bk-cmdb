@@ -28,7 +28,7 @@ import (
 )
 
 func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, businessMedatadata *metadata.Metadata) ([]metadata.Header, error) {
-	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
+	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).MapStr()
 	if businessMedatadata != nil {
 		searchOp.Set(common.MetadataField, businessMedatadata)
 	}

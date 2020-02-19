@@ -89,7 +89,6 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 		Data: info,
 		Condition: map[string]interface{}{
 			common.BKProcessIDField:  procID,
-			common.BkSupplierAccount: kit.SupplierAccount,
 		},
 	}
 
