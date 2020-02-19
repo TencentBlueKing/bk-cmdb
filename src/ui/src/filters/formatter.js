@@ -77,7 +77,7 @@ export function enumeration (value, options) {
     if (!option) {
         return '--'
     }
-    return option.name
+    return `${option.name}(${option.id})`
 }
 
 export function foreignkey (value) {

@@ -13,14 +13,15 @@
 package association
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/storage/dal"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/errors"
+    "configcenter/src/common/http/rest"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    "configcenter/src/common/universalsql/mongo"
+    "configcenter/src/common/util"
+    "configcenter/src/storage/dal"
 )
 
 type associationInstance struct {
@@ -235,14 +236,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 }
 
 func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
-	if nil != err {
-		blog.Errorf("parse conditon  error [%#v], rid: %s", err, kit.Rid)
-		return &metadata.QueryResult{}, err
-	}
-	ownerIDArr := []string{kit.SupplierAccount, common.BKDefaultOwnerID}
-	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
-	inputParam.Condition = condition.ToMapStr()
+	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 	instAsstItems, err := m.searchInstanceAssociation(kit, inputParam)
 	if nil != err {
 		blog.Errorf("search inst association array err [%#v], rid: %s", err, kit.Rid)
@@ -264,8 +258,8 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, inputPara
 }
 
 func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-	inputParam.Condition.Set(common.BKOwnerIDField, kit.SupplierAccount)
-	cnt, err := m.instCount(kit, inputParam.Condition)
+    inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
+    cnt, err := m.instCount(kit, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete inst association get inst [%#v] count err [%#v], rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.DeletedCount{}, err
