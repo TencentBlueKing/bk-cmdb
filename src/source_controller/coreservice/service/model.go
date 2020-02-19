@@ -92,7 +92,15 @@ func (s *coreService) SearchModelClassification(ctx *rest.Contexts) {
 	// translate language
 	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
-		dataResult.Info[index].ClassificationName = s.TranslateClassificationName(lang, &dataResult.Info[index])
+		defaultClassificationMap := map[string]bool{
+			"bk_host_manage":  true,
+			"bk_biz_topo":     true,
+			"bk_organization": true,
+			"bk_network":      true,
+		}
+		if defaultClassificationMap[dataResult.Info[index].ClassificationID] {
+			dataResult.Info[index].ClassificationName = s.TranslateClassificationName(lang, &dataResult.Info[index])
+		}
 	}
 	ctx.RespEntity(dataResult)
 }
@@ -165,12 +173,16 @@ func (s *coreService) SearchModel(ctx *rest.Contexts) {
 	// translate
 	lang := s.Language(ctx.Kit.Header)
 	for modelIdx := range dataResult.Info {
-		dataResult.Info[modelIdx].Spec.ObjectName = s.TranslateObjectName(lang, &dataResult.Info[modelIdx].Spec)
+		if needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
+			dataResult.Info[modelIdx].Spec.ObjectName = s.TranslateObjectName(lang, &dataResult.Info[modelIdx].Spec)
+		}
 		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
-			dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-			dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-			if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
-				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
+			if dataResult.Info[modelIdx].Attributes[attributeIdx].IsPre || dataResult.Info[modelIdx].Spec.IsPre || needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
+				dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+				dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+				if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
+					dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
+				}
 			}
 		}
 	}
@@ -307,7 +319,9 @@ func (s *coreService) SearchModelAttributeGroup(ctx *rest.Contexts) {
 
 	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
-		dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(lang, &dataResult.Info[index])
+		if dataResult.Info[index].IsDefault {
+			dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(lang, &dataResult.Info[index])
+		}
 	}
 	ctx.RespEntity(dataResult)
 }
@@ -326,7 +340,9 @@ func (s *coreService) SearchModelAttributeGroupByCondition(ctx *rest.Contexts) {
 	}
 	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
-		dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(lang, &dataResult.Info[index])
+		if dataResult.Info[index].IsDefault {
+			dataResult.Info[index].GroupName = s.TranslatePropertyGroupName(lang, &dataResult.Info[index])
+		}
 	}
 	ctx.RespEntity(dataResult)
 }
@@ -431,10 +447,12 @@ func (s *coreService) SearchModelAttributesByCondition(ctx *rest.Contexts) {
 	// translate
 	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
-		dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
-		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
-		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
-			dataResult.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
+		if dataResult.Info[index].IsPre || needTranslateObjMap[dataResult.Info[index].ObjectID] {
+			dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
+			dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
+			if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
+				dataResult.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
+			}
 		}
 	}
 
@@ -458,10 +476,12 @@ func (s *coreService) SearchModelAttributes(ctx *rest.Contexts) {
 	// translate 主机内置字段bk_state不做翻译
 	lang := s.Language(ctx.Kit.Header)
 	for index := range dataResult.Info {
-		dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
-		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
-		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
-			dataResult.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
+		if dataResult.Info[index].IsPre || needTranslateObjMap[dataResult.Info[index].ObjectID] {
+			dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
+			dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
+			if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
+				dataResult.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
+			}
 		}
 	}
 

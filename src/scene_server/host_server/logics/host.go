@@ -26,8 +26,7 @@ import (
 
 func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, businessMedatadata *metadata.Metadata) ([]metadata.Property, error) {
 	searchOp := map[string]interface{}{
-		common.BKObjIDField:      common.BKInnerObjIDHost,
-		common.BkSupplierAccount: ownerID,
+		common.BKObjIDField: common.BKInnerObjIDHost,
 	}
 	if businessMedatadata != nil {
 		searchOp[common.MetadataField] = businessMedatadata

@@ -221,7 +221,10 @@
                 return this.$parent.table.header
             },
             showRemove () {
-                return this.selectedNode && !this.selectedNode.data.is_idle_set && this.selectedNode.data.bk_obj_id === 'module'
+                return this.selectedNode
+                    && !this.selectedNode.data.is_idle_set
+                    && this.selectedNode.data.bk_obj_id === 'module'
+                    && this.selectedNode.data.default !== 1
             }
         },
         created () {

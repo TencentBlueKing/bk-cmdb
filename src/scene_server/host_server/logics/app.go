@@ -28,10 +28,7 @@ import (
 )
 
 func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, errors.CCError) {
-	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(util.GetOwnerID(lgc.header)).Data()
-	cond[common.BKDBAND] = []mapstr.MapStr{
-		{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
-	}
+    cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
 		return -1, err
@@ -46,10 +43,7 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, erro
 }
 
 func (lgc *Logics) GetDefaultAppID(ctx context.Context) (int64, errors.CCError) {
-	cond := hutil.NewOperation().WithOwnerID(lgc.ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
-	cond[common.BKDBAND] = []mapstr.MapStr{
-		{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
-	}
+	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
 		return -1, err

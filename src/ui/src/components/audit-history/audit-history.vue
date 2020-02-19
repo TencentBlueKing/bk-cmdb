@@ -26,11 +26,11 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
-            <bk-table-column :label="$t('变更内容')" prop="op_desc"></bk-table-column>
-            <bk-table-column :label="$t('操作账号')" prop="operator"></bk-table-column>
-            <bk-table-column :label="$t('操作时间')" prop="op_time">
+            <bk-table-column :label="$t('操作描述')" :formatter="getFormatterDesc"></bk-table-column>
+            <bk-table-column :label="$t('操作账号')" prop="user"></bk-table-column>
+            <bk-table-column :label="$t('操作时间')" prop="operation_time">
                 <template slot-scope="{ row }">
-                    {{row.op_time | formatter('time')}}
+                    {{row.operation_time | formatter('time')}}
                 </template>
             </bk-table-column>
         </bk-table>
@@ -57,18 +57,16 @@
             vDetails
         },
         props: {
-            extKey: {
-                type: Object,
-                default () {
-                    return null
-                }
-            },
             target: {
                 type: String,
                 default: ''
             },
             instId: {
                 type: Number
+            },
+            resourceType: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -83,8 +81,8 @@
                     limit: 10,
                     size: 'small'
                 },
-                defaultSort: '-op_time',
-                sort: '-op_time',
+                defaultSort: '-operation_time',
+                sort: '-operation_time',
                 details: {
                     isShow: false,
                     data: null,
@@ -110,6 +108,35 @@
         },
         methods: {
             ...mapActions('operationAudit', ['getUserOperationLog']),
+            getFormatterDesc (row) {
+                const funcActions = this.$store.state.operationAudit.funcActions
+                const modules = []
+                Object.keys(funcActions).forEach(key => {
+                    modules.push(...funcActions[key])
+                })
+                const operations = modules.filter(item => [this.resourceType, 'instance_association'].includes(item.id)).reduce((acc, item) => acc.concat(item.operations), [])
+                const actionSet = {}
+                operations.forEach(operation => {
+                    actionSet[operation.id] = this.$t(operation.name)
+                })
+                let action = ''
+                if (row.label) {
+                    const label = Object.keys(row.label)[0]
+                    action = actionSet[`${row.resource_type}-${row.action}-${label}`]
+                } else {
+                    action = actionSet[`${row.resource_type}-${row.action}`]
+                }
+                let name = ''
+                const data = row.operation_detail
+                if (['assign_host', 'unassign_host', 'transfer_host_module'].includes(row.action)) {
+                    name = data.bk_host_innerip
+                } else if (['instance_association'].includes(row.resource_type)) {
+                    name = data.target_instance_name
+                } else {
+                    name = data.basic_detail && data.basic_detail.resource_name
+                }
+                return `${action}"${name}"`
+            },
             initDateRange () {
                 const start = this.$tools.formatTime(moment().subtract(14, 'days'), 'YYYY-MM-DD')
                 const end = this.$tools.formatTime(moment(), 'YYYY-MM-DD')
@@ -140,17 +167,13 @@
             },
             getParams () {
                 const condition = {
-                    'op_target': this.target,
-                    'op_time': this.filterRange
-                }
-                if (this.extKey) {
-                    condition['ext_key'] = this.extKey
+                    'operation_time': this.filterRange
                 }
                 if (!isNaN(this.instId)) {
-                    condition['inst_id'] = this.instId
+                    condition['resource_id'] = Number(this.instId)
                 }
                 if (this.sendOperator) {
-                    condition.operator = this.sendOperator
+                    condition.user = this.sendOperator
                 }
                 return {
                     condition,

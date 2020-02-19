@@ -237,7 +237,7 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 			}
 
 			if hasAuthorization == true {
-				query.Condition.(map[string]interface{})[common.BKDBOR] = authCondition
+				query.Condition[common.BKDBOR] = authCondition
 				blog.V(5).Infof("AuditQuery, auth condition is: %+v, rid: %s", authCondition, params.ReqID)
 				hasAuthorize = hasAuthorization
 				break

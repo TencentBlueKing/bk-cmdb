@@ -23,11 +23,11 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
-            <bk-table-column prop="op_desc" :label="$t('变更内容')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="operator" :label="$t('操作账号')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="op_time" :label="$t('操作时间')" sortable="custom">
+            <bk-table-column :label="$t('操作描述')" :formatter="getFormatterDesc"></bk-table-column>
+            <bk-table-column prop="user" :label="$t('操作账号')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="operation_time" :label="$t('操作时间')" sortable="custom">
                 <template slot-scope="{ row }">
-                    {{$tools.formatTime(row['op_time'])}}
+                    {{$tools.formatTime(row['operation_time'])}}
                 </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
@@ -67,7 +67,7 @@
                         }
                     }
                 },
-                sort: '-op_time',
+                sort: '-operation_time',
                 details: {
                     show: false,
                     data: null
@@ -83,17 +83,42 @@
             this.getHistory()
         },
         methods: {
+            getFormatterDesc (row) {
+                const funcActions = this.$store.state.operationAudit.funcActions
+                const modules = [...funcActions.business, ...funcActions.resource].filter(item => ['host', 'instance_association'].includes(item.id))
+                const operations = modules.reduce((acc, item) => acc.concat(item.operations), [])
+                const actionSet = {}
+                operations.forEach(operation => {
+                    actionSet[operation.id] = this.$t(operation.name)
+                })
+                let action = ''
+                if (row.label) {
+                    const label = Object.keys(row.label)[0]
+                    action = actionSet[`${row.resource_type}-${row.action}-${label}`]
+                } else {
+                    action = actionSet[`${row.resource_type}-${row.action}`]
+                }
+                let name = ''
+                const data = row.operation_detail
+                if (['assign_host', 'unassign_host', 'transfer_host_module'].includes(row.action)) {
+                    name = data.bk_host_innerip
+                } else if (['instance_association'].includes(row.resource_type)) {
+                    name = data.target_instance_name
+                } else {
+                    name = data.basic_detail && data.basic_detail.resource_name
+                }
+                return `${action}"${name}"`
+            },
             async getHistory (event) {
                 try {
                     const condition = {
-                        op_target: 'host',
-                        inst_id: this.id
+                        resource_id: Number(this.id)
                     }
                     if (this.dateRange.length) {
-                        condition.op_time = [this.dateRange[0] + ' 00:00:00', this.dateRange[1] + ' 23:59:59']
+                        condition.operation_time = [this.dateRange[0] + ' 00:00:00', this.dateRange[1] + ' 23:59:59']
                     }
                     if (this.operator) {
-                        condition.operator = this.operator
+                        condition.user = this.operator
                     }
                     const data = await this.$http.post('object/host/audit/search', {
                         condition,

@@ -113,7 +113,6 @@ func (cli *inst) GetMainlineParentInst() (Inst, error) {
 	}
 
 	cond := condition.CreateCondition()
-	cond.Field(metadata.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 	if parentObj.IsCommon() {
 		cond.Field(metadata.ModelFieldObjectID).Eq(parentObj.Object().ObjectID)
 	}
@@ -150,7 +149,6 @@ func (cli *inst) GetMainlineChildInst() ([]Inst, error) {
 
 	cObj := childObj.Object()
 	cond := condition.CreateCondition()
-	cond.Field(metadata.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 	if childObj.IsCommon() {
 		cond.Field(metadata.ModelFieldObjectID).Eq(cObj.ObjectID)
 	} else if cObj.ObjectID == common.BKInnerObjIDSet {
@@ -206,8 +204,6 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 		}
 
 		innerCond := condition.CreateCondition()
-
-		innerCond.Field(metadata.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 		innerCond.Field(objPair.Object.GetInstIDFieldName()).In(parentInstIDS)
 		if objPair.Object.IsCommon() {
 			innerCond.Field(metadata.ModelFieldObjectID).Eq(objPair.Object.Object().ObjectID)
@@ -284,7 +280,6 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 		}
 
 		innerCond := condition.CreateCondition()
-		innerCond.Field(metadata.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 		innerCond.Field(objPair.Object.GetInstIDFieldName()).In(childInstIDS)
 		if objPair.Object.IsCommon() {
 			innerCond.Field(metadata.ModelFieldObjectID).Eq(objPair.Object.Object().ObjectID)
