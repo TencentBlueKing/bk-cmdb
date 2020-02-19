@@ -36,7 +36,7 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		CCApiSrvAddr: s.ccApiSrvAddr,
 	}
 
-	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db, updateCfg)
+	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db, s.cache, updateCfg)
 	if err != nil {
 		blog.Errorf("db upgrade failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{

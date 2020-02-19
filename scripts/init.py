@@ -181,6 +181,13 @@ maxOpenConns = 3000
 maxIDleConns = 1000
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
+[redis]
+host = $redis_host
+port = $redis_port
+pwd = $redis_pass
+database = 0
+maxOpenConns = 3000
+maxIDleConns = 1000
 
 [confs]
 dir = $configures_dir
