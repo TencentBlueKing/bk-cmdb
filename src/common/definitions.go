@@ -474,6 +474,8 @@ const (
 
 	HostApplyRuleIDField = "host_apply_rule_id"
 
+	BKCloudAccountIDField = "bk_account_id"
+
 	BKParentIDField = "bk_parent_id"
 	BKRootIDField   = "bk_root_id"
 
