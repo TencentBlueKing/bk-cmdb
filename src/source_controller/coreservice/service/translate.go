@@ -23,6 +23,19 @@ import (
 	"configcenter/src/common/util"
 )
 
+var needTranslateObjMap = map[string]bool{
+	common.BKInnerObjIDApp:      true,
+	common.BKInnerObjIDSet:      true,
+	common.BKInnerObjIDModule:   true,
+	common.BKInnerObjIDProc:     true,
+	common.BKInnerObjIDHost:     true,
+	common.BKInnerObjIDPlat:     true,
+	common.BKInnerObjIDSwitch:   true,
+	common.BKInnerObjIDRouter:   true,
+	common.BKInnerObjIDBlance:   true,
+	common.BKInnerObjIDFirewall: true,
+}
+
 var defaultNameLanguagePkg = map[string]map[string][]string{
 	common.BKInnerObjIDModule: {
 		"1": {"inst_module_idle", common.BKModuleNameField, common.BKModuleIDField},

@@ -187,6 +187,7 @@
                 </bk-tab-panel>
                 <bk-tab-panel name="history" :label="$t('变更记录')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-audit-history v-if="tab.active === 'history'"
+                        resource-type="model_instance"
                         :target="objId"
                         :inst-id="attribute.inst.details['bk_inst_id']">
                     </cmdb-audit-history>

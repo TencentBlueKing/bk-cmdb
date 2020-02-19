@@ -1,0 +1,106 @@
+{
+    "business": [
+        {
+            "id": "biz_topology",
+            "name": "业务拓扑",
+            "operations": [
+                {
+                    "id": "module-create-biz_topology",
+                    "name": "新增模块"
+                }, {
+                    "id": "module-update-biz_topology",
+                    "name": "修改模块"
+                }, {
+                    "id": "module-delete-biz_topology",
+                    "name": "删除模块"
+                }, {
+                    "id": "set-create-biz_topology",
+                    "name": "新增集群"
+                }, {
+                    "id": "set-update-biz_topology",
+                    "name": "修改集群"
+                }, {
+                    "id": "set-delete-biz_topology",
+                    "name": "删除集群"
+                }
+            ]
+        }, {
+            "id": "host",
+            "name": "主机",
+            "operations": [
+                {
+                    "id": "host-unassign_host",
+                    "name": "归还主机"
+                }, {
+                    "id": "host-update",
+                    "name": "修改"
+                }
+            ]
+        }
+    ],
+    "resource": [
+        {
+            "id": "business",
+            "name": "业务",
+            "operations": [
+                {
+                    "id": "business-create",
+                    "name": "新增"
+                }, {
+                    "id": "business-update",
+                    "name": "修改"
+                }, {
+                    "id": "business-archive",
+                    "name": "归档"
+                }, {
+                    "id": "business-recover",
+                    "name": "还原"
+                }
+            ]
+        }, {
+            "id": "host",
+            "name": "主机",
+            "operations": [
+                {
+                    "id": "host-create",
+                    "name": "新增"
+                }, {
+                    "id": "host-update",
+                    "name": "修改"
+                }, {
+                    "id": "host-delete",
+                    "name": "删除"
+                }, {
+                    "id": "host-assign_host",
+                    "name": "分配到业务"
+                }
+            ]
+        }, {
+            "id": "model_instance",
+            "name": "自定义模型",
+            "operations": [
+                {
+                    "id": "model_instance-create",
+                    "name": "新增实例"
+                }, {
+                    "id": "model_instance-update",
+                    "name": "修改实例"
+                }, {
+                    "id": "model_instance-delete",
+                    "name": "删除实例"
+                }
+            ]
+        }, {
+            "id": "instance_association",
+            "name": "关联关系",
+            "operations": [{
+                    "id": "instance_association-create",
+                    "name": "新增关联"
+                }, {
+                    "id": "instance_association-delete",
+                    "name": "删除关联"
+                }
+            ]
+        }
+    ]
+}
