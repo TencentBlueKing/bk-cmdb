@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 	redisdal "configcenter/src/storage/dal/redis"
 
 	"github.com/stretchr/testify/require"
@@ -65,7 +66,12 @@ func init() {
 }
 
 func GetClient() (*Mongo, error) {
-	m, err := NewMgo(mongoURI, time.Minute)
+	mongoConfig := MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          mongoURI,
+	}
+	m, err := NewMgo(mongoConfig, time.Minute)
 	if err != nil {
 		return nil, err
 	}

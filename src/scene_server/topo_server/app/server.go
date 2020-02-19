@@ -109,7 +109,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	db, err := local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
+	db, err := local.NewMgo(server.Config.Mongo.GetMongoConf(), time.Second*5)
 	if err != nil {
 		blog.Errorf("failed to connect the txc server, error info is %v", err)
 		return err

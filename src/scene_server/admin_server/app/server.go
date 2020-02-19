@@ -13,6 +13,7 @@
 package app
 
 import (
+	"configcenter/src/storage/dal/mongo/local"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -31,7 +32,6 @@ import (
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/mongo/local"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -82,7 +82,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
