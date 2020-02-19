@@ -122,9 +122,13 @@ const setAdminView = to => {
 
 // 进入业务二级导航时需要先加载业务
 // 在App.vue中添加一个隐藏的业务选择器，业务选择器完成设置后resolve对应的promise
-const checkOwner = async to => {
-    const matched = to.matched
-    if (matched.length && matched[0].name === MENU_BUSINESS) {
+const checkOwner = async (to, from) => {
+    const toMatched = (to.matched || [])[0] || {}
+    const fromMatched = (from.matched || [])[0] || {}
+    if (toMatched.name === MENU_BUSINESS) {
+        if (fromMatched.name !== MENU_BUSINESS) {
+            router.app.$store.commit('createBusinessSelectorPromise')
+        }
         router.app.$store.commit('setBusinessSelectorVisible', true)
         const result = await router.app.$store.state.businessSelectorPromise
         to.meta.view = result ? 'default' : 'permission'
@@ -146,7 +150,7 @@ router.beforeEach((to, from, next) => {
             if (setupStatus.preload) {
                 await preload(router.app)
             }
-            await checkOwner(to)
+            await checkOwner(to, from)
             setAdminView(to)
 
             const isAvailable = checkAvailable(to, from)

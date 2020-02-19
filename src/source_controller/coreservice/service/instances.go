@@ -13,12 +13,10 @@
 package service
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
+	"configcenter/src/source_controller/coreservice/multilingual"
 )
 
 func (s *coreService) CreateOneModelInstance(ctx *rest.Contexts) {
@@ -75,8 +73,10 @@ func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 		return
 	}
 
+	objectID := ctx.Request.PathParameter("bk_obj_id")
+
 	// 判断是否有要根据default字段，需要国际化的内容
-	if _, ok := defaultNameLanguagePkg[ctx.Request.PathParameter("bk_obj_id")]; ok {
+	if _, ok := multilingual.BuildInInstanceNamePkg[objectID]; ok {
 		// 大于两个字段
 		if len(inputData.Fields) > 1 {
 			inputData.Fields = append(inputData.Fields, common.BKDefaultField)
@@ -86,23 +86,13 @@ func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 		}
 	}
 
-	dataResult, err := s.core.InstanceOperation().SearchModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData)
+	dataResult, err := s.core.InstanceOperation().SearchModelInstance(ctx.Kit, objectID, inputData)
 	if nil != err {
 		ctx.RespEntityWithError(dataResult, err)
 		return
 	}
-	// translate language for default name
-	lang := s.Language(ctx.Kit.Header)
-	if m, ok := defaultNameLanguagePkg[ctx.Request.PathParameter(common.BKObjIDField)]; ok {
-		for idx := range dataResult.Info {
-			subResult := m[fmt.Sprint(dataResult.Info[idx][common.BKDefaultField])]
-			if len(subResult) >= 3 {
-				dataResult.Info[idx][subResult[1]] = util.FirstNotEmptyString(lang.Language(subResult[0]), fmt.Sprint(dataResult.Info[idx][subResult[1]]), fmt.Sprint(dataResult.Info[idx][subResult[2]]))
-			}
-		}
-
-	}
-	ctx.RespEntity(dataResult)
+	multilingual.TranslateInstanceName(s.Language(ctx.Kit.Header), objectID, dataResult.Info)
+    ctx.RespEntity(dataResult)
 }
 
 func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {
