@@ -172,7 +172,7 @@
             padding: 0 3px;
             line-height:16px;
             font-size: 12px;
-            color: $textColor;
+            color: #979BA5;
             border: 1px solid #C4C6CC;
             border-radius: 2px;
             background-color: #fff;
