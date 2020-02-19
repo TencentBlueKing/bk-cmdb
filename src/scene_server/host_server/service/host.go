@@ -1414,10 +1414,10 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Edit, hostIDArr)
 		if err != nil && err != auth.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
-			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		resp.WriteEntity(perm)
+		_ = resp.WriteEntity(perm)
 		return
 	}
 
@@ -1489,12 +1489,12 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 			}
 			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
 			if err != nil {
-				blog.Errorf("UpdateImportHosts UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, srvData.rid)
+				blog.ErrorJSON("UpdateImportHosts UpdateInstance http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, srvData.rid)
 				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 				return
 			}
 			if !result.Result {
-				blog.ErrorJSON("UpdateImportHosts failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
+				blog.ErrorJSON("UpdateImportHosts failed, UpdateInstance failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
 				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 				return
 			}
@@ -1505,7 +1505,7 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 	for _, hostID := range hostIDArr {
 		audit := srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
 		if err := audit.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
-			blog.Errorf("UpdateImportHosts, but get host[%v] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
+			blog.ErrorJSON("UpdateImportHosts, but get host[%v] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 			return
 		}
