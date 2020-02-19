@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
+    "configcenter/src/common/util"
 )
 
 func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (bool, error) {
@@ -46,8 +47,8 @@ func (m *modelClassification) isExists(kit *rest.Kit, classificationID string, m
 		_, labelCond := metaCond.Embed(metadata.BKLabel)
 		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
-
-	err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).One(kit.Ctx, origin)
+	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
+	err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(condMap).One(kit.Ctx, origin)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
 		return origin, false, err
 	}

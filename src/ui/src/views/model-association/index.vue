@@ -6,7 +6,7 @@
             :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'">
             {{$t('关联关系提示')}}
         </cmdb-tips>
-        <p class="operation-box">
+        <p class="operation-box clearfix">
             <cmdb-auth v-if="isAdminView"
                 class="inline-block-middle"
                 :auth="$authResources({ type: $OPERATION.C_RELATION })">
@@ -18,7 +18,7 @@
                     {{$t('新建')}}
                 </bk-button>
             </cmdb-auth>
-            <label class="search-input">
+            <label class="search-input fr">
                 <!-- <i class="bk-icon icon-search" @click="searchRelation(true)"></i> -->
                 <bk-input type="text" class="cmdb-form-input"
                     v-model.trim="searchText"

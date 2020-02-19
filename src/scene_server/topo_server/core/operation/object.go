@@ -89,7 +89,6 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 
 	checkObjCond := condition.CreateCondition()
 	checkObjCond.Field(metadata.AttributeFieldObjectID).Eq(objID)
-	checkObjCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
 
 	objItems, err := o.FindObject(params, checkObjCond)
 	if nil != err {
@@ -205,7 +204,6 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 				continue
 			}
 			attrCond := condition.CreateCondition()
-			attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
 			attrCond.Field(metadata.AttributeFieldObjectID).Eq(objID)
 			attrCond.Field(metadata.AttributeFieldPropertyID).Eq(attrID)
 			attrs, err := o.attr.FindObjectAttribute(params, attrCond)
@@ -292,7 +290,6 @@ func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr)
 			attribute := attr.Attribute()
 			grpCond := condition.CreateCondition()
 			grpCond.Field(metadata.GroupFieldGroupID).Eq(attribute.PropertyGroup)
-			grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attribute.OwnerID)
 			grpCond.Field(metadata.GroupFieldObjectID).Eq(attribute.ObjectID)
 			grps, err := o.grp.FindObjectGroup(params, grpCond)
 			if nil != err {

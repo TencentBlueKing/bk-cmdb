@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/pflag"
 )
@@ -50,6 +51,7 @@ type Config struct {
 	Configures    ConfConfig
 	Register      RegisterConfig
 	ProcSrvConfig ProcSrvConfig
+	Redis         redis.Config
 	AuthCenter    authcenter.AuthConfig
 }
 
