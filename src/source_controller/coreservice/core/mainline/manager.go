@@ -20,9 +20,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/source_controller/coreservice/multilingual"
 	"configcenter/src/storage/dal"
 )
 
@@ -30,6 +32,8 @@ type InstanceMainline struct {
 	dbProxy   dal.RDB
 	bkBizID   int64
 	modelTree *metadata.TopoModelNode
+
+	lang language.DefaultCCLanguageIf
 
 	modelIDs        []string
 	objectParentMap map[string]string
@@ -45,8 +49,9 @@ type InstanceMainline struct {
 	root *metadata.TopoInstanceNode
 }
 
-func NewInstanceMainline(proxy dal.DB, bkBizID int64) (*InstanceMainline, error) {
+func NewInstanceMainline(lang language.DefaultCCLanguageIf, proxy dal.DB, bkBizID int64) (*InstanceMainline, error) {
 	im := &InstanceMainline{
+		lang:              lang,
 		dbProxy:           proxy,
 		bkBizID:           bkBizID,
 		objectParentMap:   map[string]string{},
@@ -105,6 +110,7 @@ func (im *InstanceMainline) LoadModuleInstances(ctx context.Context, header http
 		blog.Errorf("get module instances by business:%d failed, err:%v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
 		return fmt.Errorf("get module instances by business:%d failed, %+v", im.bkBizID, err)
 	}
+	multilingual.TranslateInstanceName(im.lang, common.BKInnerObjIDModule, im.moduleInstances)
 	blog.V(5).Infof("get module instances by business:%d result: %+v,cond:%#v, rid: %s", im.bkBizID, im.moduleInstances, filter, rid)
 	return nil
 }
