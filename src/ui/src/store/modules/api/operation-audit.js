@@ -9,9 +9,10 @@
  */
 
 import $http from '@/api'
+import funcActions from '@/assets/json/operation_audit.json'
 
 const state = {
-
+    funcActions: funcActions
 }
 
 const getters = {

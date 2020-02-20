@@ -72,6 +72,7 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.SaveAuditL
 func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error) {
 	fields := param.Fields
 	condition := param.Condition
+	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
 	param.ConvTime()
 	skip := param.Start
 	limit := param.Limit

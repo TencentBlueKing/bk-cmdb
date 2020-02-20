@@ -197,6 +197,7 @@ type Core interface {
 	SetTemplateOperation() SetTemplateOperation
 	HostApplyRuleOperation() HostApplyRuleOperation
 	SystemOperation() SystemOperation
+	CloudOperation() CloudOperation
 }
 
 // ProcessOperation methods
@@ -277,6 +278,13 @@ type HostApplyRuleOperation interface {
 	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder)
 }
 
+type CloudOperation interface {
+	CreateAccount(kit *rest.Kit, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
+	SearchAccount(kit *rest.Kit, option *metadata.SearchCloudAccountOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder)
+	UpdateAccount(kit *rest.Kit, accountID int64, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
+	DeleteAccount(kit *rest.Kit, accountID int64) errors.CCErrorCoder
+}
+
 type SystemOperation interface {
 	GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder)
 }
@@ -295,6 +303,7 @@ type core struct {
 	sys             SystemOperation
 	setTemplate     SetTemplateOperation
 	hostApplyRule   HostApplyRuleOperation
+	cloud           CloudOperation
 }
 
 // New create core
@@ -311,6 +320,7 @@ func New(
 	operation StatisticOperation,
 	hostApplyRule HostApplyRuleOperation,
 	sys SystemOperation,
+	cloud CloudOperation,
 ) Core {
 	return &core{
 		model:           model,
@@ -326,6 +336,7 @@ func New(
 		sys:             sys,
 		setTemplate:     setTemplate,
 		hostApplyRule:   hostApplyRule,
+		cloud:           cloud,
 	}
 }
 
@@ -379,4 +390,8 @@ func (m *core) SystemOperation() SystemOperation {
 
 func (m *core) HostApplyRuleOperation() HostApplyRuleOperation {
 	return m.hostApplyRule
+}
+
+func (m *core) CloudOperation() CloudOperation {
+	return m.cloud
 }

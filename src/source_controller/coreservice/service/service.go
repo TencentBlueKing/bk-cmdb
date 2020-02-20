@@ -37,6 +37,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
+	"configcenter/src/source_controller/coreservice/core/cloud"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	dalredis "configcenter/src/storage/dal/redis"
@@ -112,7 +113,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		instance,
 		association.New(db, s),
 		datasynchronize.New(db, s),
-		mainline.New(db),
+		mainline.New(db, s.language),
 		host.New(db, cache, s, hostApplyRuleCore),
 		auditlog.New(db),
 		process.New(db, s, cache),
@@ -121,6 +122,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		operation.New(db),
 		hostApplyRuleCore,
 		dbSystem.New(db),
+		cloud.New(db),
 	)
 	return nil
 }

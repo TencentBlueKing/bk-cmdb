@@ -11,7 +11,7 @@
                 <i class="edit-trigger icon icon-cc-edit" @click="handleChangeHost"></i>
             </div>
         </div>
-        <div class="info clearfix mb20" v-if="type !== 'remove'">
+        <div class="info clearfix mb10" v-if="type !== 'remove'">
             <label class="info-label fl">{{$t('转移到')}}：</label>
             <div class="info-content">
                 <ul class="module-list">
@@ -50,8 +50,8 @@
                                 :key="item.id"
                                 @click="handleTabClick(item)">
                                 <span class="tab-label">{{item.label}}</span>
-                                <span :class="['tab-count', { 'has-badge': !item.confirmed }]">
-                                    {{item.props.info.length}}
+                                <span :class="['tab-count', { 'unconfirmed': !item.confirmed }]">
+                                    {{item.props.info.length > 99 ? '99+' : item.props.info.length}}
                                 </span>
                             </li>
                         </template>
@@ -613,10 +613,11 @@
             font-weight: bold;
             color: $textColor;
             text-align: right;
+            padding-top: 8px;
         }
         .info-content {
             overflow: hidden;
-            padding: 0 20px 0 8px;
+            padding: 8px 20px 0 8px;
             font-size: 14px;
             .info-count {
                 font-weight: bold;
@@ -733,7 +734,7 @@
         .tab-grep {
             width: 2px;
             height: 19px;
-            margin: 0 8px;
+            margin: 0 15px;
             background-color: #C4C6CC;
         }
         .tab-item {
@@ -743,10 +744,6 @@
             cursor: pointer;
             &.active {
                 color: $primaryColor;
-                .tab-count {
-                    color: #FFF;
-                    background-color: $primaryColor;
-                }
             }
             &.active:after {
                 content: "";
@@ -760,30 +757,28 @@
             .tab-label {
                 display: inline-block;
                 vertical-align: middle;
-                margin-right: 7px;
+                margin: 0 10px;
                 font-size: 14px;
             }
             .tab-count {
-                position: relative;
+                position: absolute;
                 display: inline-block;
                 vertical-align: middle;
+                right: -15px;
+                top: -8px;
+                width: 32px;
                 height: 16px;
                 padding: 0 5px;
-                border-radius: 4px;
-                line-height: 16px;
+                border-radius: 8px;
+                line-height: 14px;
                 font-size: 12px;
                 color: #FFF;
-                background-color: #979BA5;
-                &.has-badge:after {
-                    position: absolute;
-                    top: -3px;
-                    right: -3px;
-                    width: 6px;
-                    height: 6px;
-                    border-radius: 50%;
-                    border: 1px solid #FFF;
-                    background-color: $dangerColor;
-                    content: "";
+                background-color: #C4C6CC;
+                text-align: center;
+                border: 1px solid #fff;
+
+                &.unconfirmed {
+                    background-color: #FF5656;
                 }
             }
         }

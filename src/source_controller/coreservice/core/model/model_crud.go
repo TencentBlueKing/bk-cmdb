@@ -234,8 +234,8 @@ func (m *modelManager) canCascadeDelete(kit *rest.Kit, targetObjIDS []string) (e
 		common.BKObjIDField: map[string]interface{}{
 			common.BKDBIN: targetObjIDS,
 		},
-		common.BkSupplierAccount: kit.SupplierAccount,
 	}
+	instanceFilter = util.SetQueryOwner(instanceFilter, kit.SupplierAccount)
 	cnt, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(instanceFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("canCascadeDelete failed, count model instance failed, error. cond:%s, err:%s, rid:%s", instanceFilter, err.Error(), kit.Rid)

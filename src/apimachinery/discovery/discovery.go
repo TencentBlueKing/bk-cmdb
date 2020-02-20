@@ -143,7 +143,6 @@ func (d *discover) CloudServer() Interface {
 	return d.servers[types.CC_MODULE_CLOUD]
 }
 
-
 // IsMaster check whether current is master
 func (d *discover) IsMaster() bool {
 	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().UUID)
