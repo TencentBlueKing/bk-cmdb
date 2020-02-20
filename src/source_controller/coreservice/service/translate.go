@@ -23,18 +23,17 @@ import (
 	"configcenter/src/common/util"
 )
 
-var defaultNameLanguagePkg = map[string]map[string][]string{
-	common.BKInnerObjIDModule: {
-		"1": {"inst_module_idle", common.BKModuleNameField, common.BKModuleIDField},
-		"2": {"inst_module_fault", common.BKModuleNameField, common.BKModuleIDField},
-		"3": {"inst_module_recycle", common.BKModuleNameField, common.BKModuleIDField},
-	},
-	common.BKInnerObjIDApp: {
-		"1": {"inst_biz_default", common.BKAppNameField, common.BKAppIDField},
-	},
-	common.BKInnerObjIDSet: {
-		"1": {"inst_set_default", common.BKSetNameField, common.BKSetIDField},
-	},
+var needTranslateObjMap = map[string]bool{
+	common.BKInnerObjIDApp:      true,
+	common.BKInnerObjIDSet:      true,
+	common.BKInnerObjIDModule:   true,
+	common.BKInnerObjIDProc:     true,
+	common.BKInnerObjIDHost:     true,
+	common.BKInnerObjIDPlat:     true,
+	common.BKInnerObjIDSwitch:   true,
+	common.BKInnerObjIDRouter:   true,
+	common.BKInnerObjIDBlance:   true,
+	common.BKInnerObjIDFirewall: true,
 }
 
 func (s *coreService) TranslateObjectName(defLang language.DefaultCCLanguageIf, obj *metadata.Object) string {

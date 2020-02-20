@@ -63,6 +63,7 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.10.22.02"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x19.10.22.03"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x20.01.13.01"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x20.02.17.01"
 
 	// v3.6.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.6.201909062359"
@@ -79,6 +80,9 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.7.201911141719"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.7.201912121117"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.7.201912171427"
+
+	// v3.8.x
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.8.202002101113"
 
 	// v3.9.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202002131522"

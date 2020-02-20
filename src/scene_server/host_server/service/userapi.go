@@ -196,7 +196,7 @@ func (s *Service) GetUserCustomQuery(req *restful.Request, resp *restful.Respons
 
 	var condition map[string]interface{}
 	if nil != input.Condition {
-		condition, _ = input.Condition.(map[string]interface{})
+		condition = input.Condition
 	} else {
 		condition = make(map[string]interface{})
 	}

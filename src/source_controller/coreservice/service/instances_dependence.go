@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 )
 
 // IsInstanceExist used to check if the  instances  asst exist
@@ -90,9 +91,8 @@ func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, biz
 
 // SearchUnique search unique attribute
 func (s *coreService) SearchUnique(kit *rest.Kit, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
-	cond := mongo.NewCondition()
-	ownerIDArr := []string{kit.SupplierAccount, common.BKDefaultOwnerID}
-	cond.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
+	condMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
+	cond, _ := mongo.NewConditionFromMapStr(condMap)
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	queryCond := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),

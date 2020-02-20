@@ -19,11 +19,12 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
+	"configcenter/src/common/util"
 )
 
 func (m *modelClassification) count(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
-
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).Count(kit.Ctx)
+	filter := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(filter).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute a database count operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
 		return 0, err

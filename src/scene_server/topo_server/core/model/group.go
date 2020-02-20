@@ -219,8 +219,7 @@ func (g *group) ToMapStr() (mapstr.MapStr, error) {
 func (g *group) GetAttributes() ([]AttributeInterface, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AttributeFieldObjectID).Eq(g.grp.ObjectID).
-		Field(metadata.AttributeFieldPropertyGroup).Eq(g.grp.GroupID).
-		Field(metadata.AttributeFieldSupplierAccount).Eq(g.params.SupplierAccount)
+		Field(metadata.AttributeFieldPropertyGroup).Eq(g.grp.GroupID)
 
 	rsp, err := g.clientSet.CoreService().Model().ReadModelAttr(context.Background(), g.params.Header, g.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {

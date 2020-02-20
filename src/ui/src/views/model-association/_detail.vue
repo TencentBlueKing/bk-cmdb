@@ -214,9 +214,9 @@
                         padding-right: 0;
                     }
                 }
-                .label-text {
-                    padding-right: 2px;
-                }
+            }
+            .label-text {
+                width: auto;
             }
         }
     }

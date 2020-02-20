@@ -94,37 +94,39 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 }
 
 func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, propertyID, propertyName string, meta metadata.Metadata) error {
-	cond := mongo.NewCondition()
-	cond = cond.Element(mongo.Field(common.BKObjIDField).Eq(objID))
-
-	isExist, bizID := meta.Label.Get(common.BKAppIDField)
-	if isExist {
-		_, metaCond := cond.Embed(metadata.BKMetadata)
-		_, labelCond := metaCond.Embed(metadata.BKLabel)
-		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	cond := map[string]interface{}{
+		common.BKObjIDField: objID,
 	}
+	orCond := make([]map[string]interface{}, 0)
 
-	nameFieldCond := mongo.Field(common.BKPropertyNameField).Eq(propertyName)
 	if isCreate {
-		idFieldCond := mongo.Field(common.BKPropertyIDField).Eq(propertyID)
-		cond = cond.Or(nameFieldCond, idFieldCond)
+		nameFieldCond := map[string]interface{}{common.BKPropertyNameField: propertyName}
+		idFieldCond := map[string]interface{}{common.BKPropertyIDField: propertyID}
+		orCond = append(orCond, nameFieldCond, idFieldCond)
 	} else {
 		// update attribute. not change name, 无需判断
 		if propertyName == "" {
 			return nil
 		}
-
-		idFieldCond := mongo.Field(common.BKPropertyIDField).Neq(propertyID)
-		cond = cond.Element(nameFieldCond, idFieldCond)
+		cond[common.BKPropertyIDField] = map[string]interface{}{common.BKDBNE: propertyID}
+		cond[common.BKPropertyNameField] = propertyName
 	}
 
-	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
+	isExist, bizID := meta.Label.Get(common.BKAppIDField)
+	if isExist {
+		orCond = append(orCond, metadata.BizLabelNotExist, map[string]interface{}{metadata.MetadataBizField: bizID})
+	}
+
+	if len(orCond) > 0 {
+		cond[common.BKDBOR] = orCond
+	}
+	util.SetModOwner(cond, kit.SupplierAccount)
 
 	resultAttrs := make([]metadata.Attribute, 0)
-	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).All(kit.Ctx, &resultAttrs)
-	blog.V(5).Infof("checkUnique db cond:%#v, result:%#v, rid:%s", condMap, resultAttrs, kit.Rid)
+	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &resultAttrs)
+	blog.V(5).Infof("checkUnique db cond:%#v, result:%#v, rid:%s", cond, resultAttrs, kit.Rid)
 	if err != nil {
-		blog.ErrorJSON("checkUnique select error. err:%s, cond:%s, rid:%s", err.Error(), condMap, kit.Rid)
+		blog.ErrorJSON("checkUnique select error. err:%s, cond:%s, rid:%s", err.Error(), cond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
@@ -191,7 +193,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
-			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization,common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
+			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
 		default:
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
@@ -379,9 +381,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 				common.BKObjIDField: object,
 			}
 		}
-		cond[common.BkSupplierAccount] = mapstr.MapStr{
-			"$in": []string{ownerID, common.BKDefaultOwnerID},
-		}
+		cond = util.SetQueryOwner(cond, ownerID)
 
 		collectionName := common.GetInstTableName(object)
 		wg.Add(1)
@@ -421,9 +421,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 		cond := mapstr.MapStr{
 			common.BKAppIDField: ele.bizID,
 		}
-		cond[common.BkSupplierAccount] = mapstr.MapStr{
-			"$in": []string{ownerID, common.BKDefaultOwnerID},
-		}
+		cond = util.SetQueryOwner(cond, ownerID)
 
 		collectionName := common.GetInstTableName(ele.object)
 		wg.Add(1)
@@ -449,9 +447,7 @@ const pageSize = 500
 
 func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID string, info bizObjectFields) error {
 	cond := mapstr.MapStr{}
-	cond[common.BkSupplierAccount] = mapstr.MapStr{
-		"$in": []string{ownerID, common.BKDefaultOwnerID},
-	}
+	cond = util.SetQueryOwner(cond, ownerID)
 	// biz id = 0 means all the hosts.
 	// TODO: optimize when the filed is a public filed in all the host instances. handle with page
 	if info.bizID != 0 {
@@ -727,7 +723,7 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 	opt := make(map[string]interface{})
 	opt[common.BKObjIDField] = attribute.ObjectID
 	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
-	opt[common.BkSupplierAccount] = attribute.OwnerID
+	opt = util.SetModOwner(opt, attribute.OwnerID)
 	count, err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Count(kit.Ctx)
 	if err != nil {
 		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", kit.Rid, err)
@@ -741,8 +737,8 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 	sortCond := "-bk_property_index"
 	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx, &attrs); err != nil {
 		blog.Error("GetAttrLastIndex, database operation is failed, err: %v, rid: %s", err, kit.Rid)
-        return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
-    }
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
 
 	if len(attrs) <= 0 {
 		return 0, nil

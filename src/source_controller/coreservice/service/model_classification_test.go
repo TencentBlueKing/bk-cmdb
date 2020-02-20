@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"configcenter/src/common"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -234,7 +235,7 @@ func updateClassification(t *testing.T, client *httpclient.HttpClient, classific
 
 	cond := mongo.NewCondition()
 	cond.Element(mongo.Field(metadata.ClassFieldClassificationID).Eq(classificationID))
-	cond.Element(mongo.Field(metadata.ClassFieldClassificationSupplierAccount).Eq("0"))
+	cond.Element(mongo.Field(common.BKOwnerIDField).Eq("0"))
 	queryCond := metadata.UpdateOption{
 		Data: mapstr.MapStr{
 			metadata.ClassFieldClassificationName: "update_" + classificationID,

@@ -16,17 +16,17 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 )
 
 func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (bool, error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
-	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: kit.SupplierAccount})
-
 	cnt, err := m.count(kit, cond)
 	return 0 != cnt, err
 }
@@ -35,7 +35,6 @@ func (m *modelClassification) isExists(kit *rest.Kit, classificationID string, m
 
 	origin = &metadata.Classification{}
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: kit.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
 
 	// ATTENTION: Currently only business dimension isolation is done,
@@ -46,8 +45,8 @@ func (m *modelClassification) isExists(kit *rest.Kit, classificationID string, m
 		_, labelCond := metaCond.Embed(metadata.BKLabel)
 		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
-
-	err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).One(kit.Ctx, origin)
+	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
+	err = m.dbProxy.Table(common.BKTableNameObjClassification).Find(condMap).One(kit.Ctx, origin)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
 		return origin, false, err
 	}
@@ -66,13 +65,11 @@ func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Conditio
 		clsIDS = append(clsIDS, item.ClassificationID)
 	}
 
-	checkModelCond := mongo.NewCondition()
-	checkModelCond.Element(mongo.Field(metadata.ModelFieldObjCls).In(clsIDS))
-	checkModelCond.Element(mongo.Field(metadata.ModelFieldOwnerID).Eq(kit.SupplierAccount))
-
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(checkModelCond.ToMapStr()).Count(kit.Ctx)
+	filter := mapstr.MapStr{metadata.ModelFieldObjCls: mapstr.MapStr{common.BKDBIN: clsIDS}}
+	util.SetQueryOwner(filter, kit.SupplierAccount)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, filter, err.Error())
 		return 0, false, err
 	}
 	exists = 0 != cnt

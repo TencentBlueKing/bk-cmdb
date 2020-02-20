@@ -474,6 +474,8 @@ const (
 
 	HostApplyRuleIDField = "host_apply_rule_id"
 
+	BKCloudAccountIDField = "bk_account_id"
+
 	BKParentIDField = "bk_parent_id"
 	BKRootIDField   = "bk_root_id"
 
@@ -743,6 +745,12 @@ const (
 
 	//FieldTypeStrictCharRegexp the single char regex expression
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
+
+	//FieldTypeSingleCharRegexp the single char regex expression
+	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+
+	//FieldTypeLongCharRegexp the single char regex expression
+	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
 )
 
 const (
@@ -866,13 +874,13 @@ const (
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime     = "Cc_Request_Time"
-	BKHTTPCCTransactionID   = "Cc_Txn_Id"
-	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
-	BKHTTPCCTransactionNumber   = "Cc_Txn_Number"
-	BKHTTPCCTxnSessionID = "Cc_Txn_Session_ID"
-	BKHTTPCCTxnSessionState = "Cc_Txn_Session_State"
+	BKHTTPOtherRequestID      = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime       = "Cc_Request_Time"
+	BKHTTPCCTransactionID     = "Cc_Txn_Id"
+	BKHTTPCCTxnTMServerAddr   = "Cc_Txn_Tm_addr-Ip"
+	BKHTTPCCTransactionNumber = "Cc_Txn_Number"
+	BKHTTPCCTxnSessionID      = "Cc_Txn_Session_ID"
+	BKHTTPCCTxnSessionState   = "Cc_Txn_Session_State"
 )
 
 type CCContextKey string

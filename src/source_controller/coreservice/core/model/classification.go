@@ -257,7 +257,6 @@ func (m *modelClassification) DeleteModelClassification(kit *rest.Kit, inputPara
 		return &metadata.DeletedCount{}, kit.CCError.New(common.CCErrCommHTTPInputInvalid, err.Error())
 	}
 
-	deleteCond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: kit.SupplierAccount})
 	cnt, exists, err := m.hasModel(kit, deleteCond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the classifications which are marked by the condition (%#v) have some models, error info is %s", kit.Rid, deleteCond.ToMapStr(), err.Error())
@@ -281,7 +280,7 @@ func (m *modelClassification) SearchModelClassification(kit *rest.Kit, inputPara
 	dataResult := &metadata.QueryModelClassificationDataResult{
 		Info: []metadata.Classification{},
 	}
-	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return dataResult, err
