@@ -48,6 +48,8 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		return OperationType, nil
 	case u.WithTask(req):
 		return TaskType, nil
+	case u.WithCloud(req):
+		return CloudType, nil
 	default:
 		serverType = UnknownType
 		err = errors.New("unknown requested with backend process")
@@ -325,6 +327,26 @@ func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/task/"):
 		from, to, isHit = rootPath, statisticsRoot, true
+
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
+}
+
+// WithCloud transform cloud's url
+func (u *URLPath) WithCloud(req *restful.Request) (isHit bool) {
+	cloudRoot := "/cloud/v3"
+	from, to := rootPath, cloudRoot
+
+	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/cloud/"):
+		from, to, isHit = rootPath, cloudRoot, true
 
 	default:
 		isHit = false

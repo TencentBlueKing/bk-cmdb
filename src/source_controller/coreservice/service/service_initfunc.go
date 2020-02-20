@@ -282,6 +282,20 @@ func (s *coreService) ccSystem(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *coreService) initCloudAccount(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/account", Handler: s.CreateAccount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/cloud/account", Handler: s.SearchAccount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/account/{bk_account_id}", Handler: s.UpdateAccount})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/account/{bk_account_id}", Handler: s.DeleteAccount})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *coreService) initService(web *restful.WebService) {
 	s.initModelClassification(web)
 	s.initModel(web)
@@ -301,4 +315,5 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.ccSystem(web)
 	s.initSetTemplate(web)
 	s.initHostApplyRule(web)
+	s.initCloudAccount(web)
 }

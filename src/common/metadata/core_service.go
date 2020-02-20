@@ -507,3 +507,13 @@ type MultipleMap struct {
 	Count uint64                   `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
 }
+
+type CloudAccountResult struct {
+	BaseResp `json:",inline"`
+	Data     CloudAccount `json:"data"`
+}
+
+type MultipleCloudAccountResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudAccount `json:"data"`
+}
