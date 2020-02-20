@@ -16,10 +16,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 )
 
 func (m *modelManager) isExists(kit *rest.Kit, cond universalsql.Condition) (oneModel *metadata.Object, exists bool, err error) {
@@ -35,15 +35,13 @@ func (m *modelManager) isExists(kit *rest.Kit, cond universalsql.Condition) (one
 }
 
 func (m *modelManager) isValid(kit *rest.Kit, objID string) error {
+	checkCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
+	checkCond, _ := mongo.NewConditionFromMapStr(checkCondMap)
+	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
 
-	cond := mapstr.MapStr{
-		metadata.ModelFieldObjectID: objID,
-		metadata.ModelFieldOwnerID:  kit.SupplierAccount,
-	}
-
-	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).Count(kit.Ctx)
+	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database count operation on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, cond, err.Error())
+		blog.Errorf("count operation on the table (%s) by the condition (%#v) failed , err: %v", common.BKTableNameObjDes, checkCond.ToMapStr(), err, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -66,8 +64,8 @@ func (m *modelManager) deleteModelAndAttributes(kit *rest.Kit, targetObjIDS []st
 	}
 
 	// delete the model self
-	deleteModelCond := mongo.NewCondition()
-	deleteModelCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: kit.SupplierAccount})
+	deleteModelCondMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
+	deleteModelCond, _ := mongo.NewConditionFromMapStr(deleteModelCondMap)
 	deleteModelCond.Element(&mongo.In{Key: metadata.ModelFieldObjectID, Val: targetObjIDS})
 
 	cnt, err = m.delete(kit, deleteModelCond)

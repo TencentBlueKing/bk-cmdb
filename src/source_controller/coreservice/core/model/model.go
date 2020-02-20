@@ -100,9 +100,9 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	}
 
 	// check the model if it is exists
-	condCheckModel := mongo.NewCondition()
+	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
+	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
-	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: kit.SupplierAccount})
 
 	// ATTENTION: Currently only business dimension isolation is done,
 	//           and there may be isolation requirements for other dimensions in the future.
@@ -182,9 +182,9 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
 	}
 
-	condCheckModel := mongo.NewCondition()
+	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
+	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
-	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: kit.SupplierAccount})
 
 	existsModel, exists, err := m.isExists(kit, condCheckModel)
 	if nil != err {
@@ -195,8 +195,8 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 	inputParam.Spec.OwnerID = kit.SupplierAccount
 	// set model spec
 	if exists {
-		updateCond := mongo.NewCondition()
-		updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: kit.SupplierAccount})
+		updateCondMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
+		updateCond, _ := mongo.NewConditionFromMapStr(updateCondMap)
 		updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 
 		_, err := m.update(kit, mapstr.NewFromStruct(inputParam.Spec, "field"), updateCond)
@@ -243,7 +243,6 @@ func (m *modelManager) UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOpti
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s ", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
-	updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: kit.SupplierAccount})
 
 	cnt, err := m.update(kit, inputParam.Data, updateCond)
 	return &metadata.UpdatedCount{Count: cnt}, err
@@ -306,8 +305,8 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 // CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验
 func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error) {
 
-	deleteCond := mongo.NewCondition()
-	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: kit.SupplierAccount})
+	deleteCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
+	deleteCond, _ := mongo.NewConditionFromMapStr(deleteCondMap)
 	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldID, Val: modelID})
 
 	// read all models by the deletion condition
@@ -370,8 +369,8 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 	}
 
 	for _, modelItem := range modelItems {
-
-		queryAttributeCond := mongo.NewCondition()
+		queryAttributeCondMap := util.SetQueryOwner(make(map[string]interface{}), modelItem.OwnerID)
+		queryAttributeCond, _ := mongo.NewConditionFromMapStr(queryAttributeCondMap)
 		queryAttributeCond.Element(mongo.Field(metadata.AttributeFieldObjectID).Eq(modelItem.ObjectID))
 		queryAttributeCond.Element(mongo.Field(metadata.AttributeFieldSupplierAccount).Eq(modelItem.OwnerID))
 		attributeItems, err := m.modelAttribute.search(kit, queryAttributeCond)
