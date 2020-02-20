@@ -43,7 +43,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "event server is unhealthy"
+			meta.Message = "cloud server is unhealthy"
 			break
 		}
 	}

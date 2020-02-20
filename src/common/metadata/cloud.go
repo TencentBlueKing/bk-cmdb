@@ -11,8 +11,30 @@
  */
 package metadata
 
+import "time"
+
 type CloudAccount struct {
+	AccountName string      `json:"bk_account_name" bson:"bk_account_name"`
+	AccountType AccountType `json:"bk_account_type" bson:"bk_account_type"`
+	AccountID   string      `json:"bk_account_id" bson:"bk_account_id"`
+	SecreteID   string      `json:"bk_secret_id" bson:"bk_secret_id"`
+	SecreteKey  string      `json:"bk_secret_key" bson:"bk_secret_key"`
+	Description string      `json:"bk_description" bson:"bk_description"`
+	OwnerID     string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator     string      `json:"bk_creator" bson:"bk_creator"`
+	LastEditor  string      `json:"bk_last_editor" bson:"bk_last_editor"`
+	CreateTime  time.Time   `json:"create_time" bson:"create_time"`
+	LastTime    time.Time   `json:"last_time" bson:"last_time"`
 }
+
+type AccountType string
+
+const (
+	AWS          AccountType = "aws"
+	TencentCloud AccountType = "tencent_cloud"
+)
+
+var SupportCloudVendors = []string{"aws", "tencent_cloud"}
 
 type SearchCloudAccountOption struct {
 }
