@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/blog"
 	"strconv"
 
 	"configcenter/src/common"
@@ -30,6 +31,7 @@ func (s *coreService) CreateAccount(ctx *rest.Contexts) {
 
 	result, err := s.core.CloudOperation().CreateAccount(ctx.Kit, &account)
 	if err != nil {
+		blog.ErrorJSON("CreateAccount failed, accountName: %s, err: %v, rid: %s", account.AccountName, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

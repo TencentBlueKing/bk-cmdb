@@ -79,8 +79,8 @@ var statusEnum = []metadata.EnumVal{
 }
 
 var cloudVendorEnum = []metadata.EnumVal{
-	{ID: "1", Name: "AWS", Type: "text"},
-	{ID: "2", Name: "Tencent_Cloud", Type: "text"},
+	{ID: "1", Name: "aws", Type: "text"},
+	{ID: "2", Name: "tencent_cloud", Type: "text"},
 }
 
 var stateEnum = []metadata.EnumVal{

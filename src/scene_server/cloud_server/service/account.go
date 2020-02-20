@@ -16,13 +16,47 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
 // 云账户连通测试
 func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
-	ctx.RespEntity("VerifyConnectivity")
+	account := new(metadata.CloudAccountVerify)
+	if err := ctx.DecodeInto(account); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var pass bool
+	var err error
+	switch account.CloudVendor {
+	case metadata.AWS:
+		pass, err = s.Logics.AwsAccountVerify(account.SecretID, account.SecretKey)
+		if err != nil {
+			blog.ErrorJSON("aws cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
+		}
+	case metadata.TencentCloud:
+		pass, err = s.Logics.TecentCloudVerify(account.SecretID, account.SecretKey)
+		if err != nil {
+			blog.ErrorJSON("tencent cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
+		}
+	default:
+		ctx.RespErrorCodeOnly(common.CCErrCloudVendorNotSupport, "VerifyConnectivity failed, not support cloud vendor, rid: %v", ctx.Kit.Rid)
+		return
+	}
+
+	rData := mapstr.MapStr{
+		"connected": true,
+		"error_msg": "",
+	}
+	if pass == false {
+		rData["connected"] = false
+		rData["error_msg"] = err.Error()
+	}
+
+	ctx.RespEntity(rData)
 }
 
 // 新建云账户

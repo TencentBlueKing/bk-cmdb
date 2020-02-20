@@ -13,6 +13,23 @@ package metadata
 
 import "time"
 
+type CloudArea struct {
+	CloudID      int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	CloudName    string `json:"bk_cloud_name" bson:"bk_cloud_name"`
+	OwnerID      string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Status       int    `json:"bk_status" bson:"bk_status"`
+	CloudVendor  string `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
+	StateName    string `json:"bk_state_name" bson:"bk_state_name"`
+	ProvinceName string `json:"bk_province_name" bson:"bk_province_name"`
+	VpcID        int64  `json:"bk_vpc_id" bson:"bk_vpc_id"`
+	VpcName      string `json:"bk_vpc_name" bson:"bk_vpc_name"`
+	AccountID    int64  `json:"bk_account_id" bson:"bk_account_id"`
+	CreateTime   Time   `json:"create_time" bson:"create_time"`
+	Creator      string `json:"bk_creator" bson:"bk_creator"`
+	LastTime     Time   `json:"last_time" bson:"last_time"`
+	LastEditor   string `json:"bk_last_editor" bson:"bk_last_editor"`
+}
+
 type CloudAccount struct {
 	AccountName string      `json:"bk_account_name" bson:"bk_account_name"`
 	AccountType AccountType `json:"bk_account_type" bson:"bk_account_type"`
@@ -40,4 +57,10 @@ type SearchCloudAccountOption struct {
 }
 
 type MultipleCloudAccount struct {
+}
+
+type CloudAccountVerify struct {
+	SecretID    string      `json:"bk_secret_id"`
+	SecretKey   string      `json:"bk_secret_key"`
+	CloudVendor AccountType `json:"bk_cloud_vendor"`
 }
