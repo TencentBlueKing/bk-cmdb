@@ -90,7 +90,7 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
         } else if (['int', 'float'].includes(propertyType)) {
             values[propertyId] = [null, undefined].includes(inst[propertyId]) ? '' : inst[propertyId]
         } else if (['bool'].includes(propertyType)) {
-            if (autoSelect) {
+            if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
                 values[propertyId] = typeof property['option'] === 'boolean' ? property['option'] : false
             } else {
                 values[propertyId] = !!inst[propertyId]
