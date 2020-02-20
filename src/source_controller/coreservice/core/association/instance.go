@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -242,14 +243,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(ctx core.ContextPara
 }
 
 func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
-	if nil != err {
-		blog.Errorf("parse conditon  error [%#v], rid: %s", err, ctx.ReqID)
-		return &metadata.QueryResult{}, err
-	}
-	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
-	inputParam.Condition = condition.ToMapStr()
+	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, ctx.SupplierAccount)
 	instAsstItems, err := m.searchInstanceAssociation(ctx, inputParam)
 	if nil != err {
 		blog.Errorf("search inst association array err [%#v], rid: %s", err, ctx.ReqID)
@@ -271,7 +265,7 @@ func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, 
 }
 
 func (m *associationInstance) DeleteInstanceAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
+	inputParam.Condition = util.SetModOwner(inputParam.Condition, ctx.SupplierAccount)
 	cnt, err := m.instCount(ctx, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete inst association get inst [%#v] count err [%#v], rid: %s", inputParam.Condition, err, ctx.ReqID)

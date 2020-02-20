@@ -27,7 +27,7 @@ import (
 
 // get the object attributes
 func (lgc *Logics) GetObjectAttributes(ctx context.Context, ownerID, objID string, page meta.BasePage) ([]meta.Attribute, errors.CCError) {
-	opt := hutil.NewOperation().WithOwnerID(lgc.ownerID).WithObjID(objID).WithAttrComm().MapStr()
+	opt := hutil.NewOperation().WithObjID(objID).MapStr()
 	query := &meta.QueryCondition{
 		Condition: opt,
 	}
@@ -49,7 +49,7 @@ func (lgc *Logics) GetTopoIDByName(ctx context.Context, c *meta.HostToAppModule)
 		return 0, 0, 0, nil
 	}
 
-	appInfo, appErr := lgc.GetSingleApp(ctx, mapstr.MapStr{common.BKAppNameField: c.AppName, common.BKOwnerIDField: c.OwnerID})
+	appInfo, appErr := lgc.GetSingleApp(ctx, mapstr.MapStr{common.BKAppNameField: c.AppName})
 	if nil != appErr {
 		return 0, 0, 0, appErr
 	}

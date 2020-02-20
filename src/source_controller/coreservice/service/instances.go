@@ -13,13 +13,11 @@
 package service
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/source_controller/coreservice/multilingual"
 )
 
 func (s *coreService) CreateOneModelInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -71,8 +69,10 @@ func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams
 		return nil, err
 	}
 
+	objectID := pathParams("bk_obj_id")
+
 	// 判断是否有要根据default字段，需要国际化的内容
-	if _, ok := defaultNameLanguagePkg[pathParams("bk_obj_id")]; ok {
+	if _, ok := multilingual.BuildInInstanceNamePkg[objectID]; ok {
 		// 大于两个字段
 		if len(inputData.Fields) > 1 {
 			inputData.Fields = append(inputData.Fields, common.BKDefaultField)
@@ -82,21 +82,11 @@ func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams
 		}
 	}
 
-	dataResult, err := s.core.InstanceOperation().SearchModelInstance(params, pathParams("bk_obj_id"), inputData)
+	dataResult, err := s.core.InstanceOperation().SearchModelInstance(params, objectID, inputData)
 	if nil != err {
 		return dataResult, err
 	}
-
-	// translate language for default name
-	if m, ok := defaultNameLanguagePkg[pathParams("bk_obj_id")]; ok {
-		for idx := range dataResult.Info {
-			subResult := m[fmt.Sprint(dataResult.Info[idx][common.BKDefaultField])]
-			if len(subResult) >= 3 {
-				dataResult.Info[idx][subResult[1]] = util.FirstNotEmptyString(params.Lang.Language(subResult[0]), fmt.Sprint(dataResult.Info[idx][subResult[1]]), fmt.Sprint(dataResult.Info[idx][subResult[2]]))
-			}
-		}
-
-	}
+	multilingual.TranslateInstanceName(params.Lang, objectID, dataResult.Info)
 	return dataResult, err
 }
 

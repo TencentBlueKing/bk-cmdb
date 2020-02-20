@@ -13,9 +13,9 @@
 package service
 
 import (
-	"fmt"
-	"gopkg.in/redis.v5"
 	"strconv"
+
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -165,10 +165,15 @@ func (s *coreService) GetHosts(params core.ContextParams, pathParams, queryParam
 	condition := util.ConvParamsTime(dat.Condition)
 	condition = util.SetModOwner(condition, params.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
-	result, err := s.getObjectByCondition(params, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
-	if err != nil {
-		blog.Errorf("get object failed type:%s,input:%v error:%v, rid: %s", common.BKInnerObjIDHost, dat, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrHostSelectInst)
+
+	result := make([]mapstr.MapStr, 0)
+	dbInst := s.db.Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
+	if 0 < len(fieldArr) {
+		dbInst.Fields(fieldArr...)
+	}
+	if err := dbInst.All(params.Context, &result); err != nil {
+		blog.Errorf("failed to query the host , err: %v, rid: %s", err, params.ReqID)
+		return nil, err
 	}
 
 	count, err := s.db.Table(common.BKTableNameBaseHost).Find(condition).Count(params.Context)
@@ -181,32 +186,6 @@ func (s *coreService) GetHosts(params core.ContextParams, pathParams, queryParam
 		Count: int(count),
 		Info:  result,
 	}, nil
-}
-
-func (s *coreService) getObjectByCondition(params core.ContextParams, objType string, fields []string, condition interface{}, sort string, skip, limit int) ([]mapstr.MapStr, error) {
-	results := make([]mapstr.MapStr, 0)
-	tName := common.GetInstTableName(objType)
-
-	dbInst := s.db.Table(tName).Find(condition).Sort(sort).Start(uint64(skip)).Limit(uint64(limit))
-	if 0 < len(fields) {
-		dbInst.Fields(fields...)
-	}
-	if err := dbInst.All(params.Context, &results); err != nil {
-		blog.Errorf("failed to query the inst , error info %s, rid: %s", err.Error(), params.ReqID)
-		return nil, err
-	}
-
-	// translate language for default name
-	if m, ok := defaultNameLanguagePkg[objType]; nil != params.Lang && ok {
-		for index, info := range results {
-			l := m[fmt.Sprint(info["default"])]
-			if len(l) >= 3 {
-				results[index][l[1]] = util.FirstNotEmptyString(params.Lang.Language(l[0]), fmt.Sprint(info[l[1]]), fmt.Sprint(info[l[2]]))
-			}
-		}
-	}
-
-	return results, nil
 }
 
 func (s *coreService) GetHostSnap(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
