@@ -583,6 +583,7 @@
                 }
             },
             toggleFullScreen (fullScreen) {
+                this.$store.commit('setLayoutStatus', { mainFullScreen: fullScreen })
                 this.fullScreen = fullScreen
             },
             fitMaxZoom (cy) {
