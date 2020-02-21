@@ -27,12 +27,6 @@ func init() {
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
 	blog.Infof("start execute y3.9.202002181444")
-	err = removeOldPlatAttrs(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002181444] removeOldPlatAttrs failed, error  %s", err.Error())
-		return err
-	}
-
 	err = initPlatAttr(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade y3.9.202002181444] initPlatAttr failed, error  %s", err.Error())
