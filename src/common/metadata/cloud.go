@@ -32,8 +32,8 @@ type CloudArea struct {
 
 type CloudAccount struct {
 	AccountName string      `json:"bk_account_name" bson:"bk_account_name"`
-	AccountType AccountType `json:"bk_account_type" bson:"bk_account_type"`
-	AccountID   string      `json:"bk_account_id" bson:"bk_account_id"`
+	CloudVendor AccountType `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
+	AccountID   int64       `json:"bk_account_id" bson:"bk_account_id"`
 	SecreteID   string      `json:"bk_secret_id" bson:"bk_secret_id"`
 	SecreteKey  string      `json:"bk_secret_key" bson:"bk_secret_key"`
 	Description string      `json:"bk_description" bson:"bk_description"`

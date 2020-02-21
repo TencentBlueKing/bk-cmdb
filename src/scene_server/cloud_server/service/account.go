@@ -71,8 +71,8 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 	// todo
 
 	// accountType check
-	if !util.InStrArr(metadata.SupportCloudVendors, string(account.AccountType)) {
-		ctx.RespErrorCodeOnly(common.CCErrCloudVendorNotSupport, "CreateAccount failed, not support cloud vendor, rid: %v", ctx.Kit.Rid)
+	if !util.InStrArr(metadata.SupportCloudVendors, string(account.CloudVendor)) {
+		ctx.RespErrorCodeOnly(common.CCErrCloudVendorNotSupport, "CreateAccount failed, not support cloud vendor: %s, rid: %v", account.CloudVendor, ctx.Kit.Rid)
 		return
 	}
 
