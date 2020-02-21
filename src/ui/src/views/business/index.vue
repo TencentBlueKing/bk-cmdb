@@ -104,19 +104,7 @@
             :before-close="handleSliderBeforeClose">
             <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
                 <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
-                    <cmdb-details v-if="attribute.type === 'details'"
-                        :properties="properties"
-                        :property-groups="propertyGroups"
-                        :inst="attribute.inst.details"
-                        :delete-button-text="$t('归档')"
-                        :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
-                        :show-options="isAdminView"
-                        :edit-auth="$OPERATION.U_BUSINESS"
-                        :delete-auth="$OPERATION.BUSINESS_ARCHIVE"
-                        @on-edit="handleEdit"
-                        @on-delete="handleDelete">
-                    </cmdb-details>
-                    <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
+                    <cmdb-form
                         ref="form"
                         :properties="properties"
                         :property-groups="propertyGroups"
@@ -126,21 +114,6 @@
                         @on-submit="handleSave"
                         @on-cancel="handleSliderBeforeClose">
                     </cmdb-form>
-                </bk-tab-panel>
-                <bk-tab-panel name="relevance" :label="$t('关联Relation')" :visible="attribute.type !== 'create'">
-                    <cmdb-relation
-                        v-if="tab.active === 'relevance'"
-                        obj-id="biz"
-                        :auth="$OPERATION.U_BUSINESS"
-                        :inst="attribute.inst.details">
-                    </cmdb-relation>
-                </bk-tab-panel>
-                <bk-tab-panel name="history" :label="$t('变更记录')" :visible="attribute.type !== 'create'">
-                    <cmdb-audit-history v-if="tab.active === 'history'"
-                        target="biz"
-                        resource-type="business"
-                        :inst-id="attribute.inst.details['bk_biz_id']">
-                    </cmdb-audit-history>
                 </bk-tab-panel>
             </bk-tab>
         </bk-sideslider>
@@ -160,7 +133,7 @@
 
 <script>
     import { mapState, mapGetters, mapActions } from 'vuex'
-    import { MENU_RESOURCE_BUSINESS_HISTORY } from '@/dictionary/menu-symbol'
+    import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_BUSINESS_DETAILS } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
@@ -278,7 +251,7 @@
                     this.setTableHeader(),
                     this.setFilterOptions()
                 ])
-                
+
                 // 配合全文检索过滤列表
                 if (this.$route.params.bizName) {
                     this.filter.sendValue = this.$route.params.bizName
@@ -343,10 +316,12 @@
                 })
             },
             handleRowClick (item) {
-                this.slider.show = true
-                this.slider.title = item['bk_biz_name']
-                this.attribute.inst.details = item
-                this.attribute.type = 'details'
+                this.$router.push({
+                    name: MENU_RESOURCE_BUSINESS_DETAILS,
+                    params: {
+                        bizId: item.bk_biz_id
+                    }
+                })
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)
@@ -471,8 +446,6 @@
             handleCancel () {
                 if (this.attribute.type === 'create') {
                     this.slider.show = false
-                } else {
-                    this.attribute.type = 'details'
                 }
             },
             handleApplayColumnsConfig (properties) {
@@ -492,7 +465,7 @@
                 })
             },
             handleSliderBeforeClose () {
-                if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {
+                if (this.tab.active === 'attribute') {
                     const $form = this.$refs.form
                     const changedValues = $form.changedValues
                     if (Object.keys(changedValues).length) {
