@@ -31,16 +31,17 @@ func upgradeCloudArea(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	}
 
 	for _, cloud := range cloudMapping {
-		cloudArea := metadata.CloudArea{
-			CloudID:    cloud.CloudID,
-			CloudName:  cloud.CloudName,
-			OwnerID:    cloud.OwnerID,
-			CreateTime: cloud.CreateTime,
-			LastTime:   metadata.Now(),
-			LastEditor: conf.User,
-			Status:     1,
-			AccountID:  0,
-			Creator:    conf.User,
+		cloudArea := mapstr.MapStr{
+			"bk_status":        1,
+			"bk_account_id":    0,
+			"last_time":        metadata.Now(),
+			"bk_last_editor":   conf.User,
+			"bk_cloud_vendor":  "",
+			"bk_state_name":    "",
+			"bk_province_name": "",
+			"bk_vpc_id":        0,
+			"bk_vpc_name":      "",
+			"bk_creator":       conf.User,
 		}
 
 		cond := mapstr.MapStr{common.BKCloudIDField: cloud.CloudID}
