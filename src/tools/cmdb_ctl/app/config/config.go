@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common/zkclient"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/spf13/cobra"
@@ -61,7 +62,12 @@ func NewMongoService(mongoURI string) (*Service, error) {
 	if mongoURI == "" {
 		return nil, errors.New("mongo-uri must set via flag or environment variable")
 	}
-	db, err := local.NewMgo(mongoURI, time.Minute)
+	mongoConfig := local.MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          mongoURI,
+	}
+	db, err := local.NewMgo(mongoConfig, time.Minute)
 	if err != nil {
 		return nil, err
 	}

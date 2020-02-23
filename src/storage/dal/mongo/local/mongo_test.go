@@ -23,13 +23,18 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkLocalCUD(b *testing.B) {
-
-	db, err := NewMgo("mongodb://cc:cc@localhost:27011,localhost:27012,localhost:27013,localhost:27014/cmdb", time.Second*5)
+	mongoConfig := MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          "mongodb://cc:cc@localhost:27011,localhost:27012,localhost:27013,localhost:27014/cmdb",
+	}
+	db, err := NewMgo(mongoConfig, time.Second*5)
 	require.NoError(b, err)
 
 	header := http.Header{}
@@ -59,7 +64,12 @@ func BenchmarkLocalCUD(b *testing.B) {
 
 func dbCleint(t *testing.T) *Mongo {
 	uri := os.Getenv("MONGOURI")
-	db, err := NewMgo(uri, time.Second*5)
+	mongoConfig := MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          uri,
+	}
+	db, err := NewMgo(mongoConfig, time.Second*5)
 	require.NoError(t, err)
 	err = db.Ping()
 	require.NoError(t, err)
@@ -717,7 +727,7 @@ func TestColumn(t *testing.T) {
 			"add_col":    "add_col_exist",
 		},
 		map[string]interface{}{
-			"a2": "a2",
+			"a2":          "a2",
 			"delete_col1": "delete_col1",
 			"delete_col2": "delete_col2",
 		},

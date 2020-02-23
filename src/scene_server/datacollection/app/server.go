@@ -70,7 +70,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		mgoCli, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		mgoCli, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 		}
