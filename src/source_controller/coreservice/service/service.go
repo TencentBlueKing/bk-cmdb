@@ -83,7 +83,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
 	}
 
-	db, dbErr := local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
+	db, dbErr := local.NewMgo(s.cfg.Mongo.GetMongoConf(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 		return dbErr
@@ -112,7 +112,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		instance,
 		association.New(db, s),
 		datasynchronize.New(db, s),
-		mainline.New(db, s.language),
+		mainline.New(db, lang),
 		host.New(db, cache, s, hostApplyRuleCore),
 		auditlog.New(db),
 		process.New(db, s, cache),
@@ -131,7 +131,7 @@ func (s *coreService) WebService() *restful.Container {
 	container := restful.NewContainer()
 
 	api := new(restful.WebService)
-	api.Path("/api/v3").Produces(restful.MIME_JSON)
+	api.Path("/api/v3").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	// init service actions
 	s.initService(api)

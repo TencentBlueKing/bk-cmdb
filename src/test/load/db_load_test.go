@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	redisdal "configcenter/src/storage/dal/redis"
 	"configcenter/src/test"
@@ -77,7 +78,12 @@ func initData() {
 
 func GetClient() (*local.Mongo, error) {
 	//fmt.Println("********mongouri:", test.GetTestConfig().MongoURI)
-	m, err := local.NewMgo(tConfig.MongoURI, time.Minute)
+	mongoConfig := local.MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          tConfig.MongoURI,
+	}
+	m, err := local.NewMgo(mongoConfig, time.Minute)
 	if err != nil {
 		return nil, err
 	}
