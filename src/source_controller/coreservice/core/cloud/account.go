@@ -13,13 +13,32 @@
 package cloud
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"time"
 )
 
 func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder) {
-	return &metadata.CloudAccount{}, nil
+	id, err := c.dbProxy.NextSequence(kit.Ctx, common.BKTableNameCloudAccount)
+	if nil != err {
+		blog.Errorf("CreateAccount failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
+	}
+	account.AccountID = int64(id)
+	ts := time.Now()
+	account.OwnerID = kit.SupplierAccount
+	account.CreateTime = ts
+	account.LastTime = ts
+
+	err = c.dbProxy.Table(common.BKTableNameCloudAccount).Insert(kit.Ctx, account)
+	if err != nil {
+		blog.ErrorJSON("CreateAccount failed, db insert failed, accountName: %s, err: %v, rid: %s", account.AccountName, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
+	}
+	return account, nil
 }
 
 func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchCloudAccountOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
