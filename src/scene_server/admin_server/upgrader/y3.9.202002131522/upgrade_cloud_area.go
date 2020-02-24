@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202002181444
+package y3_9_202002131522
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func upgradeCloudArea(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	opt := mapstr.MapStr{}
 	cloudMapping := make([]metadata.CloudMapping, 0)
 	if err := db.Table(common.BKTableNameBasePlat).Find(opt).All(ctx, &cloudMapping); err != nil {
-		return fmt.Errorf("upgrade y3.9.202002181444, upgradeCloudArea failed because get cloud area data failed, err: %v", err)
+		return fmt.Errorf("upgrade y3.9.202002131522, upgradeCloudArea failed because get cloud area data failed, err: %v", err)
 	}
 
 	for _, cloud := range cloudMapping {

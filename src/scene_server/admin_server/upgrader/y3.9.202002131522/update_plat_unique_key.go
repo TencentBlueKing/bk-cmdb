@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_9_202002181444
+package y3_9_202002131522
 
 import (
 	"context"
@@ -29,7 +29,7 @@ func updatePlatUniqueKey(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 		common.BKPropertyIDField: common.BKCloudNameField,
 	}
 	if err := db.Table(common.BKTableNameObjAttDes).Find(cond).One(ctx, &attr); err != nil {
-		return fmt.Errorf("upgrade y3.9.202002181444, but update plat unique key failed, err: %v", err)
+		return fmt.Errorf("upgrade y3.9.202002131522, but update plat unique key failed, err: %v", err)
 	}
 
 	uniques := metadata.ObjectUnique{
@@ -50,7 +50,7 @@ func updatePlatUniqueKey(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 		common.BKObjIDField: common.BKInnerObjIDPlat,
 	}
 	if err := db.Table(common.BKTableNameObjUnique).Update(ctx, opt, uniques); err != nil {
-		return fmt.Errorf("upgrade y3.9.202002181444, but update plat unique key failed, err: %v", err)
+		return fmt.Errorf("upgrade y3.9.202002131522, but update plat unique key failed, err: %v", err)
 	}
 
 	return nil
