@@ -65,6 +65,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		netCollectorRelated().
 		processRelated().
 		eventRelated().
+		cloudRelated().
 		// finalizer must be at the end of the check chains.
 		finalizer()
 
@@ -115,6 +116,8 @@ func (ps *parseStream) validateResourceAction() *parseStream {
 	case "find":
 		ps.action = meta.Find
 	case "findMany":
+		ps.action = meta.FindMany
+	case "search":
 		ps.action = meta.FindMany
 
 	case "create":
