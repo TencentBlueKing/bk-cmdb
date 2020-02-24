@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // 云账户连通测试
@@ -33,12 +32,12 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 	var err error
 	switch account.CloudVendor {
 	case metadata.AWS:
-		pass, err = s.Logics.AwsAccountVerify(account.SecretID, account.SecretKey)
+		pass, err = s.Logics.AwsAccountVerify(ctx.Kit, account.SecretID, account.SecretKey)
 		if err != nil {
 			blog.ErrorJSON("aws cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
 		}
 	case metadata.TencentCloud:
-		pass, err = s.Logics.TecentCloudVerify(account.SecretID, account.SecretKey)
+		pass, err = s.Logics.TecentCloudVerify(ctx.Kit, account.SecretID, account.SecretKey)
 		if err != nil {
 			blog.ErrorJSON("tencent cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
 		}
@@ -67,18 +66,10 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 		return
 	}
 
-	// account name unique check
-	// todo
-
-	// accountType check
-	if !util.InStrArr(metadata.SupportCloudVendors, string(account.CloudVendor)) {
-		ctx.RespErrorCodeOnly(common.CCErrCloudVendorNotSupport, "CreateAccount failed, not support cloud vendor: %s, rid: %v", account.CloudVendor, ctx.Kit.Rid)
-		return
-	}
-
 	res, err := s.CoreAPI.CoreService().Cloud().CreateAccount(ctx.Kit.Ctx, ctx.Kit.Header, account)
 	if err != nil {
-		blog.ErrorJSON("CreateAccount failed, core service CreateAccount failed, account info: %v, err: %s, rid: %s", account, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("CreateAccount failed, core service CreateAccount failed, account name: %v, err: %s, rid: %s", *account, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 

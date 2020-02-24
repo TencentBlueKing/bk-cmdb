@@ -1,5 +1,7 @@
 {
   "1118001": "Not support cloud vendor",
+  "1118002": "Account name already exists",
+  "1118003": "Cloud account parameter valid failed，%s",
 
   "": ""
 }

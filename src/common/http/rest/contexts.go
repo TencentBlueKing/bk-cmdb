@@ -203,7 +203,7 @@ func (c *Contexts) RespAutoError(err error) {
 			ErrMsg: errMsg,
 			Code:   code,
 		},
-		Data: "",
+		Data: nil,
 	}
 
 	c.writeAsJson(&body)
@@ -227,7 +227,7 @@ func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interfac
 			ErrMsg: c.Kit.CCError.CCErrorf(errCode, errorf).Error(),
 			Code:   errCode,
 		},
-		Data: "",
+		Data: nil,
 	}
 	c.writeAsJson(&body)
 }

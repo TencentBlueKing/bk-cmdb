@@ -14,6 +14,7 @@ package logics
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/http/rest"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -24,7 +25,7 @@ import (
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
-func (lgc *Logics) AwsAccountVerify(secretID, secretKey string) (bool, error) {
+func (lgc *Logics) AwsAccountVerify(kit *rest.Kit, secretID, secretKey string) (bool, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String("us-west-2"),
 		Credentials: credentials.NewStaticCredentials(secretID, secretKey, ""),
@@ -39,7 +40,7 @@ func (lgc *Logics) AwsAccountVerify(secretID, secretKey string) (bool, error) {
 	return true, nil
 }
 
-func (lgc *Logics) TecentCloudVerify(secretID, secretKey string) (bool, error) {
+func (lgc *Logics) TecentCloudVerify(kit *rest.Kit, secretID, secretKey string) (bool, error) {
 	credential := tc.NewCredential(secretID, secretKey)
 
 	cpf := profile.NewClientProfile()

@@ -17,11 +17,18 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"time"
 )
 
 func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder) {
+	if err := c.validCreateAccount(kit, account); nil != err {
+		blog.Errorf("CreateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
 	id, err := c.dbProxy.NextSequence(kit.Ctx, common.BKTableNameCloudAccount)
 	if nil != err {
 		blog.Errorf("CreateAccount failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
@@ -51,4 +58,12 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, account *
 
 func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CCErrorCoder {
 	return nil
+}
+
+func (c *cloudOperation) countAccount(kit *rest.Kit, cond mapstr.MapStr) (uint64, error) {
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+	count, err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(cond).Count(kit.Ctx)
+
+	return count, err
+
 }
