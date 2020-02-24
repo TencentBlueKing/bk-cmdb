@@ -118,10 +118,10 @@ func (h *HostSnap) Analyze(mesg string) error {
 		return nil
 	}
 
-	cond := mapstr.New()
-	cond.Set(common.BKHostIDField, hostID)
 	opt := &metadata.UpdateOption{
-		Condition: cond,
+		Condition: map[string]interface{}{
+			common.BKHostIDField: hostIdInt64,
+		},
 		Data:      mapstr.NewFromMap(setter),
 	}
 	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.httpHeader, common.BKInnerObjIDHost, opt)
