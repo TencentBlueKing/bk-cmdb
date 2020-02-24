@@ -134,28 +134,6 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostPlatCloudNameIsrequired)})
 		return
 	}
-	cloudNameCheck := mapstr.MapStr{}
-	cloudNameCheck[common.BKCloudNameField] = input[common.BKCloudNameField]
-	query := &metadata.QueryCondition{
-		Condition: cloudNameCheck,
-	}
-
-	checkRes, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, query)
-	if nil != err {
-		blog.Errorf("CreatePlat htt do error: %v query:%#v,rid:%s", err, query, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)})
-		return
-	}
-	if false == checkRes.Result {
-		blog.Errorf("CreatePlat http reply error.  query:%#v, err code:%d, err msg:%s, rid:%s", query, checkRes.Code, checkRes.ErrMsg, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.New(checkRes.Code, checkRes.ErrMsg)})
-		return
-	}
-	if checkRes.Data.Count > 0 {
-		blog.Errorf("CreatePlat failed, bk_cloud_name is already exist, rid: %s", srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostPlatCloudNameAlreadyExist)})
-		return
-	}
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Model); err != nil {
