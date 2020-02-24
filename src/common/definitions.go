@@ -1134,3 +1134,8 @@ const (
 	Chinese LanguageType = "zh-cn"
 	English LanguageType = "en"
 )
+
+// cloud sync const
+const (
+	BKCloudAccountName = "bk_account_name"
+)
