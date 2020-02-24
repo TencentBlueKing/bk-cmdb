@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -35,7 +36,6 @@ func (m *modelClassification) isExists(ctx core.ContextParams, classificationID 
 
 	origin = &metadata.Classification{}
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
 
 	// ATTENTION: Currently only business dimension isolation is done,
@@ -46,8 +46,9 @@ func (m *modelClassification) isExists(ctx core.ContextParams, classificationID 
 		_, labelCond := metaCond.Embed(metadata.BKLabel)
 		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 	}
+	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
 
-	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).One(ctx, origin)
+	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(condMap).One(ctx, origin)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
 		return origin, false, err
 	}
@@ -68,9 +69,9 @@ func (m *modelClassification) hasModel(ctx core.ContextParams, cond universalsql
 
 	checkModelCond := mongo.NewCondition()
 	checkModelCond.Element(mongo.Field(metadata.ModelFieldObjCls).In(clsIDS))
-	checkModelCond.Element(mongo.Field(metadata.ModelFieldOwnerID).Eq(ctx.SupplierAccount))
+	checkModelCondMap := util.SetQueryOwner(checkModelCond.ToMapStr(), ctx.SupplierAccount)
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(checkModelCond.ToMapStr()).Count(ctx)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(checkModelCondMap).Count(ctx)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
 		return 0, false, err

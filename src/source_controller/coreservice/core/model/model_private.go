@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -34,9 +35,8 @@ func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condit
 }
 
 func (m *modelManager) isValid(ctx core.ContextParams, objID string) error {
-
-	checkCond := mongo.NewCondition()
-	//	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
+	checkCondMap := util.SetQueryOwner(make(map[string]interface{}), ctx.SupplierAccount)
+	checkCond, _ := mongo.NewConditionFromMapStr(checkCondMap)
 	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
 
 	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(ctx)
@@ -64,8 +64,8 @@ func (m *modelManager) deleteModelAndAttributes(ctx core.ContextParams, targetOb
 	}
 
 	// delete the model self
-	deleteModelCond := mongo.NewCondition()
-	deleteModelCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
+	deleteModelCondMap := util.SetModOwner(make(map[string]interface{}), ctx.SupplierAccount)
+	deleteModelCond, _ := mongo.NewConditionFromMapStr(deleteModelCondMap)
 	deleteModelCond.Element(&mongo.In{Key: metadata.ModelFieldObjectID, Val: targetObjIDS})
 
 	cnt, err = m.delete(ctx, deleteModelCond)

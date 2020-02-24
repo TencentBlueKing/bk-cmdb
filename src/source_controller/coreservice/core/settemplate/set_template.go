@@ -162,8 +162,8 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 
 	filter := map[string]interface{}{
 		common.BKFieldID:      setTemplateID,
-		common.BKOwnerIDField: ctx.SupplierAccount,
 	}
+	filter = util.SetModOwner(filter, ctx.SupplierAccount)
 	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter).One(ctx.Context, &setTemplate); err != nil {
 		if p.dbProxy.IsNotFoundError(err) {
 			blog.Errorf("UpdateSetTemplate failed, set template not found, id: %d, rid: %s", setTemplateID, ctx.ReqID)
@@ -322,8 +322,8 @@ func (p *setTemplateOperation) GetSetTemplate(ctx core.ContextParams, bizID int6
 	filter := map[string]interface{}{
 		common.BKFieldID:         setTemplateID,
 		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: ctx.SupplierAccount,
 	}
+	filter = util.SetQueryOwner(filter, ctx.SupplierAccount)
 	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter).One(ctx.Context, &setTemplate); err != nil {
 		if p.dbProxy.IsNotFoundError(err) {
 			blog.Errorf("GetSetTemplate failed, db select failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, ctx.ReqID)
@@ -343,8 +343,8 @@ func (p *setTemplateOperation) ListSetTemplate(ctx core.ContextParams, bizID int
 
 	filter := map[string]interface{}{
 		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: ctx.SupplierAccount,
 	}
+	filter = util.SetQueryOwner(filter, ctx.SupplierAccount)
 	if option.SetTemplateIDs != nil {
 		filter[common.BKFieldID] = map[string]interface{}{
 			common.BKDBIN: option.SetTemplateIDs,
@@ -382,8 +382,8 @@ func (p *setTemplateOperation) ListSetServiceTemplateRelations(ctx core.ContextP
 	filter := map[string]interface{}{
 		common.BKAppIDField:         bizID,
 		common.BKSetTemplateIDField: setTemplateID,
-		common.BkSupplierAccount:    ctx.SupplierAccount,
 	}
+	filter = util.SetQueryOwner(filter, ctx.SupplierAccount)
 
 	setServiceTemplateRelations := make([]metadata.SetServiceTemplateRelation, 0)
 	if err := p.dbProxy.Table(common.BKTableNameSetServiceTemplateRelation).Find(filter).All(ctx.Context, &setServiceTemplateRelations); err != nil {

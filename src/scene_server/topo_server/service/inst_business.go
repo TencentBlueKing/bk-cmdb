@@ -322,7 +322,6 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 	}
 
 	attrCond := condition.CreateCondition()
-	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
 	attrCond.Field(metadata.AttributeFieldObjectID).Eq(common.BKInnerObjIDApp)
 	attrCond.Field(metadata.AttributeFieldPropertyType).Eq(common.FieldTypeUser)
 	attrArr, err := s.Core.AttributeOperation().FindObjectAttribute(params, attrCond)

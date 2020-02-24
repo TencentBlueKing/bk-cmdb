@@ -82,8 +82,8 @@ func (im *InstanceMainline) LoadSetInstances(ctx context.Context, header http.He
 	// set instance list of target business
 	filter := map[string]interface{}{
 		common.BKAppIDField:      im.bkBizID,
-		common.BkSupplierAccount: util.GetOwnerID(header),
 	}
+    filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
 	err := im.dbProxy.Table(common.BKTableNameBaseSet).Find(filter).All(ctx, &im.setInstances)
 	if err != nil {
 		blog.Errorf("get set instances by business:%d failed, %+v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
@@ -98,8 +98,8 @@ func (im *InstanceMainline) LoadModuleInstances(ctx context.Context, header http
 	// module instance list of target business
 	filter := map[string]interface{}{
 		common.BKAppIDField:      im.bkBizID,
-		common.BkSupplierAccount: util.GetOwnerID(header),
 	}
+    filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
 	err := im.dbProxy.Table(common.BKTableNameBaseModule).Find(filter).All(ctx, &im.moduleInstances)
 	if err != nil {
 		blog.Errorf("get module instances by business:%d failed, err:%v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
@@ -117,9 +117,9 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 		common.BKObjIDField: map[string]interface{}{
 			common.BKDBIN: im.modelIDs,
 		},
-		common.BkSupplierAccount: util.GetOwnerID(header),
 		common.MetadataLabelBiz:  strconv.FormatInt(im.bkBizID, 10),
 	}
+    filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
 	err = im.dbProxy.Table(common.BKTableNameBaseInst).Find(filter).All(ctx, &im.mainlineInstances)
 	if err != nil {
 		blog.Errorf("get other mainline instances by business:%d failed, err: %v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
@@ -142,8 +142,8 @@ func (im *InstanceMainline) ConstructBizTopoInstance(ctx context.Context, header
 	// get business detail here
 	bizFilter := map[string]interface{}{
 		common.BKAppIDField:      im.bkBizID,
-		common.BkSupplierAccount: util.GetOwnerID(header),
 	}
+    bizFilter = util.SetQueryOwner(bizFilter, util.GetOwnerID(header))
 	err := im.dbProxy.Table(common.BKTableNameBaseApp).Find(bizFilter).One(ctx, &im.businessInstance)
 	if err != nil {
 		blog.Errorf("get business instances by business:%d failed, err: %+v, cond: %#v, rid: %s", im.bkBizID, err, rid)
@@ -295,8 +295,8 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 
 		filter := map[string]interface{}{
 			common.BKInstIDField:     topoInstance.ParentInstanceID,
-			common.BkSupplierAccount: util.GetOwnerID(header),
 		}
+        filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
 		missedInstances := make([]mapstr.MapStr, 0)
 		err := im.dbProxy.Table(common.BKTableNameBaseInst).Find(filter).All(ctx, &missedInstances)
 		if err != nil {
@@ -387,8 +387,8 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, heade
 					cond := map[string]interface{}{
 						common.BKObjIDField:      parentObjectID,
 						common.BKInstIDField:     topoInstance.ParentInstanceID,
-						common.BkSupplierAccount: util.GetOwnerID(header),
 					}
+                    cond = util.SetQueryOwner(cond, util.GetOwnerID(header))
 					inst := mapstr.MapStr{}
 					if err := im.dbProxy.Table(common.BKTableNameBaseInst).Find(cond).One(context.Background(), &inst); err != nil {
 						if im.dbProxy.IsNotFoundError(err) == false {
