@@ -7,6 +7,7 @@ import (
 
 	"configcenter/src/common"
 	params "configcenter/src/common/paraparse"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
 
@@ -36,7 +37,7 @@ var _ = Describe("business test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("eereeede"))
-		bizId = strconv.FormatInt(int64(rsp.Data["bk_biz_id"].(float64)), 10)
+		bizId = commonutil.GetStrByInterface(rsp.Data["bk_biz_id"])
 	})
 
 	It("create business bk_biz_name = 'eereeede' again", func() {
@@ -109,7 +110,8 @@ var _ = Describe("business test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("mmrmm"))
-		bizIdInt = int64(rsp.Data["bk_biz_id"].(float64))
+		bizIdInt, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+		Expect(err).NotTo(HaveOccurred())
 		bizId2 = strconv.FormatInt(bizIdInt, 10)
 	})
 

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
 
@@ -53,7 +54,8 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			bizId = int64(rsp.Data["bk_biz_id"].(float64))
+			bizId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create business bk_biz_name = 'Angela'", func() {
@@ -68,7 +70,8 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			bizId1 = int64(rsp.Data["bk_biz_id"].(float64))
+			bizId1, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create set", func() {
@@ -84,7 +87,8 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			setId = int64(rsp.Data["bk_set_id"].(float64))
+			setId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create set", func() {
@@ -100,7 +104,8 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			setId1 = int64(rsp.Data["bk_set_id"].(float64))
+			setId1, err = commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create module", func() {
@@ -114,7 +119,8 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			moduleId = int64(rsp.Data["bk_module_id"].(float64))
+			moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create module", func() {
@@ -128,7 +134,8 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			moduleId1 = int64(rsp.Data["bk_module_id"].(float64))
+			moduleId1, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create module", func() {
@@ -142,7 +149,8 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			moduleId2 = int64(rsp.Data["bk_module_id"].(float64))
+			moduleId2, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("get instance topo", func() {
@@ -2017,8 +2025,10 @@ func prepareData() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(rsp1.Result).To(Equal(true))
 	Expect(rsp1.Data.Count).To(Equal(2))
-	hostId = int64(rsp1.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
-	hostId2 = int64(rsp1.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+	hostId, err = commonutil.GetInt64ByInterface(rsp1.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
+	Expect(err).NotTo(HaveOccurred())
+	hostId2, err = commonutil.GetInt64ByInterface(rsp1.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
+	Expect(err).NotTo(HaveOccurred())
 
 	// 在业务bizId1中加入主机
 	input2 := map[string]interface{}{
@@ -2050,8 +2060,10 @@ func prepareData() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(rsp3.Result).To(Equal(true))
 	Expect(rsp3.Data.Count).To(Equal(2))
-	hostId1 = int64(rsp3.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
-	hostId3 = int64(rsp3.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+	hostId1, err = commonutil.GetInt64ByInterface(rsp3.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
+	Expect(err).NotTo(HaveOccurred())
+	hostId3, err = commonutil.GetInt64ByInterface(rsp3.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
+	Expect(err).NotTo(HaveOccurred())
 
 	// 在资源池中加入主机
 	input4 := map[string]interface{}{
@@ -2092,7 +2104,8 @@ func prepareData() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(rsp5.Result).To(Equal(true))
 	data := rsp5.Data.Info[0]["host"].(map[string]interface{})
-	hostId4 = int64(data["bk_host_id"].(float64))
+	hostId4, err = commonutil.GetInt64ByInterface(data["bk_host_id"])
+	Expect(err).NotTo(HaveOccurred())
 	Expect(rsp5.Data.Count).To(Equal(1))
 }
 
@@ -2115,8 +2128,10 @@ func clearData() {
 		hostIds := []int64{}
 		hostIds2 := []string{}
 		for _, hostInfo := range rsp.Data.Info {
-			hostIds = append(hostIds, int64(hostInfo["host"].(map[string]interface{})["bk_host_id"].(float64)))
-			hostIds2 = append(hostIds2, fmt.Sprintf("%d", int64(hostInfo["host"].(map[string]interface{})["bk_host_id"].(float64))))
+			hostIdInt, err := commonutil.GetInt64ByInterface(hostInfo["host"].(map[string]interface{})["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+			hostIds = append(hostIds, hostIdInt)
+			hostIds2 = append(hostIds2, commonutil.GetStrByInterface(hostInfo["host"].(map[string]interface{})["bk_host_id"]))
 		}
 
 		if len(hostIds) > 0 {
