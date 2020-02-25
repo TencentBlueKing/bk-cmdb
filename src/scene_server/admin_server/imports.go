@@ -83,4 +83,7 @@ import (
 
 	// v3.8.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.8.202002101113"
+
+	// v3.9.x
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.9.202002131522"
 )

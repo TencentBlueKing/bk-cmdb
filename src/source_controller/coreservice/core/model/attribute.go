@@ -19,22 +19,22 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/lock"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 
-    redis "gopkg.in/redis.v5"
+	redis "gopkg.in/redis.v5"
 )
 
 type modelAttribute struct {
-	model   *modelManager
-	dbProxy dal.RDB
-	cache   *redis.Client
+	model    *modelManager
+	dbProxy  dal.RDB
+	cache    *redis.Client
 	language language.CCLanguageIf
 }
 
@@ -331,25 +331,25 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inpu
 }
 
 func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
-    
+
 	if err := m.model.isValid(kit, objID); nil != err {
 		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", kit.Rid, objID, err.Error())
 		return nil, err
 	}
-	
-    inputParam.Condition[common.BKObjIDField] = objID
-    inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
-    
+
+	inputParam.Condition[common.BKObjIDField] = objID
+	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
+
 	attrResult, err := m.newSearch(kit, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", kit.Rid, objID, err.Error())
 		return nil, err
 	}
-	
+
 	return &metadata.QueryModelAttributeDataResult{
-	    Count: int64(len(attrResult)),
-        Info: attrResult,
-    }, nil
+		Count: int64(len(attrResult)),
+		Info:  attrResult,
+	}, nil
 }
 
 func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {

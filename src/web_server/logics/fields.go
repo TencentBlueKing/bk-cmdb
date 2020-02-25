@@ -76,7 +76,7 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metada
 	rid := util.GetHTTPCCRequestID(header)
 	ownerID := util.GetOwnerID(header)
 	condition := mapstr.MapStr{
-		common.BKObjIDField:   objID,
+		common.BKObjIDField: objID,
 		"page": mapstr.MapStr{
 			"start": 0,
 			"limit": common.BKNoLimit,
@@ -178,7 +178,7 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	rid := util.GetHTTPCCRequestID(header)
 
 	condition := mapstr.MapStr{
-		common.BKObjIDField:   objID,
+		common.BKObjIDField: objID,
 		metadata.PageName: mapstr.MapStr{
 			"start": 0,
 			"limit": common.BKNoLimit,

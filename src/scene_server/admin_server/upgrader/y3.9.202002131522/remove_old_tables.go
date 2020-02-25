@@ -10,33 +10,28 @@
  * limitations under the License.
  */
 
-package service
+package y3_9_202002131522
 
 import (
-	"configcenter/src/common/http/rest"
+	"context"
+	"fmt"
+
+	"configcenter/src/storage/dal"
 )
 
-// 云账户连通测试
-func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
-	ctx.RespEntity("VerifyConnectivity")
-}
+func removeOldTables(ctx context.Context, db dal.RDB, tableNames []string) error {
+	for _, tableName := range tableNames {
+		hasTable, err := db.HasTable(ctx, tableName)
+		if err != nil {
+			return fmt.Errorf("removeOldTables failed, tableName: %s, err: %+v", tableName, err)
+		}
+		if hasTable == false {
+			continue
+		}
+		if err := db.DropTable(ctx, tableName); err != nil {
+			return fmt.Errorf("removeOldTables failed, tableName: %s, err: %+v", tableName, err)
+		}
+	}
 
-// 新建云账户
-func (s *Service) CreateAccount(ctx *rest.Contexts) {
-	ctx.RespEntity("CreateAccount")
-}
-
-// 查询云账户
-func (s *Service) SearchAccount(ctx *rest.Contexts) {
-	ctx.RespEntity("SearchAccount")
-}
-
-// 更新云账户
-func (s *Service) UpdateAccount(ctx *rest.Contexts) {
-	ctx.RespEntity("UpdateAccount")
-}
-
-// 删除云账户
-func (s *Service) DeleteAccount(ctx *rest.Contexts) {
-	ctx.RespEntity("DeleteAccount")
+	return nil
 }

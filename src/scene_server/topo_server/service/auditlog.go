@@ -70,8 +70,8 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		businessID = id
 	}
 
-    // switch between two different control mechanism
-    // TODO use global authorization for now, need more specific auth control
+	// switch between two different control mechanism
+	// TODO use global authorization for now, need more specific auth control
 	if s.AuthManager.RegisterAuditCategoryEnabled == false {
 		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, 0); err != nil {
 			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v, rid: %s", err, params.ReqID)

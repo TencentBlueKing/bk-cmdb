@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
@@ -35,13 +35,13 @@ func (m *modelManager) isExists(kit *rest.Kit, cond universalsql.Condition) (one
 }
 
 func (m *modelManager) isValid(kit *rest.Kit, objID string) error {
-    checkCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
-    checkCond, _ := mongo.NewConditionFromMapStr(checkCondMap)
-    checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
+	checkCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
+	checkCond, _ := mongo.NewConditionFromMapStr(checkCondMap)
+	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
 
 	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("count operation on the table (%s) by the condition (%#v) failed , err: %v",common.BKTableNameObjDes, checkCond.ToMapStr(), err ,kit.Rid)
+		blog.Errorf("count operation on the table (%s) by the condition (%#v) failed , err: %v", common.BKTableNameObjDes, checkCond.ToMapStr(), err, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 

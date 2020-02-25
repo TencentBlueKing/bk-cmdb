@@ -79,7 +79,6 @@ func (s *coreService) ListProcessInstanceRelation(ctx *rest.Contexts) {
 		return
 	}
 
-	blog.Debug("fp: %v", fp.ServiceInstanceIDs)
 	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(ctx.Kit, fp)
 	if err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)

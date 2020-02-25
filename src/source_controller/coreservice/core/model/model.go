@@ -18,9 +18,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/lock"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -28,7 +28,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 
-    "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 var _ core.ModelOperation = (*modelManager)(nil)
@@ -40,15 +40,15 @@ type modelManager struct {
 	*modelAttrUnique
 	dbProxy   dal.RDB
 	cache     *redis.Client
-    language language.CCLanguageIf
+	language  language.CCLanguageIf
 	dependent OperationDependences
 }
 
 // New create a new model manager instance
 func New(dbProxy dal.RDB, dependent OperationDependences, language language.CCLanguageIf, cache *redis.Client) core.ModelOperation {
-    
+
 	coreMgr := &modelManager{dbProxy: dbProxy, dependent: dependent, language: language, cache: cache}
-	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr, language: language,cache: cache}
+	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr, language: language, cache: cache}
 	coreMgr.modelClassification = &modelClassification{dbProxy: dbProxy, model: coreMgr}
 	coreMgr.modelAttributeGroup = &modelAttributeGroup{dbProxy: dbProxy, model: coreMgr}
 	coreMgr.modelAttrUnique = &modelAttrUnique{dbProxy: dbProxy}
@@ -305,7 +305,7 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 // CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验
 func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error) {
 
-    deleteCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
+	deleteCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
 	deleteCond, _ := mongo.NewConditionFromMapStr(deleteCondMap)
 	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldID, Val: modelID})
 

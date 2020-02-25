@@ -206,8 +206,8 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 	for _, attr := range attrs {
 		attribute := attr.Attribute()
 		grpOrCond.Item(map[string]interface{}{
-			metadata.GroupFieldGroupID:         attribute.PropertyGroup,
-			metadata.GroupFieldObjectID:        attribute.ObjectID,
+			metadata.GroupFieldGroupID:  attribute.PropertyGroup,
+			metadata.GroupFieldObjectID: attribute.ObjectID,
 		})
 	}
 	grps, err := a.grp.FindObjectGroup(params, grpCond)
