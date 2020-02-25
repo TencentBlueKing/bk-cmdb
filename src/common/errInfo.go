@@ -797,6 +797,7 @@ const (
 	CCErrCloudVendorNotSupport        = 1118001
 	CCErrCloudAccountNameAlreadyExist = 1118002
 	CCErrCloudValidAccountParamFail   = 1118003
+	CCErrCloudAccountIDNoExistFail    = 1118004
 
 	/** TODO: 以下错误码需要改造 **/
 

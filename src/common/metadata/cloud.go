@@ -11,7 +11,11 @@
  */
 package metadata
 
-import "time"
+import (
+	"time"
+
+	"configcenter/src/common/mapstr"
+)
 
 type CloudArea struct {
 	CloudID      int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
@@ -54,9 +58,15 @@ const (
 var SupportCloudVendors = []string{"aws", "tencent_cloud"}
 
 type SearchCloudAccountOption struct {
+	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
+	Page      BasePage      `json:"page" bson:"page" field:"page"`
+	Fields    []string      `json:"fields,omitempty" bson:"fields,omitempty"`
+	Exact     bool          `json:"exact" bson:"exact"`
 }
 
 type MultipleCloudAccount struct {
+	Count int64          `json:"count"`
+	Info  []CloudAccount `json:"info"`
 }
 
 type CloudAccountVerify struct {
