@@ -9,6 +9,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
@@ -250,9 +251,14 @@ var _ = Describe("no service template test", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
 				Expect(rsp.Data["bk_module_name"].(string)).To(Equal("test"))
-				Expect(int64(rsp.Data["bk_set_id"].(float64))).To(Equal(setId))
-				Expect(int64(rsp.Data["bk_parent_id"].(float64))).To(Equal(setId))
-				moduleId = int64(rsp.Data["bk_module_id"].(float64))
+				setIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+				Expect(err).NotTo(HaveOccurred())
+				Expect(setIdRes).To(Equal(setId))
+				parentIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_parent_id"])
+				Expect(err).NotTo(HaveOccurred())
+				Expect(parentIdRes).To(Equal(setId))
+				moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("search module", func() {
@@ -348,7 +354,8 @@ var _ = Describe("no service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-			serviceId = int64(rsp.Data.([]interface{})[0].(float64))
+			serviceId, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("search service instance", func() {
@@ -462,7 +469,8 @@ var _ = Describe("no service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-			serviceId2 = int64(rsp.Data.([]interface{})[0].(float64))
+			serviceId2, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("clone service instance to other host", func() {
@@ -488,7 +496,8 @@ var _ = Describe("no service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-			serviceId3 = int64(rsp.Data.([]interface{})[0].(float64))
+			serviceId3, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create service instance without template with no process", func() {
@@ -505,7 +514,8 @@ var _ = Describe("no service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-			serviceId1 = int64(rsp.Data.([]interface{})[0].(float64))
+			serviceId1, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("search service instance", func() {
@@ -569,7 +579,8 @@ var _ = Describe("no service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-			processId = int64(rsp.Data.([]interface{})[0].(float64))
+			processId, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("search process instance", func() {
