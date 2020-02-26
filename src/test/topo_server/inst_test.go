@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common/metadata"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
 
@@ -50,7 +51,9 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		propertyID1 = uint64(rsp.Data.(map[string]interface{})["id"].(float64))
+		propertyID1Float64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
+		Expect(err).NotTo(HaveOccurred())
+		propertyID1 = uint64(propertyID1Float64)
 	})
 
 	It("create object attribute bk_obj_id='cc_test' and bk_property_id='test_unique' and bk_property_name='test_unique'", func() {
@@ -68,7 +71,9 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		propertyID2 = uint64(rsp.Data.(map[string]interface{})["id"].(float64))
+		propertyID2Float64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
+		Expect(err).NotTo(HaveOccurred())
+		propertyID2 = uint64(propertyID2Float64)
 	})
 
 	It("create object attribute bk_obj_id='cc_test' same bk_property_id", func() {
@@ -283,7 +288,9 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		uniqueID = uint64(rsp.Data.(map[string]interface{})["id"].(float64))
+		uniqueIDFloat64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
+		Expect(err).NotTo(HaveOccurred())
+		uniqueID = uint64(uniqueIDFloat64)
 	})
 
 	It("create object attribute unique with duplicate inst", func() {
@@ -416,7 +423,8 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Data["bk_asset_id"].(string)).To(Equal("123"))
 		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("bk_switch"))
 		Expect(rsp.Data["bk_sn"].(string)).To(Equal("1234"))
-		instId = int64(rsp.Data["bk_inst_id"].(float64))
+		instId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("create inst bk_obj_id='bk_switch'", func() {
@@ -433,7 +441,8 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Data["bk_asset_id"].(string)).To(Equal("234"))
 		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("bk_switch"))
 		Expect(rsp.Data["bk_sn"].(string)).To(Equal("1234"))
-		instId1 = int64(rsp.Data["bk_inst_id"].(float64))
+		instId1, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("create inst invalid bk_obj_id", func() {
@@ -645,7 +654,9 @@ var _ = Describe("inst test", func() {
 		json.Unmarshal(j, &data)
 		Expect(data["bk_obj_id"].(string)).To(Equal("bk_switch"))
 		Expect(data["bk_inst_name"].(string)).To(Equal("aaa"))
-		Expect(int64(data["bk_inst_id"].(float64))).To(Equal(instId))
+		instIdRes, err := commonutil.GetInt64ByInterface(data["bk_inst_id"])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(instIdRes).To(Equal(instId))
 	})
 })
 

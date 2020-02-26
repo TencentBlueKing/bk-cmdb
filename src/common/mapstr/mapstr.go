@@ -13,6 +13,7 @@
 package mapstr
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -81,7 +82,10 @@ func (cli MapStr) MarshalJSONInto(target interface{}) error {
 		return fmt.Errorf("marshal %#v failed: %v", target, err)
 	}
 
-	err = json.Unmarshal(data, target)
+	d := json.NewDecoder(bytes.NewReader(data))
+	d.UseNumber()
+
+	err = d.Decode(target)
 	if err != nil {
 		return fmt.Errorf("unmarshal %s failed: %v", data, err)
 	}
