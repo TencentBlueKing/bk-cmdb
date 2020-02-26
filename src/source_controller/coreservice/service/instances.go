@@ -92,7 +92,7 @@ func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 		return
 	}
 	multilingual.TranslateInstanceName(s.Language(ctx.Kit.Header), objectID, dataResult.Info)
-    ctx.RespEntity(dataResult)
+	ctx.RespEntity(dataResult)
 }
 
 func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {

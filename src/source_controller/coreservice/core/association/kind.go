@@ -271,7 +271,7 @@ func (m *associationKind) SearchAssociationKind(kit *rest.Kit, inputParam metada
 	}
 
 	return &metadata.SearchAssociationKindResult{
-	    Count:count,
-	    Info:associationKindItems,
-    }, nil
+		Count: count,
+		Info:  associationKindItems,
+	}, nil
 }

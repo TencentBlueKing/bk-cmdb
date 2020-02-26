@@ -86,7 +86,7 @@ type ServerInfo struct {
 	Version    string `json:"version"`
 	Pid        int    `json:"pid"`
 	// UUID is used to distinguish which service is master in zookeeper
-	UUID       string `json:"uuid"`
+	UUID string `json:"uuid"`
 }
 
 // NewServerInfo new a ServerInfo object

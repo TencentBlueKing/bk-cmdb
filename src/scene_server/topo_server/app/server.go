@@ -126,7 +126,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	blog.Infof("enableTxn is %t", enableTxn)
 
-
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
@@ -151,7 +150,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Es:          essrv,
 		Core:        core.New(engine.CoreAPI, authManager),
 		Error:       engine.CCErr,
-		DB:         db,
+		DB:          db,
 		EnableTxn:   enableTxn,
 		Config:      server.Config,
 	}

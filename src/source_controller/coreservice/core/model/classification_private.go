@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
-    "configcenter/src/common/util"
+	"configcenter/src/common/util"
 )
 
 func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (bool, error) {

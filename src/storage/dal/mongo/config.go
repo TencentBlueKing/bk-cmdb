@@ -26,9 +26,9 @@ import (
 
 const (
 	// if maxOpenConns isn't configured, use default value
-	DefaultMaxOpenConns     = 1000
+	DefaultMaxOpenConns = 1000
 	// if maxOpenConns exceeds maximum value, use maximum value
-	MaximumMaxOpenConns     = 3000
+	MaximumMaxOpenConns = 3000
 	// if maxIDleConns is less than minimum value, use minimum value
 	MinimumMaxIdleOpenConns = 50
 )

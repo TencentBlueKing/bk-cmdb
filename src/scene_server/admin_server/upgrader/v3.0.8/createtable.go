@@ -134,10 +134,10 @@ var tables = map[string][]dal.Index{
 		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1, "bk_inst_id": 1}, Background: true},
 	},
 
-	"cc_History":            []dal.Index{},
-	"cc_HostFavourite":      []dal.Index{},
-	"cc_UserAPI":            []dal.Index{},
-	"cc_UserCustom":         []dal.Index{},
-	"cc_idgenerator":        []dal.Index{},
-	"cc_System":             []dal.Index{},
+	"cc_History":       []dal.Index{},
+	"cc_HostFavourite": []dal.Index{},
+	"cc_UserAPI":       []dal.Index{},
+	"cc_UserCustom":    []dal.Index{},
+	"cc_idgenerator":   []dal.Index{},
+	"cc_System":        []dal.Index{},
 }

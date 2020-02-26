@@ -60,7 +60,7 @@ func initData() {
 		Address:  tConfig.RedisCfg.RedisAdress,
 		Port:     tConfig.RedisCfg.RedisPort,
 		Password: tConfig.RedisCfg.RedisPasswd,
-		Database:   "0",
+		Database: "0",
 		//MasterName: redisMasterName,
 	}
 
