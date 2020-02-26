@@ -868,8 +868,10 @@ var _ = Describe("list_biz_host_process test", func() {
 		util.RegisterResponse(hostRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(true))
-		hostId3 := int64(hostRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
-		hostId4 := int64(hostRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+		hostId3, err := commonutil.GetInt64ByInterface(hostRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
+		Expect(err).NotTo(HaveOccurred())
+		hostId4, err := commonutil.GetInt64ByInterface(hostRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
+		Expect(err).NotTo(HaveOccurred())
 
 		By("create module")
 		input = map[string]interface{}{
@@ -882,7 +884,8 @@ var _ = Describe("list_biz_host_process test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-		moduleId := int64(rsp.Data["bk_module_id"].(float64))
+		moduleId, err := commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+		Expect(err).NotTo(HaveOccurred())
 
 		By("create service instance without template with processes")
 		input = map[string]interface{}{
