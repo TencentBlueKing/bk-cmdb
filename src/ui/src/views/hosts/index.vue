@@ -178,4 +178,9 @@
     .hosts-table{
         margin-top: 20px;
     }
+    .filter-field /deep/ {
+       .bk-selector-list {
+            z-index: 300;
+       }
+    }
 </style>

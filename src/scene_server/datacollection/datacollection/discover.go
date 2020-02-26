@@ -214,12 +214,14 @@ func (d *Discover) subChan() {
 	if nil != err {
 		d.interrupt <- err
 		blog.Errorf("subscribe [%s] failed: %s", d.chanName, err.Error())
+		return
 	}
 
 	defer func() {
 		subChan.Unsubscribe(d.chanName)
 		d.isSubing = false
 		blog.Infof("close subscribe channel: %s", d.chanName)
+		_ = subChan.Close()
 	}()
 
 	var ts = time.Now()
@@ -244,7 +246,7 @@ func (d *Discover) subChan() {
 
 			blog.Warnf("receive message err: %s", err.Error())
 			d.interrupt <- err
-			continue
+			return
 		}
 
 		msg, ok := received.(*redis.Message)
