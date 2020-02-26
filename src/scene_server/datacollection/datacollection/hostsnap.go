@@ -533,8 +533,10 @@ func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 	subChan, err := snapcli.Subscribe(chanName...)
 	if nil != err {
 		h.interrupt <- err
-		blog.Error("subscribe channel faile ", err.Error())
+		blog.Errorf("subscribe channel failed %s", err.Error())
+		return
 	}
+	defer subChan.Close()
 	closeChan := make(chan struct{})
 	go h.healthCheck(closeChan)
 	defer func() {
@@ -559,13 +561,13 @@ func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 		if err == redis.Nil || err == io.EOF {
 			continue
 		}
+		if nil != err {
+			blog.Debug("receive message err", err.Error())
+			h.interrupt <- err
+			return
+		}
 		msg, ok := received.(*redis.Message)
 		if !ok {
-			continue
-		}
-		if nil != err {
-			blog.Debug("receive messave  err", err.Error())
-			h.interrupt <- err
 			continue
 		}
 
