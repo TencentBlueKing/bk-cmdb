@@ -808,9 +808,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostInstance,
-					// Action: meta.UpdateMany,
-					Action: meta.SkipAction,
+					Type:   meta.HostInstance,
+					Action: meta.UpdateMany,
 				},
 			},
 		}
