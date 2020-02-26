@@ -33,6 +33,11 @@ export default [{
         menu: {
             i18n: '主机详情',
             relative: [MENU_RESOURCE_HOST, MENU_RESOURCE_MANAGEMENT]
+        },
+        layout: {
+            previous: {
+                name: MENU_RESOURCE_HOST
+            }
         }
     })
 }]
