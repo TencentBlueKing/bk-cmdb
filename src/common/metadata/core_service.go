@@ -466,6 +466,16 @@ type MultipleProcessInstanceRelationResult struct {
 	Data     MultipleProcessInstanceRelation `json:"data"`
 }
 
+type MultipleHostProcessRelation struct {
+	Count uint64                 `json:"count"`
+	Info  []HostProcessRelation `json:"info"`
+}
+
+type MultipleHostProcessRelationResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleHostProcessRelation `json:"data"`
+}
+
 type BusinessDefaultSetModuleInfo struct {
 	IdleSetID       int64 `json:"idle_set_id"`
 	IdleModuleID    int64 `json:"idle_module_id"`
