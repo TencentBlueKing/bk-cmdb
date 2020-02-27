@@ -15,6 +15,7 @@ package core
 import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
+	"configcenter/src/common/language"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
@@ -35,7 +36,6 @@ type Core interface {
 	GraphicsOperation() operation.GraphicsOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AuditOperation() operation.AuditOperationInterface
-	HealthOperation() operation.HealthOperationInterface
 	UniqueOperation() operation.UniqueOperationInterface
 	SetTemplateOperation() settemplate.SetTemplate
 }
@@ -53,34 +53,29 @@ type core struct {
 	graphics       operation.GraphicsOperationInterface
 	audit          operation.AuditOperationInterface
 	identifier     operation.IdentifierOperationInterface
-	health         operation.HealthOperationInterface
 	unique         operation.UniqueOperationInterface
 	setTemplate    settemplate.SetTemplate
 }
 
 // New create a logics manager
-func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Core {
-
-	// health
-	healthOperation := operation.NewHealthOperation(client)
-
+func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager, languageIf language.CCLanguageIf) Core {
 	// create instances
 	attributeOperation := operation.NewAttributeOperation(client, authManager)
 	classificationOperation := operation.NewClassificationOperation(client, authManager)
 	groupOperation := operation.NewGroupOperation(client)
 	objectOperation := operation.NewObjectOperation(client, authManager)
-	instOperation := operation.NewInstOperation(client)
+	instOperation := operation.NewInstOperation(client, languageIf)
 	moduleOperation := operation.NewModuleOperation(client, authManager)
-	setOperation := operation.NewSetOperation(client)
+	setOperation := operation.NewSetOperation(client, languageIf)
 	businessOperation := operation.NewBusinessOperation(client, authManager)
 	associationOperation := operation.NewAssociationOperation(client, authManager)
 	graphics := operation.NewGraphics(client, authManager)
 	identifier := operation.NewIdentifier(client)
-	audit := operation.NewAuditOperation(client)
+	audit := operation.NewAuditOperation(client, languageIf)
 	unique := operation.NewUniqueOperation(client, authManager)
 	setTemplate := settemplate.NewSetTemplate(client)
 
-	targetModel := model.New(client)
+	targetModel := model.New(client, languageIf)
 	targetInst := inst.New(client)
 
 	// set the operation
@@ -110,7 +105,6 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		graphics:       graphics,
 		audit:          audit,
 		identifier:     identifier,
-		health:         healthOperation,
 		unique:         unique,
 		setTemplate:    setTemplate,
 	}
@@ -154,9 +148,6 @@ func (c *core) AuditOperation() operation.AuditOperationInterface {
 }
 func (c *core) IdentifierOperation() operation.IdentifierOperationInterface {
 	return c.identifier
-}
-func (c *core) HealthOperation() operation.HealthOperationInterface {
-	return c.health
 }
 func (c *core) UniqueOperation() operation.UniqueOperationInterface {
 	return c.unique

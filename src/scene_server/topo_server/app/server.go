@@ -148,7 +148,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Engine:      engine,
 		AuthManager: authManager,
 		Es:          essrv,
-		Core:        core.New(engine.CoreAPI, authManager),
+		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
 		DB:          db,
 		EnableTxn:   enableTxn,
