@@ -81,6 +81,7 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 		txnErr = err
 		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
+		return
 	}
 	ret, err := s.Core.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation, s.Config.BusinessTopoLevelMax)
 	if err != nil {
@@ -95,6 +96,7 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 		txnErr = err
 		blog.Errorf("create mainline object success, but register mainline model to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespEntityWithError(ret, ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
+		return
 	}
 
 	ctx.RespEntity(ret)

@@ -13,12 +13,13 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"strconv"
 )
 
 // CreateClassification create a new object classification

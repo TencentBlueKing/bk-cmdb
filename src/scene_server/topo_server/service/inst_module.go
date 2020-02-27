@@ -242,12 +242,12 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("UpdateModule failed, IsSetInitializedByTemplate failed, setID: %d, err: %s, rid: %s", setID, err.Error(), ctx.Kit.Rid)
 			ctx.RespAutoError(err)
-		return
+			return
 		}
 		if initializedByTemplate == true {
 			blog.V(3).Infof("UpdateModule failed, forbidden add module to set initialized by template, setID: %d, rid: %s", setID, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate))
-		return
+			return
 		}
 	*/
 

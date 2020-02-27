@@ -216,9 +216,11 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		return
 	}
 	err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID, data.Metadata)
-
-	ctx.RespAutoError(err)
-	return
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // DeleteSet delete the set

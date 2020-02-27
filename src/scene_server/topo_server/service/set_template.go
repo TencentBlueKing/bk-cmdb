@@ -238,6 +238,7 @@ func (s *Service) ListSetTemplateWeb(ctx *rest.Contexts) {
 	}
 	if listResult == nil {
 		ctx.RespEntity(nil)
+		return
 	}
 
 	// count template instances
