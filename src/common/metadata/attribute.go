@@ -26,8 +26,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"github.com/tidwall/gjson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const (
@@ -556,8 +556,8 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 		}
 		strReg, err := regexp.Compile(option)
 		if nil != err {
-            blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
-            return errors.RawErrorInfo{
+			blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
+			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{option},
 			}

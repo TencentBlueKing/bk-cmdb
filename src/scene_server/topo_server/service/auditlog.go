@@ -20,17 +20,16 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // AuditQuery search audit logs
-func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) AuditQuery(ctx *rest.Contexts) {
 	query := metadata.QueryInput{}
-	if err := data.MarshalJSONInto(&query); nil != err {
-		blog.Errorf("[audit] failed to parse the input (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
-		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
+	if err := ctx.DecodeInto(&query); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	var businessID int64
@@ -42,11 +41,13 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		condition := metadata.AuditQueryCondition{}
 		js, err := json.Marshal(queryCondition)
 		if nil != err {
-			return nil, params.Err.New(common.CCErrCommJSONMarshalFailed, err.Error())
+			ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommJSONMarshalFailed, err.Error()))
+			return
 		}
 		err = json.Unmarshal(js, &condition)
 		if err != nil {
-			return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
+			ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommJSONUnmarshalFailed, err.Error()))
+			return
 		}
 
 		cond := make(map[string]interface{})
@@ -69,8 +70,9 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		if condition.OperationTime != nil && len(condition.OperationTime) > 0 {
 			times := condition.OperationTime
 			if 2 != len(times) {
-				blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, params.ReqID)
-				return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
+				blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField))
+				return
 			}
 			cond[common.BKOperationTimeField] = map[string]interface{}{
 				common.BKDBGTE:             times[0],
@@ -125,7 +127,8 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 						}
 					}
 					if !flag {
-						return map[string]interface{}{"count": 0, "info": []interface{}{}}, nil
+						ctx.RespEntity(map[string]interface{}{"count": 0, "info": []interface{}{}})
+						return
 					}
 				}
 			} else {
@@ -133,23 +136,25 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 					common.BKDBIN: auditTypes,
 				}
 			}
-			biz, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDApp, &metadata.QueryCondition{
+			biz, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDApp, &metadata.QueryCondition{
 				Fields: []string{common.BKAppIDField},
 				Page: metadata.BasePage{
 					Limit: 1,
 					Start: 0,
 				},
-				Condition: mapstr.MapStr{
+				Condition: map[string]interface{}{
 					common.BKDefaultField: common.DefaultAppFlag,
 				},
 			})
 			if nil != err {
-				blog.Errorf("find default biz failed, err: %v, rid: %s", err, params.ReqID)
-				return nil, err
+				blog.Errorf("find default biz failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				ctx.RespAutoError(err)
+				return
 			}
 			if len(biz.Data.Info) == 0 {
-				blog.Errorf("find default biz get no result, rid: %s", params.ReqID)
-				return nil, params.Err.CCErrorf(common.CCErrCommBizNotFoundError, "default")
+				blog.Errorf("find default biz get no result, rid: %s", ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommBizNotFoundError, "default"))
+				return
 			}
 			defaultBizID := biz.Data.Info[0][common.BKAppIDField]
 			switch condition.Category {
@@ -219,68 +224,81 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 	// switch between two different control mechanism
 	// TODO use global authorization for now, need more specific auth control
 	if s.AuthManager.RegisterAuditCategoryEnabled == false {
-		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, 0); err != nil {
-			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v, rid: %s", err, params.ReqID)
-			resp, err := s.AuthManager.GenAuthorizeAuditReadNoPermissionsResponse(params.Context, params.Header, 0)
+		if err := s.AuthManager.AuthorizeAuditRead(ctx.Kit.Ctx, ctx.Kit.Header, 0); err != nil {
+			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			resp, err := s.AuthManager.GenAuthorizeAuditReadNoPermissionsResponse(ctx.Kit.Ctx, ctx.Kit.Header, 0)
 			if err != nil {
-				return nil, fmt.Errorf("try authorize failed, err: %v", err)
+				ctx.RespAutoError(fmt.Errorf("try authorize failed, err: %v", err))
+				return
 			}
-			return resp, auth.NoAuthorizeError
+			ctx.RespEntityWithError(resp, auth.NoAuthorizeError)
+			return
 		}
 	} else {
 		var hasAuthorize bool
 		for _, bizID := range []int64{businessID, 0} {
-			authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, bizID)
+			authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
 			if err != nil {
-				blog.Errorf("AuditQuery failed, make audit query condition from auth failed, %+v, rid: %s", err, params.ReqID)
-				return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
+				blog.Errorf("AuditQuery failed, make audit query condition from auth failed, %+v, rid: %s", err, ctx.Kit.Rid)
+				ctx.RespAutoError(fmt.Errorf("make audit query condition from auth failed, %+v", err))
+				return
 			}
 
 			if hasAuthorization == true {
 				query.Condition[common.BKDBOR] = authCondition
-				blog.V(5).Infof("AuditQuery, auth condition is: %+v, rid: %s", authCondition, params.ReqID)
+				blog.V(5).Infof("AuditQuery, auth condition is: %+v, rid: %s", authCondition, ctx.Kit.Rid)
 				hasAuthorize = hasAuthorization
 				break
 			}
 		}
 		if hasAuthorize == false {
-			blog.Errorf("AuditQuery failed, user %+v has no authorization on audit, rid: %s", params.User, params.ReqID)
-			return nil, auth.NoAuthorizeError
+			blog.Errorf("AuditQuery failed, user %+v has no authorization on audit, rid: %s", ctx.Kit.User, ctx.Kit.Rid)
+			ctx.RespAutoError(auth.NoAuthorizeError)
+			return
 		}
 	}
 
-	blog.V(5).Infof("AuditQuery, AuditOperation parameter: %+v, rid: %s", query, params.ReqID)
-	return s.Core.AuditOperation().Query(params, query)
+	blog.V(5).Infof("AuditQuery, AuditOperation parameter: %+v, rid: %s", query, ctx.Kit.Rid)
+	resp, err := s.Core.AuditOperation().Query(ctx.Kit, query)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }
 
 // InstanceAuditQuery search instance audit logs
 // current use case: get host and process related audit log in cmdb web
-func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	query := metadata.QueryInput{}
-	if err := data.MarshalJSONInto(&query); nil != err {
-		blog.Errorf("InstanceAuditQuery failed, failed to parse the input (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
-		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
+	if err := ctx.DecodeInto(&query); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	objectID := pathParams(common.BKObjIDField)
+	objectID := ctx.Request.PathParameter(common.BKObjIDField)
 	if len(objectID) == 0 {
-		blog.Errorf("InstanceAuditQuery failed, object ID can't be empty, rid: %s", params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKObjIDField)
+		blog.Errorf("InstanceAuditQuery failed, object ID can't be empty, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField))
+		return
 	}
 
 	queryCondition := query.Condition
 	if nil == queryCondition {
-		blog.Errorf("InstanceAuditQuery failed, host audit query condition can't be empty, query: %+v, rid: %s", query, params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "condition")
+		blog.Errorf("InstanceAuditQuery failed, host audit query condition can't be empty, query: %+v, rid: %s", query, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "condition"))
+		return
 	}
 	condition := metadata.AuditQueryCondition{}
 	js, err := json.Marshal(queryCondition)
 	if nil != err {
-		return nil, params.Err.New(common.CCErrCommJSONMarshalFailed, err.Error())
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommJSONMarshalFailed, err.Error()))
+		return
 	}
 	err = json.Unmarshal(js, &condition)
 	if err != nil {
-		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommJSONUnmarshalFailed, err.Error()))
+		return
 	}
 
 	cond := make(map[string]interface{})
@@ -299,8 +317,9 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	if condition.OperationTime != nil && len(condition.OperationTime) > 0 {
 		times := condition.OperationTime
 		if 2 != len(times) {
-			blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, params.ReqID)
-			return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
+			blog.Errorf("search operation log input params times error, info: %v, rid: %s", times, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField))
+			return
 		}
 		cond[common.BKOperationTimeField] = map[string]interface{}{
 			common.BKDBGTE:             times[0],
@@ -322,8 +341,9 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	}
 
 	if condition.ResourceID == 0 {
-		blog.Errorf("InstanceAuditQuery failed, instance audit query condition condition.resource_id not exist, query: %+v, rid: %s", query, params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKResourceIDField)
+		blog.Errorf("InstanceAuditQuery failed, instance audit query condition condition.resource_id not exist, query: %+v, rid: %s", query, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceIDField))
+		return
 	}
 
 	instanceID := condition.ResourceID
@@ -362,43 +382,55 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	action := meta.Find
 	switch objectID {
 	case common.BKInnerObjIDHost:
-		err = s.AuthManager.AuthorizeByHostsIDs(params.Context, params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
 	case common.BKInnerObjIDProc:
-		err = s.AuthManager.AuthorizeByProcessID(params.Context, params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeByProcessID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
 		if err != nil && err == auth.NoAuthorizeError {
-			resp, err := s.AuthManager.GenProcessNoPermissionResp(params.Context, params.Header, businessID)
+			resp, err := s.AuthManager.GenProcessNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, businessID)
 			if err != nil {
-				return nil, params.Err.Errorf(common.CCErrTopoGetAppFailed, businessID)
+				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetAppFailed, businessID))
+				return
 			}
-			return resp, auth.NoAuthorizeError
+			ctx.RespEntityWithError(resp, auth.NoAuthorizeError)
+			return
 		}
 	case common.BKInnerObjIDModule:
-		err = s.AuthManager.AuthorizeByModuleID(params.Context, params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeByModuleID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
 		if err != nil && err == auth.NoAuthorizeError {
-			return s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError
+			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError)
+			return
 		}
 	case common.BKInnerObjIDSet:
-		err = s.AuthManager.AuthorizeBySetID(params.Context, params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeBySetID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
 		if err != nil && err == auth.NoAuthorizeError {
-			return s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError
+			ctx.RespEntityWithError(s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError)
+			return
 		}
 	case common.BKInnerObjIDApp:
-		err = s.AuthManager.AuthorizeByBusinessID(params.Context, params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, action, instanceID)
 		if err != nil && err == auth.NoAuthorizeError {
-			resp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(params.Context, params.Header, businessID)
+			resp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, businessID)
 			if err != nil {
-				return nil, params.Err.Error(common.CCErrTopoGetAppFailed)
+				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoGetAppFailed))
+				return
 			}
-			return resp, auth.NoAuthorizeError
+			ctx.RespEntityWithError(resp, auth.NoAuthorizeError)
+			return
 		}
 	default:
-		err = s.AuthManager.AuthorizeByInstanceID(params.Context, params.Header, action, objectID, instanceID)
+		err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, action, objectID, instanceID)
 	}
 	if err != nil {
-		blog.Errorf("InstanceAuditQuery failed, query instance audit log failed, authorization on instance of model %s failed, err: %+v, rid: %s", objectID, err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
+		blog.Errorf("InstanceAuditQuery failed, query instance audit log failed, authorization on instance of model %s failed, err: %+v, rid: %s", objectID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+		return
 	}
 
-	blog.V(4).Infof("InstanceAuditQuery failed, AuditOperation parameter: %+v, rid: %s", query, params.ReqID)
-	return s.Core.AuditOperation().Query(params, query)
+	blog.V(4).Infof("InstanceAuditQuery failed, AuditOperation parameter: %+v, rid: %s", query, ctx.Kit.Rid)
+	resp, err := s.Core.AuditOperation().Query(ctx.Kit, query)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }

@@ -1,12 +1,12 @@
 <template>
     <div class="property">
         <div class="group"
-            v-for="(group, index) in groupedProperties"
+            v-for="(group, index) in $sortedGroups"
             :key="index">
             <h2 class="group-name">{{group.bk_group_name}}</h2>
             <ul class="property-list">
                 <li class="property-item"
-                    v-for="property in group.properties"
+                    v-for="property in $groupedProperties[index]"
                     :key="property.id"
                     :id="`property-item-${property.id}`">
                     <span class="property-name" v-overflow-tips>
@@ -15,20 +15,13 @@
                     <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
                         v-overflow-tips
                         v-show="property !== editState.property">
-                        {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
+                        {{$tools.getPropertyText(property, instState) | filterShowText(property.unit)}}
                     </span>
                     <template v-if="!loadingState.includes(property)">
-                        <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
-                            <span :id="`rule-${property.id}`">
-                                <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
-                                    <bk-button text place="link" @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
-                                </i18n>
-                                <span v-else>{{$t('系统限定不可修改')}}</span>
-                            </span>
+                        <template v-if="!isPropertyEditable(property)">
                             <i class="is-related property-edit icon-cc-edit"
                                 v-bk-tooltips="{
-                                    allowHtml: true,
-                                    content: `#rule-${property.id}`,
+                                    content: $t('系统限定不可修改'),
                                     placement: 'top',
                                     onShow: () => {
                                         setFocus(`#property-item-${property.id}`, true)
@@ -40,7 +33,10 @@
                             </i>
                         </template>
                         <template v-else>
-                            <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;" :auth="updateAuthResources" v-show="property !== editState.property">
+                            <cmdb-auth
+                                style="margin: 8px 0 0 8px; font-size: 0;"
+                                :auth="$authResources({ type: $OPERATION.U_INST })"
+                                v-show="property !== editState.property">
                                 <bk-button slot-scope="{ disabled }"
                                     text
                                     theme="primary"
@@ -74,9 +70,12 @@
                                 </span>
                             </div>
                         </template>
-                        <template v-if="$tools.getPropertyText(property, host) !== '--' && property !== editState.property">
+                        <template v-if="$tools.getPropertyText(property, instState) !== '--' && property !== editState.property">
                             <div class="copy-box">
-                                <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), property.bk_property_id)"></i>
+                                <i
+                                    class="property-copy icon-cc-details-copy"
+                                    @click="handleCopy($tools.getPropertyText(property, instState), property.bk_property_id)">
+                                </i>
                                 <transition name="fade">
                                     <span class="copy-tips"
                                         :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
@@ -94,86 +93,54 @@
 </template>
 
 <script>
-    import { mapGetters, mapState } from 'vuex'
-    import { MENU_RESOURCE_HOST_DETAILS, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import { mapGetters, mapActions } from 'vuex'
+    import formMixins from '@/mixins/form'
     export default {
-        name: 'cmdb-host-property',
         filters: {
             filterShowText (value, unit) {
                 return value === '--' ? '--' : value + unit
             }
         },
+        mixins: [formMixins],
+        props: {
+            inst: {
+                type: Object,
+                required: true
+            },
+            resourceType: {
+                type: String,
+                default: ''
+            }
+        },
         data () {
             return {
+                instState: this.inst,
                 editState: {
                     property: null,
                     value: null
                 },
                 loadingState: [],
-                showCopyTips: false,
-                hostRelatedRules: [],
-                request: {
-                    rules: Symbol('rules')
-                }
+                showCopyTips: false
             }
         },
         computed: {
-            ...mapState('hostDetails', ['info']),
-            ...mapGetters('hostDetails', ['groupedProperties']),
-            host () {
-                return this.info.host || {}
-            },
-            updateAuthResources () {
-                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
-                if (isResourceHost) {
-                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
-                }
-                return this.$authResources({ type: this.$OPERATION.U_HOST })
+            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
+            isPublicModel () {
+                const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
+                return !this.$tools.getMetadataBiz(model)
             }
         },
         watch: {
-            host () {
-                this.getHostRelatedRules()
+            inst (val) {
+                this.instState = val
             }
         },
         methods: {
+            ...mapActions('objectCommonInst', ['updateInst']),
+            ...mapActions('objectBiz', ['updateBusiness']),
             setFocus (id, focus) {
                 const item = this.$el.querySelector(id)
                 focus ? item.classList.add('focus') : item.classList.remove('focus')
-            },
-            handleViewRules (property) {
-                const rule = this.hostRelatedRules.find(rule => rule.bk_attribute_id === property.id) || {}
-                this.$router.push({
-                    name: MENU_BUSINESS_HOST_APPLY,
-                    query: {
-                        module: rule.bk_module_id
-                    }
-                })
-            },
-            hasRelatedRules (property) {
-                return this.hostRelatedRules.some(rule => rule.bk_attribute_id === property.id)
-            },
-            async getHostRelatedRules () {
-                try {
-                    const defaultType = this.$tools.getValue(this.info, 'biz.0.default')
-                    if (defaultType) { // 为0时非业务模块，不存在属性自动应用
-                        this.hostRelatedRules = []
-                    } else {
-                        const data = await this.$store.dispatch('hostApply/getHostRelatedRules', {
-                            bizId: this.$tools.getValue(this.info, 'biz.0.bk_biz_id'),
-                            params: {
-                                bk_host_ids: [this.host.bk_host_id]
-                            },
-                            config: {
-                                requestId: this.request.rules
-                            }
-                        })
-                        this.hostRelatedRules = data[this.host.bk_host_id] || []
-                    }
-                } catch (e) {
-                    this.hostRelatedRules = []
-                    console.error(e)
-                }
             },
             getPlaceholder (property) {
                 const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
@@ -183,7 +150,7 @@
                 return property.editable && !property.bk_isapi
             },
             setEditState (property) {
-                const value = this.host[property.bk_property_id]
+                const value = this.instState[property.bk_property_id]
                 this.editState.value = value === null ? '' : value
                 this.editState.property = property
                 this.$nextTick(() => {
@@ -200,18 +167,24 @@
                     }
                     this.loadingState.push(property)
                     this.exitForm()
-                    await this.$store.dispatch('hostUpdate/updateHost', {
-                        params: this.$injectMetadata({
-                            [property.bk_property_id]: value,
-                            bk_host_id: String(this.host.bk_host_id)
-                        }),
-                        config: {
-                            requestId: 'updateHostInfo'
-                        }
-                    })
-                    this.$store.commit('hostDetails/updateInfo', {
-                        [property.bk_property_id]: value
-                    })
+
+                    const values = { [property['bk_property_id']]: value }
+
+                    if (this.resourceType === 'business') {
+                        await this.updateBusiness({
+                            bizId: this.instState.bk_biz_id,
+                            params: values
+                        })
+                    } else {
+                        await this.updateInst({
+                            objId: this.instState.bk_obj_id,
+                            instId: this.instState.bk_inst_id,
+                            params: this.$injectMetadata(values, { inject: !this.isPublicModel })
+                        })
+                    }
+
+                    this.instState = { ...this.instState, ...values }
+
                     this.loadingState = this.loadingState.filter(exist => exist !== property)
                 } catch (e) {
                     console.error(e)

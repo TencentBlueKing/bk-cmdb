@@ -20,11 +20,11 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // WrapperResult the data wrapper
@@ -43,7 +43,7 @@ type AuditInterface interface {
 type auditLog struct {
 	client apimachinery.ClientSetInterface
 	inst   InstOperationInterface
-	params types.ContextParams
+	kit    *rest.Kit
 	obj    model.Object
 }
 
@@ -57,7 +57,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 		isPreItem = true
 		targetData = preData
 	} else {
-		blog.Errorf("[audit] the curr data is empty, rid: %s", a.params.ReqID)
+		blog.Errorf("[audit] the curr data is empty, rid: %s", a.kit.Rid)
 		return
 	}
 
@@ -65,7 +65,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 		var err error
 		nonInnerAttributes, err = a.obj.GetNonInnerAttributes()
 		if nil != err {
-			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s, rid: %s", a.obj.Object().ObjectID, err.Error(), a.params.ReqID)
+			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s, rid: %s", a.obj.Object().ObjectID, err.Error(), a.kit.Rid)
 			return
 		}
 	}
@@ -73,7 +73,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 
 		id, err := targetItem.GetInstID()
 		if nil != err {
-			blog.Errorf("[audit]failed to get the inst id, error info is %s, rid: %s", err.Error(), a.params.ReqID)
+			blog.Errorf("[audit]failed to get the inst id, error info is %s, rid: %s", err.Error(), a.kit.Rid)
 			return
 		}
 
@@ -88,7 +88,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 			for _, preItem := range preData.datas {
 				preID, err := preItem.GetInstID()
 				if nil != err {
-					blog.Errorf("[audit]failed to get the inst id, error info is %s, rid: %s", err.Error(), a.params.ReqID)
+					blog.Errorf("[audit]failed to get the inst id, error info is %s, rid: %s", err.Error(), a.kit.Rid)
 					continue
 				}
 				if id == preID {
@@ -108,7 +108,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 		if targetItem.GetValues() != nil {
 			if _, exist := targetItem.GetValues()[common.BKAppIDField]; exist {
 				if biz, err := targetItem.GetValues().Int64(common.BKAppIDField); nil != err {
-					blog.V(3).Infof("[audit] failed to get the biz id from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.params.ReqID)
+					blog.V(3).Infof("[audit] failed to get the biz id from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.kit.Rid)
 					return
 				} else {
 					bizID = biz
@@ -117,7 +117,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 		}
 		bizName := ""
 		if bizID > 0 {
-			bizName, err = auditlog.NewAudit(a.client, a.params.Context, a.params.Header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
+			bizName, err = auditlog.NewAudit(a.client, a.kit.Ctx, a.kit.Header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
 			if err != nil {
 				return
 			}
@@ -126,7 +126,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 		objID := targetItem.GetObject().GetObjectID()
 		instName, err := targetItem.GetInstName()
 		if err != nil {
-			blog.V(3).Infof("[audit] failed to get the inst name from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.params.ReqID)
+			blog.V(3).Infof("[audit] failed to get the inst name from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.kit.Rid)
 			return
 		}
 		if action == metadata.AuditUpdate {
@@ -160,9 +160,9 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 		}
 
 		// add biz topology label for mainline instance
-		asst, err := a.client.CoreService().Association().ReadModelAssociation(context.Background(), a.params.Header, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
+		asst, err := a.client.CoreService().Association().ReadModelAssociation(context.Background(), a.kit.Header, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
 		if err != nil || !asst.Result {
-			blog.V(3).Infof("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, a.params.ReqID)
+			blog.V(3).Infof("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, a.kit.Rid)
 			return
 		}
 		if objID != common.BKInnerObjIDApp {
@@ -176,13 +176,13 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 			}
 		}
 
-		auditResp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.params.Header, auditLog)
+		auditResp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.kit.Header, auditLog)
 		if err != nil {
-			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, rid: %s", auditLog, err.Error(), a.params.ReqID)
+			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, rid: %s", auditLog, err.Error(), a.kit.Rid)
 			return
 		}
 		if !auditResp.Result {
-			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, rid: %s", auditLog, auditResp.ErrMsg, a.params.ReqID)
+			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, rid: %s", auditLog, auditResp.ErrMsg, a.kit.Rid)
 			return
 		}
 	}
@@ -198,9 +198,9 @@ func (a *auditLog) CreateSnapshot(instID int64, cond mapstr.MapStr) *WrapperResu
 	}
 
 	query.Condition = cond
-	_, insts, err := a.inst.FindInst(a.params, a.obj, query, false)
+	_, insts, err := a.inst.FindInst(a.kit, a.obj, query, false)
 	if nil != err {
-		blog.Errorf("[audit] failed to create the snapshot, error info is %s, rid: %s", err.Error(), a.params.ReqID)
+		blog.Errorf("[audit] failed to create the snapshot, error info is %s, rid: %s", err.Error(), a.kit.Rid)
 	}
 
 	result := &WrapperResult{}

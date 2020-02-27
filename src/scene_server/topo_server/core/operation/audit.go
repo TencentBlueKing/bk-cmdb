@@ -18,12 +18,12 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 type AuditOperationInterface interface {
-	Query(params types.ContextParams, query metadata.QueryInput) (interface{}, error)
+	Query(kit *rest.Kit, query metadata.QueryInput) (interface{}, error)
 }
 
 // NewAuditOperation create a new inst operation instance
@@ -37,16 +37,16 @@ type audit struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (a *audit) Query(params types.ContextParams, query metadata.QueryInput) (interface{}, error) {
-	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), params.Header, query)
+func (a *audit) Query(kit *rest.Kit, query metadata.QueryInput) (interface{}, error) {
+	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), kit.Header, query)
 	if nil != err {
-		blog.Errorf("[audit] failed to request core service, error info is %s, rid: %s", err.Error(), params.ReqID)
-		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		blog.Errorf("[audit] failed to request core service, error info is %s, rid: %s", err.Error(), kit.Rid)
+		return nil, kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[audit] search audit log failed, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
-		return nil, params.Err.CCError(common.CCErrAuditSelectFailed)
+		blog.Errorf("[audit] search audit log failed, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrAuditSelectFailed)
 	}
 
 	return rsp.Data, nil

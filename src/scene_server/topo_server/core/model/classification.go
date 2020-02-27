@@ -20,9 +20,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // Classification classification operation interface declaration
@@ -31,7 +31,7 @@ type Classification interface {
 	Parse(data mapstr.MapStr) (*metadata.Classification, error)
 	GetObjects() ([]Object, error)
 	Classify() metadata.Classification
-	ToMapStr() (mapstr.MapStr, error)
+	ToMapStr() mapstr.MapStr
 }
 
 var _ Classification = (*classification)(nil)
@@ -40,7 +40,8 @@ var _ Classification = (*classification)(nil)
 type classification struct {
 	FieldValid
 	cls       metadata.Classification
-	params    types.ContextParams
+	kit       *rest.Kit
+	metadata  *metadata.Metadata
 	clientSet apimachinery.ClientSetInterface
 }
 
@@ -56,9 +57,9 @@ func (cli *classification) Parse(data mapstr.MapStr) (*metadata.Classification, 
 	return cli.cls.Parse(data)
 }
 
-func (cli *classification) ToMapStr() (mapstr.MapStr, error) {
+func (cli *classification) ToMapStr() mapstr.MapStr {
 	rst := mapstr.SetValueToMapStrByTags(&cli.cls)
-	return rst, nil
+	return rst
 }
 
 func (cli *classification) GetObjects() ([]Object, error) {
@@ -66,15 +67,15 @@ func (cli *classification) GetObjects() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ModelFieldObjCls).Eq(cli.cls.ClassificationID)
 
-	rsp, err := cli.clientSet.CoreService().Model().ReadModel(context.Background(), cli.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Model().ReadModel(context.Background(), cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), cli.params.ReqID)
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), cli.kit.Rid)
+		return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to search the classification(%s) object, error info is %s, rid: %s", cli.cls.ClassificationID, rsp.ErrMsg, cli.params.ReqID)
-		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("failed to search the classification(%s) object, error info is %s, rid: %s", cli.cls.ClassificationID, rsp.ErrMsg, cli.kit.Rid)
+		return nil, cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	rstItems := make([]Object, 0)
@@ -92,12 +93,12 @@ func (cli *classification) GetObjects() ([]Object, error) {
 func (cli *classification) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationID) {
-		if _, err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationID); nil != err {
+		if _, err := cli.FieldValid.Valid(cli.kit, data, metadata.ClassFieldClassificationID); nil != err {
 			return err
 		}
 	}
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationName) {
-		if _, err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationName); nil != err {
+		if _, err := cli.FieldValid.Valid(cli.kit, data, metadata.ClassFieldClassificationName); nil != err {
 			return err
 		}
 	}
@@ -115,19 +116,19 @@ func (cli *classification) Create() error {
 	}
 
 	if exists {
-		return cli.params.Err.Errorf(common.CCErrCommDuplicateItem, cli.GetID()+"/"+cli.GetName())
+		return cli.kit.CCError.Errorf(common.CCErrCommDuplicateItem, cli.GetID()+"/"+cli.GetName())
 	}
 
 	input := metadata.CreateOneModelClassification{Data: cli.cls}
-	rsp, err := cli.clientSet.CoreService().Model().CreateModelClassification(context.Background(), cli.params.Header, &input)
+	rsp, err := cli.clientSet.CoreService().Model().CreateModelClassification(context.Background(), cli.kit.Header, &input)
 	if nil != err {
-		blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to create classification(%s), error info is %s, rid: %s", cli.cls.ClassificationID, rsp.ErrMsg, cli.params.ReqID)
-		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("failed to create classification(%s), error info is %s, rid: %s", cli.cls.ClassificationID, rsp.ErrMsg, cli.kit.Rid)
+		return cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	cli.cls.ID = int64(rsp.Data.Created.ID)
@@ -149,7 +150,7 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 	}
 
 	if exists {
-		return cli.params.Err.Errorf(common.CCErrCommDuplicateItem, cli.GetName())
+		return cli.kit.CCError.Errorf(common.CCErrCommDuplicateItem, cli.GetName())
 	}
 
 	cond := condition.CreateCondition()
@@ -166,20 +167,20 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 
 	for _, item := range updateItems { // only one item
 
-		//TODO : if update with params cli.params.MetaData
+		//TODO : if update with kit cli.kit.MetaData
 		input := metadata.UpdateOption{
 			Condition: cond.ToMapStr(),
 			Data:      data,
 		}
-		rsp, err := cli.clientSet.CoreService().Model().UpdateModelClassification(context.Background(), cli.params.Header, &input)
+		rsp, err := cli.clientSet.CoreService().Model().UpdateModelClassification(context.Background(), cli.kit.Header, &input)
 		if nil != err {
-			blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+			blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 			return err
 		}
 
 		if !rsp.Result {
-			blog.Errorf("failed to update the classificaiotn(%s), error info is %s, rid: %s", cli.cls.ClassificationID, rsp.ErrMsg, cli.params.ReqID)
-			return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+			blog.Errorf("failed to update the classificaiotn(%s), error info is %s, rid: %s", cli.cls.ClassificationID, rsp.ErrMsg, cli.kit.Rid)
+			return cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 
 		cli.cls = item
@@ -189,18 +190,18 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 }
 
 func (cli *classification) search(cond condition.Condition) ([]metadata.Classification, error) {
-	if nil != cli.params.MetaData {
-		cond.Field(metadata.BKMetadata).Eq(*cli.params.MetaData)
+	if nil != cli.metadata {
+		cond.Field(metadata.BKMetadata).Eq(*cli.metadata)
 	}
-	rsp, err := cli.clientSet.CoreService().Model().ReadModelClassification(context.Background(), cli.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Model().ReadModelClassification(context.Background(), cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return nil, err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to search the classification, error info is %s, rid: %s", rsp.ErrMsg, cli.params.ReqID)
-		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("failed to search the classification, error info is %s, rid: %s", rsp.ErrMsg, cli.kit.Rid)
+		return nil, cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return rsp.Data.Info, nil

@@ -795,6 +795,10 @@ const (
 	ExcelHeaderOtherRowFontColor = "FF000000"
 	// ExcelCellDefaultBorderColor black color
 	ExcelCellDefaultBorderColor = "FFD4D4D4"
+	// ExcelHeaderFirstColumnColor light gray
+	ExcelHeaderFirstColumnColor = "fee9da"
+	// ExcelFirstColumnCellColor dark gray
+	ExcelFirstColumnCellColor = "fabf8f"
 
 	// ExcelAsstPrimaryKeySplitChar split char
 	ExcelAsstPrimaryKeySplitChar = ","
@@ -811,6 +815,12 @@ const (
 
 	// ExcelCommentSheetCotentLangPrefixKey excel comment sheet centent language prefixe key
 	ExcelCommentSheetCotentLangPrefixKey = "import_comment"
+
+	// ExcelFirstColumnFieldName export excel first column for tips
+	ExcelFirstColumnFieldName = "field_name"
+	ExcelFirstColumnFieldType = "field_type"
+	ExcelFirstColumnFieldID   = "field_id"
+	ExcelFirstColumnInstData  = "inst_data"
 )
 
 const (
@@ -881,13 +891,13 @@ const (
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime     = "Cc_Request_Time"
-	BKHTTPCCTransactionID   = "Cc_Txn_Id"
-	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
-	BKHTTPCCTransactionNumber   = "Cc_Txn_Number"
-	BKHTTPCCTxnSessionID = "Cc_Txn_Session_ID"
-	BKHTTPCCTxnSessionState = "Cc_Txn_Session_State"
+	BKHTTPOtherRequestID      = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime       = "Cc_Request_Time"
+	BKHTTPCCTransactionID     = "Cc_Txn_Id"
+	BKHTTPCCTxnTMServerAddr   = "Cc_Txn_Tm_addr-Ip"
+	BKHTTPCCTransactionNumber = "Cc_Txn_Number"
+	BKHTTPCCTxnSessionID      = "Cc_Txn_Session_ID"
+	BKHTTPCCTxnSessionState   = "Cc_Txn_Session_State"
 )
 
 type CCContextKey string
