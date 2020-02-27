@@ -145,8 +145,8 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 
 	// get must check unique to judge if the instance exists
 	cond := map[string]interface{}{
-		common.BKObjIDField:   objID,
-		"must_check":          true,
+		common.BKObjIDField: objID,
+		"must_check":        true,
 	}
 	uniqueResp, err := d.CoreAPI.CoreService().Model().ReadModelAttrUnique(d.ctx, d.httpHeader, metadata.QueryCondition{Condition: cond})
 	if err != nil {

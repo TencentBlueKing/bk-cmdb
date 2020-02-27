@@ -32,8 +32,8 @@ func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 	}
 
 	cond := mapstr.MapStr{
-		"scope_type":          selector.ScopeType,
-		"scope_id":            selector.ScopeID,
+		"scope_type": selector.ScopeType,
+		"scope_id":   selector.ScopeID,
 	}
 	cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 	_, err := selector.Metadata.Label.GetBusinessID()
@@ -64,11 +64,11 @@ func (s *coreService) UpdateTopoGraphics(ctx *rest.Contexts) {
 	for index := range inputBody.Data {
 		inputBody.Data[index].SetSupplierAccount(ctx.Kit.SupplierAccount)
 		cond := mapstr.MapStr{
-			"scope_type":          inputBody.Data[index].ScopeType,
-			"scope_id":            inputBody.Data[index].ScopeID,
-			"node_type":           inputBody.Data[index].NodeType,
-			"bk_obj_id":           inputBody.Data[index].ObjID,
-			"bk_inst_id":          inputBody.Data[index].InstID,
+			"scope_type": inputBody.Data[index].ScopeType,
+			"scope_id":   inputBody.Data[index].ScopeID,
+			"node_type":  inputBody.Data[index].NodeType,
+			"bk_obj_id":  inputBody.Data[index].ObjID,
+			"bk_inst_id": inputBody.Data[index].InstID,
 		}
 		cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 

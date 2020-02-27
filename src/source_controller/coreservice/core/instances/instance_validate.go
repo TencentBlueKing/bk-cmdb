@@ -139,15 +139,15 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			// blog.Errorf("field [%s] is not a valid property for model [%s], rid: %s", key, objID, kit.Rid)
 			// return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
-        if value, ok := val.(string); ok {
-            val = strings.TrimSpace(value)
-            instanceData[key] = val
-        }
-		
+		if value, ok := val.(string); ok {
+			val = strings.TrimSpace(value)
+			instanceData[key] = val
+		}
+
 		rawErr := property.Validate(kit.Ctx, val, key)
 		if rawErr.ErrCode != 0 {
-            blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
-            return rawErr.ToCCError(kit.CCError)
+			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
+			return rawErr.ToCCError(kit.CCError)
 		}
 	}
 	if instanceData.Exists(metadata.BKMetadata) {
@@ -272,10 +272,10 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			delete(instanceData, key)
 			continue
 		}
-        if value, ok := val.(string); ok {
-            val = strings.TrimSpace(value)
-            instanceData[key] = val
-        }
+		if value, ok := val.(string); ok {
+			val = strings.TrimSpace(value)
+			instanceData[key] = val
+		}
 		rawErr := property.Validate(kit.Ctx, val, key)
 		if rawErr.ErrCode != 0 {
 			return rawErr.ToCCError(kit.CCError)

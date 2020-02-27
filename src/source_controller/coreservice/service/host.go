@@ -201,7 +201,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
 		blog.Errorf("failed to query the host , err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
-        return
+		return
 	}
 
 	count, err := s.db.Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)

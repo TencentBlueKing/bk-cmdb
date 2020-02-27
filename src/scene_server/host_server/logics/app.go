@@ -28,7 +28,7 @@ import (
 )
 
 func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, errors.CCError) {
-    cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
+	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
 		return -1, err

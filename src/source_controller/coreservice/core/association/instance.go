@@ -13,15 +13,15 @@
 package association
 
 import (
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/errors"
-    "configcenter/src/common/http/rest"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    "configcenter/src/common/universalsql/mongo"
-    "configcenter/src/common/util"
-    "configcenter/src/storage/dal"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
+	"configcenter/src/storage/dal"
 )
 
 type associationInstance struct {
@@ -258,8 +258,8 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, inputPara
 }
 
 func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-    inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
-    cnt, err := m.instCount(kit, inputParam.Condition)
+	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
+	cnt, err := m.instCount(kit, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("delete inst association get inst [%#v] count err [%#v], rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.DeletedCount{}, err
