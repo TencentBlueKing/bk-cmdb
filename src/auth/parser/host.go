@@ -303,6 +303,7 @@ func (ps *parseStream) userCustom() *parseStream {
 const (
 	deleteHostBatchPattern                    = "/api/v3/hosts/batch"
 	addHostsToHostPoolPattern                 = "/api/v3/hosts/add"
+	addHostsToResourcePoolPattern             = "/api/v3/hosts/add/resource"
 	moveHostToBusinessModulePattern           = "/api/v3/hosts/modules"
 	moveResPoolToBizIdleModulePattern         = "/api/v3/hosts/modules/resource/idle"
 	moveHostsToBizFaultModulePattern          = "/api/v3/hosts/modules/fault"
@@ -424,6 +425,20 @@ func (ps *parseStream) host() *parseStream {
 
 	// add new hosts to resource pool
 	if ps.hitPattern(addHostsToHostPoolPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.AddHostToResourcePool,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// add hosts to resource pool
+	if ps.hitPattern(addHostsToResourcePoolPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
