@@ -61,10 +61,11 @@ var _ = Describe("cloud area test", func() {
 		prepareCloudData()
 	})
 
-	var _ = Describe("create cloud area test", func() {
+	var _ = Describe("cloud area test create", func() {
 
 		It("create with normal data", func() {
 			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, tmpTestData)
+			cloudIDTmp = int64(rsp.Data.Created.ID)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -89,7 +90,7 @@ var _ = Describe("cloud area test", func() {
 
 	})
 
-	var _ = Describe("update cloud area test", func() {
+	var _ = Describe("cloud area test update", func() {
 
 		It("update with normal data", func() {
 			cloudID := cloudID1
@@ -102,7 +103,7 @@ var _ = Describe("cloud area test", func() {
 
 		It("update with cloud name which is already exist", func() {
 			cloudID := cloudID2
-			data := map[string]interface{}{"bk_cloud_name": "LPL39区"}
+			data := map[string]interface{}{"bk_cloud_name": testData1["bk_cloud_name"]}
 			rsp, err := hostServerClient.UpdateCloudArea(context.Background(), header, cloudID, data)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
@@ -129,7 +130,7 @@ var _ = Describe("cloud area test", func() {
 
 	})
 
-	var _ = Describe("search cloud area test", func() {
+	var _ = Describe("cloud area test search", func() {
 
 		It("search with default query condition", func() {
 			cond := make(map[string]interface{})
@@ -137,7 +138,7 @@ var _ = Describe("cloud area test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(int64(4)))
+			Expect(rsp.Data.Count).To(Equal(int64(3)))
 		})
 
 		It("search with configured conditon", func() {
@@ -156,9 +157,9 @@ var _ = Describe("cloud area test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(int64(4)))
-			Expect(rsp.Data.Info[2].String("bk_cloud_name")).To(Equal(testData1["bk_cloud_name"]))
-			Expect(rsp.Data.Info[3].String("bk_cloud_name")).To(Equal(testData2["bk_cloud_name"]))
+			Expect(rsp.Data.Count).To(Equal(int64(3)))
+			Expect(rsp.Data.Info[1].String("bk_cloud_name")).To(Equal(testData1["bk_cloud_name"]))
+			Expect(rsp.Data.Info[2].String("bk_cloud_name")).To(Equal(testData2["bk_cloud_name"]))
 		})
 
 		It("search with configured limit", func() {
@@ -193,12 +194,12 @@ var _ = Describe("cloud area test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(int64(3)))
+			Expect(rsp.Data.Count).To(Equal(int64(2)))
 		})
 
 	})
 
-	var _ = Describe("delete cloud area test", func() {
+	var _ = Describe("cloud area test delete", func() {
 
 		It("delete with normal data", func() {
 			cloudID := int64(2)
@@ -210,7 +211,7 @@ var _ = Describe("cloud area test", func() {
 	})
 })
 
-var cloudID1, cloudID2 int64
+var cloudID1, cloudID2, cloudIDTmp int64
 
 func prepareCloudData() {
 	if cloudID1 != 0 {
@@ -222,6 +223,13 @@ func prepareCloudData() {
 
 	if cloudID2 != 0 {
 		rsp, err := hostServerClient.DeleteCloudArea(context.Background(), header, cloudID2)
+		util.RegisterResponse(rsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+	}
+
+	if cloudIDTmp != 0 {
+		rsp, err := hostServerClient.DeleteCloudArea(context.Background(), header, cloudIDTmp)
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
