@@ -20,7 +20,7 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/paraparse"
 )
 
 type HostServerClientInterface interface {
@@ -66,6 +66,11 @@ type HostServerClientInterface interface {
 	GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *metadata.Response, err error)
 	HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error)
 	ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64, params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error)
+
+	CreateCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	UpdateCloudArea(ctx context.Context, h http.Header, cloudID int64, data map[string]interface{}) (resp *metadata.Response, err error)
+	SearchCloudArea(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.SearchResp, err error)
+	DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response, err error)
 }
 
 func NewHostServerClientInterface(c *util.Capability, version string) HostServerClientInterface {
