@@ -1407,22 +1407,15 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	logPreContents := make(map[int64]meta.SaveAuditLogParams, 0)
+	logPreContents := make(map[int64]*logics.HostLog, 0)
 	for _, hostID := range hostIDArr {
-		stringID := strconv.FormatInt(hostID, 10)
-		if err != nil {
-			blog.Errorf("UpdateImportHosts, but got invalid host id[%s], err: %v,rid:%s", stringID, err, srvData.rid)
-			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
-			return
-		}
 		audit := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
-		if err := audit.WithPrevious(srvData.ctx, stringID, hostFields); err != nil {
-			blog.Errorf("UpdateImportHosts, but get host[%s] pre data for audit failed, err: %v, rid: %s", stringID, err, srvData.rid)
+		if err := audit.WithPrevious(srvData.ctx, hostID, hostFields); err != nil {
+			blog.Errorf("UpdateImportHosts, but get host[%d] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 			return
 		}
-
-		logPreContents[hostID] = audit.AuditLog(srvData.ctx, hostID)
+		logPreContents[hostID] = audit
 	}
 
 	hasHostUpdateWithoutHostApplyFiled := false
@@ -1487,24 +1480,14 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		}
 	}
 
-	logLastContents := make([]meta.SaveAuditLogParams, 0)
+	logLastContents := make([]meta.AuditLog, 0)
 	for _, hostID := range hostIDArr {
-		audit := srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
-		if err := audit.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
-			blog.ErrorJSON("UpdateImportHosts, but get host[%v] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
+		audit := logPreContents[hostID]
+		if err := audit.WithCurrent(srvData.ctx, hostID, hostFields); err != nil {
+			blog.Errorf("UpdateImportHosts, but get host[%d] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 			return
 		}
-		logContent := audit.Content
-		logContent.CurData = logContent.PreData
-		preLogContent, ok := logPreContents[hostID]
-		if ok {
-			content, ok := preLogContent.Content.(*meta.Content)
-			if ok {
-				logContent.PreData = content.PreData
-			}
-		}
-
 		hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: []int64{hostID}})
 		if err != nil {
 			blog.Errorf("UpdateImportHosts GetConfigByCond failed, id[%v], err: %v,input:%+v,rid:%s", hostID, err, hostList.HostInfo, srvData.rid)
@@ -1515,19 +1498,13 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		if len(hostModuleConfig) > 0 {
 			appID = hostModuleConfig[0].AppID
 		}
-
-		logLastContents = append(logLastContents,
-			meta.SaveAuditLogParams{
-				ID:      hostID,
-				Model:   common.BKInnerObjIDHost,
-				Content: logContent,
-				OpDesc:  "update host",
-				OpType:  auditoplog.AuditOpTypeModify,
-				ExtKey:  preLogContent.ExtKey,
-				BizID:   appID,
-			},
-		)
-
+		auditLog, err := audit.AuditLog(srvData.ctx, hostID, appID, meta.AuditUpdate)
+		if err != nil {
+			blog.Errorf("UpdateImportHosts create audit log failed, id[%v], err: %v,rid:%s", hostID, err, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
+		logLastContents = append(logLastContents, auditLog)
 	}
 	auditResp, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logLastContents...)
 	if err != nil {
