@@ -423,6 +423,8 @@
                         && ['enum', 'int', 'float', 'list'].includes(property.bk_property_type)
                         && (!data[key].value || !data[key].as_default_value)) {
                         data[key].value = null
+                    } else if (property && property.bk_property_type === 'bool' && !data[key].as_default_value) {
+                        data[key].value = null
                     } else if (!data[key].as_default_value) {
                         data[key].value = ''
                     }
