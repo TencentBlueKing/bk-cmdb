@@ -539,9 +539,9 @@ func (hs *hostServer) ListBizHostsTopo(ctx context.Context, h http.Header, bizID
 	return
 }
 
-func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
 
-	resp = new(metadata.Response)
+	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/create/cloudarea"
 
 	err = hs.client.Post().

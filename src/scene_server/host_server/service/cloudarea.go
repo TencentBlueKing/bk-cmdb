@@ -154,7 +154,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	}
 
 	if false == createRes.Result {
-		blog.Errorf("GetPlat error.err code:%d,err msg:%s,input:%+v,rid:%s", createRes.Code, createRes.ErrMsg, input, srvData.rid)
+		blog.Errorf("CreatePlat error.err code:%d,err msg:%s,input:%+v,rid:%s", createRes.Code, createRes.ErrMsg, input, srvData.rid)
 		_ = resp.WriteHeaderAndJson(http.StatusInternalServerError, createRes, "application/json")
 		return
 	}
