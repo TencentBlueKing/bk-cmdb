@@ -1323,3 +1323,123 @@ var _ = Describe("batch_update_host test", func() {
 		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_outerip"].(string)).To(Equal("1.2.3.4"))
 	})
 })
+
+var _ = Describe("add_host_to_resource_pool test", func() {
+	It("add_host_to_resource_pool", func() {
+		test.ClearDatabase()
+
+		By("add hosts to resource pool default module")
+		hostInput := metadata.AddHostToResourcePoolHostList{
+			HostInfo: []map[string]interface{}{
+				{
+					common.BKHostInnerIPField: "1.0.0.1",
+					common.BKCloudIDField:     0,
+				},
+				{
+					common.BKHostInnerIPField: "1.0.0.2",
+					common.BKCloudIDField:     0,
+				},
+			},
+		}
+		hostRsp, err := hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
+		util.RegisterResponse(hostRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
+		js, err := json.Marshal(hostRsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+		result := metadata.AddHostToResourcePoolResult{}
+		err = json.Unmarshal(js, &result)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(result.Success)).To(Equal(2))
+		Expect(len(result.Error)).To(Equal(0))
+		var hostID1, hostID2 int64
+		if result.Success[0].Index == 0 {
+			hostID1 = result.Success[0].HostID
+			hostID2 = result.Success[1].HostID
+		} else {
+			hostID1 = result.Success[1].HostID
+			hostID2 = result.Success[0].HostID
+		}
+
+		By("search hosts")
+		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{})
+		util.RegisterResponse(searchRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count).To(Equal(2))
+		host1 := searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		host2 := searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		if host1[common.BKHostInnerIPField] == "1.0.0.1" {
+			Expect(int64(host1[common.BKHostIDField].(float64))).To(Equal(hostID1))
+			Expect(int64(host2[common.BKHostIDField].(float64))).To(Equal(hostID2))
+		} else {
+			Expect(int64(host1[common.BKHostIDField].(float64))).To(Equal(hostID2))
+			Expect(int64(host2[common.BKHostIDField].(float64))).To(Equal(hostID1))
+		}
+
+		By("add hosts to resource pool invalid module")
+		hostInput = metadata.AddHostToResourcePoolHostList{
+			HostInfo: []map[string]interface{}{
+				{
+					common.BKHostInnerIPField: "1.0.0.3",
+					common.BKCloudIDField:     0,
+				},
+				{
+					common.BKHostInnerIPField: "1.0.0.4",
+					common.BKCloudIDField:     0,
+				},
+			},
+			Directory: 1000,
+		}
+		hostRsp, err = hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
+		util.RegisterResponse(hostRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(false))
+
+		By("search hosts")
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{})
+		util.RegisterResponse(searchRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count).To(Equal(2))
+
+		By("add hosts to resource pool one invalid host")
+		hostInput = metadata.AddHostToResourcePoolHostList{
+			HostInfo: []map[string]interface{}{
+				{
+					common.BKHostInnerIPField: "1.0.0.5",
+					common.BKCloudIDField:     0,
+				},
+				{
+					"bk_host_innerip":     "",
+					common.BKCloudIDField: 0,
+				},
+			},
+		}
+		hostRsp, err = hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
+		util.RegisterResponse(hostRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(false))
+		js, err = json.Marshal(hostRsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+		result = metadata.AddHostToResourcePoolResult{}
+		err = json.Unmarshal(js, &result)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(result.Success)).To(Equal(1))
+		Expect(result.Success[0].Index).To(Equal(0))
+		Expect(len(result.Error)).To(Equal(1))
+		Expect(result.Error[0].Index).To(Equal(1))
+
+		By("search hosts")
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{
+			Page: params.PageInfo{
+				Sort: common.BKHostIDField,
+			},
+		})
+		util.RegisterResponse(searchRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count).To(Equal(3))
+		Expect(int64(searchRsp.Data.Info[2]["host"].(map[string]interface{})[common.BKHostIDField].(float64))).To(Equal(result.Success[0].HostID))
+	})
+})
