@@ -22,21 +22,21 @@ import (
 )
 
 func addSystemData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tablename := "cc_System"
-	blog.V(3).Infof("add data for  %s table ", tablename)
+	tableName := common.BKTableNameSystem
+	blog.V(3).Infof("add data for  %s table ", tableName)
 	data := map[string]interface{}{
 		common.HostCrossBizField: common.HostCrossBizValue}
-	isExist, err := db.Table(tablename).Find(data).Count(ctx)
+	isExist, err := db.Table(tableName).Find(data).Count(ctx)
 	if nil != err {
-		blog.Errorf("add data for  %s table error  %s", tablename, err)
+		blog.Errorf("add data for  %s table error  %s", tableName, err)
 		return err
 	}
 	if isExist > 0 {
 		return nil
 	}
-	err = db.Table(tablename).Insert(ctx, data)
+	err = db.Table(tableName).Insert(ctx, data)
 	if nil != err {
-		blog.Errorf("add data for  %s table error  %s", tablename, err)
+		blog.Errorf("add data for  %s table error  %s", tableName, err)
 		return err
 	}
 

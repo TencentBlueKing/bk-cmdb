@@ -16,12 +16,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
 func (m *operationManager) SearchOperationChart(kit *rest.Kit, inputParam interface{}) (*metadata.ChartClassification, error) {
-	opt := mapstr.MapStr{}
+	opt := map[string]interface{}{}
 	chartConfig := make([]metadata.ChartConfig, 0)
 
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Find(opt).All(kit.Ctx, &chartConfig); err != nil {
@@ -86,7 +85,7 @@ func (m *operationManager) CreateOperationChart(kit *rest.Kit, inputParam metada
 }
 
 func (m *operationManager) UpdateChartPosition(kit *rest.Kit, inputParam interface{}) (interface{}, error) {
-	opt := mapstr.MapStr{}
+	opt := map[string]interface{}{}
 
 	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Delete(kit.Ctx, opt); err != nil {
 		blog.Errorf("UpdateChartPosition, delete chart position info fail, err: %v, rid: %v", err, kit.Rid)
@@ -102,7 +101,7 @@ func (m *operationManager) UpdateChartPosition(kit *rest.Kit, inputParam interfa
 }
 
 func (m *operationManager) DeleteOperationChart(kit *rest.Kit, id int64) (interface{}, error) {
-	opt := mapstr.MapStr{}
+	opt := map[string]interface{}{}
 	opt[common.OperationConfigID] = id
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(kit.Ctx, opt); err != nil {
 		blog.Errorf("DeleteOperationChart fail, err: %v, rid: %v", err, kit.Rid)
@@ -112,8 +111,8 @@ func (m *operationManager) DeleteOperationChart(kit *rest.Kit, id int64) (interf
 	return nil, nil
 }
 
-func (m *operationManager) UpdateOperationChart(kit *rest.Kit, inputParam mapstr.MapStr) (interface{}, error) {
-	opt := mapstr.MapStr{}
+func (m *operationManager) UpdateOperationChart(kit *rest.Kit, inputParam map[string]interface{}) (interface{}, error) {
+	opt := map[string]interface{}{}
 	opt[common.OperationConfigID] = inputParam[common.OperationConfigID]
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Update(kit.Ctx, opt, inputParam); err != nil {
 		blog.Errorf("UpdateOperationChart fail,chartName: %v, id: %v err: %v, rid: %v", opt["name"], inputParam[common.OperationConfigID], err, kit.Rid)

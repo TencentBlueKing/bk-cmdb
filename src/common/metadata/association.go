@@ -250,7 +250,7 @@ type Association struct {
 	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
 
-	//	define the metadata of assocication
+	//	define the metadata of association
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 

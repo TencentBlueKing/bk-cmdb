@@ -19,7 +19,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
-	"configcenter/src/common/auditoplog"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
@@ -29,35 +29,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
-)
-
-var (
-	InstanceAssociationAuditHeaders = []metadata.Header{
-		{
-			PropertyName: "association kind",
-			PropertyID:   common.AssociationKindIDField,
-		},
-		{
-			PropertyName: "association instance id",
-			PropertyID:   common.BKAsstInstIDField,
-		},
-		{
-			PropertyName: "association model id",
-			PropertyID:   common.BKAsstObjIDField,
-		},
-		{
-			PropertyName: "instance id",
-			PropertyID:   common.BKInstIDField,
-		},
-		{
-			PropertyName: "association id",
-			PropertyID:   common.AssociationObjAsstIDField,
-		},
-		{
-			PropertyName: common.AssociationKindIDField,
-			PropertyID:   "name",
-		},
-	}
 )
 
 // AssociationOperationInterface association operation methods
@@ -761,15 +732,6 @@ func (assoc *association) SearchInst(kit *rest.Kit, request *metadata.SearchAsso
 }
 
 func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
-	var bizID int64
-	if request.Metadata != nil {
-		bizID, err = metadata.BizIDFromMetadata(*request.Metadata)
-		if err != nil {
-			blog.Errorf("parse business id from request failed, kit: %+v, err: %+v, rid: %s", kit, err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrCommHTTPInputInvalid)
-		}
-	}
-
 	cond := condition.CreateCondition()
 	cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
 	result, err := assoc.SearchObject(kit, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
@@ -875,19 +837,35 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 
 	curData := mapstr.NewFromStruct(input.Data, "json")
 	curData.Set("name", objectAsst.AssociationAliasName)
-	// record audit log
-	auditlog := metadata.SaveAuditLogParams{
-		ID:    request.InstID,
-		Model: objID,
-		Content: metadata.Content{
-			CurData: curData,
-			Headers: InstanceAssociationAuditHeaders,
-		},
-		OpDesc: "create instance association",
-		OpType: auditoplog.AuditOpTypeAdd,
-		BizID:  bizID,
+
+	audit := auditlog.NewAudit(assoc.clientSet, kit.Ctx, kit.Header)
+	srcInstName, err := audit.GetInstNameByID(objID, request.InstID)
+	if err != nil {
+		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}
-	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, auditlog)
+	targetInstName, err := audit.GetInstNameByID(asstObjID, request.AsstInstID)
+	if err != nil {
+		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+	}
+	auditLog := metadata.AuditLog{
+		AuditType:    metadata.ModelInstanceType,
+		ResourceType: metadata.InstanceAssociationRes,
+		Action:       metadata.AuditCreate,
+		OperationDetail: &metadata.InstanceAssociationOpDetail{
+			AssociationOpDetail: metadata.AssociationOpDetail{
+				AssociationID:   objectAsst.AssociationName,
+				AssociationKind: objectAsst.AsstKindID,
+				SourceModelID:   objID,
+				TargetModelID:   asstObjID,
+			},
+			SourceInstanceID:   request.InstID,
+			SourceInstanceName: srcInstName,
+			TargetInstanceID:   request.AsstInstID,
+			TargetInstanceName: targetInstName,
+		},
+		OperationTime: metadata.Now(),
+	}
+	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, auditLog)
 	if err != nil {
 		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
@@ -901,15 +879,6 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 }
 
 func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64, metaData *metadata.Metadata) (resp *metadata.DeleteAssociationInstResult, err error) {
-	var bizID int64
-	if metaData != nil {
-		bizID, err = metadata.BizIDFromMetadata(*metaData)
-		if err != nil {
-			blog.Errorf("parse business id from request failed, kit: %+v, err: %+v, rid: %s", kit, err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrCommHTTPInputInvalid)
-		}
-	}
-
 	// record audit log
 	searchCondition := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
@@ -937,36 +906,51 @@ func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64, metaData *meta
 		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-
 	if !assInfoResult.Result {
-		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s, rid: %s", cond, assInfoResult.ErrMsg, kit.Rid)
+		return nil, assInfoResult.CCError()
 	}
 
 	input := metadata.DeleteOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
 	}
 	rsp, err := assoc.clientSet.CoreService().Association().DeleteInstAssociation(context.Background(), kit.Header, &input)
+	if err != nil {
+		blog.ErrorJSON("DeleteInstAssociation failed, err: %s, input: %s, rid: %s", err, input, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
 	resp = &metadata.DeleteAssociationInstResult{
 		BaseResp: rsp.BaseResp,
 	}
 
-	preData := mapstr.NewFromStruct(instanceAssociation, "json")
-	if len(assInfoResult.Data) > 0 {
-		preData.Set("name", assInfoResult.Data[0].AssociationAliasName)
+	audit := auditlog.NewAudit(assoc.clientSet, kit.Ctx, kit.Header)
+	srcInstName, err := audit.GetInstNameByID(instanceAssociation.ObjectID, instanceAssociation.InstID)
+	if err != nil {
+		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}
-	auditlog := metadata.SaveAuditLogParams{
-		ID:    instanceAssociation.InstID,
-		Model: instanceAssociation.ObjectID,
-		Content: metadata.Content{
-			PreData: preData,
-			Headers: InstanceAssociationAuditHeaders,
+	targetInstName, err := audit.GetInstNameByID(instanceAssociation.AsstObjectID, instanceAssociation.AsstInstID)
+	if err != nil {
+		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
+	}
+	auditLog := metadata.AuditLog{
+		AuditType:    metadata.ModelInstanceType,
+		ResourceType: metadata.InstanceAssociationRes,
+		Action:       metadata.AuditDelete,
+		OperationDetail: &metadata.InstanceAssociationOpDetail{
+			AssociationOpDetail: metadata.AssociationOpDetail{
+				AssociationID:   instanceAssociation.ObjectAsstID,
+				AssociationKind: instanceAssociation.AssociationKindID,
+				SourceModelID:   instanceAssociation.ObjectID,
+				TargetModelID:   instanceAssociation.AsstObjectID,
+			},
+			SourceInstanceID:   instanceAssociation.InstID,
+			SourceInstanceName: srcInstName,
+			TargetInstanceID:   instanceAssociation.AsstInstID,
+			TargetInstanceName: targetInstName,
 		},
-		OpDesc: "delete instance association",
-		OpType: auditoplog.AuditOpTypeDel,
-		BizID:  bizID,
+		OperationTime: metadata.Now(),
 	}
-	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, auditlog)
+	auditResp, err := assoc.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, auditLog)
 	if err != nil {
 		blog.Errorf("DeleteInst finished, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
@@ -976,7 +960,7 @@ func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64, metaData *meta
 		return nil, kit.CCError.New(auditResp.Code, auditResp.ErrMsg)
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 // SearchInstAssociationList 与实例有关系的实例关系数据,以分页的方式返回

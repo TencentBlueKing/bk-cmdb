@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
-	"configcenter/src/common/auditoplog"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
@@ -48,8 +48,7 @@ type auditLog struct {
 }
 
 // nonInnerAttributes 用于加速，避免不必要的数据查询(批量创建实例时，每次创建实例都会执行nonInnerAttributes)
-func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action auditoplog.AuditOpType, nonInnerAttributes []model.AttributeInterface) {
-
+func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metadata.ActionType, nonInnerAttributes []model.AttributeInterface) {
 	var targetData *WrapperResult
 	isPreItem := false
 	if nil != currData {
@@ -98,31 +97,9 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 			}
 		}
 
-		desc := ""
-		switch action {
-		case auditoplog.AuditOpTypeAdd:
-			desc = "create " + a.obj.GetObjectType()
-		case auditoplog.AuditOpTypeDel:
-			desc = "delete " + a.obj.GetObjectType()
-		case auditoplog.AuditOpTypeModify:
-			if currDataTmp[common.BKDataStatusField] != preDataTmp[common.BKDataStatusField] {
-				switch currDataTmp[common.BKDataStatusField] {
-				case common.DataStatusDisabled:
-					desc = "disabled " + a.obj.GetObjectType()
-				case common.DataStatusEnable:
-					desc = "enable " + a.obj.GetObjectType()
-				default:
-					desc = "update " + a.obj.GetObjectType()
-				}
-			} else {
-				desc = "update " + a.obj.GetObjectType()
-			}
-
-		}
-
-		headers := make([]metadata.Header, 0)
+		properties := make([]metadata.Property, 0)
 		for _, attr := range nonInnerAttributes {
-			headers = append(headers, metadata.Header{
+			properties = append(properties, metadata.Property{
 				PropertyID:   attr.Attribute().PropertyID,
 				PropertyName: attr.Attribute().PropertyName,
 			})
@@ -138,23 +115,70 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 				}
 			}
 		}
+		bizName := ""
+		if bizID > 0 {
+			bizName, err = auditlog.NewAudit(a.client, a.kit.Ctx, a.kit.Header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
+			if err != nil {
+				return
+			}
+		}
 
-		auditLog := metadata.SaveAuditLogParams{
-			ID:    id,
-			Model: a.obj.GetObjectID(),
-			Content: metadata.Content{
-				CurData: currDataTmp,
-				PreData: preDataTmp,
-				Headers: headers,
+		objID := targetItem.GetObject().GetObjectID()
+		instName, err := targetItem.GetInstName()
+		if err != nil {
+			blog.V(3).Infof("[audit] failed to get the inst name from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.kit.Rid)
+			return
+		}
+		if action == metadata.AuditUpdate {
+			if currDataTmp[common.BKDataStatusField] != preDataTmp[common.BKDataStatusField] {
+				switch currDataTmp[common.BKDataStatusField] {
+				case string(common.DataStatusDisabled):
+					action = metadata.AuditArchive
+				case string(common.DataStatusEnable):
+					action = metadata.AuditRecover
+				}
+			}
+		}
+		auditLog := metadata.AuditLog{
+			AuditType:    metadata.GetAuditTypeByObjID(objID),
+			ResourceType: metadata.GetResourceTypeByObjID(objID),
+			Action:       action,
+			OperationDetail: &metadata.InstanceOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
+					BusinessID:   bizID,
+					BusinessName: bizName,
+					ResourceID:   id,
+					ResourceName: instName,
+					Details: &metadata.BasicContent{
+						PreData:    preDataTmp,
+						CurData:    currDataTmp,
+						Properties: properties,
+					},
+				},
+				ModelID: objID,
 			},
-			OpDesc: desc,
-			OpType: action,
-			BizID:  bizID,
+		}
+
+		// add biz topology label for mainline instance
+		asst, err := a.client.CoreService().Association().ReadModelAssociation(context.Background(), a.kit.Header, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
+		if err != nil || !asst.Result {
+			blog.V(3).Infof("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, a.kit.Rid)
+			return
+		}
+		if objID != common.BKInnerObjIDApp {
+			for _, mainline := range asst.Data.Info {
+				if mainline.ObjectID == objID || mainline.AsstObjID == objID {
+					auditLog.Label = map[string]string{
+						metadata.LabelBizTopology: "",
+					}
+					break
+				}
+			}
 		}
 
 		auditResp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.kit.Header, auditLog)
 		if err != nil {
-			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, resp: %v, rid: %s", auditLog, err.Error(), a.kit.Rid)
+			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, rid: %s", auditLog, err.Error(), a.kit.Rid)
 			return
 		}
 		if !auditResp.Result {
@@ -165,7 +189,6 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 }
 
 func (a *auditLog) CreateSnapshot(instID int64, cond mapstr.MapStr) *WrapperResult {
-
 	query := &metadata.QueryInput{}
 
 	if instID >= 0 {
@@ -193,13 +216,13 @@ func (a *auditLog) CommitCreateLog(preData, currData *WrapperResult, inst inst.I
 		currData = &WrapperResult{}
 		currData.datas = append(currData.datas, inst)
 	}
-	a.commitSnapshot(preData, currData, auditoplog.AuditOpTypeAdd, nonInnerAttributes)
+	a.commitSnapshot(preData, currData, metadata.AuditCreate, nonInnerAttributes)
 }
 
 func (a *auditLog) CommitDeleteLog(preData, currData *WrapperResult, inst inst.Inst) {
-	a.commitSnapshot(preData, currData, auditoplog.AuditOpTypeDel, nil)
+	a.commitSnapshot(preData, currData, metadata.AuditDelete, nil)
 }
 
 func (a *auditLog) CommitUpdateLog(preData, currData *WrapperResult, inst inst.Inst, nonInnerAttributes []model.AttributeInterface) {
-	a.commitSnapshot(preData, currData, auditoplog.AuditOpTypeModify, nonInnerAttributes)
+	a.commitSnapshot(preData, currData, metadata.AuditUpdate, nonInnerAttributes)
 }

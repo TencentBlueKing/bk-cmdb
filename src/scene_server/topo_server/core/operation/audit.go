@@ -19,9 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 type AuditOperationInterface interface {
@@ -29,16 +27,14 @@ type AuditOperationInterface interface {
 }
 
 // NewAuditOperation create a new inst operation instance
-func NewAuditOperation(client apimachinery.ClientSetInterface, languageIf language.CCLanguageIf) AuditOperationInterface {
+func NewAuditOperation(client apimachinery.ClientSetInterface) AuditOperationInterface {
 	return &audit{
 		clientSet: client,
-		language:  languageIf,
 	}
 }
 
 type audit struct {
 	clientSet apimachinery.ClientSetInterface
-	language  language.CCLanguageIf
 }
 
 func (a *audit) Query(kit *rest.Kit, query metadata.QueryInput) (interface{}, error) {
@@ -51,12 +47,6 @@ func (a *audit) Query(kit *rest.Kit, query metadata.QueryInput) (interface{}, er
 	if !rsp.Result {
 		blog.Errorf("[audit] search audit log failed, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrAuditSelectFailed)
-	}
-
-	for index := range rsp.Data.Info {
-		if desc := a.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language("auditlog_" + rsp.Data.Info[index].OpDesc); len(desc) > 0 {
-			rsp.Data.Info[index].OpDesc = desc
-		}
 	}
 
 	return rsp.Data, nil

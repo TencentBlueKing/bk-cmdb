@@ -71,7 +71,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	associationOperation := operation.NewAssociationOperation(client, authManager)
 	graphics := operation.NewGraphics(client, authManager)
 	identifier := operation.NewIdentifier(client)
-	audit := operation.NewAuditOperation(client, languageIf)
+	audit := operation.NewAuditOperation(client)
 	unique := operation.NewUniqueOperation(client, authManager)
 	setTemplate := settemplate.NewSetTemplate(client)
 
