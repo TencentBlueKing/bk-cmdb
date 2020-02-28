@@ -63,6 +63,22 @@ type HostList struct {
 	InputType     HostInputType                    `json:"input_type"`
 }
 
+type AddHostToResourcePoolHostList struct {
+	HostInfo  []map[string]interface{} `json:"host_info"`
+	Directory int64                    `json:"directory"`
+}
+
+type AddHostToResourcePoolResult struct {
+	Success []AddOneHostToResourcePoolResult `json:"success,omitempty"`
+	Error   []AddOneHostToResourcePoolResult `json:"error,omitempty"`
+}
+
+type AddOneHostToResourcePoolResult struct {
+	Index    int    `json:"index"`
+	HostID   int64  `json:"bk_host_id,omitempty"`
+	ErrorMsg string `json:"error_message,omitempty"`
+}
+
 type AddHostFromAgentHostList struct {
 	HostInfo map[string]interface{} `json:"host_info"`
 }

@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -411,6 +412,47 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	retData["success"] = success
+
+	// auth: register hosts
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDs...); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid: %s", hostIDs, err, srvData.rid)
+		_ = resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		return
+	}
+
+	_ = resp.WriteEntity(meta.NewSuccessResp(retData))
+}
+
+// add host to resource pool, returns bk_host_id of the successfully added hosts
+func (s *Service) AddHostToResourcePool(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	hostList := new(meta.AddHostToResourcePoolHostList)
+	body, err := ioutil.ReadAll(req.Request.Body)
+	if err != nil {
+		blog.Errorf("read request body failed, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPReadBodyFailed)})
+		return
+	}
+	if err := json.Unmarshal(body, hostList); err != nil {
+		blog.Errorf("add host failed with decode body err: %v, body: %s, rid:%s", err, string(body), srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	if hostList.HostInfo == nil {
+		blog.ErrorJSON("add host, but host info is nil. input:%s, rid:%s", hostList, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
+		return
+	}
+
+	hostIDs, retData, err := srvData.lgc.AddHostToResourcePool(srvData.ctx, *hostList)
+	if err != nil {
+		blog.ErrorJSON("add host failed, retData: %s, err: %s, input:%s, rid:%s", retData, err, hostList, srvData.rid)
+		_ = resp.WriteEntity(meta.Response{
+			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: err.Error()},
+			Data:     retData,
+		})
+		return
+	}
 
 	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDs...); err != nil {

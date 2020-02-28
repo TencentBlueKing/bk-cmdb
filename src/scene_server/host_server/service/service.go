@@ -89,6 +89,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	api.Route(api.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
+	api.Route(api.POST("/hosts/add/resource").To(s.AddHostToResourcePool))
 	// api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
 	api.Route(api.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
 	api.Route(api.PUT("/updatemany/hosts/cloudarea_field").To(s.UpdateHostCloudAreaField))

@@ -75,6 +75,20 @@ func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{
 	return
 }
 
+func (hs *hostServer) AddHostToResourcePool(ctx context.Context, h http.Header, dat metadata.AddHostToResourcePoolHostList) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/add/resource"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/host/add/agent"

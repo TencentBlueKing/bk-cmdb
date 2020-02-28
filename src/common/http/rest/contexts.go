@@ -246,7 +246,7 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 			ErrMsg: c.Kit.CCError.Error(errCode).Error(),
 			Code:   errCode,
 		},
-		Data: "",
+		Data: nil,
 	}
 
 	c.writeAsJson(&body)
