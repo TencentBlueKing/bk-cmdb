@@ -57,3 +57,9 @@ type CloudAccountVerify struct {
 	SecretKey   string      `json:"bk_secret_key"`
 	CloudVendor AccountType `json:"bk_cloud_vendor"`
 }
+
+type VpcInfo struct {
+	VpcName string `json:"bk_vpc_name"`
+	VpcID   string `json:"bk_vpc_id"`
+	Region  string `json:"bk_region"`
+}
