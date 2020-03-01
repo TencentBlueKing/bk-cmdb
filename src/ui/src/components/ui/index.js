@@ -32,6 +32,8 @@ import tableEmpty from './table-empty/table-empty.vue'
 import list from './form/list.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
 import user from './user/user.vue'
+import textButton from './button/link-button.vue'
+import stickyLayout from './other/sticky-layout.vue'
 import permission from './permission/embed-permission.vue'
 import routerSubview from './other/router-subview.vue'
 const install = (Vue, opts = {}) => {
@@ -70,6 +72,8 @@ const install = (Vue, opts = {}) => {
         list,
         leaveConfirm,
         user,
+        textButton,
+        stickyLayout,
         permission,
         routerSubview
     ]
@@ -112,6 +116,8 @@ export default {
     tableEmpty,
     list,
     leaveConfirm,
+    textButton,
+    stickyLayout,
     permission,
     routerSubview
 }
