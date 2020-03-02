@@ -34,7 +34,7 @@
     import { mapGetters, mapActions } from 'vuex'
     import cmdbProperty from '@/components/model-instance/property'
     import cmdbAuditHistory from '@/components/audit-history/audit-history'
-    import cmdbRelation from '@/components/relation'
+    import cmdbRelation from '@/components/model-instance/relation'
     export default {
         components: {
             cmdbProperty,
@@ -103,7 +103,6 @@
                         bizId: this.bizId,
                         config: { requestId: `post_searchBusinessById_${this.bizId}`, cancelPrevious: true }
                     })
-                    console.log(inst)
                     return inst
                 } catch (e) {
                     console.error(e)

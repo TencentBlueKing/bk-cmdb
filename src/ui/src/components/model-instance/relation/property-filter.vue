@@ -14,17 +14,12 @@
             v-model="localSelected.operator"
             @on-selected="handleOperatorSelected">
         </cmdb-selector>
-        <div class="property-value fl" style="width: 245px;"
+        <div class="property-value fl" style="width: 315px;"
             v-if="Object.keys(selectedProperty).length">
             <component
-                v-if="['enum', 'list'].includes(selectedProperty['bk_property_type'])"
                 :is="`cmdb-form-${selectedProperty['bk_property_type']}`"
                 :options="selectedProperty.option || []"
-                v-model="localSelected.value">
-            </component>
-            <component
-                v-else
-                :is="`cmdb-form-${selectedProperty['bk_property_type']}`"
+                :placeholder="$t('请输入关键字')"
                 v-model.trim="localSelected.value">
             </component>
         </div>
@@ -126,7 +121,8 @@
                         'bk_supplier_account': this.supplierAccount
                     }),
                     config: {
-                        requestId: `post_searchObjectAttribute_${objId}`
+                        requestId: `post_searchObjectAttribute_${objId}`,
+                        fromCache: true
                     }
                 })
                 this.filteredProperties = properties.filter(property => {
