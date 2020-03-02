@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 	redisdal "configcenter/src/storage/dal/redis"
 
 	"github.com/stretchr/testify/require"
@@ -29,15 +30,14 @@ import (
 	"gopkg.in/redis.v5"
 )
 
-
 var (
-	mongoURI string
-	redisAdress string
-	redisPort string
-	redisPasswd string
-	redisDatabase string
+	mongoURI        string
+	redisAdress     string
+	redisPort       string
+	redisPasswd     string
+	redisDatabase   string
 	redisMasterName string
-	redisClient *redis.Client
+	redisClient     *redis.Client
 )
 
 func init() {
@@ -60,12 +60,17 @@ func init() {
 	var err error
 	redisClient, err = redisdal.NewFromConfig(redisCfg)
 	if err != nil {
-		panic("redisdal.NewFromConfig err:%"+err.Error())
+		panic("redisdal.NewFromConfig err:%" + err.Error())
 	}
 }
 
 func GetClient() (*Mongo, error) {
-	m, err := NewMgo(mongoURI, time.Minute)
+	mongoConfig := MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          mongoURI,
+	}
+	m, err := NewMgo(mongoConfig, time.Minute)
 	if err != nil {
 		return nil, err
 	}

@@ -159,9 +159,8 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 	result.Data = mapstr.New()
 	if 0 != len(hosts) {
 		params := map[string]interface{}{
-			"host_info":      hosts,
-			"bk_supplier_id": common.BKDefaultSupplierID,
-			"input_type":     common.InputTypeExcel,
+			"host_info":  hosts,
+			"input_type": common.InputTypeExcel,
 		}
 		result, resultErr = lgc.CoreAPI.ApiServer().AddHost(context.Background(), header, params)
 		if nil != resultErr {
@@ -207,6 +206,56 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 	if result.Result && !asstResult.Result {
 		result.BaseResp = asstResult.BaseResp
+	}
+
+	return result
+}
+
+// UpdateHosts update excel import hosts
+func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
+	meta *metadata.Metadata) *metadata.ResponseDataMapStr {
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, meta)
+
+	if nil != err {
+		blog.Errorf("ImportHost  get import hosts from excel err, error:%s, rid: %s", err.Error(), rid)
+	}
+	if 0 != len(errMsg) {
+		return &metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{
+				Result: false,
+				Code:   common.CCErrWebFileContentFail,
+				ErrMsg: defErr.Errorf(common.CCErrWebFileContentFail, " file empty").Error(),
+			},
+			Data: map[string]interface{}{
+				"err": errMsg,
+			},
+		}
+	}
+	var resultErr error
+	result := &metadata.ResponseDataMapStr{}
+	result.BaseResp.Result = true
+	result.Data = mapstr.New()
+	if 0 != len(hosts) {
+		params := map[string]interface{}{
+			"host_info":      hosts,
+			"bk_supplier_id": common.BKDefaultSupplierID,
+			"input_type":     common.InputTypeExcel,
+		}
+		result, resultErr = lgc.CoreAPI.ApiServer().UpdateHost(context.Background(), header, params)
+		if nil != resultErr {
+			blog.Errorf("UpdateHosts update host http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
+			return &metadata.ResponseDataMapStr{
+				BaseResp: metadata.BaseResp{
+					Result: false,
+					Code:   common.CCErrCommHTTPDoRequestFailed,
+					ErrMsg: defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
+				},
+				Data: nil,
+			}
+		}
 	}
 
 	return result

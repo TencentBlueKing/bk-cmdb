@@ -32,6 +32,7 @@ import (
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/redis"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -82,11 +83,16 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 		process.Service.SetDB(db)
+		cache, err := redis.NewFromConfig(process.Config.Redis)
+		if err != nil {
+			return fmt.Errorf("connect redis server failed, err: %s", err.Error())
+		}
+		process.Service.SetCache(cache)
 		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
 
 		if auth.IsAuthed() {
@@ -142,6 +148,9 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 		h.Config.MongoDB = mongoConf
+
+		redisConf := redis.ParseConfigFromKV("redis", current.ConfigMap)
+		h.Config.Redis = redisConf
 
 		h.Config.Errors.Res = current.ConfigMap["errors.res"]
 		h.Config.Language.Res = current.ConfigMap["language.res"]

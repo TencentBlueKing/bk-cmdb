@@ -148,8 +148,7 @@ func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, er
 	rid := util.GetHTTPCCRequestID(m.header)
 
 	filter := mapstr.MapStr{
-		common.BKObjIDField:   objID,
-		common.BKOwnerIDField: common.BKDefaultOwnerID,
+		common.BKObjIDField: objID,
 		"page": common.KvMap{
 			"skip":  0,
 			"limit": common.BKNoLimit,

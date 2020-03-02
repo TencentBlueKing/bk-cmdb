@@ -148,16 +148,7 @@
                 v-if="slider.contentShow"
                 :active.sync="tab.active" :show-header="attribute.type !== 'create'">
                 <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
-                    <cmdb-details v-if="attribute.type === 'details'"
-                        :properties="properties"
-                        :property-groups="propertyGroups"
-                        :inst="attribute.inst.details"
-                        :edit-auth="$OPERATION.U_INST"
-                        :delete-auth="$OPERATION.D_INST"
-                        @on-edit="handleEdit"
-                        @on-delete="handleDelete">
-                    </cmdb-details>
-                    <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
+                    <cmdb-form v-if="['update', 'create'].includes(attribute.type)"
                         ref="form"
                         :properties="properties"
                         :property-groups="propertyGroups"
@@ -176,20 +167,6 @@
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
-                </bk-tab-panel>
-                <bk-tab-panel name="relevance" :label="$t('关联Relation')" :visible="['update', 'details'].includes(attribute.type)">
-                    <cmdb-relation
-                        v-if="tab.active === 'relevance'"
-                        :auth="$OPERATION.U_INST"
-                        :obj-id="objId"
-                        :inst="attribute.inst.details">
-                    </cmdb-relation>
-                </bk-tab-panel>
-                <bk-tab-panel name="history" :label="$t('变更记录')" :visible="['update', 'details'].includes(attribute.type)">
-                    <cmdb-audit-history v-if="tab.active === 'history'"
-                        :target="objId"
-                        :inst-id="attribute.inst.details['bk_inst_id']">
-                    </cmdb-audit-history>
                 </bk-tab-panel>
             </bk-tab>
         </bk-sideslider>
@@ -224,14 +201,11 @@
 <script>
     import { mapState, mapGetters, mapActions } from 'vuex'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
-    import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
-    import cmdbRelation from '@/components/relation'
     import cmdbImport from '@/components/import/import'
+    import { MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
     export default {
         components: {
             cmdbColumnsConfig,
-            cmdbAuditHistory,
-            cmdbRelation,
             cmdbImport
         },
         data () {
@@ -466,10 +440,13 @@
                 })
             },
             handleRowClick (item) {
-                this.slider.show = true
-                this.slider.title = item['bk_inst_name']
-                this.attribute.inst.details = item
-                this.attribute.type = 'details'
+                this.$router.push({
+                    name: MENU_RESOURCE_INSTANCE_DETAILS,
+                    params: {
+                        objId: this.objId,
+                        instId: item.bk_inst_id
+                    }
+                })
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)
@@ -633,8 +610,6 @@
             handleCancel () {
                 if (this.attribute.type === 'create') {
                     this.slider.show = false
-                } else {
-                    this.attribute.type = 'details'
                 }
             },
             async handleMultipleEdit () {
@@ -715,7 +690,7 @@
                 })
             },
             handleSliderBeforeClose () {
-                if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {
+                if (this.tab.active === 'attribute') {
                     const $form = this.attribute.type === 'multiple' ? this.$refs.multipleForm : this.$refs.form
                     if ($form.hasChange) {
                         return new Promise((resolve, reject) => {

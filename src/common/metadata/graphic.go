@@ -47,7 +47,7 @@ type TopoGraphics struct {
 }
 
 type UpdateTopoGraphicsInput struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	*Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 	Origin   []TopoGraphics `field:"origin" json:"origin" bson:"origin"`
 }
 

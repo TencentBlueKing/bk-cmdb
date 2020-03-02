@@ -18,28 +18,17 @@
                         {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
                     </span>
                     <template v-if="!loadingState.includes(property)">
-                        <template v-if="hasRelatedRules(property)">
-                            <i18n path="已配置属性自动应用提示" :id="`rule-${property.id}`">
-                                <bk-button text place="link" @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
-                            </i18n>
+                        <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
+                            <span :id="`rule-${property.id}`">
+                                <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
+                                    <bk-button text place="link" @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+                                </i18n>
+                                <span v-else>{{$t('系统限定不可修改')}}</span>
+                            </span>
                             <i class="is-related property-edit icon-cc-edit"
                                 v-bk-tooltips="{
                                     allowHtml: true,
                                     content: `#rule-${property.id}`,
-                                    placement: 'top',
-                                    onShow: () => {
-                                        setFocus(`#property-item-${property.id}`, true)
-                                    },
-                                    onHide: () => {
-                                        setFocus(`#property-item-${property.id}`, false)
-                                    }
-                                }">
-                            </i>
-                        </template>
-                        <template v-else-if="!isPropertyEditable(property)">
-                            <i class="is-related property-edit icon-cc-edit"
-                                v-bk-tooltips="{
-                                    content: $t('系统限定不可修改'),
                                     placement: 'top',
                                     onShow: () => {
                                         setFocus(`#property-item-${property.id}`, true)
@@ -62,7 +51,7 @@
                                 </bk-button>
                             </cmdb-auth>
                             <div class="property-form" v-if="property === editState.property">
-                                <div class="form-component">
+                                <div :class="['form-component', property.bk_property_type]">
                                     <component
                                         :is="`cmdb-form-${property.bk_property_type}`"
                                         :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
@@ -436,6 +425,10 @@
             &.bool {
                 width: 42px;
                 height: 24px;
+            }
+            &.longchar {
+                height: auto;
+                vertical-align: top;
             }
         }
     }

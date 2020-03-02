@@ -21,19 +21,19 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 type SetTemplate interface {
 	DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder)
-	SyncSetTplToInst(params types.ContextParams, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
-	UpdateSetSyncStatus(params types.ContextParams, setID int64) (metadata.SetTemplateSyncStatus, errors.CCErrorCoder)
-	GetLatestSyncTaskDetail(params types.ContextParams, setID int64) (*metadata.APITaskDetail, errors.CCErrorCoder)
-	CheckSetInstUpdateToDateStatus(params types.ContextParams, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
+	SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
+	UpdateSetSyncStatus(kit *rest.Kit, setID int64) (metadata.SetTemplateSyncStatus, errors.CCErrorCoder)
+	GetLatestSyncTaskDetail(kit *rest.Kit, setID int64) (*metadata.APITaskDetail, errors.CCErrorCoder)
+	CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder)
 }
 
 func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {
@@ -175,13 +175,13 @@ func (st *setTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	return setDiffs, nil
 }
 
-func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
-	rid := util.GetHTTPCCRequestID(params.Header)
+func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
+	rid := util.GetHTTPCCRequestID(kit.Header)
 
 	diffOption := metadata.DiffSetTplWithInstOption{
 		SetIDs: option.SetIDs,
 	}
-	setDiffs, err := st.DiffSetTplWithInst(params.Context, params.Header, bizID, setTemplateID, diffOption)
+	setDiffs, err := st.DiffSetTplWithInst(kit.Ctx, kit.Header, bizID, setTemplateID, diffOption)
 	if err != nil {
 		return err
 	}
@@ -192,7 +192,7 @@ func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64,
 		tasks := make([]metadata.SyncModuleTask, 0)
 		for _, moduleDiff := range setDiff.ModuleDiffs {
 			task := metadata.SyncModuleTask{
-				Header:             params.Header,
+				Header:             kit.Header,
 				Set:                setDiff.SetDetail,
 				ModuleDiff:         moduleDiff,
 				SetTopoPath:        setDiff.TopoPath,
@@ -200,7 +200,7 @@ func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64,
 			}
 			tasks = append(tasks, task)
 		}
-		taskDetail, err := st.DispatchTask4ModuleSync(params.Context, params.Header, indexKey, tasks...)
+		taskDetail, err := st.DispatchTask4ModuleSync(kit.Ctx, kit.Header, indexKey, tasks...)
 		if err != nil {
 			return err
 		}
@@ -209,7 +209,7 @@ func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64,
 		}
 
 		// update cc_SetTemplateSyncStatus status
-		_, err = st.UpdateSetSyncStatus(params, setDiff.SetID)
+		_, err = st.UpdateSetSyncStatus(kit, setDiff.SetID)
 		if err != nil {
 			blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s", setDiff.SetID, err.Error())
 			return err
@@ -228,7 +228,7 @@ func (st *setTemplate) SyncSetTplToInst(params types.ContextParams, bizID int64,
 					blog.Errorf("poll UpdateSetSyncStatus timeout, setID: %d", setID)
 					return
 				case <-ticker.C:
-					setSyncStatus, err := st.UpdateSetSyncStatus(params, setID)
+					setSyncStatus, err := st.UpdateSetSyncStatus(kit, setID)
 					if err != nil {
 						blog.Errorf("UpdateSetSyncStatus failed, setID: %d, err: %s", setID, err.Error())
 						return
@@ -331,11 +331,11 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 }
 
 // CheckSetTplInstLatest 检查通过集群模板 setTemplateID 实例化的集群是否都已经达到最新状态
-func (st *setTemplate) CheckSetInstUpdateToDateStatus(params types.ContextParams, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder) {
-	rid := params.ReqID
+func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64, setTemplateID int64) (metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder) {
+	rid := kit.Rid
 
 	result := metadata.SetTemplateUpdateToDateStatus{}
-	setTemplate, ccErr := st.client.CoreService().SetTemplate().GetSetTemplate(params.Context, params.Header, bizID, setTemplateID)
+	setTemplate, ccErr := st.client.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
 	if ccErr != nil {
 		blog.Errorf("CheckSetInstUpdateToDateStatus failed, GetSetTemplate failed, bizID: %d, setTemplateID: %d, err: %+v, rid: %s", bizID, setTemplateID, ccErr, rid)
 		return result, ccErr
@@ -354,7 +354,7 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(params types.ContextParams
 			common.BKSetTemplateIDField: setTemplateID,
 		},
 	}
-	setResult, err := st.client.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDSet, filter)
+	setResult, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter)
 	if err != nil {
 		blog.Errorf("CheckSetInstUpdateToDateStatus failed, ReadInstance of set failed, option: %+v, err: %+v, rid: %s", filter, err, rid)
 		return result, errors.CCHttpError
@@ -368,7 +368,7 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(params types.ContextParams
 		set := metadata.SetInst{}
 		if err := mapstruct.Decode2Struct(item, &set); err != nil {
 			blog.ErrorJSON("CheckSetInstUpdateToDateStatus failed, unmarshal set data failed, set: %s, err: %s, rid: %s", item, err.Error(), rid)
-			return result, params.Err.CCError(common.CCErrCommParseDBFailed)
+			return result, kit.CCError.CCError(common.CCErrCommParseDBFailed)
 		}
 		needSync := set.SetTemplateVersion != setTemplate.Version
 		setStatus := metadata.SetUpdateToDateStatus{

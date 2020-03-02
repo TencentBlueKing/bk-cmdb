@@ -9,11 +9,11 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package x08_09_11_01
+package y3_8_202001172032
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
@@ -21,14 +21,21 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x08.09.11.01", upgrade)
+	upgrader.RegistUpgrader("y3.8.202001172032", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = addOperationLogIndex(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x08.09.11.01] updateSystemProperty error  %s", err.Error())
-		return err
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	blog.Infof("start execute y3.8.202001172032")
+
+	if err := createAuditLogTable(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.8.202001172032] createAuditLogTable failed, error %s", err.Error())
+		return fmt.Errorf("createAuditLogTable failed, error %s", err.Error())
 	}
-	return
+
+	if err := addAuditLogTableIndex(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade y3.8.202001172032] addAuditLogTableIndex failed, error %s", err.Error())
+		return fmt.Errorf("addAuditLogTableIndex failed, error %s", err.Error())
+	}
+
+	return nil
 }

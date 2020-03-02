@@ -44,15 +44,15 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 		},
 		Condition: cond.ToMapStr(),
 	}
-	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.params.Header, object.ObjectID, &input)
+	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.kit.Header, object.ObjectID, &input)
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to request object controller, error info %s, rid: %s", err.Error(), cli.params.ReqID)
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[inst-inst] failed to request object controller, error info %s, rid: %s", err.Error(), cli.kit.Rid)
+		return cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[inst-inst] failed to update the association, err: %s, rid: %s", rsp.ErrMsg, cli.params.ReqID)
-		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[inst-inst] failed to update the association, err: %s, rid: %s", rsp.ErrMsg, cli.kit.Rid)
+		return cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
@@ -60,15 +60,15 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 
 func (cli *inst) searchInstAssociation(cond condition.Condition) ([]metadata.InstAsst, error) {
 
-	rsp, err := cli.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), cli.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), cli.kit.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.params.ReqID)
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.kit.Rid)
+		return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[inst-inst] failed to search the inst association, err: %s, rid: %s", rsp.ErrMsg, cli.params.ReqID)
-		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[inst-inst] failed to search the inst association, err: %s, rid: %s", rsp.ErrMsg, cli.kit.Rid)
+		return nil, cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return rsp.Data.Info, nil
@@ -84,15 +84,15 @@ func (cli *inst) deleteInstAssociation(instID, asstInstID int64, objID, asstObjI
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKAsstObjIDField).Eq(asstObjID)
 
-	rsp, err := cli.clientSet.CoreService().Association().DeleteInstAssociation(context.Background(), cli.params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Association().DeleteInstAssociation(context.Background(), cli.kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.params.ReqID)
-		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.kit.Rid)
+		return cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[inst-inst] failed to delete the inst association, err: %s, rid: %s", rsp.ErrMsg, cli.params.ReqID)
-		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[inst-inst] failed to delete the inst association, err: %s, rid: %s", rsp.ErrMsg, cli.kit.Rid)
+		return cli.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
@@ -108,12 +108,11 @@ func (cli *inst) GetMainlineParentInst() (Inst, error) {
 
 	parentID, err := cli.GetParentID()
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the inst id, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst] failed to get the inst id, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return nil, err
 	}
 
 	cond := condition.CreateCondition()
-	cond.Field(metadata.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 	if parentObj.IsCommon() {
 		cond.Field(metadata.ModelFieldObjectID).Eq(parentObj.Object().ObjectID)
 	}
@@ -121,8 +120,8 @@ func (cli *inst) GetMainlineParentInst() (Inst, error) {
 
 	rspItems, err := cli.searchInsts(parentObj, cond)
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.params.ReqID)
-		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[inst-inst] failed to request the object controller , err: %s, rid: %s", err.Error(), cli.kit.Rid)
+		return nil, cli.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	for _, item := range rspItems {
@@ -138,19 +137,18 @@ func (cli *inst) GetMainlineChildInst() ([]Inst, error) {
 		if err == io.EOF {
 			return []Inst{}, nil
 		}
-		blog.Errorf("[inst-inst]failed to get the object(%s)'s child object, err: %s, rid: %s", cli.target.Object().ObjectID, err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst]failed to get the object(%s)'s child object, err: %s, rid: %s", cli.target.Object().ObjectID, err.Error(), cli.kit.Rid)
 		return nil, err
 	}
 
 	currInstID, err := cli.GetInstID()
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the inst id, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst] failed to get the inst id, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return nil, err
 	}
 
 	cObj := childObj.Object()
 	cond := condition.CreateCondition()
-	cond.Field(metadata.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 	if childObj.IsCommon() {
 		cond.Field(metadata.ModelFieldObjectID).Eq(cObj.ObjectID)
 	} else if cObj.ObjectID == common.BKInnerObjIDSet {
@@ -164,13 +162,13 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 	result := make([]*ObjectWithInsts, 0)
 	objPairs, err := cli.target.GetParentObject()
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the object(%s)'s parent, err: %s, rid: %s", cli.target.Object().ObjectID, err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst] failed to get the object(%s)'s parent, err: %s, rid: %s", cli.target.Object().ObjectID, err.Error(), cli.kit.Rid)
 		return result, err
 	}
 
 	currInstID, err := cli.GetInstID()
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the inst id, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst] failed to get the inst id, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return result, err
 	}
 
@@ -185,7 +183,7 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 
 		asstItems, err := cli.searchInstAssociation(cond)
 		if nil != err {
-			blog.Errorf("[inst-inst] failed to search the inst association, the err: %s, rid: %s", err.Error(), cli.params.ReqID)
+			blog.Errorf("[inst-inst] failed to search the inst association, the err: %s, rid: %s", err.Error(), cli.kit.Rid)
 			return result, err
 		}
 
@@ -206,8 +204,6 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 		}
 
 		innerCond := condition.CreateCondition()
-
-		innerCond.Field(metadata.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 		innerCond.Field(objPair.Object.GetInstIDFieldName()).In(parentInstIDS)
 		if objPair.Object.IsCommon() {
 			innerCond.Field(metadata.ModelFieldObjectID).Eq(objPair.Object.Object().ObjectID)
@@ -215,14 +211,14 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 
 		rspItems, err := cli.searchInsts(objPair.Object, innerCond)
 		if nil != err {
-			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), err: %s, rid: %s", innerCond, err.Error(), cli.params.ReqID)
+			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), err: %s, rid: %s", innerCond, err.Error(), cli.kit.Rid)
 			return result, err
 		}
 
 		for _, item := range rspItems {
 			id, err := item.GetInstID()
 			if err != nil {
-				blog.Errorf("[inst-inst] failed to parse the instance id , err: %s, rid: %s", err.Error(), cli.params.ReqID)
+				blog.Errorf("[inst-inst] failed to parse the instance id , err: %s, rid: %s", err.Error(), cli.kit.Rid)
 				return result, err
 			}
 			item.SetAssoID(relation[id])
@@ -242,13 +238,13 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 
 	objPairs, err := cli.target.GetChildObject()
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the object(%s)'s child, err: %s, rid: %s", cli.target.Object().ObjectID, err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst] failed to get the object(%s)'s child, err: %s, rid: %s", cli.target.Object().ObjectID, err.Error(), cli.kit.Rid)
 		return result, err
 	}
 
 	currInstID, err := cli.GetInstID()
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the inst id, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst] failed to get the inst id, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return result, err
 	}
 
@@ -263,7 +259,7 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 
 		asstItems, err := cli.searchInstAssociation(cond)
 		if nil != err {
-			blog.Errorf("[inst-inst] failed to search the inst association,  the err: %s, rid: %s", err.Error(), cli.params.ReqID)
+			blog.Errorf("[inst-inst] failed to search the inst association,  the err: %s, rid: %s", err.Error(), cli.kit.Rid)
 			return result, err
 		}
 
@@ -284,7 +280,6 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 		}
 
 		innerCond := condition.CreateCondition()
-		innerCond.Field(metadata.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
 		innerCond.Field(objPair.Object.GetInstIDFieldName()).In(childInstIDS)
 		if objPair.Object.IsCommon() {
 			innerCond.Field(metadata.ModelFieldObjectID).Eq(objPair.Object.Object().ObjectID)
@@ -292,14 +287,14 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 
 		rspItems, err := cli.searchInsts(objPair.Object, innerCond)
 		if nil != err {
-			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), err: %s, rid: %s", innerCond, err.Error(), cli.params.ReqID)
+			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), err: %s, rid: %s", innerCond, err.Error(), cli.kit.Rid)
 			return result, err
 		}
 
 		for _, item := range rspItems {
 			id, err := item.GetInstID()
 			if err != nil {
-				blog.Errorf("[inst-inst] failed to parse the association id , err: %s, rid: %s", err.Error(), cli.params.ReqID)
+				blog.Errorf("[inst-inst] failed to parse the association id , err: %s, rid: %s", err.Error(), cli.kit.Rid)
 				return result, err
 			}
 
@@ -315,7 +310,7 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 
 func (cli *inst) SetMainlineParentInst(instID int64) error {
 	if err := cli.updateMainlineAssociation(cli, instID); nil != err {
-		blog.Errorf("[inst-inst] failed to update the mainline association, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst] failed to update the mainline association, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return err
 	}
 
@@ -330,12 +325,12 @@ func (cli *inst) SetMainlineChildInst(targetInst Inst) error {
 
 	childInsts, err := cli.GetMainlineChildInst()
 	if nil != err {
-		blog.Errorf("[inst-inst] failed to get the child inst, err:  %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst] failed to get the child inst, err:  %s, rid: %s", err.Error(), cli.kit.Rid)
 		return err
 	}
 	for _, childInst := range childInsts {
 		if err = cli.updateMainlineAssociation(childInst, instID); nil != err {
-			blog.Errorf("[inst-inst] failed to set the mainline child inst, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+			blog.Errorf("[inst-inst] failed to set the mainline child inst, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 			return err
 		}
 	}
@@ -346,7 +341,7 @@ func (cli *inst) SetMainlineChildInst(targetInst Inst) error {
 	}
 
 	if err = cli.updateMainlineAssociation(targetInst, id); nil != err {
-		blog.Errorf("[inst-inst] failed to update the mainline association, err: %s, rid: %s", err.Error(), cli.params.ReqID)
+		blog.Errorf("[inst-inst] failed to update the mainline association, err: %s, rid: %s", err.Error(), cli.kit.Rid)
 		return err
 	}
 

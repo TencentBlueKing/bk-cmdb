@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // CreateClassification create object's classification
@@ -31,10 +32,10 @@ func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 	}
 
 	cond := mapstr.MapStr{
-		"scope_type":          selector.ScopeType,
-		"scope_id":            selector.ScopeID,
-		"bk_supplier_account": ctx.Kit.SupplierAccount,
+		"scope_type": selector.ScopeType,
+		"scope_id":   selector.ScopeID,
 	}
+	cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 	_, err := selector.Metadata.Label.GetBusinessID()
 	if nil == err {
 		cond.Merge(meta.PublicAndBizCondition(selector.Metadata))
@@ -63,13 +64,13 @@ func (s *coreService) UpdateTopoGraphics(ctx *rest.Contexts) {
 	for index := range inputBody.Data {
 		inputBody.Data[index].SetSupplierAccount(ctx.Kit.SupplierAccount)
 		cond := mapstr.MapStr{
-			"scope_type":          inputBody.Data[index].ScopeType,
-			"scope_id":            inputBody.Data[index].ScopeID,
-			"node_type":           inputBody.Data[index].NodeType,
-			"bk_obj_id":           inputBody.Data[index].ObjID,
-			"bk_inst_id":          inputBody.Data[index].InstID,
-			"bk_supplier_account": ctx.Kit.SupplierAccount,
+			"scope_type": inputBody.Data[index].ScopeType,
+			"scope_id":   inputBody.Data[index].ScopeID,
+			"node_type":  inputBody.Data[index].NodeType,
+			"bk_obj_id":  inputBody.Data[index].ObjID,
+			"bk_inst_id": inputBody.Data[index].InstID,
 		}
+		cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 
 		cnt, err := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx.Kit.Ctx)
 		if nil != err {

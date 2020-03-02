@@ -10,7 +10,6 @@ import {
 import {
     U_HOST,
     C_TOPO,
-    R_TOPO,
     U_TOPO,
     D_TOPO,
     C_SERVICE_INSTANCE,
@@ -33,7 +32,6 @@ export default [{
             operation: {
                 U_HOST,
                 C_TOPO,
-                R_TOPO,
                 U_TOPO,
                 D_TOPO,
                 C_SERVICE_INSTANCE,

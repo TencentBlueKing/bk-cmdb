@@ -13,9 +13,9 @@
 package service
 
 import (
-	"fmt"
-	"gopkg.in/redis.v5"
 	"strconv"
+
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -159,6 +159,7 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 	if err != nil && !s.db.IsNotFoundError(err) {
 		blog.Errorf("GetHostByID failed, get host by id[%d] failed, err: %+v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 
 	ctx.RespEntity(result)
@@ -192,10 +193,15 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	}
 	condition = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
-	result, err := s.getObjectByCondition(ctx, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
-	if err != nil {
-		blog.Errorf("get object failed type:%s,input:%v error:%v, rid: %s", common.BKInnerObjIDHost, dat, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostSelectInst))
+
+	result := make([]mapstr.MapStr, 0)
+	dbInst := s.db.Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
+	if 0 < len(fieldArr) {
+		dbInst.Fields(fieldArr...)
+	}
+	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
+		blog.Errorf("failed to query the host , err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -212,33 +218,6 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	})
 }
 
-func (s *coreService) getObjectByCondition(ctx *rest.Contexts, objType string, fields []string, condition interface{}, sort string, skip, limit int) ([]mapstr.MapStr, error) {
-	results := make([]mapstr.MapStr, 0)
-	tName := common.GetInstTableName(objType)
-
-	dbInst := s.db.Table(tName).Find(condition).Sort(sort).Start(uint64(skip)).Limit(uint64(limit))
-	if 0 < len(fields) {
-		dbInst.Fields(fields...)
-	}
-	if err := dbInst.All(ctx.Kit.Ctx, &results); err != nil {
-		blog.Errorf("failed to query the inst , error info %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		return nil, err
-	}
-
-	// translate language for default name
-	lang := s.Language(ctx.Kit.Header)
-	if m, ok := defaultNameLanguagePkg[objType]; nil != lang && ok {
-		for index, info := range results {
-			l := m[fmt.Sprint(info["default"])]
-			if len(l) >= 3 {
-				results[index][l[1]] = util.FirstNotEmptyString(lang.Language(l[0]), fmt.Sprint(info[l[1]]), fmt.Sprint(info[l[2]]))
-			}
-		}
-	}
-
-	return results, nil
-}
-
 func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	hostID := ctx.Request.PathParameter(common.BKHostIDField)
 	key := common.RedisSnapKeyPrefix + hostID
@@ -246,6 +225,7 @@ func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	if nil != err && err != redis.Nil {
 		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
+		return
 	}
 
 	ctx.RespEntity(metadata.HostSnap{

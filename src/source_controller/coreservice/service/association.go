@@ -127,11 +127,13 @@ func (s *coreService) SearchAssociationKind(ctx *rest.Contexts) {
 		return
 	}
 
-    // translate
-    for idx := range result.Info {
-        s.TranslateAssociationType(s.Language(ctx.Kit.Header), &result.Info[idx])
-    }
-    
+	// translate
+	for idx := range result.Info {
+		if result.Info[idx].IsPre != nil && *result.Info[idx].IsPre {
+			s.TranslateAssociationType(s.Language(ctx.Kit.Header), &result.Info[idx])
+		}
+	}
+
 	ctx.RespEntity(result)
 }
 

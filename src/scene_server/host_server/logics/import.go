@@ -19,7 +19,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
-	"configcenter/src/common/auditoplog"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
@@ -67,7 +67,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 	}
 
 	var errMsg, updateErrMsg, successMsg []string
-	logContents := make([]metadata.SaveAuditLogParams, 0)
+	logContents := make([]metadata.AuditLog, 0)
 	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, nil)
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -117,6 +117,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			intHostID, existInDB = hostIDMap[key]
 		}
 		var preData mapstr.MapStr
+		var action metadata.ActionType
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
 		if existInDB {
@@ -131,6 +132,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 				updateErrMsg = append(updateErrMsg, err.Error())
 				continue
 			}
+			action = metadata.AuditUpdate
 		} else {
 			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleIDs, toInternalModule, host)
 			if err != nil {
@@ -139,6 +141,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			}
 			host[common.BKHostIDField] = intHostID
 			hostIDMap[generateHostCloudKey(innerIP, iSubArea)] = intHostID
+			action = metadata.AuditCreate
 		}
 		// add current host operate result to  batch add result
 		successMsg = append(successMsg, strconv.FormatInt(index, 10))
@@ -149,19 +152,33 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 
+		bizName := ""
+		if appID > 0 {
+			bizName, err = auditlog.NewAudit(lgc.CoreAPI, ctx, lgc.header).GetInstNameByID(common.BKInnerObjIDApp, appID)
+			if err != nil {
+				return nil, nil, nil, nil, err
+			}
+		}
+
 		// add audit log
-		logContents = append(logContents, metadata.SaveAuditLogParams{
-			ID: intHostID,
-			Content: metadata.Content{
-				PreData: preData,
-				CurData: curData,
-				Headers: auditHeaders,
+		logContents = append(logContents, metadata.AuditLog{
+			AuditType:    metadata.HostType,
+			ResourceType: metadata.HostRes,
+			Action:       action,
+			OperationDetail: &metadata.InstanceOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
+					BusinessID:   appID,
+					BusinessName: bizName,
+					ResourceID:   intHostID,
+					ResourceName: innerIP,
+					Details: &metadata.BasicContent{
+						PreData:    preData,
+						CurData:    curData,
+						Properties: auditHeaders,
+					},
+				},
+				ModelID: common.BKInnerObjIDHost,
 			},
-			ExtKey: innerIP,
-			OpType: auditoplog.AuditOpTypeAdd,
-			BizID:  appID,
-			OpDesc: "import host",
-			Model:  common.BKInnerObjIDHost,
 		})
 		hostIDs = append(hostIDs, intHostID)
 	}
@@ -181,7 +198,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 }
 
 func (lgc *Logics) getHostFields(ctx context.Context, ownerID string) (map[string]*metadata.ObjAttDes, error) {
-	opt := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
+	opt := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).MapStr()
 
 	input := &metadata.QueryCondition{
 		Condition: opt,

@@ -151,13 +151,13 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
-	cond.Field(common.BKOwnerIDField).Eq(kit.SupplierAccount)
 	if len(unique.Metadata.Label) > 0 {
 		cond.Field(metadata.BKMetadata).Eq(unique.Metadata)
 	}
+	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
 
 	oldUnique := metadata.ObjectUnique{}
-	err = m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).One(kit.Ctx, &oldUnique)
+	err = m.dbProxy.Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &oldUnique)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] find error: %s, raw: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -180,10 +180,10 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKFieldID).Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
-	cond.Field(common.BKOwnerIDField).Eq(kit.SupplierAccount)
+	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
 
 	unique := metadata.ObjectUnique{}
-	err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).One(kit.Ctx, &unique)
+	err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &unique)
 	if nil != err {
 		blog.Errorf("[DeleteObjectUnique] find error: %s, raw: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -232,9 +232,9 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 	properties := make([]metadata.Attribute, 0)
 	attCond := condition.CreateCondition()
 	attCond.Field(common.BKObjIDField).Eq(objID)
-	attCond.Field(common.BKOwnerIDField).Eq(kit.SupplierAccount)
 	attCond.Field(common.BKFieldID).In(propertyIDs)
 	fCond := attCond.ToMapStr()
+	fCond = util.SetQueryOwner(fCond, kit.SupplierAccount)
 	if len(meta.Label) > 0 {
 		fCond.Merge(metadata.PublicAndBizCondition(meta))
 		fCond.Remove(metadata.BKMetadata)

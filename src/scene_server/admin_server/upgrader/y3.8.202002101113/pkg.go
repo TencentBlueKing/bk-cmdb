@@ -9,26 +9,30 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package x08_09_13_01
+package y3_8_202002101113
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+
+	"gopkg.in/redis.v5"
 )
 
 func init() {
-	upgrader.RegistUpgrader("x08.09.13.01", upgrade)
+	upgrader.RegisterUpgraderWithRedis("y3.8.202002101113", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = addOperationLogIndex(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x08.09.13.01] addOperationLogIndex error  %s", err.Error())
-		return err
+func upgrade(ctx context.Context, db dal.RDB, cache *redis.Client, conf *upgrader.Config) error {
+	blog.Infof("start execute y3.8.202002101113")
+
+	if err := migrateEventIDToMongo(ctx, db, cache, conf); err != nil {
+		blog.Errorf("[upgrade y3.8.202002101113] migrateEventIDToMongo failed, error %s", err.Error())
+		return fmt.Errorf("migrateEventIDToMongo failed, error %s", err.Error())
 	}
-	return
+
+	return nil
 }

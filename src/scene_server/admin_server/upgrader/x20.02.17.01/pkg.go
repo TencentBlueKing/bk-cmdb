@@ -10,21 +10,23 @@
  * limitations under the License.
  */
 
-package x08_09_11_01
+package x20_02_17_01
 
 import (
 	"context"
 
-	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func addOperationLogIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func init() {
+	upgrader.RegistUpgrader("x20_02_17_01", upgrade)
+}
 
-	index := dal.Index{Name: "", Keys: map[string]int32{"opt_time": 1}, Background: true}
-
-	if err = db.Table(common.BKTableNameOperationLog).CreateIndex(ctx, index); err != nil && db.IsDuplicatedError(err) {
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	if err := fixProcTemplateProcName(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade to version x20_02_17_01 failed, updateNonePropertyGroup failed, err: %+v", err)
 		return err
 	}
 

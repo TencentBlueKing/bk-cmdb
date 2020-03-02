@@ -132,6 +132,7 @@
                 }
             },
             handleFullScreen () {
+                this.$store.commit('setLayoutStatus', { mainFullScreen: true })
                 this.$refs.dynamicComponent.toggleFullScreen(true)
             }
         }
@@ -191,6 +192,6 @@
         }
     }
     .relation-component {
-        height: calc(100% - 80px);
+        height: calc(100% - 62px);
     }
 </style>

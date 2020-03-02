@@ -16,9 +16,9 @@ import (
 	"encoding/json"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 var _ Association = (*association)(nil)
@@ -26,7 +26,7 @@ var _ Association = (*association)(nil)
 type association struct {
 	asst       metadata.Association
 	isMainLine bool
-	params     types.ContextParams
+	kit        *rest.Kit
 	clientSet  apimachinery.ClientSetInterface
 }
 
