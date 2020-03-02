@@ -76,7 +76,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		sys := System{
 			ID:          SystemIDCMDB,
 			Name:        SystemNameCMDB,
-			EnglishName: "cmdb",
+			EnglishName: SystemNameCMDBEn,
 			Clients:     SystemIDCMDB,
 			ProviderConfig: &SysConfig{
 				Host: host,

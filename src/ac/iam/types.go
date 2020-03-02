@@ -26,14 +26,17 @@ const (
 	iamAppCodeHeader   = "X-Bk-App-Code"
 	iamAppSecretHeader = "X-Bk-App-Secret"
 
-	SystemIDCMDB   = "bk_cmdb"
-	SystemNameCMDB = "配置平台"
+	SystemIDCMDB     = "bk_cmdb"
+	SystemNameCMDBEn = "cmdb"
+	SystemNameCMDB   = "配置平台"
 
-	ScopeTypeIDSystem     = "system"
-	ScopeTypeIDSystemName = "全局"
+	ScopeTypeIDSystem       = "system"
+	ScopeTypeIDSystemName   = "全局"
+	ScopeTypeIDSystemNameEn = "system"
 
-	ScopeTypeIDBiz     = "biz"
-	ScopeTypeIDBizName = "业务"
+	ScopeTypeIDBiz       = "biz"
+	ScopeTypeIDBizName   = "业务"
+	ScopeTypeIDBizNameEn = "business"
 )
 
 type AuthConfig struct {
@@ -363,4 +366,28 @@ func (s *iamDiscovery) GetServers() ([]string, error) {
 		s.index = 0
 		return append(s.servers[num-1:], s.servers[:num-1]...), nil
 	}
+}
+
+type ScopeInfo struct {
+	ScopeType string `json:"scope_type,omitempty"`
+	ScopeID   string `json:"scope_id,omitempty"`
+}
+
+type ResourceEntity struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ScopeInfo
+	ResourceName string         `json:"resource_name,omitempty"`
+	ResourceID   []RscTypeAndID `json:"resource_id,omitempty"`
+}
+
+type RscTypeAndID struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceID   string         `json:"resource_id,omitempty"`
+}
+
+type ResourceInfo struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	// this filed is not always used, it's decided by the api
+	// that is used.
+	ResourceEntity
 }
