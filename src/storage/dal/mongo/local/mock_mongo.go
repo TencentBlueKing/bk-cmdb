@@ -22,6 +22,8 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
 
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -58,6 +60,12 @@ func (c *Mock) Clone() dal.DB {
 		cache: c.cache,
 	}
 	return &nc
+}
+
+// Watch returns a change stream cursor used to receive information of changes to the client
+func (c *Mock) Watch(ctx context.Context, pipeline interface{},
+	opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error) {
+	return nil, nil
 }
 
 // MockResult the result mock
@@ -102,6 +110,12 @@ func (c *Mock) Table(collName string) dal.Table {
 type MockCollection struct {
 	collName string // 集合名
 	*Mock
+}
+
+// Watch returns a change stream cursor used to receive notifications of changes to the collection
+func (c *MockCollection) Watch(ctx context.Context, pipeline interface{},
+	opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error) {
+	return nil, nil
 }
 
 // Find 查询多个并反序列化到 Result

@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/cloud_server/app/options"
 	"configcenter/src/scene_server/cloud_server/logics"
+	"configcenter/src/scene_server/cloud_server/taskprocess"
 	svc "configcenter/src/scene_server/cloud_server/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
@@ -83,6 +84,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		blog.Infof("enable auth center: %v", auth.IsAuthed())
 
 		process.Service.Logics = logics.NewLogics(ctx, service.Engine, db, cache)
+
+		err = taskprocess.ProcessTask(ctx, service.Engine.ServiceManageClient().Client(), db, input.SrvInfo.Instance())
+		if err != nil {
+			return fmt.Errorf("ProcessTask failed: %v", err)
+		}
 
 		break
 	}

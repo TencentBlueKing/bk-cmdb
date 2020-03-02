@@ -100,6 +100,12 @@ func (c *Mongo) Clone() dal.DB {
 	return &nc
 }
 
+// Watch returns a change stream cursor used to receive information of changes to the client
+func (c *Mongo) Watch(ctx context.Context, pipeline interface{},
+	opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error) {
+	return c.dbc.Watch(ctx, pipeline, opts...)
+}
+
 // IsDuplicatedError check duplicated error
 func (c *Mongo) IsDuplicatedError(err error) bool {
 	if err != nil {
@@ -133,6 +139,12 @@ func (c *Mongo) Table(collName string) dal.Table {
 type Collection struct {
 	collName string // 集合名
 	*Mongo
+}
+
+// Watch returns a change stream cursor used to receive notifications of changes to the collection
+func (c *Collection) Watch(ctx context.Context, pipeline interface{},
+	opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error) {
+	return c.dbc.Database(c.dbname).Collection(c.collName).Watch(ctx, pipeline, opts...)
 }
 
 // Find 查询多个并反序列化到 Result

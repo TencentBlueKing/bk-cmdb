@@ -19,6 +19,9 @@ import (
 
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/storage/types"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Errors defind
@@ -65,6 +68,10 @@ type DB interface {
 	StartSession() (DB, error)
 	// EndSession 结束会话
 	EndSession(ctx context.Context) error
+
+	// 监听DB事件
+	Watch(ctx context.Context, pipeline interface{},
+		opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error)
 
 	Transaction
 }
@@ -129,6 +136,10 @@ type Table interface {
 	DropColumn(ctx context.Context, field string) error
 	// 根据条件移除字段
 	DropColumns(ctx context.Context, filter Filter, fields []string) error
+
+	// 监听表事件
+	Watch(ctx context.Context, pipeline interface{},
+		opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error)
 }
 
 // JoinOption defind join transaction options
