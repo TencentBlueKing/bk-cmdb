@@ -16,11 +16,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/hashring"
 	"configcenter/src/common/types"
 	"configcenter/src/common/zkclient"
 	"configcenter/src/storage/dal"
@@ -29,32 +29,34 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"stathat.com/c/consistent"
 )
 
 type taskProcessor struct {
 	client   *zkclient.ZkClient
 	db       dal.RDB
 	addrport string
-	hashring *hashring.HashRing
+	hashring *consistent.Consistent
 	tasklist map[int64]bool
 	taskChan chan int64
+	mu       sync.RWMutex
 }
 
 const (
-	replicas   int = 10
 	processNum int = 10
 )
 
+// 处理云资源同步任务
 func ProcessTask(ctx context.Context, client *zkclient.ZkClient, db dal.RDB, addrport string) error {
 	t := &taskProcessor{
 		client:   client,
 		db:       db,
 		addrport: addrport,
-		hashring: hashring.NewHashRing(replicas, nil),
+		hashring: consistent.New(),
 		tasklist: make(map[int64]bool),
 		taskChan: make(chan int64, 10),
 	}
-	if err := t.DispatchTask(ctx); err != nil {
+	if err := t.WatchTaskNode(ctx); err != nil {
 		return err
 	}
 	if err := t.WatchTaskTable(ctx); err != nil {
@@ -66,16 +68,15 @@ func ProcessTask(ctx context.Context, client *zkclient.ZkClient, db dal.RDB, add
 }
 
 // 监听zk节点变化，有变化时重新分配当前进程的任务列表
-func (t *taskProcessor) DispatchTask(ctx context.Context) error {
+func (t *taskProcessor) WatchTaskNode(ctx context.Context) error {
 	zkPath := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, common.GetIdentification())
 
 	go func() {
-		var children []string
 		var ch <-chan zk.Event
 		var err error
 		cnt := 0
 		for {
-			children, ch, err = t.client.WatchChildren(zkPath)
+			_, ch, err = t.client.WatchChildren(zkPath)
 			if err != nil {
 				blog.Errorf("endpoints watch failed, will watch after 10s, path: %s, err: %s", zkPath, err.Error())
 				switch err {
@@ -88,16 +89,12 @@ func (t *taskProcessor) DispatchTask(ctx context.Context) error {
 				time.Sleep(5 * time.Second)
 				continue
 			}
-			children, err = t.client.GetChildren(zkPath)
-			if err != nil {
-				blog.Errorf("fail to GetChildren(%s), err:%s", zkPath, err.Error())
-				continue
-			}
-			blog.V(3).Infof("children:%#v", children)
 
 			// 启动时需执行任务重新分配
 			if cnt == 0 {
-				t.ReDispatchTask(ctx, zkPath, children)
+				if err := t.DispatchTasks(ctx, zkPath); err != nil {
+					continue
+				}
 			}
 
 			select {
@@ -106,8 +103,9 @@ func (t *taskProcessor) DispatchTask(ctx context.Context) error {
 				if event.Type != zk.EventNodeChildrenChanged {
 					continue
 				}
-				blog.V(3).Infof("event:%#v", event)
-				t.ReDispatchTask(ctx, zkPath, children)
+				if err := t.DispatchTasks(ctx, zkPath); err != nil {
+					continue
+				}
 			case <-ctx.Done():
 				blog.Warnf("cloudserver endpoints watch stopped because of context done.")
 				return
@@ -141,12 +139,7 @@ func (t *taskProcessor) WatchTaskTable(ctx context.Context) error {
 			if _, ok = fulldoc["bk_task_id"]; ok {
 				taskid = int64(fulldoc["bk_task_id"].(float64))
 			}
-			// 判断是否要添加到当前任务队列
-			if t.hashring.Get(fmt.Sprintf("%d", taskid)) == t.addrport {
-				if _, ok := t.tasklist[taskid]; !ok {
-					t.tasklist[taskid] = true
-				}
-			}
+			t.AddTask(taskid)
 		}
 	}()
 
@@ -154,7 +147,7 @@ func (t *taskProcessor) WatchTaskTable(ctx context.Context) error {
 }
 
 // 获取资源同步任务表的所有任务
-func (t *taskProcessor) GetAllTasks(ctx context.Context) ([]int64, error) {
+func (t *taskProcessor) GetTasksFromTable(ctx context.Context) ([]int64, error) {
 	condition := map[string]interface{}{"del": map[string]interface{}{"$ne": 0}}
 	taskResult := make([]map[string]interface{}, 0)
 	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(condition).All(ctx, &taskResult)
@@ -169,8 +162,15 @@ func (t *taskProcessor) GetAllTasks(ctx context.Context) ([]int64, error) {
 	return taskids, nil
 }
 
-// 重新分配任务
-func (t *taskProcessor) ReDispatchTask(ctx context.Context, zkPath string, children []string) error {
+// 监听zk路径上的任务节点，有变动时重新分配任务
+func (t *taskProcessor) DispatchTasks(ctx context.Context, zkPath string) error {
+	// 获取监控路径下的所有子节点
+	children, err := t.client.GetChildren(zkPath)
+	if err != nil {
+		blog.Errorf("fail to GetChildren(%s), err:%s", zkPath, err.Error())
+		return err
+	}
+	blog.V(3).Infof("children:%#v", children)
 	addrArr := []string{}
 	for _, child := range children {
 		childpath := zkPath + "/" + child
@@ -188,21 +188,24 @@ func (t *taskProcessor) ReDispatchTask(ctx context.Context, zkPath string, child
 		addrArr = append(addrArr, info.Instance())
 
 	}
-	t.hashring.Clear()
-	t.hashring.Add(addrArr...)
-	taskids, err := t.GetAllTasks(ctx)
+	// 清空哈希环
+	t.hashring.Set([]string{})
+	// 添加所有子节点
+	for _, addr := range addrArr {
+		t.hashring.Add(addr)
+
+	}
+	// 清空任务列表后，将表中所有任务里属于自己的放入任务队列
+	t.ClearTaskList()
+	taskids, err := t.GetTasksFromTable(ctx)
 	if err != nil {
-		blog.Errorf("GetAllTasks err:%s", err.Error())
+		blog.Errorf("GetTasksFromTable err:%s", err.Error())
 		return err
 	}
 	for _, taskid := range taskids {
-		if t.hashring.Get(fmt.Sprintf("%d", taskid)) == t.addrport {
-			if _, ok := t.tasklist[taskid]; !ok {
-				t.tasklist[taskid] = true
-			}
-		}
+		t.AddTask(taskid)
 	}
-	blog.Info("DispatchTask, tasklist:%#v", t.tasklist)
+	blog.Info("finished DispatchTasks, tasklist:%#v", t.tasklist)
 	return nil
 }
 
@@ -223,10 +226,46 @@ func (t *taskProcessor) SyncCloudHost() {
 func (t *taskProcessor) TaskChanLoop() {
 	go func() {
 		for {
-			for taskid, _ := range t.tasklist {
+			taskids := t.GetTaskList()
+			for _, taskid := range taskids {
 				t.taskChan <- taskid
 			}
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 5)
 		}
 	}()
+}
+
+// 添加属于自己的任务到当前任务队列
+func (t *taskProcessor) AddTask(taskid int64) error {
+	if node, err := t.hashring.Get(fmt.Sprintf("%d", taskid)); err != nil {
+		blog.Errorf("hashring Get err:%s", err.Error())
+		return err
+	} else {
+		if node == t.addrport {
+			t.mu.Lock()
+			defer t.mu.Unlock()
+			if _, ok := t.tasklist[taskid]; !ok {
+				t.tasklist[taskid] = true
+			}
+		}
+	}
+	return nil
+}
+
+// 获取任务列表的所有任务
+func (t *taskProcessor) GetTaskList() []int64 {
+	taskids := []int64{}
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	for taskid, _ := range t.tasklist {
+		taskids = append(taskids, taskid)
+	}
+	return taskids
+}
+
+// 清空任务列表
+func (t *taskProcessor) ClearTaskList() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.tasklist = map[int64]bool{}
 }
