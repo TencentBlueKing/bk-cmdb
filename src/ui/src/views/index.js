@@ -21,10 +21,6 @@ import setTemplate from '@/views/set-template/router.config'
 import hostApply from '@/views/host-apply/router.config'
 import businessTopology from '@/views/business-topology/router.config'
 
-import cloudArea from '@/views/cloud-area/router.config'
-import cloudAccount from '@/views/cloud-account/router.config'
-import cloudResource from '@/views/cloud-resource/router.config'
-
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
 
@@ -69,10 +65,7 @@ export const resourceViews = injectStatusComponents(flatternViews([
     resource,
     generalModel,
     eventpush,
-    resourceManagement,
-    cloudArea,
-    cloudAccount,
-    cloudResource
+    resourceManagement
 ]))
 
 export const modelViews = injectStatusComponents(flatternViews([
