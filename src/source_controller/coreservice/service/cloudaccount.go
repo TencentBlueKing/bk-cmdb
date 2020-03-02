@@ -39,7 +39,7 @@ func (s *coreService) CreateAccount(ctx *rest.Contexts) {
 
 // 查询云账户
 func (s *coreService) SearchAccount(ctx *rest.Contexts) {
-	option := metadata.SearchCloudAccountOption{}
+	option := metadata.SearchCloudOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return

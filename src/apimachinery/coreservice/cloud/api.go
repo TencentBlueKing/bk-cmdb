@@ -44,7 +44,7 @@ func (c *cloud) CreateAccount(ctx context.Context, h http.Header, account *metad
 	return &ret.Data, nil
 }
 
-func (c *cloud) SearchAccount(ctx context.Context, h http.Header, option *metadata.SearchCloudAccountOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
+func (c *cloud) SearchAccount(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleCloudAccountResult)
 	subPath := "/search/cloud/account"
 
@@ -103,6 +103,97 @@ func (c *cloud) DeleteAccount(ctx context.Context, h http.Header, accountID int6
 
 	if err != nil {
 		blog.Errorf("DeleteAccount failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return nil
+}
+
+func (c *cloud) CreateSyncTask(ctx context.Context, h http.Header, account *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder) {
+	ret := new(metadata.CreateSyncTaskResult)
+	subPath := "/create/cloud/sync/task"
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(account).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("CreateSyncTask failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
+func (c *cloud) SearchSyncTask(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder) {
+	ret := new(metadata.MultipleCloudSyncTaskResult)
+	subPath := "/search/cloud/sync/task"
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("SearchAccount failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
+func (c *cloud) UpdateSyncTask(ctx context.Context, h http.Header, taskID int64, option map[string]interface{}) errors.CCErrorCoder {
+	ret := new(metadata.UpdatedOptionResult)
+	subPath := "/update/cloud/sync/task/%d"
+
+	err := c.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, taskID).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("UpdateSyncTask failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return nil
+}
+
+func (c *cloud) DeleteSyncTask(ctx context.Context, h http.Header, taskID int64) errors.CCErrorCoder {
+	ret := new(metadata.DeletedOptionResult)
+	subPath := "/delete/cloud/sync/task/%d"
+
+	err := c.client.Delete().
+		WithContext(ctx).
+		SubResourcef(subPath, taskID).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("DeleteSyncTask failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {

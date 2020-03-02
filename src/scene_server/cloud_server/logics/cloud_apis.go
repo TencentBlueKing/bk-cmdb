@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -189,4 +190,22 @@ func (lgc *Logics) GetTencentCloudInstance(kit *rest.Kit, client *cvm.Client, fi
 		return nil, err
 	}
 	return rsp, nil
+}
+
+func (lgc *Logics) GetCloudVendorVpc(kit *rest.Kit, account metadata.CloudAccount) ([]metadata.VpcInfo, error) {
+	vpc := make([]metadata.VpcInfo, 0)
+	var err error
+
+	switch account.CloudVendor {
+	case metadata.AWS:
+		// todo id、key需要解密
+		vpc, err = lgc.GetAwsVpc(kit, account.SecreteID, account.SecreteKey)
+	case metadata.TencentCloud:
+		// todo id、key需要解密
+		vpc, err = lgc.GetTencentCloudVpc(kit, account.SecreteID, account.SecreteKey)
+	default:
+		return nil, kit.CCError.CCError(common.CCErrCloudVendorNotSupport)
+	}
+
+	return vpc, err
 }
