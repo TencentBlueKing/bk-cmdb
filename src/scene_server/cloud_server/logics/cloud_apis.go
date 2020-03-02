@@ -103,15 +103,33 @@ func (lgc *Logics) GetAwsVpc(kit *rest.Kit, secretID, secretKey string) ([]metad
 		ec2Svc := ec2.New(sess)
 		output, err := ec2Svc.DescribeVpcs(nil)
 		for _, vpc := range output.Vpcs {
-			vpcs = append(vpcs, metadata.VpcInfo{
+			vpcInfo := metadata.VpcInfo{
 				VpcName: *vpc.VpcId,
 				VpcID:   *vpc.VpcId,
 				Region:  region,
-			})
+			}
+			name := lgc.getAwsVpcName(kit, vpc)
+			if name != "" {
+				vpcInfo.VpcName = name
+			}
+			vpcs = append(vpcs, vpcInfo)
 		}
 	}
 
 	return vpcs, nil
+}
+
+func (lgc *Logics) getAwsVpcName(kit *rest.Kit, vpc *ec2.Vpc) string {
+	if len(vpc.Tags) <= 0 {
+		return ""
+	}
+	for _, tag := range vpc.Tags {
+		if *tag.Key == "Name" {
+			return *tag.Value
+		}
+	}
+
+	return ""
 }
 
 func (lgc *Logics) GetTencentCloudVpc(kit *rest.Kit, secretID, secretKey string) ([]metadata.VpcInfo, error) {
@@ -144,10 +162,31 @@ func (lgc *Logics) GetTencentCloudVpc(kit *rest.Kit, secretID, secretKey string)
 	return vpcs, nil
 }
 
-func (lgc *Logics) GetAwsInstance(kit *rest.Kit, secretID, secretKey string) {
-	return
+// GetAwsInstance
+// session是需要region的，这样每次都只能拿一个region的instance，根据目前的需求，传filters好像没必要
+func (lgc *Logics) GetAwsInstance(kit *rest.Kit, sess *session.Session, filters []*ec2.Filter) (*ec2.DescribeInstancesOutput, error) {
+	ec2Svc := ec2.New(sess)
+	input := &ec2.DescribeInstancesInput{
+		Filters: filters,
+	}
+	result, err := ec2Svc.DescribeInstances(input)
+	if err != nil {
+		blog.ErrorJSON("GetAwsInstance failed, aws sdk api http call failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }
 
-func (lgc *Logics) GetTencentCloudInstance(kit *rest.Kit, secretID, secretKey string) {
-	return
+// GetTencentCloudInstance
+// client的初始化是需要region，所以每次都只能拿到一个region的instance，传filter好像没必要
+func (lgc *Logics) GetTencentCloudInstance(kit *rest.Kit, client *cvm.Client, filters []*cvm.Filter) (*cvm.DescribeInstancesResponse, error) {
+	instRequest := cvm.NewDescribeInstancesRequest()
+	instRequest.Filters = filters
+	rsp, err := client.DescribeInstances(instRequest)
+	if err != nil {
+		blog.ErrorJSON("GetTencentCloudInstance failed, tencent_cloud sdk api http failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	return rsp, nil
 }
