@@ -3,7 +3,7 @@
         <div class="info-basic">
             <i :class="['info-icon', model.bk_obj_icon]"></i>
             <span class="info-ip">{{hostIp}}</span>
-            <span class="info-area">（{{cloudArea}}）</span>
+            <span class="info-area">{{cloudArea}}</span>
         </div>
         <div class="info-topology clearfix">
             <div class="topology-label fl">{{$t('业务拓扑')}}：</div>
@@ -169,8 +169,8 @@
             vertical-align: middle;
             height: 18px;
             margin-left: 10px;
-            padding: 0 3px;
-            line-height:16px;
+            padding: 0 5px;
+            line-height: 16px;
             font-size: 12px;
             color: #979BA5;
             border: 1px solid #C4C6CC;
