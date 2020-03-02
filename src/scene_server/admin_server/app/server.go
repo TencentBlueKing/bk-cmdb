@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -109,6 +110,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 				blog.Info("enable auth center and enable auth sync function.")
 			}
 
+			iamCli, err := iam.NewIam(nil, process.Config.Iam, engine.Metric().Registry())
+			if err != nil {
+				return fmt.Errorf("new iam client failed: %v", err)
+			}
+			process.Service.SetIam(iamCli)
 		} else {
 			blog.Infof("disable auth center access.")
 		}
@@ -164,6 +170,11 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 		if err != nil && auth.IsAuthed() {
 			blog.Errorf("parse authcenter error: %v, config: %+v", err, current.ConfigMap)
+		}
+
+		h.Config.Iam, err = iam.ParseConfigFromKV("auth", current.ConfigMap)
+		if err != nil && auth.IsAuthed() {
+			blog.Errorf("parse iam error: %v, config: %+v", err, current.ConfigMap)
 		}
 	}
 }

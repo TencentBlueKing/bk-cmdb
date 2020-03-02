@@ -13,6 +13,8 @@
 // auth control
 package ac
 
+import "context"
+
 type AuthInterface interface {
-    RegisterSystem()error
+	RegisterSystem(ctx context.Context, host string) error
 }
