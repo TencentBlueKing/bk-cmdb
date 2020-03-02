@@ -85,6 +85,7 @@
             ...mapState('hosts', ['filterParams']),
             ...mapGetters(['userName']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('resourceHost', ['activeDirectory']),
             columnsConfigKey () {
                 return `${this.userName}_$resource_adminView_table_columns`
             },
@@ -111,6 +112,14 @@
                         }
                     })
                 }
+                if (this.activeDirectory && this.scope === 1) {
+                    const moduleCondition = params.condition.find(target => target.bk_obj_id === 'module')
+                    moduleCondition.condition.push({
+                        field: 'bk_module_id',
+                        operator: '$eq',
+                        value: this.activeDirectory.bk_inst_id
+                    })
+                }
                 return params
             }
         },
@@ -127,7 +136,7 @@
         },
         async created () {
             try {
-                Bus.$on('refresh-list', this.handlePageChange)
+                Bus.$on('refresh-resource-list', this.handlePageChange)
                 await Promise.all([
                     this.getProperties(),
                     this.getHostPropertyGroups()
@@ -140,7 +149,7 @@
         },
         beforeDestroy () {
             this.ready = false
-            Bus.$off('refresh-list', this.handlePageChange)
+            Bus.$off('refresh-resource-list', this.handlePageChange)
         },
         methods: {
             getPropertyValue (modelId, propertyId, field) {

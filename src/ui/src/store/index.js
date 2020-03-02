@@ -56,6 +56,7 @@ import cloudarea from './modules/api/cloudarea.js'
 import hostApply from './modules/api/host-apply'
 
 import businessHost from './modules/view/business-host.js'
+import resourceHost from './modules/view/resource-host.js'
 
 Vue.use(Vuex)
 
@@ -115,6 +116,7 @@ export default new Vuex.Store({
         setTemplate,
         businessHost,
         cloudarea,
-        hostApply
+        hostApply,
+        resourceHost
     }
 })
