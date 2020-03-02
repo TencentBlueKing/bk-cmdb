@@ -102,6 +102,7 @@
                 <bk-button @click="cancelAssignHosts">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
+        <router-subview></router-subview>
     </div>
 </template>
 

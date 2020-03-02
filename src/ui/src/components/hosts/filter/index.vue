@@ -224,6 +224,9 @@
             },
             properties (properties) {
                 this.propertyResolver && this.propertyResolver()
+            },
+            '$route.name' () {
+                this.handleToggleFilter(false)
             }
         },
         async created () {

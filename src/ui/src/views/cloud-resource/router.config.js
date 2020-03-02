@@ -10,6 +10,7 @@ export default {
         },
         auth: {
             view: null
-        }
+        },
+        available: false
     })
 }
