@@ -192,7 +192,7 @@ func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "hosts/update"
 
-	err = a.client.Post().
+	err = a.client.Put().
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
