@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 )
 
@@ -31,11 +30,10 @@ func (c *cloudOperation) validCreateAccount(kit *rest.Kit, account *metadata.Clo
 	}
 
 	// account name unique check
-	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.BKCloudAccountName, Val: account.AccountName})
-	count, err := c.countAccount(kit, cond.ToMapStr())
+	cond := mapstr.MapStr{common.BKCloudAccountName: account.AccountName}
+	count, err := c.countAccount(kit, cond)
 	if nil != err {
-		blog.ErrorJSON("[validCreateAccount] count account error %v, condition: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
+		blog.ErrorJSON("[validCreateAccount] count account error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
@@ -71,12 +69,11 @@ func (c *cloudOperation) validUpdateAccount(kit *rest.Kit, accountID int64, opti
 			blog.ErrorJSON("[validUpdateAccount] not invalid cloud vendor, option: %v, rid: %v", option, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCloudValidAccountParamFail, cloudAccountName)
 		}
-		cond := mongo.NewCondition()
-		cond.Element(&mongo.Eq{Key: common.BKCloudAccountName, Val: cloudAccountName})
-		cond.Element(&mongo.Neq{Key: common.BKCloudAccountIDField, Val: accountID})
-		count, err := c.countAccount(kit, cond.ToMapStr())
+		cond := mapstr.MapStr{common.BKCloudAccountName: cloudAccountName,
+			common.BKCloudAccountIDField: map[string]interface{}{common.BKDBNE: accountID}}
+		count, err := c.countAccount(kit, cond)
 		if nil != err {
-			blog.ErrorJSON("[validUpdateAccount] count account error %v, condition: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
+			blog.ErrorJSON("[validUpdateAccount] count account error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if count > 0 {
@@ -97,11 +94,10 @@ func (c *cloudOperation) validDeleteAccount(kit *rest.Kit, accountID int64) erro
 }
 
 func (c *cloudOperation) validAccountExist(kit *rest.Kit, accountID int64) errors.CCErrorCoder {
-	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.BKCloudAccountIDField, Val: accountID})
-	count, err := c.countAccount(kit, cond.ToMapStr())
+	cond := mapstr.MapStr{common.BKCloudAccountIDField: accountID}
+	count, err := c.countAccount(kit, cond)
 	if nil != err {
-		blog.ErrorJSON("[validAccountExist] count account error %v, condition: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
+		blog.ErrorJSON("[validAccountExist] count account error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count <= 0 {

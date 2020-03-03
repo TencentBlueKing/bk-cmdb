@@ -46,7 +46,7 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 			blog.ErrorJSON("tencent cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
 		}
 	default:
-		ctx.RespErrorCodeOnly(common.CCErrCloudVendorNotSupport, "VerifyConnectivity failed, not support cloud vendor, rid: %v", ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrCloudVendorNotSupport, "VerifyConnectivity failed, not support cloud vendor: %v", account.CloudVendor)
 		return
 	}
 
@@ -94,7 +94,7 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 
 	// set default sort
 	if option.Page.Sort == "" {
-		option.Page.Sort = "-" + common.BKCloudAccountIDField
+		option.Page.Sort = "-" + common.CreateTimeField
 	}
 
 	if option.Page.IsIllegal() {

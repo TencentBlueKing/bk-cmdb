@@ -54,6 +54,7 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 
 func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchCloudAccountOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
 	results := []metadata.CloudAccount{}
+	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
 		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &results)
 	if err != nil {
@@ -73,11 +74,13 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option ma
 		blog.Errorf("CreateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
 		return err
 	}
-
-	filter := map[string]int64{common.BKCloudAccountIDField: accountID}
+	filter := map[string]interface{}{common.BKCloudAccountIDField: accountID}
+	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	option.Set(common.LastTimeField, time.Now())
-	// 确保不会更新云厂商类型
+	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)
+	option.Remove(common.BKCloudIDField)
+	option.Remove(common.BKOwnerIDField)
 	if e := c.dbProxy.Table(common.BKTableNameCloudAccount).Update(kit.Ctx, filter, option); e != nil {
 		blog.Errorf("DeleteAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
@@ -91,7 +94,8 @@ func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CC
 		return err
 	}
 
-	filter := map[string]int64{common.BKCloudAccountIDField: accountID}
+	filter := map[string]interface{}{common.BKCloudAccountIDField: accountID}
+	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	if e := c.dbProxy.Table(common.BKTableNameCloudAccount).Delete(kit.Ctx, filter); e != nil {
 		blog.Errorf("DeleteAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
