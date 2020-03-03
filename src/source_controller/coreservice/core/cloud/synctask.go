@@ -23,14 +23,21 @@ import (
 )
 
 func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder) {
-	if err := c.validCreateSycTask(kit, task); nil != err {
+	if err := c.validCreateSyncTask(kit, task); nil != err {
 		blog.Errorf("CreateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
+	cloudVendor, errVendor := c.getSyncTaskCloudVendor(kit, task.AccountID)
+	if errVendor != nil {
+		blog.ErrorJSON("CreateSyncTask getSyncTaskCloudVendor failed, taskName: %s, err: %v, rid: %s", task.TaskName, errVendor, kit.Rid)
+		return nil, errVendor
+	}
+	task.CloudVendor = cloudVendor
+
 	id, err := c.dbProxy.NextSequence(kit.Ctx, common.BKTableNameCloudSyncTask)
 	if nil != err {
-		blog.Errorf("CreateAccount failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("CreateSyncTask failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	task.TaskID = int64(id)
@@ -40,7 +47,7 @@ func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncT
 	task.CreateTime = ts
 	task.LastTime = ts
 
-	err = c.dbProxy.Table(common.BKTableNameCloudAccount).Insert(kit.Ctx, task)
+	err = c.dbProxy.Table(common.BKTableNameCloudSyncTask).Insert(kit.Ctx, task)
 	if err != nil {
 		blog.ErrorJSON("CreateSyncTask failed, db insert failed, taskName: %s, err: %v, rid: %s", task.TaskName, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
@@ -62,6 +69,19 @@ func (c *cloudOperation) SearchSyncTask(kit *rest.Kit, option *metadata.SearchCl
 }
 
 func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option mapstr.MapStr) errors.CCErrorCoder {
+	if err := c.validUpdateSyncTask(kit, taskID, option); nil != err {
+		blog.Errorf("UpdateSyncTask failed, valid error: %+v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	filter := map[string]int64{common.BKCloudSyncTaskID: taskID}
+	option.Set(common.LastTimeField, time.Now())
+	// 确保不会更新云厂商类型
+	option.Remove(common.BKCloudVendor)
+	if e := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Update(kit.Ctx, filter, option); e != nil {
+		blog.Errorf("UpdateSyncTask failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudSyncTask, filter, e, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+	}
 	return nil
 }
 
@@ -72,4 +92,16 @@ func (c *cloudOperation) DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCEr
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 	}
 	return nil
+}
+
+func (c *cloudOperation) getSyncTaskCloudVendor(kit *rest.Kit, accountID int64) (metadata.AccountType, errors.CCErrorCoder) {
+	result := new(metadata.CloudAccount)
+	cond := map[string]interface{}{common.BKCloudAccountIDField: accountID}
+	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(cond).One(kit.Ctx, result)
+	if err != nil {
+		blog.ErrorJSON("getSyncTaskCloudVendor failed, db operate failed, cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
+		return "", kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return result.CloudVendor, nil
 }

@@ -13,10 +13,12 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"strconv"
 )
 
 func (s *coreService) CreateSyncTask(ctx *rest.Contexts) {
@@ -50,7 +52,27 @@ func (s *coreService) SearchSyncTask(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-func (s *coreService) UpdateSyncTask(ctx *rest.Contexts) {}
+func (s *coreService) UpdateSyncTask(ctx *rest.Contexts) {
+	taskIDStr := ctx.Request.PathParameter(common.BKCloudSyncTaskID)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudSyncTaskID))
+		return
+	}
+
+	option := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	err = s.core.CloudOperation().UpdateSyncTask(ctx.Kit, taskID, option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
 
 func (s *coreService) DeleteSyncTask(ctx *rest.Contexts) {
 	taskIDStr := ctx.Request.PathParameter(common.BKCloudSyncTaskID)

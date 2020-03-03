@@ -65,12 +65,12 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 		results[i].SecreteKey = ""
 	}
 
-	return &metadata.MultipleCloudAccount{int64(len(results)), results}, nil
+	return &metadata.MultipleCloudAccount{Count: int64(len(results)), Info: results}, nil
 }
 
 func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option mapstr.MapStr) errors.CCErrorCoder {
 	if err := c.validUpdateAccount(kit, accountID, option); nil != err {
-		blog.Errorf("CreateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("UpdateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -79,7 +79,7 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option ma
 	// 确保不会更新云厂商类型
 	option.Remove(common.BKCloudVendor)
 	if e := c.dbProxy.Table(common.BKTableNameCloudAccount).Update(kit.Ctx, filter, option); e != nil {
-		blog.Errorf("DeleteAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
+		blog.Errorf("UpdateAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return nil

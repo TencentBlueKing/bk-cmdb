@@ -112,19 +112,68 @@ func (c *cloudOperation) validAccountExist(kit *rest.Kit, accountID int64) error
 	return nil
 }
 
-func (c *cloudOperation) validCreateSycTask(kit *rest.Kit, task *metadata.CloudSyncTask) errors.CCErrorCoder {
-	// task name unique check
+func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) errors.CCErrorCoder {
+	// accountID check
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.BKCloudSyncTaskName, Val: task.TaskName})
-	query := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
-	count, err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Find(query).Count(kit.Ctx)
+	cond.Element(&mongo.Eq{Key: common.BKCloudAccountIDField, Val: task.AccountID})
+	count, err := c.countAccount(kit, cond.ToMapStr())
+	if nil != err {
+		blog.ErrorJSON("[validCreateSyncTask] accountID valid failed, error %v, condition: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if count <= 0 {
+		blog.ErrorJSON("[validCreateSyncTask] accountID: %d does not exist, bk_task_name: %s", task.AccountID, task.TaskName, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, common.BKCloudAccountIDField)
+	}
+
+	// task name unique check
+	opt := mongo.NewCondition()
+	opt.Element(&mongo.Eq{Key: common.BKCloudSyncTaskName, Val: task.TaskName})
+	query := util.SetQueryOwner(opt.ToMapStr(), kit.SupplierAccount)
+	taskCount, err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Find(query).Count(kit.Ctx)
 	if nil != err {
 		blog.ErrorJSON("[validCreateSycTask] count task error %v, condition: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	if count > 0 {
-		blog.ErrorJSON("[validCreateSycTask] task name already exist, bk_account_name: %s", task.TaskName, kit.Rid)
+	if taskCount > 0 {
+		blog.ErrorJSON("[validCreateSycTask] task name already exist, bk_task_name: %s", task.TaskName, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCloudSyncTaskNameAlreadyExist)
+	}
+
+	// vpcID is required
+	if len(task.SyncVpcs) > 0 {
+		for _, vpc := range task.SyncVpcs {
+			if vpc.VpcID == "" {
+				blog.ErrorJSON("[validCreateSycTask] vpcID filed is required, bk_task_name: %s", task.TaskName, kit.Rid)
+				return kit.CCError.CCError(common.CCErrCloudVpcIDIsRequired)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *cloudOperation) validUpdateSyncTask(kit *rest.Kit, taskID int64, option mapstr.MapStr) errors.CCErrorCoder {
+	// task name unique check
+	if option.Exists(common.BKCloudSyncTaskName) {
+		taskName, err := option.String(common.BKCloudSyncTaskName)
+		if err != nil {
+			blog.ErrorJSON("[validUpdateSyncTask] not invalid task name, option: %v, rid: %v", option, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, taskName)
+		}
+		cond := mongo.NewCondition()
+		cond.Element(&mongo.Eq{Key: common.BKCloudSyncTaskName, Val: taskName})
+		cond.Element(&mongo.Neq{Key: common.BKCloudSyncTaskID, Val: taskID})
+		filter := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
+		count, err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Find(filter).Count(kit.Ctx)
+		if nil != err {
+			blog.ErrorJSON("[validUpdateSyncTask] count task name failed error %v, condition: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+		if count > 0 {
+			blog.ErrorJSON("[validUpdateSyncTask] task name already exist, bk_account_name: %s", taskName, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCloudSyncTaskNameAlreadyExist)
+		}
 	}
 
 	return nil

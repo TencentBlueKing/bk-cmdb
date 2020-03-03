@@ -799,6 +799,8 @@ const (
 	CCErrCloudValidAccountParamFail    = 1118003
 	CCErrCloudAccountIDNoExistFail     = 1118004
 	CCErrCloudSyncTaskNameAlreadyExist = 1118005
+	CCErrCloudValidSyncTaskParamFail   = 1118006
+	CCErrCloudVpcIDIsRequired          = 1118007
 
 	/** TODO: 以下错误码需要改造 **/
 

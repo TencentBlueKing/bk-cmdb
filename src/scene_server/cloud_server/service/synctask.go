@@ -30,7 +30,7 @@ func (s *Service) SearchVpc(ctx *rest.Contexts) {
 		return
 	}
 
-	option := &metadata.SearchCloudAccountOption{
+	option := &metadata.SearchCloudOption{
 		Condition: mapstr.MapStr{common.BKCloudAccountIDField: accountID},
 	}
 	res, err := s.CoreAPI.CoreService().Cloud().SearchAccount(ctx.Kit.Ctx, ctx.Kit.Header, option)
