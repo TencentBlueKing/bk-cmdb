@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2019 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -10,15 +10,18 @@
  * limitations under the License.
  */
 
-// auth control
-package ac
+package logics
 
 import (
-	"context"
-	"net/http"
+	"configcenter/src/apimachinery"
 )
 
-type AuthInterface interface {
-	RegisterSystem(ctx context.Context, host string) error
-	CheckRequestAuthorization(req *http.Request) (bool, error)
+type Logics struct {
+	CoreAPI apimachinery.ClientSetInterface
+}
+
+func NewLogics(CoreAPI apimachinery.ClientSetInterface) *Logics {
+	return &Logics{
+		CoreAPI: CoreAPI,
+	}
 }

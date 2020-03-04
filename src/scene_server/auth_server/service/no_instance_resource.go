@@ -10,15 +10,13 @@
  * limitations under the License.
  */
 
-// auth control
-package ac
+package service
 
 import (
-	"context"
-	"net/http"
+	"configcenter/src/common/http/rest"
 )
 
-type AuthInterface interface {
-	RegisterSystem(ctx context.Context, host string) error
-	CheckRequestAuthorization(req *http.Request) (bool, error)
+// pull resource whose actions don't need to be related to instance
+func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
+	ctx.RespEntity("TODO")
 }

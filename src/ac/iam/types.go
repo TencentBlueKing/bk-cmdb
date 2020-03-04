@@ -37,6 +37,8 @@ const (
 	ScopeTypeIDBiz       = "biz"
 	ScopeTypeIDBizName   = "业务"
 	ScopeTypeIDBizNameEn = "business"
+
+	SystemIDIAM = "bk_iam"
 )
 
 type AuthConfig struct {

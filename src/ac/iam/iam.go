@@ -174,3 +174,21 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	}
 	return nil
 }
+
+func (i Iam) CheckRequestAuthorization(req *http.Request) (bool, error) {
+	name, pwd, ok := req.BasicAuth()
+	if !ok || name != SystemIDIAM {
+		blog.Errorf("request have no basic authorization")
+		return false, nil
+	}
+	token, err := i.client.GetSystemToken(context.Background())
+	if err != nil {
+		blog.Errorf("check request authorization get system token failed, error: %s", err.Error())
+		return false, err
+	}
+	if pwd == token {
+		return true, nil
+	}
+	blog.Errorf("request password not match system token")
+	return false, nil
+}

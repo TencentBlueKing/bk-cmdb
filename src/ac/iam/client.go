@@ -52,7 +52,7 @@ func (c *iamClient) RegisterSystem(ctx context.Context, sys System) error {
 
 func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 	resp := new(SystemResp)
-	result := c.client.Post().
+	result := c.client.Get().
 		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
@@ -246,4 +246,31 @@ func (c *iamClient) DeleteAction(ctx context.Context, actionIDs []ResourceAction
 	}
 
 	return nil
+}
+
+func (c *iamClient) GetSystemToken(ctx context.Context) (string, error) {
+	resp := new(struct {
+		BaseResponse
+		Data struct {
+			Token string `json:"token"`
+		} `json:"data"`
+	})
+	result := c.client.Get().
+		SubResourcef("/api/v1/model/systems/%s/token", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(nil).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.Code != 0 {
+		return "", &AuthError{
+			RequestID: result.Header.Get(iamRequestHeader),
+			Reason:    fmt.Errorf("get system token failed, code: %d, msg:%s", resp.Code, resp.Message),
+		}
+	}
+
+	return resp.Data.Token, nil
 }
