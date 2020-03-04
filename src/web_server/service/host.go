@@ -338,3 +338,57 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 	return
 }
+
+// UpdateHost Excel update host batch
+func (s *Service) UpdateHosts(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	ctx := util.NewContextFromHTTPHeader(c.Request.Header)
+
+	language := webCommon.GetLanguageByHTTPRequest(c)
+	defLang := s.Language.CreateDefaultCCLanguageIf(language)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+	file, err := c.FormFile("file")
+	if nil != err {
+		blog.Errorf("UpdateHost excel import update hosts failed, get file from form data failed, err: %+v, rid: %s", err, rid)
+		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
+	webCommon.SetProxyHeader(c)
+
+	randNum := rand.Uint32()
+	dir := webCommon.ResourcePath + "/import/"
+	_, err = os.Stat(dir)
+	if nil != err {
+		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("UpdateHost excel import update hosts, save form data to local file failed, mkdir failed, err: %+v, rid: %s", err, rid)
+			c.String(http.StatusInternalServerError, fmt.Sprintf("save form data to local file failed, mkdir failed, err: %+v", err))
+			return
+		}
+	}
+	filePath := fmt.Sprintf("%s/importhost-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
+	if err := c.SaveUploadedFile(file, filePath); nil != err {
+		blog.Errorf("UpdateHosts failed, save form data to local file failed, save data as excel failed, err: %+v, rid: %s", err, rid)
+		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
+
+	// del file
+	defer func(filePath string, rid string) {
+		if err := os.Remove(filePath); err != nil {
+			blog.Errorf("UpdateHost excel import update hosts, remove temporary file failed, err: %+v, rid: %s", err, rid)
+		}
+	}(filePath, rid)
+
+	f, err := xlsx.OpenFile(filePath)
+	if nil != err {
+		blog.Errorf("UpdateHost excel import update hosts failed, open form data as excel file failed, err: %+v, rid: %s", err, rid)
+		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
+	result := s.Logics.UpdateHosts(ctx, f, c.Request.Header, defLang, &metadata.Metadata{})
+
+	c.JSON(http.StatusOK, result)
+}

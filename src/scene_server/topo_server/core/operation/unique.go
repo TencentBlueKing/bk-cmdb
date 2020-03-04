@@ -20,16 +20,16 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // UniqueOperationInterface group operation methods
 type UniqueOperationInterface interface {
-	Create(params types.ContextParams, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error)
-	Update(params types.ContextParams, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error)
-	Delete(params types.ContextParams, objectID string, id uint64) (err error)
-	Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error)
+	Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest, metaData *metadata.Metadata) (uniqueID *metadata.RspID, err error)
+	Update(kit *rest.Kit, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error)
+	Delete(kit *rest.Kit, objectID string, id uint64, metaData *metadata.Metadata) (err error)
+	Search(kit *rest.Kit, objectID string, metaData *metadata.Metadata) (objectUniques []metadata.ObjectUnique, err error)
 }
 
 // NewUniqueOperation create a new group operation instance
@@ -45,7 +45,7 @@ type unique struct {
 	authManager *extensions.AuthManager
 }
 
-func (a *unique) Create(params types.ContextParams, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error) {
+func (a *unique) Create(kit *rest.Kit, objectID string, request *metadata.CreateUniqueRequest, metaData *metadata.Metadata) (uniqueID *metadata.RspID, err error) {
 
 	unique := metadata.ObjectUnique{
 		ObjID:     request.ObjID,
@@ -53,67 +53,67 @@ func (a *unique) Create(params types.ContextParams, objectID string, request *me
 		MustCheck: request.MustCheck,
 	}
 
-	if nil != params.MetaData {
-		unique.Metadata = *params.MetaData
+	if nil != metaData {
+		unique.Metadata = *metaData
 	}
-	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), params.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})
+	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), kit.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})
 	if err != nil {
-		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v, rid: %s", objectID, request, err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrTopoObjectUniqueCreateFailed)
+		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v, rid: %s", objectID, request, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueCreateFailed)
 	}
 	if !resp.Result {
-		return nil, params.Err.New(resp.Code, resp.ErrMsg)
+		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
 	}
 
 	return &metadata.RspID{ID: int64(resp.Data.Created.ID)}, nil
 }
 
-func (a *unique) Update(params types.ContextParams, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error) {
+func (a *unique) Update(kit *rest.Kit, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error) {
 	update := metadata.UpdateModelAttrUnique{
 		Data: *request,
 	}
-	resp, err := a.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), params.Header, objectID, id, update)
+	resp, err := a.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), kit.Header, objectID, id, update)
 	if err != nil {
-		blog.Errorf("[UniqueOperation] update for %s, %d, %#v failed %v, rid: %s", objectID, id, request, err, params.ReqID)
-		return params.Err.Error(common.CCErrTopoObjectUniqueUpdateFailed)
+		blog.Errorf("[UniqueOperation] update for %s, %d, %#v failed %v, rid: %s", objectID, id, request, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrTopoObjectUniqueUpdateFailed)
 	}
 	if !resp.Result {
-		return params.Err.New(resp.Code, resp.ErrMsg)
+		return kit.CCError.New(resp.Code, resp.ErrMsg)
 	}
 
 	// auth: update register to iam
-	if err := a.authManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
-		blog.V(2).Infof("update unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, params.ReqID)
+	if err := a.authManager.UpdateRegisteredModelUniqueByID(kit.Ctx, kit.Header, int64(id)); err != nil {
+		blog.V(2).Infof("update unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, kit.Rid)
 		return err
 	}
 	return nil
 }
 
-func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) (err error) {
+func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64, metaData *metadata.Metadata) (err error) {
 	meta := metadata.Metadata{}
-	if params.MetaData != nil {
-		meta = *params.MetaData
+	if metaData != nil {
+		meta = *metaData
 	}
-	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(context.Background(), params.Header, objectID, id, metadata.DeleteModelAttrUnique{Metadata: meta})
+	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(context.Background(), kit.Header, objectID, id, metadata.DeleteModelAttrUnique{Metadata: meta})
 	if err != nil {
-		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v, rid: %s", objectID, id, err, params.ReqID)
-		return params.Err.Error(common.CCErrTopoObjectUniqueDeleteFailed)
+		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v, rid: %s", objectID, id, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrTopoObjectUniqueDeleteFailed)
 	}
 	if !resp.Result {
-		return params.Err.New(resp.Code, resp.ErrMsg)
+		return kit.CCError.New(resp.Code, resp.ErrMsg)
 	}
 	// auth: deregister to iam
-	if err := a.authManager.DeregisterModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
-		blog.V(2).Infof("deregister unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, params.ReqID)
+	if err := a.authManager.DeregisterModelUniqueByID(kit.Ctx, kit.Header, int64(id)); err != nil {
+		blog.V(2).Infof("deregister unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, kit.Rid)
 		return err
 	}
 	return nil
 }
 
-func (a *unique) Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error) {
+func (a *unique) Search(kit *rest.Kit, objectID string, metaData *metadata.Metadata) (objectUniques []metadata.ObjectUnique, err error) {
 	fCond := condition.CreateCondition().Field(common.BKObjIDField).Eq(objectID).ToMapStr()
-	if nil != params.MetaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+	if nil != metaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
 		fCond.Remove(metadata.BKMetadata)
 	} else {
 		fCond.Merge(metadata.BizLabelNotExist)
@@ -122,13 +122,13 @@ func (a *unique) Search(params types.ContextParams, objectID string) (objectUniq
 	cond := metadata.QueryCondition{
 		Condition: fCond,
 	}
-	resp, err := a.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), params.Header, cond)
+	resp, err := a.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), kit.Header, cond)
 	if err != nil {
-		blog.Errorf("[UniqueOperation] search for %s, failed %v, rid: %s", objectID, err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrTopoObjectUniqueSearchFailed)
+		blog.Errorf("[UniqueOperation] search for %s, failed %v, rid: %s", objectID, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrTopoObjectUniqueSearchFailed)
 	}
 	if !resp.Result {
-		return nil, params.Err.New(resp.Code, resp.ErrMsg)
+		return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
 	}
 	return resp.Data.Info, nil
 }
