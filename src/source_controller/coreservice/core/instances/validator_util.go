@@ -104,6 +104,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.ID = getString(option["id"])
 				enumOption.Name = getString(option["name"])
 				enumOption.Type = getString(option["type"])
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOption.IsDefault = getBool(option["is_default"])
 				enumOptions = append(enumOptions, enumOption)
 			} else if option, ok := optionVal.(mgobson.M); ok {
@@ -111,6 +114,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.ID = getString(option["id"])
 				enumOption.Name = getString(option["name"])
 				enumOption.Type = getString(option["type"])
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOption.IsDefault = getBool(option["is_default"])
 				enumOptions = append(enumOptions, enumOption)
 			} else {
@@ -124,6 +130,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.ID = getString(option["id"])
 				enumOption.Name = getString(option["name"])
 				enumOption.Type = getString(option["type"])
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOption.IsDefault = getBool(option["is_default"])
 				enumOptions = append(enumOptions, enumOption)
 			} else if option, ok := optionVal.(bson.D); ok {
@@ -132,6 +141,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.ID = getString(opt["id"])
 				enumOption.Name = getString(opt["name"])
 				enumOption.Type = getString(opt["type"])
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOption.IsDefault = getBool(opt["is_default"])
 				enumOptions = append(enumOptions, enumOption)
 			} else {
