@@ -62,3 +62,17 @@ func (p *process) UpdateProcessInstance(ctx context.Context, h http.Header, data
 		Into(resp)
 	return
 }
+
+func (p *process) ListProcessInstancesWithHost(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/findmany/proc/process_instance/with_host"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

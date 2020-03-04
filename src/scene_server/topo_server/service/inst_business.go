@@ -13,6 +13,7 @@
 package service
 
 import (
+    "encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -396,6 +397,10 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 		objType := reflect.TypeOf(j)
 		switch objType.Kind() {
 		case reflect.String:
+			if _, ok := j.(json.Number); ok {
+				output[i] = j
+				continue
+			}
 			targetStr := j.(string)
 			if util.InStrArr(userFieldArr, i) {
 				exactOr := make([]map[string]interface{}, 0)

@@ -208,18 +208,18 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
+    err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID, data.Metadata)
+    if err != nil {
+        ctx.RespAutoError(err)
+        return
+    }
 	// auth: deregister set
 	if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setIDs...); err != nil {
 		blog.Errorf("delete sets failed, deregister sets from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
 		return
 	}
-	err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID, data.Metadata)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
+	
 	ctx.RespEntity(nil)
 }
 
@@ -263,21 +263,20 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 		return
 	}
 
+    err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, []int64{setID}, md.Metadata)
+    if err != nil {
+        blog.Errorf("delete sets failed, %+v, rid: %s", err, ctx.Kit.Rid)
+        ctx.RespAutoError(err)
+        return
+    }
+    
 	// auth: deregister set
 	if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setID); err != nil {
 		blog.Errorf("delete set failed, deregister set from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
 		return
 	}
-
-	err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, []int64{setID}, md.Metadata)
-
-	if err != nil {
-		blog.Errorf("delete sets failed, %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
+	
 	ctx.RespEntity(nil)
 }
 
