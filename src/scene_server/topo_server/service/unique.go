@@ -153,7 +153,7 @@ func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	// auth: update registered model unique
+	// auth: delete registered model unique
 	if err := s.AuthManager.DeregisterModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
 		blog.Errorf("deregister model unique from iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, params.ReqID)
 		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())

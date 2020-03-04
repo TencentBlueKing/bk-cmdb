@@ -580,6 +580,20 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 		}
 	}
 
+	if option, exists := data.Get(metadata.AttributeFieldOption); exists {
+		propertyType := dbAttributeArr[0].PropertyType
+		for _, dbAttribute := range dbAttributeArr {
+			if dbAttribute.PropertyType != propertyType {
+				blog.ErrorJSON("update option, but property type not the same, db attributes: %s, rid:%s", dbAttributeArr, ctx.ReqID)
+				return changeRow, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "cond")
+			}
+		}
+		if err := util.ValidPropertyOption(propertyType, option, ctx.Error); err != nil {
+			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, ctx.ReqID)
+			return changeRow, err
+		}
+	}
+
 	// 删除不可更新字段， 避免由于传入数据，修改字段
 	// TODO: 改成白名单方式
 	data.Remove(metadata.AttributeFieldPropertyID)

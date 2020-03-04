@@ -83,6 +83,32 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 	return result, nil
 }
 
+func (s *coreService) ListHostProcessRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	// filter parameter
+	input := new(metadata.ListProcessInstancesWithHostOption)
+	if err := data.MarshalJSONInto(input); err != nil {
+		blog.Errorf("ListHostProcessRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, err
+	}
+
+	if input.BizID == 0 {
+		blog.Errorf("ListHostProcessRelation failed, business id can't be empty, bk_biz_id: %d, rid: %s", input.BizID, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+	}
+
+	if input.Page.IsIllegal() {
+		blog.Errorf("ListHostProcessRelation failed, business id can't be empty, bk_biz_id: %d, rid: %s", input.BizID, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "page")
+	}
+
+	result, err := s.core.ProcessOperation().ListHostProcessRelation(params, input)
+	if err != nil {
+		blog.Errorf("ListHostProcessRelation failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+	return result, nil
+}
+
 func (s *coreService) UpdateProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	processInstanceIDStr := pathParams(common.BKProcIDField)
 	if len(processInstanceIDStr) == 0 {

@@ -181,6 +181,12 @@ func (s *Service) DeleteModule(params types.ContextParams, pathParams, queryPara
 		return nil, err
 	}
 
+	// auth: deregister module to iam
+	if err := s.AuthManager.DeregisterModuleByID(params.Context, params.Header, moduleID); err != nil {
+		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+
 	return nil, nil
 }
 

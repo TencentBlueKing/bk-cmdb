@@ -155,13 +155,16 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 		return nil, err
 	}
 
+	if err = s.Core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID, true); err != nil {
+		blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), objID, deleteCondition.Delete.InstID, params.ReqID)
+		return nil, err
+	}
 	// auth: deregister resources
 	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, obj.GetObjectID(), deleteCondition.Delete.InstID...); err != nil {
 		blog.Errorf("batch delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", deleteCondition.Delete.InstID, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
-
-	return nil, s.Core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID, true)
+	return nil, nil
 }
 
 // DeleteInst delete the inst
@@ -200,14 +203,17 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 		// TODO add custom mainline instance param validation
 	}
 
+	if err := s.Core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID}, true); err != nil {
+		blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instID: %d, rid: %s", err.Error(), objID, instID, params.ReqID)
+		return nil, err
+	}
+
 	// auth: deregister resources
 	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, obj.GetObjectID(), instID); err != nil {
 		blog.Errorf("delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", instID, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
-
-	err = s.Core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID}, true)
-	return nil, err
+	return nil, nil
 }
 
 func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -267,7 +273,7 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 		}
 	}
 
-	// auth: deregister resources
+	// auth: update resources
 	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, objID, instanceIDs...); err != nil {
 		blog.Errorf("update inst success, but update register to iam failed, instanceIDs: %+v, err: %+v, rid: %s", instanceIDs, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
