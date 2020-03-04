@@ -28,6 +28,11 @@ type CloudServerClientInterface interface {
 	SearchAccount(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error)
 	UpdateAccount(ctx context.Context, h http.Header, accountID int64, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteAccount(ctx context.Context, h http.Header, accountID int64) (resp *metadata.Response, err error)
+
+	CreateSyncTask(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	SearchSyncTask(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error)
+	UpdateSyncTask(ctx context.Context, h http.Header, taskID int64, data map[string]interface{}) (resp *metadata.Response, err error)
+	DeleteSyncTask(ctx context.Context, h http.Header, taskID int64) (resp *metadata.Response, err error)
 }
 
 func NewCloudServerClientInterface(c *util.Capability, version string) CloudServerClientInterface {

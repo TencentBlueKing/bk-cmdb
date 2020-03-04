@@ -154,6 +154,21 @@ func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.Cloud
 }
 
 func (c *cloudOperation) validUpdateSyncTask(kit *rest.Kit, taskID int64, option mapstr.MapStr) errors.CCErrorCoder {
+	// accountID check
+	if option.Exists(common.BKCloudAccountIDField) {
+		cond := mongo.NewCondition()
+		cond.Element(&mongo.Eq{Key: common.BKCloudAccountIDField, Val: option[common.BKCloudAccountIDField]})
+		count, err := c.countAccount(kit, cond.ToMapStr())
+		if nil != err {
+			blog.ErrorJSON("[validCreateSyncTask] accountID valid failed, error %v, condition: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+		if count <= 0 {
+			blog.ErrorJSON("[validCreateSyncTask] accountID: %d does not exist, rid: %s", option[common.BKCloudAccountIDField], kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, common.BKCloudAccountIDField)
+		}
+	}
+
 	// task name unique check
 	if option.Exists(common.BKCloudSyncTaskName) {
 		taskName, err := option.String(common.BKCloudSyncTaskName)
