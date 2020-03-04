@@ -52,7 +52,7 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 	return account, nil
 }
 
-func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchCloudAccountOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
+func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
 	results := []metadata.CloudAccount{}
 	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
@@ -66,12 +66,12 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 		results[i].SecreteKey = ""
 	}
 
-	return &metadata.MultipleCloudAccount{int64(len(results)), results}, nil
+	return &metadata.MultipleCloudAccount{Count: int64(len(results)), Info: results}, nil
 }
 
 func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option mapstr.MapStr) errors.CCErrorCoder {
 	if err := c.validUpdateAccount(kit, accountID, option); nil != err {
-		blog.Errorf("CreateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("UpdateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
 		return err
 	}
 	filter := map[string]interface{}{common.BKCloudAccountIDField: accountID}
@@ -82,7 +82,7 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option ma
 	option.Remove(common.BKCloudIDField)
 	option.Remove(common.BKOwnerIDField)
 	if e := c.dbProxy.Table(common.BKTableNameCloudAccount).Update(kit.Ctx, filter, option); e != nil {
-		blog.Errorf("DeleteAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
+		blog.Errorf("UpdateAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return nil

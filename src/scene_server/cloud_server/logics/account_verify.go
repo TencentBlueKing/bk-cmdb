@@ -13,12 +13,8 @@
 package logics
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	tc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
@@ -27,10 +23,7 @@ import (
 )
 
 func (lgc *Logics) AwsAccountVerify(kit *rest.Kit, secretID, secretKey string) (bool, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String("us-west-2"),
-		Credentials: credentials.NewStaticCredentials(secretID, secretKey, ""),
-	})
+	sess, err := lgc.AwsNewSession(kit, "", secretID, secretKey)
 	if err != nil {
 		return false, err
 	}
@@ -44,16 +37,9 @@ func (lgc *Logics) AwsAccountVerify(kit *rest.Kit, secretID, secretKey string) (
 	return true, nil
 }
 
-func (lgc *Logics) TecentCloudVerify(kit *rest.Kit, secretID, secretKey string) (bool, error) {
+func (lgc *Logics) TencentCloudVerify(kit *rest.Kit, secretID, secretKey string) (bool, error) {
 	credential := tc.NewCredential(secretID, secretKey)
-
-	cpf := profile.NewClientProfile()
-	cpf.HttpProfile.ReqMethod = common.HTTPSelectGet
-	cpf.HttpProfile.ReqTimeout = 10
-	cpf.HttpProfile.Endpoint = "cvm.tencentcloudapi.com"
-	cpf.SignMethod = "HmacSHA1"
-
-	client, err := cvm.NewClient(credential, regions.Guangzhou, cpf)
+	client, err := cvm.NewClient(credential, regions.Guangzhou, profile.NewClientProfile())
 	if err != nil {
 		return false, err
 	}

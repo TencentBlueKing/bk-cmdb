@@ -41,7 +41,7 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 			blog.ErrorJSON("aws cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
 		}
 	case metadata.TencentCloud:
-		pass, err = s.Logics.TecentCloudVerify(ctx.Kit, account.SecretID, account.SecretKey)
+		pass, err = s.Logics.TencentCloudVerify(ctx.Kit, account.SecretID, account.SecretKey)
 		if err != nil {
 			blog.ErrorJSON("tencent cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
 		}
@@ -81,7 +81,7 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 
 // 查询云账户
 func (s *Service) SearchAccount(ctx *rest.Contexts) {
-	option := metadata.SearchCloudAccountOption{}
+	option := metadata.SearchCloudOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return

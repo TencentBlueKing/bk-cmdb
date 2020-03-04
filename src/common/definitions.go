@@ -258,27 +258,6 @@ const (
 	// BKNewAddHost the cloud sync new add hosts
 	BKNewAddHost = "new_add"
 
-	// BKAttrChangedHost the cloud sync attr changed hosts
-	BKAttrChangedHost = "attr_changed"
-
-	// BKCloudConfirm whether new add cloud hosts need confirm
-	BKCloudConfirm = "bk_confirm"
-
-	// BKAttrConfirm the cloud hosts attr changed need confirm
-	BKAttrConfirm = "bk_attr_confirm"
-
-	// BKCloudSyncTaskName the cloud sync task name field
-	BKCloudSyncTaskName = "bk_task_name"
-
-	// BKCloudAccountType the cloud account type field
-	BKCloudAccountType = "bk_account_type"
-
-	// BKCloudSyncAccountAdmin the cloud sync account admin
-	BKCloudSyncAccountAdmin = "bk_account_admin"
-
-	// BKResourceType the cloud sync resource type
-	BKResourceType = "bk_resource_type"
-
 	// BKImportFrom the host import from field
 	BKImportFrom = "import_from"
 
@@ -1136,6 +1115,8 @@ const (
 // cloud sync const
 const (
 	BKCloudAccountIDField = "bk_account_id"
-	BKCloudAccountName = "bk_account_name"
-	BKCloudVendor = "bk_cloud_vendor"
+	BKCloudAccountName    = "bk_account_name"
+	BKCloudVendor         = "bk_cloud_vendor"
+	BKCloudSyncTaskName   = "bk_task_name"
+	BKCloudSyncTaskID     = "bk_task_id"
 )

@@ -21,31 +21,30 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// 新建云账户
-func (s *coreService) CreateAccount(ctx *rest.Contexts) {
-	account := metadata.CloudAccount{}
-	if err := ctx.DecodeInto(&account); err != nil {
+func (s *coreService) CreateSyncTask(ctx *rest.Contexts) {
+	task := metadata.CloudSyncTask{}
+	if err := ctx.DecodeInto(&task); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	result, err := s.core.CloudOperation().CreateAccount(ctx.Kit, &account)
+	result, err := s.core.CloudOperation().CreateSyncTask(ctx.Kit, &task)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	ctx.RespEntity(result)
 }
 
-// 查询云账户
-func (s *coreService) SearchAccount(ctx *rest.Contexts) {
+func (s *coreService) SearchSyncTask(ctx *rest.Contexts) {
 	option := metadata.SearchCloudOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	result, err := s.core.CloudOperation().SearchAccount(ctx.Kit, &option)
+	result, err := s.core.CloudOperation().SearchSyncTask(ctx.Kit, &option)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -53,13 +52,11 @@ func (s *coreService) SearchAccount(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// 更新云账户
-func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
-	//get accountID
-	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
-	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
+func (s *coreService) UpdateSyncTask(ctx *rest.Contexts) {
+	taskIDStr := ctx.Request.PathParameter(common.BKCloudSyncTaskID)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudSyncTaskID))
 		return
 	}
 
@@ -69,7 +66,7 @@ func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.core.CloudOperation().UpdateAccount(ctx.Kit, accountID, option)
+	err = s.core.CloudOperation().UpdateSyncTask(ctx.Kit, taskID, option)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -77,17 +74,15 @@ func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// 删除云账户
-func (s *coreService) DeleteAccount(ctx *rest.Contexts) {
-	//get accountID
-	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
-	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
+func (s *coreService) DeleteSyncTask(ctx *rest.Contexts) {
+	taskIDStr := ctx.Request.PathParameter(common.BKCloudSyncTaskID)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudSyncTaskID))
 		return
 	}
 
-	err = s.core.CloudOperation().DeleteAccount(ctx.Kit, accountID)
+	err = s.core.CloudOperation().DeleteSyncTask(ctx.Kit, taskID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

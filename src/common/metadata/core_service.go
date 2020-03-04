@@ -517,3 +517,13 @@ type MultipleCloudAccountResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleCloudAccount `json:"data"`
 }
+
+type CreateSyncTaskResult struct {
+	BaseResp `json:",inline"`
+	Data     CloudSyncTask `json:"data"`
+}
+
+type MultipleCloudSyncTaskResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudSyncTask `json:"data"`
+}
