@@ -70,7 +70,7 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 		common.BKInstIDField: mapstr.MapStr{
 			common.BKDBIN: iInstIDArr,
 		},
-		common.BKObjIDField:   objID,
+		common.BKObjIDField: objID,
 	}
 	searchCond["page"] = nil
 	searchCond[metadata.BKMetadata] = meta

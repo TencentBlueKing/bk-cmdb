@@ -13,9 +13,9 @@
 package model
 
 import (
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // AssociationType the association type
@@ -57,12 +57,12 @@ type Association interface {
 
 // Factory used to create object  classification attribute etd.
 type Factory interface {
-	CreateObject(params types.ContextParams) Object
-	CreateClassification(params types.ContextParams) Classification
-	CreateAttribute(params types.ContextParams) AttributeInterface
-	CreateGroup(params types.ContextParams) GroupInterface
-	CreateCommonAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association
-	CreateMainLineAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association
+	CreateObject(kit *rest.Kit) Object
+	CreateClassification(kit *rest.Kit) Classification
+	CreateAttribute(kit *rest.Kit) AttributeInterface
+	CreateGroup(kit *rest.Kit, metadata *metadata.Metadata) GroupInterface
+	CreateCommonAssociation(kit *rest.Kit, obj Object, asstKey string, asstObj Object) Association
+	CreateMainLineAssociation(kit *rest.Kit, obj Object, asstKey string, asstObj Object) Association
 }
 
 type ObjectAssoPair struct {

@@ -88,7 +88,7 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 	option := metadata.UpdateOption{
 		Data: info,
 		Condition: map[string]interface{}{
-			common.BKProcessIDField:  procID,
+			common.BKProcessIDField: procID,
 		},
 	}
 

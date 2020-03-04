@@ -14,13 +14,13 @@ package operation
 
 import (
 	"configcenter/src/apimachinery"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // Supplementary supplementary methods
 type Supplementary interface {
-	Audit(params types.ContextParams, client apimachinery.ClientSetInterface, obj model.Object, inst InstOperationInterface) AuditInterface
+	Audit(kit *rest.Kit, client apimachinery.ClientSetInterface, obj model.Object, inst InstOperationInterface) AuditInterface
 }
 
 // NewSupplementary create a supplementary instance
@@ -31,9 +31,9 @@ func NewSupplementary() Supplementary {
 type supplementary struct {
 }
 
-func (s *supplementary) Audit(params types.ContextParams, client apimachinery.ClientSetInterface, obj model.Object, inst InstOperationInterface) AuditInterface {
+func (s *supplementary) Audit(kit *rest.Kit, client apimachinery.ClientSetInterface, obj model.Object, inst InstOperationInterface) AuditInterface {
 	return &auditLog{
-		params: params,
+		kit:    kit,
 		client: client,
 		inst:   inst,
 		obj:    obj,

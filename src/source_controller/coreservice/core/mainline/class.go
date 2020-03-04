@@ -41,7 +41,7 @@ func (mm *ModelMainline) loadMainlineAssociations(ctx context.Context, header ht
 	filter := map[string]interface{}{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
-    filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
+	filter = util.SetQueryOwner(filter, util.GetOwnerID(header))
 	err := mm.dbProxy.Table(common.BKTableNameObjAsst).Find(filter).All(ctx, &mm.associations)
 	if err != nil {
 		blog.Errorf("query topo model mainline association from db failed, %+v, rid: %s", err, rid)

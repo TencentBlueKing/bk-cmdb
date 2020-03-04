@@ -14,6 +14,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
 	testutil "configcenter/src/test/util"
@@ -102,7 +103,12 @@ func GetHeader() http.Header {
 func ClearDatabase() {
 	fmt.Println("********Clear Database*************")
 	// clientSet.AdminServer().ClearDatabase(context.Background(), GetHeader())
-	db, err := local.NewMgo(tConfig.MongoURI, time.Minute)
+	mongoConfig := local.MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          tConfig.MongoURI,
+	}
+	db, err := local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
 	for _, tableName := range common.AllTables {
 		db.DropTable(context.Background(), tableName)

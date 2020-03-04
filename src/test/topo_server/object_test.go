@@ -645,12 +645,16 @@ var _ = Describe("object test", func() {
 
 		It("update object topo graphics", func() {
 			input := map[string]interface{}{
-				"bk_obj_id":  "cc_obj",
-				"bk_inst_id": 0,
-				"node_type":  "obj",
-				"position": map[string]interface{}{
-					"x": -75,
-					"y": 108,
+				"data": []map[string]interface{}{
+					{
+						"bk_obj_id":  "cc_obj",
+						"bk_inst_id": 0,
+						"node_type":  "obj",
+						"position": map[string]interface{}{
+							"x": -75,
+							"y": 108,
+						},
+					},
 				},
 			}
 			rsp, err := objectClient.UpdateObjectTopoGraphics(context.Background(), "global", "0", header, input)
@@ -665,7 +669,7 @@ var _ = Describe("object test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			j, err := json.Marshal(rsp.Data)
-			Expect(j).NotTo(ContainSubstring("\"position\":{\"x\":-75,\"y\":108}"))
+			Expect(j).To(ContainSubstring("\"position\":{\"x\":-75,\"y\":108}"))
 		})
 	})
 

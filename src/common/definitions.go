@@ -419,23 +419,32 @@ const (
 	// BKOptionField the option field
 	BKOptionField = "option"
 
-	// BKContentField the content field
-	BKContentField = "content"
+	// BKAuditTypeField the audit type field
+	BKAuditTypeField = "audit_type"
 
-	// BKExtKeyField the ext key field
-	BKExtKeyField = "ext_key"
+	// BKResourceTypeField the audit resource type field
+	BKResourceTypeField = "resource_type"
 
-	// BKOpDescField the op desc field
-	BKOpDescField = "op_desc"
+	// BKOperateFromField the platform where operation from field
+	BKOperateFromField = "operate_from"
 
-	// BKOpTypeField the op type field
-	BKOpTypeField = "op_type"
+	// BKOperationDetailField the audit operation detail field
+	BKOperationDetailField = "operation_detail"
 
-	// BKOpTargetField the op target field
-	BKOpTargetField = "op_target"
+	// BKOperationDetailField the audit operation detail field
+	BKBasicDetailField = "basic_detail"
 
-	// BKOpTimeField the op time field
-	BKOpTimeField = "op_time"
+	// BKOperationTimeField the audit operation time field
+	BKOperationTimeField = "operation_time"
+
+	// BKResourceIDField the audit resource ID field
+	BKResourceIDField = "resource_id"
+
+	// BKResourceNameField the audit resource name field
+	BKResourceNameField = "resource_name"
+
+	// BKLabelField the audit resource name field
+	BKLabelField = "label"
 
 	// BKSetEnvField the set env field
 	BKSetEnvField = "bk_set_env"
@@ -786,6 +795,10 @@ const (
 	ExcelHeaderOtherRowFontColor = "FF000000"
 	// ExcelCellDefaultBorderColor black color
 	ExcelCellDefaultBorderColor = "FFD4D4D4"
+	// ExcelHeaderFirstColumnColor light gray
+	ExcelHeaderFirstColumnColor = "fee9da"
+	// ExcelFirstColumnCellColor dark gray
+	ExcelFirstColumnCellColor = "fabf8f"
 
 	// ExcelAsstPrimaryKeySplitChar split char
 	ExcelAsstPrimaryKeySplitChar = ","
@@ -802,6 +815,12 @@ const (
 
 	// ExcelCommentSheetCotentLangPrefixKey excel comment sheet centent language prefixe key
 	ExcelCommentSheetCotentLangPrefixKey = "import_comment"
+
+	// ExcelFirstColumnFieldName export excel first column for tips
+	ExcelFirstColumnFieldName = "field_name"
+	ExcelFirstColumnFieldType = "field_type"
+	ExcelFirstColumnFieldID   = "field_id"
+	ExcelFirstColumnInstData  = "inst_data"
 )
 
 const (
@@ -872,13 +891,13 @@ const (
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime     = "Cc_Request_Time"
-	BKHTTPCCTransactionID   = "Cc_Txn_Id"
-	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
-	BKHTTPCCTransactionNumber   = "Cc_Txn_Number"
-	BKHTTPCCTxnSessionID = "Cc_Txn_Session_ID"
-	BKHTTPCCTxnSessionState = "Cc_Txn_Session_State"
+	BKHTTPOtherRequestID      = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime       = "Cc_Request_Time"
+	BKHTTPCCTransactionID     = "Cc_Txn_Id"
+	BKHTTPCCTxnTMServerAddr   = "Cc_Txn_Tm_addr-Ip"
+	BKHTTPCCTransactionNumber = "Cc_Txn_Number"
+	BKHTTPCCTxnSessionID      = "Cc_Txn_Session_ID"
+	BKHTTPCCTxnSessionState   = "Cc_Txn_Session_State"
 )
 
 type CCContextKey string

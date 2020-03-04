@@ -35,20 +35,18 @@ import (
 //	TMAddr     string    // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
 //}
 
-
 type Transaction struct {
-	TxnID      string    `bson:"bk_txn_id"`     // 事务ID,uuid
-	RequestID  string    `bson:"bk_request_id"` // 请求ID,可选项
-	Processor  string    `bson:"processor"`     // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
-	Status     TxStatus  `bson:"status"`        // 事务状态，作为定时补偿判断条件，这个字段需要加索引
-	CreateTime time.Time `bson:"create_time"`   // 创建时间，作为定时补偿判断条件和统计信息存在，这个字段需要加索引
-	LastTime   time.Time `bson:"last_time"`     // 修改时间，作为统计信息存在
-	TMAddr     string    // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
-	SessionID string // 会话ID
-	SessionState string // 会话State
-	TxnNumber string // 事务Number
+	TxnID        string    `bson:"bk_txn_id"`     // 事务ID,uuid
+	RequestID    string    `bson:"bk_request_id"` // 请求ID,可选项
+	Processor    string    `bson:"processor"`     // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+	Status       TxStatus  `bson:"status"`        // 事务状态，作为定时补偿判断条件，这个字段需要加索引
+	CreateTime   time.Time `bson:"create_time"`   // 创建时间，作为定时补偿判断条件和统计信息存在，这个字段需要加索引
+	LastTime     time.Time `bson:"last_time"`     // 修改时间，作为统计信息存在
+	TMAddr       string    // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
+	SessionID    string    // 会话ID
+	SessionState string    // 会话State
+	TxnNumber    string    // 事务Number
 }
-
 
 func (t Transaction) IntoHeader(header http.Header) http.Header {
 	tar := http.Header{}
