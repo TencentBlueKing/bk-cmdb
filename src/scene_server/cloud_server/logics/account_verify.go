@@ -15,6 +15,7 @@ package logics
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -30,6 +31,9 @@ func (lgc *Logics) AwsAccountVerify(kit *rest.Kit, secretID, secretKey string) (
 		Region:      aws.String("us-west-2"),
 		Credentials: credentials.NewStaticCredentials(secretID, secretKey, ""),
 	})
+	if err != nil {
+		return false, err
+	}
 	ec2Svc := ec2.New(sess)
 
 	_, err = ec2Svc.DescribeInstances(nil)
@@ -49,9 +53,12 @@ func (lgc *Logics) TecentCloudVerify(kit *rest.Kit, secretID, secretKey string) 
 	cpf.HttpProfile.Endpoint = "cvm.tencentcloudapi.com"
 	cpf.SignMethod = "HmacSHA1"
 
-	client, _ := cvm.NewClient(credential, regions.Guangzhou, cpf)
+	client, err := cvm.NewClient(credential, regions.Guangzhou, cpf)
+	if err != nil {
+		return false, err
+	}
 	instRequest := cvm.NewDescribeInstancesRequest()
-	_, err := client.DescribeInstances(instRequest)
+	_, err = client.DescribeInstances(instRequest)
 	if err != nil {
 		return false, err
 	}
