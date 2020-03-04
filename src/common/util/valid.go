@@ -33,16 +33,33 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 		}
 		for _, o := range arrOption {
 			mapOption, ok := o.(map[string]interface{})
-			if false == ok {
+			if false == ok || mapOption == nil {
 				blog.Errorf(" option %v not enum option, enum option item must id and name", option)
 				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 			}
-			_, idOk := mapOption["id"]
-			_, nameOk := mapOption["name"]
-			if false == idOk || false == nameOk {
-				blog.Errorf(" option %v not enum option, enum option item must id and name", option)
-				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
-
+			idVal, idOk := mapOption["id"]
+			if !idOk || idVal == "" {
+				blog.Errorf("enum option id can't be empty", option)
+				return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option id")
+			}
+			if _, ok := idVal.(string); !ok {
+				blog.Errorf("idVal %v not string", idVal)
+				return errProxy.Errorf(common.CCErrCommParamsNeedString, "option id")
+			}
+			nameVal, nameOk := mapOption["name"]
+			if !nameOk || nameVal == "" {
+				blog.Errorf("enum option name can't be empty", option)
+				return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option name")
+			}
+			switch mapOption["type"] {
+			case "text":
+				if _, ok := nameVal.(string); !ok {
+					blog.Errorf(" nameVal %v not string", nameVal)
+					return errProxy.Errorf(common.CCErrCommParamsNeedString, "option name")
+				}
+			default:
+				blog.Errorf("enum option type must be 'text', current: %v", mapOption["type"])
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option type")
 			}
 		}
 	case common.FieldTypeInt:
