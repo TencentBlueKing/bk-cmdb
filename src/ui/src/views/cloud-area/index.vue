@@ -6,31 +6,38 @@
             :pagination="pagination"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange">
-            <bk-table-column :label="$t('云区域名称')" prop="xxxx" class-name="is-highlight"></bk-table-column>
-            <bk-table-column :label="$t('状态')" prop="xxxx">
-                <div class="row-status"
-                    slot-scope="{ row }"
-                    v-bk-tooltips.right="{
-                        disabled: row.error,
-                        content: '异常原因'
-                    }">
-                    <i :class="['status', { 'is-error': row.error }]"></i>
-                    异常
+            <bk-table-column :label="$t('云区域名称')" prop="bk_cloud_name" class-name="is-highlight"></bk-table-column>
+            <bk-table-column :label="$t('状态')" prop="bk_status">
+                <div class="row-status" slot-scope="{ row }">
+                    <i :class="['status', { 'is-error': row.bk_status !== 1 }]"></i>
+                    {{row.bk_status === 1 ? $t('正常') : $t('异常')}}
                 </div>
             </bk-table-column>
-            <bk-table-column :label="$t('所属云厂商')" prop="xxxx"></bk-table-column>
-            <bk-table-column :label="$t('国家')" prop="xxxx"></bk-table-column>
-            <bk-table-column :label="$t('省份/州')" prop="xxxx"></bk-table-column>
-            <bk-table-column :label="$t('VPC')" prop="xxxx"></bk-table-column>
-            <bk-table-column :label="$t('主机数量')" prop="xxxx"></bk-table-column>
-            <bk-table-column :label="$t('最近编辑')" prop="xxxx"></bk-table-column>
-            <bk-table-column :label="$t('编辑人')" prop="xxxx"></bk-table-column>
-            <bk-table-column :label="$t('操作')" prop="xxxx">
+            <bk-table-column :label="$t('所属云厂商')" prop="bk_cloud_vendor">
+                <template slot-scope="{ row }">{{row.bk_cloud_vendor | formatter('singlechar')}}</template>
+            </bk-table-column>
+            <bk-table-column :label="$t('国家')" prop="bk_region">
+                <template slot-scope="{ row }">{{row.bk_region | formatter('singlechar')}}</template>
+            </bk-table-column>
+            <bk-table-column :label="$t('省份/州')" prop="bk_province">
+                <template slot-scope="{ row }">{{row.bk_province | formatter('singlechar')}}</template>
+            </bk-table-column>
+            <bk-table-column :label="$t('VPC')" prop="bk_vpc_name">
+                <template slot-scope="{ row }">{{row.bk_vpc_name | formatter('singlechar')}}</template>
+            </bk-table-column>
+            <bk-table-column :label="$t('主机数量')" prop="bk_host_count">
+                <template slot-scope="{ row }">{{row.bk_host_count | formatter('int')}}</template>
+            </bk-table-column>
+            <bk-table-column :label="$t('最近编辑')" prop="last_time">
+                <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
+            </bk-table-column>
+            <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
+            <bk-table-column :label="$t('操作')">
                 <link-button slot-scope="{ row }"
-                    :disabled="row.host_count"
+                    :disabled="!!row.bk_host_count"
                     v-bk-tooltips="{
                         disabled: !row.host_count,
-                        content: '主机不为空，不能删除'
+                        content: $t('主机不为空，不能删除')
                     }"
                     @click="handleDelete(row)">
                     {{$t('删除')}}
@@ -45,10 +52,7 @@
         data () {
             return {
                 list: [{}, {}],
-                pagination: {
-                    ...this.$tools.getDefaultPaginationConfig(),
-                    count: 2
-                }
+                pagination: this.$tools.getDefaultPaginationConfig()
             }
         },
         created () {
@@ -66,7 +70,7 @@
             },
             async handleDelete (row) {
                 try {
-                    await Promise.resolve()
+                    await this.$store.dispatch('cloudarea/deleteCloudarea', { id: row.bk_cloud_id })
                     this.$success('删除成功')
                     this.getData()
                 } catch (e) {
@@ -75,9 +79,10 @@
             },
             async getData () {
                 try {
-                    const data = await Promise.resolve({
-                        count: 2,
-                        info: [{}, {}]
+                    const data = await this.$store.dispatch('cloudarea/getCloudarea', {
+                        params: {
+                            ...this.$tools.getPageParams(this.pagination)
+                        }
                     })
                     if (data.count && !data.info.length) {
                         this.handlePageChange(this.pagination.current - 1)

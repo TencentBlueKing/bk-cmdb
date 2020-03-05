@@ -3,33 +3,33 @@
         v-bkloading="{ isLoading: $loading(requestId) }">
         <bk-form :label-width="105">
             <bk-form-item class="details-item" :label="$t('账户名称')">
-                {{account.name | formatter}}
+                {{account.bk_account_name}}
             </bk-form-item>
             <bk-form-item class="details-item" :label="$t('账户类型')">
-                {{account.type | formatter}}
+                {{account.bk_cloud_vendor}}
             </bk-form-item>
             <bk-form-item class="details-item" label="ID">
-                {{account.id | formatter}}
+                {{account.bk_secret_id}}
             </bk-form-item>
             <bk-form-item class="details-item" label="Key">
-                {{account.key | formatter}}
+                {{account.bk_secret_key | formatter('singlechar')}}
             </bk-form-item>
             <bk-form-item class="details-item" :label="$t('备注')">
-                {{account.remarks | formatter}}
+                {{account.bk_description | formatter('longchar')}}
             </bk-form-item>
         </bk-form>
         <bk-form class="extra-info-form" :label-width="105">
             <bk-form-item class="details-item" :label="$t('创建人')">
-                {{account.creator | formatter}}
+                {{account.bk_creator}}
             </bk-form-item>
             <bk-form-item class="details-item" :label="$t('创建时间')">
-                {{account.create_at | formatter}}
+                {{account.create_time | formatter('time')}}
             </bk-form-item>
             <bk-form-item class="details-item" :label="$t('修改人')">
-                {{account.updator | formatter}}
+                {{account.bk_last_editor | formatter('singlechar')}}
             </bk-form-item>
             <bk-form-item class="details-item" :label="$t('修改时间')">
-                {{account.update_at | formatter}}
+                {{account.last_time | formatter('time')}}
             </bk-form-item>
             <bk-form-item class="details-options">
                 <bk-button class="mr10" theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
@@ -42,11 +42,6 @@
 <script>
     export default {
         name: 'cloud-account-details',
-        filters: {
-            formatter (value) {
-                return value || '--'
-            }
-        },
         props: {
             id: {
                 type: Number,
@@ -69,7 +64,12 @@
         methods: {
             async getAccountData () {
                 try {
-                    this.account = await Promise.resolve({ id: '1', name: '测试' })
+                    this.account = await this.$store.dispatch('cloudAccount/searchById', {
+                        id: this.id,
+                        config: {
+                            requestId: this.requestId
+                        }
+                    })
                 } catch (e) {
                     this.account = {}
                     console.error(e)
@@ -78,7 +78,7 @@
             handleEdit () {
                 this.container.show({
                     type: 'form',
-                    title: `${this.$t('编辑账户')} 【${this.account.name}】`,
+                    title: `${this.$t('编辑账户')} 【${this.account.bk_account_name}】`,
                     props: {
                         mode: 'edit',
                         account: this.account

@@ -5,11 +5,11 @@
                 <bk-input class="create-form-meta"
                     :placeholder="$t('请输入xx', { name: $t('账户名称') })"
                     :data-vv-as="$t('账户名称')"
-                    data-vv-name="name"
+                    data-vv-name="bk_account_name"
                     v-validate="'required|length:256'"
-                    v-model.trim="form.name">
+                    v-model.trim="form.bk_account_name">
                 </bk-input>
-                <p class="create-form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
+                <p class="create-form-error" v-if="errors.has('bk_account_name')">{{errors.first('bk_account_name')}}</p>
             </bk-form-item>
             <bk-form-item class="create-form-item" :label="$t('账户类型')" required>
                 <bk-select class="create-form-meta"
@@ -17,7 +17,7 @@
                     :data-vv-as="$t('账户类型')"
                     :readonly="!isCreateMode"
                     data-vv-name="type"
-                    v-model="form.type"
+                    v-model="form.bk_cloud_vendor"
                     v-validate="'required'">
                     <bk-option v-for="type in typeList"
                         :key="type.id"
@@ -25,26 +25,26 @@
                         :id="type.id">
                     </bk-option>
                 </bk-select>
-                <p class="create-form-error" v-if="errors.has('type')">{{errors.first('type')}}</p>
+                <p class="create-form-error" v-if="errors.has('bk_cloud_vendor')">{{errors.first('bk_cloud_vendor')}}</p>
             </bk-form-item>
             <bk-form-item class="create-form-item" label="ID" required>
                 <bk-input class="create-form-meta"
                     :placeholder="$t('请输入xx', { name: 'ID' })"
                     data-vv-as="ID"
-                    data-vv-name="id"
-                    v-model.trim="form.id"
+                    data-vv-name="bk_secret_id"
+                    v-model.trim="form.bk_secret_id"
                     v-validate="'required|length:256'">
                 </bk-input>
                 <link-button class="create-form-link">如何获取ID和Key?</link-button>
-                <p class="create-form-error" v-if="errors.has('id')">{{errors.first('id')}}</p>
+                <p class="create-form-error" v-if="errors.has('bk_secret_id')">{{errors.first('bk_secret_id')}}</p>
             </bk-form-item>
             <bk-form-item class="create-form-item clearfix" label="Key" required>
                 <bk-button class="create-form-button fr" @click="handleTest">{{$t('连通测试')}}</bk-button>
                 <bk-input class="create-form-meta key"
                     :placeholder="$t('请输入xx', { name: 'Key' })"
                     data-vv-as="Key"
-                    data-vv-name="key"
-                    v-model.trim="form.key"
+                    data-vv-name="bk_secret_key"
+                    v-model.trim="form.bk_secret_key"
                     v-validate="'required|length:256'">
                 </bk-input>
                 <p class="create-test-success" v-if="testState === 'success'">
@@ -55,17 +55,17 @@
                     <i class="bk-icon icon-close-circle-shape"></i>
                     {{$t('账户连通失败')}}
                 </p>
-                <p class="create-form-error" v-else-if="errors.has('key')">{{errors.first('key')}}</p>
+                <p class="create-form-error" v-else-if="errors.has('bk_secret_key')">{{errors.first('bk_secret_key')}}</p>
             </bk-form-item>
             <bk-form-item class="create-form-item" :label="$t('备注')">
                 <bk-input class="create-form-meta" type="textarea"
                     :placeholder="$t('请输入xx', { name: $t('备注') })"
                     :data-vv-as="$t('备注')"
-                    data-vv-name="remarks"
-                    v-model.trim="form.remarks"
+                    data-vv-name="bk_description"
+                    v-model.trim="form.bk_description"
                     v-validate="'length:2000'">
                 </bk-input>
-                <p class="create-form-error" v-if="errors.has('remarks')">{{errors.first('remarks')}}</p>
+                <p class="create-form-error" v-if="errors.has('bk_description')">{{errors.first('bk_description')}}</p>
             </bk-form-item>
             <bk-form-item class="create-form-options">
                 <bk-button class="mr10" theme="primary" @click.stop.prevent="handleSubmit">{{$t('提交')}}</bk-button>
@@ -77,11 +77,11 @@
 
 <script>
     const DEFAULT_FORM = {
-        name: '',
-        type: '',
-        id: '',
-        key: '',
-        remarks: ''
+        bk_account_name: '',
+        bk_cloud_vendor: '',
+        bk_secret_id: '',
+        bk_secret_key: '',
+        bk_description: ''
     }
     export default {
         name: 'cloud-account-form',
@@ -101,10 +101,7 @@
         },
         data () {
             return {
-                typeList: [{
-                    id: 'ali',
-                    name: '阿里云'
-                }],
+                typeList: [],
                 form: {
                     ...DEFAULT_FORM
                 },
@@ -158,7 +155,7 @@
                 if (!this.isCreateMode) {
                     this.container.show({
                         type: 'details',
-                        title: `${this.$t('账户详情')} 【${this.account.name}】`,
+                        title: `${this.$t('账户详情')} 【${this.account.bk_account_name}】`,
                         props: {
                             id: 1
                         }

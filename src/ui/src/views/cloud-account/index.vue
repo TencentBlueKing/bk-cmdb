@@ -4,16 +4,18 @@
         <div class="cloud-account-options">
             <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
         </div>
-        <bk-table class="cloud-account-table"
+        <bk-table class="cloud-account-table" v-bkloading="{ isLoading: $loading(request.search) }"
             :data="list"
             :pagination="pagination"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @cell-click="handleCellClick">
-            <bk-table-column :label="$t('账户名称')" prop="name" class-name="is-highlight" id="name"></bk-table-column>
-            <bk-table-column :label="$t('账号类型')" prop="type"></bk-table-column>
-            <bk-table-column :label="$t('修改人')" prop="updator"></bk-table-column>
-            <bk-table-column :label="$t('修改时间')" prop="last_time"></bk-table-column>
+            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" class-name="is-highlight" id="name"></bk-table-column>
+            <bk-table-column :label="$t('账号类型')" prop="bk_cloud_vendor"></bk-table-column>
+            <bk-table-column :label="$t('修改人')" prop="bk_last_editor"></bk-table-column>
+            <bk-table-column :label="$t('修改时间')" prop="last_time">
+                <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
+            </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <link-button class="mr10" @click="handleView(row)">{{$t('查看')}}</link-button>
@@ -42,9 +44,9 @@
         data () {
             return {
                 list: [],
-                pagination: {
-                    ...this.$tools.getDefaultPaginationConfig(),
-                    count: 2
+                pagination: this.$tools.getDefaultPaginationConfig(),
+                request: {
+                    search: Symbol('search')
                 }
             }
         },
@@ -71,16 +73,16 @@
                 this.getData()
             },
             handleCellClick (row, column) {
-                if (column.property === 'name') {
+                if (column.property === 'bk_account_name') {
                     this.handleView(row)
                 }
             },
             handleView (row) {
                 this.$refs.accountSideslider.show({
                     type: 'details',
-                    title: `${this.$t('账户详情')} 【${row.name}】`,
+                    title: `${this.$t('账户详情')} 【${row.bk_account_name}】`,
                     props: {
-                        id: row.id
+                        id: row.bk_account_id
                     }
                 })
             },
@@ -95,9 +97,10 @@
             },
             async getData () {
                 try {
-                    const data = await Promise.resolve({
-                        count: 2,
-                        info: [{ id: 1 }, { id: 2 }]
+                    const data = await this.$store.dispatch('cloudAccount/search', {
+                        config: {
+                            requestId: this.request.search
+                        }
                     })
                     if (data.count && !data.info.length) {
                         this.handlePageChange(this.pagination.current - 1)
