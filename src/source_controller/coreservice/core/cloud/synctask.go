@@ -13,13 +13,14 @@
 package cloud
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"time"
 )
 
 func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder) {
@@ -94,7 +95,7 @@ func (c *cloudOperation) DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCEr
 	return nil
 }
 
-func (c *cloudOperation) getSyncTaskCloudVendor(kit *rest.Kit, accountID int64) (metadata.AccountType, errors.CCErrorCoder) {
+func (c *cloudOperation) getSyncTaskCloudVendor(kit *rest.Kit, accountID int64) (string, errors.CCErrorCoder) {
 	result := new(metadata.CloudAccount)
 	cond := map[string]interface{}{common.BKCloudAccountIDField: accountID}
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(cond).One(kit.Ctx, result)

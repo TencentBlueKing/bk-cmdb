@@ -34,20 +34,10 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 
 	var pass bool
 	var err error
-	switch account.CloudVendor {
-	case metadata.AWS:
-		pass, err = s.Logics.AwsAccountVerify(ctx.Kit, account.SecretID, account.SecretKey)
-		if err != nil {
-			blog.ErrorJSON("aws cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
-		}
-	case metadata.TencentCloud:
-		pass, err = s.Logics.TencentCloudVerify(ctx.Kit, account.SecretID, account.SecretKey)
-		if err != nil {
-			blog.ErrorJSON("tencent cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
-		}
-	default:
-		ctx.RespErrorCodeOnly(common.CCErrCloudVendorNotSupport, "VerifyConnectivity failed, not support cloud vendor: %v", account.CloudVendor)
-		return
+
+	pass, err = s.Logics.AccountVerify(account.CloudVendor, account.SecretID, account.SecretKey)
+	if err != nil {
+		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err, ctx.Kit.Rid)
 	}
 
 	rData := mapstr.MapStr{

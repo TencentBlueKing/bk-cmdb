@@ -24,7 +24,7 @@ import (
 
 func (c *cloudOperation) validCreateAccount(kit *rest.Kit, account *metadata.CloudAccount) errors.CCErrorCoder {
 	// cloud vendor check
-	if !util.InStrArr(metadata.SupportCloudVendors, string(account.CloudVendor)) {
+	if !util.InStrArr(metadata.SupportedCloudVendors, string(account.CloudVendor)) {
 		blog.ErrorJSON("[validCreateAccount] not support cloud vendor: %s, rid: %v", account.CloudVendor, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCloudVendorNotSupport)
 	}
@@ -49,14 +49,14 @@ func (c *cloudOperation) validUpdateAccount(kit *rest.Kit, accountID int64, opti
 	if err := c.validAccountExist(kit, accountID); err != nil {
 		return err
 	}
-	// accountType check
+	// cloud vendor check
 	if option.Exists(common.BKCloudVendor) {
 		cloudVendor, err := option.String(common.BKCloudVendor)
 		if err != nil {
 			blog.ErrorJSON("[validUpdateAccount] not invalid cloud vendor, option: %v, rid: %v", option, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCloudValidAccountParamFail, common.BKCloudVendor)
 		}
-		if !util.InStrArr(metadata.SupportCloudVendors, cloudVendor) {
+		if !util.InStrArr(metadata.SupportedCloudVendors, cloudVendor) {
 			blog.ErrorJSON("[validUpdateAccount] not support cloud vendor: %s, rid: %v", cloudVendor, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCloudVendorNotSupport)
 		}

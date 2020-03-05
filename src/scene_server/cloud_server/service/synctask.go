@@ -13,16 +13,23 @@
 package service
 
 import (
+	"reflect"
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
-	"reflect"
-	"strconv"
 )
 
 func (s *Service) SearchVpc(ctx *rest.Contexts) {
+	vpcOpt := new(metadata.SearchVpcOption)
+	if err := ctx.DecodeInto(vpcOpt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
@@ -42,10 +49,8 @@ func (s *Service) SearchVpc(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
 		return
 	}
-
-	// todo vpc 需要组装region，host_count, bk_sync_dir
-	// todo 这里的region是id格式，"ap-guangzhou"，但是需要的是"广东一区"，需要一个map
-	vpc, err := s.Logics.GetCloudVendorVpc(ctx.Kit, res.Info[0])
+	account := res.Info[0]
+	vpc, err := s.Logics.GetVpcInstInfo(vpcOpt.Region, account.CloudVendor, account.SecreteID, account.SecreteKey)
 	if err != nil {
 
 	}
@@ -82,7 +87,7 @@ func (s *Service) SearchSyncTask(ctx *rest.Contexts) {
 	}
 	// set default sort
 	if option.Page.Sort == "" {
-		option.Page.Sort = "-" + common.BKCloudSyncTaskID
+		option.Page.Sort = "-" + common.CreateTimeField
 	}
 	if option.Page.IsIllegal() {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
