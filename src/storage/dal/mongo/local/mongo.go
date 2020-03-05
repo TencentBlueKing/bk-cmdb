@@ -15,7 +15,6 @@ package local
 import (
 	"context"
 	"errors"
-	//"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -24,16 +23,15 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/types"
-
-	"go.mongodb.org/mongo-driver/bson"
+	"configcenter/src/storage/dal/types"
+    dtype "configcenter/src/storage/types"
+    "go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 	"gopkg.in/redis.v5"
 )
 
-// Mongo implement client.DALRDB interface
 type Mongo struct {
 	dbc    *mongo.Client
 	dbname string
@@ -44,9 +42,10 @@ type Mongo struct {
 var _ dal.DB = new(Mongo)
 
 type MongoConf struct {
-	MaxOpenConns uint64
-	MaxIdleConns uint64
-	URI          string
+	TimeoutSeconds int
+	MaxOpenConns   uint64
+	MaxIdleConns   uint64
+	URI            string
 }
 
 // NewMgo returns new RDB
@@ -94,16 +93,6 @@ func (c *Mongo) Ping() error {
 	return c.dbc.Ping(context.TODO(), nil)
 }
 
-// Clone return the new client
-func (c *Mongo) Clone() dal.DB {
-	nc := Mongo{
-		dbc:    c.dbc,
-		dbname: c.dbname,
-		tm:     c.tm,
-	}
-	return &nc
-}
-
 // IsDuplicatedError check duplicated error
 func (c *Mongo) IsDuplicatedError(err error) bool {
 	if err != nil {
@@ -117,16 +106,16 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 			return true
 		}
 	}
-	return err == dal.ErrDuplicated
+	return err == types.ErrDuplicated
 }
 
 // IsNotFoundError check the not found error
 func (c *Mongo) IsNotFoundError(err error) bool {
-	return err == dal.ErrDocumentNotFound
+	return err == types.ErrDocumentNotFound
 }
 
 // Table collection operation
-func (c *Mongo) Table(collName string) dal.Table {
+func (c *Mongo) Table(collName string) types.Table {
 	col := Collection{}
 	col.collName = collName
 	col.Mongo = c
@@ -140,7 +129,7 @@ type Collection struct {
 }
 
 // Find 查询多个并反序列化到 Result
-func (c *Collection) Find(filter dal.Filter) dal.Find {
+func (c *Collection) Find(filter types.Filter) types.Find {
 	return &Find{
 		Collection: c,
 		filter:     filter,
@@ -153,14 +142,14 @@ type Find struct {
 	*Collection
 
 	projection map[string]int
-	filter     dal.Filter
+	filter     types.Filter
 	start      int64
 	limit      int64
 	sort       map[string]interface{}
 }
 
 // Fields 查询字段
-func (f *Find) Fields(fields ...string) dal.Find {
+func (f *Find) Fields(fields ...string) types.Find {
 	for _, field := range fields {
 		if len(field) <= 0 {
 			continue
@@ -171,7 +160,7 @@ func (f *Find) Fields(fields ...string) dal.Find {
 }
 
 // Sort 查询排序
-func (f *Find) Sort(sort string) dal.Find {
+func (f *Find) Sort(sort string) types.Find {
 	if sort != "" {
 		sortArr := strings.Split(sort, ",")
 		f.sort = make(map[string]interface{}, 0)
@@ -199,7 +188,7 @@ func (f *Find) Sort(sort string) dal.Find {
 }
 
 // Start 查询上标
-func (f *Find) Start(start uint64) dal.Find {
+func (f *Find) Start(start uint64) types.Find {
 	// change to int64,后续改成int64
 	dbStart := int64(start)
 	f.start = dbStart
@@ -207,7 +196,7 @@ func (f *Find) Start(start uint64) dal.Find {
 }
 
 // Limit 查询限制
-func (f *Find) Limit(limit uint64) dal.Find {
+func (f *Find) Limit(limit uint64) types.Find {
 	// change to int64,后续改成int64
 	dbLimit := int64(limit)
 	f.limit = dbLimit
@@ -224,8 +213,9 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if f.HasSession(ctx) {
-		sess, err := f.GetDistributedSession(ctx)
+
+	if f.hasSession(ctx) {
+		sess, err := f.getDistributedSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -270,8 +260,8 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if f.HasSession(ctx) {
-		sess, err := f.GetDistributedSession(ctx)
+	if f.hasSession(ctx) {
+		sess, err := f.getDistributedSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -308,7 +298,7 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	for cursor.Next(ctx) {
 		return cursor.Decode(result)
 	}
-	return dal.ErrDocumentNotFound
+	return types.ErrDocumentNotFound
 }
 
 // Count 统计数量(非事务)
@@ -321,8 +311,8 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if f.HasSession(ctx) {
-		sess, err := f.GetDistributedSession(ctx)
+	if f.hasSession(ctx) {
+		sess, err := f.getDistributedSession(ctx)
 		if err != nil {
 			return uint64(0), err
 		}
@@ -350,8 +340,8 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if c.HasSession(ctx) {
-		sess, err := c.GetDistributedSession(ctx)
+	if c.hasSession(ctx) {
+		sess, err := c.getDistributedSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -368,7 +358,7 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 }
 
 // Update 更新数据
-func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
+func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -377,8 +367,8 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if c.HasSession(ctx) {
-		sess, err := c.GetDistributedSession(ctx)
+	if c.hasSession(ctx) {
+		sess, err := c.getDistributedSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -397,7 +387,7 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 }
 
 // Upsert 数据存在更新数据，否则新加数据
-func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
+func (c *Collection) Upsert(ctx context.Context, filter types.Filter, doc interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -406,8 +396,8 @@ func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interfac
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if c.HasSession(ctx) {
-		sess, err := c.GetDistributedSession(ctx)
+	if c.hasSession(ctx) {
+		sess, err := c.getDistributedSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -429,7 +419,7 @@ func (c *Collection) Upsert(ctx context.Context, filter dal.Filter, doc interfac
 }
 
 // UpdateMultiModel 根据不同的操作符去更新数据
-func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
+func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, updateModel ...types.ModeUpdate) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -438,8 +428,8 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, up
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if c.HasSession(ctx) {
-		sess, err := c.GetDistributedSession(ctx)
+	if c.hasSession(ctx) {
+		sess, err := c.getDistributedSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -462,7 +452,7 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, up
 }
 
 // UpdateModifyCount 更新数据,返回更新的条数
-func (c *Collection) UpdateModifyCount(ctx context.Context, filter dal.Filter, doc interface{}) (int64, error) {
+func (c *Collection) UpdateModifyCount(ctx context.Context, filter types.Filter, doc interface{}) (int64, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -471,8 +461,8 @@ func (c *Collection) UpdateModifyCount(ctx context.Context, filter dal.Filter, d
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if c.HasSession(ctx) {
-		sess, err := c.GetDistributedSession(ctx)
+	if c.hasSession(ctx) {
+		sess, err := c.getDistributedSession(ctx)
 		if err != nil {
 			return 0, err
 		}
@@ -491,7 +481,7 @@ func (c *Collection) UpdateModifyCount(ctx context.Context, filter dal.Filter, d
 }
 
 // Delete 删除数据
-func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
+func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -500,8 +490,8 @@ func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if c.HasSession(ctx) {
-		sess, err := c.GetDistributedSession(ctx)
+	if c.hasSession(ctx) {
+		sess, err := c.getDistributedSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -554,139 +544,7 @@ type Idgen struct {
 	SequenceID uint64 `bson:"SequenceID"`
 }
 
-// HasSession 判断context里是否有session信息
-func (c *Mongo) HasSession(ctx context.Context) bool {
-	v, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
-	return ok == true && v.SessionID != ""
-}
-
-// GetDistributedSession 获取context里用来做分布式事务的session
-func (c *Mongo) GetDistributedSession(ctx context.Context) (mongo.Session, error) {
-	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
-	if !ok {
-		return nil, errors.New("Can't get distributed session, context has no CCContextKeyJoinOption")
-	}
-
-	sess, err := c.dbc.StartSession()
-	if err != nil {
-		return nil, err
-	}
-	err = sess.StartTransaction()
-	if err != nil {
-		return nil, err
-	}
-	err = c.tm.ConvertToSameSession(sess, opt.SessionID)
-	if err != nil {
-		return nil, err
-	}
-	return sess, nil
-}
-
-// ChooseSession 选择session，优先选择context里用来做分布式事务的session，其次选择自身本地的
-func (c *Mongo) ChooseSession(ctx context.Context) (mongo.Session, error) {
-	var sess mongo.Session
-	var err error
-	if c.HasSession(ctx) {
-		sess, err = c.GetDistributedSession(ctx)
-		if err != nil {
-			return nil, err
-		}
-	} else if c.sess != nil {
-		sess = c.sess
-	} else {
-		return nil, dal.ErrSessionNotStarted
-	}
-	return sess, nil
-}
-
-// StartSession 开启新会话
-func (c *Mongo) StartSession() (dal.DB, error) {
-	sess, err := c.dbc.StartSession()
-	if err != nil {
-		return nil, err
-	}
-	m := c.Clone().(*Mongo)
-	m.sess = sess
-	c.tm.SaveSession(sess)
-	return m, err
-}
-
-// EndSession 结束会话
-func (c *Mongo) EndSession(ctx context.Context) error {
-	sess, err := c.ChooseSession(ctx)
-	if err != nil {
-		return err
-	}
-	sess.EndSession(ctx)
-	return nil
-}
-
-// StartTransaction 开启新事务
-func (c *Mongo) StartTransaction(ctx context.Context) error {
-	sess, err := c.ChooseSession(ctx)
-	if err != nil {
-		return err
-	}
-	if c.HasSession(ctx) {
-		defer c.tm.SaveSession(sess)
-	}
-	return sess.StartTransaction()
-}
-
-// CommitTransaction 提交事务
-func (c *Mongo) CommitTransaction(ctx context.Context) error {
-	sess, err := c.ChooseSession(ctx)
-	if err != nil {
-		return err
-	}
-	if c.HasSession(ctx) {
-		defer c.tm.SaveSession(sess)
-	}
-	return sess.CommitTransaction(ctx)
-}
-
-// AbortTransaction 取消事务
-func (c *Mongo) AbortTransaction(ctx context.Context) error {
-	sess, err := c.ChooseSession(ctx)
-	if err != nil {
-		return err
-	}
-	if c.HasSession(ctx) {
-		defer c.tm.SaveSession(sess)
-	}
-	return sess.AbortTransaction(ctx)
-}
-
-// Start 开启新事务 TODO delete
-func (c *Mongo) Start(ctx context.Context) (dal.Transaction, error) {
-	return c, nil
-}
-
-// Commit 提交事务 TODO delete
-func (c *Mongo) Commit(ctx context.Context) error {
-	return nil
-}
-
-// Abort 取消事务 TODO delete
-func (c *Mongo) Abort(ctx context.Context) error {
-	return nil
-}
-
-// TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *Mongo) TxnInfo() (*types.Transaction, error) {
-	if c.sess == nil {
-		return nil, dal.ErrSessionNotStarted
-	}
-	se := mongo.SessionExposer{}
-	info, err := se.GetSessionInfo(c.sess)
-	if err != nil {
-		return nil, err
-	}
-
-	return &types.Transaction{SessionID: info.SessionID, SessionState: info.SessionState, TxnNumber: info.TxnNumber}, nil
-}
-
-// HasTable 判断是否存在集合  TOOD test
+// HasTable 判断是否存在集合
 func (c *Mongo) HasTable(ctx context.Context, collName string) (bool, error) {
 	cursor, err := c.dbc.Database(c.dbname).ListCollections(ctx, bson.M{"name": collName, "type": "collection"})
 	if err != nil {
@@ -711,13 +569,8 @@ func (c *Mongo) CreateTable(ctx context.Context, collName string) error {
 	return c.dbc.Database(c.dbname).RunCommand(ctx, map[string]interface{}{"create": collName}).Err()
 }
 
-// DB get dal interface
-func (c *Mongo) DB(collName string) dal.RDB {
-	return c
-}
-
 // CreateIndex 创建索引
-func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
+func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	createIndexOpt := &options.IndexOptions{
 		Background: &index.Background,
 		Unique:     &index.Unique,
@@ -744,16 +597,16 @@ func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
 }
 
 // Indexes get all indexes for the collection
-func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
+func (c *Collection) Indexes(ctx context.Context) ([]types.Index, error) {
 	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
 	cursor, err := indexView.List(ctx)
 	if nil != err {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
-	var indexs []dal.Index
+	var indexs []types.Index
 	for cursor.Next(ctx) {
-		idxResult := dal.Index{}
+		idxResult := types.Index{}
 		cursor.Decode(&idxResult)
 		indexs = append(indexs, idxResult)
 	}
@@ -768,9 +621,9 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 	defer func() {
 		blog.V(4).InfoDepthf(2, "mongo add-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
 	}()
-
-	selector := types.Document{column: types.Document{"$exists": false}}
-	datac := types.Document{"$set": types.Document{column: value}}
+	
+	selector := dtype.Document{column: dtype.Document{"$exists": false}}
+	datac := dtype.Document{"$set": dtype.Document{column: value}}
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, selector, datac)
 	return err
 }
@@ -783,8 +636,8 @@ func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string
 		blog.V(4).InfoDepthf(2, "mongo rename-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, types.Document{}, datac)
+	datac := dtype.Document{"$rename": dtype.Document{oldName: newColumn}}
+	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
 	return err
 }
 
@@ -796,18 +649,18 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 		blog.V(4).InfoDepthf(2, "mongo drop-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	datac := types.Document{"$unset": types.Document{field: ""}}
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, types.Document{}, datac)
+	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
+	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
 	return err
 }
 
 // DropColumns remove many columns by the name
-func (c *Collection) DropColumns(ctx context.Context, filter dal.Filter, fields []string) error {
+func (c *Collection) DropColumns(ctx context.Context, filter types.Filter, fields []string) error {
 	unsetFields := make(map[string]interface{})
 	for _, field := range fields {
 		unsetFields[field] = ""
 	}
-	datac := types.Document{"$unset": unsetFields}
+	datac := dtype.Document{"$unset": unsetFields}
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
 	return err
 }
@@ -822,8 +675,8 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if c.HasSession(ctx) {
-		sess, err := c.GetDistributedSession(ctx)
+	if c.hasSession(ctx) {
+		sess, err := c.getDistributedSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -851,8 +704,8 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 
 	// 设置ctx的Session对象,用来处理事务
 	se := &mongo.SessionExposer{}
-	if c.HasSession(ctx) {
-		sess, err := c.GetDistributedSession(ctx)
+	if c.hasSession(ctx) {
+		sess, err := c.getDistributedSession(ctx)
 		if err != nil {
 			return err
 		}
@@ -870,7 +723,7 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 	for cursor.Next(ctx) {
 		return cursor.Decode(result)
 	}
-	return dal.ErrDocumentNotFound
+	return types.ErrDocumentNotFound
 }
 
 func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {

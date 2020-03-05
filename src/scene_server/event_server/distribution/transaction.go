@@ -101,7 +101,7 @@ func (th *TxnHandler) fetchTimeout() {
 			continue
 		}
 		// Transaction
-		txns := make([]daltypes.Transaction, 0)
+		txns := make([]daltypes.TransactionInfo, 0)
 		tranCond := mongo.NewCondition()
 		tranCond.Element(&mongo.In{Key: common.BKTxnIDField, Val: txnIDs})
 		if err := th.db.Table(common.BKTableNameTransaction).Find(tranCond.ToMapStr()).All(th.ctx, &txns); err != nil {
@@ -116,7 +116,7 @@ func (th *TxnHandler) fetchTimeout() {
 			}
 			for _, txnID := range txnIDs {
 				if !m[txnID] {
-					txns = append(txns, daltypes.Transaction{TxnID: txnID, Status: daltypes.TxStatusException})
+					txns = append(txns, daltypes.TransactionInfo{TxnID: txnID, Status: daltypes.TxStatusException})
 				}
 			}
 		}
@@ -124,7 +124,7 @@ func (th *TxnHandler) fetchTimeout() {
 	}
 }
 
-func (th *TxnHandler) handleTxn(txns ...daltypes.Transaction) {
+func (th *TxnHandler) handleTxn(txns ...daltypes.TransactionInfo) {
 	dropped := make([]string, 0)
 	for _, txn := range txns {
 		switch txn.Status {

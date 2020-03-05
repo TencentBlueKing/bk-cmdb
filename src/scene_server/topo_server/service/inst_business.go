@@ -13,22 +13,22 @@
 package service
 
 import (
-	"fmt"
-	"reflect"
-	"sort"
-	"strconv"
-	"strings"
+    "fmt"
+    "reflect"
+    "sort"
+    "strconv"
+    "strings"
 
-	authmeta "configcenter/src/auth/meta"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/mapstruct"
-	"configcenter/src/common/metadata"
-	gparams "configcenter/src/common/paraparse"
-	"configcenter/src/common/util"
+    authmeta "configcenter/src/auth/meta"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/condition"
+    "configcenter/src/common/http/rest"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/mapstruct"
+    "configcenter/src/common/metadata"
+    gparams "configcenter/src/common/paraparse"
+    "configcenter/src/common/util"
 )
 
 // CreateBusiness create a new business
@@ -40,49 +40,28 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 	}
 	data := dataWithMetadata.Data
 
-	var txnErr error
-	// 判断是否使用事务
-	if s.EnableTxn {
-		sess, err := s.DB.StartSession()
-		if err != nil {
-			txnErr = err
-			blog.Errorf("StartSession err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		// 获取事务信息，将其存入context中
-		txnInfo, err := sess.TxnInfo()
-		if err != nil {
-			txnErr = err
-			blog.Errorf("TxnInfo err: %+v", err)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-			return
-		}
-		ctx.Kit.Header = txnInfo.IntoHeader(ctx.Kit.Header)
-		ctx.Kit.Ctx = util.TnxIntoContext(ctx.Kit.Ctx, txnInfo)
-		err = sess.StartTransaction(ctx.Kit.Ctx)
-		if err != nil {
-			txnErr = err
-			blog.Errorf("StartTransaction err: %+v", err)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-			return
-		}
-		defer func() {
-			if txnErr == nil {
-				err = sess.CommitTransaction(ctx.Kit.Ctx)
-				if err != nil {
-					blog.Errorf("CommitTransaction err: %+v", err)
-				}
-			} else {
-				blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
-				err = sess.AbortTransaction(ctx.Kit.Ctx)
-				if err != nil {
-					blog.Errorf("AbortTransaction err: %+v", err)
-				}
-			}
-			sess.EndSession(ctx.Kit.Ctx)
-		}()
-	}
+    var txnErr error
+    txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
+    if err != nil {
+        txnErr = err
+        blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
+        ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
+        return
+    }
+    defer func() {
+        if txnErr == nil {
+            err = txn.CommitTransaction(ctx.Kit.Ctx)
+            if err != nil {
+                blog.Errorf("CommitTransaction err: %+v", err)
+            }
+        } else {
+            blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
+            err = txn.AbortTransaction(ctx.Kit.Ctx)
+            if err != nil {
+                blog.Errorf("AbortTransaction err: %+v", err)
+            }
+        }
+    }()
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, dataWithMetadata.Metadata)
 	if nil != err {

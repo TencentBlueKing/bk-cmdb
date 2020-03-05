@@ -13,22 +13,22 @@
 package model
 
 import (
-	"context"
-	"fmt"
-	"strings"
-	"sync"
-	"time"
-	"unicode/utf8"
+    "context"
+    "fmt"
+    "strings"
+    "sync"
+    "time"
+    "unicode/utf8"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql"
-	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/http/rest"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    "configcenter/src/common/universalsql"
+    "configcenter/src/common/universalsql/mongo"
+    "configcenter/src/common/util"
+    "configcenter/src/storage/dal/types"
 )
 
 var (
@@ -385,7 +385,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 
 		collectionName := common.GetInstTableName(object)
 		wg.Add(1)
-		go func(collName string, filter dal.Filter, fields []string) {
+		go func(collName string, filter types.Filter, fields []string) {
 			defer wg.Done()
 			if err := m.dbProxy.Table(collName).DropColumns(ctx, filter, fields); err != nil {
 				blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
@@ -425,7 +425,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 
 		collectionName := common.GetInstTableName(ele.object)
 		wg.Add(1)
-		go func(collName string, filter dal.Filter, fields []string) {
+		go func(collName string, filter types.Filter, fields []string) {
 			defer wg.Done()
 			if err := m.dbProxy.Table(collName).DropColumns(ctx, filter, fields); err != nil {
 				blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
