@@ -98,6 +98,7 @@ func (c *tcClient) GetInstances(region string) ([]*metadata.Instance, error) {
 			PrivateIp:     *inst.PrivateIpAddresses[0],
 			PublicIp:      *inst.PublicIpAddresses[0],
 			InstanceState: *inst.InstanceState,
+			VpcId:         *inst.VirtualPrivateCloud.VpcId,
 		}
 		instances = append(instances, instance)
 

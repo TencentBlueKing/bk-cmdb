@@ -36,6 +36,7 @@ func (lgc *Logics) GetVpcInstInfo(region, vendorName, secretID, secretKey string
 	if err != nil {
 		return nil, err
 	}
+	//metadata.VpcInstanceInfo
 
 	return client.GetVpcs(region)
 }

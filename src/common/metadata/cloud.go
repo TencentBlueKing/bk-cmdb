@@ -31,9 +31,17 @@ type CloudAccount struct {
 	LastTime    time.Time `json:"last_time" bson:"last_time"`
 }
 
+// 云厂商
 const (
 	AWS          string = "aws"
 	TencentCloud string = "tencent_cloud"
+)
+
+// 同步状态
+const (
+	Success int = 1
+	Fail    int = 2
+	InSync  int = 3
 )
 
 var SupportedCloudVendors = []string{"aws", "tencent_cloud"}
@@ -46,9 +54,8 @@ type SearchCloudOption struct {
 	Exact bool `json:"exact" bson:"exact"`
 }
 
-
 type SearchVpcOption struct {
-	Region  string `json:"bk_region"`
+	Region string `json:"bk_region"`
 }
 
 type MultipleCloudAccount struct {
@@ -66,6 +73,18 @@ type VpcInfo struct {
 	VpcName string `json:"bk_vpc_name"`
 	VpcID   string `json:"bk_vpc_id"`
 	Region  string `json:"bk_region"`
+}
+
+type SearchVpcResult struct {
+	Count string            `json:"count"`
+	Info  []VpcInstanceInfo `json:"info"`
+}
+
+type VpcInstanceInfo struct {
+	VpcId     string `json:"bk_vpc_id"`
+	VpcName   string `json:"bk_vpc_name"`
+	Region    string `json:"bk_region"`
+	HostCount int64  `json:"bk_host_count"`
 }
 
 type CloudSyncTask struct {
@@ -92,7 +111,7 @@ type TargetVpcs []VpcSyncInfo
 type VpcSyncInfo struct {
 	VpcID        string `json:"bk_vpc_id" bson:"bk_vpc_id"`
 	VpcName      string `json:"bk_vpc_name" bson:"bk_vpc_name"`
-	Region    string `json:"bk_region" bson:"bk_region"`
+	Region       string `json:"bk_region" bson:"bk_region"`
 	VpcHostCount int64  `json:"bk_host_count" bson:"bk_host_count"`
 	SyncDir      int64  `json:"bk_sync_dir" bson:"bk_sync_dir"`
 }
@@ -100,4 +119,30 @@ type VpcSyncInfo struct {
 type MultipleCloudSyncTask struct {
 	Count int64           `json:"count"`
 	Info  []CloudSyncTask `json:"info"`
+}
+
+type Vpc struct {
+	VpcId   string `json:"bk_vpc_id" bson:"bk_vpc_id"`
+	VpcName string `json:"bk_vpc_name" bson:"bk_vpc_name"`
+}
+
+type Instance struct {
+	InstanceId    string `json:"bk_instance_id" bson:"bk_instance_id"`
+	InstanceName  string `json:"bk_instance_name" bson:"bk_instance_name"`
+	PrivateIp     string `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	PublicIp      string `json:"bk_host_outerip" bson:"bk_host_outerip"`
+	InstanceState string `json:"bk_instance_state" bson:"bk_instance_state"`
+	VpcId         string `json:"bk_vpc_id" bson:"bk_vpc_id"`
+}
+
+type CloudHostResource struct {
+	HostResource []*VpcInstances
+}
+
+type VpcInstances struct {
+	Vpc       Vpc
+	Instances []Instance
+}
+
+type SyncHostsResult struct {
 }

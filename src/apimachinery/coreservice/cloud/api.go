@@ -148,7 +148,7 @@ func (c *cloud) SearchSyncTask(ctx context.Context, h http.Header, option *metad
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("SearchAccount failed, http request failed, err: %+v", err)
+		blog.Errorf("SearchSyncTask failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {

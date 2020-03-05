@@ -50,7 +50,7 @@ func (c *awsClient) GetRegions() ([]string, error) {
 
 	regions := make([]string, 0)
 	for _, region := range rsp.Regions {
-		regions = append(regions,*region.RegionName)
+		regions = append(regions, *region.RegionName)
 	}
 
 	return regions, nil
@@ -105,6 +105,7 @@ func (c *awsClient) GetInstances(region string) ([]*metadata.Instance, error) {
 				PrivateIp:     *inst.PrivateIpAddress,
 				PublicIp:      *inst.PublicIpAddress,
 				InstanceState: *inst.State.Name,
+				VpcId:         *inst.VpcId,
 			}
 			name := c.getInstanceName(inst)
 			if name != "" {
