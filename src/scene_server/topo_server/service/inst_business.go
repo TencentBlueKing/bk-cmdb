@@ -13,11 +13,12 @@
 package service
 
 import (
-    "fmt"
-    "reflect"
-    "sort"
-    "strconv"
-    "strings"
+    "encoding/json"
+	"fmt"
+	"reflect"
+	"sort"
+	"strconv"
+	"strings"
 
     authmeta "configcenter/src/auth/meta"
     "configcenter/src/common"
@@ -375,6 +376,10 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 		objType := reflect.TypeOf(j)
 		switch objType.Kind() {
 		case reflect.String:
+			if _, ok := j.(json.Number); ok {
+				output[i] = j
+				continue
+			}
 			targetStr := j.(string)
 			if util.InStrArr(userFieldArr, i) {
 				exactOr := make([]map[string]interface{}, 0)

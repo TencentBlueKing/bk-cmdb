@@ -204,6 +204,13 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 		return
 	}
 
+	// auth: deregister module to iam
+	if err := s.AuthManager.DeregisterModuleByID(ctx.Kit.Ctx, ctx.Kit.Header, moduleID); err != nil {
+		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+        ctx.RespAutoError(err)
+        return
+	}
+
 	ctx.RespEntity(nil)
 }
 

@@ -170,7 +170,7 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 		return
 	}
 
-	// auth: update registered model unique
+	// auth: delete registered model unique
 	if err := s.AuthManager.DeregisterModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, int64(id)); err != nil {
 		blog.Errorf("deregister model unique from iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error()))

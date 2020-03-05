@@ -135,13 +135,9 @@
     import { mapState, mapGetters, mapActions } from 'vuex'
     import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_BUSINESS_DETAILS } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
-    import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
-    import cmdbRelation from '@/components/relation'
     export default {
         components: {
-            cmdbColumnsConfig,
-            cmdbAuditHistory,
-            cmdbRelation
+            cmdbColumnsConfig
         },
         data () {
             return {
