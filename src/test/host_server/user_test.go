@@ -8,6 +8,7 @@ import (
 
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
@@ -31,7 +32,8 @@ var _ = Describe("user operation test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data).To(ContainElement("user_biz"))
-			bizId = int64(rsp.Data["bk_biz_id"].(float64))
+			bizId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
@@ -341,7 +343,9 @@ var _ = Describe("user operation test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.(map[string]interface{})["count"]).To(Equal(float64(1)))
+			count, err := commonutil.GetIntByInterface(rsp.Data.(map[string]interface{})["count"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(Equal(1))
 		})
 
 		It("get custom query detail", func() {
@@ -436,7 +440,8 @@ var _ = Describe("user operation test", func() {
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
 			Expect(data["bk_host_innerip"].(string)).To(Equal("3.0.0.1"))
-			hostId = int64(data["bk_host_id"].(float64))
+			hostId, err = commonutil.GetInt64ByInterface(data["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("get custom query data", func() {
@@ -450,7 +455,9 @@ var _ = Describe("user operation test", func() {
 			Expect(data.Data.Count).To(Equal(1))
 			host := data.Data.Info[0]["host"].(map[string]interface{})
 			Expect(host["bk_host_innerip"].(string)).To(Equal("3.0.0.1"))
-			Expect(int64(host["bk_host_id"].(float64))).To(Equal(hostId))
+			hostIdRes, err := commonutil.GetInt64ByInterface(host["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hostIdRes).To(Equal(hostId))
 		})
 
 		It("get custom query data invalid biz_id", func() {
@@ -532,7 +539,9 @@ var _ = Describe("user operation test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.(map[string]interface{})["count"]).To(Equal(float64(0)))
+			count, err := commonutil.GetIntByInterface(rsp.Data.(map[string]interface{})["count"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(Equal(0))
 		})
 	})
 })

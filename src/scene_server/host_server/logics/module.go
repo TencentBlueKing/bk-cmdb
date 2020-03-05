@@ -140,6 +140,37 @@ func (lgc *Logics) GetModuleMapByCond(ctx context.Context, fields []string, cond
 	return moduleMap, nil
 }
 
+func (lgc *Logics) GetModuleIDAndIsInternal(ctx context.Context, bizID, moduleID int64) (int64, bool, error) {
+	if moduleID == 0 {
+		cond := map[string]interface{}{
+			common.BKAppIDField:   bizID,
+			common.BKDefaultField: common.DefaultResModuleFlag,
+		}
+		moduleID, err := lgc.GetResourcePoolModuleID(ctx, cond)
+		if err != nil {
+			blog.Errorf("GetModuleIDAndIsInternal get default moduleID failed, err: %s, bizID: %d, rid: %s", err.Error(), bizID, lgc.rid)
+			return 0, false, err
+		}
+		return moduleID, true, nil
+	} else {
+		cond := map[string]interface{}{
+			common.BKAppIDField:    bizID,
+			common.BKModuleIDField: moduleID,
+		}
+		moduleMap, err := lgc.GetModuleMapByCond(ctx, []string{common.BKDefaultField}, cond)
+		if err != nil {
+			blog.Errorf("GetModuleIDAndIsInternal get module info failed, err: %s, bizID: %d, moduleID: %d, rid: %s", err.Error(), bizID, moduleID, lgc.rid)
+			return 0, false, err
+		}
+		module, ok := moduleMap[moduleID]
+		if !ok {
+			blog.Errorf("GetModuleIDAndIsInternal module not exist, bizID: %d, moduleID: %d, rid: %s", bizID, moduleID, lgc.rid)
+			return 0, false, lgc.ccErr.CCErrorf(common.CCErrHostModuleNotBelongBusinessErr, moduleID, bizID)
+		}
+		return moduleID, module[common.BKDefaultField] == common.NormalModuleFlag, nil
+	}
+}
+
 //
 func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.DefaultModuleHostConfigParams) ([]metadata.ExceptionResult, error) {
 
@@ -201,7 +232,7 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 
 	}
 
-	if err := audit.SaveAudit(ctx, conf.ApplicationID, lgc.user, "move host to resource pool"); err != nil {
+	if err := audit.SaveAudit(ctx); err != nil {
 		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
@@ -330,7 +361,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		return result.Data, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(ctx, conf.ApplicationID, lgc.user, "assign host to app"); err != nil {
+	if err := audit.SaveAudit(ctx); err != nil {
 		blog.Errorf("assign host to app, but save audit failed, err: %v, rid:%s", err, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}

@@ -25,10 +25,11 @@ import (
 // Errors defined
 var (
 	ErrSessionInfoNotFound = errors.New("session info not found in storage")
-	ErrRedisNotInited = errors.New("redis of TxnManager is not inited")
+	ErrRedisNotInited      = errors.New("redis of TxnManager is not inited")
 )
+
 // a transaction manager
-type TxnManager struct{
+type TxnManager struct {
 	cache *redis.Client
 }
 
@@ -73,7 +74,7 @@ func (t *TxnManager) SaveSession(sess mongo.Session) error {
 		return err
 	}
 	val := info.SessionState + Sep + info.TxnNumber
-	return t.cache.Set(SessPre+info.SessionID, val, time.Minute * 5).Err()
+	return t.cache.Set(SessPre+info.SessionID, val, time.Minute*5).Err()
 }
 
 // GetSessionInfoFromStorage is to get session info from storage
@@ -81,7 +82,7 @@ func (t *TxnManager) GetSessionInfoFromStorage(sessionID string) (*mongo.Session
 	if t.cache == nil {
 		return nil, ErrRedisNotInited
 	}
-	v, err := t.cache.Get(SessPre+sessionID).Result()
+	v, err := t.cache.Get(SessPre + sessionID).Result()
 	if err != nil {
 		return nil, err
 	}

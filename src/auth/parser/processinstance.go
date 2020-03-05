@@ -53,6 +53,14 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   ProcessInstanceIAMResourceType,
 		ResourceAction: meta.Find,
+	}, {
+		Name:           "listProcessInstancesWithHost",
+		Description:    "查询业务下的主机和进程信息",
+		Pattern:        "/api/v3/findmany/proc/process_instance/with_host",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   ProcessInstanceIAMResourceType,
+		ResourceAction: meta.Find,
 	},
 }
 

@@ -48,7 +48,6 @@ var shouldAddSupplierAccountFieldTables = []string{
 	"cc_ObjClassification",
 	"cc_ObjDes",
 	"cc_ObjectBase",
-	"cc_OperationLog",
 	"cc_PlatBase",
 	"cc_Proc2Module",
 	"cc_Process",

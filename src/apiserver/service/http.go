@@ -13,16 +13,16 @@
 package service
 
 import (
-    "fmt"
-    "io"
-    "net/http"
-    "time"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
 
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/metadata"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 
-    "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
 
 func (s *service) Get(req *restful.Request, resp *restful.Response) {
@@ -76,22 +76,22 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		}
 		return
 	}
-	
-    for k, v := range response.Header {
-        if len(v) > 0 {
-            resp.Header().Set(k, v[0])
-        }
-    }
 
-    resp.ResponseWriter.WriteHeader(response.StatusCode)
+	for k, v := range response.Header {
+		if len(v) > 0 {
+			resp.Header().Set(k, v[0])
+		}
+	}
 
-    if _, err := io.Copy(resp, response.Body); err != nil {
-        response.Body.Close()
-        blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
-        return
-    }
-    response.Body.Close()
-    blog.V(4).Infof("request id: %s, cost: %dms, action: %s, status code: %d, url: %s",
+	resp.ResponseWriter.WriteHeader(response.StatusCode)
+
+	if _, err := io.Copy(resp, response.Body); err != nil {
+		response.Body.Close()
+		blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+		return
+	}
+	response.Body.Close()
+	blog.V(4).Infof("request id: %s, cost: %dms, action: %s, status code: %d, url: %s",
 		req.Request.Header.Get(common.BKHTTPCCRequestID),
 		time.Since(start).Nanoseconds()/int64(time.Millisecond),
 		req.Request.Method, response.StatusCode, url)

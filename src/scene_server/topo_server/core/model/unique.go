@@ -20,9 +20,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // Unique group opeartion interface declaration
@@ -56,7 +56,7 @@ type unique struct {
 	FieldValid
 	data      metadata.ObjectUnique
 	isNew     bool
-	params    types.ContextParams
+	kit       *rest.Kit
 	clientSet apimachinery.ClientSetInterface
 }
 
@@ -82,15 +82,15 @@ func (g *unique) Create() error {
 		Keys:      g.data.Keys,
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), g.params.Header, g.data.ObjID, metadata.CreateModelAttrUnique{Data: data})
+	rsp, err := g.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), g.kit.Header, g.data.ObjID, metadata.CreateModelAttrUnique{Data: data})
 	if nil != err {
-		blog.Errorf("[model-unique] failed to request object controller, err: %s, rid: %s", err.Error(), g.params.ReqID)
-		return g.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[model-unique] failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
+		return g.kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[model-unique] failed to create the unique(%#v), error info is is %s, rid: %s", g.data, rsp.ErrMsg, g.params.ReqID)
-		return g.params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[model-unique] failed to create the unique(%#v), error info is is %s, rid: %s", g.data, rsp.ErrMsg, g.kit.Rid)
+		return g.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	g.data.ID = uint64(rsp.Data.Created.ID)
@@ -103,30 +103,30 @@ func (g *unique) Update(data mapstr.MapStr) error {
 		Keys:      g.data.Keys,
 	}
 
-	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), g.params.Header, g.data.ObjID, g.data.ID, metadata.UpdateModelAttrUnique{Data: updateReq})
+	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), g.kit.Header, g.data.ObjID, g.data.ID, metadata.UpdateModelAttrUnique{Data: updateReq})
 	if nil != err {
-		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.params.ReqID)
+		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[model-unique]failed to update the object %s(%d) to  %v, error info is %s, rid: %s", g.data.ObjID, g.data.ID, updateReq, err.Error(), g.params.ReqID)
-		return g.params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[model-unique]failed to update the object %s(%d) to  %v, error info is %s, rid: %s", g.data.ObjID, g.data.ID, updateReq, err.Error(), g.kit.Rid)
+		return g.kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 	return nil
 }
 
 func (g *unique) Save(data mapstr.MapStr) error {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
-	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.params.ReqID)
+		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return err
 	}
 
 	if !searchResp.Result {
-		blog.Errorf("[model-unique]failed to search the object unique by %s, err: %s, rid: %s", g.data.ObjID, searchResp.ErrMsg, g.params.ReqID)
-		return g.params.Err.New(searchResp.Code, searchResp.ErrMsg)
+		blog.Errorf("[model-unique]failed to search the object unique by %s, err: %s, rid: %s", g.data.ObjID, searchResp.ErrMsg, g.kit.Rid)
+		return g.kit.CCError.New(searchResp.Code, searchResp.ErrMsg)
 	}
 
 	keyhash := g.data.KeysHash()
@@ -147,15 +147,15 @@ func (g *unique) Save(data mapstr.MapStr) error {
 
 func (g *unique) IsExists() (bool, error) {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
-	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.kit.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.params.ReqID)
+		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.kit.Rid)
 		return false, err
 	}
 
 	if !searchResp.Result {
-		blog.Errorf("[model-unique]failed to search the object unique by %s, err: %s, rid: %s", g.data.ObjID, searchResp.ErrMsg, g.params.ReqID)
-		return false, g.params.Err.New(searchResp.Code, searchResp.ErrMsg)
+		blog.Errorf("[model-unique]failed to search the object unique by %s, err: %s, rid: %s", g.data.ObjID, searchResp.ErrMsg, g.kit.Rid)
+		return false, g.kit.CCError.New(searchResp.Code, searchResp.ErrMsg)
 	}
 
 	keyhash := g.data.KeysHash()

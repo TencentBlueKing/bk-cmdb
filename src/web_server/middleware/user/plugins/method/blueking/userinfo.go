@@ -169,7 +169,7 @@ func (m *user) getEsbClient(config map[string]string) (esbserver.EsbClientInterf
 }
 
 // GetUserList get user list from paas
-func (m *user) GetUserList(c *gin.Context, config map[string]string, params map[string]string) ([]*metadata.LoginSystemUserInfo, error){
+func (m *user) GetUserList(c *gin.Context, config map[string]string, params map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
 	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
 	accountURL, ok := config["site.bk_account_url"]
 	if !ok {
