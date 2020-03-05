@@ -73,3 +73,8 @@ type QueryBusinessRequest struct {
 type UpdateBusinessStatusOption struct {
 	BizName string `json:"bk_biz_name" mapstructure:"bk_biz_name"`
 }
+
+type SearchResourceDirParams struct {
+	Condition mapstr.MapStr `json:"condition"`
+	Exact     bool          `json:"exact"`
+}

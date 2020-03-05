@@ -310,5 +310,11 @@ func (s *Service) newTopoService(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/app/search/{owner_id}", Handler: s.SearchBusiness})
 
+	// 资源池目录
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/resource/directory", Handler: s.CreateResourceDirectory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/resource/directory/{bk_module_id}", Handler: s.UpdateResourceDirectory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/resource/directory", Handler: s.SearchResourceDirectory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/resource/directory/{bk_module_id}", Handler: s.DeleteResourceDirectory})
+
 	utility.AddToRestfulWebService(web)
 }
