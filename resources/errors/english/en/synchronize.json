@@ -1,6 +1,6 @@
 {
     "1113900": "Instance data synchronization failed",
     "1113901": "%s type data synchronization, data of the same type %s does not exist",
-    "1114001": "data synchronization failed",
+    "1113902": "data synchronization failed",
     "": ""
 }
