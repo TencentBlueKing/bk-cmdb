@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -63,8 +64,8 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		Option:        true,
 		Description:   "",
 		Creator:       common.CCSystemOperatorUserName,
-		LastTime:      NewTime(),
-		CreateTime:    NewTime(),
+		LastTime:      &metadata.Time{Time: time.Now()},
+		CreateTime:    &metadata.Time{Time: time.Now()},
 	}
 
 	err = db.Table(common.BKTableNameObjAttDes).Insert(ctx, addPortEnable)
@@ -141,20 +142,9 @@ type Attribute struct {
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
 
-	Creator    string `field:"creator" json:"creator" bson:"creator"`
-	CreateTime *Time  `json:"create_time" bson:"create_time"`
-	LastTime   *Time  `json:"last_time" bson:"last_time"`
-}
-
-type Time struct {
-	time.Time `bson:",inline" json:",inline"`
-}
-
-func NewTime() *Time {
-	t := &Time{}
-
-	t.Time = time.Now()
-	return t
+	Creator    string         `field:"creator" json:"creator" bson:"creator"`
+	CreateTime *metadata.Time `json:"create_time" bson:"create_time"`
+	LastTime   *metadata.Time `json:"last_time" bson:"last_time"`
 }
 
 // Metadata  used to define the metadata for the resources
