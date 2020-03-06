@@ -10,6 +10,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
 
@@ -37,7 +38,8 @@ var _ = Describe("host test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data).To(ContainElement("cc_biz"))
-			bizId = int64(rsp.Data["bk_biz_id"].(float64))
+			bizId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create set", func() {
@@ -54,9 +56,14 @@ var _ = Describe("host test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_set_name"].(string)).To(Equal("test"))
-			Expect(int64(rsp.Data["bk_parent_id"].(float64))).To(Equal(bizId))
-			Expect(int64(rsp.Data["bk_biz_id"].(float64))).To(Equal(bizId))
-			setId = int64(rsp.Data["bk_set_id"].(float64))
+			parentIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_parent_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parentIdRes).To(Equal(bizId))
+			bizIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bizIdRes).To(Equal(bizId))
+			setId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create module", func() {
@@ -71,9 +78,16 @@ var _ = Describe("host test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("cc_module"))
-			Expect(int64(rsp.Data["bk_set_id"].(float64))).To(Equal(setId))
-			Expect(int64(rsp.Data["bk_parent_id"].(float64))).To(Equal(setId))
-			moduleId = int64(rsp.Data["bk_module_id"].(float64))
+
+			setIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(setIdRes).To(Equal(setId))
+
+			parentIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_parent_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parentIdRes).To(Equal(setId))
+			moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
@@ -116,7 +130,8 @@ var _ = Describe("host test", func() {
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
 			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.1"))
 			Expect(data["bk_asset_id"].(string)).To(Equal("addhost_api_asset_1"))
-			hostId1 = int64(data["bk_host_id"].(float64))
+			hostId1, err = commonutil.GetInt64ByInterface(data["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("add host using excel", func() {
@@ -158,7 +173,8 @@ var _ = Describe("host test", func() {
 			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.2"))
 			Expect(data["bk_asset_id"].(string)).To(Equal("addhost_excel_asset_1"))
 			Expect(data["bk_host_name"].(string)).To(Equal("1.0.0.2"))
-			hostId2 = int64(data["bk_host_id"].(float64))
+			hostId2, err = commonutil.GetInt64ByInterface(data["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("search host using multiple ips", func() {
@@ -262,7 +278,8 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
 			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.4"))
-			hostId = int64(data["bk_host_id"].(float64))
+			hostId, err = commonutil.GetInt64ByInterface(data["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("get host base info", func() {
@@ -416,10 +433,16 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(1))
 			host := rsp.Data.Info[0]["host"].(map[string]interface{})
 			Expect(host["bk_host_innerip"].(string)).To(Equal("1.0.0.2"))
-			Expect(int64(host["bk_host_id"].(float64))).To(Equal(hostId2))
+
+			hostIdRes, err := commonutil.GetInt64ByInterface(host["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hostIdRes).To(Equal(hostId2))
 			module := rsp.Data.Info[0]["module"].([]interface{})[0].(map[string]interface{})
 			Expect(module["bk_module_name"].(string)).To(Equal("cc_module"))
-			Expect(int64(module["bk_module_id"].(float64))).To(Equal(moduleId))
+
+			moduleIdRes, err := commonutil.GetInt64ByInterface(module["bk_module_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(moduleIdRes).To(Equal(moduleId))
 		})
 
 		It("add clone destion host", func() {
@@ -903,7 +926,8 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[1]["host"].(map[string]interface{})
 			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.6"))
-			hostId3 = int64(data["bk_host_id"].(float64))
+			hostId3, err = commonutil.GetInt64ByInterface(data["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("transfer host module", func() {
@@ -1150,7 +1174,8 @@ var _ = Describe("list_hosts_topo test", func() {
 		util.RegisterResponse(bizRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(bizRsp.Result).To(Equal(true))
-		bizId := int64(bizRsp.Data[common.BKAppIDField].(float64))
+		bizId, err := commonutil.GetInt64ByInterface(bizRsp.Data[common.BKAppIDField])
+		Expect(err).NotTo(HaveOccurred())
 
 		By("create set cc_set")
 		setInput := mapstr.MapStr{
@@ -1165,7 +1190,8 @@ var _ = Describe("list_hosts_topo test", func() {
 		util.RegisterResponse(setRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(setRsp.Result).To(Equal(true))
-		setId := int64(setRsp.Data[common.BKSetIDField].(float64))
+		setId, err := commonutil.GetInt64ByInterface(setRsp.Data[common.BKSetIDField])
+		Expect(err).NotTo(HaveOccurred())
 
 		By("create module cc_module")
 		moduleInput := map[string]interface{}{
@@ -1178,7 +1204,8 @@ var _ = Describe("list_hosts_topo test", func() {
 		util.RegisterResponse(moduleRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(moduleRsp.Result).To(Equal(true))
-		moduleId1 := int64(moduleRsp.Data[common.BKModuleIDField].(float64))
+		moduleId1, err := commonutil.GetInt64ByInterface(moduleRsp.Data[common.BKModuleIDField])
+		Expect(err).NotTo(HaveOccurred())
 
 		By("create module cc_module1")
 		moduleInput1 := map[string]interface{}{
@@ -1191,7 +1218,8 @@ var _ = Describe("list_hosts_topo test", func() {
 		util.RegisterResponse(moduleRsp1)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(moduleRsp1.Result).To(Equal(true))
-		moduleId2 := int64(moduleRsp1.Data[common.BKModuleIDField].(float64))
+		moduleId2, err := commonutil.GetInt64ByInterface(moduleRsp1.Data[common.BKModuleIDField])
+		Expect(err).NotTo(HaveOccurred())
 
 		By("add host using api")
 		hostInput := map[string]interface{}{
@@ -1221,8 +1249,10 @@ var _ = Describe("list_hosts_topo test", func() {
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
-		hostId1 := int64(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
-		hostId2 := int64(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+		hostId1, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
+		Expect(err).NotTo(HaveOccurred())
+		hostId2, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
+		Expect(err).NotTo(HaveOccurred())
 
 		By("transfer host module")
 		transferInput := map[string]interface{}{
@@ -1281,8 +1311,10 @@ var _ = Describe("batch_update_host test", func() {
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
-		hostId1 := int64(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
-		hostId2 := int64(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+		hostId1, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
+		Expect(err).NotTo(HaveOccurred())
+		hostId2, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
+		Expect(err).NotTo(HaveOccurred())
 
 		By("update host property batch")
 		updateInput := map[string]interface{}{
@@ -1321,5 +1353,131 @@ var _ = Describe("batch_update_host test", func() {
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_isp_name"].(string)).To(Equal("1"))
 		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_bak_operator"].(string)).To(Equal("admin"))
 		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_outerip"].(string)).To(Equal("1.2.3.4"))
+	})
+})
+
+var _ = Describe("add_host_to_resource_pool test", func() {
+	It("add_host_to_resource_pool", func() {
+		test.ClearDatabase()
+
+		By("add hosts to resource pool default module")
+		hostInput := metadata.AddHostToResourcePoolHostList{
+			HostInfo: []map[string]interface{}{
+				{
+					common.BKHostInnerIPField: "1.0.0.1",
+					common.BKCloudIDField:     0,
+				},
+				{
+					common.BKHostInnerIPField: "1.0.0.2",
+					common.BKCloudIDField:     0,
+				},
+			},
+		}
+		hostRsp, err := hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
+		util.RegisterResponse(hostRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
+		js, err := json.Marshal(hostRsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+		result := metadata.AddHostToResourcePoolResult{}
+		err = json.Unmarshal(js, &result)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(result.Success)).To(Equal(2))
+		Expect(len(result.Error)).To(Equal(0))
+		var hostID1, hostID2 int64
+		if result.Success[0].Index == 0 {
+			hostID1 = result.Success[0].HostID
+			hostID2 = result.Success[1].HostID
+		} else {
+			hostID1 = result.Success[1].HostID
+			hostID2 = result.Success[0].HostID
+		}
+
+		By("search hosts")
+		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{})
+		util.RegisterResponse(searchRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count).To(Equal(2))
+		host1 := searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		host2 := searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		host1ID, err := commonutil.GetInt64ByInterface(host1[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
+		host2ID, err := commonutil.GetInt64ByInterface(host2[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
+		if host1[common.BKHostInnerIPField] == "1.0.0.1" {
+			Expect(host1ID).To(Equal(hostID1))
+			Expect(host2ID).To(Equal(hostID2))
+		} else {
+			Expect(host1ID).To(Equal(hostID2))
+			Expect(host2ID).To(Equal(hostID1))
+		}
+
+		By("add hosts to resource pool invalid module")
+		hostInput = metadata.AddHostToResourcePoolHostList{
+			HostInfo: []map[string]interface{}{
+				{
+					common.BKHostInnerIPField: "1.0.0.3",
+					common.BKCloudIDField:     0,
+				},
+				{
+					common.BKHostInnerIPField: "1.0.0.4",
+					common.BKCloudIDField:     0,
+				},
+			},
+			Directory: 1000,
+		}
+		hostRsp, err = hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
+		util.RegisterResponse(hostRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(false))
+
+		By("search hosts")
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{})
+		util.RegisterResponse(searchRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count).To(Equal(2))
+
+		By("add hosts to resource pool one invalid host")
+		hostInput = metadata.AddHostToResourcePoolHostList{
+			HostInfo: []map[string]interface{}{
+				{
+					common.BKHostInnerIPField: "1.0.0.5",
+					common.BKCloudIDField:     0,
+				},
+				{
+					"bk_host_innerip":     "",
+					common.BKCloudIDField: 0,
+				},
+			},
+		}
+		hostRsp, err = hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
+		util.RegisterResponse(hostRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(false))
+		js, err = json.Marshal(hostRsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+		result = metadata.AddHostToResourcePoolResult{}
+		err = json.Unmarshal(js, &result)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(result.Success)).To(Equal(1))
+		Expect(result.Success[0].Index).To(Equal(0))
+		Expect(len(result.Error)).To(Equal(1))
+		Expect(result.Error[0].Index).To(Equal(1))
+
+		By("search hosts")
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{
+			Page: params.PageInfo{
+				Sort: common.BKHostIDField,
+			},
+		})
+		util.RegisterResponse(searchRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count).To(Equal(3))
+		hostID, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[2]["host"].(map[string]interface{})[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostID).To(Equal(result.Success[0].HostID))
 	})
 })

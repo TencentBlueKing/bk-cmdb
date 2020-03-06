@@ -279,18 +279,18 @@ type DepartmentData struct {
 }
 
 type DepartmentItem struct {
-	ID          int64  `json:"id"`
-	Parent      int64  `json:"parent"`
-	Name        string `json:"name"`
-	FullName    string `json:"full_name"`
-	Level       int    `json:"level"`
-	HasChildren bool   `json:"has_children"`
-	Ancestors []Ancestor `json:"ancestors"`
+	ID          int64      `json:"id"`
+	Parent      int64      `json:"parent"`
+	Name        string     `json:"name"`
+	FullName    string     `json:"full_name"`
+	Level       int        `json:"level"`
+	HasChildren bool       `json:"has_children"`
+	Ancestors   []Ancestor `json:"ancestors"`
 }
 
 type Ancestor struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 type EsbDepartmentProfileResponse struct {
@@ -299,13 +299,13 @@ type EsbDepartmentProfileResponse struct {
 }
 
 type DepartmentProfileData struct {
-	Count   int64            `json:"count"`
+	Count   int64                   `json:"count"`
 	Results []DepartmentProfileItem `json:"results"`
 }
 
 type DepartmentProfileItem struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"username"`
+	ID   int64  `json:"id"`
+	Name string `json:"username"`
 }
 
 type EsbBaseResponse struct {

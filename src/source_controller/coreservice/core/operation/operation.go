@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -30,7 +29,7 @@ type operationManager struct {
 	dbProxy dal.RDB
 }
 
-type M mapstr.MapStr
+type M map[string]interface{}
 
 func New(dbProxy dal.RDB) core.StatisticOperation {
 	return &operationManager{
@@ -38,7 +37,7 @@ func New(dbProxy dal.RDB) core.StatisticOperation {
 	}
 }
 
-func (m *operationManager) SearchInstCount(kit *rest.Kit, inputParam mapstr.MapStr) (uint64, error) {
+func (m *operationManager) SearchInstCount(kit *rest.Kit, inputParam map[string]interface{}) (uint64, error) {
 	count, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(inputParam).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v, rid: %v", err.Error(), inputParam, kit.Rid)
@@ -92,7 +91,7 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 	}
 
 	attribute := metadata.Attribute{}
-	opt := mapstr.MapStr{}
+	opt := map[string]interface{}{}
 	opt[common.BKObjIDField] = inputParam.ObjID
 	opt[common.BKPropertyIDField] = inputParam.Field
 	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).One(kit.Ctx, &attribute); err != nil {
@@ -158,7 +157,7 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 }
 
 func (m *operationManager) SearchTimerChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
-	condition := mapstr.MapStr{}
+	condition := map[string]interface{}{}
 	condition[common.OperationReportType] = inputParam.ReportType
 
 	switch inputParam.ReportType {

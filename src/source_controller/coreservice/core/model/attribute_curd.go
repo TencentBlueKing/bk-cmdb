@@ -193,7 +193,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
-			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization,common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
+			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
 		default:
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
@@ -572,6 +572,20 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		}
 	}
 
+	if option, exists := data.Get(metadata.AttributeFieldOption); exists {
+		propertyType := dbAttributeArr[0].PropertyType
+		for _, dbAttribute := range dbAttributeArr {
+			if dbAttribute.PropertyType != propertyType {
+				blog.ErrorJSON("update option, but property type not the same, db attributes: %s, rid:%s", dbAttributeArr, kit.Ctx)
+				return changeRow, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
+			}
+		}
+		if err := util.ValidPropertyOption(propertyType, option, kit.CCError); err != nil {
+			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
+			return changeRow, err
+		}
+	}
+
 	// 删除不可更新字段， 避免由于传入数据，修改字段
 	// TODO: 改成白名单方式
 	data.Remove(metadata.AttributeFieldPropertyID)
@@ -737,8 +751,8 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 	sortCond := "-bk_property_index"
 	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx, &attrs); err != nil {
 		blog.Error("GetAttrLastIndex, database operation is failed, err: %v, rid: %s", err, kit.Rid)
-        return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
-    }
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
 
 	if len(attrs) <= 0 {
 		return 0, nil

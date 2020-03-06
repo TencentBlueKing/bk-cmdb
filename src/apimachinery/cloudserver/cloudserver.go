@@ -28,7 +28,6 @@ type CloudServerClientInterface interface {
 	SearchAccount(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateAccount(ctx context.Context, h http.Header, accountID int64, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteAccount(ctx context.Context, h http.Header, accountID int64) (resp *metadata.Response, err error)
-
 }
 
 func NewCloudServerClientInterface(c *util.Capability, version string) CloudServerClientInterface {

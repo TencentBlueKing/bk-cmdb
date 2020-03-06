@@ -51,7 +51,7 @@
                                 @click="handleTabClick(item)">
                                 <span class="tab-label">{{item.label}}</span>
                                 <span :class="['tab-count', { 'unconfirmed': !item.confirmed }]">
-                                    {{item.props.info.length > 99 ? '99+' : item.props.info.length}}
+                                    {{item.props.info.length > 999 ? '999+' : item.props.info.length}}
                                 </span>
                             </li>
                         </template>
@@ -757,16 +757,13 @@
             .tab-label {
                 display: inline-block;
                 vertical-align: middle;
-                margin: 0 10px;
+                margin-left: 10px;
+                margin-right: 4px;
                 font-size: 14px;
             }
             .tab-count {
-                position: absolute;
                 display: inline-block;
                 vertical-align: middle;
-                right: -15px;
-                top: -8px;
-                width: 32px;
                 height: 16px;
                 padding: 0 5px;
                 border-radius: 8px;

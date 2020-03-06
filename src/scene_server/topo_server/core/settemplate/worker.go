@@ -8,11 +8,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/operation"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 type BackendWorker struct {
@@ -28,23 +28,17 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	user := util.GetUser(header)
 	supplierAccount := util.GetOwnerID(header)
 	defaultCCError := util.GetDefaultCCError(header)
-	language := util.GetLanguage(header)
-	defLang := bw.Engine.Language.CreateDefaultCCLanguageIf(language)
 	md := metadata.NewMetadata(set.BizID)
 
-	params := types.ContextParams{
-		Context:         ctx,
-		Engin:           bw.Engine,
+	kit := &rest.Kit{
+		Rid:             rid,
 		Header:          header,
-		MaxTopoLevel:    0,
-		SupplierAccount: supplierAccount,
+		Ctx:             ctx,
+		CCError:         defaultCCError,
 		User:            user,
-		Err:             defaultCCError,
-		Lang:            defLang,
-		MetaData:        &md,
-		ReqID:           rid,
+		SupplierAccount: supplierAccount,
 	}
-	moduleObj, err := bw.ObjectOperation.FindSingleObject(params, common.BKInnerObjIDModule)
+	moduleObj, err := bw.ObjectOperation.FindSingleObject(kit, common.BKInnerObjIDModule, &md)
 	if err != nil {
 		blog.Errorf("DoModuleSyncTask failed, FindSingleObject: module failed, err: %s, rid: %s", err.Error(), rid)
 		return err
@@ -55,7 +49,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	moduleID := moduleDiff.ModuleID
 	switch moduleDiff.DiffType {
 	case metadata.ModuleDiffRemove:
-		err := bw.ModuleOperation.DeleteModule(params, moduleObj, set.BizID, []int64{setID}, []int64{moduleID})
+		err := bw.ModuleOperation.DeleteModule(kit, moduleObj, set.BizID, []int64{setID}, []int64{moduleID})
 		if err != nil {
 			blog.ErrorJSON("DoModuleSyncTask failed, DeleteModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err
@@ -74,7 +68,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 			common.BKSetTemplateIDField:     set.SetTemplateID,
 		}
 
-		_, err := bw.ModuleOperation.CreateModule(params, moduleObj, bizID, setID, data)
+		_, err := bw.ModuleOperation.CreateModule(kit, moduleObj, bizID, setID, data)
 		if err != nil {
 			blog.ErrorJSON("DoModuleSyncTask failed, CreateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err
@@ -83,7 +77,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 		data := mapstr.MapStr(map[string]interface{}{
 			common.BKModuleNameField: moduleDiff.ModuleName,
 		})
-		err := bw.ModuleOperation.UpdateModule(params, data, moduleObj, bizID, setID, moduleID)
+		err := bw.ModuleOperation.UpdateModule(kit, data, moduleObj, bizID, setID, moduleID)
 		if err != nil {
 			blog.ErrorJSON("DoModuleSyncTask failed, UpdateModule failed, set: %s, moduleDiff: %s, err: %s, rid: %s", set, moduleDiff, err.Error(), rid)
 			return err

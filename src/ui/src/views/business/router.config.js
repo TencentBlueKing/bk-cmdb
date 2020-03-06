@@ -1,6 +1,7 @@
 import Meta from '@/router/meta'
 import {
     MENU_RESOURCE_BUSINESS,
+    MENU_RESOURCE_BUSINESS_DETAILS,
     MENU_RESOURCE_BUSINESS_HISTORY,
     MENU_RESOURCE_MANAGEMENT
 } from '@/dictionary/menu-symbol'
@@ -23,6 +24,18 @@ export default [{
             previous: {
                 name: MENU_RESOURCE_MANAGEMENT
             }
+        }
+    })
+}, {
+    name: MENU_RESOURCE_BUSINESS_DETAILS,
+    path: 'business/details/:bizId',
+    component: () => import('./details.vue'),
+    meta: new Meta({
+        menu: {
+            relative: MENU_RESOURCE_MANAGEMENT
+        },
+        layout: {
+            previous: { name: MENU_RESOURCE_BUSINESS }
         }
     })
 }, {

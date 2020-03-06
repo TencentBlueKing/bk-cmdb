@@ -23,12 +23,11 @@ import (
 
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
-	"configcenter/src/common/auditoplog"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	dcUtil "configcenter/src/scene_server/datacollection/datacollection/middleware"
 	"configcenter/src/storage/dal"
 
 	"github.com/tidwall/gjson"
@@ -118,11 +117,11 @@ func (h *HostSnap) Analyze(mesg string) error {
 		return nil
 	}
 
-	cond := mapstr.New()
-	cond.Set(common.BKHostIDField, hostID)
 	opt := &metadata.UpdateOption{
-		Condition: cond,
-		Data:      mapstr.NewFromMap(setter),
+		Condition: map[string]interface{}{
+			common.BKHostIDField: hostIdInt64,
+		},
+		Data: mapstr.NewFromMap(setter),
 	}
 	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.httpHeader, common.BKInnerObjIDHost, opt)
 	if err != nil {
@@ -152,27 +151,41 @@ func (h *HostSnap) Analyze(mesg string) error {
 		return fmt.Errorf("[data-collection][hostsnap] get moduleHostConfig failed, fail to create auditLog")
 	}
 
-	auditHeader, err := dcUtil.GetAuditLogHeader(h.CoreAPI, h.httpHeader, common.BKInnerObjIDHost)
+	audit := auditlog.NewAudit(h.CoreAPI, h.ctx, h.httpHeader)
+	properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDHost)
 	if err != nil {
-		blog.Errorf("GetAuditLogHeader failed, fail to create auditLog, objID: %s, err: %s", common.BKInnerObjIDHost, err.Error())
 		return err
 	}
 	var bizID int64
 	if len(moduleHost.Data.Info) > 0 {
 		bizID = moduleHost.Data.Info[0].AppID
 	}
-	auditLog := metadata.SaveAuditLogParams{
-		ID:    hostIdInt64,
-		Model: common.BKInnerObjIDHost,
-		Content: metadata.Content{
-			CurData: curData.Data,
-			PreData: host.data,
-			Headers: auditHeader,
+	bizName := ""
+	if bizID > 0 {
+		bizName, err = audit.GetInstNameByID(common.BKInnerObjIDApp, bizID)
+		if err != nil {
+			return err
+		}
+	}
+	auditLog := metadata.AuditLog{
+		AuditType:    metadata.HostType,
+		ResourceType: metadata.HostRes,
+		Action:       metadata.AuditUpdate,
+		OperateFrom:  metadata.FromDataCollection,
+		OperationDetail: &metadata.InstanceOpDetail{
+			BasicOpDetail: metadata.BasicOpDetail{
+				BusinessID:   bizID,
+				BusinessName: bizName,
+				ResourceID:   hostIdInt64,
+				ResourceName: innerIp,
+				Details: &metadata.BasicContent{
+					PreData:    host.data,
+					CurData:    curData.Data,
+					Properties: properties,
+				},
+			},
+			ModelID: common.BKInnerObjIDHost,
 		},
-		OpDesc: "update " + common.BKInnerObjIDHost,
-		OpType: auditoplog.AuditOpTypeModify,
-		ExtKey: innerIp,
-		BizID:  bizID,
 	}
 	result, err := h.CoreAPI.CoreService().Audit().SaveAuditLog(h.ctx, h.httpHeader, auditLog)
 	if err != nil {

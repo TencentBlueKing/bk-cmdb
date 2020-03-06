@@ -168,18 +168,18 @@ type AssociationOperation interface {
 }
 
 type AuditOperation interface {
-	CreateAuditLog(kit *rest.Kit, logs ...metadata.SaveAuditLogParams) error
-	SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
+	CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error
+	SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.AuditLog, uint64, error)
 }
 
 type StatisticOperation interface {
-	SearchInstCount(kit *rest.Kit, inputParam mapstr.MapStr) (uint64, error)
+	SearchInstCount(kit *rest.Kit, inputParam map[string]interface{}) (uint64, error)
 	SearchChartDataCommon(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
 	SearchOperationChart(kit *rest.Kit, inputParam interface{}) (*metadata.ChartClassification, error)
 	CreateOperationChart(kit *rest.Kit, inputParam metadata.ChartConfig) (uint64, error)
 	UpdateChartPosition(kit *rest.Kit, inputParam interface{}) (interface{}, error)
 	DeleteOperationChart(kit *rest.Kit, id int64) (interface{}, error)
-	UpdateOperationChart(kit *rest.Kit, inputParam mapstr.MapStr) (interface{}, error)
+	UpdateOperationChart(kit *rest.Kit, inputParam map[string]interface{}) (interface{}, error)
 	SearchTimerChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
 	TimerFreshData(kit *rest.Kit) error
 }
@@ -243,6 +243,7 @@ type ProcessOperation interface {
 	GetProcessInstanceRelation(kit *rest.Kit, processInstanceID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	UpdateProcessInstanceRelation(kit *rest.Kit, processInstanceID int64, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	ListProcessInstanceRelation(kit *rest.Kit, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder)
+	ListHostProcessRelation(kit *rest.Kit, option *metadata.ListProcessInstancesWithHostOption) (*metadata.MultipleHostProcessRelation, errors.CCErrorCoder)
 	DeleteProcessInstanceRelation(kit *rest.Kit, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
 
 	GetBusinessDefaultSetModuleInfo(kit *rest.Kit, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)

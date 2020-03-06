@@ -331,6 +331,7 @@ func (r *Request) Do() *Result {
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status
+			result.Header = resp.Header
 
 			return result
 		}
@@ -359,6 +360,7 @@ type Result struct {
 	Err        error
 	StatusCode int
 	Status     string
+	Header     http.Header
 }
 
 func (r *Result) Into(obj interface{}) error {

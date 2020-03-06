@@ -78,7 +78,7 @@ func fixProcTemplateProcName(ctx context.Context, db dal.RDB, conf *upgrader.Con
 			doc["bk_process_name"] = *row.Property.ProcessName.Value
 		}
 		if err := db.Table(common.BKTableNameProcessTemplate).Update(ctx, updateCond, doc); err != nil {
-			blog.ErrorJSON("fix process template id:%v, update db error. condition:%s, doc:%s, err:%s", updateCond, doc, err.Error())
+			blog.ErrorJSON("fix process template id:%v, update db error. condition:%s, doc:%s, err:%s", row.ID, updateCond, doc, err.Error())
 			return fmt.Errorf("fix process template id:%v, update db error. err:%s", row.ID, err.Error())
 		}
 	}

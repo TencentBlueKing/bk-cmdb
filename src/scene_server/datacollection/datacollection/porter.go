@@ -269,7 +269,10 @@ func (p *chanPorter) subscribeLoop() error {
 	if nil != err {
 		return fmt.Errorf("subscribe channel failed, %v", err)
 	}
-	defer subChan.Unsubscribe(p.channels...)
+	defer func() {
+		_ = subChan.Unsubscribe(p.channels...)
+		_ = subChan.Close()
+	}()
 
 	blog.Info("[data-collection][%s] subscribing channel %v from redis", p.name, p.channels)
 	defer blog.Info("[data-collection][%s] unsubscribe channel %v from redis", p.name, p.channels)

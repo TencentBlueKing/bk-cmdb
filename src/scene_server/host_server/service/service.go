@@ -89,6 +89,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	api.Route(api.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
+	api.Route(api.POST("/hosts/add/resource").To(s.AddHostToResourcePool))
 	// api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
 	api.Route(api.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
 	api.Route(api.PUT("/updatemany/hosts/cloudarea_field").To(s.UpdateHostCloudAreaField))
@@ -149,7 +150,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
-	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
+	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DeletePlat))
 
 	// first install use api
 	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))
@@ -170,6 +171,7 @@ func (s *Service) WebService() *restful.Container {
 	// 主机在资源池目录之间转移
 	api.Route(api.POST("/host/transfer/resource/directory").To(s.TransferHostResourceDirectory))
 
+	api.Route(api.PUT("/hosts/update").To(s.UpdateImportHosts))
 	container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)

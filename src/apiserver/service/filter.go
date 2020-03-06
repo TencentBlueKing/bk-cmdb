@@ -39,7 +39,7 @@ const (
 	DataCollectType RequestType = "collect"
 	OperationType   RequestType = "operation"
 	TaskType        RequestType = "task"
-	CloudType        RequestType = "cloud"
+	CloudType       RequestType = "cloud"
 )
 
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {

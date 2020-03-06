@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	ClassificationFieldID                   = "id"
-	ClassFieldClassificationID              = "bk_classification_id"
-	ClassFieldClassificationName            = "bk_classification_name"
+	ClassificationFieldID        = "id"
+	ClassFieldClassificationID   = "bk_classification_id"
+	ClassFieldClassificationName = "bk_classification_name"
 )
 
 // Classification the classification metadata definition

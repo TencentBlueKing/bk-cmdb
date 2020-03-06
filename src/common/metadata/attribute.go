@@ -26,8 +26,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"github.com/tidwall/gjson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const (
@@ -556,8 +556,8 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 		}
 		strReg, err := regexp.Compile(option)
 		if nil != err {
-            blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
-            return errors.RawErrorInfo{
+			blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
+			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{option},
 			}
@@ -788,6 +788,19 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.Name = getString(option["name"])
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
+				enumOptions = append(enumOptions, enumOption)
+			} else if option, ok := optionVal.(bson.M); ok {
+				enumOption := EnumVal{}
+				enumOption.ID = getString(option["id"])
+				enumOption.Name = getString(option["name"])
+				enumOption.Type = getString(option["type"])
+				enumOption.IsDefault = getBool(option["is_default"])
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOptions = append(enumOptions, enumOption)
 			} else {
 				return nil, fmt.Errorf("unknow val type: %#v", val)
@@ -801,6 +814,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.Name = getString(option["name"])
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOptions = append(enumOptions, enumOption)
 			} else if option, ok := optionVal.(bson.D); ok {
 				opt := option.Map()
@@ -809,6 +825,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.Name = getString(opt["name"])
 				enumOption.Type = getString(opt["type"])
 				enumOption.IsDefault = getBool(opt["is_default"])
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOptions = append(enumOptions, enumOption)
 			} else {
 				return nil, fmt.Errorf("unknow val type: %#v", val)

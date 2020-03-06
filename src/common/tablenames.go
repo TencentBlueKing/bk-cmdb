@@ -62,7 +62,7 @@ const (
 	BKTableNameSystem           = "cc_System"
 	BKTableNameHistory          = "cc_History"
 	BKTableNameHostFavorite     = "cc_HostFavourite"
-	BKTableNameOperationLog     = "cc_OperationLog"
+	BKTableNameAuditLog         = "cc_AuditLog"
 	BKTableNameSubscription     = "cc_Subscription"
 	BKTableNameUserAPI          = "cc_UserAPI"
 	BKTableNameUserCustom       = "cc_UserCustom"
@@ -100,6 +100,11 @@ const (
 
 	// rule for host property auto apply
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
+
+	// cloud sync tables
+	BKTableNameCloudSyncTask    = "cc_CloudSyncTask"
+	BKTableNameCloudAccount     = "cc_CloudAccount"
+	BKTableNameCloudSyncHistory = "cc_CloudSyncHistory"
 )
 
 // AllTables alltables
@@ -127,7 +132,7 @@ var AllTables = []string{
 	BKTableNameSystem,
 	BKTableNameHistory,
 	BKTableNameHostFavorite,
-	BKTableNameOperationLog,
+	BKTableNameAuditLog,
 	BKTableNameSubscription,
 	BKTableNameUserAPI,
 	BKTableNameUserCustom,

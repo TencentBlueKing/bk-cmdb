@@ -182,15 +182,16 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
+	blog.Debug(reflect.TypeOf(bizID), bizID)
 	intBizID, ok := bizID.(float64)
 	if !ok {
-		blog.Errorf("DeleteResourceDirectory, bizID convert to int64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
+		blog.Errorf("DeleteResourceDirectory, bizID convert to float64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	intSetID, ok := setID.(float64)
 	if !ok {
-		blog.Errorf("DeleteResourceDirectory, setID convert to int64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
+		blog.Errorf("DeleteResourceDirectory, setID convert to float64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

@@ -13,7 +13,8 @@
 package mapstr
 
 import (
-    "encoding/json"
+	"bytes"
+	"encoding/json"
 )
 
 // DecodeFromMapStr convert input into json, then decode json into data
@@ -24,6 +25,8 @@ func DecodeFromMapStr(data interface{}, input MapStr) error {
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(inputBytes, data)
+	d := json.NewDecoder(bytes.NewReader(inputBytes))
+	d.UseNumber()
+	err = d.Decode(data)
 	return err
 }

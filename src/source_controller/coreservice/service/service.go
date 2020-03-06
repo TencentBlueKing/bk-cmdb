@@ -26,6 +26,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/auditlog"
+	"configcenter/src/source_controller/coreservice/core/cloud"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
@@ -37,7 +38,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
-	"configcenter/src/source_controller/coreservice/core/cloud"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	dalredis "configcenter/src/storage/dal/redis"
@@ -84,7 +84,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
 	}
 
-	db, dbErr := local.NewMgo(s.cfg.Mongo.BuildURI(), time.Minute)
+	db, dbErr := local.NewMgo(s.cfg.Mongo.GetMongoConf(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 		return dbErr
@@ -133,7 +133,7 @@ func (s *coreService) WebService() *restful.Container {
 	container := restful.NewContainer()
 
 	api := new(restful.WebService)
-	api.Path("/api/v3").Produces(restful.MIME_JSON)
+	api.Path("/api/v3").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	// init service actions
 	s.initService(api)
