@@ -229,17 +229,6 @@ type TransactionInfo struct {
     TxnNumber    string    // 事务Number
 }
 
-// func (t TransactionInfo) IntoHeader(header http.Header) http.Header {
-//     tar := http.Header{}
-//     for key := range header {
-//         tar.Set(key, header.Get(key))
-//     }
-//     tar.Set(common.BKHTTPCCTransactionNumber, t.TxnNumber)
-//     tar.Set(common.BKHTTPCCTxnSessionID, t.SessionID)
-//     tar.Set(common.BKHTTPCCTxnSessionState, t.SessionState)
-//     return tar
-// }
-
 type TxStatus int
 
 // TxStatus enumerations

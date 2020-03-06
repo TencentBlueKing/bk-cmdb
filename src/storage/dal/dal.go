@@ -46,6 +46,8 @@ type DB interface {
 	IsNotFoundError(error) bool
 
 	Close() error
+	
+	Transaction
 }
 
 

@@ -30,11 +30,6 @@ import (
 
 // NewMgo returns new RDB
 func NewTransaction(enableTxn bool, mConf MongoConf, rConf redis.Config) (dal.Transaction, error) {
-
-    if !enableTxn {
-        return &Mongo{tm:&TxnManager{enableTransaction: enableTxn},}, nil
-    }
-    
     connStr, err := connstring.Parse(mConf.URI)
     if nil != err {
         return nil, err
@@ -67,7 +62,7 @@ func NewTransaction(enableTxn bool, mConf MongoConf, rConf redis.Config) (dal.Tr
         dbname: connStr.Database,
         tm:     &TxnManager{
             cache: redisCli,
-            enableTransaction: true,
+            enableTransaction: enableTxn,
         },
     }, nil
 }
@@ -76,28 +71,11 @@ func NewTransaction(enableTxn bool, mConf MongoConf, rConf redis.Config) (dal.Tr
 // StartTransaction 
 // rewrite the ctx and header with transaction related info
 func (c *Mongo) StartTransaction(ctx *context.Context, h http.Header, opts ...types.TxnOption) (dal.Transaction, error) {
-    if !c.tm.enableTransaction {
-        return c, nil
-    }
+    
     sess, err := c.dbc.StartSession()
     if err != nil {
         return nil, err
     }
-
-    se := mongo.SessionExposer{}
-    info, err := se.GetSessionInfo(c.sess)
-    if err != nil {
-        return nil, err
-    }
-    h.Set(common.BKHTTPCCTransactionNumber, info.TxnNumber)
-    h.Set(common.BKHTTPCCTxnSessionID, info.SessionID)
-    h.Set(common.BKHTTPCCTxnSessionState, info.SessionState)
-
-    context.WithValue(*ctx, common.CCContextKeyJoinOption, types.JoinOption{
-        SessionID:    info.SessionID,
-        SessionState: info.SessionState,
-        TxnNumber:    info.TxnNumber,
-    })
     
     nc := Mongo{
         dbc:    c.dbc,
@@ -106,19 +84,36 @@ func (c *Mongo) StartTransaction(ctx *context.Context, h http.Header, opts ...ty
         sess: sess,
     }
     
-    if len(opts) != 0 {
-        if opts[0].Timeout < 5 * time.Second {
-            nc.tm.timeout = 5 * time.Second
-        } else  {
-            nc.tm.timeout = opts[0].Timeout
+    if c.tm.enableTransaction {
+        se := mongo.SessionExposer{}
+        info, err := se.GetSessionInfo(sess)
+        if err != nil {
+            return nil, err
         }
-    } else {
-        // set default value
-        nc.tm.timeout = 5 * time.Minute
-    }
+        h.Set(common.BKHTTPCCTransactionNumber, info.TxnNumber)
+        h.Set(common.BKHTTPCCTxnSessionID, info.SessionID)
+        h.Set(common.BKHTTPCCTxnSessionState, info.SessionState)
 
-    if err := c.tm.SaveSession(sess); err != nil {
-        return nil, err
+        context.WithValue(*ctx, common.CCContextKeyJoinOption, types.JoinOption{
+            SessionID:    info.SessionID,
+            SessionState: info.SessionState,
+            TxnNumber:    info.TxnNumber,
+        })
+
+        if len(opts) != 0 {
+            if opts[0].Timeout < 5 * time.Second {
+                nc.tm.timeout = 5 * time.Second
+            } else  {
+                nc.tm.timeout = opts[0].Timeout
+            }
+        } else {
+            // set default value
+            nc.tm.timeout = 5 * time.Minute
+        }
+
+        if err := c.tm.SaveSession(sess); err != nil {
+            return nil, err
+        }
     }
     
     if err := sess.StartTransaction(); err != nil {
@@ -130,9 +125,6 @@ func (c *Mongo) StartTransaction(ctx *context.Context, h http.Header, opts ...ty
 
 // CommitTransaction 提交事务
 func (c *Mongo) CommitTransaction(ctx context.Context) error {
-    if !c.tm.enableTransaction {
-        return nil
-    }
     sess, err := c.chooseSession(ctx)
     if err != nil {
         return err
@@ -150,9 +142,6 @@ func (c *Mongo) CommitTransaction(ctx context.Context) error {
 
 // AbortTransaction 取消事务
 func (c *Mongo) AbortTransaction(ctx context.Context) error {
-    if !c.tm.enableTransaction {
-        return nil
-    }
     
     sess, err := c.chooseSession(ctx)
     if err != nil {
