@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	iamRequestHeader   = "X-Request-Id"
+	IamRequestHeader   = "X-Request-Id"
 	iamAppCodeHeader   = "X-Bk-App-Code"
 	iamAppSecretHeader = "X-Bk-App-Secret"
 

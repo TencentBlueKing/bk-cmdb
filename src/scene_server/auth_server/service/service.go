@@ -16,13 +16,14 @@ import (
 	"net/http"
 
 	"configcenter/src/ac"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/rdapi"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/logics"
+	"configcenter/src/scene_server/auth_server/types"
 
 	"github.com/emicklei/go-restful"
 )
@@ -50,23 +51,35 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 
 		isAuthorized, err := s.auth.CheckRequestAuthorization(req.Request)
 		if err != nil {
-			resp.WriteHeader(http.StatusInternalServerError)
-			rsp := IamBaseResp{
-				Code:    common.CCErrCommHTTPDoRequestFailed,
+			rsp := types.BaseResp{
+				Code:    types.InternalServerErrorCode,
 				Message: err.Error(),
 			}
 			_ = resp.WriteAsJson(rsp)
 			return
 		}
 		if !isAuthorized {
-			resp.WriteHeader(http.StatusUnauthorized)
-			rsp := IamBaseResp{
-				Code:    common.CCErrCommAuthNotHavePermission,
+			rsp := types.BaseResp{
+				Code:    types.UnauthorizedErrorCode,
 				Message: "request not from iam",
 			}
 			_ = resp.WriteAsJson(rsp)
 			return
 		}
+
+		// use iam request id as cc rid
+		rid := req.Request.Header.Get(iam.IamRequestHeader)
+		resp.Header().Set(iam.IamRequestHeader, rid)
+		if rid != "" {
+			req.Request.Header.Set(common.BKHTTPCCRequestID, rid)
+		} else if rid = util.GetHTTPCCRequestID(req.Request.Header); rid == "" {
+			rid = util.GenerateRID()
+			req.Request.Header.Set(common.BKHTTPCCRequestID, rid)
+		}
+		resp.Header().Set(common.BKHTTPCCRequestID, rid)
+
+		// use iam language as cc language
+		req.Request.Header.Set(common.BKHTTPLanguage, req.Request.Header.Get("Blueking-Language"))
 
 		chain.ProcessFilter(req, resp)
 		return
@@ -77,9 +90,6 @@ func (s *AuthService) WebService() *restful.Container {
 	api := new(restful.WebService)
 	api.Path("/auth/v3")
 	api.Filter(s.engine.Metric().RestfulMiddleWare)
-	api.Filter(rdapi.AllGlobalFilter(func() errors.CCErrorIf {
-		return s.engine.CCErr
-	}))
 	// only allows iam to pull resource using these api
 	api.Filter(s.checkRequestFromIamFilter())
 	api.Produces(restful.MIME_JSON)
