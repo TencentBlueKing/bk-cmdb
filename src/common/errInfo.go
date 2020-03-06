@@ -757,6 +757,8 @@ const (
 	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
 	CCErrCoreServiceModelHasAssociationErr           = 1113031
 	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
+	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
+	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

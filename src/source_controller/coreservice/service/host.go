@@ -63,6 +63,7 @@ func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	exceptionArr, err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
 	if err != nil {
 		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), inputData, exceptionArr, ctx.Kit.Rid)
@@ -201,7 +202,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
 		blog.Errorf("failed to query the host , err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
-        return
+		return
 	}
 
 	count, err := s.db.Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
@@ -229,4 +230,21 @@ func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.HostSnap{
 		Data: result,
 	})
+}
+
+func (s *coreService) TransferHostResourceDirectory(ctx *rest.Contexts) {
+	input := &metadata.TransferHostResourceDirectory{}
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	err := s.core.HostOperation().TransferResourceDirectory(ctx.Kit, input)
+	if err != nil {
+		blog.ErrorJSON("TransferHostResourceDirectory  error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }

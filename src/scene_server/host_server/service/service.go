@@ -167,6 +167,9 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/updatemany/host_apply_plan/bk_biz_id/{bk_biz_id}/run").To(s.RunHostApplyRule))
 	api.Route(api.POST("/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/host_related_rules").To(s.ListHostRelatedApplyRule))
 
+	// 主机在资源池目录之间转移
+	api.Route(api.POST("/host/transfer/resource/directory").To(s.TransferHostResourceDirectory))
+
 	container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)

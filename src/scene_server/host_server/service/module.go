@@ -557,3 +557,22 @@ func (s *Service) GetAppHostTopoRelation(req *restful.Request, resp *restful.Res
 	_ = resp.WriteEntity(metadata.NewSuccessResp(result))
 	return
 }
+
+func (s *Service) TransferHostResourceDirectory(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	input := new(metadata.TransferHostResourceDirectory)
+	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+		blog.Errorf("TransferHostResourceDirectory failed with decode body err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	err := s.CoreAPI.CoreService().Host().TransferHostResourceDirectory(srvData.ctx, srvData.header, input)
+	if err != nil {
+		blog.ErrorJSON("TransferHostResourceDirectory failed with coreservice http failed, input: %v, err: %v, rid: %s", &input, err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+	}
+
+	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+	return
+}

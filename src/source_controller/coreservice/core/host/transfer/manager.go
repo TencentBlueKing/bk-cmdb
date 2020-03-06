@@ -19,10 +19,10 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/eventclient"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-
 	"gopkg.in/redis.v5"
 )
 
@@ -496,6 +496,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
+	blog.Debug("cond: %v", cond)
 	cnt, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get module host config count failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
@@ -573,4 +574,47 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID 
 		result[item.HostID] = append(result[item.HostID], item)
 	}
 	return result, nil
+}
+
+func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+	// validate input bk_module_id
+	err := manager.validTransferResourceDirParams(kit, input)
+	if err != nil {
+		blog.ErrorJSON("TransferResourceDirectory fail with validTransferResourceDirParams failed, err: %v, rid: %v", err, kit.Rid)
+		return err
+	}
+
+	cond := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: input.HostID,
+		},
+	}
+	data := map[string]interface{}{
+		common.BKModuleIDField: input.ModuleID,
+	}
+	updateErr := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Update(kit.Ctx, cond, data)
+	if updateErr != nil {
+		blog.ErrorJSON("TransferResourceDirectory fail with update table error: %v, cond: %v, data: %v, rid: %v", updateErr, cond, data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	return nil
+}
+
+func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+	// valid bk_module_id
+	cond := mapstr.MapStr{}
+	cond[common.BKModuleIDField] = input.ModuleID
+	cond[common.BKDefaultField] = 4
+	count, err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%v, rid: %s", err.Error(), cond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if count <= 0 {
+		blog.ErrorJSON("validTransferResourceDirParams bk_module_id bind resource directory not exist")
+		return kit.CCError.CCError(common.CCErrCoreServiceResourceDirectoryNotExistErr)
+	}
+
+	return nil
 }

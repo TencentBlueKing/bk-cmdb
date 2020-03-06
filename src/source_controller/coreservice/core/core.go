@@ -156,6 +156,8 @@ type HostOperation interface {
 
 	// host search
 	ListHosts(kit *rest.Kit, input metadata.ListHosts) (*metadata.ListHostResult, error)
+
+	TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
 }
 
 // AssociationOperation association methods
