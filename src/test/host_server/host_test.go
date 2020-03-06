@@ -1401,12 +1401,16 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		Expect(searchRsp.Data.Count).To(Equal(2))
 		host1 := searchRsp.Data.Info[0]["host"].(map[string]interface{})
 		host2 := searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		host1ID, err := commonutil.GetInt64ByInterface(host1[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
+		host2ID, err := commonutil.GetInt64ByInterface(host2[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
 		if host1[common.BKHostInnerIPField] == "1.0.0.1" {
-			Expect(int64(host1[common.BKHostIDField].(float64))).To(Equal(hostID1))
-			Expect(int64(host2[common.BKHostIDField].(float64))).To(Equal(hostID2))
+			Expect(host1ID).To(Equal(hostID1))
+			Expect(host2ID).To(Equal(hostID2))
 		} else {
-			Expect(int64(host1[common.BKHostIDField].(float64))).To(Equal(hostID2))
-			Expect(int64(host2[common.BKHostIDField].(float64))).To(Equal(hostID1))
+			Expect(host1ID).To(Equal(hostID2))
+			Expect(host2ID).To(Equal(hostID1))
 		}
 
 		By("add hosts to resource pool invalid module")
@@ -1472,6 +1476,8 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Count).To(Equal(3))
-		Expect(int64(searchRsp.Data.Info[2]["host"].(map[string]interface{})[common.BKHostIDField].(float64))).To(Equal(result.Success[0].HostID))
+		hostID, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[2]["host"].(map[string]interface{})[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostID).To(Equal(result.Success[0].HostID))
 	})
 })
