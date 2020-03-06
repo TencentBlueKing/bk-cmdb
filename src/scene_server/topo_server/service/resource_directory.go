@@ -167,6 +167,7 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(errors.New(rsp.Code, rsp.ErrMsg))
 		return
 	}
+	// todo host_count没加
 
 	ctx.RespEntity(rsp.Data)
 }

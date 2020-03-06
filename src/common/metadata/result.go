@@ -268,3 +268,13 @@ type Uint64DataResponse struct {
 	BaseResp `json:",inline"`
 	Data     uint64 `json:"data"`
 }
+
+type TransferException struct {
+	HostID []int64 `json:"bk_host_id"`
+	ErrMsg string  `json:"bk_error_msg"`
+}
+
+type TransferExceptionResult struct {
+	BaseResp `json:",inline"`
+	Data     TransferException `json:"data"`
+}

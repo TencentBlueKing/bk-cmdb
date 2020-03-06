@@ -656,8 +656,8 @@ const (
 	CCErrHostModuleNotExist = 1110054
 	// CCErrDeleteHostFromBusiness Delete the host under the business
 	CCErrDeleteHostFromBusiness = 1110055
-	// CCErrHostNotBelongIDLEModuleErr hostID[%#v] not belong to business
-	CCErrHostNotBelongIDLEModuleErr = 1110056
+	// CCErrHostModuleConfigNotMatch hostID[%#v] not belong to business
+	CCErrHostModuleConfigNotMatch = 1110056
 	// CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed Module does not exist or there are multiple built-in modules
 	CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed = 1110057
 	CCErrHostSearchNeedObjectInstIDErr                        = 1110058
@@ -759,6 +759,8 @@ const (
 	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
 	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
+	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
+	CCErrCoreServiceHostNotUnderAnyResourceDirectory = 11130034
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

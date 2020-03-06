@@ -175,7 +175,7 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 	if len(errHostID) > 0 {
 		errHostIP := lgc.convertHostIDToHostIP(ctx, errHostID)
 		blog.Errorf("move host to resource pool, notExistAppModuleHost error, has host not belong to idle module , owneAppID: %d, input:%#v, err host inner ip:%#v, rid:%s", ownerAppID, conf, errHostIP, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrHostNotBelongIDLEModuleErr, util.PrettyIPStr(errHostIP))
+		return nil, lgc.ccErr.Errorf(common.CCErrHostModuleConfigNotMatch, util.PrettyIPStr(errHostIP))
 	}
 
 	param := &metadata.TransferHostsCrossBusinessRequest{
@@ -263,7 +263,10 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		blog.Errorf("assign host to app error, not foud app appID: %d,input:%+v,rid:%s", conf.ApplicationID, conf, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommNotFound)
 	}
-	if 0 == conf.ModuleID {
+
+	filter := mapstr.MapStr{common.BKModuleIDField: conf.ModuleID}
+	moduleInfo, err := lgc.GetModuleMapByCond(ctx, []string{}, filter)
+	if 0 == len(moduleInfo) {
 		blog.Errorf("assign host to app error, not foud app moduleID: %d,input:%+v,rid:%s", conf.ModuleID, conf, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommNotFound)
 	}
@@ -288,7 +291,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	if len(errHostID) > 0 {
 		errHostIP := lgc.convertHostIDToHostIP(ctx, errHostID)
 		blog.Errorf("move host to resource pool, notExistAppModuleHost error, has host not belong to idle module , input:%+v, rid:%s", conf, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrHostNotBelongIDLEModuleErr, strings.Join(errHostIP, ","))
+		return nil, lgc.ccErr.Errorf(common.CCErrHostModuleConfigNotMatch, strings.Join(errHostIP, ","))
 	}
 
 	mConds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)

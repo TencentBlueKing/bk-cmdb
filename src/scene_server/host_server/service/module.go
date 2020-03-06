@@ -571,6 +571,7 @@ func (s *Service) TransferHostResourceDirectory(req *restful.Request, resp *rest
 	if err != nil {
 		blog.ErrorJSON("TransferHostResourceDirectory failed with coreservice http failed, input: %v, err: %v, rid: %s", &input, err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		return
 	}
 
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))

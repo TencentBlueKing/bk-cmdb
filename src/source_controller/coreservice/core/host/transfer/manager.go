@@ -578,15 +578,23 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID 
 
 func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
 	// validate input bk_module_id
-	err := manager.validTransferResourceDirParams(kit, input)
+	errHostID, err := manager.validTransferResourceDirParams(kit, input)
 	if err != nil {
 		blog.ErrorJSON("TransferResourceDirectory fail with validTransferResourceDirParams failed, err: %v, rid: %v", err, kit.Rid)
 		return err
 	}
+	updateHosts := make([]int64, 0)
+	if 0 != len(errHostID) {
+		for _, id := range input.HostID {
+			if !util.ContainsInt64(errHostID, id) {
+				updateHosts = append(updateHosts, id)
+			}
+		}
+	}
 
 	cond := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: input.HostID,
+			common.BKDBIN: updateHosts,
 		},
 	}
 	data := map[string]interface{}{
@@ -598,10 +606,14 @@ func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
+	if len(errHostID) > 0 {
+		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotUnderAnyResourceDirectory, errHostID)
+	}
+
 	return nil
 }
 
-func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) ([]int64, errors.CCErrorCoder) {
 	// valid bk_module_id
 	cond := mapstr.MapStr{}
 	cond[common.BKModuleIDField] = input.ModuleID
@@ -609,12 +621,35 @@ func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit, in
 	count, err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%v, rid: %s", err.Error(), cond, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if count <= 0 {
 		blog.ErrorJSON("validTransferResourceDirParams bk_module_id bind resource directory not exist")
-		return kit.CCError.CCError(common.CCErrCoreServiceResourceDirectoryNotExistErr)
+		return nil, kit.CCError.CCError(common.CCErrCoreServiceResourceDirectoryNotExistErr)
 	}
 
-	return nil
+	// 确保主机在资源池目录下(default=1的业务)
+	bizInfo := &metadata.BizInst{}
+	filter := mapstr.MapStr{common.BKDefaultField: 1}
+	err = manager.dbProxy.Table(common.BKTableNameBaseApp).Find(filter).One(kit.Ctx, bizInfo)
+	if err != nil {
+		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%v, rid: %s", err.Error(), cond, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	opt := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.HostID}}
+	moduleHost := make([]metadata.ModuleHost, 0)
+	if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(opt).All(kit.Ctx, &moduleHost); err != nil {
+		blog.ErrorJSON("validTransferResourceDirParams failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, opt, err.Error(), kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	wrongHostID := make([]int64, 0)
+	for _, host := range moduleHost {
+		if host.AppID != bizInfo.BizID {
+			wrongHostID = append(wrongHostID, host.HostID)
+		}
+	}
+
+	return wrongHostID, nil
 }
