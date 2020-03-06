@@ -252,7 +252,7 @@ func (s *Service) DeleteInst(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
 		return
 	}
-	return
+	ctx.RespEntity(nil)
 }
 
 func (s *Service) UpdateInsts(ctx *rest.Contexts) {
