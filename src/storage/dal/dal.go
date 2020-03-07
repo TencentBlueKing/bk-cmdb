@@ -16,13 +16,12 @@ import (
 	"context"
 	"net/http"
 
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/dal/types"
 )
-
-
 
 // RDB rename the RDB into DB
 // Compatible stock code
+// Deprecated: do not use anymore.
 type RDB DB
 
 // DB db operation interface
@@ -48,26 +47,17 @@ type DB interface {
 	Close() error
 }
 
-
 // Transaction interface
 type Transaction interface {
-    // StartTransaction 开启新事务
-    StartTransaction(ctx *context.Context, h http.Header, opts ...types.TxnOption) (Transaction, error)
-    // CommitTransaction 提交事务
-    CommitTransaction(context.Context) error
-    // AbortTransaction 取消事务
-    AbortTransaction(context.Context) error
+	// StartTransaction 开启新事务
+	StartTransaction(ctx *context.Context, h http.Header, opts ...types.TxnOption) (Transaction, error)
+	// CommitTransaction 提交事务
+	CommitTransaction(context.Context) error
+	// AbortTransaction 取消事务
+	AbortTransaction(context.Context) error
 
-    // AutoRun Interface for automatic processing of encapsulated transactions
-    // f func return error, abort commit, other commit transaction. transaction commit can be error.
-    // f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
-    // AutoRun(ctx context.Context, opt TxnWrapperOption, f func(header http.Header) error) error
+	// AutoRun Interface for automatic processing of encapsulated transactions
+	// f func return error, abort commit, other commit transaction. transaction commit can be error.
+	// f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
+	// AutoRun(ctx context.Context, opt TxnWrapperOption, f func(header http.Header) error) error
 }
-
-
-
-
-
-
-
-
