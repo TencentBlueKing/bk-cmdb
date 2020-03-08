@@ -16,15 +16,20 @@ import (
 	"fmt"
 
 	"configcenter/src/common/metadata"
+	ccom "configcenter/src/scene_server/cloud_server/common"
 )
 
 var vendorClients = make(map[string]VendorClient, 0)
 
 type VendorClient interface {
+	// 设置账号密码
 	SetCredential(secretID, secretKey string)
-	GetRegions() ([]string, error)
-	GetVpcs(region string) ([]*metadata.Vpc, error)
-	GetInstances(region string) ([]*metadata.Instance, error)
+	// 获取地域列表
+	GetRegions(opt *ccom.RequestOpt) (*metadata.RegionsInfo, error)
+	// 获取vpc列表
+	GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.VpcsInfo, error)
+	// 获取实例列表
+	GetInstances(region string, opt *ccom.RequestOpt) (*metadata.InstancesInfo, error)
 }
 
 // Register 注册云厂商客户端
@@ -33,12 +38,12 @@ func Register(vendorName string, client VendorClient) {
 }
 
 // GetVendorClient 获取云厂商客户端
-func GetVendorClient(vendorName, secretID, secretKey string) (VendorClient, error) {
+func GetVendorClient(conf ccom.AccountConf) (VendorClient, error) {
 	var client VendorClient
 	var ok bool
-	if client, ok = vendorClients[vendorName]; !ok {
-		return nil, fmt.Errorf("vendor %s is not supported", vendorName)
+	if client, ok = vendorClients[conf.VendorName]; !ok {
+		return nil, fmt.Errorf("vendor %s is not supported", conf.VendorName)
 	}
-	client.SetCredential(secretID, secretKey)
+	client.SetCredential(conf.SecretID, conf.SecretKey)
 	return client, nil
 }

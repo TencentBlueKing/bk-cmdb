@@ -252,9 +252,6 @@ const (
 	// BKCloudTaskID the cloud sync task id
 	BKCloudTaskID = "bk_task_id"
 
-	// BKSyncStatus the cloud sync status
-	BKSyncStatus = "bk_sync_status"
-
 	// BKNewAddHost the cloud sync new add hosts
 	BKNewAddHost = "new_add"
 
@@ -1114,9 +1111,10 @@ const (
 
 // cloud sync const
 const (
-	BKCloudAccountIDField = "bk_account_id"
-	BKCloudAccountName    = "bk_account_name"
-	BKCloudVendor         = "bk_cloud_vendor"
-	BKCloudSyncTaskName   = "bk_task_name"
-	BKCloudSyncTaskID     = "bk_task_id"
+	BKCloudAccountID    = "bk_account_id"
+	BKCloudAccountName  = "bk_account_name"
+	BKCloudVendor       = "bk_cloud_vendor"
+	BKCloudSyncTaskName = "bk_task_name"
+	BKCloudSyncTaskID   = "bk_task_id"
+	BKCloudSyncStatus   = "bk_sync_status"
 )

@@ -48,7 +48,7 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 		return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 	}
 	// 不返回bk_secret_key的值
-	account.SecreteKey = ""
+	account.SecretKey = ""
 	return account, nil
 }
 
@@ -63,10 +63,17 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 	}
 	// 不返回bk_secret_key的值
 	for i, _ := range results {
-		results[i].SecreteKey = ""
+		results[i].SecretKey = ""
 	}
 
-	return &metadata.MultipleCloudAccount{Count: int64(len(results)), Info: results}, nil
+	// 账户总个数
+	count, err := c.countAccount(kit, option.Condition)
+	if err != nil {
+		blog.ErrorJSON("SearchAccount countAccount error %v, option: %v, rid: %s", err, option.Condition, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return &metadata.MultipleCloudAccount{Count: int64(count), Info: results}, nil
 }
 
 func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option mapstr.MapStr) errors.CCErrorCoder {
@@ -74,7 +81,7 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option ma
 		blog.Errorf("UpdateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
 		return err
 	}
-	filter := map[string]interface{}{common.BKCloudAccountIDField: accountID}
+	filter := map[string]interface{}{common.BKCloudAccountID: accountID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	option.Set(common.LastTimeField, time.Now())
 	// 确保不会更新云厂商类型、云账户id、开发商id
@@ -94,7 +101,7 @@ func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CC
 		return err
 	}
 
-	filter := map[string]interface{}{common.BKCloudAccountIDField: accountID}
+	filter := map[string]interface{}{common.BKCloudAccountID: accountID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	if e := c.dbProxy.Table(common.BKTableNameCloudAccount).Delete(kit.Ctx, filter); e != nil {
 		blog.Errorf("DeleteAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
@@ -106,7 +113,6 @@ func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CC
 func (c *cloudOperation) countAccount(kit *rest.Kit, cond mapstr.MapStr) (uint64, error) {
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	count, err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(cond).Count(kit.Ctx)
-
 	return count, err
 
 }

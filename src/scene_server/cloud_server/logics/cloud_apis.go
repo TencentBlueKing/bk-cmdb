@@ -199,10 +199,10 @@ func (lgc *Logics) GetCloudVendorVpc(kit *rest.Kit, account metadata.CloudAccoun
 	switch account.CloudVendor {
 	case metadata.AWS:
 		// todo id、key需要解密
-		vpc, err = lgc.GetAwsVpc(kit, account.SecreteID, account.SecreteKey)
+		vpc, err = lgc.GetAwsVpc(kit, account.SecretID, account.SecretKey)
 	case metadata.TencentCloud:
 		// todo id、key需要解密
-		vpc, err = lgc.GetTencentCloudVpc(kit, account.SecreteID, account.SecreteKey)
+		vpc, err = lgc.GetTencentCloudVpc(kit, account.SecretID, account.SecretKey)
 	default:
 		return nil, kit.CCError.CCError(common.CCErrCloudVendorNotSupport)
 	}

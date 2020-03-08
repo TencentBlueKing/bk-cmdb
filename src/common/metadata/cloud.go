@@ -21,8 +21,8 @@ type CloudAccount struct {
 	AccountName string    `json:"bk_account_name" bson:"bk_account_name"`
 	CloudVendor string    `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
 	AccountID   int64     `json:"bk_account_id" bson:"bk_account_id"`
-	SecreteID   string    `json:"bk_secret_id" bson:"bk_secret_id"`
-	SecreteKey  string    `json:"bk_secret_key" bson:"bk_secret_key"`
+	SecretID   string    `json:"bk_secret_id" bson:"bk_secret_id"`
+	SecretKey  string    `json:"bk_secret_key" bson:"bk_secret_key"`
 	Description string    `json:"bk_description" bson:"bk_description"`
 	OwnerID     string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Creator     string    `json:"bk_creator" bson:"bk_creator"`
@@ -39,9 +39,9 @@ const (
 
 // 同步状态
 const (
-	Success int = 1
-	Fail    int = 2
-	InSync  int = 3
+	CloudSyncSuccess int = 1
+	CloudSyncFail    int = 2
+	CloudSyncInProgress  int = 3
 )
 
 var SupportedCloudVendors = []string{"aws", "tencent_cloud"}
@@ -113,7 +113,7 @@ type VpcSyncInfo struct {
 	VpcName      string `json:"bk_vpc_name" bson:"bk_vpc_name"`
 	Region       string `json:"bk_region" bson:"bk_region"`
 	VpcHostCount int64  `json:"bk_host_count" bson:"bk_host_count"`
-	SyncDir      int64  `json:"bk_sync_dir" bson:"bk_sync_dir"`
+	SyncDir      int64  `json:"bk_sync_dir,omitempty" bson:"bk_sync_dir,omitempty"`
 }
 
 type MultipleCloudSyncTask struct {
@@ -121,14 +121,40 @@ type MultipleCloudSyncTask struct {
 	Info  []CloudSyncTask `json:"info"`
 }
 
+type VpcHostCntResult struct {
+	Count int64           `json:"count"`
+	Info  []VpcSyncInfo `json:"info"`
+}
+
+type RegionsInfo struct {
+	Count int64 `json:"count" bson:"count"`
+	RegionSet []*Region `json:"region_set" bson:"region_set"`
+}
+
+type Region struct {
+	RegionId    string `json:"bk_region_id" bson:"bk_region_id"`
+	RegionName  string `json:"bk_region_name" bson:"bk_host_name"`
+	RegionState string `json:"bk_region_state" bson:"bk_region_state"`
+}
+
+type VpcsInfo struct {
+	Count int64 `json:"count" bson:"count"`
+	VpcSet []*Vpc `json:"vpc_set" bson:"vpc_set"`
+}
+
 type Vpc struct {
 	VpcId   string `json:"bk_vpc_id" bson:"bk_vpc_id"`
 	VpcName string `json:"bk_vpc_name" bson:"bk_vpc_name"`
 }
 
+type InstancesInfo struct {
+	Count int64 `json:"count" bson:"count"`
+	InstanceSet []*Instance `json:"instance_set" bson:"instance_set"`
+}
+
 type Instance struct {
 	InstanceId    string `json:"bk_instance_id" bson:"bk_instance_id"`
-	InstanceName  string `json:"bk_instance_name" bson:"bk_instance_name"`
+	InstanceName  string `json:"bk_host_name" bson:"bk_host_name"`
 	PrivateIp     string `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	PublicIp      string `json:"bk_host_outerip" bson:"bk_host_outerip"`
 	InstanceState string `json:"bk_instance_state" bson:"bk_instance_state"`

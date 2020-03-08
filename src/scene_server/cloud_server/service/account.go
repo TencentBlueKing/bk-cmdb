@@ -22,6 +22,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	ccom "configcenter/src/scene_server/cloud_server/common"
+
 )
 
 // 云账户连通测试
@@ -34,8 +36,8 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 
 	var pass bool
 	var err error
-
-	pass, err = s.Logics.AccountVerify(account.CloudVendor, account.SecretID, account.SecretKey)
+	conf := ccom.AccountConf{account.CloudVendor, account.SecretID, account.SecretKey}
+	pass, err = s.Logics.AccountVerify(conf)
 	if err != nil {
 		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err, ctx.Kit.Rid)
 	}
@@ -117,10 +119,10 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 // 更新云账户
 func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 	//get accountID
-	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
+	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountID))
 		return
 	}
 
@@ -142,10 +144,10 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 // 删除云账户
 func (s *Service) DeleteAccount(ctx *rest.Contexts) {
 	//get accountID
-	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
+	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountID))
 		return
 	}
 

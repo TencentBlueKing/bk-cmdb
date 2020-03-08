@@ -30,32 +30,25 @@ func (s *Service) SearchVpc(ctx *rest.Contexts) {
 		return
 	}
 
-	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
+	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountID))
 		return
 	}
 
-	option := &metadata.SearchCloudOption{
-		Condition: mapstr.MapStr{common.BKCloudAccountIDField: accountID},
-	}
-	res, err := s.CoreAPI.CoreService().Cloud().SearchAccount(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	accountConf, err := s.Logics.GetAccountConf(accountID)
 	if err != nil {
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
 	}
-	if len(res.Info) <= 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
-		return
-	}
-	account := res.Info[0]
-	vpc, err := s.Logics.GetVpcInstInfo(vpcOpt.Region, account.CloudVendor, account.SecreteID, account.SecreteKey)
+	result, err := s.Logics.GetVpcHostCnt(vpcOpt.Region, *accountConf)
 	if err != nil {
-
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed))
+		return
 	}
 
-	ctx.RespEntity(vpc)
+	ctx.RespEntity(result)
 }
 
 func (s *Service) CreateSyncTask(ctx *rest.Contexts) {

@@ -56,10 +56,10 @@ func (s *coreService) SearchAccount(ctx *rest.Contexts) {
 // 更新云账户
 func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
 	//get accountID
-	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
+	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountID))
 		return
 	}
 
@@ -80,10 +80,10 @@ func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
 // 删除云账户
 func (s *coreService) DeleteAccount(ctx *rest.Contexts) {
 	//get accountID
-	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
+	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountID))
 		return
 	}
 

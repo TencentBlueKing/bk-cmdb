@@ -13,7 +13,9 @@
 package cloudvendor
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	ccom "configcenter/src/scene_server/cloud_server/common"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -31,92 +33,182 @@ type awsClient struct {
 	secretKey  string
 }
 
+var regionIdNameMap = map[string]string{
+	"us-east-1":      "美国东部（弗吉尼亚北部）",
+	"us-east-2":      "美国东部（俄亥俄州）",
+	"us-west-1":      "美国西部（加利福尼亚北部）",
+	"us-west-2":      "美国西部（俄勒冈）",
+	"ap-east-1":      "亚太地区（香港）",
+	"ap-south-1":     "亚太地区（孟买）",
+	"ap-southeast-1": "亚太区域（新加坡）",
+	"ap-northeast-2": "亚太区域（首尔）",
+	"ap-northeast-3": "亚太区域 （大阪当地）",
+	"ap-southeast-2": "亚太区域（悉尼）",
+	"ap-northeast-1": "亚太区域（东京）",
+	"ca-central-1":   "加拿大 （中部）",
+	"eu-central-1":   "欧洲（法兰克福）",
+	"eu-west-1":      "欧洲（爱尔兰）",
+	"eu-west-2":      "欧洲（伦敦）",
+	"eu-west-3":      "欧洲（巴黎）",
+	"eu-north-1":     "欧洲（斯德哥尔摩）",
+	"me-south-1":     "中东（巴林）",
+	"sa-east-1":      "南美洲（圣保罗）",
+}
+
+// 设置账号密码
 func (c *awsClient) SetCredential(secretID, secretKey string) {
 	c.secretID = secretID
 	c.secretKey = secretKey
 }
 
-func (c *awsClient) GetRegions() ([]string, error) {
+// 获取地域列表
+// API文档：https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeRegions.html
+// 对于获取地域列表的请求，不让设置过滤条件和分页参数，直接获取所有地域
+func (c *awsClient) GetRegions(opt *ccom.RequestOpt) (*metadata.RegionsInfo, error) {
 	sess, err := c.newSession("us-west-1")
 	if err != nil {
 		return nil, err
 	}
 	ec2Svc := ec2.New(sess)
 
-	rsp, err := ec2Svc.DescribeRegions(nil)
+	input := c.newDescribeRegionsInput(opt)
+	resp, err := ec2Svc.DescribeRegions(input)
 	if err != nil {
 		return nil, err
 	}
 
-	regions := make([]string, 0)
-	for _, region := range rsp.Regions {
-		regions = append(regions, *region.RegionName)
+	regionsInfo := new(metadata.RegionsInfo)
+	for _, region := range resp.Regions {
+		regionsInfo.RegionSet = append(regionsInfo.RegionSet, &metadata.Region{
+			RegionId:   *region.RegionName,
+			RegionName: regionIdNameMap[*region.RegionName],
+		})
 	}
-
-	return regions, nil
+	regionsInfo.Count = int64(len(regionsInfo.RegionSet))
+	return regionsInfo, nil
 }
 
-func (c *awsClient) GetVpcs(region string) ([]*metadata.Vpc, error) {
+// 获取vpc列表
+// API文档：https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVpcs.html
+// 单个用户在单个地域下的vpc配额是5个，因此直接设置limit为最大值，一次性获取该地域所有vpc
+func (c *awsClient) GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.VpcsInfo, error) {
 	sess, err := c.newSession(region)
 	if err != nil {
 		return nil, err
 	}
 	ec2Svc := ec2.New(sess)
 
-	output, err := ec2Svc.DescribeVpcs(nil)
+	vpcsInfo := new(metadata.VpcsInfo)
+	loopCnt := 0
+	if opt == nil {
+		opt = &ccom.RequestOpt{}
+	}
+	opt.Limit = ccom.Int64Ptr(ccom.MaxLimit)
+	input := c.newDescribeVpcsInput(opt)
+	// 在limit小于全部数据量的情况下，获取limit数量的数据，否则获取全部数据
+	for {
+		output, err := ec2Svc.DescribeVpcs(input)
+		if err != nil {
+			return nil, err
+		}
+		for _, vpc := range output.Vpcs {
+			vpcsInfo.VpcSet = append(vpcsInfo.VpcSet, &metadata.Vpc{
+				VpcId:   *vpc.VpcId,
+				VpcName: c.getVpcName(vpc),
+			})
+		}
+		// 在获取到limit数量或者全部数据的情况下，退出循环
+		if opt == nil || opt.Limit == nil || *opt.Limit == int64(len(vpcsInfo.VpcSet)) || output.NextToken == nil || *output.NextToken == "" {
+			break
+		}
+		loopCnt++
+		// 设置分页请求参数
+		input.NextToken = output.NextToken
+		if loopCnt > ccom.MaxLoopCnt {
+			blog.Errorf("DescribeVpcs loopCnt:%d, bigger than MaxLoopCnt, len(vpcsInfo.VpcSet):%d", loopCnt, vpcsInfo.VpcSet)
+			return nil, ccom.ErrorLoopCnt
+		}
+	}
+	vpcsInfo.Count = int64(len(vpcsInfo.VpcSet))
+
+	return vpcsInfo, nil
+}
+
+// 获取实例列表
+// API文档：https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+func (c *awsClient) GetInstances(region string, opt *ccom.RequestOpt) (*metadata.InstancesInfo, error) {
+	instancesInfo := new(metadata.InstancesInfo)
+	instances, err := c.getInstances(region, opt)
 	if err != nil {
 		return nil, err
 	}
+	instancesInfo.InstanceSet = instances
 
-	vpcs := make([]*metadata.Vpc, 0)
-	for _, vpc := range output.Vpcs {
-		vpcInfo := &metadata.Vpc{
-			VpcId:   *vpc.VpcId,
-			VpcName: *vpc.VpcId,
-		}
-		name := c.getVpcName(vpc)
-		if name != "" {
-			vpcInfo.VpcName = name
-		}
-		vpcs = append(vpcs, vpcInfo)
+	totalCnt := int64(len(instances))
+	// limit没有设置为MaxLimit，则去获取实例总数
+	if opt == nil || opt.Limit == nil || *opt.Limit != ccom.MaxLimit {
+		totalCnt, err = c.GetInstancesTotalCnt(region, opt)
 	}
+	instancesInfo.Count = totalCnt
 
-	return vpcs, nil
+	return instancesInfo, nil
 }
 
-func (c *awsClient) GetInstances(region string) ([]*metadata.Instance, error) {
+// 获取实例列表，不包含实例总个数
+func (c *awsClient) getInstances(region string, opt *ccom.RequestOpt) ([]*metadata.Instance, error) {
 	sess, err := c.newSession(region)
 	if err != nil {
 		return nil, err
 	}
 	ec2Svc := ec2.New(sess)
-
-	output, err := ec2Svc.DescribeInstances(nil)
-	if err != nil {
-		return nil, err
-	}
 
 	instances := make([]*metadata.Instance, 0)
-	for _, reservation := range output.Reservations {
-		for _, inst := range reservation.Instances {
-			instance := &metadata.Instance{
-				InstanceId:    *inst.InstanceId,
-				InstanceName:  *inst.InstanceId,
-				PrivateIp:     *inst.PrivateIpAddress,
-				PublicIp:      *inst.PublicIpAddress,
-				InstanceState: *inst.State.Name,
-				VpcId:         *inst.VpcId,
-			}
-			name := c.getInstanceName(inst)
-			if name != "" {
-				instance.InstanceName = name
-			}
-			instances = append(instances, instance)
+	loopCnt := 0
+	input := c.newDescribeInstancesInput(opt)
+	// 在limit小于全部数据量的情况下，获取limit数量的数据，否则获取全部数据
+	for {
+		output, err := ec2Svc.DescribeInstances(input)
+		if err != nil {
+			return nil, err
 		}
-
+		for _, reservation := range output.Reservations {
+			for _, inst := range reservation.Instances {
+				instances = append(instances, &metadata.Instance{
+					InstanceId:    *inst.InstanceId,
+					InstanceName:  *inst.InstanceId,
+					PrivateIp:     *inst.PrivateIpAddress,
+					PublicIp:      *inst.PublicIpAddress,
+					InstanceState: *inst.State.Name,
+					VpcId:         *inst.VpcId,
+				})
+			}
+		}
+		// 在获取到limit数量或者全部数据的情况下，退出循环
+		if opt == nil || opt.Limit == nil || *opt.Limit == int64(len(instances)) || output.NextToken == nil || *output.NextToken == "" {
+			break
+		}
+		// 设置分页请求参数
+		input.NextToken = output.NextToken
+		loopCnt++
+		if loopCnt > ccom.MaxLoopCnt {
+			blog.Errorf("DescribeVpcs loopCnt:%d, bigger than MaxLoopCnt, len(instances):%d", loopCnt, instances)
+			return nil, ccom.ErrorLoopCnt
+		}
 	}
-
 	return instances, nil
+}
+
+// 获取实例总个数
+func (c *awsClient) GetInstancesTotalCnt(region string, opt *ccom.RequestOpt) (int64, error) {
+	if opt == nil {
+		opt = &ccom.RequestOpt{}
+	}
+	opt.Limit = ccom.Int64Ptr(ccom.MaxLimit)
+	instances, err := c.getInstances(region, opt)
+	if err != nil {
+		return int64(0), err
+	}
+	return int64(len(instances)), nil
 }
 
 func (c *awsClient) newSession(region string) (*session.Session, error) {
@@ -131,26 +223,84 @@ func (c *awsClient) newSession(region string) (*session.Session, error) {
 	return sess, nil
 }
 
+// 获取地域请求条件
+func (c *awsClient) newDescribeRegionsInput(opt *ccom.RequestOpt) *ec2.DescribeRegionsInput {
+	input := &ec2.DescribeRegionsInput{}
+	if opt == nil {
+		return input
+	}
+	if len(opt.Filters) > 0 {
+		input.Filters = make([]*ec2.Filter, 0)
+		for i, _ := range opt.Filters {
+			filter := &ec2.Filter{Name: opt.Filters[i].Name, Values: opt.Filters[i].Values}
+			input.Filters = append(input.Filters, filter)
+		}
+	}
+	return input
+}
+
+// 获取vpc请求条件
+func (c *awsClient) newDescribeVpcsInput(opt *ccom.RequestOpt) *ec2.DescribeVpcsInput {
+	input := &ec2.DescribeVpcsInput{}
+	if opt == nil {
+		return input
+	}
+	if len(opt.Filters) > 0 {
+		input.Filters = make([]*ec2.Filter, 0)
+		for i, _ := range opt.Filters {
+			filter := &ec2.Filter{Name: opt.Filters[i].Name, Values: opt.Filters[i].Values}
+			input.Filters = append(input.Filters, filter)
+		}
+	}
+	input.MaxResults = opt.Limit
+	// 按API要求，设置的MaxResults的取值范围为5～1000，不在该范围内的值会报错，这里设为最大值
+	input.MaxResults = ccom.Int64Ptr(int64(1000))
+	input.NextToken = opt.NextToken
+	return input
+}
+
+// 获取实例请求条件
+func (c *awsClient) newDescribeInstancesInput(opt *ccom.RequestOpt) *ec2.DescribeInstancesInput {
+	input := &ec2.DescribeInstancesInput{}
+	if opt == nil {
+		return input
+	}
+	if len(opt.Filters) > 0 {
+		input.Filters = make([]*ec2.Filter, 0)
+		for i, _ := range opt.Filters {
+			filter := &ec2.Filter{Name: opt.Filters[i].Name, Values: opt.Filters[i].Values}
+			input.Filters = append(input.Filters, filter)
+		}
+	}
+	input.MaxResults = opt.Limit
+	// 按API要求，设置的MaxResults的取值范围为5～1000，不在该范围内的值会报错，这里设为最大值
+	input.MaxResults = ccom.Int64Ptr(int64(1000))
+	input.NextToken = opt.NextToken
+	return input
+}
+
+// 获取vpc名称，没有vpc名称标签，则使用vpcid作为名称
 func (c *awsClient) getVpcName(vpc *ec2.Vpc) string {
 	if len(vpc.Tags) <= 0 {
-		return ""
+		return *vpc.VpcId
 	}
 	for _, tag := range vpc.Tags {
 		if *tag.Key == "Name" {
 			return *tag.Value
 		}
 	}
-	return ""
+	return *vpc.VpcId
 }
 
+// 获取实例名称，没有实例名称标签，则使用实例id作为名称
 func (c *awsClient) getInstanceName(inst *ec2.Instance) string {
 	if len(inst.Tags) <= 0 {
-		return ""
+		return *inst.InstanceId
 	}
 	for _, tag := range inst.Tags {
 		if *tag.Key == "Name" {
 			return *tag.Value
 		}
 	}
-	return ""
+	return *inst.InstanceId
 }
