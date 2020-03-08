@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common/paraparse"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -24,6 +23,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/paraparse"
 )
 
 func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
@@ -36,6 +36,11 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 
 	// 给资源池目录加上资源池(业务id)和空闲机池（集群id）, service_category_id, service_template_id
 	bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
+	if err != nil {
+		blog.ErrorJSON("CreateResourceDirectory fail with getResourcePoolIDAndSetID failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
 	data[common.BKAppIDField] = bizID
 	data[common.BKSetIDField] = setID
 	data[common.BKServiceCategoryIDField] = 0
@@ -59,37 +64,48 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	ctx.RespEntity(rsp.Data)
 }
 
-func (s *Service) getResourcePoolIDAndSetID(ctx *rest.Contexts) (interface{}, interface{}, error) {
+func (s *Service) getResourcePoolIDAndSetID(ctx *rest.Contexts) (int64, int64, error) {
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKDefaultField: 1},
 	}
-	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDApp, query)
+	bizRsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDApp, query)
 	if err != nil {
 		blog.ErrorJSON("getResourcePoolIDAndSetID, failed to find business by query condition: %s, err: %s, rid: %s", query, err.Error(), ctx.Kit.Rid)
 		return 0, 0, err
 	}
-	if !result.Result {
-		return 0, 0, ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+	if !bizRsp.Result {
+		return 0, 0, ctx.Kit.CCError.New(bizRsp.Code, bizRsp.ErrMsg)
 	}
-	if result.Data.Count <= 0 {
+	if bizRsp.Data.Count <= 0 {
 		return 0, 0, fmt.Errorf("get resource pool info success, but count < 0")
 	}
-	bizID := result.Data.Info[0][common.BKAppIDField]
 
-	query.Condition = mapstr.MapStr{common.BKAppIDField: bizID}
+	intBizID, err := bizRsp.Data.Info[0].Int64(common.BKAppIDField)
+	if err != nil {
+		blog.Errorf("getResourcePoolIDAndSetID, bizID convert to float64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
+		return 0, 0, err
+	}
+
+	query.Condition = mapstr.MapStr{common.BKAppIDField: intBizID}
 	setRsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, query)
 	if err != nil {
 		blog.ErrorJSON("getResourcePoolIDAndSetID, failed to find business by query condition: %s, err: %s, rid: %s", query, err.Error(), ctx.Kit.Rid)
 		return 0, 0, err
 	}
-	if !result.Result {
-		return 0, 0, ctx.Kit.CCError.New(result.Code, result.ErrMsg)
+	if !setRsp.Result {
+		return 0, 0, ctx.Kit.CCError.New(setRsp.Code, setRsp.ErrMsg)
 	}
-	if result.Data.Count <= 0 {
+	if setRsp.Data.Count <= 0 {
 		return 0, 0, fmt.Errorf("get set info success, but count < 0")
 	}
 
-	return bizID, setRsp.Data.Info[0][common.BKSetIDField], nil
+	intSetID, err := setRsp.Data.Info[0].Int64(common.BKSetIDField)
+	if err != nil {
+		blog.Errorf("getResourcePoolIDAndSetID, setID convert to float64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
+		return 0, 0, err
+	}
+
+	return intBizID, intSetID, nil
 }
 
 func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
@@ -142,7 +158,6 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
 		return
 	}
-
 	if input.Exact == false {
 		for k, v := range input.Condition {
 			if reflect.TypeOf(v).Kind() == reflect.String {
@@ -155,6 +170,17 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 		}
 	}
 
+	bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
+	if err != nil {
+		blog.ErrorJSON("SearchResourceDirectory fail with getResourcePoolIDAndSetID failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(input.Condition) == 0 {
+		input.Condition = mapstr.MapStr{}
+	}
+	input.Condition[common.BKAppIDField] = bizID
+	input.Condition[common.BKSetIDField] = setID
 	query := &metadata.QueryCondition{Condition: input.Condition}
 	rsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, query)
 	if err != nil {
@@ -167,9 +193,58 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(errors.New(rsp.Code, rsp.ErrMsg))
 		return
 	}
-	// todo host_count没加
 
-	ctx.RespEntity(rsp.Data)
+	moduleIDArr := make([]int64, 0)
+	mapModuleIdInfo := make(map[int64]mapstr.MapStr)
+	for _, item := range rsp.Data.Info {
+		moduleID, err := item.Int64(common.BKModuleIDField)
+		if err != nil {
+			blog.ErrorJSON("SearchResourceDirectory fail with moduleID convert from interface to int64 failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		moduleIDArr = append(moduleIDArr, moduleID)
+		mapModuleIdInfo[moduleID] = item
+	}
+
+	// count hosts
+	listHostOption := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		SetIDArr:      []int64{setID},
+		ModuleIDArr:   moduleIDArr,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostModuleRelations, e := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, listHostOption)
+	if e != nil {
+		blog.Errorf("GetInternalModuleWithStatistics failed, list host modules failed, option: %+v, err: %s, rid: %s", listHostOption, e.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(e)
+		return
+	}
+	moduleHostIDs := make(map[int64][]int64, 0)
+	for _, relation := range hostModuleRelations.Data.Info {
+		if _, ok := moduleHostIDs[relation.ModuleID]; ok == false {
+			moduleHostIDs[relation.ModuleID] = make([]int64, 0)
+		}
+		moduleHostIDs[relation.ModuleID] = append(moduleHostIDs[relation.ModuleID], relation.HostID)
+	}
+	retInfo := make([]mapstr.MapStr, 0)
+	for moduleID, moduleInfo := range mapModuleIdInfo {
+		for id, hostIDs := range moduleHostIDs {
+			moduleInfo["host_count"] = 0
+			if moduleID == id {
+				moduleInfo["host_count"] = len(hostIDs)
+			}
+			retInfo = append(retInfo, moduleInfo)
+			break
+		}
+	}
+
+	ret := make(map[string]interface{}, 0)
+	ret["count"] = len(retInfo)
+	ret["info"] = retInfo
+	ctx.RespEntity(ret)
 }
 
 func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
@@ -182,20 +257,8 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
-	blog.Debug(reflect.TypeOf(bizID), bizID)
-	intBizID, ok := bizID.(float64)
-	if !ok {
-		blog.Errorf("DeleteResourceDirectory, bizID convert to float64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	intSetID, ok := setID.(float64)
-	if !ok {
-		blog.Errorf("DeleteResourceDirectory, setID convert to float64 failed, err:%v, rid: %v", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	hasHost, err := s.hasHost(ctx, int64(intBizID), []int64{int64(intSetID)}, []int64{intModuleID})
+
+	hasHost, err := s.hasHost(ctx, bizID, []int64{setID}, []int64{intModuleID})
 	if err != nil {
 		blog.Errorf("DeleteResourceDirectory, check if resource directory has host failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
