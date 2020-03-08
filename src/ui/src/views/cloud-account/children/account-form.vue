@@ -1,5 +1,5 @@
 <template>
-    <div class="create-layout" slot="content">
+    <div class="create-layout" v-bkloading="{ isLoading: $loading([request.create, request.update]) }">
         <bk-form form-type="vertical">
             <bk-form-item class="create-form-item" :label="$t('账户名称')" required>
                 <bk-input class="create-form-meta"
@@ -19,10 +19,10 @@
                     data-vv-name="type"
                     v-model="form.bk_cloud_vendor"
                     v-validate="'required'">
-                    <bk-option v-for="type in typeList"
-                        :key="type.id"
-                        :name="type.name"
-                        :id="type.id">
+                    <bk-option v-for="vendor in vendors"
+                        :key="vendor.id"
+                        :name="vendor.name"
+                        :id="vendor.id">
                     </bk-option>
                 </bk-select>
                 <p class="create-form-error" v-if="errors.has('bk_cloud_vendor')">{{errors.first('bk_cloud_vendor')}}</p>
@@ -39,7 +39,12 @@
                 <p class="create-form-error" v-if="errors.has('bk_secret_id')">{{errors.first('bk_secret_id')}}</p>
             </bk-form-item>
             <bk-form-item class="create-form-item clearfix" label="Key" required>
-                <bk-button class="create-form-button fr" @click="handleTest">{{$t('连通测试')}}</bk-button>
+                <bk-button class="create-form-button fr"
+                    :disabled="!verifyAvailable"
+                    :loading="$loading(request.verify)"
+                    @click="handleTest">
+                    {{$t('连通测试')}}
+                </bk-button>
                 <bk-input class="create-form-meta key"
                     :placeholder="$t('请输入xx', { name: 'Key' })"
                     data-vv-as="Key"
@@ -47,14 +52,16 @@
                     v-model.trim="form.bk_secret_key"
                     v-validate="'required|length:256'">
                 </bk-input>
-                <p class="create-test-success" v-if="testState === 'success'">
-                    <i class="bk-icon icon-check-circle-shape"></i>
-                    {{$t('账户连通成功')}}
-                </p>
-                <p class="create-test-fail" v-else-if="testState === 'fail'">
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                    {{$t('账户连通失败')}}
-                </p>
+                <template v-if="verifyResult">
+                    <p class="create-verify-success" v-if="verifyResult.connected">
+                        <i class="bk-icon icon-check-circle-shape"></i>
+                        {{$t('账户连通成功')}}
+                    </p>
+                    <p class="create-verify-fail" v-else>
+                        <i class="bk-icon icon-close-circle-shape"></i>
+                        {{verifyResult.error_msg}}
+                    </p>
+                </template>
                 <p class="create-form-error" v-else-if="errors.has('bk_secret_key')">{{errors.first('bk_secret_key')}}</p>
             </bk-form-item>
             <bk-form-item class="create-form-item" :label="$t('备注')">
@@ -68,14 +75,15 @@
                 <p class="create-form-error" v-if="errors.has('bk_description')">{{errors.first('bk_description')}}</p>
             </bk-form-item>
             <bk-form-item class="create-form-options">
-                <bk-button class="mr10" theme="primary" @click.stop.prevent="handleSubmit">{{$t('提交')}}</bk-button>
-                <bk-button theme="default" @click.stop.prevent="handleCancel">{{$t('取消')}}</bk-button>
+                <bk-button class="mr10" theme="primary" @click.stop.prevent="handleSubmit">{{isCreateMode ? $t('提交') : $t('保存')}}</bk-button>
+                <bk-button theme="default" @click.stop.prevent="handleCancel(null)">{{$t('取消')}}</bk-button>
             </bk-form-item>
         </bk-form>
     </div>
 </template>
 
 <script>
+    import vendors from '@/dictionary/cloud-vendor'
     const DEFAULT_FORM = {
         bk_account_name: '',
         bk_cloud_vendor: '',
@@ -101,16 +109,31 @@
         },
         data () {
             return {
-                typeList: [],
+                vendors: vendors,
                 form: {
                     ...DEFAULT_FORM
                 },
-                testState: null
+                verifyResult: null,
+                request: {
+                    create: Symbol('create'),
+                    update: Symbol('update'),
+                    verify: Symbol('verify')
+                }
             }
         },
         computed: {
             isCreateMode () {
                 return this.mode === 'create'
+            },
+            verifyParams () {
+                return {
+                    bk_cloud_vendor: this.form.bk_cloud_vendor,
+                    bk_secret_id: this.form.bk_secret_id,
+                    bk_secret_key: this.form.bk_secret_key
+                }
+            },
+            verifyAvailable () {
+                return Object.values(this.verifyParams).every(value => !!value)
             }
         },
         created () {
@@ -119,8 +142,22 @@
             }
         },
         methods: {
-            handleTest () {
-                this.testState = 'fail'
+            async handleTest () {
+                try {
+                    this.verifyResult = null
+                    this.verifyResult = await this.$store.dispatch('cloudAccount/verify', {
+                        params: this.verifyParams,
+                        config: {
+                            requestId: this.request.verify
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                    this.verifyResult = {
+                        connected: false,
+                        error_msg: e.message
+                    }
+                }
             },
             async handleSubmit () {
                 const valid = await this.$validator.validateAll()
@@ -135,7 +172,12 @@
             },
             async doCreate () {
                 try {
-                    await Promise.resolve()
+                    await this.$store.dispatch('cloudAccount/create', {
+                        params: this.form,
+                        config: {
+                            requestId: this.request.create
+                        }
+                    })
                     this.$success('新建成功')
                     this.handleHide('request-refresh')
                 } catch (e) {
@@ -144,7 +186,13 @@
             },
             async doUpdate () {
                 try {
-                    await Promise.resolve({})
+                    await this.$store.dispatch('cloudAccount/update', {
+                        id: this.account.bk_account_id,
+                        params: this.form,
+                        config: {
+                            requestId: this.request.update
+                        }
+                    })
                     this.$success('修改成功')
                     this.handleCancel('request-refresh')
                 } catch (e) {
@@ -200,14 +248,14 @@
             line-height: 1.2;
             color: $dangerColor;
         }
-        .create-test-success {
+        .create-verify-success {
             font-size: 12px;
             line-height: 24px;
             .bk-icon {
                 color: $successColor;
             }
         }
-        .create-test-fail {
+        .create-verify-fail {
             font-size: 12px;
             line-height: 24px;
             .bk-icon {

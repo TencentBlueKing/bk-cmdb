@@ -23,6 +23,15 @@ const actions = {
         } catch (e) {
             return Promise.reject(e)
         }
+    },
+    verify (context, { params, config }) {
+        return $http.post('cloud/account/verify', params, config)
+    },
+    create (context, { params, config }) {
+        return $http.post('create/cloud/account', params, config)
+    },
+    update (context, { id, params, config }) {
+        return $http.put(`update/cloud/account/${id}`, params, config)
     }
 }
 

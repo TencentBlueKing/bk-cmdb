@@ -114,6 +114,7 @@
                 }
                 .bk-form-content {
                     color: #313238;
+                    font-size: 14px;
                 }
             }
         }
