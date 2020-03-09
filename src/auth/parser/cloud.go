@@ -42,9 +42,9 @@ var CloudAccountConfigs = []AuthConfig{
 		ResourceType:   meta.CloudAccount,
 		ResourceAction: meta.SkipAction,
 	}, {
-		Name:           "searchCloudAccountPattern",
+		Name:           "listCloudAccountPattern",
 		Description:    "查询云账户",
-		Pattern:        "/api/v3/search/cloud/account",
+		Pattern:        "/api/v3/findmany/cloud/account",
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.CloudAccount,
 		ResourceAction: meta.Find,

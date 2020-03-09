@@ -117,8 +117,6 @@ func (ps *parseStream) validateResourceAction() *parseStream {
 		ps.action = meta.Find
 	case "findMany":
 		ps.action = meta.FindMany
-	case "search":
-		ps.action = meta.FindMany
 
 	case "create":
 		ps.action = meta.Create

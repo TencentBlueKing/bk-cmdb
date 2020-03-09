@@ -254,7 +254,7 @@ func (u *URLPath) WithEvent(req *restful.Request) (isHit bool) {
 	return false
 }
 
-const verbs = "create|createmany|update|updatemany|delete|deletemany|find|findmany|search"
+const verbs = "create|createmany|update|updatemany|delete|deletemany|find|findmany"
 
 var procUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/proc/.*$", verbs))
 
