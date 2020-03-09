@@ -13,6 +13,7 @@
 package cloudsync
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -220,13 +221,13 @@ func (t *taskProcessor) SyncCloudResource() {
 
 // 获取资源同步任务表的所有任务
 func (t *taskProcessor) getTasksFromTable(ctx context.Context) ([]int64, error) {
-	results := make([]*metadata.CloudSyncTask, 0)
-	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(nil).All(ctx, &results)
+	result := make([]*metadata.CloudSyncTask, 0)
+	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(nil).All(ctx, &result)
 	if err != nil {
 		return nil, err
 	}
 	taskids := []int64{}
-	for _, v := range results {
+	for _, v := range result {
 		taskids = append(taskids, v.TaskID)
 	}
 	blog.V(3).Infof("getTasksFromTable len(taskids):%d", len(taskids))
@@ -280,20 +281,6 @@ func (t *taskProcessor) dispatchTasks(ctx context.Context, zkPath string) error 
 	return nil
 }
 
-// 根据任务id获取任务详情
-func (t *taskProcessor) getTaskDetail(taskid int64) (*metadata.CloudSyncTask, error) {
-	cond := map[string]interface{}{common.BKCloudSyncTaskID: taskid}
-	results := make([]*metadata.CloudSyncTask, 0)
-	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(cond).All(context.Background(), &results)
-	if err != nil {
-		return nil, err
-	}
-	if len(results) > 0 {
-		return results[0], nil
-	}
-	return nil, nil
-}
-
 // 添加属于自己的任务到当前任务队列
 func (t *taskProcessor) addTask(taskid int64) error {
 	if node, err := t.hashring.Get(fmt.Sprintf("%d", taskid)); err != nil {
@@ -329,16 +316,45 @@ func (t *taskProcessor) clearTaskList() {
 	t.tasklist = map[int64]bool{}
 }
 
-// 根据账号id获取账号详情
-func (t *taskProcessor) getAccountDetail(taskid int64) (*metadata.CloudAccount, error) {
-	cond := map[string]interface{}{common.BKCloudAccountIDField: taskid}
-	results := make([]*metadata.CloudAccount, 0)
-	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(cond).All(context.Background(), &results)
+// 根据任务id获取任务详情
+func (t *taskProcessor) getTaskDetail(taskid int64) (*metadata.CloudSyncTask, error) {
+	cond := mapstr.MapStr{common.BKCloudSyncTaskID: taskid}
+	result := make([]*metadata.CloudSyncTask, 0)
+	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(cond).All(context.Background(), &result)
 	if err != nil {
+		blog.Errorf("getTaskDetail err:%v", err.Error())
 		return nil, err
 	}
-	if len(results) > 0 {
-		return results[0], nil
+	if len(result) > 0 {
+		return result[0], nil
 	}
 	return nil, nil
+}
+
+// 根据账号id获取账号详情
+func (t *taskProcessor) getAccountDetail(accountID int64) (*metadata.CloudAccount, error) {
+	cond := mapstr.MapStr{common.BKCloudAccountID: accountID}
+	result := make([]*metadata.CloudAccount, 0)
+	err := t.db.Table(common.BKTableNameCloudAccount).Find(cond).All(context.Background(), &result)
+	if err != nil {
+		blog.Errorf("getAccountDetail err:%v", err.Error())
+		return nil, err
+	}
+	if len(result) > 0 {
+		return result[0], nil
+	}
+	return nil, nil
+}
+
+// 更新任务同步状态
+func (t *taskProcessor) updateTaskState(taskid int64, status int) error {
+	cond := mapstr.MapStr{common.BKCloudTaskID: taskid}
+	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
+	if err := t.db.Table(common.BKTableNameCloudSyncTask).Update(context.Background(), cond, option); err != nil {
+		if err != nil {
+			blog.Errorf("updateTaskState err:%v", err.Error())
+			return err
+		}
+	}
+	return nil
 }
