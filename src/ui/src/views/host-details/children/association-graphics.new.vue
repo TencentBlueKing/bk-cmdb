@@ -1,8 +1,9 @@
 <template>
     <div class="relation-topology-layout" :class="{ 'full-screen': fullScreen }" ref="layout">
-        <bk-button class="exit-full-screen icon-cc-resize-small" size="small" theme="default"
+        <bk-button class="exit-full-screen" size="small" theme="default"
             v-show="fullScreen"
             @click="toggleFullScreen(false)">
+            <i class="icon-cc-resize-small"></i>
             {{$t('退出')}}
         </bk-button>
         <div class="tolology-loading" v-bkloading="{ isLoading: $loading(getRelationRequestId) }">
@@ -435,12 +436,37 @@
                 }
             },
             getInstDetail (objId, instId) {
-                // 需要兼容不同实例的属性名称不一致
-                const inst = this.instanceMap[objId].find(inst => inst.bk_inst_id === instId || inst.bk_host_id === instId)
+                const instIdKey = this.getInstIdKey(objId)
+                const instNameKey = this.getInstNameKey(instIdKey)
+                const inst = this.instanceMap[objId].find(inst => inst[instIdKey] === instId)
                 return {
                     id: instId,
-                    name: inst['bk_inst_name'] ? inst['bk_inst_name'] : inst['bk_host_innerip']
+                    name: inst[instNameKey]
                 }
+            },
+            getInstIdKey (objId) {
+                const specialObj = {
+                    'host': 'bk_host_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_cloud_id',
+                    'module': 'bk_module_id',
+                    'set': 'bk_set_id'
+                }
+                if (specialObj.hasOwnProperty(objId)) {
+                    return specialObj[objId]
+                }
+                return 'bk_inst_id'
+            },
+            getInstNameKey (idKey) {
+                const nameKey = {
+                    'bk_host_id': 'bk_host_innerip',
+                    'bk_biz_id': 'bk_biz_name',
+                    'bk_cloud_id': 'bk_cloud_name',
+                    'bk_module_id': 'bk_module_name',
+                    'bk_set_id': 'bk_set_name',
+                    'bk_inst_id': 'bk_inst_name'
+                }
+                return nameKey[idKey]
             },
             getTopoElements (topoData, rootNodeId) {
                 const { association, instance } = topoData
@@ -671,6 +697,7 @@
                 })
             },
             toggleFullScreen (fullScreen) {
+                this.$store.commit('setLayoutStatus', { mainFullScreen: fullScreen })
                 this.fullScreen = fullScreen
             },
             fitMaxZoom (cy) {

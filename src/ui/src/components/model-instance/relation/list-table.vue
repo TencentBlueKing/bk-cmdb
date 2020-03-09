@@ -1,5 +1,5 @@
 <template>
-    <div class="table" v-show="instances.length" v-bkloading="{ isLoading: $loading(propertyRequest, instanceRequest) }">
+    <div class="table" v-bkloading="{ isLoading: loading }">
         <div class="table-info clearfix">
             <div class="info-title fl" @click="expanded = !expanded">
                 <i class="icon bk-icon icon-right-shape"
@@ -34,7 +34,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="updateAuthResources">
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_INST })">
                         <bk-button slot-scope="{ disabled }"
                             text
                             theme="primary"
@@ -58,10 +58,10 @@
 </template>
 
 <script>
+    import bus from '@/utils/bus.js'
     import { mapGetters } from 'vuex'
-    import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     export default {
-        name: 'cmdb-host-association-list-table',
+        name: 'cmdb-relation-list-table',
         props: {
             type: {
                 type: String,
@@ -73,6 +73,14 @@
             },
             associationType: {
                 type: Object,
+                required: true
+            },
+            source: {
+                type: Array,
+                required: true
+            },
+            target: {
+                type: Array,
                 required: true
             }
         },
@@ -100,26 +108,15 @@
                     target: null,
                     id: null,
                     show: false
-                }
+                },
+                targetInstances: this.target,
+                sourceInstances: this.source
             }
         },
         computed: {
-            ...mapGetters('hostDetails', [
-                'sourceInstances',
-                'targetInstances'
-            ]),
-            updateAuthResources () {
-                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
-                if (isResourceHost) {
-                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
-                }
-                return this.$authResources({ type: this.$OPERATION.U_HOST })
-            },
-            hostId () {
-                return parseInt(this.$route.params.id)
-            },
+            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             model () {
-                return this.$store.getters['objectModelClassify/getModelById'](this.id)
+                return this.getModelById(this.id) || {}
             },
             permissionAuth () {
                 const map = {
@@ -138,9 +135,6 @@
                     }]
                 }
                 return auth
-            },
-            isBusinessModel () {
-                return !!this.$tools.getMetadataBiz(this.model)
             },
             title () {
                 const desc = this.type === 'source' ? this.associationType.src_des : this.associationType.dest_des
@@ -180,8 +174,10 @@
                 })
                 return header
             },
-            expandAll () {
-                return this.$store.state.hostDetails.expandAll
+            loading () {
+                return this.$loading([
+                    this.propertyRequest
+                ])
             }
         },
         watch: {
@@ -190,14 +186,25 @@
                     this.getData()
                 }
             },
-            expandAll (expanded) {
-                this.expanded = expanded
-            },
             expanded (expanded) {
                 if (expanded) {
                     this.getData()
                 }
+            },
+            source (source) {
+                this.sourceInstances = source
+            },
+            target (target) {
+                this.targetInstances = target
             }
+        },
+        created () {
+            bus.$on('expand-all-relation-table', (expandAll) => {
+                this.expanded = expandAll
+            })
+        },
+        beforeDestroy () {
+            bus.$off('expand-all-relation-table')
         },
         methods: {
             getData () {
@@ -243,7 +250,7 @@
                     this.list = data.info
                     this.pagination.count = data.count
                 } catch (e) {
-                    console.error(e)
+                    console.warn(e)
                     this.list = []
                     this.pagination.count = 0
                 }
@@ -336,21 +343,26 @@
                 const idKey = keyMap[this.id] || 'bk_inst_id'
                 try {
                     const associationInstance = this.instances.find(instance => instance.bk_inst_id === item[idKey])
+                    const assoId = associationInstance.asso_id
                     await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
-                        id: associationInstance.asso_id,
+                        id: assoId,
                         config: {
                             data: {}
                         }
                     })
-                    this.$store.commit('hostDetails/deleteAssociation', {
-                        type: this.type,
-                        model: this.id,
-                        association: associationInstance
-                    })
-                    this.$nextTick(() => {
-                        this.pagination.current = 1
-                        this.getInstances()
-                    })
+
+                    // 操作关联数据就地触发更新
+                    const instances = this.type === 'source' ? this.targetInstances : this.sourceInstances
+                    const associations = instances.find(data => data.bk_obj_id === this.id)
+                    const index = associations.children.findIndex(association => association.asso_id === assoId)
+                    if (index > -1) {
+                        associations.children.splice(index, 1)
+                        const currentTotalPage = Math.ceil(associations.children.length / this.pagination.size)
+                        if (currentTotalPage > 0 && this.totalPage > currentTotalPage) {
+                            this.pagination.current -= 1
+                        }
+                    }
+
                     this.$success(this.$t('取消关联成功'))
                     this.hideTips()
                 } catch (e) {
@@ -420,6 +432,7 @@
             display: inline-block;
             vertical-align: middle;
             transition: transform .2s linear;
+            margin-top: -3px;
             &.is-open {
                 transform: rotate(90deg);
             }

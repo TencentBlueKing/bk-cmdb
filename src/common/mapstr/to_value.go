@@ -12,6 +12,10 @@
 
 package mapstr
 
+import (
+	"encoding/json"
+)
+
 func toBool(val interface{}) bool {
 	if val, ok := val.(bool); ok {
 		return val
@@ -37,7 +41,9 @@ func toInt(val interface{}) int {
 		return int(t)
 	case int8:
 		return int(t)
-
+	case json.Number:
+		data, _ := t.Int64()
+		return int(data)
 	}
 }
 
@@ -60,6 +66,9 @@ func toUint(val interface{}) uint {
 		return uint(t)
 	case uint8:
 		return uint(t)
+	case json.Number:
+		data, _ := t.Float64()
+		return uint(data)
 	}
 }
 
@@ -91,5 +100,8 @@ func toFloat(tagVal interface{}) float64 {
 		return float64(t)
 	case uint8:
 		return float64(t)
+	case json.Number:
+		data, _ := t.Float64()
+		return data
 	}
 }
