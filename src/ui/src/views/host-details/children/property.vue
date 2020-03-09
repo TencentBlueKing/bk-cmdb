@@ -51,7 +51,7 @@
                                 </bk-button>
                             </cmdb-auth>
                             <div class="property-form" v-if="property === editState.property">
-                                <div class="form-component">
+                                <div :class="['form-component', property.bk_property_type]">
                                     <component
                                         :is="`cmdb-form-${property.bk_property_type}`"
                                         :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
@@ -425,6 +425,10 @@
             &.bool {
                 width: 42px;
                 height: 24px;
+            }
+            &.longchar {
+                height: auto;
+                vertical-align: top;
             }
         }
     }

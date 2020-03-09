@@ -120,6 +120,7 @@ type SearchAssociationInstResult struct {
 }
 
 type CreateAssociationInstRequest struct {
+	*Metadata    `field:"metadata" json:"metadata" bson:"metadata"`
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
 	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
 	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
@@ -249,7 +250,7 @@ type Association struct {
 	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
 
-	//	define the metadata of assocication
+	//	define the metadata of association
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 

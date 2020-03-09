@@ -14,6 +14,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
 	testutil "configcenter/src/test/util"
@@ -67,7 +68,12 @@ func init() {
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
 	var err error
-	db, err = local.NewMgo(tConfig.MongoURI, time.Minute)
+	mongoConfig := local.MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          tConfig.MongoURI,
+	}
+	db, err = local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
 	client := zk.NewZkClient(tConfig.ZkAddr, 5*time.Second)
 	Expect(client.Start()).Should(BeNil())

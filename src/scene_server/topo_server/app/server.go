@@ -109,7 +109,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	db, err := local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
+	db, err := local.NewMgo(server.Config.Mongo.GetMongoConf(), time.Second*5)
 	if err != nil {
 		blog.Errorf("failed to connect the txc server, error info is %v", err)
 		return err
@@ -125,7 +125,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		enableTxn = true
 	}
 	blog.Infof("enableTxn is %t", enableTxn)
-
 
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
@@ -149,9 +148,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Engine:      engine,
 		AuthManager: authManager,
 		Es:          essrv,
-		Core:        core.New(engine.CoreAPI, authManager),
+		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
-		DB:         db,
+		DB:          db,
 		EnableTxn:   enableTxn,
 		Config:      server.Config,
 	}

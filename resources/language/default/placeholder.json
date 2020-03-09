@@ -4,5 +4,6 @@
     "process_placeholder_port": "单个端口：8080 </br>多个连续端口：8080-8089 </br>多个不连续端口：8080-8089,8199",
     "process_placeholder_bk_func_name": "程序的二进制名称</br> 比如zookeeper的二进制名称是java，则填java",
     "process_placeholder_bk_func_id": "对进程的数字型标注，便于快速检索",
+    "process_placeholder_bk_port_enable": "是否启动端口，默认值为true",
     "": ""
 }

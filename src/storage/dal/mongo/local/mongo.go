@@ -15,7 +15,6 @@ package local
 import (
 	"context"
 	"errors"
-
 	//"fmt"
 	"reflect"
 	"strings"
@@ -44,21 +43,26 @@ type Mongo struct {
 
 var _ dal.DB = new(Mongo)
 
+type MongoConf struct {
+	MaxOpenConns uint64
+	MaxIdleConns uint64
+	URI          string
+}
+
 // NewMgo returns new RDB
-func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
-	connStr, err := connstring.Parse(uri)
+func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
+	connStr, err := connstring.Parse(config.URI)
 	if nil != err {
 		return nil, err
 	}
 
-	minIdle := uint64(100)
-	maxIdle := uint64(3000)
 	conOpt := options.ClientOptions{
-		MaxPoolSize: &maxIdle,
-		MinPoolSize: &minIdle,
+		MaxPoolSize:    &config.MaxOpenConns,
+		MinPoolSize:    &config.MaxIdleConns,
+		ConnectTimeout: &timeout,
 	}
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(uri), &conOpt)
+	client, err := mongo.NewClient(options.Client().ApplyURI(config.URI), &conOpt)
 	if nil != err {
 		return nil, err
 	}

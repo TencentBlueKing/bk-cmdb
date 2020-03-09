@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"configcenter/src/common/util"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -21,23 +20,24 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // ClassificationOperationInterface classification operation methods
 type ClassificationOperationInterface interface {
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 
-	// FindSingleClassification(params types.ContextParams, classificationID string) (model.Classification, error)
-	CreateClassification(params types.ContextParams, data mapstr.MapStr) (model.Classification, error)
-	DeleteClassification(params types.ContextParams, id int64, data mapstr.MapStr, cond condition.Condition) error
-	FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error)
-	FindClassificationWithObjects(params types.ContextParams, cond condition.Condition) ([]metadata.ClassificationWithObject, error)
-	UpdateClassification(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error
+	// FindSingleClassification(kit *rest.Kit, classificationID string) (model.Classification, error)
+	CreateClassification(kit *rest.Kit, data mapstr.MapStr) (model.Classification, error)
+	DeleteClassification(kit *rest.Kit, id int64, cond condition.Condition, metadata *metadata.Metadata) error
+	FindClassification(kit *rest.Kit, cond condition.Condition, metadata *metadata.Metadata) ([]model.Classification, error)
+	FindClassificationWithObjects(kit *rest.Kit, cond condition.Condition, metadata *metadata.Metadata) ([]metadata.ClassificationWithObject, error)
+	UpdateClassification(kit *rest.Kit, data mapstr.MapStr, id int64, cond condition.Condition) error
 }
 
 // NewClassificationOperation create a new classification operation instance
@@ -64,11 +64,11 @@ func (c *classification) SetProxy(modelFactory model.Factory, instFactory inst.F
 	c.obj = obj
 }
 
-func (c *classification) CreateClassification(params types.ContextParams, data mapstr.MapStr) (model.Classification, error) {
-	cls := c.modelFactory.CreateClassification(params)
+func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr) (model.Classification, error) {
+	cls := c.modelFactory.CreateClassification(kit)
 	_, err := cls.Parse(data)
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to parse the params, error info is %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("[operation-cls]failed to parse the kit, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
 
@@ -83,27 +83,27 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 	// 	}
 	// }
 	//
-	// if err := c.authManager.AuthorizeResourceCreate(params.Context, params.Header, businessID, meta.ModelClassification); err != nil {
-	// 	blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v, rid: %s", class, err, params.ReqID)
+	// if err := c.authManager.AuthorizeResourceCreate(kit.Ctx, kit.Header, businessID, metaData.ModelClassification); err != nil {
+	// 	blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v, rid: %s", class, err, kit.Rid)
 	// 	return nil, err
 	// }
 
 	err = cls.Create()
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to save the classification(%#v), error info is %s, rid: %s", cls, err.Error(), params.ReqID)
+		blog.Errorf("[operation-cls]failed to save the classification(%#v), error info is %s, rid: %s", cls, err.Error(), kit.Rid)
 		return nil, err
 	}
 
 	// auth: register new created classify
 	class := cls.Classify()
-	if err := c.authManager.RegisterClassification(params.Context, params.Header, class); err != nil {
-		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+	if err := c.authManager.RegisterClassification(kit.Ctx, kit.Header, class); err != nil {
+		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
 	return cls, nil
 }
 
-func (c *classification) DeleteClassification(params types.ContextParams, id int64, data mapstr.MapStr, cond condition.Condition) error {
+func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond condition.Condition, metaData *metadata.Metadata) error {
 
 	if 0 < id {
 		if nil == cond {
@@ -112,11 +112,11 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		cond.Field(metadata.ClassificationFieldID).Eq(id)
 	}
 
-	if nil != params.MetaData {
-		cond.Field(metadata.BKMetadata).Eq(*params.MetaData)
+	if nil != metaData {
+		cond.Field(metadata.BKMetadata).Eq(*metaData)
 	}
 
-	clsItems, err := c.FindClassification(params, cond)
+	clsItems, err := c.FindClassification(kit, cond, metaData)
 	if nil != err {
 		return err
 	}
@@ -128,48 +128,48 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		}
 
 		if 0 != len(objs) {
-			blog.Warnf("[operation-cls] the classification(%s) has some objects, forbidden to delete, rid: %s", cls.Classify().ClassificationID, params.ReqID)
-			return params.Err.Error(common.CCErrTopoObjectClassificationHasObject)
+			blog.Warnf("[operation-cls] the classification(%s) has some objects, forbidden to delete, rid: %s", cls.Classify().ClassificationID, kit.Rid)
+			return kit.CCError.Error(common.CCErrTopoObjectClassificationHasObject)
 		}
 
-		if err := c.authManager.DeregisterClassification(params.Context, params.Header, cls.Classify()); err != nil {
-			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		if err := c.authManager.DeregisterClassification(kit.Ctx, kit.Header, cls.Classify()); err != nil {
+			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 
 	}
 
-	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
+	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to delete the classification, error info is %s, rid: %s", rsp.ErrMsg, params.ReqID)
-		return params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("failed to delete the classification, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
+		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
 }
 
-func (c *classification) FindClassificationWithObjects(params types.ContextParams, cond condition.Condition) ([]metadata.ClassificationWithObject, error) {
+func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]metadata.ClassificationWithObject, error) {
 	fCond := cond.ToMapStr()
-	if nil != params.MetaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+	if nil != metaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
 		fCond.Remove(metadata.BKMetadata)
 	} else {
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 
-	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", fCond, rsp.ErrMsg, params.ReqID)
-		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", fCond, rsp.ErrMsg, kit.Rid)
+		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	clsIDs := make([]string, 0)
@@ -178,14 +178,14 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	}
 	clsIDs = util.StrArrayUnique(clsIDs)
 	queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).In(clsIDs)
-	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
+	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), kit.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
 	if !queryObjectResp.Result {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", fCond, queryObjectResp.ErrMsg, params.ReqID)
-		return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", fCond, queryObjectResp.ErrMsg, kit.Rid)
+		return nil, kit.CCError.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
 	}
 	objMap := make(map[string][]metadata.Object)
 	objIDs := make([]string, 0)
@@ -209,35 +209,35 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	return datas, nil
 }
 
-func (c *classification) FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error) {
+func (c *classification) FindClassification(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]model.Classification, error) {
 	fCond := cond.ToMapStr()
-	if nil != params.MetaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+	if nil != metaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*metaData))
 		fCond.Remove(metadata.BKMetadata)
 	} else {
 		// fCond.Merge(metadata.BizLabelNotExist)
 	}
 
-	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), kit.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), params.ReqID)
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, params.ReqID)
-		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s, rid: %s", cond.ToMapStr(), rsp.ErrMsg, kit.Rid)
+		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	clsItems := model.CreateClassification(params, c.clientSet, rsp.Data.Info)
+	clsItems := model.CreateClassification(kit, c.clientSet, rsp.Data.Info, metaData)
 	return clsItems, nil
 }
 
-func (c *classification) UpdateClassification(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error {
-	cls := c.modelFactory.CreateClassification(params)
+func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr, id int64, cond condition.Condition) error {
+	cls := c.modelFactory.CreateClassification(kit)
 	data.Set("id", id)
 	if _, err := cls.Parse(data); err != nil {
-		blog.Errorf("update classification, but parse classification failed, err：%v, rid: %s", err, params.ReqID)
+		blog.Errorf("update classification, but parse classification failed, err：%v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -245,27 +245,27 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 	class.ID = id
 
 	// auth: check authorization
-	// if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, class); err != nil {
-	// 	blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v, rid: %s", class, err, params.ReqID)
+	// if err := c.authManager.AuthorizeByClassification(kit.Ctx, kit.Header, metaData.Update, class); err != nil {
+	// 	blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v, rid: %s", class, err, kit.Rid)
 	// 	return err
 	// }
 
 	err := cls.Update(data)
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s, rid: %s", cls, err.Error(), params.ReqID)
+		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s, rid: %s", cls, err.Error(), kit.Rid)
 		return err
 	}
 
 	// auth: update registered classifications
 	if len(class.ClassificationID) > 0 {
-		if err := c.authManager.UpdateRegisteredClassificationByID(params.Context, params.Header, class.ClassificationID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, params.ReqID)
-			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		if err := c.authManager.UpdateRegisteredClassificationByID(kit.Ctx, kit.Header, class.ClassificationID); err != nil {
+			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
+			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 	} else {
-		if err := c.authManager.UpdateRegisteredClassificationByRawID(params.Context, params.Header, class.ID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, params.ReqID)
-			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		if err := c.authManager.UpdateRegisteredClassificationByRawID(kit.Ctx, kit.Header, class.ID); err != nil {
+			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
+			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 	}
 

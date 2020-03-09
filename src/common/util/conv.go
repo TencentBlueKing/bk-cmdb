@@ -82,9 +82,7 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 	case uint64:
 		id = int64(a.(uint64))
 	case json.Number:
-		var tmpID int64
-		tmpID, err = a.(json.Number).Int64()
-		id = int64(tmpID)
+		id, err = a.(json.Number).Int64()
 	case float64:
 		tmpID := a.(float64)
 		id = int64(tmpID)

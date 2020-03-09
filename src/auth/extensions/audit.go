@@ -136,7 +136,7 @@ func (am *AuthManager) RegisterAuditCategories(ctx context.Context, header http.
 
 // MakeAuthorizedAuditListCondition make a query condition, with which user can only search audit log under it.
 // ==> [{"bk_biz_id":2,"op_target":{"$in":["module"]}}]
-func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, header http.Header, businessID int64) (cond []mapstr.MapStr, hasAuthorization bool, err error) {
+func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, header http.Header, businessID int64) (cond []map[string]interface{}, hasAuthorization bool, err error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// businessID 0 means audit log priority of special model on any business
 
@@ -157,7 +157,7 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 	businessIDs = append(businessIDs, 0)
 	blog.V(5).Infof("audit on business %+v to be check", businessIDs)
 
-	authorizedBusinessModelMap := map[int64][]string{}
+	cond = make([]map[string]interface{}, 0)
 	for _, businessID := range businessIDs {
 		auditList, err := am.Authorize.GetAuthorizedAuditList(ctx, commonInfo.User, businessID)
 		if err != nil {
@@ -167,7 +167,8 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 		blog.Infof("get authorized audit by business %d result: %s", businessID, auditList)
 		blog.InfoJSON("get authorized audit by business %s result: %s", businessID, auditList)
 
-		modelIDs := make([]string, 0)
+		resourceTypes := make([]metadata.ResourceType, 0)
+		auditTypes := make([]metadata.AuditType, 0)
 		for _, authorizedList := range auditList {
 			for _, resourceID := range authorizedList.ResourceIDs {
 				if len(resourceID) == 0 {
@@ -175,38 +176,27 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 				}
 				modelID := resourceID[len(resourceID)-1].ResourceID
 				id := util.GetStrByInterface(modelID)
-				modelIDs = append(modelIDs, id)
+				resourceTypes = append(resourceTypes, metadata.GetResourceTypeByObjID(id))
+				auditTypes = append(auditTypes, metadata.GetAuditTypeByObjID(id))
 			}
 		}
 
-		if len(modelIDs) == 0 {
+		if len(resourceTypes) == 0 {
 			continue
 		}
-		authorizedBusinessModelMap[businessID] = modelIDs
-	}
-
-	cond = make([]mapstr.MapStr, 0)
-
-	// extract authorization on any business
-	if _, ok := authorizedBusinessModelMap[0]; ok {
-		if len(authorizedBusinessModelMap[0]) > 0 {
-			hasAuthorization = true
-			item := condition.CreateCondition()
-			item.Field(common.BKOpTargetField).In(authorizedBusinessModelMap[0])
-
-			cond = append(cond, item.ToMapStr())
-			delete(authorizedBusinessModelMap, 0)
-		}
-	}
-
-	// extract authorization on special business and object
-	for businessID, objectIDs := range authorizedBusinessModelMap {
 		hasAuthorization = true
-		item := condition.CreateCondition()
-		item.Field(common.BKOpTargetField).In(objectIDs)
-		item.Field(common.BKAppIDField).Eq(businessID)
-
-		cond = append(cond, item.ToMapStr())
+		item := map[string]interface{}{
+			common.BKResourceTypeField: map[string]interface{}{
+				common.BKDBIN: resourceTypes,
+			},
+			common.BKAuditTypeField: map[string]interface{}{
+				common.BKDBIN: auditTypes,
+			},
+		}
+		if businessID != 0 {
+			item[common.BKAppIDField] = businessID
+		}
+		cond = append(cond, item)
 	}
 
 	blog.V(5).Infof("MakeAuthorizedAuditListCondition result: %+v, rid: %s", cond, rid)

@@ -14,12 +14,23 @@ package service
 
 import (
 	"net/http"
+
+	"configcenter/src/common/http/rest"
+
+	"github.com/emicklei/go-restful"
 )
 
 /*
 	be careful: path has internal prefix shouldn't be route by api-server
 */
 
-func (s *Service) initInternalTask() {
-	s.addAction(http.MethodPost, "/internal/task", s.SyncModuleTaskHandler, nil)
+func (s *Service) initInternalTask(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/internal/task", Handler: s.SyncModuleTaskHandler})
+
+	utility.AddToRestfulWebService(web)
 }

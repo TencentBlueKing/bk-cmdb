@@ -143,7 +143,7 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metada
 
 	fields := make([]Property, 0)
 	noRequiredField := make([]Property, 0)
-	index := 0
+	index := 1
 	// 第一步，根据字段分组，对必填字段排序；并选出非必填字段
 	for _, group := range groups {
 		for _, field := range sortedFields {
@@ -285,7 +285,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		Name:          "",
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
-		ExcelColIndex: 0,
+		ExcelColIndex: 1, // why set ExcelColIndex=1? because ExcelColIndex=0 used by tip column
 	}
 
 	switch objID {

@@ -171,6 +171,7 @@ func (s *coreService) CountSetTplInstances(ctx *rest.Contexts) {
 		} else {
 			blog.Errorf("CountSetTplInstances failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommDBSelectFailed))
+			return
 		}
 	}
 

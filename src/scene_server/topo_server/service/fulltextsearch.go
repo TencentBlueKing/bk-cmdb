@@ -8,10 +8,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/types"
-
 	"github.com/olivere/elastic"
 )
 
@@ -56,35 +54,39 @@ func NewQuery() *Query {
 	return query
 }
 
-func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) FullTextFind(ctx *rest.Contexts) {
 	if s.Es.Client == nil {
-		blog.Errorf("FullTextFind failed, es client is nil, rid: %s", params.ReqID)
-		return nil, params.Err.Error(common.CCErrorTopoFullTextClientNotInitialized)
-	}
-
-	if _, exist := data["query_string"]; exist == false {
-		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+		blog.Errorf("FullTextFind failed, es client is nil, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextClientNotInitialized))
+		return
 	}
 
 	query := NewQuery()
-	if err := data.MarshalJSONInto(query); err != nil {
-		blog.Errorf("full_text_find failed, import query params, but got invalid query params:[%v], err: %+v, rid: %s", query, err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommJSONMarshalFailed)
+	if err := ctx.DecodeInto(query); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if query.QueryString == "" {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		return
 	}
 
 	// check query string
 	rawString, ok := query.checkQueryString()
 	if !ok {
-		blog.Errorf("full_text_find failed, query string [%s] large than 32, rid: %s", rawString, params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "query_string")
+		blog.Errorf("full_text_find failed, query string [%s] large than 32, rid: %s", rawString, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "query_string"))
+		return
 	}
 	// get query and search types
 	esQuery, searchTypes := query.toEsQueryAndSearchTypes()
 
-	result, err := s.Es.Search(params.Context, esQuery, searchTypes, query.Paging.Start, query.Paging.Limit)
+	result, err := s.Es.Search(ctx.Kit.Ctx, esQuery, searchTypes, query.Paging.Start, query.Paging.Limit)
 	if err != nil {
-		blog.Errorf("full_text_find failed, es search failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
+		blog.Errorf("full_text_find failed, es search failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
+		return
 	}
 
 	// result is hits and aggregations
@@ -96,7 +98,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		// ignore not correct cmdb table data
 		if hit.Index == common.CMDBINDEX && hit.Id != common.INDICES {
 			sr := SearchResult{}
-			sr.setHit(params.Context, hit, query.BkBizId, rawString)
+			sr.setHit(ctx.Kit.Ctx, hit, query.BkBizId, rawString)
 			searchResults.Hits = append(searchResults.Hits, sr)
 		}
 	}
@@ -146,7 +148,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		}
 		searchResults.Aggregations = append(searchResults.Aggregations, agg)
 	}
-	return searchResults, nil
+	ctx.RespEntity(searchResults)
 }
 
 func (query Query) checkQueryString() (string, bool) {
