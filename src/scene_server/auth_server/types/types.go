@@ -13,8 +13,10 @@
 package types
 
 import (
-	"configcenter/src/ac/iam"
 	"encoding/json"
+	"fmt"
+
+	"configcenter/src/ac/iam"
 )
 
 const (
@@ -103,6 +105,8 @@ func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 			return err
 		}
 		req.Filter = filter
+	default:
+		return fmt.Errorf("method %s is not supported", data.Method)
 	}
 	return nil
 }
@@ -113,9 +117,10 @@ type Page struct {
 }
 
 type ListAttrValueFilter struct {
-	Attr    string        `json:"attr"`
-	Keyword string        `json:"keyword,omitempty"`
-	IDs     []interface{} `json:"ids,omitempty"` // id type is string, int or bool
+	Attr    string `json:"attr"`
+	Keyword string `json:"keyword,omitempty"`
+	// id type is string, int or bool
+	IDs []interface{} `json:"ids,omitempty"`
 }
 
 type ListInstanceFilter struct {
@@ -177,7 +182,8 @@ type ListAttrValueResult struct {
 }
 
 type AttrValueResource struct {
-	ID          interface{} `json:"id"` // string, int or bool
+	// id type is string, int or bool
+	ID          interface{} `json:"id"`
 	DisplayName string      `json:"display_name"`
 }
 

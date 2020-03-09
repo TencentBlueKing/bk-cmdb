@@ -43,7 +43,7 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 		Discover: &iamDiscovery{
 			servers: cfg.Address,
 		},
-		Throttle: flowctrl.NewRateLimiter(1000, 1000),
+		Throttle: flowctrl.NewRateLimiter(5000, 5000),
 		Mock: util.MockInfo{
 			Mocked: false,
 		},
