@@ -46,7 +46,7 @@ func (c *cloud) CreateAccount(ctx context.Context, h http.Header, account *metad
 
 func (c *cloud) SearchAccount(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleCloudAccountResult)
-	subPath := "/search/cloud/account"
+	subPath := "/findmany/cloud/account"
 
 	err := c.client.Post().
 		WithContext(ctx).
@@ -137,7 +137,7 @@ func (c *cloud) CreateSyncTask(ctx context.Context, h http.Header, account *meta
 
 func (c *cloud) SearchSyncTask(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleCloudSyncTaskResult)
-	subPath := "/search/cloud/sync/task"
+	subPath := "/findmany/cloud/sync/task"
 
 	err := c.client.Post().
 		WithContext(ctx).

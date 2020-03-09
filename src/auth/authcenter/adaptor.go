@@ -174,6 +174,7 @@ const (
 	SysAuditLog           ResourceTypeID = "sys_audit_log"
 	SysOperationStatistic ResourceTypeID = "sys_operation_statistic"
 	SysCloudAccount       ResourceTypeID = "sys_cloud_account"
+	SysCloudResourceTask  ResourceTypeID = "sys_cloud_resource_task"
 )
 
 // Business Resource
