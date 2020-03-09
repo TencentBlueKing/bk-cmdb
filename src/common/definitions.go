@@ -486,8 +486,6 @@ const (
 
 	HostApplyRuleIDField = "host_apply_rule_id"
 
-	BKCloudAccountIDField = "bk_account_id"
-
 	BKParentIDField = "bk_parent_id"
 	BKRootIDField   = "bk_root_id"
 
@@ -1155,4 +1153,11 @@ type LanguageType string
 const (
 	Chinese LanguageType = "zh-cn"
 	English LanguageType = "en"
+)
+
+// cloud sync const
+const (
+	BKCloudAccountIDField = "bk_account_id"
+	BKCloudAccountName = "bk_account_name"
+	BKCloudVendor = "bk_cloud_vendor"
 )

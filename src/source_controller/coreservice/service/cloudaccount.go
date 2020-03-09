@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -62,18 +63,18 @@ func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
 		return
 	}
 
-	account := metadata.CloudAccount{}
-	if err := ctx.DecodeInto(&account); err != nil {
+	option := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	result, err := s.core.CloudOperation().UpdateAccount(ctx.Kit, accountID, &account)
+	err = s.core.CloudOperation().UpdateAccount(ctx.Kit, accountID, option)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(result)
+	ctx.RespEntity(nil)
 }
 
 // 删除云账户
