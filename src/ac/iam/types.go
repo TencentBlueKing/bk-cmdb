@@ -12,14 +12,33 @@
 
 package iam
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"strings"
+	"sync"
+
+	"configcenter/src/common/auth"
+)
 
 const (
-	iamRequestHeader   = "X-Request-Id"
+	IamRequestHeader   = "X-Request-Id"
 	iamAppCodeHeader   = "X-Bk-App-Code"
 	iamAppSecretHeader = "X-Bk-App-Secret"
 
-	systemID = "bk_iam"
+	SystemIDCMDB     = "bk_cmdb"
+	SystemNameCMDBEn = "cmdb"
+	SystemNameCMDB   = "配置平台"
+
+	ScopeTypeIDSystem       = "system"
+	ScopeTypeIDSystemName   = "全局"
+	ScopeTypeIDSystemNameEn = "system"
+
+	ScopeTypeIDBiz       = "biz"
+	ScopeTypeIDBizName   = "业务"
+	ScopeTypeIDBizNameEn = "business"
+
+	SystemIDIAM = "bk_iam"
 )
 
 type AuthConfig struct {
@@ -32,6 +51,48 @@ type AuthConfig struct {
 	// the system id that cmdb used in auth center.
 	// default value: bk_cmdb
 	SystemID string
+}
+
+func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, error) {
+	var cfg AuthConfig
+
+	if !auth.IsAuthed() {
+		return AuthConfig{}, nil
+	}
+
+	address, exist := configMap[prefix+".address"]
+	if !exist {
+		return cfg, errors.New(`missing "address" configuration for auth center`)
+	}
+	cfg.Address = strings.Split(strings.Replace(address, " ", "", -1), ",")
+	if len(cfg.Address) == 0 {
+		return cfg, errors.New(`invalid "address" configuration for auth center`)
+	}
+	for i := range cfg.Address {
+		if !strings.HasSuffix(cfg.Address[i], "/") {
+			cfg.Address[i] = cfg.Address[i] + "/"
+		}
+	}
+
+	cfg.AppSecret, exist = configMap[prefix+".appSecret"]
+	if !exist {
+		return cfg, errors.New(`missing "appSecret" configuration for auth center`)
+	}
+	if len(cfg.AppSecret) == 0 {
+		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
+	}
+
+	cfg.AppCode, exist = configMap[prefix+".appCode"]
+	if !exist {
+		return cfg, errors.New(`missing "appCode" configuration for auth center`)
+	}
+	if len(cfg.AppCode) == 0 {
+		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
+	}
+
+	cfg.SystemID = SystemIDCMDB
+
+	return cfg, nil
 }
 
 type System struct {
@@ -80,16 +141,19 @@ func (a *AuthError) Error() string {
 type ResourceTypeID string
 
 const (
-	SysSystemBase         ResourceTypeID = "sys_system_base"
-	SysBusinessInstance   ResourceTypeID = "sys_business_instance"
-	SysHostInstance       ResourceTypeID = "sys_host_instance"
-	SysEventPushing       ResourceTypeID = "sys_event_pushing"
-	SysModelGroup         ResourceTypeID = "sys_model_group"
-	SysModel              ResourceTypeID = "sys_model"
-	SysInstance           ResourceTypeID = "sys_instance"
-	SysAssociationType    ResourceTypeID = "sys_association_type"
-	SysAuditLog           ResourceTypeID = "sys_audit_log"
-	SysOperationStatistic ResourceTypeID = "sys_operation_statistic"
+	SysSystemBase            ResourceTypeID = "sys_system_base"
+	SysHostInstance          ResourceTypeID = "sys_host_instance"
+	SysEventPushing          ResourceTypeID = "sys_event_pushing"
+	SysModelGroup            ResourceTypeID = "sys_model_group"
+	SysModel                 ResourceTypeID = "sys_model"
+	SysInstance              ResourceTypeID = "sys_instance"
+	SysAssociationType       ResourceTypeID = "sys_association_type"
+	SysAuditLog              ResourceTypeID = "sys_audit_log"
+	SysOperationStatistic    ResourceTypeID = "sys_operation_statistic"
+	SysResourcePoolDirectory ResourceTypeID = "sys_resource_pool_directory"
+	SysCloudArea             ResourceTypeID = "sys_cloud_area"
+	SysCloudAccount          ResourceTypeID = "sys_cloud_account"
+	SysCloudResourceTask     ResourceTypeID = "sys_cloud_resource_task"
 )
 
 const (
@@ -97,8 +161,7 @@ const (
 	BizHostInstance           ResourceTypeID = "biz_host_instance"
 	BizCustomQuery            ResourceTypeID = "biz_custom_query"
 	BizTopology               ResourceTypeID = "biz_topology"
-	BizModelGroup             ResourceTypeID = "biz_model_group"
-	BizModel                  ResourceTypeID = "biz_model"
+	BizCustomField            ResourceTypeID = "biz_custom_field"
 	BizProcessServiceTemplate ResourceTypeID = "biz_process_service_template"
 	BizProcessServiceCategory ResourceTypeID = "biz_process_service_category"
 	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
@@ -143,22 +206,15 @@ const (
 type ResourceActionID string
 
 const (
-	CreateBusinessHost ResourceActionID = "create_biz_host"
-	EditBusinessHost   ResourceActionID = "edit_biz_host"
-	RemoveBusinessHost ResourceActionID = "remove_biz_host"
-	
+	EditBusinessHost                   ResourceActionID = "edit_biz_host"
+	BusinessHostTransferToResourcePool ResourceActionID = "biz_host_transfer_to_resource_pool"
+
 	CreateBusinessCustomQuery ResourceActionID = "create_biz_dynamic_query"
 	EditBusinessCustomQuery   ResourceActionID = "edit_biz_dynamic_query"
 	DeleteBusinessCustomQuery ResourceActionID = "delete_biz_dynamic_query"
 	FindBusinessCustomQuery   ResourceActionID = "find_biz_dynamic_query"
 
-	CreateBusinessModel ResourceActionID = "create_biz_model"
-	EditBusinessModel   ResourceActionID = "edit_biz_model"
-	DeleteBusinessModel ResourceActionID = "delete_biz_model"
-
-	CreateBusinessModelGroup ResourceActionID = "create_biz_model_group"
-	EditBusinessModelGroup   ResourceActionID = "edit_biz_model_group"
-	DeleteBusinessModelGroup ResourceActionID = "delete_biz_model_group"
+	EditBusinessCustomField ResourceActionID = "edit_biz_custom_field"
 
 	CreateBusinessServiceCategory ResourceActionID = "create_biz_service_category"
 	EditBusinessServiceCategory   ResourceActionID = "edit_biz_service_category"
@@ -167,20 +223,84 @@ const (
 	CreateBusinessServiceInstance ResourceActionID = "create_biz_service_instance"
 	EditBusinessServiceInstance   ResourceActionID = "edit_biz_service_instance"
 	DeleteBusinessServiceInstance ResourceActionID = "delete_biz_service_instance"
-	
+
 	CreateBusinessServiceTemplate ResourceActionID = "create_biz_service_template"
 	EditBusinessServiceTemplate   ResourceActionID = "edit_biz_service_template"
 	DeleteBusinessServiceTemplate ResourceActionID = "delete_biz_service_template"
-	
+
 	CreateBusinessSetTemplate ResourceActionID = "create_biz_set_template"
 	EditBusinessSetTemplate   ResourceActionID = "edit_biz_set_template"
 	DeleteBusinessSetTemplate ResourceActionID = "delete_biz_set_template"
-	
+
 	CreateBusinessTopology ResourceActionID = "create_biz_topology"
 	EditBusinessTopology   ResourceActionID = "edit_biz_topology"
 	DeleteBusinessTopology ResourceActionID = "delete_biz_topology"
-	
-	
+
+	EditBusinessHostApply ResourceActionID = "edit_biz_host_apply"
+
+	CreateResourcePoolHost              ResourceActionID = "create_resource_pool_host"
+	EditResourcePoolHost                ResourceActionID = "edit_resource_pool_host"
+	DeleteResourcePoolHost              ResourceActionID = "delete_resource_pool_host"
+	ResourcePoolHostTransferToBusiness  ResourceActionID = "resource_pool_host_transfer_to_biz"
+	ResourcePoolHostTransferToDirectory ResourceActionID = "resource_pool_host_transfer_to_directory"
+
+	CreateResourcePoolDirectory ResourceActionID = "create_resource_pool_directory"
+	EditResourcePoolDirectory   ResourceActionID = "edit_resource_pool_directory"
+	DeleteResourcePoolDirectory ResourceActionID = "delete_resource_pool_directory"
+
+	CreateBusiness  ResourceActionID = "create_business"
+	EditBusiness    ResourceActionID = "edit_business"
+	ArchiveBusiness ResourceActionID = "archive_business"
+	FindBusiness    ResourceActionID = "find_business"
+
+	CreateCloudArea ResourceActionID = "create_cloud_area"
+	EditCloudArea   ResourceActionID = "edit_cloud_area"
+	DeleteCloudArea ResourceActionID = "delete_cloud_area"
+
+	CreateInstance ResourceActionID = "create_instance"
+	EditInstance   ResourceActionID = "edit_instance"
+	DeleteInstance ResourceActionID = "delete_instance"
+	FindInstance   ResourceActionID = "find_instance"
+
+	CreateEventPushing ResourceActionID = "create_event_subscription"
+	EditEventPushing   ResourceActionID = "edit_event_subscription"
+	DeleteEventPushing ResourceActionID = "delete_event_subscription"
+	FindEventPushing   ResourceActionID = "find_event_subscription"
+
+	CreateCloudAccount ResourceActionID = "create_cloud_account"
+	EditCloudAccount   ResourceActionID = "edit_cloud_account"
+	DeleteCloudAccount ResourceActionID = "delete_cloud_account"
+	FindCloudAccount   ResourceActionID = "find_cloud_account"
+
+	CreateCloudResourceTask ResourceActionID = "create_cloud_resource_task"
+	EditCloudResourceTask   ResourceActionID = "edit_cloud_resource_task"
+	DeleteCloudResourceTask ResourceActionID = "delete_cloud_resource_task"
+	FindCloudResourceTask   ResourceActionID = "find_cloud_resource_task"
+
+	CreateModel ResourceActionID = "create_model"
+	EditModel   ResourceActionID = "edit_model"
+	DeleteModel ResourceActionID = "delete_model"
+	FindModel   ResourceActionID = "find_model"
+
+	CreateAssociationType ResourceActionID = "create_association_type"
+	EditAssociationType   ResourceActionID = "edit_association_type"
+	DeleteAssociationType ResourceActionID = "delete_association_type"
+
+	CreateModelGroup ResourceActionID = "create_model_group"
+	EditModelGroup   ResourceActionID = "edit_model_group"
+	DeleteModelGroup ResourceActionID = "delete_model_group"
+
+	EditBusinessLayer ResourceActionID = "edit_business_layer"
+
+	EditModelTopologyView ResourceActionID = "edit_model_topology_view"
+
+	FindOperationStatistic ResourceActionID = "find_operation_statistic"
+	EditOperationStatistic ResourceActionID = "edit_operation_statistic"
+
+	FindAuditLog ResourceActionID = "find_audit_log"
+
+	// Unknown is an action that can not be recognized
+	Unknown ResourceActionID = "unknown"
 )
 
 type ResourceAction struct {
@@ -224,4 +344,52 @@ type InstanceSelection struct {
 type ResourceChain struct {
 	SystemID string         `json:"system_id"`
 	ID       ResourceTypeID `json:"id"`
+}
+
+type iamDiscovery struct {
+	servers []string
+	index   int
+	sync.Mutex
+}
+
+func (s *iamDiscovery) GetServers() ([]string, error) {
+	s.Lock()
+	defer s.Unlock()
+
+	num := len(s.servers)
+	if num == 0 {
+		return []string{}, errors.New("oops, there is no server can be used")
+	}
+
+	if s.index < num-1 {
+		s.index = s.index + 1
+		return append(s.servers[s.index-1:], s.servers[:s.index-1]...), nil
+	} else {
+		s.index = 0
+		return append(s.servers[num-1:], s.servers[:num-1]...), nil
+	}
+}
+
+type ScopeInfo struct {
+	ScopeType string `json:"scope_type,omitempty"`
+	ScopeID   string `json:"scope_id,omitempty"`
+}
+
+type ResourceEntity struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ScopeInfo
+	ResourceName string         `json:"resource_name,omitempty"`
+	ResourceID   []RscTypeAndID `json:"resource_id,omitempty"`
+}
+
+type RscTypeAndID struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceID   string         `json:"resource_id,omitempty"`
+}
+
+type ResourceInfo struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	// this filed is not always used, it's decided by the api
+	// that is used.
+	ResourceEntity
 }

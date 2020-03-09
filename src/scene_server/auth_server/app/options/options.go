@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2019 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -14,11 +14,8 @@ package options
 
 import (
 	"configcenter/src/ac/iam"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/pflag"
 )
@@ -39,40 +36,13 @@ func NewServerOption() *ServerOption {
 
 // AddFlags add flags
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60005", "The ip address and port for the serve on")
-	fs.StringVar(&s.ServConf.ExConfig, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
+	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60014", "The ip address and port for the serve on")
+	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
+	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
 	fs.StringVar(&s.ServConf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }
 
 type Config struct {
-	MongoDB       mongo.Config
-	Errors        ErrorConfig
-	Language      LanguageConfig
-	Configures    ConfConfig
-	Register      RegisterConfig
-	ProcSrvConfig ProcSrvConfig
-	Redis         redis.Config
-	AuthCenter    authcenter.AuthConfig
-	Iam           iam.AuthConfig
-}
-
-type LanguageConfig struct {
-	Res string
-}
-
-type ErrorConfig struct {
-	Res string
-}
-
-type ConfConfig struct {
-	Dir string
-}
-
-type RegisterConfig struct {
-	Address string
-}
-
-type ProcSrvConfig struct {
-	CCApiSrvAddr string
+	Auth iam.AuthConfig
 }
