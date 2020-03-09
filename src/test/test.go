@@ -68,7 +68,12 @@ func init() {
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
 	var err error
-	db, err = local.NewMgo(tConfig.MongoURI, time.Minute)
+	mongoConfig := local.MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          tConfig.MongoURI,
+	}
+	db, err = local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
 	client := zk.NewZkClient(tConfig.ZkAddr, 5*time.Second)
 	Expect(client.Start()).Should(BeNil())
