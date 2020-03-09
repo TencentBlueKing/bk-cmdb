@@ -798,6 +798,13 @@ const (
 	CCErrTaskUnLockedTaskFail     = 1117006
 	CCErrTaskListTaskFail         = 1117007
 
+	// cloud_server 1118xxx
+	// CCErrCloudVendorNotSupport cloud vendor not support
+	CCErrCloudVendorNotSupport        = 1118001
+	CCErrCloudAccountNameAlreadyExist = 1118002
+	CCErrCloudValidAccountParamFail   = 1118003
+	CCErrCloudAccountIDNoExistFail    = 1118004
+
 	/** TODO: 以下错误码需要改造 **/
 
 	// json

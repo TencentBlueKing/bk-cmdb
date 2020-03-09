@@ -18,7 +18,9 @@ import (
 
 	"configcenter/src/auth"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/scene_server/cloud_server/logics"
 	"configcenter/src/storage/dal"
 
@@ -58,6 +60,10 @@ func (s *Service) WebService() *restful.Container {
 	api := new(restful.WebService)
 	api.Path("/cloud/v3")
 	api.Filter(s.Engine.Metric().RestfulMiddleWare)
+	getErrFunc := func() errors.CCErrorIf {
+		return s.Engine.CCErr
+	}
+	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
 	api.Produces(restful.MIME_JSON)
 
 	s.initRoute(api)

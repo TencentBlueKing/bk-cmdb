@@ -172,6 +172,12 @@ type CreateOneDataResult struct {
 	Created CreatedDataResult `json:"created"`
 }
 
+// SearchResp common search response
+type SearchResp struct {
+	BaseResp `json:",inline"`
+	Data     SearchDataResult `json:"data"`
+}
+
 // SearchDataResult common search data result
 type SearchDataResult struct {
 	Count int64           `json:"count"`

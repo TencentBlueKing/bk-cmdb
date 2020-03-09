@@ -27,6 +27,7 @@ var tConfig TestConfig
 var header http.Header
 var reportUrl string
 var reportDir string
+var db *local.Mongo
 
 type TestConfig struct {
 	ZkAddr         string
@@ -66,6 +67,14 @@ func init() {
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
+	var err error
+	mongoConfig := local.MongoConf{
+		MaxOpenConns: mongo.DefaultMaxOpenConns,
+		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		URI:          tConfig.MongoURI,
+	}
+	db, err = local.NewMgo(mongoConfig, time.Minute)
+	Expect(err).Should(BeNil())
 	client := zk.NewZkClient(tConfig.ZkAddr, 5*time.Second)
 	Expect(client.Start()).Should(BeNil())
 	Expect(client.Ping()).Should(BeNil())
@@ -103,18 +112,11 @@ func GetHeader() http.Header {
 func ClearDatabase() {
 	fmt.Println("********Clear Database*************")
 	// clientSet.AdminServer().ClearDatabase(context.Background(), GetHeader())
-	mongoConfig := local.MongoConf{
-		MaxOpenConns: mongo.DefaultMaxOpenConns,
-		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
-		URI:          tConfig.MongoURI,
-	}
-	db, err := local.NewMgo(mongoConfig, time.Minute)
-	Expect(err).Should(BeNil())
 	for _, tableName := range common.AllTables {
 		db.DropTable(context.Background(), tableName)
 	}
-	db.Close()
-	clientSet.AdminServer().Migrate(context.Background(), "0", "community", header)
+	resp, err := clientSet.AdminServer().Migrate(context.Background(), "0", "community", header)
+	fmt.Printf("******resp:%v, err:%v\n", resp, err)
 }
 
 func GetReportUrl() string {
@@ -129,4 +131,8 @@ func GetReportDir() string {
 		reportDir = reportDir + "/"
 	}
 	return reportDir
+}
+
+func GetDB() *local.Mongo {
+	return db
 }

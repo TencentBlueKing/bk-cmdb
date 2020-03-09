@@ -13,11 +13,11 @@
 package core
 
 import (
-	"configcenter/src/common/http/rest"
 	"context"
 	"net/http"
 
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
@@ -284,7 +284,7 @@ type HostApplyRuleOperation interface {
 type CloudOperation interface {
 	CreateAccount(kit *rest.Kit, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
 	SearchAccount(kit *rest.Kit, option *metadata.SearchCloudAccountOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder)
-	UpdateAccount(kit *rest.Kit, accountID int64, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
+	UpdateAccount(kit *rest.Kit, accountID int64, option mapstr.MapStr) errors.CCErrorCoder
 	DeleteAccount(kit *rest.Kit, accountID int64) errors.CCErrorCoder
 }
 
