@@ -23,31 +23,32 @@ export default [{
                 name: MENU_RESOURCE_MANAGEMENT
             }
         }
-    })
-}, {
-    name: MENU_RESOURCE_INSTANCE_DETAILS,
-    path: 'instance/:objId/:instId',
-    component: () => import('./details.vue'),
-    meta: new Meta({
-        menu: {
-            relative: MENU_RESOURCE_MANAGEMENT
-        },
-        checkAvailable: (to, from, app) => {
-            const modelId = to.params.objId
-            const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
-            return model && !model.bk_ispaused
-        },
-        layout: {
-            previous () {
-                return {
-                    name: MENU_RESOURCE_INSTANCE,
-                    params: {
-                        objId: window.CMDB_APP.$route.params.objId
+    }),
+    children: [{
+        name: MENU_RESOURCE_INSTANCE_DETAILS,
+        path: ':instId',
+        component: () => import('./details.vue'),
+        meta: new Meta({
+            menu: {
+                relative: MENU_RESOURCE_MANAGEMENT
+            },
+            checkAvailable: (to, from, app) => {
+                const modelId = to.params.objId
+                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+                return model && !model.bk_ispaused
+            },
+            layout: {
+                previous () {
+                    return {
+                        name: MENU_RESOURCE_INSTANCE,
+                        params: {
+                            objId: window.CMDB_APP.$route.params.objId
+                        }
                     }
                 }
             }
-        }
-    })
+        })
+    }]
 }, {
     name: 'instanceHistory',
     path: 'instance/:objId/history',

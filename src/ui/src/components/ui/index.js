@@ -32,7 +32,10 @@ import tableEmpty from './table-empty/table-empty.vue'
 import list from './form/list.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
 import user from './user/user.vue'
+import textButton from './button/link-button.vue'
+import stickyLayout from './other/sticky-layout.vue'
 import permission from './permission/embed-permission.vue'
+import routerSubview from './other/router-subview.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -69,7 +72,10 @@ const install = (Vue, opts = {}) => {
         list,
         leaveConfirm,
         user,
-        permission
+        textButton,
+        stickyLayout,
+        permission,
+        routerSubview
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -110,5 +116,8 @@ export default {
     tableEmpty,
     list,
     leaveConfirm,
-    permission
+    textButton,
+    stickyLayout,
+    permission,
+    routerSubview
 }

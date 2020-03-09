@@ -13,7 +13,7 @@
 package service
 
 import (
-    "encoding/json"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -436,28 +436,32 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		// operators like or/in/and is not allowed.
 		if bizcond, ok := biz.(map[string]interface{}); ok {
 			if cond, ok := bizcond["$eq"]; ok {
-				if reflect.TypeOf(cond).ConvertibleTo(reflect.TypeOf(int64(1))) == false {
+				bizID, err := util.GetInt64ByInterface(cond)
+				if err != nil {
 					ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "", common.BKAppIDField)
 					return
 				}
-				bizIDs = []int64{int64(cond.(float64))}
+				bizIDs = []int64{bizID}
 			}
 			if cond, ok := bizcond["$in"]; ok {
 				if conds, ok := cond.([]interface{}); ok {
 					for _, c := range conds {
-						if reflect.TypeOf(c).ConvertibleTo(reflect.TypeOf(int64(1))) == false {
+						bizID, err := util.GetInt64ByInterface(c)
+						if err != nil {
 							ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "", common.BKAppIDField)
 							return
 						}
-						bizIDs = append(bizIDs, int64(c.(float64)))
+						bizIDs = append(bizIDs, bizID)
 					}
 				}
 			}
-		} else if reflect.TypeOf(biz).ConvertibleTo(reflect.TypeOf(int64(1))) {
-			bizIDs = []int64{int64(searchCond.Condition[common.BKAppIDField].(float64))}
 		} else {
-			ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "", common.BKAppIDField)
-			return
+			bizID, err := util.GetInt64ByInterface(searchCond.Condition[common.BKAppIDField])
+			if err != nil {
+				ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+				return
+			}
+			bizIDs = []int64{bizID}
 		}
 	}
 

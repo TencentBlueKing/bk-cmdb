@@ -81,7 +81,7 @@ var defaultMaxAwaitTime = time.Second
 func (opts *Options) CheckSetDefault() error {
 	if reflect.ValueOf(opts.EventStruct).Kind() != reflect.Ptr ||
 		reflect.ValueOf(opts.EventStruct).IsNil() {
-		fmt.Errorf("invalid EventStruct field, must be a none pointer")
+		return fmt.Errorf("invalid EventStruct field, must be a pointer and not nil")
 	}
 
 	if opts.MajorityCommitted == nil {

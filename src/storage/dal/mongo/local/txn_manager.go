@@ -30,14 +30,15 @@ var (
 
 // a transaction manager
 type TxnManager struct {
-    // enable traction functionality or not.
-    enableTransaction bool
-	cache *redis.Client
+	// enable remote traction functionality or not.
+	// if false, the local transaction still is enabled.
+	enableTransaction bool
+	cache             *redis.Client
 	// transaction timeout time.
 	timeout time.Duration
 }
 
-var redisCache = map[string][]string{} 
+var redisCache = map[string][]string{}
 var Sep = "-_-"
 var SessPre = "sessinfo_"
 
@@ -81,7 +82,7 @@ func (t *TxnManager) SaveSession(sess mongo.Session) error {
 	return t.cache.Set(SessPre+info.SessionID, val, t.timeout).Err()
 }
 
-// SaveSession is to save session in storage
+// DeleteSession is to delete session in redis storage
 func (t *TxnManager) DeleteSession(sess mongo.Session) error {
 	if t.cache == nil {
 		return ErrRedisNotInited
@@ -91,7 +92,7 @@ func (t *TxnManager) DeleteSession(sess mongo.Session) error {
 	if err != nil {
 		return err
 	}
-	return t.cache.Del(SessPre+info.SessionID).Err()
+	return t.cache.Del(SessPre + info.SessionID).Err()
 }
 
 // GetSessionInfoFromStorage is to get session info from storage

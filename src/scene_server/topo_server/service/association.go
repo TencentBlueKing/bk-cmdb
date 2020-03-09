@@ -40,7 +40,6 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
                 blog.Errorf("CommitTransaction err: %+v", err)
             }
         } else {
-            blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
             err = txn.AbortTransaction(ctx.Kit.Ctx)
             if err != nil {
                 blog.Errorf("AbortTransaction err: %+v", err)
