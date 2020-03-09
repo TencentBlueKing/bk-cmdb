@@ -13,6 +13,7 @@
 package toposerver
 
 import (
+	"configcenter/src/apimachinery/toposerver/resourcedir"
 	"fmt"
 
 	"configcenter/src/apimachinery/rest"
@@ -28,6 +29,7 @@ type TopoServerClientInterface interface {
 	Object() object.ObjectInterface
 	Association() association.AssociationInterface
 	SetTemplate() settemplate.SetTemplateInterface
+	ResourceDirectory() resourcedir.ResourceDirectoryInterface
 }
 
 func NewTopoServerClient(c *util.Capability, version string) TopoServerClientInterface {
@@ -55,4 +57,8 @@ func (t *topoServer) Association() association.AssociationInterface {
 
 func (t *topoServer) SetTemplate() settemplate.SetTemplateInterface {
 	return settemplate.NewSetTemplateInterface(t.restCli)
+}
+
+func (t *topoServer) ResourceDirectory() resourcedir.ResourceDirectoryInterface {
+	return resourcedir.NewResourceDirectoryInterface(t.restCli)
 }
