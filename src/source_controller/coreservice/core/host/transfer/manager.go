@@ -496,7 +496,6 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
-	blog.Debug("cond: %v", cond)
 	cnt, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get module host config count failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
