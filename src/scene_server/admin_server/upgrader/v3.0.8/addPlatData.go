@@ -23,8 +23,8 @@ import (
 )
 
 func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tablename := "cc_PlatBase"
-	blog.Errorf("add data for  %s table ", tablename)
+	tableName := common.BKTableNameBasePlat
+	blog.Errorf("add data for  %s table ", tableName)
 	rows := []map[string]interface{}{
 		map[string]interface{}{
 			common.BKCloudNameField: "default area",
@@ -36,7 +36,7 @@ func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	}
 	for _, row := range rows {
 		// ensure id plug > 1, 1Reserved
-		platID, err := db.NextSequence(ctx, tablename)
+		platID, err := db.NextSequence(ctx, tableName)
 		if err != nil {
 			return err
 		}
@@ -46,9 +46,9 @@ func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		}
 
 		row[common.BKCloudIDField] = platID
-		_, _, err = upgrader.Upsert(ctx, db, tablename, row, "", []string{common.BKCloudNameField, common.BKOwnerIDField}, []string{common.BKCloudIDField})
+		_, _, err = upgrader.Upsert(ctx, db, tableName, row, "", []string{common.BKCloudNameField, common.BKOwnerIDField}, []string{common.BKCloudIDField})
 		if nil != err {
-			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			blog.Errorf("add data for  %s table error  %s", tableName, err)
 			return err
 		}
 
@@ -56,6 +56,6 @@ func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	}
 
-	blog.Errorf("add data for  %s table  ", tablename)
+	blog.Errorf("add data for  %s table  ", tableName)
 	return nil
 }

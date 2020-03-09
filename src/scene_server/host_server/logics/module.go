@@ -232,7 +232,7 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 
 	}
 
-	if err := audit.SaveAudit(ctx, conf.ApplicationID, lgc.user, "move host to resource pool"); err != nil {
+	if err := audit.SaveAudit(ctx); err != nil {
 		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
@@ -361,7 +361,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		return result.Data, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(ctx, conf.ApplicationID, lgc.user, "assign host to app"); err != nil {
+	if err := audit.SaveAudit(ctx); err != nil {
 		blog.Errorf("assign host to app, but save audit failed, err: %v, rid:%s", err, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}

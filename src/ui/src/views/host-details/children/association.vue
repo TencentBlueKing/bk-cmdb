@@ -36,10 +36,16 @@
                     @click="toggleView(viewName.graphics)">
                     {{$t('拓扑')}}
                 </bk-button>
+                <bk-button class="options-full-screen"
+                    v-show="activeView === viewName.graphics"
+                    v-bk-tooltips="$t('全屏')"
+                    @click="handleFullScreen">
+                    <i class="icon-cc-resize-full"></i>
+                </bk-button>
             </div>
         </div>
         <div class="association-view">
-            <component :is="activeView"></component>
+            <component ref="dynamicComponent" :is="activeView"></component>
         </div>
         <bk-sideslider v-transfer-dom :is-show.sync="showCreate" :width="800" :title="$t('新增关联')">
             <cmdb-host-association-create slot="content" v-if="showCreate"></cmdb-host-association-create>
@@ -92,6 +98,9 @@
             },
             handleExpandAll (expandAll) {
                 this.$store.commit('hostDetails/toggleExpandAll', expandAll)
+            },
+            handleFullScreen () {
+                this.$refs.dynamicComponent.toggleFullScreen(true)
             }
         }
     }
@@ -123,6 +132,13 @@
             .checkbox-label {
                 padding-left: 4px;
             }
+        }
+        .options-full-screen {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            text-align: center;
+            margin-left: 10px;
         }
     }
 </style>

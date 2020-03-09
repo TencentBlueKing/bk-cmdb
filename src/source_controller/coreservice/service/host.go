@@ -159,6 +159,7 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 	if err != nil && !s.db.IsNotFoundError(err) {
 		blog.Errorf("GetHostByID failed, get host by id[%d] failed, err: %+v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
 
 	ctx.RespEntity(result)
@@ -224,6 +225,7 @@ func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	if nil != err && err != redis.Nil {
 		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
+		return
 	}
 
 	ctx.RespEntity(metadata.HostSnap{

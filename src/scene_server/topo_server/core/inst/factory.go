@@ -14,9 +14,9 @@ package inst
 
 import (
 	"configcenter/src/apimachinery"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // New create a new inst factory
@@ -27,12 +27,12 @@ func New(clientSet apimachinery.ClientSetInterface) Factory {
 }
 
 // CreateInst convert the inst into the Inst interface
-func CreateInst(params types.ContextParams, clientSet apimachinery.ClientSetInterface, obj model.Object, instItems []mapstr.MapStr) []Inst {
+func CreateInst(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, obj model.Object, instItems []mapstr.MapStr) []Inst {
 	results := make([]Inst, 0)
 	for _, item := range instItems {
 		tmpInst := &inst{
 			clientSet: clientSet,
-			params:    params,
+			kit:       kit,
 			target:    obj,
 			datas:     mapstr.New(),
 		}
@@ -46,10 +46,10 @@ type factory struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *factory) CreateInst(params types.ContextParams, obj model.Object) Inst {
+func (cli *factory) CreateInst(kit *rest.Kit, obj model.Object) Inst {
 	return &inst{
 		datas:     mapstr.New(),
-		params:    params,
+		kit:       kit,
 		clientSet: cli.clientSet,
 		target:    obj,
 	}

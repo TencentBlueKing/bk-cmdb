@@ -15,7 +15,6 @@ package auditlog
 import (
 	"context"
 	"strings"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -41,35 +40,27 @@ func New(dbProxy dal.RDB) core.AuditOperation {
 	}
 }
 
-func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.SaveAuditLogParams) error {
-
+func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error {
 	var logRows []interface{}
-	for _, content := range logs {
-		if instNotChange(kit.Ctx, content.Content) {
+	for _, log := range logs {
+		if log.OperationDetail == nil || instNotChange(kit.Ctx, log.OperationDetail) {
 			continue
 		}
-		row := &metadata.OperationLog{
-			OwnerID:       kit.SupplierAccount,
-			ApplicationID: content.BizID,
-			OpType:        int(content.OpType),
-			OpTarget:      content.Model,
-			User:          kit.User,
-			ExtKey:        content.ExtKey,
-			OpDesc:        content.OpDesc,
-			Content:       content.Content,
-			CreateTime:    time.Now(),
-			InstID:        content.ID,
+		if log.OperateFrom == "" {
+			log.OperateFrom = metadata.FromUser
 		}
-		logRows = append(logRows, row)
-
+		log.SupplierAccount = kit.SupplierAccount
+		log.User = kit.User
+		log.OperationTime = metadata.Now()
+		logRows = append(logRows, log)
 	}
 	if len(logRows) == 0 {
 		return nil
 	}
-	return m.dbProxy.Table(common.BKTableNameOperationLog).Insert(kit.Ctx, logRows)
+	return m.dbProxy.Table(common.BKTableNameAuditLog).Insert(kit.Ctx, logRows)
 }
 
-func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error) {
+func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) ([]metadata.AuditLog, uint64, error) {
 	fields := param.Fields
 	condition := param.Condition
 	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
@@ -77,14 +68,14 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) 
 	skip := param.Start
 	limit := param.Limit
 	fieldArr := strings.Split(fields, ",")
-	rows := make([]metadata.OperationLog, 0)
-	blog.V(5).Infof("Search table common.BKTableNameOperationLog with parameters: %+v, rid: %s", condition, kit.Rid)
-	err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Sort(param.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(kit.Ctx, &rows)
+	rows := make([]metadata.AuditLog, 0)
+	blog.V(5).Infof("Search table common.BKTableNameAuditLog with parameters: %+v, rid: %s", condition, kit.Rid)
+	err := m.dbProxy.Table(common.BKTableNameAuditLog).Find(condition).Sort(param.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(kit.Ctx, &rows)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
 		return nil, 0, err
 	}
-	cnt, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Count(kit.Ctx)
+	cnt, err := m.dbProxy.Table(common.BKTableNameAuditLog).Find(condition).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
 		return nil, 0, err
@@ -94,20 +85,28 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) 
 }
 
 // instNotChange Determine whether the data is consistent before and after the change
-func instNotChange(ctx context.Context, content interface{}) bool {
+func instNotChange(ctx context.Context, content metadata.DetailFactory) bool {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	contentMap, ok := content.(map[string]interface{})
-	if !ok {
+	var basicContent *metadata.BasicOpDetail
+	switch content.WithName() {
+	case "BasicDetail":
+		basicContent = content.(*metadata.BasicOpDetail)
+	case "InstanceOpDetail":
+		instanceContent := content.(*metadata.InstanceOpDetail)
+		basicContent = &instanceContent.BasicOpDetail
+	case "HostTransferOpDetail":
+		hostTransferContent := content.(*metadata.HostTransferOpDetail)
+		bl := cmp.Equal(hostTransferContent.PreData, hostTransferContent.CurData)
+		if bl {
+			blog.V(5).Infof("inst data same, %+v, rid: %s", content, rid)
+		}
+		return bl
+	}
+	if basicContent == nil || basicContent.Details == nil || basicContent.Details.PreData == nil || basicContent.Details.CurData == nil {
 		return false
 	}
-	preData, ok := contentMap["pre_data"].(map[string]interface{})
-	if !ok {
-		return false
-	}
-	curData, ok := contentMap["cur_data"].(map[string]interface{})
-	if !ok {
-		return false
-	}
+	preData := basicContent.Details.PreData
+	curData := basicContent.Details.CurData
 	delete(preData, common.LastTimeField)
 	delete(curData, common.LastTimeField)
 	bl := cmp.Equal(preData, curData)

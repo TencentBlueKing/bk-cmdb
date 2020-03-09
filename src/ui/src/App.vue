@@ -112,7 +112,8 @@
     .main-full-screen {
         /deep/ {
             .header-layout,
-            .nav-layout {
+            .nav-layout,
+            .breadcrumbs-layout {
                 display: none;
             }
         }

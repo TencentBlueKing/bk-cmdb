@@ -20,7 +20,7 @@ import (
 
 func (s *coreService) CreateAuditLog(ctx *rest.Contexts) {
 	inputData := struct {
-		Data []metadata.SaveAuditLogParams `json:"data"`
+		Data []metadata.AuditLog `json:"data"`
 	}{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
 		ctx.RespAutoError(err)
@@ -45,8 +45,8 @@ func (s *coreService) SearchAuditLog(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(struct {
-		Count uint64                  `json:"count"`
-		Info  []metadata.OperationLog `json:"info"`
+		Count uint64              `json:"count"`
+		Info  []metadata.AuditLog `json:"info"`
 	}{
 		Count: count,
 		Info:  auditLogs,

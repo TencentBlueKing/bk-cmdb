@@ -98,6 +98,9 @@
                 this.$store.commit('hostDetails/setInstances', { type: 'target', instances: root.next })
             })
         },
+        beforeDestroy () {
+            bus.$off('association-change')
+        },
         methods: {
             async getData () {
                 try {

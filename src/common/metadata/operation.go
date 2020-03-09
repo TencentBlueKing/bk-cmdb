@@ -160,8 +160,8 @@ type ObjectIDName struct {
 
 type StatisticInstOperation struct {
 	Create []StringIDCount   `json:"create"`
-	Delete []StringIDCount   `json:"update"`
-	Update []UpdateInstCount `json:"delete"`
+	Delete []StringIDCount   `json:"delete"`
+	Update []UpdateInstCount `json:"update"`
 }
 
 var (

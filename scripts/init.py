@@ -72,7 +72,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIdleConns = 1000
+maxIdleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 
@@ -120,7 +120,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 
@@ -178,7 +178,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 [redis]
@@ -218,7 +218,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 
@@ -256,7 +256,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 txnEnabled = $txn_enabled
 '''
     template = FileTemplate(proc_file_template_str)
@@ -273,7 +273,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 txnEnabled = $txn_enabled
 
 [timer]
@@ -298,7 +298,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 
@@ -372,7 +372,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIdleConns = 1000
+maxIdleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 maxIDleConns = 1000
@@ -383,7 +383,7 @@ port = $redis_port
 pwd = $redis_pass
 database = 0
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 '''
     template = FileTemplate(taskserver_file_template_str)
     result = template.substitute(**context)

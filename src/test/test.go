@@ -14,6 +14,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
 	testutil "configcenter/src/test/util"

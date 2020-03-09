@@ -88,6 +88,33 @@ func (s *coreService) ListProcessInstanceRelation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+func (s *coreService) ListHostProcessRelation(ctx *rest.Contexts) {
+	// filter parameter
+	input := new(metadata.ListProcessInstancesWithHostOption)
+    if err := ctx.DecodeInto(input); err != nil {
+        blog.Errorf("ListHostProcessRelation failed, decode request body failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+        ctx.RespAutoError(err)
+        return
+    }
+    
+	if input.BizID == 0 {
+		ctx.RespErrorCodeF(common.CCErrCommParamsNeedSet, "biz id is empty", common.BKAppIDField)
+        return
+	}
+
+	if input.Page.IsIllegal() {
+		blog.Errorf("ListHostProcessRelation failed, business id can't be empty, bk_biz_id: %d, rid: %s", input.BizID, ctx.Kit.Rid)
+		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid,"illegal request page", "page")
+	}
+
+	result, err := s.core.ProcessOperation().ListHostProcessRelation(ctx.Kit, input)
+	if err != nil {
+		blog.Errorf("ListHostProcessRelation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+	ctx.RespEntity(result)
+}
+
 func (s *coreService) UpdateProcessInstanceRelation(ctx *rest.Contexts) {
 	processInstanceIDStr := ctx.Request.PathParameter(common.BKProcIDField)
 	if len(processInstanceIDStr) == 0 {
