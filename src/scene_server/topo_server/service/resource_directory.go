@@ -235,10 +235,10 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 			moduleInfo["host_count"] = 0
 			if moduleID == id {
 				moduleInfo["host_count"] = len(hostIDs)
+				break
 			}
-			retInfo = append(retInfo, moduleInfo)
-			break
 		}
+		retInfo = append(retInfo, moduleInfo)
 	}
 
 	ret := make(map[string]interface{}, 0)
