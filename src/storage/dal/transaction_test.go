@@ -1,33 +1,32 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.,
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the ",License",); you may not use this file except
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-package local
+package dal
 
 import (
-	"context"
-	"flag"
-	"fmt"
-	"sync"
-	"testing"
-	"time"
+    "context"
+    "flag"
+    "fmt"
+    "sync"
+    "testing"
+    "time"
 
-	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
-	redisdal "configcenter/src/storage/dal/redis"
+    "configcenter/src/storage/dal/mongo"
+    "configcenter/src/storage/dal/mongo/local"
+    redisdal "configcenter/src/storage/dal/redis"
 
-	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
-	"gopkg.in/redis.v5"
+    "github.com/stretchr/testify/require"
+    "go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
+    "gopkg.in/redis.v5"
 )
 
 var (
@@ -64,13 +63,13 @@ func init() {
 	}
 }
 
-func GetClient() (*Mongo, error) {
-	mongoConfig := MongoConf{
+func GetClient() (*local.Mongo, error) {
+	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 		URI:          mongoURI,
 	}
-	m, err := NewMgo(mongoConfig, time.Minute)
+	m, err := local.NewMgo(mongoConfig, time.Minute)
 	if err != nil {
 		return nil, err
 	}
@@ -722,7 +721,7 @@ func TestDistributedStartStart(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -747,7 +746,7 @@ func TestDistributedCommitAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -775,7 +774,7 @@ func TestDistributedAbortCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -803,7 +802,7 @@ func TestDistributedAbortAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -831,7 +830,7 @@ func TestDistributedCommitCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -864,7 +863,7 @@ func TestDistributedCommitOpCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -902,7 +901,7 @@ func TestDistributedInsertCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -942,7 +941,7 @@ func TestDistributedInsertAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -998,7 +997,7 @@ func TestDistributedDeleteCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1054,7 +1053,7 @@ func TestDistributedDeleteAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1110,7 +1109,7 @@ func TestDistributedUpdateCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1178,7 +1177,7 @@ func TestDistributedUpdateAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1246,7 +1245,7 @@ func TestDistributedUpsertCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1315,7 +1314,7 @@ func TestDistributedUpsertAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1392,14 +1391,14 @@ func TestDistributedUpdateMultiModelCommit(t *testing.T) {
 	}
 
 	filter := map[string]string{"ext": "ext"}
-	update1 := []dal.ModeUpdate{
-		dal.ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
-		dal.ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
-		dal.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
+	update1 := []ModeUpdate{
+        ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
+        ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
+        ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
 	}
-	update2 := []dal.ModeUpdate{
-		dal.ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
-		dal.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
+	update2 := []ModeUpdate{
+        ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
+        ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
 	}
 
 	sess1, err := client1.StartSession()
@@ -1408,7 +1407,7 @@ func TestDistributedUpdateMultiModelCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1465,14 +1464,14 @@ func TestDistributedUpdateMultiModelAbort(t *testing.T) {
 	require.NoError(t, err)
 
 	filter := map[string]string{"ext": "ext"}
-	update1 := []dal.ModeUpdate{
-		dal.ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
-		dal.ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
-		dal.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
+	update1 := []ModeUpdate{
+        ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
+        ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
+        ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
 	}
-	update2 := []dal.ModeUpdate{
-		dal.ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
-		dal.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
+	update2 := []ModeUpdate{
+        ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
+        ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
 	}
 
 	sess1, err := client1.StartSession()
@@ -1481,7 +1480,7 @@ func TestDistributedUpdateMultiModelAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1522,7 +1521,7 @@ func TestDistributedAggregateCommit(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1595,7 +1594,7 @@ func TestDistributedAggregateAbort(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1665,7 +1664,7 @@ func TestDistributedIsolation(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	defer sess1.EndSession(ctx)
 
@@ -1737,7 +1736,7 @@ func TestDistributedInsertEndSession(t *testing.T) {
 	// 获取事务信息，将其存入context中
 	tnxInfo, err := sess1.TxnInfo()
 	require.NoError(t, err)
-	ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+	ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 	sess1.EndSession(ctx)
 
@@ -1767,7 +1766,7 @@ func BenchmarkDistributedCUD(b *testing.B) {
 		// 获取事务信息，将其存入context中
 		tnxInfo, err := sess1.TxnInfo()
 		require.NoError(b, err)
-		ctx := util.TnxIntoContext(context.Background(), tnxInfo)
+		ctx := TnxIntoContext(context.Background(), tnxInfo)
 
 		defer sess1.EndSession(ctx)
 

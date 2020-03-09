@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 )
 
 func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -111,7 +112,7 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	}
 
 	// add index
-	indexes := []dal.Index{
+	indexes := []types.Index{
 		{
 			Keys: map[string]int32{
 				common.BKAppIDField: 1,

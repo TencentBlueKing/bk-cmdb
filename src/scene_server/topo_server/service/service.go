@@ -32,7 +32,7 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	DB          dal.RDB
+	Txn          dal.Transaction
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
