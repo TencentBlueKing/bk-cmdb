@@ -104,8 +104,27 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		return
 	}
 
+	// add host_count
+	mapCloudIDInfo := make(map[int64]mapstr.MapStr, 0)
+	intCloudIDArray := make([]int64, 0)
+	for _, area := range res.Data.Info {
+		intCloudID, err := area.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.ErrorJSON("FindManyCloudArea fail with cloudID convert from interface to int64 failed, err: %v, rid: %s", err, rid)
+			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDPlat, common.BKCloudIDField, "int", err.Error())})
+		}
+		intCloudIDArray = append(intCloudIDArray, intCloudID)
+		mapCloudIDInfo[intCloudID] = area
+	}
+	ret, err := s.findManyCloudAreaAddHostCount(srvData, intCloudIDArray, mapCloudIDInfo)
+	if err != nil {
+		blog.ErrorJSON("FindManyCloudArea add field host_count failed, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostFindManyCloudAreaAddHostCountFieldFail)})
+		return
+	}
+
 	retData := map[string]interface{}{
-		"info":  res.Data.Info,
+		"info":  ret,
 		"count": res.Data.Count,
 	}
 
@@ -378,4 +397,49 @@ func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.R
 		BaseResp: meta.SuccessBaseResp,
 		Data:     "",
 	})
+}
+
+func (s *Service) findManyCloudAreaAddHostCount(srvData *srvComm, intCloudIDArray []int64, mapCloudIDInfo map[int64]mapstr.MapStr) ([]mapstr.MapStr, error) {
+	condition := mapstr.MapStr{
+		common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: intCloudIDArray},
+	}
+	cond := &metadata.QueryCondition{
+		Fields:    []string{common.BKCloudIDField},
+		Condition: condition,
+	}
+	rsp, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, cond)
+	if nil != err {
+		blog.Errorf("findManyCloudAreaAddHostCount htt do error: %v cond:%#v,rid:%s", err, cond, srvData.rid)
+		return nil, err
+	}
+	if false == rsp.Result {
+		blog.Errorf("findManyCloudAreaAddHostCount http reply error.  cond:%#v, err code:%d, err msg:%s, rid:%s", cond, rsp.Code, rsp.ErrMsg, srvData.rid)
+		return nil, srvData.ccErr.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	result := make([]mapstr.MapStr, 0)
+	cloudHost := make(map[int64]int64, 0)
+	for _, info := range rsp.Data.Info {
+		intID, err := info.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.ErrorJSON("findManyCloudAreaAddHostCount fail, cloudID convert from interface to int64 failed, err: %v, rid: %s", err, srvData.rid)
+			return nil, err
+		}
+		if _, ok := cloudHost[intID]; !ok {
+			cloudHost[intID] = 0
+		}
+		cloudHost[intID] += 1
+	}
+	for cloudID, cloudInfo := range mapCloudIDInfo {
+		for id, count := range cloudHost {
+			cloudInfo["host_count"] = 0
+			if cloudID == id {
+				cloudInfo["host_count"] = count
+				break
+			}
+		}
+		result = append(result, cloudInfo)
+	}
+
+	return result, nil
 }
