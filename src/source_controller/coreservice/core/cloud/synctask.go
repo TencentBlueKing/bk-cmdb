@@ -105,9 +105,45 @@ func (c *cloudOperation) DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCEr
 	return nil
 }
 
+func (c *cloudOperation) SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder) {
+	results := make([]metadata.SyncHistory, 0)
+	// 设置查询条件
+	cond := option.Condition
+	cond.Set(common.BKCloudSyncTaskID, option.TaskID)
+	if option.StarTime != "" {
+		cond.Set(common.CreateTimeField, mapstr.MapStr{common.BKDBGTE: option.StarTime})
+	}
+	if option.EndTime != "" {
+		cond.Set(common.CreateTimeField, mapstr.MapStr{common.BKDBLTE: option.EndTime})
+	}
+
+	err := c.dbProxy.Table(common.BKTableNameCloudSyncHistory).Find(cond).Fields(option.Fields...).
+		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &results)
+	if err != nil {
+		blog.ErrorJSON("SearchSyncHistory failed, db find failed, option: %v, err: %v, rid: %s", option, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// 同步历史记录总个数
+	count, err := c.countHistory(kit, cond)
+	if err != nil {
+		blog.ErrorJSON("SearchSyncHistory countHistory error %v, cond: %v, rid: %s", err, cond, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return &metadata.MultipleSyncHistory{Count: int64(count), Info: results}, nil
+}
+
 func (c *cloudOperation) countTask(kit *rest.Kit, cond mapstr.MapStr) (uint64, error) {
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	count, err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Find(cond).Count(kit.Ctx)
+	return count, err
+
+}
+
+func (c *cloudOperation) countHistory(kit *rest.Kit, cond mapstr.MapStr) (uint64, error) {
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+	count, err := c.dbProxy.Table(common.BKTableNameCloudSyncHistory).Find(cond).Count(kit.Ctx)
 	return count, err
 
 }

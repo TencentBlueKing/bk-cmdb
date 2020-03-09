@@ -288,6 +288,8 @@ type CloudOperation interface {
 	SearchSyncTask(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder)
 	UpdateSyncTask(kit *rest.Kit, taskID int64, option mapstr.MapStr) errors.CCErrorCoder
 	DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCErrorCoder
+	SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder)
+
 }
 
 type SystemOperation interface {

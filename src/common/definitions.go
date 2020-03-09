@@ -243,6 +243,9 @@ const (
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
 
+	// BKHostInstanceIDField the host instanceid field
+	BKHostInstanceIDField = "bk_host_instanceid"
+
 	// TimeTransferModel the time transferModel field
 	TimeTransferModel = "2006-01-02 15:04:05"
 
@@ -1117,4 +1120,6 @@ const (
 	BKCloudSyncTaskName = "bk_task_name"
 	BKCloudSyncTaskID   = "bk_task_id"
 	BKCloudSyncStatus   = "bk_sync_status"
+
+	BKVpcID = "bk_vpc_id"
 )

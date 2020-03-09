@@ -202,3 +202,27 @@ func (c *cloud) DeleteSyncTask(ctx context.Context, h http.Header, taskID int64)
 
 	return nil
 }
+
+
+func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder) {
+	ret := new(metadata.MultipleSyncHistoryResult)
+	subPath := "/findmany/cloud/sync/history"
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("SearchSyncHistory failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}

@@ -89,3 +89,18 @@ func (s *coreService) DeleteSyncTask(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(nil)
 }
+
+func (s *coreService) SearchSyncHistory(ctx *rest.Contexts) {
+	option := metadata.SearchSyncHistoryOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.core.CloudOperation().SearchSyncHistory(ctx.Kit, &option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+}

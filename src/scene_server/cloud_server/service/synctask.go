@@ -148,3 +148,46 @@ func (s *Service) DeleteSyncTask(ctx *rest.Contexts) {
 
 	ctx.RespEntity(nil)
 }
+
+
+func (s *Service) SearchSyncHistory(ctx *rest.Contexts) {
+	option := metadata.SearchSyncHistoryOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// set default limit
+	if option.Page.Limit == 0 {
+		option.Page.Limit = common.BKDefaultLimit
+	}
+	// set default sort
+	if option.Page.Sort == "" {
+		option.Page.Sort = "-" + common.CreateTimeField
+	}
+	if option.Page.IsIllegal() {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
+	// if not exact search, change the string query to regexp
+	if option.Exact != true {
+		for k, v := range option.Condition {
+			if reflect.TypeOf(v).Kind() == reflect.String {
+				field := v.(string)
+				option.Condition[k] = mapstr.MapStr{
+					common.BKDBLIKE: params.SpecialCharChange(field),
+					"$options":      "i",
+				}
+			}
+		}
+	}
+
+	res, err := s.CoreAPI.CoreService().Cloud().SearchSyncHistory(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
+}

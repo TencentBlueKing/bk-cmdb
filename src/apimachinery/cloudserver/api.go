@@ -118,3 +118,17 @@ func (c *cloudserver) DeleteSyncTask(ctx context.Context, h http.Header, taskID 
 		Into(resp)
 	return
 }
+
+func (c *cloudserver) SearchSyncHistory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error) {
+	resp = new(metadata.SearchResp)
+	subPath := "/findmany/cloud/sync/history"
+
+	err = c.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

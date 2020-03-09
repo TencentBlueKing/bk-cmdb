@@ -47,7 +47,7 @@ type Filter struct {
 }
 
 const (
-	MaxLimit   int64 = 99999
+	MaxLimit   int64 = 100
 	MaxLoopCnt int   = 10
 )
 

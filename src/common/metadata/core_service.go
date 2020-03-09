@@ -527,3 +527,8 @@ type MultipleCloudSyncTaskResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleCloudSyncTask `json:"data"`
 }
+
+type MultipleSyncHistoryResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleSyncHistory `json:"data"`
+}
