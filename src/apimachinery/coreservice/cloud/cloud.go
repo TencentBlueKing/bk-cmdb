@@ -33,7 +33,6 @@ type CloudInterface interface {
 	UpdateSyncTask(ctx context.Context, h http.Header, taskID int64, option map[string]interface{}) errors.CCErrorCoder
 	DeleteSyncTask(ctx context.Context, h http.Header, taskID int64) errors.CCErrorCoder
 	SearchSyncHistory(ctx context.Context, h http.Header, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder)
-
 }
 
 func NewCloudInterfaceClient(client rest.ClientInterface) CloudInterface {

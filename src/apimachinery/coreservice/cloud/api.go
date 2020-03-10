@@ -203,7 +203,6 @@ func (c *cloud) DeleteSyncTask(ctx context.Context, h http.Header, taskID int64)
 	return nil
 }
 
-
 func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleSyncHistoryResult)
 	subPath := "/findmany/cloud/sync/history"

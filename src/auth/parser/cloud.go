@@ -173,6 +173,14 @@ var CloudResourceTaskConfigs = []AuthConfig{
 		ResourceType:   meta.CloudResourceTask,
 		ResourceAction: meta.Find,
 	},
+	{
+		Name:           "listCloudResourceRegionPattern",
+		Description:    "查询云资源同步地域信息",
+		Pattern:        "/api/v3/findmany/cloud/sync/region",
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.CloudResourceTask,
+		ResourceAction: meta.SkipAction,
+	},
 }
 
 func (ps *parseStream) CloudAccount() *parseStream {

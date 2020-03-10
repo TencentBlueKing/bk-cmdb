@@ -34,6 +34,7 @@ type CloudServerClientInterface interface {
 	UpdateSyncTask(ctx context.Context, h http.Header, taskID int64, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteSyncTask(ctx context.Context, h http.Header, taskID int64) (resp *metadata.Response, err error)
 	SearchSyncHistory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error)
+	SearchSyncRegion(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error)
 }
 
 func NewCloudServerClientInterface(c *util.Capability, version string) CloudServerClientInterface {

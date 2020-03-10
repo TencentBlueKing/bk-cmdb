@@ -13,6 +13,7 @@
 package app
 
 import (
+	"configcenter/src/scene_server/cloud_server/cloudsync"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -27,7 +28,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/cloud_server/app/options"
 	"configcenter/src/scene_server/cloud_server/logics"
-	"configcenter/src/scene_server/cloud_server/cloudsync"
 	svc "configcenter/src/scene_server/cloud_server/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"

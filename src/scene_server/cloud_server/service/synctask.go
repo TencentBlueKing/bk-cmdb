@@ -191,3 +191,25 @@ func (s *Service) SearchSyncHistory(ctx *rest.Contexts) {
 
 	ctx.RespEntity(res)
 }
+
+func (s *Service) SearchSyncRegion(ctx *rest.Contexts) {
+	option := metadata.SearchSyncRegionOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	accountConf, err := s.Logics.GetAccountConf(option.AccountID)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	result, err := s.Logics.GetRegionsInfo(option.WithHostCount, *accountConf)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed))
+		return
+	}
+
+	ctx.RespEntity(result)
+}

@@ -59,6 +59,12 @@ type SearchVpcOption struct {
 	Region string `json:"bk_region"`
 }
 
+type SearchSyncRegionOption struct {
+	AccountID int64 `json:"bk_account_id" bson:"bk_account_id"`
+	// 是否返回地域下的主机数，返回主机数会导致请求更耗时，默认为false
+	WithHostCount bool `json:"with_host_count" bson:"with_host_count"`
+}
+
 type SearchSyncHistoryOption struct {
 	SearchCloudOption `json:",inline"`
 	TaskID            int64  `json:"bk_task_id" bson:"bk_task_id"`
@@ -69,6 +75,11 @@ type SearchSyncHistoryOption struct {
 type MultipleSyncHistory struct {
 	Count int64         `json:"count"`
 	Info  []SyncHistory `json:"info"`
+}
+
+type MultipleSyncRegion struct {
+	Count int64        `json:"count"`
+	Info  []SyncRegion `json:"info"`
 }
 
 type MultipleCloudAccount struct {
@@ -217,6 +228,13 @@ type CloudArea struct {
 	CreateTime  time.Time `json:"create_time" bson:"create_time"`
 	LastEditor  string    `json:"bk_last_editor" bson:"bk_last_editor"`
 	LastTime    time.Time `json:"last_time" bson:"last_time"`
+}
+
+type SyncRegion struct {
+	RegionId    string `json:"bk_region" bson:"bk_region"`
+	RegionName  string `json:"bk_region_name" bson:"bk_region_name"`
+	RegionState string `json:"bk_region_state" bson:"bk_region_state"`
+	HostCount int64 `json:"bk_host_count" bson:"bk_host_count"`
 }
 
 // 同步历史记录

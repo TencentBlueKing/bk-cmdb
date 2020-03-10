@@ -42,6 +42,67 @@ func (lgc *Logics) AccountVerify(conf ccom.AccountConf) (bool, error) {
 	return true, nil
 }
 
+// 获取地域信息
+func (lgc *Logics) GetRegionsInfo(withHostCount bool, conf ccom.AccountConf) (*metadata.MultipleSyncRegion, error) {
+	client, err := cloudvendor.GetVendorClient(conf)
+	if err != nil {
+		blog.Errorf("GetVpcHostCnt GetVendorClient err:%s", err.Error())
+		return nil, err
+	}
+
+	regionInfo, err := client.GetRegions(nil)
+	if err != nil {
+		blog.Errorf("GetRegionsInfo GetRegions err:%s", err.Error())
+		return nil, err
+	}
+
+	regionHostCnt := make(map[string]int64)
+	// 需要获取地域下的主机数
+	if withHostCount {
+		hostCntChan := make(chan []interface{}, 10)
+		var wg, wg2 sync.WaitGroup
+		// 并发请求获取每个地域下的主机数
+		for _, region := range regionInfo.RegionSet {
+			wg.Add(1)
+			go func(region *metadata.Region) {
+				defer wg.Done()
+				instancesInfo, err := client.GetInstances(region.RegionId, &ccom.RequestOpt{
+					Limit:   ccom.Int64Ptr(ccom.MaxLimit),
+				})
+				if err != nil {
+					blog.Errorf("GetVpcHostCnt GetInstances err:%s", err.Error())
+					return
+				}
+				hostCntChan <- []interface{}{region.RegionId, instancesInfo.Count}
+			}(region)
+		}
+		wg2.Add(1)
+		go func() {
+			defer wg2.Done()
+			for hostCnt := range hostCntChan {
+				regionHostCnt[hostCnt[0].(string)] = hostCnt[1].(int64)
+			}
+		}()
+		wg.Wait()
+		close(hostCntChan)
+		wg2.Wait()
+	}
+
+	result := new(metadata.MultipleSyncRegion)
+	result.Count = regionInfo.Count
+	for i, _ := range regionInfo.RegionSet {
+		region := regionInfo.RegionSet[i]
+		result.Info = append(result.Info, metadata.SyncRegion{
+			RegionId:        region.RegionId,
+			RegionName:      region.RegionName,
+			RegionState:       region.RegionState,
+			HostCount: regionHostCnt[region.RegionId],
+		})
+	}
+
+	return result, nil
+}
+
 // 获取地域下的vpc详情和主机数
 func (lgc *Logics) GetVpcHostCnt(region string, conf ccom.AccountConf) (*metadata.VpcHostCntResult, error) {
 	client, err := cloudvendor.GetVendorClient(conf)

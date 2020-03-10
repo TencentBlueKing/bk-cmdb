@@ -97,6 +97,7 @@ func (s *Service) initRoute(api *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/sync/task/{bk_task_id}", Handler: s.UpdateSyncTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/sync/task/{bk_task_id}", Handler: s.DeleteSyncTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/history", Handler: s.SearchSyncHistory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/region", Handler: s.SearchSyncRegion})
 
 	utility.AddToRestfulWebService(api)
 }
