@@ -25,12 +25,13 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 
 	"github.com/rs/xid"
 )
 
 var (
-	limit         = uint64(2000)
+	limit = uint64(2000)
 )
 
 func removeDeletedInstAsst(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -283,9 +284,9 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 		return err
 	}
 
-	createIdxArr := []dal.Index{
-		dal.Index{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
-		dal.Index{Name: "idx_asstID_id", Keys: map[string]int32{common.AssociationObjAsstIDField: -1, common.BKFieldID: -1}, Background: true, Unique: false},
+	createIdxArr := []types.Index{
+		types.Index{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
+		types.Index{Name: "idx_asstID_id", Keys: map[string]int32{common.AssociationObjAsstIDField: -1, common.BKFieldID: -1}, Background: true, Unique: false},
 	}
 	for _, idx := range createIdxArr {
 		exist := false

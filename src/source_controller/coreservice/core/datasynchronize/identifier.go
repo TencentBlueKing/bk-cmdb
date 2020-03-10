@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 )
 
 type setIdentifierFlag struct {
@@ -106,7 +107,7 @@ func (s *setIdentifierFlag) addFlag(kit *rest.Kit) errors.CCErrorCoder {
 	data := mapstr.MapStr{
 		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
 	}
-	err = s.dbProxy.Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, dal.ModeUpdate{Op: dal.UpdateOpAddToSet, Doc: data})
+	err = s.dbProxy.Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, types.ModeUpdate{Op: types.UpdateOpAddToSet, Doc: data})
 	if err != nil {
 		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
@@ -139,7 +140,7 @@ func (s *setIdentifierFlag) deleteFlag(kit *rest.Kit) errors.CCErrorCoder {
 	data := mapstr.MapStr{
 		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
 	}
-	err := s.dbProxy.Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, dal.ModeUpdate{Op: dal.UpdateOpPull, Doc: data})
+	err := s.dbProxy.Table(s.tableName).UpdateMultiModel(kit.Ctx, condMap, types.ModeUpdate{Op: types.UpdateOpPull, Doc: data})
 	if err != nil {
 		blog.ErrorJSON("addFlag db update error. err:%s,  cond:%s, data:%s, rid:%s", err.Error(), condMap, data, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)

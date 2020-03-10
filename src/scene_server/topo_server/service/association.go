@@ -20,55 +20,32 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // CreateMainLineObject create a new model in the main line topo
 func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 
 	var txnErr error
-	// 判断是否使用事务
-	if s.EnableTxn {
-		sess, err := s.DB.StartSession()
-		if err != nil {
-			txnErr = err
-			blog.Errorf("StartSession err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		// 获取事务信息，将其存入context中
-		txnInfo, err := sess.TxnInfo()
-		if err != nil {
-			txnErr = err
-			blog.Errorf("TxnInfo err: %+v", err)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-			return
-		}
-		ctx.Kit.Header = txnInfo.IntoHeader(ctx.Kit.Header)
-		ctx.Kit.Ctx = util.TnxIntoContext(ctx.Kit.Ctx, txnInfo)
-		err = sess.StartTransaction(ctx.Kit.Ctx)
-		if err != nil {
-			txnErr = err
-			blog.Errorf("StartTransaction err: %+v", err)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-			return
-		}
-		defer func() {
-			if txnErr == nil {
-				err = sess.CommitTransaction(ctx.Kit.Ctx)
-				if err != nil {
-					blog.Errorf("CommitTransaction err: %+v", err)
-				}
-			} else {
-				blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
-				err = sess.AbortTransaction(ctx.Kit.Ctx)
-				if err != nil {
-					blog.Errorf("AbortTransaction err: %+v", err)
-				}
-			}
-			sess.EndSession(ctx.Kit.Ctx)
-		}()
+	txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
+	if err != nil {
+		txnErr = err
+		blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
+		return
 	}
+	defer func() {
+		if txnErr == nil {
+			err = txn.CommitTransaction(ctx.Kit.Ctx)
+			if err != nil {
+				blog.Errorf("CommitTransaction err: %+v", err)
+			}
+		} else {
+			err = txn.AbortTransaction(ctx.Kit.Ctx)
+			if err != nil {
+				blog.Errorf("AbortTransaction err: %+v", err)
+			}
+		}
+	}()
 
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); err != nil {
@@ -76,7 +53,7 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 		return
 	}
 	mainLineAssociation := &metadata.Association{}
-	_, err := mainLineAssociation.Parse(data)
+	_, err = mainLineAssociation.Parse(data)
 	if nil != err {
 		txnErr = err
 		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(), ctx.Kit.Rid)
@@ -106,53 +83,31 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 
 	var txnErr error
-	// 判断是否使用事务
-	if s.EnableTxn {
-		sess, err := s.DB.StartSession()
-		if err != nil {
-			txnErr = err
-			blog.Errorf("StartSession err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		// 获取事务信息，将其存入context中
-		txnInfo, err := sess.TxnInfo()
-		if err != nil {
-			txnErr = err
-			blog.Errorf("TxnInfo err: %+v", err)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-			return
-		}
-		ctx.Kit.Header = txnInfo.IntoHeader(ctx.Kit.Header)
-		ctx.Kit.Ctx = util.TnxIntoContext(ctx.Kit.Ctx, txnInfo)
-		err = sess.StartTransaction(ctx.Kit.Ctx)
-		if err != nil {
-			txnErr = err
-			blog.Errorf("StartTransaction err: %+v", err)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-			return
-		}
-		defer func() {
-			if txnErr == nil {
-				err = sess.CommitTransaction(ctx.Kit.Ctx)
-				if err != nil {
-					blog.Errorf("CommitTransaction err: %+v", err)
-				}
-			} else {
-				blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
-				err = sess.AbortTransaction(ctx.Kit.Ctx)
-				if err != nil {
-					blog.Errorf("AbortTransaction err: %+v", err)
-				}
-			}
-			sess.EndSession(ctx.Kit.Ctx)
-		}()
+	txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
+	if err != nil {
+		txnErr = err
+		blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
+		return
 	}
+	defer func() {
+		if txnErr == nil {
+			err = txn.CommitTransaction(ctx.Kit.Ctx)
+			if err != nil {
+				blog.Errorf("CommitTransaction err: %+v", err)
+			}
+		} else {
+			blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
+			err = txn.AbortTransaction(ctx.Kit.Ctx)
+			if err != nil {
+				blog.Errorf("AbortTransaction err: %+v", err)
+			}
+		}
+	}()
 
 	objID := ctx.Request.PathParameter("bk_obj_id")
 
 	var bizID int64
-	var err error
 	md := new(MetaShell)
 	if err := ctx.DecodeInto(md); err != nil {
 		ctx.RespAutoError(err)

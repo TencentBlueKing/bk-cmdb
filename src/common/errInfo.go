@@ -771,7 +771,7 @@ const (
 
 	// synchronize_server 1114xxx
 
-	CCErrSynchronizeError = 1114001
+	CCErrSynchronizeError = 1113903
 
 	// operation_server 1116xxx
 	CCErrOperationBizModuleHostAmountFail = 1116001

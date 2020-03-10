@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 )
 
 func isIndexExist(ctx context.Context, db dal.RDB, indexName string) (bool, error) {
@@ -44,7 +45,7 @@ func addHostIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 	if exist {
 		return nil
 	}
-	idx := dal.Index{
+	idx := types.Index{
 		Keys: map[string]int32{
 			common.BKHostInnerIPField: 1,
 			common.BKCloudIDField:     1,

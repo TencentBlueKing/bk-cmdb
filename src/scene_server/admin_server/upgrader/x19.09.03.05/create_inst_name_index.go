@@ -20,10 +20,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 )
 
 func CreateInstNameIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	idx := dal.Index{
+	idx := types.Index{
 		Keys: map[string]int32{
 			common.BKInstNameField: 1,
 		},

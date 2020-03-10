@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 )
 
 func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -47,7 +48,7 @@ func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrade
 		if tableName == common.BKTableNameSetTemplateSyncHistory {
 			taskIDUnique = true
 		}
-		indexArr := []dal.Index{
+		indexArr := []types.Index{
 			{
 				Keys:       map[string]int32{"task_id": 1},
 				Name:       "idx_taskID",

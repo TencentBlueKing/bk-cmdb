@@ -14,6 +14,7 @@ package util
 
 import (
 	"encoding/json"
+	"unicode/utf8"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -50,29 +51,52 @@ func ValidFieldTypeEnumOption(option interface{}, errProxy errors.DefaultCCError
 			blog.Errorf(" option %v not enum option, enum option item must id and name", option)
 			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
-		idVal, idOk := mapOption["id"]
-		if !idOk || idVal == "" {
-			blog.Errorf("enum option id can't be empty", option)
-			return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option id")
+
+		if len(arrOption) > common.AttributeOptionArrayMaxLength {
+			blog.Errorf(" option array length %d exceeds max length %d", len(arrOption), common.AttributeOptionArrayMaxLength)
+			return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option", common.AttributeOptionArrayMaxLength)
 		}
-		if _, ok := idVal.(string); !ok {
-			blog.Errorf("idVal %v not string", idVal)
-			return errProxy.Errorf(common.CCErrCommParamsNeedString, "option id")
-		}
-		nameVal, nameOk := mapOption["name"]
-		if !nameOk || nameVal == "" {
-			blog.Errorf("enum option name can't be empty", option)
-			return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option name")
-		}
-		switch mapOption["type"] {
-		case "text":
-			if _, ok := nameVal.(string); !ok {
-				blog.Errorf(" nameVal %v not string", nameVal)
-				return errProxy.Errorf(common.CCErrCommParamsNeedString, "option name")
+		for _, o := range arrOption {
+			mapOption, ok := o.(map[string]interface{})
+			if false == ok || mapOption == nil {
+				blog.Errorf(" option %v not enum option, enum option item must id and name", option)
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 			}
-		default:
-			blog.Errorf("enum option type must be 'text', current: %v", mapOption["type"])
-			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option type")
+			idVal, idOk := mapOption["id"]
+			if !idOk || idVal == "" {
+				blog.Errorf("enum option id can't be empty", option)
+				return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option id")
+			}
+			idValStr, ok := idVal.(string)
+			if !ok {
+				blog.Errorf("idVal %v not string", idVal)
+				return errProxy.Errorf(common.CCErrCommParamsNeedString, "option id")
+			}
+
+			if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(idValStr) {
+				blog.Errorf(" option id %s length %d exceeds max length %d", idValStr, utf8.RuneCountInString(idValStr), common.AttributeOptionValueMaxLength)
+				return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option id", common.AttributeOptionValueMaxLength)
+			}
+
+			nameVal, nameOk := mapOption["name"]
+			if !nameOk || nameVal == "" {
+				blog.Errorf("enum option name can't be empty", option)
+				return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option name")
+			}
+			switch mapOption["type"] {
+			case "text":
+				if nameValStr, ok := nameVal.(string); !ok {
+					blog.Errorf(" nameVal %v not string", nameVal)
+					return errProxy.Errorf(common.CCErrCommParamsNeedString, "option name")
+				} else if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(nameValStr) {
+					blog.Errorf(" option name %s length %d exceeds max length %d", nameValStr, utf8.RuneCountInString(nameValStr), common.AttributeOptionValueMaxLength)
+					return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option name", common.AttributeOptionValueMaxLength)
+				}
+			default:
+				blog.Errorf("enum option type must be 'text', current: %v", mapOption["type"])
+				return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option type")
+			}
+
 		}
 	}
 

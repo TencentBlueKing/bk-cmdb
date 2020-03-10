@@ -16,12 +16,12 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 )
 
 // AutoRun Interface for automatic processing of encapsulated transactions
 // f func return error, abort commit, other commit transcation. transcation commit can be error.
 // f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
-func (c *Mongo) AutoRun(ctx context.Context, opt dal.TxnWrapperOption, f func(header http.Header) error) error {
+func (c *Mongo) AutoRun(ctx context.Context, opt types.TxnWrapperOption, f func(header http.Header) error) error {
 	panic("transcation wrapper not implemented")
 }

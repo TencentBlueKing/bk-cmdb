@@ -195,6 +195,7 @@
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
         </bk-sideslider>
+        <router-subview></router-subview>
     </div>
 </template>
 

@@ -27,6 +27,7 @@
             </cmdb-resize-layout>
             <resource-hosts class="main" ref="resourceHosts"></resource-hosts>
         </div>
+        <router-subview></router-subview>
     </div>
 </template>
 

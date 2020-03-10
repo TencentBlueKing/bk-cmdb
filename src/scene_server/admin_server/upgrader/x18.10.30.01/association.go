@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 )
 
 func createAssociationTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -49,9 +50,9 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 		return err
 	}
 
-	createIdxArr := []dal.Index{
-		dal.Index{Name: "idx_id", Keys: map[string]int32{"id": -1}, Background: true, Unique: true},
-		dal.Index{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
+	createIdxArr := []types.Index{
+		types.Index{Name: "idx_id", Keys: map[string]int32{"id": -1}, Background: true, Unique: true},
+		types.Index{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
 	}
 	for _, idx := range createIdxArr {
 		exist := false

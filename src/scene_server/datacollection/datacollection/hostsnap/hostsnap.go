@@ -205,8 +205,12 @@ func copyVal(a map[string]interface{}, b *HostInst) {
 		b.set(k, v)
 	}
 }
+
 func needToUpdate(a map[string]interface{}, b *HostInst) bool {
 	for k, v := range a {
+		if b.get(k) == nil && v == "" {
+			continue
+		}
 		if b.get(k) != v {
 			return true
 		}

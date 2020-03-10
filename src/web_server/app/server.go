@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
@@ -36,6 +37,9 @@ type WebServer struct {
 }
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+
+	// init esb client
+	esb.InitEsbClient(nil)
 
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -158,6 +162,10 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.AuthCenter.URL = current.ConfigMap["app.auth_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
 	w.Config.ConfigMap = current.ConfigMap
+
+	if esbConfig, err := esb.ParseEsbConfig(current.ConfigMap); err == nil {
+		esb.UpdateEsbConfig(*esbConfig)
+	}
 
 }
 

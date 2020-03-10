@@ -1104,6 +1104,8 @@ const (
 	AttributeIDMaxLength          = 20
 	AttributeNameMaxLength        = 20
 	AttributeUnitMaxLength        = 20
+	AttributeOptionValueMaxLength = 128
+	AttributeOptionArrayMaxLength = 200
 )
 
 const (
@@ -1158,6 +1160,6 @@ const (
 // cloud sync const
 const (
 	BKCloudAccountIDField = "bk_account_id"
-	BKCloudAccountName = "bk_account_name"
-	BKCloudVendor = "bk_cloud_vendor"
+	BKCloudAccountName    = "bk_account_name"
+	BKCloudVendor         = "bk_cloud_vendor"
 )
