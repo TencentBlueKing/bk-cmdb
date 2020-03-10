@@ -104,6 +104,19 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		return
 	}
 
+	// 查询云区域不需要主机数量
+	if input.HostCount == false {
+		retData := map[string]interface{}{
+			"info":  res.Data.Info,
+			"count": res.Data.Count,
+		}
+
+		_ = resp.WriteEntity(metadata.Response{
+			BaseResp: metadata.SuccessBaseResp,
+			Data:     retData,
+		})
+	}
+
 	// add host_count
 	mapCloudIDInfo := make(map[int64]mapstr.MapStr, 0)
 	intCloudIDArray := make([]int64, 0)
@@ -431,8 +444,8 @@ func (s *Service) findManyCloudAreaAddHostCount(srvData *srvComm, intCloudIDArra
 		cloudHost[intID] += 1
 	}
 	for cloudID, cloudInfo := range mapCloudIDInfo {
+		cloudInfo["host_count"] = 0
 		for id, count := range cloudHost {
-			cloudInfo["host_count"] = 0
 			if cloudID == id {
 				cloudInfo["host_count"] = count
 				break
