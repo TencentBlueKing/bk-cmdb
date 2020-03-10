@@ -65,6 +65,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		netCollectorRelated().
 		processRelated().
 		eventRelated().
+		cloudRelated().
 		// finalizer must be at the end of the check chains.
 		finalizer()
 

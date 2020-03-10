@@ -35,6 +35,7 @@ import user from './user/user.vue'
 import textButton from './button/link-button.vue'
 import stickyLayout from './other/sticky-layout.vue'
 import permission from './permission/embed-permission.vue'
+import routerSubview from './other/router-subview.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -73,7 +74,8 @@ const install = (Vue, opts = {}) => {
         user,
         textButton,
         stickyLayout,
-        permission
+        permission,
+        routerSubview
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -116,5 +118,6 @@ export default {
     leaveConfirm,
     textButton,
     stickyLayout,
-    permission
+    permission,
+    routerSubview
 }

@@ -422,6 +422,19 @@ appSecret = $auth_app_secret
     with open(output + "cloud.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
+    # auth.conf
+    auth_file_template_str = '''
+[auth]
+address = $auth_address
+appCode = $auth_app_code
+appSecret = $auth_app_secret
+'''
+
+    template = FileTemplate(auth_file_template_str)
+    result = template.substitute(**context)
+    with open(output + "auth.conf", 'w') as tmp_file:
+        tmp_file.write(result)
+
 def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip):
     list_dirs = os.walk(os.getcwd()+"/")
     for root, dirs, _ in list_dirs:
@@ -506,7 +519,8 @@ def main(argv):
         "cmdb_synchronizeserver": 60010,
         "cmdb_operationserver": 60011,
         "cmdb_taskserver": 60012,
-        "cmdb_cloudserver": 60013
+        "cmdb_cloudserver": 60013,
+        "cmdb_authserver": 60014
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",

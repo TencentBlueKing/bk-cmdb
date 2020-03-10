@@ -22,8 +22,9 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 
-	"gopkg.in/redis.v5"
+    "gopkg.in/redis.v5"
 )
 
 type TransferManager struct {
@@ -423,7 +424,7 @@ func (manager *TransferManager) clearLegacyPrivateField(kit *rest.Kit, attribute
 	if len(doc) == 0 {
 		return nil
 	}
-	reset := dal.ModeUpdate{
+	reset := types.ModeUpdate{
 		Op:  "unset",
 		Doc: doc,
 	}
