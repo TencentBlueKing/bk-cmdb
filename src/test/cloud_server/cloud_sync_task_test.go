@@ -223,7 +223,7 @@ var _ = Describe("cloud sync task test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(int64(1)))
+			Expect(len(rsp.Data.Info)).To(Equal(1))
 		})
 
 		It("search with configured exact is true", func() {
