@@ -155,6 +155,8 @@ func (t *taskProcessor) WatchTaskTable(ctx context.Context) error {
 			changeStream, err := col.Watch(context.TODO(), mongo.Pipeline{matchStage}, opts)
 			if err != nil {
 				blog.Errorf("WatchTaskTable Watch err:%s", err.Error())
+				time.Sleep(time.Second * 5)
+				continue
 			}
 			// 获取表事件
 			for changeStream.Next(context.TODO()) {
@@ -348,8 +350,12 @@ func (t *taskProcessor) getAccountDetail(accountID int64) (*metadata.CloudAccoun
 
 // 更新任务同步状态
 func (t *taskProcessor) updateTaskState(taskid int64, status int) error {
-	cond := mapstr.MapStr{common.BKCloudTaskID: taskid}
+	cond := mapstr.MapStr{common.BKCloudSyncTaskID: taskid}
 	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
+	if status == metadata.CloudSyncSuccess || status == metadata.CloudSyncFail {
+
+		option.Set(common.BKCloudLastSyncTime, time.Now().Format("2006-01-02 15:04:05"))
+	}
 	if err := t.db.Table(common.BKTableNameCloudSyncTask).Update(context.Background(), cond, option); err != nil {
 		if err != nil {
 			blog.Errorf("updateTaskState err:%v", err.Error())

@@ -224,7 +224,7 @@ func (t *taskProcessor) addSyncHistory(syncResult *metadata.SyncResult, taskid i
 		OwnerID:           fmt.Sprintf("%d", common.BKDefaultSupplierID),
 		Detail:            syncResult.Detail,
 		Summary:           summary,
-		CreateTime:        time.Now(),
+		CreateTime:        time.Now().Format("2006-01-02 15:04:05"),
 	}
 	if err := t.db.Table(common.BKTableNameCloudSyncHistory).Insert(context.Background(), syncHistory); err != nil {
 		if err != nil {
@@ -257,7 +257,7 @@ func (t *taskProcessor) createCloudArea(vpc *metadata.VpcSyncInfo, account *meta
 		blog.Errorf("createCloudArea failed, generate id failed, err: %s", err.Error())
 		return nil, err
 	}
-	ts := time.Now()
+	ts := time.Now().Format("2006-01-02 15:04:05")
 	cloudArea := metadata.CloudArea{
 		CloudID:     int64(id),
 		CloudName:   fmt.Sprintf("%d_%s", account.AccountID, vpc.VpcID),

@@ -36,7 +36,7 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	account.AccountID = int64(id)
-	ts := time.Now()
+	ts := time.Now().Format("2006-01-02 15:04:05")
 	account.OwnerID = kit.SupplierAccount
 	account.LastEditor = account.Creator
 	account.CreateTime = ts
@@ -58,7 +58,7 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
 		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &results)
 	if err != nil {
-		blog.ErrorJSON("SearchAccount failed, db insert failed, option: %v, err: %v, rid: %s", option, err, kit.Rid)
+		blog.ErrorJSON("SearchAccount failed, db insert failed, option: %#v, err: %v, rid: %s", *option, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	// 不返回bk_secret_key的值
@@ -83,7 +83,7 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option ma
 	}
 	filter := map[string]interface{}{common.BKCloudAccountID: accountID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
-	option.Set(common.LastTimeField, time.Now())
+	option.Set(common.LastTimeField, time.Now().Format("2006-01-02 15:04:05"))
 	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)
 	option.Remove(common.BKCloudIDField)

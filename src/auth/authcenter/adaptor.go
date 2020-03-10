@@ -151,6 +151,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizHostApply
 	case meta.CloudAccount:
 		iamResourceType = SysCloudAccount
+	case meta.CloudResourceTask:
+		iamResourceType = SysCloudResourceTask
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}

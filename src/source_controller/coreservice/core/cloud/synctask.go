@@ -43,7 +43,7 @@ func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncT
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	task.TaskID = int64(id)
-	ts := time.Now()
+	ts := time.Now().Format("2006-01-02 15:04:05")
 	task.OwnerID = kit.SupplierAccount
 	task.LastEditor = task.Creator
 	task.CreateTime = ts
@@ -63,7 +63,7 @@ func (c *cloudOperation) SearchSyncTask(kit *rest.Kit, option *metadata.SearchCl
 	err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Find(option.Condition).Fields(option.Fields...).
 		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &results)
 	if err != nil {
-		blog.ErrorJSON("SearchSyncTask failed, db find failed, option: %v, err: %v, rid: %s", option, err, kit.Rid)
+		blog.ErrorJSON("SearchSyncTask failed, db find failed, option: %#v, err: %v, rid: %s", *option, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -84,7 +84,7 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 	}
 
 	filter := map[string]int64{common.BKCloudSyncTaskID: taskID}
-	option.Set(common.LastTimeField, time.Now())
+	option.Set(common.LastTimeField, time.Now().Format("2006-01-02 15:04:05"))
 	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)
 	option.Remove(common.BKCloudIDField)

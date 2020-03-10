@@ -46,7 +46,7 @@ func (lgc *Logics) AccountVerify(conf ccom.AccountConf) (bool, error) {
 func (lgc *Logics) GetRegionsInfo(withHostCount bool, conf ccom.AccountConf) (*metadata.MultipleSyncRegion, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("GetVpcHostCnt GetVendorClient err:%s", err.Error())
+		blog.Errorf("GetRegionsInfo GetVendorClient err:%s", err.Error())
 		return nil, err
 	}
 
@@ -166,7 +166,7 @@ func (lgc *Logics) GetVpcHostCnt(region string, conf ccom.AccountConf) (*metadat
 func (lgc *Logics) GetCloudHostResource(syncVpcs []metadata.VpcSyncInfo, conf ccom.AccountConf) (*metadata.CloudHostResource, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("GetVpcHostCnt GetVendorClient err:%s", err.Error())
+		blog.Errorf("GetCloudHostResource GetVendorClient err:%s", err.Error())
 		return nil, err
 	}
 

@@ -249,9 +249,6 @@ const (
 	// TimeTransferModel the time transferModel field
 	TimeTransferModel = "2006-01-02 15:04:05"
 
-	// BKLastTimeCloudSync the last time cloud sync
-	BKLastTimeCloudSync = "bk_last_sync_time"
-
 	// BKCloudTaskID the cloud sync task id
 	BKCloudTaskID = "bk_task_id"
 
@@ -1142,6 +1139,7 @@ const (
 	BKCloudSyncTaskName = "bk_task_name"
 	BKCloudSyncTaskID   = "bk_task_id"
 	BKCloudSyncStatus   = "bk_sync_status"
+	BKCloudLastSyncTime = "bk_last_sync_time"
 
 	BKVpcID = "bk_vpc_id"
 )
