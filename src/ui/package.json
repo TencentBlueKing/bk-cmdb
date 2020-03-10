@@ -10,7 +10,7 @@
     "dev": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
     "start": "npm run dev",
     "lint": "eslint --ext .js,.vue src",
-    "build": "node build/build.js",
+    "build": "node --max-old-space-size=2048 build/build.js",
     "sync-magicbox": "node build/sync-magicbox.js"
   },
   "dependencies": {
