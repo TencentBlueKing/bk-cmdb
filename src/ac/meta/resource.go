@@ -64,7 +64,9 @@ const (
 	SetTemplate              ResourceType = "setTemplate"
 	OperationStatistic       ResourceType = "operationStatistic" // 运营统计
 	HostApply                ResourceType = "hostApply"
+	ResourcePoolDirectory    ResourceType = "resourcePoolDirectory"
 	CloudAccount             ResourceType = "cloudAccount"
+	CloudResourceTask        ResourceType = "cloudResourceTask"
 )
 
 const (

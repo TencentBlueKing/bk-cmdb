@@ -42,7 +42,7 @@ func (c *iamClient) RegisterSystem(ctx context.Context, sys System) error {
 
 	if resp.Code != 0 {
 		return &AuthError{
-			RequestID: result.Header.Get(iamRequestHeader),
+			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("register system failed, code: %d, msg:%s", resp.Code, resp.Message),
 		}
 	}
@@ -52,7 +52,7 @@ func (c *iamClient) RegisterSystem(ctx context.Context, sys System) error {
 
 func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 	resp := new(SystemResp)
-	result := c.client.Post().
+	result := c.client.Get().
 		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
@@ -68,7 +68,7 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 
 	if resp.Code != 0 {
 		return nil, &AuthError{
-			RequestID: result.Header.Get(iamRequestHeader),
+			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("get system info failed, code: %d, msg:%s", resp.Code, resp.Message),
 		}
 	}
@@ -94,7 +94,7 @@ func (c *iamClient) UpdateSystemConfig(ctx context.Context, config *SysConfig) e
 
 	if resp.Code != 0 {
 		return &AuthError{
-			RequestID: result.Header.Get(iamRequestHeader),
+			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("update system config failed, code: %d, msg:%s", resp.Code, resp.Message),
 		}
 	}
@@ -116,7 +116,7 @@ func (c *iamClient) RegisterResourcesTypes(ctx context.Context, resTypes []Resou
 
 	if resp.Code != 0 {
 		return &AuthError{
-			RequestID: result.Header.Get(iamRequestHeader),
+			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("register system failed, code: %d, msg:%s", resp.Code, resp.Message),
 		}
 	}
@@ -139,7 +139,7 @@ func (c *iamClient) UpdateResourcesTypes(ctx context.Context, resType ResourceTy
 
 	if resp.Code != 0 {
 		return &AuthError{
-			RequestID: result.Header.Get(iamRequestHeader),
+			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("udpate resource type %s failed, code: %d, msg:%s", resType.ID, resp.Code, resp.Message),
 		}
 	}
@@ -169,7 +169,7 @@ func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []Resou
 
 	if resp.Code != 0 {
 		return &AuthError{
-			RequestID: result.Header.Get(iamRequestHeader),
+			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("delete resource type %v failed, code: %d, msg:%s", resTypeIDs, resp.Code, resp.Message),
 		}
 	}
@@ -192,7 +192,7 @@ func (c *iamClient) CreateAction(ctx context.Context, actions []ResourceAction) 
 
 	if resp.Code != 0 {
 		return &AuthError{
-			RequestID: result.Header.Get(iamRequestHeader),
+			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("add resource actions %v failed, code: %d, msg:%s", actions, resp.Code, resp.Message),
 		}
 	}
@@ -215,8 +215,8 @@ func (c *iamClient) UpdateAction(ctx context.Context, action ResourceAction) err
 
 	if resp.Code != 0 {
 		return &AuthError{
-			RequestID: result.Header.Get(iamRequestHeader),
-			Reason:    fmt.Errorf("udpate resource action %v failed, code: %d, msg:%s", actions, resp.Code, resp.Message),
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("udpate resource action %v failed, code: %d, msg:%s", action, resp.Code, resp.Message),
 		}
 	}
 
@@ -244,10 +244,37 @@ func (c *iamClient) DeleteAction(ctx context.Context, actionIDs []ResourceAction
 
 	if resp.Code != 0 {
 		return &AuthError{
-			RequestID: result.Header.Get(iamRequestHeader),
-			Reason:    fmt.Errorf("delete resource actions %v failed, code: %d, msg:%s", actions, resp.Code, resp.Message),
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("delete resource actions %v failed, code: %d, msg:%s", actionIDs, resp.Code, resp.Message),
 		}
 	}
 
 	return nil
+}
+
+func (c *iamClient) GetSystemToken(ctx context.Context) (string, error) {
+	resp := new(struct {
+		BaseResponse
+		Data struct {
+			Token string `json:"token"`
+		} `json:"data"`
+	})
+	result := c.client.Get().
+		SubResourcef("/api/v1/model/systems/%s/token", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(nil).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.Code != 0 {
+		return "", &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("get system token failed, code: %d, msg:%s", resp.Code, resp.Message),
+		}
+	}
+
+	return resp.Data.Token, nil
 }
