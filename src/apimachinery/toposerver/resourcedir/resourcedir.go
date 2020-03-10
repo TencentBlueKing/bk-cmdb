@@ -16,99 +16,61 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
-func (st *ResourceDirectory) CreateResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (*metadata.CreateOneDataResult, errors.CCErrorCoder) {
-	ret := new(metadata.CreatedOneOptionResult)
+func (r *ResourceDirectory) CreateResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
+	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/create/resource/directory"
 
-	err := st.client.Post().
+	err = r.client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
-		Into(ret)
-
-	if err != nil {
-		blog.Errorf("CreateResourceDirectory failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
-	}
-
-	return &ret.Data, nil
+		Into(resp)
+	return
 }
 
-func (st *ResourceDirectory) UpdateResourceDirectory(ctx context.Context, header http.Header, moduleID int64, option metadata.UpdateSetTemplateOption) (*metadata.UpdatedCount, errors.CCErrorCoder) {
-	ret := new(metadata.UpdatedOptionResult)
+func (r *ResourceDirectory) UpdateResourceDirectory(ctx context.Context, header http.Header, moduleID int64, data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/update/resource/directory/%d"
 
-	err := st.client.Post().
+	err = r.client.Put().
 		WithContext(ctx).
-		Body(option).
+		Body(data).
 		SubResourcef(subPath, moduleID).
 		WithHeaders(header).
 		Do().
-		Into(ret)
-
-	if err != nil {
-		blog.Errorf("UpdateResourceDirectory failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
-	}
-
-	return &ret.Data, nil
+		Into(resp)
+	return
 }
 
-func (st *ResourceDirectory) SearchResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (*metadata.InstDataInfo, errors.CCErrorCoder) {
-	ret := new(metadata.QueryConditionResult)
+func (r *ResourceDirectory) SearchResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error) {
+	resp = new(metadata.SearchResp)
 	subPath := "/findmany/resource/directory"
 
-	err := st.client.Post().
+	err = r.client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
-		Into(ret)
-
-	if err != nil {
-		blog.Errorf("SearchResourceDirectory failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
-	}
-
-	return &ret.Data, nil
+		Into(resp)
+	return
 }
 
-func (st *ResourceDirectory) DeleteResourceDirectory(ctx context.Context, header http.Header, moduleID int64) (*metadata.DeletedCount, errors.CCErrorCoder) {
-	ret := new(metadata.DeletedOptionResult)
+func (r *ResourceDirectory) DeleteResourceDirectory(ctx context.Context, header http.Header, moduleID int64) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/delete/resource/directory/%d"
 
-	err := st.client.Post().
+	err = r.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResourcef(subPath, moduleID).
 		WithHeaders(header).
 		Do().
-		Into(ret)
-
-	if err != nil {
-		blog.Errorf("DeleteResourceDirectory failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
-	}
-
-	return &ret.Data, nil
+		Into(resp)
+	return
 }

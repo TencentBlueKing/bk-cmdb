@@ -17,15 +17,14 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
 type ResourceDirectoryInterface interface {
-	CreateResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (*metadata.CreateOneDataResult, errors.CCErrorCoder)
-	UpdateResourceDirectory(ctx context.Context, header http.Header, moduleID int64, option metadata.UpdateSetTemplateOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
-	SearchResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (*metadata.InstDataInfo, errors.CCErrorCoder)
-	DeleteResourceDirectory(ctx context.Context, header http.Header, moduleID int64) (*metadata.DeletedCount, errors.CCErrorCoder)
+	CreateResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error)
+	UpdateResourceDirectory(ctx context.Context, header http.Header, moduleID int64, data map[string]interface{}) (resp *metadata.Response, err error)
+	SearchResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error)
+	DeleteResourceDirectory(ctx context.Context, header http.Header, moduleID int64) (resp *metadata.Response, err error)
 }
 
 func NewResourceDirectoryInterface(client rest.ClientInterface) ResourceDirectoryInterface {
