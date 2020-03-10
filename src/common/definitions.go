@@ -33,7 +33,7 @@ const (
 	// BKNoLimit no limit definition
 	BKNoLimit = 999999999
 	// max limit of a page
-	BKMaxPageSize  = 1000
+	BKMaxPageSize = 1000
 
 	// 一次最大操作记录数
 	BKMaxRecordsAtOnce = 2000
@@ -1064,6 +1064,8 @@ const (
 	AttributeIDMaxLength          = 20
 	AttributeNameMaxLength        = 20
 	AttributeUnitMaxLength        = 20
+	AttributeOptionValueMaxLength = 128
+	AttributeOptionArrayMaxLength = 200
 )
 
 const (

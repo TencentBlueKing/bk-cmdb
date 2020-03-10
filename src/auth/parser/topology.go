@@ -1600,7 +1600,12 @@ func (ps *parseStream) objectAttribute() *parseStream {
 			return ps
 		}
 
-		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		attrs, err := ps.getModelAttribute(mapstr.MapStr{metadata.AttributeFieldID: attrID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objectID := attrs[0].ObjectID
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: objectID})
 		if err != nil {
 			ps.err = err
@@ -1633,7 +1638,12 @@ func (ps *parseStream) objectAttribute() *parseStream {
 			return ps
 		}
 
-		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		attrs, err := ps.getModelAttribute(mapstr.MapStr{metadata.AttributeFieldID: attrID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		objectID := attrs[0].ObjectID
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: objectID})
 		if err != nil {
 			ps.err = err

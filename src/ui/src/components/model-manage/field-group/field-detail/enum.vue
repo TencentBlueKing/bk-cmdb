@@ -69,7 +69,8 @@
                 enumList: [{
                     id: '',
                     is_default: true,
-                    name: ''
+                    name: '',
+                    type: 'text'
                 }],
                 defaultIndex: 0
             }
@@ -106,10 +107,11 @@
                     this.enumList = [{
                         id: '',
                         is_default: true,
-                        name: ''
+                        name: '',
+                        type: 'text'
                     }]
                 } else {
-                    this.enumList = this.value
+                    this.enumList = this.value.map(data => ({ ...data, type: 'text' }))
                     this.defaultIndex = this.enumList.findIndex(({ is_default: isDefault }) => isDefault)
                 }
             },
@@ -133,7 +135,8 @@
                 this.enumList.push({
                     id: '',
                     is_default: false,
-                    name: ''
+                    name: '',
+                    type: 'text'
                 })
             },
             deleteEnum (index) {
