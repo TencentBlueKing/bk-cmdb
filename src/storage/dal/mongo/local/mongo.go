@@ -156,7 +156,7 @@ func (f *Find) Limit(limit uint64) dal.Find {
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
-	sess := f.dbc.Copy()
+	sess := f.dbc.Clone()
 
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
@@ -173,7 +173,7 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
-	sess := f.dbc.Copy()
+	sess := f.dbc.Clone()
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	err := sess.DB(f.dbname).C(f.collName).Find(f.filter).One(result)
@@ -188,7 +188,7 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 
 // Count 统计数量(非事务)
 func (f *Find) Count(ctx context.Context) (uint64, error) {
-	sess := f.dbc.Copy()
+	sess := f.dbc.Clone()
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	count, err := sess.DB(f.dbname).C(f.collName).Find(f.filter).Count()

@@ -602,8 +602,31 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
 
-	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists && (grp == "") {
-		data.Remove(metadata.AttributeFieldPropertyGroup)
+	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists {
+		if grp == "" {
+			data.Remove(metadata.AttributeFieldPropertyGroup)
+		}
+		// check if property group exists in object
+		objIDs := make([]string, 0)
+		for _, dbAttribute := range dbAttributeArr {
+			objIDs = append(objIDs, dbAttribute.ObjectID)
+		}
+		objIDs = util.StrArrayUnique(objIDs)
+		cond := map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: objIDs,
+			},
+			common.BKPropertyGroupIDField: grp,
+		}
+		cnt, err := m.dbProxy.Table(common.BKTableNamePropertyGroup).Find(cond).Count(ctx)
+		if err != nil {
+			blog.ErrorJSON("property group count failed, err: %s, condition: %s, rid: %s", err, cond, ctx.ReqID)
+			return changeRow, err
+		}
+		if cnt != uint64(len(objIDs)) {
+			blog.Errorf("property group invalid, objIDs: %s have %d property groups, rid: %s", objIDs, cnt, ctx.ReqID)
+			return changeRow, ctx.Error.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyGroup)
+		}
 	}
 
 	attribute := metadata.Attribute{}
