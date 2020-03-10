@@ -21,8 +21,9 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 
-	"gopkg.in/mgo.v2"
+    "gopkg.in/mgo.v2"
 )
 
 func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -36,8 +37,8 @@ func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 			return err
 		}
 	}
-	indexs := []dal.Index{
-		dal.Index{Name: "idx_taskID_gseTaskID", Keys: map[string]int32{common.BKTaskIDField: 1, common.BKGseOpTaskIDField: 1}, Background: true},
+	indexs := []types.Index{
+		types.Index{Name: "idx_taskID_gseTaskID", Keys: map[string]int32{common.BKTaskIDField: 1, common.BKGseOpTaskIDField: 1}, Background: true},
 	}
 	for _, index := range indexs {
 
@@ -59,10 +60,10 @@ func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.C
 			return err
 		}
 	}
-	indexs := []dal.Index{
-		dal.Index{Name: "idx_bkBizID_bkSetID_bkModuleID_bkHostInstanceID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKSetIDField: 1, common.BKModuleIDField: 1, "bk_host_instance_id": 1}, Background: true},
-		dal.Index{Name: "idx_bkBizID_bkHostID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKHostIDField: 1}, Background: true},
-		dal.Index{Name: "idx_bkBizID_bkProcessID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKProcessIDField: 1}, Background: true},
+	indexs := []types.Index{
+		types.Index{Name: "idx_bkBizID_bkSetID_bkModuleID_bkHostInstanceID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKSetIDField: 1, common.BKModuleIDField: 1, "bk_host_instance_id": 1}, Background: true},
+		types.Index{Name: "idx_bkBizID_bkHostID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKHostIDField: 1}, Background: true},
+		types.Index{Name: "idx_bkBizID_bkProcessID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKProcessIDField: 1}, Background: true},
 	}
 	for _, index := range indexs {
 		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
@@ -82,10 +83,10 @@ func addProcInstanceDetailTable(ctx context.Context, db dal.RDB, conf *upgrader.
 			return err
 		}
 	}
-	indexs := []dal.Index{
-		dal.Index{Name: "idx_bkBizID_bkModuleID_bkProcessID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKModuleIDField: 1, common.BKProcessIDField: 1}, Background: true},
-		dal.Index{Name: "idx_bkBizID_status", Keys: map[string]int32{common.BKAppIDField: 1, common.BKStatusField: 1}, Background: true},
-		dal.Index{Name: "idx_bkBizID_bkHostID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKHostIDField: 1}, Background: true},
+	indexs := []types.Index{
+		types.Index{Name: "idx_bkBizID_bkModuleID_bkProcessID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKModuleIDField: 1, common.BKProcessIDField: 1}, Background: true},
+		types.Index{Name: "idx_bkBizID_status", Keys: map[string]int32{common.BKAppIDField: 1, common.BKStatusField: 1}, Background: true},
+		types.Index{Name: "idx_bkBizID_bkHostID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKHostIDField: 1}, Background: true},
 	}
 	for _, index := range indexs {
 		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {

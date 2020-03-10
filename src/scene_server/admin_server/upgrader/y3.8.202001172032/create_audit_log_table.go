@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 )
 
 func createAuditLogTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -43,7 +44,7 @@ func addAuditLogTableIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		return err
 	}
 
-	createIdxArr := []dal.Index{
+	createIdxArr := []types.Index{
 		{Name: "index_bk_supplier_account", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
 		{Name: "index_audit_type", Keys: map[string]int32{common.BKAuditTypeField: 1}, Background: true},
 		{Name: "index_action", Keys: map[string]int32{common.BKActionField: 1}, Background: true},
