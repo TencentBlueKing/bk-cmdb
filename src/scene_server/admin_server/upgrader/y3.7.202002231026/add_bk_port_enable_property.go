@@ -14,10 +14,10 @@ package y3_7_202002231026
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -43,6 +43,7 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		return fmt.Errorf("get proerty max index value error. err:%s", err.Error())
 	}
 
+	now := metadata.Now()
 	addPortEnable := Attribute{
 		ID:            int64(id),
 		OwnerID:       common.BKDefaultOwnerID,
@@ -63,8 +64,8 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		Option:        true,
 		Description:   "",
 		Creator:       common.CCSystemOperatorUserName,
-		LastTime:      time.Now(),
-		CreateTime:    time.Now(),
+		LastTime:      &now,
+		CreateTime:    &now,
 	}
 
 	err = db.Table(common.BKTableNameObjAttDes).Insert(ctx, addPortEnable)
@@ -141,9 +142,9 @@ type Attribute struct {
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
 
-	Creator    string    `field:"creator" json:"creator" bson:"creator"`
-	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	LastTime   time.Time `json:"last_time" bson:"last_time"`
+	Creator    string         `field:"creator" json:"creator" bson:"creator"`
+	CreateTime *metadata.Time `json:"create_time" bson:"create_time"`
+	LastTime   *metadata.Time `json:"last_time" bson:"last_time"`
 }
 
 // Metadata  used to define the metadata for the resources
