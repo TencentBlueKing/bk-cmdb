@@ -10,10 +10,10 @@
             <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleShowCreate"></i>
         </div>
         <ul class="dir-list">
-            <li class="dir-item" :class="{ 'selected': acitveDirId === -1 }" @click="handleSearchHost(defaultDir)">
+            <li class="dir-item" :class="{ 'selected': acitveDirId === defaultDir.bk_module_id }" @click="handleSearchHost(defaultDir)">
                 <i class="icon-cc-memory"></i>
                 <span class="dir-name" :title="$t('默认')">{{$t('默认')}}</span>
-                <span class="host-count">{{defaultDir.count}}</span>
+                <span class="host-count">{{defaultDir.host_count}}</span>
             </li>
             <li class="dir-item edit-status" v-if="createInfo.active">
                 <bk-input
@@ -114,7 +114,7 @@
                 defaultDir: {
                     bk_module_id: -1,
                     bk_module_name: '默认',
-                    count: 999
+                    host_count: 0
                 }
             }
         },
@@ -155,6 +155,7 @@
                     if (!this.searching) {
                         const firstDir = this.dirList[0] || {}
                         this.defaultDir = firstDir
+                        this.acitveDirId = firstDir.bk_module_id
                         this.$store.commit('resourceHost/setActiveDirectory', firstDir)
                     }
                 } catch (e) {
