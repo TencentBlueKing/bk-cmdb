@@ -13,22 +13,22 @@
 package model
 
 import (
-	"context"
-	"fmt"
-	"strings"
-	"sync"
-	"time"
-	"unicode/utf8"
+    "context"
+    "fmt"
+    "strings"
+    "sync"
+    "time"
+    "unicode/utf8"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql"
-	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/http/rest"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    "configcenter/src/common/universalsql"
+    "configcenter/src/common/universalsql/mongo"
+    "configcenter/src/common/util"
+    "configcenter/src/storage/dal/types"
 )
 
 var (
@@ -193,7 +193,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
-			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization,common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
+			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
 		default:
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
@@ -385,7 +385,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 
 		collectionName := common.GetInstTableName(object)
 		wg.Add(1)
-		go func(collName string, filter dal.Filter, fields []string) {
+		go func(collName string, filter types.Filter, fields []string) {
 			defer wg.Done()
 			if err := m.dbProxy.Table(collName).DropColumns(ctx, filter, fields); err != nil {
 				blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
@@ -425,7 +425,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 
 		collectionName := common.GetInstTableName(ele.object)
 		wg.Add(1)
-		go func(collName string, filter dal.Filter, fields []string) {
+		go func(collName string, filter types.Filter, fields []string) {
 			defer wg.Done()
 			if err := m.dbProxy.Table(collName).DropColumns(ctx, filter, fields); err != nil {
 				blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
@@ -572,6 +572,20 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		}
 	}
 
+	if option, exists := data.Get(metadata.AttributeFieldOption); exists {
+		propertyType := dbAttributeArr[0].PropertyType
+		for _, dbAttribute := range dbAttributeArr {
+			if dbAttribute.PropertyType != propertyType {
+				blog.ErrorJSON("update option, but property type not the same, db attributes: %s, rid:%s", dbAttributeArr, kit.Ctx)
+				return changeRow, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
+			}
+		}
+		if err := util.ValidPropertyOption(propertyType, option, kit.CCError); err != nil {
+			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
+			return changeRow, err
+		}
+	}
+
 	// 删除不可更新字段， 避免由于传入数据，修改字段
 	// TODO: 改成白名单方式
 	data.Remove(metadata.AttributeFieldPropertyID)
@@ -580,8 +594,31 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
 
-	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists && (grp == "") {
-		data.Remove(metadata.AttributeFieldPropertyGroup)
+	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists {
+		if grp == "" {
+			data.Remove(metadata.AttributeFieldPropertyGroup)
+		}
+		// check if property group exists in object
+		objIDs := make([]string, 0)
+		for _, dbAttribute := range dbAttributeArr {
+			objIDs = append(objIDs, dbAttribute.ObjectID)
+		}
+		objIDs = util.StrArrayUnique(objIDs)
+		cond := map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: objIDs,
+			},
+			common.BKPropertyGroupIDField: grp,
+		}
+		cnt, err := m.dbProxy.Table(common.BKTableNamePropertyGroup).Find(cond).Count(kit.Ctx)
+		if err != nil {
+			blog.ErrorJSON("property group count failed, err: %s, condition: %s, rid: %s", err, cond, kit.Rid)
+			return changeRow, err
+		}
+		if cnt != uint64(len(objIDs)) {
+			blog.Errorf("property group invalid, objIDs: %s have %d property groups, rid: %s", objIDs, cnt, kit.Rid)
+			return changeRow, kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyGroup)
+		}
 	}
 
 	attribute := metadata.Attribute{}
@@ -737,8 +774,8 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 	sortCond := "-bk_property_index"
 	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx, &attrs); err != nil {
 		blog.Error("GetAttrLastIndex, database operation is failed, err: %v, rid: %s", err, kit.Rid)
-        return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
-    }
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
 
 	if len(attrs) <= 0 {
 		return 0, nil

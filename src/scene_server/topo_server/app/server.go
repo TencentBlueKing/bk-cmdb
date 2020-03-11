@@ -101,31 +101,17 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	if err := server.CheckForReadiness(); err != nil {
 		return err
-	}
-
-	cache, err := redis.NewFromConfig(server.Config.Redis)
-	if err != nil {
-		blog.Errorf("new redis client failed, err: %v", err)
-		return err
-	}
-
-	db, err := local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
-	if err != nil {
-		blog.Errorf("failed to connect the txc server, error info is %v", err)
-		return err
-	}
-	err = db.InitTxnManager(cache)
-	if err != nil {
-		blog.Errorf("failed to init txn manager, error info is %v", err)
-		return err
-	}
+	}	
 
 	enableTxn := false
 	if server.Config.Mongo.TxnEnabled == "true" {
 		enableTxn = true
 	}
 	blog.Infof("enableTxn is %t", enableTxn)
-
+	txn, err := local.NewTransaction(enableTxn, server.Config.Mongo.GetMongoConf(), server.Config.Redis)
+	if err != nil {
+	    return fmt.Errorf("initial transaction failed, err: %v", err)
+    }
 
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
@@ -149,9 +135,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Engine:      engine,
 		AuthManager: authManager,
 		Es:          essrv,
-		Core:        core.New(engine.CoreAPI, authManager),
+		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
-		DB:         db,
+		Txn:          txn,
 		EnableTxn:   enableTxn,
 		Config:      server.Config,
 	}

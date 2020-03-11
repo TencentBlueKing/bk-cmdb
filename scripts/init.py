@@ -72,7 +72,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIdleConns = 1000
+maxIdleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 
@@ -120,7 +120,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 
@@ -178,7 +178,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 [redis]
@@ -218,7 +218,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 
@@ -256,7 +256,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 txnEnabled = $txn_enabled
 '''
     template = FileTemplate(proc_file_template_str)
@@ -273,7 +273,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 txnEnabled = $txn_enabled
 
 [timer]
@@ -298,7 +298,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 
@@ -372,7 +372,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIdleConns = 1000
+maxIdleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 maxIDleConns = 1000
@@ -383,7 +383,7 @@ port = $redis_port
 pwd = $redis_pass
 database = 0
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 '''
     template = FileTemplate(taskserver_file_template_str)
     result = template.substitute(**context)
@@ -420,6 +420,19 @@ appSecret = $auth_app_secret
     template = FileTemplate(cloud_file_template_str)
     result = template.substitute(**context)
     with open(output + "cloud.conf", 'w') as tmp_file:
+        tmp_file.write(result)
+
+    # auth.conf
+    auth_file_template_str = '''
+[auth]
+address = $auth_address
+appCode = $auth_app_code
+appSecret = $auth_app_secret
+'''
+
+    template = FileTemplate(auth_file_template_str)
+    result = template.substitute(**context)
+    with open(output + "auth.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
 def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip):
@@ -506,7 +519,8 @@ def main(argv):
         "cmdb_synchronizeserver": 60010,
         "cmdb_operationserver": 60011,
         "cmdb_taskserver": 60012,
-        "cmdb_cloudserver": 60013
+        "cmdb_cloudserver": 60013,
+        "cmdb_authserver": 60014
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",

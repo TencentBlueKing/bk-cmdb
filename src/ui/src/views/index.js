@@ -2,7 +2,6 @@ import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
 import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
-import resourceHostDetails from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
@@ -21,10 +20,6 @@ import setTemplate from '@/views/set-template/router.config'
 
 import hostApply from '@/views/host-apply/router.config'
 import businessTopology from '@/views/business-topology/router.config'
-
-import cloudArea from '@/views/cloud-area/router.config'
-import cloudAccount from '@/views/cloud-account/router.config'
-import cloudResource from '@/views/cloud-resource/router.config'
 
 import statusPermission from '@/views/status/permission'
 import statusError from '@/views/status/error'
@@ -68,13 +63,9 @@ export const businessViews = injectStatusComponents(flatternViews([
 export const resourceViews = injectStatusComponents(flatternViews([
     business,
     resource,
-    resourceHostDetails,
     generalModel,
     eventpush,
-    resourceManagement,
-    cloudArea,
-    cloudAccount,
-    cloudResource
+    resourceManagement
 ]))
 
 export const modelViews = injectStatusComponents(flatternViews([

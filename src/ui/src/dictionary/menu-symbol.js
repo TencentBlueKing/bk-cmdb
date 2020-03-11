@@ -29,8 +29,10 @@ export const MENU_RESOURCE_EVENTPUSH = 'menu_resource_eventpush'
 export const MENU_RESOURCE_MANAGEMENT = 'menu_resource_management'
 export const MENU_RESOURCE_BUSINESS = 'menu_resource_business'
 export const MENU_RESOURCE_BUSINESS_HISTORY = 'menu_resource_business_history'
+export const MENU_RESOURCE_BUSINESS_DETAILS = 'menu_resource_business_details'
 export const MENU_RESOURCE_HOST = 'menu_resource_host'
 export const MENU_RESOURCE_INSTANCE = 'menu_resource_instance'
+export const MENU_RESOURCE_INSTANCE_DETAILS = 'menu_resource_instance_details'
 
 export const MENU_MODEL_MANAGEMENT = 'menu_model_management'
 export const MENU_MODEL_TOPOLOGY = 'menu_model_topology'
@@ -57,10 +59,3 @@ export const MENU_BUSINESS_TRANSFER_HOST = 'menu_business_transfer_host'
 
 // 删除服务实例
 export const MENU_BUSINESS_DELETE_SERVICE = 'menu_business_delete_service'
-
-// 云区域
-export const MENU_RESOURCE_CLOUD_AREA = 'menu_resource_cloud_area'
-// 云账户
-export const MENU_RESOURCE_CLOUD_ACCOUNT = 'menu_resource_cloud_account'
-// 云资源发现
-export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'

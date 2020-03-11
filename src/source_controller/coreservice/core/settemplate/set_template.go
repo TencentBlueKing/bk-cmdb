@@ -164,7 +164,7 @@ func (p *setTemplateOperation) UpdateSetTemplate(kit *rest.Kit, setTemplateID in
 	}
 
 	filter := map[string]interface{}{
-		common.BKFieldID:      setTemplateID,
+		common.BKFieldID: setTemplateID,
 	}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter).One(kit.Ctx, &setTemplate); err != nil {
@@ -326,8 +326,8 @@ func (p *setTemplateOperation) DeleteSetTemplate(kit *rest.Kit, bizID int64, opt
 func (p *setTemplateOperation) GetSetTemplate(kit *rest.Kit, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder) {
 	setTemplate := metadata.SetTemplate{}
 	filter := map[string]interface{}{
-		common.BKFieldID:         setTemplateID,
-		common.BKAppIDField:      bizID,
+		common.BKFieldID:    setTemplateID,
+		common.BKAppIDField: bizID,
 	}
 	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter).One(kit.Ctx, &setTemplate); err != nil {
@@ -348,7 +348,7 @@ func (p *setTemplateOperation) ListSetTemplate(kit *rest.Kit, bizID int64, optio
 	}
 
 	filter := map[string]interface{}{
-		common.BKAppIDField:      bizID,
+		common.BKAppIDField: bizID,
 	}
 	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 	if option.SetTemplateIDs != nil {

@@ -67,13 +67,13 @@ func (c *cloud) SearchAccount(ctx context.Context, h http.Header, option *metada
 	return &ret.Data, nil
 }
 
-func (c *cloud) UpdateAccount(ctx context.Context, h http.Header, accountID int64, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder) {
+func (c *cloud) UpdateAccount(ctx context.Context, h http.Header, accountID int64, option map[string]interface{}) errors.CCErrorCoder {
 	ret := new(metadata.CloudAccountResult)
 	subPath := "/update/cloud/account/%d"
 
 	err := c.client.Put().
 		WithContext(ctx).
-		Body(account).
+		Body(option).
 		SubResourcef(subPath, accountID).
 		WithHeaders(h).
 		Do().
@@ -81,13 +81,13 @@ func (c *cloud) UpdateAccount(ctx context.Context, h http.Header, accountID int6
 
 	if err != nil {
 		blog.Errorf("UpdateAccount failed, http request failed, err: %+v", err)
-		return nil, errors.CCHttpError
+		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.Code, ret.ErrMsg)
+		return errors.New(ret.Code, ret.ErrMsg)
 	}
 
-	return &ret.Data, nil
+	return nil
 }
 
 func (c *cloud) DeleteAccount(ctx context.Context, h http.Header, accountID int64) errors.CCErrorCoder {

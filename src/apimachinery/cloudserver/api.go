@@ -21,8 +21,8 @@ func (c *cloudserver) CreateAccount(ctx context.Context, h http.Header, data map
 	return
 }
 
-func (c *cloudserver) SearchAccount(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (c *cloudserver) SearchAccount(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error) {
+	resp = new(metadata.SearchResp)
 	subPath := "/search/cloud/account"
 
 	err = c.client.Post().

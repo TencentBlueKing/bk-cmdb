@@ -218,10 +218,10 @@ const (
 
 	CCErrCommGetBusinessIDByHostIDFailed = 1199086
 
-    // CCErrCommOPInProgressErr have the same task[%s] in progress
-    CCErrCommOPInProgressErr = 1199087
-    // CCErrCommRedisOPErr operate redis error.
-    CCErrCommRedisOPErr = 1199088
+	// CCErrCommOPInProgressErr have the same task[%s] in progress
+	CCErrCommOPInProgressErr = 1199087
+	// CCErrCommRedisOPErr operate redis error.
+	CCErrCommRedisOPErr = 1199088
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -663,6 +663,8 @@ const (
 	CCErrHostSetNotBelongBusinessErr                          = 1110060
 	CCErrHostModuleNotBelongBusinessErr                       = 1110061
 	CCErrHostModuleNotBelongSetErr                            = 1110062
+	CCErrHostPlatCloudNameIsrequired                          = 1110063
+	CCErrHostPlatCloudNameAlreadyExist                        = 1110064
 
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
@@ -763,7 +765,7 @@ const (
 
 	// synchronize_server 1114xxx
 
-	CCErrSynchronizeError = 1114001
+	CCErrSynchronizeError = 1113903
 
 	// operation_server 1116xxx
 	CCErrOperationBizModuleHostAmountFail = 1116001
@@ -789,6 +791,13 @@ const (
 	CCErrTaskLockedTaskFail       = 1117005
 	CCErrTaskUnLockedTaskFail     = 1117006
 	CCErrTaskListTaskFail         = 1117007
+
+	// cloud_server 1118xxx
+	// CCErrCloudVendorNotSupport cloud vendor not support
+	CCErrCloudVendorNotSupport        = 1118001
+	CCErrCloudAccountNameAlreadyExist = 1118002
+	CCErrCloudValidAccountParamFail   = 1118003
+	CCErrCloudAccountIDNoExistFail    = 1118004
 
 	/** TODO: 以下错误码需要改造 **/
 

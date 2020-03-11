@@ -16,8 +16,8 @@ import (
 	"encoding/json"
 	"testing"
 
-    "configcenter/src/common"
-    "configcenter/src/common/http/httpclient"
+	"configcenter/src/common"
+	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"

@@ -13,15 +13,13 @@
 package service
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/settemplate"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (s *Service) SyncModuleTaskHandler(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SyncModuleTaskHandler(ctx *rest.Contexts) {
 	// parse task body
 	backendWorker := settemplate.BackendWorker{
 		ClientSet:       s.Engine.CoreAPI,
@@ -30,14 +28,15 @@ func (s *Service) SyncModuleTaskHandler(params types.ContextParams, pathParams, 
 		ModuleOperation: s.Core.ModuleOperation(),
 	}
 	task := &metadata.SyncModuleTask{}
-	if err := data.MarshalJSONInto(task); err != nil {
-		blog.ErrorJSON("unmarshal body into task data failed, body: %s, err: %s, rid: %s", data, err.Error(), params.ReqID)
-		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(task); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 	err := backendWorker.DoModuleSyncTask(task.Header, task.Set, task.ModuleDiff)
 	if err != nil {
-		blog.ErrorJSON("DoModuleSyncTask failed, task: %s, err: %s, rid: %s", task, err, params.ReqID)
-		return nil, params.Err.CCError(common.CCErrorTopoSyncModuleTaskFailed)
+		blog.ErrorJSON("DoModuleSyncTask failed, task: %s, err: %s, rid: %s", task, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }

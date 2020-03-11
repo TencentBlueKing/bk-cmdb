@@ -28,8 +28,6 @@ type User interface {
 	GetUserList(c *gin.Context) (int, interface{})
 	// 获取登录系统的URL
 	GetLoginUrl(c *gin.Context) string
-	GetDepartment(c *gin.Context) (int, interface{})
-	GetDepartmentProfile(c *gin.Context) (int, interface{})
 }
 
 // NewUser return user instance by type

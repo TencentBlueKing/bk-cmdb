@@ -1,5 +1,5 @@
 <template>
-    <div class="layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+    <div class="layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }" style="overflow: hidden;">
         <cmdb-resize-layout :class="['resize-layout fl', { 'is-collapse': layout.topologyCollapse }]"
             direction="right"
             :handler-offset="3"
@@ -39,6 +39,7 @@
                 </bk-tab-panel>
             </bk-tab>
         </div>
+        <router-subview></router-subview>
     </div>
 </template>
 

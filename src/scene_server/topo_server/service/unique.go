@@ -17,10 +17,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 var ForbiddenModifyMainlineObjectUniqueWhiteList = []string{
@@ -28,151 +27,177 @@ var ForbiddenModifyMainlineObjectUniqueWhiteList = []string{
 }
 
 // CreateObjectUnique create a new object unique
-func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateObjectUnique(ctx *rest.Contexts) {
 	request := &metadata.CreateUniqueRequest{}
-
-	if err := data.MarshalJSONInto(request); err != nil {
-		blog.Errorf("[CreateObjectUnique] unmarshal error: %v, data: %#v, rid: %s", err, data, params.ReqID)
-		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+	if err := ctx.DecodeInto(request); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	objectID := pathParams(common.BKObjIDField)
+	objectID := ctx.Request.PathParameter(common.BKObjIDField)
 
 	// mainline object's unique can not be changed.
-	yes, err := s.Core.AssociationOperation().IsMainlineObject(params, objectID)
+	yes, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
 	if err != nil {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 	if yes {
 		if util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) == false {
-			return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged))
+			return
 		}
 	}
 
-	id, err := s.Core.UniqueOperation().Create(params, objectID, request)
+	id, err := s.Core.UniqueOperation().Create(ctx.Kit, objectID, request, &request.Metadata)
 	if err != nil {
-		blog.Errorf("[CreateObjectUnique] create for [%s] failed: %v, raw: %#v, rid: %s", objectID, err, data, params.ReqID)
-		return nil, err
+		blog.Errorf("[CreateObjectUnique] create for [%s] failed: %v, raw: %#v, rid: %s", objectID, err, request, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
 	uniqueID := id.ID
 
 	// auth: register model unique
-	if err := s.AuthManager.RegisterModuleUniqueByID(params.Context, params.Header, uniqueID); err != nil {
-		blog.Errorf("register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", uniqueID, err, params.ReqID)
-		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
+	if err := s.AuthManager.RegisterModuleUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, uniqueID); err != nil {
+		blog.Errorf("register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", uniqueID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error()))
+		return
 	}
 
-	return id, nil
+	ctx.RespEntity(id)
 }
 
 // UpdateObjectUnique update a object unique
-func (s *Service) UpdateObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateObjectUnique(ctx *rest.Contexts) {
 	request := &metadata.UpdateUniqueRequest{}
 
-	if err := data.MarshalJSONInto(request); err != nil {
-		blog.Errorf("[UpdateObjectUnique] unmarshal error: %v, data: %#v, rid: %s", err, data, params.ReqID)
-		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+	if err := ctx.DecodeInto(request); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	objectID := pathParams(common.BKObjIDField)
-	id, err := strconv.ParseUint(pathParams("id"), 10, 64)
+	objectID := ctx.Request.PathParameter(common.BKObjIDField)
+	id, err := strconv.ParseUint(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "id")
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "id"))
+		return
 	}
-
-	data.Remove(metadata.BKMetadata)
 
 	// validate unique keys.
 	for _, key := range request.Keys {
 		if key.ID == 0 {
-			return nil, params.Err.New(common.CCErrCommParamsInvalid, "unique key_id is 0")
+			ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "unique key_id is 0"))
+			return
 		}
 		if len(key.Kind) == 0 {
-			return nil, params.Err.New(common.CCErrCommParamsInvalid, "unique key_kind is empty")
+			ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "unique key_kind is empty"))
+			return
 		}
 	}
 
 	// mainline object's unique can not be changed.
-	yes, err := s.Core.AssociationOperation().IsMainlineObject(params, objectID)
+	yes, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
 	if err != nil {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 	if yes {
 		if util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) == false {
-			return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged))
+			return
 		}
 	}
 
-	err = s.Core.UniqueOperation().Update(params, objectID, id, request)
+	err = s.Core.UniqueOperation().Update(ctx.Kit, objectID, id, request)
 	if err != nil {
-		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v, rid: %s", objectID, id, err, data, params.ReqID)
-		return nil, err
+		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v, rid: %s", objectID, id, err, request, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 	// auth: update registered model unique
-	if err := s.AuthManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
-		blog.Errorf("update register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, params.ReqID)
-		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+	if err := s.AuthManager.UpdateRegisteredModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, int64(id)); err != nil {
+		blog.Errorf("update register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error()))
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
 // DeleteObjectUnique delete a object unique
-func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	objectID := pathParams(common.BKObjIDField)
-	id, err := strconv.ParseUint(pathParams("id"), 10, 64)
+func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
+	objectID := ctx.Request.PathParameter(common.BKObjIDField)
+	id, err := strconv.ParseUint(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "id")
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "id"))
+		return
 	}
-	data.Remove(metadata.BKMetadata)
 
 	// mainline object's unique can not be changed.
-	yes, err := s.Core.AssociationOperation().IsMainlineObject(params, objectID)
+	yes, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
 	if err != nil {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 	if yes {
 		if util.InStrArr(ForbiddenModifyMainlineObjectUniqueWhiteList, objectID) == false {
-			return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged))
+			return
 		}
 	}
 
-	uniques, err := s.Core.UniqueOperation().Search(params, objectID)
+	md := new(MetaShell)
+	if err := ctx.DecodeInto(md); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	uniques, err := s.Core.UniqueOperation().Search(ctx.Kit, objectID, md.Metadata)
 	if err != nil {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 
 	if len(uniques) <= 1 {
-		blog.Errorf("[DeleteObjectUnique][%s] unique should have more than one, rid: %s", objectID, params.ReqID)
-		return nil, params.Err.Error(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
+		blog.Errorf("[DeleteObjectUnique][%s] unique should have more than one, rid: %s", objectID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne))
+		return
 	}
 
-	err = s.Core.UniqueOperation().Delete(params, objectID, id)
+	err = s.Core.UniqueOperation().Delete(ctx.Kit, objectID, id, md.Metadata)
 	if err != nil {
-		blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v, rid: %s", objectID, id, err, params.ReqID)
-		return nil, err
+		blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v, rid: %s", objectID, id, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	// auth: update registered model unique
-	if err := s.AuthManager.DeregisterModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
-		blog.Errorf("deregister model unique from iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, params.ReqID)
-		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
+	// auth: delete registered model unique
+	if err := s.AuthManager.DeregisterModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, int64(id)); err != nil {
+		blog.Errorf("deregister model unique from iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error()))
+		return
 	}
 
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
 // SearchObjectUnique search object uniques
-func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	objectID := pathParams(common.BKObjIDField)
-	uniques, err := s.Core.UniqueOperation().Search(params, objectID)
+func (s *Service) SearchObjectUnique(ctx *rest.Contexts) {
+	md := new(MetaShell)
+	if err := ctx.DecodeInto(md); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	objectID := ctx.Request.PathParameter(common.BKObjIDField)
+	uniques, err := s.Core.UniqueOperation().Search(ctx.Kit, objectID, md.Metadata)
 	if err != nil {
-		blog.Errorf("[SearchObjectUnique] search for [%s] failed: %v, rid: %s", objectID, err, params.ReqID)
-		return nil, err
+		blog.Errorf("[SearchObjectUnique] search for [%s] failed: %v, rid: %s", objectID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
 	if len(uniques) == 0 {
-		return uniques, nil
+		ctx.RespEntity(uniques)
+		return
 	}
 
 	// auth: check authorization
@@ -182,11 +207,11 @@ func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, que
 	}
 
 	/*
-		if err := s.AuthManager.AuthorizeModelUniqueByID(params.Context, params.Header, meta.Find, ids...); err != nil {
-			blog.Errorf("authorize model unique failed, unique: %+v, err: %+v, rid: %s", uniques, err, params.ReqID)
-			return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+		if err := s.AuthManager.AuthorizeModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Find, ids...); err != nil {
+			blog.Errorf("authorize model unique failed, unique: %+v, err: %+v, rid: %s", uniques, err, ctx.Kit.Rid)
+			return nil, ctx.Kit.CCError.New(common.CCErrCommAuthNotHavePermission, err.Error())
 		}
 	*/
 
-	return uniques, nil
+	ctx.RespEntity(uniques)
 }

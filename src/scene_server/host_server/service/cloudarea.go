@@ -15,6 +15,7 @@ package service
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
 
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -33,7 +35,7 @@ import (
 func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	rid := srvData.rid
-	input := new(metadata.CloudAreaParameter)
+	input := new(metadata.CloudAreaSearchParam)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); nil != err {
 		blog.Errorf("FindManyCloudArea , but decode body failed, err: %s,rid:%s", err.Error(), rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -44,11 +46,23 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 	if input.Page.Limit == 0 {
 		input.Page.Limit = common.BKMaxPageSize
 	}
-
 	if input.Page.IsIllegal() {
 		blog.Errorf("FindManyCloudArea failed, parse plat page illegal, input:%#v,rid:%s", input, rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommPageLimitIsExceeded)})
 		return
+	}
+
+	// if not exact search, change the string query to regexp
+	if input.Exact != true {
+		for k, v := range input.Condition {
+			if reflect.TypeOf(v).Kind() == reflect.String {
+				field := v.(string)
+				input.Condition[k] = mapstr.MapStr{
+					common.BKDBLIKE: params.SpecialCharChange(field),
+					"$options":      "i",
+				}
+			}
+		}
 	}
 
 	filter := input.Condition
@@ -73,6 +87,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		}
 	}
 	query := &metadata.QueryCondition{
+		Fields:    input.Fields,
 		Condition: filter,
 		Page:      input.Page,
 	}
@@ -101,8 +116,6 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 }
 
 // CreatePlat create a plat instance
-// available fields for body are last_time, bk_cloud_name, bk_supplier_account, bk_cloud_id, create_time
-// {"bk_cloud_name": "云区域", "bk_supplier_account": 0}
 func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	input := make(map[string]interface{})
@@ -113,6 +126,14 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	}
 	// read supplier account from header
 	input[common.BkSupplierAccount] = util.GetOwnerID(req.Request.Header)
+
+	// bk_cloud_name is required and unique
+	_, ok := input[common.BKCloudNameField]
+	if !ok {
+		blog.Errorf("CreatePlat failed, bk_cloud_name field is required, rid: %s", srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostPlatCloudNameIsrequired)})
+		return
+	}
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Model); err != nil {
@@ -125,21 +146,21 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		Data: mapstr.NewFromMap(input),
 	}
 
-	res, err := s.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, instInfo)
+	createRes, err := s.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, instInfo)
 	if nil != err {
 		blog.Errorf("CreatePlat error: %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)})
 		return
 	}
 
-	if false == res.Result {
-		blog.Errorf("GetPlat error.err code:%d,err msg:%s,input:%+v,rid:%s", res.Code, res.ErrMsg, input, srvData.rid)
-		_ = resp.WriteHeaderAndJson(http.StatusInternalServerError, res, "application/json")
+	if false == createRes.Result {
+		blog.Errorf("CreatePlat error.err code:%d,err msg:%s,input:%+v,rid:%s", createRes.Code, createRes.ErrMsg, input, srvData.rid)
+		_ = resp.WriteHeaderAndJson(http.StatusInternalServerError, createRes, "application/json")
 		return
 	}
 
 	// register plat to iam
-	platID := int64(res.Data.Created.ID)
+	platID := int64(createRes.Data.Created.ID)
 	if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platID); err != nil {
 		blog.Errorf("CreatePlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
 		ccErr := srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
@@ -149,12 +170,12 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
-		Data:     res.Data,
+		Data:     createRes.Data,
 	})
 
 }
 
-func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
+func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
 	platID, convErr := util.GetInt64ByInterface(req.PathParameter(common.BKCloudIDField))
@@ -263,9 +284,7 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 	}
 
 	// decode request body
-	input := struct {
-		CloudName string `json:"bk_cloud_name"`
-	}{}
+	input := mapstr.MapStr{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("UpdatePlat failed, err:%+v, rid:%s", err, srvData.rid)
 		ccErr := srvData.ccErr.Errorf(common.CCErrCommJSONUnmarshalFailed)
@@ -275,9 +294,7 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 
 	// update plat
 	updateOption := &meta.UpdateOption{
-		Data: map[string]interface{}{
-			common.BKCloudNameField: input.CloudName,
-		},
+		Data: input,
 		Condition: map[string]interface{}{
 			common.BKCloudIDField: platID,
 		},
@@ -296,9 +313,26 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 	}
 
 	// auth: sync resource info to iam
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKCloudIDField: platID,
+		},
+	}
+
+	platInfo, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, query)
+	if nil != err {
+		blog.Errorf("UpdatePlat ReadInstance htt do error: %v query:%#v,rid:%s", err, query, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if false == platInfo.Result {
+		blog.Errorf("UpdatePlat ReadInstance http reply error.  query:%#v, err code:%d, err msg:%s, rid:%s", query, platInfo.Code, platInfo.ErrMsg, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.New(platInfo.Code, platInfo.ErrMsg)})
+		return
+	}
 	iamPlat := extensions.PlatSimplify{
 		BKCloudIDField:   platID,
-		BKCloudNameField: input.CloudName,
+		BKCloudNameField: platInfo.Data.Info[0][common.BKCloudNameField].(string),
 	}
 	if err := s.AuthManager.UpdateRegisteredPlat(srvData.ctx, srvData.header, iamPlat); err != nil {
 		blog.Errorf("UpdatePlat success, but UpdateRegisteredPlat failed, plat: %d, err: %v, rid: %s", platID, err, srvData.rid)

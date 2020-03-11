@@ -4,5 +4,6 @@
   "process_placeholder_port": "Single port: 8080, </br>multiple consecutive ports: 8080-8089,</br> multiple discontinuous ports: 8080-8089, 8199.",
   "process_placeholder_bk_func_name": "The binary name of the program,</br> such as the binary name of zookeeper</br> is java, then fill in java.",
   "process_placeholder_bk_func_id": "Numeric field, a shortcut reference of the process",
+  "process_placeholder_bk_port_enable": "Whether to enbale the port, the default value is true",
   "": ""
 }

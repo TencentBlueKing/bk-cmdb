@@ -41,7 +41,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	service := svc.NewService(ctx)
 
-	process := new(EventServer)
+	process := new(CloudServer)
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: process.onHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
@@ -63,7 +63,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
 		}
@@ -99,7 +99,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
-type EventServer struct {
+type CloudServer struct {
 	Core    *backbone.Engine
 	Config  *options.Config
 	Service *svc.Service
@@ -107,24 +107,24 @@ type EventServer struct {
 
 var configLock sync.Mutex
 
-func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+func (c *CloudServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	var err error
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
-		if h.Config == nil {
-			h.Config = new(options.Config)
+		if c.Config == nil {
+			c.Config = new(options.Config)
 		}
 		// ignore err, cause ConfigMap is map[string]string
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.Infof("config updated: \n%s", out)
 		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-		h.Config.MongoDB = mongoConf
+		c.Config.MongoDB = mongoConf
 
 		redisConf := redis.ParseConfigFromKV("redis", current.ConfigMap)
-		h.Config.Redis = redisConf
+		c.Config.Redis = redisConf
 
-		h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+		c.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 		if err != nil {
 			blog.Errorf("parse auth center config failed: %v", err)
 		}

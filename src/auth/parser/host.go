@@ -303,6 +303,7 @@ func (ps *parseStream) userCustom() *parseStream {
 const (
 	deleteHostBatchPattern                    = "/api/v3/hosts/batch"
 	addHostsToHostPoolPattern                 = "/api/v3/hosts/add"
+	addHostsToResourcePoolPattern             = "/api/v3/hosts/add/resource"
 	moveHostToBusinessModulePattern           = "/api/v3/hosts/modules"
 	moveResPoolToBizIdleModulePattern         = "/api/v3/hosts/modules/resource/idle"
 	moveHostsToBizFaultModulePattern          = "/api/v3/hosts/modules/fault"
@@ -314,6 +315,7 @@ const (
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
 	findHostTopoRelationPattern               = "/api/v3/host/topo/relation/read"
 	updateHostCloudAreaFieldPattern           = "/api/v3/updatemany/hosts/cloudarea_field"
+	updateImportHostsPattern                  = "/api/v3/hosts/update"
 
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -424,6 +426,20 @@ func (ps *parseStream) host() *parseStream {
 
 	// add new hosts to resource pool
 	if ps.hitPattern(addHostsToHostPoolPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.AddHostToResourcePool,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// add hosts to resource pool
+	if ps.hitPattern(addHostsToResourcePoolPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -795,6 +811,20 @@ func (ps *parseStream) host() *parseStream {
 					Type: meta.HostInstance,
 					// Action: meta.UpdateMany,
 					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// update import hosts batch. but can not get the exactly host id.
+	if ps.hitPattern(updateImportHostsPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.UpdateMany,
 				},
 			},
 		}
