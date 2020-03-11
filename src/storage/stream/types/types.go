@@ -26,14 +26,23 @@ type OperType string
 const (
 	// reference doc:
 	// https://docs.mongodb.com/manual/reference/change-events/#change-events
-	Insert       OperType = "insert"
-	Delete       OperType = "delete"
-	Replace      OperType = "replace"
-	Update       OperType = "update"
-	Drop         OperType = "drop"
-	Rename       OperType = "rename"
+	// Document operation type
+	Insert  OperType = "insert"
+	Delete  OperType = "delete"
+	Replace OperType = "replace"
+	Update  OperType = "update"
+
+	// collection operation type.
+	Drop   OperType = "drop"
+	Rename OperType = "rename"
+
+	// dropDatabase event occurs when a database is dropped.
 	DropDatabase OperType = "dropDatabase"
-	Invalidate   OperType = "invalidate"
+
+	// For change streams opened up against a collection, a drop event, rename event,
+	// or dropDatabase event that affects the watched collection leads to an invalidate event.
+	Invalidate OperType = "invalidate"
+
 	// Lister OperType is a self defined type, which is represent this operation comes from
 	// a list watcher's find operations, it does not really come form the mongodb's change event.
 	Lister OperType = "lister"
@@ -143,6 +152,7 @@ type Event struct {
 	// Oid represent the unique document key filed "_id"
 	Oid           string
 	Document      interface{}
+	DocBytes      []byte
 	OperationType OperType
 }
 

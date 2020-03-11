@@ -107,6 +107,7 @@ func (e *Event) loopWatch(ctx context.Context,
 				Oid:           base.DocumentKey.ID.Hex(),
 				OperationType: base.OperationType,
 				Document:      newStruct.Field(1).Addr().Interface(),
+				DocBytes:      []byte(stream.Current.String()),
 			}
 		}
 
