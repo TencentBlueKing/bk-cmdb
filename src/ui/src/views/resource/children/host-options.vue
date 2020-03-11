@@ -406,7 +406,7 @@
                         requestId: this.assign.requestId
                     }
                 }).then(() => {
-                    Bus.$emit('refreshCount', {
+                    Bus.$emit('refresh-dir-count', {
                         reduceId: moduleId,
                         count: this.table.checked.length
                     })
@@ -427,7 +427,7 @@
                         bk_host_id: this.table.checked
                     }
                 })
-                Bus.$emit('refreshCount', {
+                Bus.$emit('refresh-dir-count', {
                     reduceId: originModuleId,
                     addId: targetModuleId,
                     count: this.table.checked.length
