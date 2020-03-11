@@ -36,6 +36,8 @@ type tcClient struct {
 	secretKey  string
 }
 
+const tcMaxPageSize int64 = 100
+
 // 设置账号密码
 func (c *tcClient) SetCredential(secretID, secretKey string) {
 	c.secretID = secretID
@@ -188,8 +190,10 @@ func (c *tcClient) NewDescribeVpcsRequest(opt *ccom.RequestOpt) *tcVpc.DescribeV
 	}
 	if opt.Limit != nil {
 		limit := fmt.Sprintf("%d", *opt.Limit)
+		if *opt.Limit > tcMaxPageSize {
+			limit = fmt.Sprintf("%d", tcMaxPageSize)
+		}
 		request.Limit = &limit
-
 	}
 	if opt.Offset != nil {
 		offset := fmt.Sprintf("%d", *opt.Offset)
@@ -212,7 +216,13 @@ func (c *tcClient) NewDescribeInstancesRequest(opt *ccom.RequestOpt) *cvm.Descri
 			request.Filters = append(request.Filters, filter)
 		}
 	}
-	request.Limit = opt.Limit
+	if opt.Limit != nil {
+		limit := *opt.Limit
+		if *opt.Limit > tcMaxPageSize {
+			limit = tcMaxPageSize
+		}
+		request.Limit = &limit
+	}
 	request.Offset = opt.Offset
 	return request
 }

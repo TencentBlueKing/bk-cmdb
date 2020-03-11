@@ -33,6 +33,8 @@ type awsClient struct {
 	secretKey  string
 }
 
+const awsMaxPageSize int64 = 1000
+
 var regionIdNameMap = map[string]string{
 	"us-east-1":      "美国东部（弗吉尼亚北部）",
 	"us-east-2":      "美国东部（俄亥俄州）",
@@ -252,9 +254,9 @@ func (c *awsClient) newDescribeVpcsInput(opt *ccom.RequestOpt) *ec2.DescribeVpcs
 			input.Filters = append(input.Filters, filter)
 		}
 	}
-	input.MaxResults = opt.Limit
+
 	// 按API要求，设置的MaxResults的取值范围为5～1000，不在该范围内的值会报错，这里设为最大值
-	input.MaxResults = ccom.Int64Ptr(int64(1000))
+	input.MaxResults = ccom.Int64Ptr(awsMaxPageSize)
 	input.NextToken = opt.NextToken
 	return input
 }
@@ -272,9 +274,9 @@ func (c *awsClient) newDescribeInstancesInput(opt *ccom.RequestOpt) *ec2.Describ
 			input.Filters = append(input.Filters, filter)
 		}
 	}
-	input.MaxResults = opt.Limit
+
 	// 按API要求，设置的MaxResults的取值范围为5～1000，不在该范围内的值会报错，这里设为最大值
-	input.MaxResults = ccom.Int64Ptr(int64(1000))
+	input.MaxResults = ccom.Int64Ptr(awsMaxPageSize)
 	input.NextToken = opt.NextToken
 	return input
 }

@@ -23,11 +23,13 @@ type CloudAccount struct {
 	SecretID    string `json:"bk_secret_id" bson:"bk_secret_id"`
 	SecretKey   string `json:"bk_secret_key" bson:"bk_secret_key"`
 	Description string `json:"bk_description" bson:"bk_description"`
-	OwnerID     string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Creator     string `json:"bk_creator" bson:"bk_creator"`
-	LastEditor  string `json:"bk_last_editor" bson:"bk_last_editor"`
-	CreateTime  string `json:"create_time" bson:"create_time"`
-	LastTime    string `json:"last_time" bson:"last_time"`
+	// 是否能删除账户，只有该账户下不存在同步任务了，才能删除，此时才能为true，否则为false
+	CanDeleteAccount bool   `json:"bk_can_delete_account" bson:"bk_can_delete_account"`
+	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator    string `json:"bk_creator" bson:"bk_creator"`
+	LastEditor string `json:"bk_last_editor" bson:"bk_last_editor"`
+	CreateTime string `json:"create_time" bson:"create_time"`
+	LastTime   string `json:"last_time" bson:"last_time"`
 }
 
 // 云厂商

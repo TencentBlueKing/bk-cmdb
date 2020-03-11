@@ -55,11 +55,17 @@ func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncT
 		return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 	}
 
+	// 更新账户的删除状态为不能删除
+	if err := c.UpdateCanDeleteAccount(kit, task.AccountID, false); err != nil {
+		return nil, err
+	}
+
 	return task, nil
 }
 
 func (c *cloudOperation) SearchSyncTask(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder) {
 	results := make([]metadata.CloudSyncTask, 0)
+	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
 	err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Find(option.Condition).Fields(option.Fields...).
 		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &results)
 	if err != nil {
@@ -83,7 +89,8 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 		return err
 	}
 
-	filter := map[string]int64{common.BKCloudSyncTaskID: taskID}
+	filter := map[string]interface{}{common.BKCloudSyncTaskID: taskID}
+	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	option.Set(common.LastTimeField, time.Now().Format("2006-01-02 15:04:05"))
 	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)
@@ -97,11 +104,39 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 }
 
 func (c *cloudOperation) DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCErrorCoder {
-	cond := map[string]int64{common.BKCloudSyncTaskID: taskID}
-	if e := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Delete(kit.Ctx, cond); e != nil {
-		blog.Errorf("DeleteSyncTask failed, mongodb operate failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, cond, e, kit.Rid)
+	cond := mapstr.MapStr{common.BKCloudSyncTaskID: taskID}
+	// 获取账户信息，用来处理后续的账号能否被删除的逻辑
+	searchOpt := &metadata.SearchCloudOption{Condition: cond}
+	task, err := c.SearchSyncTask(kit, searchOpt)
+	if err != nil {
+		return err
+	}
+	if len(task.Info) == 0 {
+		return nil
+	}
+	accountID := task.Info[0].AccountID
+
+	cond = util.SetModOwner(cond, kit.SupplierAccount)
+	if err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Delete(kit.Ctx, cond); err != nil {
+		blog.Errorf("DeleteSyncTask failed, mongodb operate failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, cond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 	}
+
+	// 账户下的任务总个数
+	cntCond := mapstr.MapStr{common.BKCloudAccountID: accountID}
+	var count uint64
+	var cntErr error
+	count, cntErr = c.countTask(kit, cntCond)
+	if cntErr != nil {
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	// 账户下的任务数为0，则更新账户状态为可删除
+	if count == 0 {
+		if err := c.UpdateCanDeleteAccount(kit, accountID, true); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -151,6 +186,7 @@ func (c *cloudOperation) countHistory(kit *rest.Kit, cond mapstr.MapStr) (uint64
 func (c *cloudOperation) getSyncTaskCloudVendor(kit *rest.Kit, accountID int64) (string, errors.CCErrorCoder) {
 	result := new(metadata.CloudAccount)
 	cond := map[string]interface{}{common.BKCloudAccountID: accountID}
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(cond).One(kit.Ctx, result)
 	if err != nil {
 		blog.ErrorJSON("getSyncTaskCloudVendor failed, db operate failed, cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
@@ -158,4 +194,17 @@ func (c *cloudOperation) getSyncTaskCloudVendor(kit *rest.Kit, accountID int64) 
 	}
 
 	return result.CloudVendor, nil
+}
+
+// 更新账户的删除状态
+func (c *cloudOperation) UpdateCanDeleteAccount(kit *rest.Kit, accountID int64, canDelete bool) errors.CCErrorCoder {
+	cond := mapstr.MapStr{common.BKCloudAccountID: accountID}
+	cond = util.SetModOwner(cond, kit.SupplierAccount)
+	option := mapstr.MapStr{common.BKCloudCanDeleteAccount: canDelete}
+	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Update(kit.Ctx, cond, option)
+	if err != nil {
+		blog.ErrorJSON("UpdateCanDeleteAccount failed, db update failed, accountID: %s, err: %v, rid: %s", accountID, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+	}
+	return nil
 }
