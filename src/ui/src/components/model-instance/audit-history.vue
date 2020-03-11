@@ -43,11 +43,24 @@
 </template>
 
 <script>
+    import { mapActions } from 'vuex'
     import cmdbHostHistoryDetails from '@/components/audit-history/details'
     export default {
-        name: 'cmdb-host-history',
         components: {
             cmdbHostHistoryDetails
+        },
+        props: {
+            target: {
+                type: String,
+                default: ''
+            },
+            instId: {
+                type: Number
+            },
+            resourceType: {
+                type: String,
+                default: ''
+            }
         },
         data () {
             return {
@@ -75,17 +88,15 @@
             }
         },
         computed: {
-            id () {
-                return parseInt(this.$route.params.id)
-            }
         },
         created () {
             this.getHistory()
         },
         methods: {
+            ...mapActions('operationAudit', ['getUserOperationLog']),
             getFormatterDesc (row) {
                 const funcActions = this.$store.state.operationAudit.funcActions
-                const modules = [...funcActions.business, ...funcActions.resource].filter(item => ['host', 'instance_association'].includes(item.id))
+                const modules = [...funcActions.business, ...funcActions.resource].filter(item => [this.resourceType, 'instance_association'].includes(item.id))
                 const operations = modules.reduce((acc, item) => acc.concat(item.operations), [])
                 const actionSet = {}
                 operations.forEach(operation => {
@@ -112,7 +123,7 @@
             async getHistory (event) {
                 try {
                     const condition = {
-                        resource_id: Number(this.id)
+                        resource_id: Number(this.instId)
                     }
                     if (this.dateRange.length) {
                         condition.operation_time = [this.dateRange[0] + ' 00:00:00', this.dateRange[1] + ' 23:59:59']
@@ -120,14 +131,21 @@
                     if (this.operator) {
                         condition.user = this.operator
                     }
-                    const data = await this.$http.post('object/host/audit/search', {
-                        condition,
-                        limit: this.pagination.limit,
-                        sort: this.sort,
-                        start: (this.pagination.current - 1) * this.pagination.limit
-                    }, {
-                        requestId: 'getHostAuditLog'
+
+                    const data = await this.getUserOperationLog({
+                        objId: this.target,
+                        params: {
+                            condition,
+                            limit: this.pagination.limit,
+                            sort: this.sort,
+                            start: (this.pagination.current - 1) * this.pagination.limit
+                        },
+                        config: {
+                            cancelPrevious: true,
+                            requestId: 'getUserOperationLog'
+                        }
                     })
+
                     this.history = data.info
                     this.pagination.count = data.count
 
