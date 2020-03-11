@@ -246,7 +246,8 @@
                 }, {
                     id: 'toDirs',
                     name: this.$t('资源池其他目录')
-                }]
+                }],
+                dirList: []
             }
         },
         computed: {
@@ -303,16 +304,14 @@
             },
             assignOptions () {
                 if (this.assign.curSelected === 'toBusiness') {
-                    const list = this.businessList.map(item => ({
+                    return this.businessList.map(item => ({
                         id: item.bk_biz_id,
                         name: item.bk_biz_name
                     }))
-                    return list
                 }
-                const list = this.$store.getters['resourceHost/dirList'] || []
-                return list.map(item => ({
-                    id: item.bk_inst_id,
-                    name: item.bk_inst_name
+                return this.dirList.map(item => ({
+                    id: item.bk_module_id,
+                    name: item.bk_module_name
                 }))
             }
         },
@@ -326,6 +325,7 @@
         async created () {
             try {
                 await this.getFullAmountBusiness()
+                await this.getDirectoryList()
             } catch (e) {
                 console.error(e)
             }
@@ -338,6 +338,17 @@
                 } catch (e) {
                     console.error(e)
                     this.businessList = []
+                }
+            },
+            async getDirectoryList () {
+                try {
+                    const data = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
+                        params: {}
+                    })
+                    this.dirList = data.info || []
+                } catch (e) {
+                    console.error(e)
+                    this.dirList = []
                 }
             },
             openAgentApp () {
@@ -384,17 +395,19 @@
                 this.assign.curSelected === 'toBusiness' ? this.assignHostsToBusiness() : this.changeHostsDir()
             },
             async assignHostsToBusiness () {
-                await this.$store.dispatch('hostRelation/transferResourcehostToIdleModule', {
+                const moduleId = this.activeDirectory.bk_module_id
+                await this.$store.dispatch('resourceDirectory/assignHostsToBusiness', {
                     params: {
-                        'bk_biz_id': this.assign.id,
-                        'bk_host_id': this.table.checked
+                        bk_module_id: moduleId,
+                        bk_biz_id: this.assign.id,
+                        bk_host_id: this.table.checked
                     },
                     config: {
                         requestId: this.assign.requestId
                     }
                 }).then(() => {
                     Bus.$emit('refreshCount', {
-                        reduceId: this.activeDirectory.bk_inst_id,
+                        reduceId: moduleId,
                         count: this.table.checked.length
                     })
                     this.$success(this.$t('分配成功'))
@@ -404,6 +417,25 @@
                 }).catch(e => {
                     console.error(e)
                 })
+            },
+            async changeHostsDir () {
+                const originModuleId = this.activeDirectory.bk_module_id
+                const targetModuleId = this.assign.id
+                await this.$http.post('resourceDirectory/changeHostsDirectory', {
+                    params: {
+                        bk_module_id: targetModuleId,
+                        bk_host_id: this.table.checked
+                    }
+                })
+                Bus.$emit('refreshCount', {
+                    reduceId: originModuleId,
+                    addId: targetModuleId,
+                    count: this.table.checked.length
+                })
+                this.$success(this.$t('转移成功'))
+                this.$parent.table.checked = []
+                this.$parent.handlePageChange(1)
+                this.handleCancelAssignHosts()
             },
             getHostCellText (header, item) {
                 const objId = header.objId
@@ -571,29 +603,6 @@
                 } catch (e) {
                     console.error(e)
                 }
-            },
-            async changeHostsDir () {
-                const originModuleId = this.activeDirectory.bk_inst_id
-                const targetModuleId = this.assign.id
-                // bizId固定为1
-                await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/1`, {
-                    add_to_modules: [targetModuleId],
-                    bk_host_ids: this.table.checked,
-                    remove_from_node: {
-                        bk_inst_id: originModuleId,
-                        bk_obj_id: 'module'
-                    }
-                }, {
-                    requestId: this.assign.requestId
-                })
-                Bus.$emit('refreshCount', {
-                    reduceId: originModuleId,
-                    addId: targetModuleId,
-                    count: this.table.checked.length
-                })
-                this.$success(this.$t('转移成功'))
-                this.$parent.handlePageChange(1)
-                this.handleCancelAssignHosts()
             }
         }
     }

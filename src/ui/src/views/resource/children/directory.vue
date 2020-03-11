@@ -1,24 +1,28 @@
 <template>
     <div class="diractory-layout">
-        <bk-input class="dir-search" v-model="dirSearch" :placeholder="$t('分组目录')"></bk-input>
+        <bk-input class="dir-search"
+            v-model="dirSearch"
+            :placeholder="$t('分组目录')"
+            @enter="getDirectoryList">
+        </bk-input>
         <div class="dir-header">
             <span class="title">{{$t('资源池')}}</span>
             <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleShowCreate"></i>
         </div>
         <ul class="dir-list">
-            <li class="dir-item" :class="{ 'selected': curActiveDir === -1 }" @click="handleSearchHost(defaultDir)">
+            <li class="dir-item" :class="{ 'selected': acitveDirId === -1 }" @click="handleSearchHost(defaultDir)">
                 <i class="icon-cc-memory"></i>
                 <span class="dir-name" :title="$t('默认')">{{$t('默认')}}</span>
                 <span class="host-count">{{defaultDir.count}}</span>
             </li>
-            <li class="dir-item edit-status" v-if="createDir.active">
+            <li class="dir-item edit-status" v-if="createInfo.active">
                 <bk-input
                     ref="createdDir"
                     v-click-outside="handleCancelCreate"
                     style="width: 100%"
                     v-validate="'required|singlechar|length:256'"
                     :placeholder="$t('请输入目录名称，回车结束')"
-                    v-model="createDir.name"
+                    v-model="createInfo.name"
                     @enter="handleConfirm(true)">
                 </bk-input>
             </li>
@@ -32,18 +36,18 @@
                     <div
                         class="dir-item"
                         :class="{
-                            'edit-status': editDir.id === dir.bk_inst_id,
+                            'edit-status': editDir.id === dir.bk_module_id,
                             'disabled': disabled,
-                            'selected': curActiveDir === dir.bk_inst_id && !disabled
+                            'selected': acitveDirId === dir.bk_module_id && !disabled
                         }"
                         @click="handleSearchHost(dir)">
-                        <template v-if="editDir.id === dir.bk_inst_id">
+                        <template v-if="editDir.id === dir.bk_module_id">
                             <bk-input
                                 style="width: 100%"
                                 v-click-outside="handleCancelEdit"
                                 v-validate="'required|singlechar|length:256'"
                                 :placeholder="$t('请输入目录名称，回车结束')"
-                                :ref="`dir-node-${dir.bk_inst_id}`"
+                                :ref="`dir-node-${dir.bk_module_id}`"
                                 v-model="editDir.name"
                                 @enter="handleConfirm(false)"
                                 @click.native.stop>
@@ -51,7 +55,7 @@
                         </template>
                         <template v-else>
                             <i class="icon-cc-memory"></i>
-                            <span class="dir-name" :title="dir.bk_inst_name">{{dir.bk_inst_name}}</span>
+                            <span class="dir-name" :title="dir.bk_module_name">{{dir.bk_module_name}}</span>
                             <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
                                 <div class="dot-content">
                                     <cmdb-auth :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
@@ -94,9 +98,10 @@
     export default {
         data () {
             return {
+                searching: false,
                 dirSearch: '',
                 resetName: false,
-                createDir: {
+                createInfo: {
                     active: false,
                     name: ''
                 },
@@ -104,13 +109,30 @@
                     id: null,
                     name: ''
                 },
-                curActiveDir: -1,
+                acitveDirId: -1,
                 dirList: [],
                 defaultDir: {
-                    bk_inst_id: -1,
-                    bk_inst_name: '默认',
+                    bk_module_id: -1,
+                    bk_module_name: '默认',
                     count: 999
                 }
+            }
+        },
+        computed: {
+            params () {
+                if (this.searching) {
+                    return {
+                        condition: {
+                            bk_module_name: this.dirSearch
+                        }
+                    }
+                }
+                return {}
+            }
+        },
+        watch: {
+            dirSearch (val) {
+                this.searching = !!val
             }
         },
         created () {
@@ -121,59 +143,38 @@
             Bus.$off('refresh-dir-count', this.refreshCount)
         },
         methods: {
-            getModuleList (data) {
-                const cur = data[0] || {}
-                const child = cur.child || []
-                const objId = cur.bk_obj_id
-                if (objId === 'set' || !child.length) {
-                    return child
-                }
-                return this.getModuleList(child)
-            },
             async getDirectoryList () {
                 try {
-                    // bizId固定为1
-                    const data = await this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
-                        bizId: 1,
+                    const data = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
+                        params: this.params,
                         config: {
-                            requestId: Symbol('instance')
+                            requestId: 'getDirectoryList'
                         }
                     })
-                    // const data = await this.$store.dispatch('objectModule/searchModule', {
-                    //     bizId: 1,
-                    //     setId: 1,
-                    //     params: this.$injectMetadata(),
-                    //     config: {
-                    //         requestId: 'searchModule'
-                    //     }
-                    // })
-                    // console.log(data)
-                    this.dirList = this.getModuleList(data)
-                    this.$store.commit('resourceHost/setDirList', this.dirList)
-                    // this.$store.commit('resourceHost/setActiveDirectory', this.dirList[0])
+                    this.dirList = data.info || []
+                    if (!this.searching) {
+                        const firstDir = this.dirList[0] || {}
+                        this.defaultDir = firstDir
+                        this.$store.commit('resourceHost/setActiveDirectory', firstDir)
+                    }
                 } catch (e) {
                     console.error(e)
                     this.dirList = []
                 }
             },
-            async createdDirectory () {
+            async createdDir () {
                 try {
-                    // bizId、setId、bk_parent_id固定为1
-                    const data = await this.$store.dispatch('objectModule/createModule', {
-                        bizId: 1,
-                        setId: 1,
-                        params: this.$injectMetadata({
-                            bk_parent_id: 1,
-                            bk_module_name: this.createDir.name,
-                            bk_supplier_account: this.$store.getters.supplierAccount
-                        })
+                    const data = await this.$store.dispatch('resourceDirectory/createDirectory', {
+                        params: {
+                            bk_module_name: this.createInfo.name
+                        }
                     })
-                    this.dirList.unshift({
-                        bk_inst_id: data.bk_module_id,
-                        bk_inst_name: data.bk_module_name,
+                    const newDir = {
+                        bk_module_id: data.bk_module_id,
+                        bk_module_name: data.bk_module_name,
                         host_count: 0
-                    })
-                    // this.$store.commit('resourceHost/setDirList', this.dirList)
+                    }
+                    this.dirList.unshift(newDir)
                     this.$success(this.$t('新建成功'))
                     this.handleCancelCreate()
                 } catch (e) {
@@ -182,25 +183,20 @@
             },
             async updateDir () {
                 try {
-                    // bizId和setId固定为1
-                    await this.$store.dispatch('objectModule/updateModule', {
-                        bizId: 1,
-                        setId: 1,
+                    await this.$store.dispatch('resourceDirectory/updateDirectory', {
                         moduleId: this.editDir.id,
                         params: {
-                            bk_supplier_account: this.$store.getters.supplierAccount,
                             bk_module_name: this.editDir.name
                         },
                         config: {
                             requestId: 'updateDir'
                         }
                     })
-                    const index = this.dirList.findIndex(dir => dir.bk_inst_id === this.editDir.id)
+                    const index = this.dirList.findIndex(dir => dir.bk_module_id === this.editDir.id)
                     this.$set(this.dirList, index, Object.assign(this.dirList[index], {
-                        bk_inst_id: this.editDir.id,
-                        bk_inst_name: this.editDir.name
+                        bk_module_id: this.editDir.id,
+                        bk_module_name: this.editDir.name
                     }))
-                    // this.$store.commit('resourceHost/setDirList', this.dirList)
                     this.$success(this.$t('修改成功'))
                     this.handleCancelEdit()
                 } catch (e) {
@@ -210,14 +206,14 @@
             handleSearchHost (active = {}) {
                 this.$store.commit('resourceHost/setActiveDirectory', active)
                 Bus.$emit('refresh-resource-list')
-                this.curActiveDir = active.bk_inst_id
+                this.acitveDirId = active.bk_module_id
             },
             handleCancelCreate () {
-                this.createDir.active = false
-                this.createDir.name = ''
+                this.createInfo.active = false
+                this.createInfo.name = ''
             },
             handleShowCreate () {
-                this.createDir.active = true
+                this.createInfo.active = true
                 this.$nextTick(() => {
                     this.$refs.createdDir.$refs.input.focus()
                 })
@@ -232,16 +228,16 @@
                     return
                 }
                 if (isCreate) {
-                    this.createdDirectory()
+                    this.createdDir()
                 } else {
                     this.updateDir()
                 }
             },
             handleResetName (dir) {
-                this.editDir.id = dir.bk_inst_id
-                this.editDir.name = dir.bk_inst_name
+                this.editDir.id = dir.bk_module_id
+                this.editDir.name = dir.bk_module_name
                 this.$nextTick(() => {
-                    this.$refs[`dir-node-${dir.bk_inst_id}`][0].$refs.input.focus()
+                    this.$refs[`dir-node-${dir.bk_module_id}`][0].$refs.input.focus()
                 })
             },
             handleCloseInput () {
@@ -249,31 +245,26 @@
                 this.handleCancelEdit()
             },
             async handleDelete (dir) {
-                const count = await this.getActiveDirHostCount(dir.bk_inst_id)
-                if (count) {
+                if (dir.host_count) {
                     this.$error(this.$t('目标包含主机, 不允许删除'))
                     return
                 }
                 this.$bkInfo({
                     title: this.$t('确认确定删除目录'),
-                    subTitle: this.$t('即将删除目录', { name: dir.bk_inst_name }),
+                    subTitle: this.$t('即将删除目录', { name: dir.bk_module_name }),
                     extCls: 'bk-dialog-sub-header-center',
                     confirmFn: async () => {
                         try {
-                            // bizId和setId固定为1
-                            await this.$store.dispatch('objectModule/deleteModule', {
-                                bizId: 1,
-                                setId: 1,
-                                moduleId: dir.bk_inst_id,
+                            await this.$store.dispatch('resourceDirectory/deleteDirectory', {
+                                moduleId: dir.bk_module_id,
                                 config: {
-                                    requestId: 'deleteNodeInstance',
-                                    data: {}
+                                    requestId: 'deleteDirectory'
                                 }
                             })
-                            const index = this.dirList.findIndex(target => target.bk_inst_id === dir.bk_inst_id)
+                            const index = this.dirList.findIndex(target => target.bk_module_id === dir.bk_module_id)
                             this.dirList.splice(index, 1)
-                            if (dir.bk_inst_id === this.curActiveDir) {
-                                this.curActiveDir = this.defaultDir.bk_inst_id
+                            if (dir.bk_module_id === this.acitveDirId) {
+                                this.acitveDirId = this.defaultDir.bk_module_id
                             }
                             this.$success(this.$t('删除成功'))
                         } catch (e) {
@@ -282,51 +273,11 @@
                     }
                 })
             },
-            async getActiveDirHostCount (id) {
-                const defaultModel = ['biz', 'set', 'module', 'host', 'object']
-                const conditionParams = {
-                    condition: defaultModel.map(model => {
-                        return {
-                            bk_obj_id: model,
-                            condition: [],
-                            fields: []
-                        }
-                    })
-                }
-                const moduleCondition = conditionParams.condition.find(target => target.bk_obj_id === 'module')
-                moduleCondition.condition.push({
-                    field: 'bk_module_id',
-                    operator: '$eq',
-                    value: id
-                })
-                // bk_biz_id固定为1
-                const data = await this.$store.dispatch('hostSearch/searchHost', {
-                    params: {
-                        ...conditionParams,
-                        bk_biz_id: 1,
-                        ip: {
-                            flag: 'bk_host_innerip|bk_host_outer',
-                            exact: 0,
-                            data: []
-                        },
-                        page: {
-                            start: 0,
-                            limit: 1,
-                            sort: ''
-                        }
-                    },
-                    config: {
-                        requestId: 'searchHosts',
-                        cancelPrevious: true
-                    }
-                })
-                return data && data.count
-            },
             refreshCount ({ reduceId, addId, count }) {
                 this.dirList = this.dirList.map((dir, index) => {
-                    if (dir.bk_inst_id === reduceId) {
+                    if (dir.bk_module_id === reduceId) {
                         dir.host_count -= count
-                    } else if (dir.bk_inst_id === addId) {
+                    } else if (dir.bk_module_id === addId) {
                         dir.host_count += count
                     }
                     return dir

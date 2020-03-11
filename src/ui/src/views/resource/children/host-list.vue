@@ -117,7 +117,7 @@
                     moduleCondition.condition.push({
                         field: 'bk_module_id',
                         operator: '$eq',
-                        value: this.activeDirectory.bk_inst_id
+                        value: this.activeDirectory.bk_module_id
                     })
                 }
                 return params
