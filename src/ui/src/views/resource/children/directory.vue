@@ -30,7 +30,7 @@
                 style="display: block;"
                 tag="li"
                 :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })"
-                v-for="(dir, index) in dirList"
+                v-for="(dir, index) in filterDirList"
                 :key="index">
                 <template slot-scope="{ disabled }">
                     <div
@@ -119,6 +119,9 @@
             }
         },
         computed: {
+            filterDirList () {
+                return this.searching ? this.dirList : this.dirList.slice(1)
+            },
             params () {
                 if (this.searching) {
                     return {
@@ -175,7 +178,7 @@
                         bk_module_name: data.bk_module_name,
                         host_count: 0
                     }
-                    this.dirList.unshift(newDir)
+                    this.dirList.splice(1, 0, newDir)
                     this.$success(this.$t('新建成功'))
                     this.handleCancelCreate()
                 } catch (e) {
