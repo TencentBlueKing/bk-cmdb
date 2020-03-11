@@ -386,7 +386,7 @@
                 this.sideslider.component = CmdbImport.name
                 this.sideslider.componentProps = {
                     templateUrl: `${window.API_HOST}importtemplate/host`,
-                    importUrl: `${window.API_PREFIX}/hosts/update`
+                    importUrl: `${window.API_HOST}/hosts/update`
                 }
                 this.sideslider.title = this.$t('更新主机属性')
                 this.sideslider.show = true
