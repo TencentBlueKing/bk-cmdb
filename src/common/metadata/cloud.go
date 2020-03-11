@@ -45,7 +45,7 @@ type SearchCloudAccountOption struct {
 	Page      BasePage      `json:"page" bson:"page" field:"page"`
 	Fields    []string      `json:"fields,omitempty" bson:"fields,omitempty"`
 	// 对于condition里的属性值是否精确匹配，默认为false，即使用模糊匹配和忽略大小写
-	Exact     bool          `json:"exact" bson:"exact"`
+	Exact bool `json:"exact" bson:"exact"`
 }
 
 type MultipleCloudAccount struct {
@@ -57,4 +57,10 @@ type CloudAccountVerify struct {
 	SecretID    string      `json:"bk_secret_id"`
 	SecretKey   string      `json:"bk_secret_key"`
 	CloudVendor AccountType `json:"bk_cloud_vendor"`
+}
+
+var CloudAccountAudiLogProperty = []Property{
+	{"bk_account_name", "账户名称"},
+	{"bk_cloud_vendor", "账户类型"},
+	{"bk_description", "备注"},
 }

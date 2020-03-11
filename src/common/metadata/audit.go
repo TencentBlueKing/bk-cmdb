@@ -30,21 +30,21 @@ type AuditQueryResult struct {
 }
 
 type AuditQueryCondition struct {
-	AuditType     AuditType       `json:"audit_type"`
-	User          string          `json:"user"`
-	ResourceType  []ResourceType  `json:"resource_type" `
-	Action        []ActionType    `json:"action"`
-	OperateFrom   OperateFromType `json:"operate_from"`
-	BizID         int64           `json:"bk_biz_id"`
-	ResourceID    int64           `json:"resource_id"`
+	AuditType    AuditType       `json:"audit_type"`
+	User         string          `json:"user"`
+	ResourceType []ResourceType  `json:"resource_type" `
+	Action       []ActionType    `json:"action"`
+	OperateFrom  OperateFromType `json:"operate_from"`
+	BizID        int64           `json:"bk_biz_id"`
+	ResourceID   int64           `json:"resource_id"`
 	// ResourceName filters audit logs by resource name, such as instance name, host ip etc., support fuzzy query
-	ResourceName  string          `json:"resource_name"`
+	ResourceName string `json:"resource_name"`
 	// OperationTime is an array of start time and end time, filters audit logs between them
-	OperationTime []string        `json:"operation_time"`
+	OperationTime []string `json:"operation_time"`
 	// Label filters audit logs with these labels
-	Label         []string        `json:"label"`
+	Label []string `json:"label"`
 	// Category is used by front end, filters audit logs as business(business resource and host operation related to business), resource(instance resource not related to business) or other category
-	Category      string          `json:"category"`
+	Category string `json:"category"`
 }
 
 type AuditLog struct {
@@ -138,6 +138,12 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+	case CloudAccountRes:
+		operationDetail := new(CloudAccountOpDetail)
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
 	default:
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -184,6 +190,12 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ModelAssociationRes:
 		operationDetail := new(ModelAssociationOpDetail)
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case CloudAccountRes:
+		operationDetail := new(CloudAccountOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -483,4 +495,21 @@ func GetAuditTypesByCategory(category string) []AuditType {
 		return []AuditType{ModelType, AssociationKindType, EventPushType}
 	}
 	return []AuditType{}
+}
+
+type CloudAccountOpDetail struct {
+	AccountID  int64              `json:"bk_account_id" bson:"bk_account_id"`
+	PreData    CloudAccountOpData `json:"pre_data" bson:"pre_data"`
+	CurData    CloudAccountOpData `json:"cur_data" bson:"cur_data"`
+	Properties []Property         `json:"properties" bson:"properties"`
+}
+
+type CloudAccountOpData struct {
+	AccountName string      `json:"bk_account_name" bson:"bk_account_name"`
+	CloudVendor AccountType `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
+	Description string      `json:"bk_description" bson:"bk_description"`
+}
+
+func (op *CloudAccountOpDetail) WithName() string {
+	return "CloudAccountOpDetail"
 }

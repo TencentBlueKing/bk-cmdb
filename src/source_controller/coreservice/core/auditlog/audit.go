@@ -101,6 +101,13 @@ func instNotChange(ctx context.Context, content metadata.DetailFactory) bool {
 			blog.V(5).Infof("inst data same, %+v, rid: %s", content, rid)
 		}
 		return bl
+	case "CloudAccountOpDetail":
+		cloudAccountContent := content.(*metadata.CloudAccountOpDetail)
+		bl := cmp.Equal(cloudAccountContent.PreData, cloudAccountContent.CurData)
+		if bl {
+			blog.V(5).Infof("inst data same, %+v, rid: %s", content, rid)
+		}
+		return bl
 	}
 	if basicContent == nil || basicContent.Details == nil || basicContent.Details.PreData == nil || basicContent.Details.CurData == nil {
 		return false
