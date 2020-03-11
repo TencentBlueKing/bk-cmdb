@@ -20,33 +20,34 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
 )
 
 var CreateTableOptions = []struct {
 	TableName  string
-	TableIndex []dal.Index
+	TableIndex []types.Index
 }{
 	{
 		TableName: common.BKTableNameCloudSyncTask,
-		TableIndex: []dal.Index{
+		TableIndex: []types.Index{
 			{Name: "bk_task_id", Keys: map[string]int32{"bk_task_id": 1}, Unique: true, Background: true},
 		},
 	},
 	{
 		TableName: common.BKTableNameCloudAccount,
-		TableIndex: []dal.Index{
+		TableIndex: []types.Index{
 			{Name: "bk_account_id", Keys: map[string]int32{"bk_account_id": 1}, Background: true},
 		},
 	},
 	{
 		TableName: common.BKTableNameCloudSyncHistory,
-		TableIndex: []dal.Index{
+		TableIndex: []types.Index{
 			{Name: "bk_history_id", Keys: map[string]int32{"bk_history_id": 1}, Background: true},
 		},
 	},
 }
 
-func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableName string, indices []dal.Index) error {
+func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableName string, indices []types.Index) error {
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return fmt.Errorf("check HasTable failed, tableName: %s, err: %+v", tableName, err)
