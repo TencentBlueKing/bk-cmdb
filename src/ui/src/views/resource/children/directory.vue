@@ -1,55 +1,61 @@
 <template>
     <div class="diractory-layout">
-        <bk-input class="dir-search" v-model="dirSearch" :placeholder="$t('分组目录')"></bk-input>
+        <bk-input class="dir-search"
+            v-model="dirSearch"
+            :placeholder="$t('分组目录')"
+            @enter="getDirectoryList">
+        </bk-input>
         <div class="dir-header">
             <span class="title">{{$t('资源池')}}</span>
-            <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleCreateDir"></i>
+            <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleShowCreate"></i>
         </div>
         <ul class="dir-list">
-            <li class="dir-item" :class="{ 'selected': curActiveDir === -1 }" @click="handleSearchHost(-1)">
+            <li class="dir-item" :class="{ 'selected': acitveDirId === defaultDir.bk_module_id }" @click="handleSearchHost(defaultDir)">
                 <i class="icon-cc-memory"></i>
                 <span class="dir-name" :title="$t('默认')">{{$t('默认')}}</span>
-                <span class="host-count">999+</span>
+                <span class="host-count">{{defaultDir.host_count}}</span>
             </li>
-            <li class="dir-item edit-status" v-if="createDir.active">
+            <li class="dir-item edit-status" v-if="createInfo.active">
                 <bk-input
                     ref="createdDir"
-                    v-click-outside="hanldeCancelCreateDir"
-                    class="reset-name"
+                    v-click-outside="handleCancelCreate"
+                    style="width: 100%"
+                    v-validate="'required|singlechar|length:256'"
                     :placeholder="$t('请输入目录名称，回车结束')"
-                    v-model="createDir.name"
-                    @enter="handleConfirm">
+                    v-model="createInfo.name"
+                    @enter="handleConfirm(true)">
                 </bk-input>
             </li>
             <cmdb-auth
                 style="display: block;"
                 tag="li"
                 :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })"
-                v-for="(dir, index) in dirList"
+                v-for="(dir, index) in filterDirList"
                 :key="index">
                 <template slot-scope="{ disabled }">
                     <div
                         class="dir-item"
                         :class="{
-                            'edit-status': editDir.id === dir.id,
+                            'edit-status': editDir.id === dir.bk_module_id,
                             'disabled': disabled,
-                            'selected': curActiveDir === dir.id && !disabled
+                            'selected': acitveDirId === dir.bk_module_id && !disabled
                         }"
-                        @click="handleSearchHost(dir.id)">
-                        <template v-if="editDir.id === dir.id">
+                        @click="handleSearchHost(dir)">
+                        <template v-if="editDir.id === dir.bk_module_id">
                             <bk-input
-                                class="reset-name"
-                                v-click-outside="hanldeCancelEdit"
+                                style="width: 100%"
+                                v-click-outside="handleCancelEdit"
+                                v-validate="'required|singlechar|length:256'"
                                 :placeholder="$t('请输入目录名称，回车结束')"
-                                :ref="`dir-node-${dir.id}`"
+                                :ref="`dir-node-${dir.bk_module_id}`"
                                 v-model="editDir.name"
-                                @enter="handleConfirm"
+                                @enter="handleConfirm(false)"
                                 @click.native.stop>
                             </bk-input>
                         </template>
                         <template v-else>
                             <i class="icon-cc-memory"></i>
-                            <span class="dir-name" :title="dir.name">{{dir.name}}</span>
+                            <span class="dir-name" :title="dir.bk_module_name">{{dir.bk_module_name}}</span>
                             <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
                                 <div class="dot-content">
                                     <cmdb-auth :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
@@ -67,7 +73,7 @@
                                                 class="menu-btn"
                                                 :text="true"
                                                 :disabled="btnDisabled"
-                                                @click="handleRemoveDir">
+                                                @click="handleDelete(dir)">
                                                 {{$t('删除')}}
                                             </bk-button>
                                             <span class="menu-btn no-allow-btn" v-else v-bk-tooltips.right="$t('主机不为空，不能删除')">
@@ -78,7 +84,7 @@
                                 </div>
                             </cmdb-dot-menu>
                             <i v-if="disabled" class="icon-cc-lock" v-bk-tooltips.top="$t('无权限')"></i>
-                            <span class="host-count" v-else>{{dir.count}}</span>
+                            <span class="host-count" v-else>{{dir.host_count}}</span>
                         </template>
                     </div>
                 </template>
@@ -92,9 +98,10 @@
     export default {
         data () {
             return {
+                searching: false,
                 dirSearch: '',
                 resetName: false,
-                createDir: {
+                createInfo: {
                     active: false,
                     name: ''
                 },
@@ -102,52 +109,182 @@
                     id: null,
                     name: ''
                 },
-                curActiveDir: -1,
-                dirList: []
+                acitveDirId: -1,
+                dirList: [],
+                defaultDir: {
+                    bk_module_id: -1,
+                    bk_module_name: '默认',
+                    host_count: 0
+                }
             }
         },
+        computed: {
+            filterDirList () {
+                return this.searching ? this.dirList : this.dirList.slice(1)
+            },
+            params () {
+                if (this.searching) {
+                    return {
+                        condition: {
+                            bk_module_name: this.dirSearch
+                        }
+                    }
+                }
+                return {}
+            }
+        },
+        watch: {
+            dirSearch (val) {
+                this.searching = !!val
+            }
+        },
+        created () {
+            Bus.$on('refresh-dir-count', this.refreshCount)
+            this.getDirectoryList()
+        },
+        beforeDestroy () {
+            Bus.$off('refresh-dir-count', this.refreshCount)
+        },
         methods: {
-            handleSearchHost (activeId) {
-                Bus.$emit('refresh-list')
-                this.curActiveDir = activeId
+            async getDirectoryList () {
+                try {
+                    const data = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
+                        params: this.params,
+                        config: {
+                            requestId: 'getDirectoryList'
+                        }
+                    })
+                    this.dirList = data.info || []
+                    if (!this.searching) {
+                        const firstDir = this.dirList[0] || {}
+                        this.defaultDir = firstDir
+                        this.acitveDirId = firstDir.bk_module_id
+                        this.$store.commit('resourceHost/setActiveDirectory', firstDir)
+                    }
+                } catch (e) {
+                    console.error(e)
+                    this.dirList = []
+                }
             },
-            hanldeCancelCreateDir () {
-                this.createDir.active = false
-                this.createDir.name = ''
+            async createdDir () {
+                try {
+                    const data = await this.$store.dispatch('resourceDirectory/createDirectory', {
+                        params: {
+                            bk_module_name: this.createInfo.name
+                        }
+                    })
+                    const newDir = {
+                        bk_module_id: data.bk_module_id,
+                        bk_module_name: data.bk_module_name,
+                        host_count: 0
+                    }
+                    this.dirList.splice(1, 0, newDir)
+                    this.$success(this.$t('新建成功'))
+                    this.handleCancelCreate()
+                } catch (e) {
+                    console.error(e)
+                }
             },
-            handleCreateDir () {
-                this.createDir.active = true
+            async updateDir () {
+                try {
+                    await this.$store.dispatch('resourceDirectory/updateDirectory', {
+                        moduleId: this.editDir.id,
+                        params: {
+                            bk_module_name: this.editDir.name
+                        },
+                        config: {
+                            requestId: 'updateDir'
+                        }
+                    })
+                    const index = this.dirList.findIndex(dir => dir.bk_module_id === this.editDir.id)
+                    this.$set(this.dirList, index, Object.assign(this.dirList[index], {
+                        bk_module_id: this.editDir.id,
+                        bk_module_name: this.editDir.name
+                    }))
+                    this.$success(this.$t('修改成功'))
+                    this.handleCancelEdit()
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleSearchHost (active = {}) {
+                this.$store.commit('resourceHost/setActiveDirectory', active)
+                Bus.$emit('refresh-resource-list')
+                this.acitveDirId = active.bk_module_id
+            },
+            handleCancelCreate () {
+                this.createInfo.active = false
+                this.createInfo.name = ''
+            },
+            handleShowCreate () {
+                this.createInfo.active = true
                 this.$nextTick(() => {
                     this.$refs.createdDir.$refs.input.focus()
                 })
             },
-            hanldeCancelEdit () {
+            handleCancelEdit () {
                 this.editDir.id = null
                 this.editDir.name = ''
             },
-            handleConfirm () {
-                this.$success(this.$t('新建成功'))
-                this.hanldeCancelCreateDir()
+            async handleConfirm (isCreate) {
+                if (!await this.$validator.validateAll()) {
+                    this.$error(this.$t('请正确目录名称'))
+                    return
+                }
+                if (isCreate) {
+                    this.createdDir()
+                } else {
+                    this.updateDir()
+                }
             },
             handleResetName (dir) {
-                this.editDir.id = dir.id
-                this.editDir.name = dir.name
+                this.editDir.id = dir.bk_module_id
+                this.editDir.name = dir.bk_module_name
                 this.$nextTick(() => {
-                    this.$refs[`dir-node-${dir.id}`][0].$refs.input.focus()
+                    this.$refs[`dir-node-${dir.bk_module_id}`][0].$refs.input.focus()
                 })
             },
             handleCloseInput () {
-                this.hanldeCancelCreateDir()
-                this.hanldeCancelEdit()
+                this.handleCancelCreate()
+                this.handleCancelEdit()
             },
-            handleRemoveDir () {
+            async handleDelete (dir) {
+                if (dir.host_count) {
+                    this.$error(this.$t('目标包含主机, 不允许删除'))
+                    return
+                }
                 this.$bkInfo({
                     title: this.$t('确认确定删除目录'),
-                    subTitle: this.$t('即将删除目录', { name: 'LOL专用-新入库' }),
+                    subTitle: this.$t('即将删除目录', { name: dir.bk_module_name }),
                     extCls: 'bk-dialog-sub-header-center',
-                    confirmFn: () => {
-                        console.log(1)
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('resourceDirectory/deleteDirectory', {
+                                moduleId: dir.bk_module_id,
+                                config: {
+                                    requestId: 'deleteDirectory'
+                                }
+                            })
+                            const index = this.dirList.findIndex(target => target.bk_module_id === dir.bk_module_id)
+                            this.dirList.splice(index, 1)
+                            if (dir.bk_module_id === this.acitveDirId) {
+                                this.acitveDirId = this.defaultDir.bk_module_id
+                            }
+                            this.$success(this.$t('删除成功'))
+                        } catch (e) {
+                            console.error(e)
+                        }
                     }
+                })
+            },
+            refreshCount ({ reduceId, addId, count }) {
+                this.dirList = this.dirList.map((dir, index) => {
+                    if (dir.bk_module_id === reduceId) {
+                        dir.host_count -= count
+                    } else if (dir.bk_module_id === addId) {
+                        dir.host_count += count
+                    }
+                    return dir
                 })
             }
         }
@@ -228,9 +365,6 @@
                 .dir-name {
                     color: #C4C6CC;
                 }
-            }
-            .reset-name {
-                width: 100%;
             }
             .icon-cc-memory {
                 font-size: 16px;

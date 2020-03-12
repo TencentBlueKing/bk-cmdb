@@ -143,7 +143,7 @@
             :esc-close="false"
             :close-icon="false"
             :title="assign.title"
-            @cancel="handleCancelAssignBusiness">
+            @cancel="handleCancelAssignHosts">
             <div class="assign-content">
                 <i18n class="assign-count" tag="div" path="已选择主机">
                     <span place="count">{{table.checked.length}}</span>
@@ -158,11 +158,11 @@
                         :placeholder="assign.placeholder"
                         v-model="assign.id">
                         <bk-option v-for="option in assignOptions"
-                            :key="option.bk_biz_id"
-                            :id="option.bk_biz_id"
-                            :name="option.bk_biz_name">
+                            :key="option.id"
+                            :id="option.id"
+                            :name="option.name">
                         </bk-option>
-                        <div slot="extension" v-if="assign.curSelected === 'othersDir'" @click="handleApplyOthersDir">
+                        <div slot="extension" v-if="assign.curSelected === 'toDirs'" @click="handleApplyPermission">
                             <a href="javascript:void(0)" class="apply-others">
                                 <i class="bk-icon icon-plus-circle"></i>
                                 {{$t('申请其他资源目录')}}
@@ -177,16 +177,18 @@
                     theme="primary"
                     :disabled="assign.id === ''"
                     :loading="$loading(assign.requestId)"
-                    @click="assignHostsToBusiness">
+                    @click="handleConfirmAssign">
                     {{$t('确定')}}
                 </bk-button>
-                <bk-button theme="default" :disabled="$loading(assign.requestId)" @click="handleCancelAssignBusiness">{{$t('取消')}}</bk-button>
+                <bk-button theme="default" :disabled="$loading(assign.requestId)" @click="handleCancelAssignHosts">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
     </div>
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
+    import { translateAuth } from '@/setup/permission'
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
@@ -239,15 +241,17 @@
                     requestId: Symbol('assignHosts')
                 },
                 assignTarget: [{
-                    id: 'business',
+                    id: 'toBusiness',
                     name: this.$t('业务空闲机')
                 }, {
-                    id: 'othersDir',
+                    id: 'toDirs',
                     name: this.$t('资源池其他目录')
-                }]
+                }],
+                dirList: []
             }
         },
         computed: {
+            ...mapGetters('resourceHost', ['activeDirectory']),
             table () {
                 return this.$parent.table
             },
@@ -299,7 +303,16 @@
                 }
             },
             assignOptions () {
-                return this.businessList
+                if (this.assign.curSelected === 'toBusiness') {
+                    return this.businessList.map(item => ({
+                        id: item.bk_biz_id,
+                        name: item.bk_biz_name
+                    }))
+                }
+                return this.dirList.map(item => ({
+                    id: item.bk_module_id,
+                    name: item.bk_module_name
+                }))
             }
         },
         watch: {
@@ -312,6 +325,7 @@
         async created () {
             try {
                 await this.getFullAmountBusiness()
+                await this.getDirectoryList()
             } catch (e) {
                 console.error(e)
             }
@@ -324,6 +338,17 @@
                 } catch (e) {
                     console.error(e)
                     this.businessList = []
+                }
+            },
+            async getDirectoryList () {
+                try {
+                    const data = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
+                        params: {}
+                    })
+                    this.dirList = data.info || []
+                } catch (e) {
+                    console.error(e)
+                    this.dirList = []
                 }
             },
             openAgentApp () {
@@ -344,25 +369,18 @@
                 }
             },
             handleAssignHosts (id) {
-                id === 'business' ? this.handleAssignHostsToBusiness() : this.handleAssignHostsToDir()
-            },
-            handleAssignHostsToDir () {
-                this.assign.show = true
-                this.assign.placeholder = this.$t('请选择xx', { name: this.$t('目录') })
-                this.assign.label = this.$t('目录列表')
-                this.assign.title = this.$t('分配到资源池其他目录')
-            },
-            handleAssignHostsToBusiness () {
-                if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('请勿选择已分配主机'))
-                } else {
-                    this.assign.show = true
+                if (id === 'toBusiness') {
                     this.assign.placeholder = this.$t('请选择xx', { name: this.$t('业务') })
                     this.assign.label = this.$t('业务列表')
                     this.assign.title = this.$t('分配到业务空闲机')
+                } else {
+                    this.assign.placeholder = this.$t('请选择xx', { name: this.$t('目录') })
+                    this.assign.label = this.$t('目录列表')
+                    this.assign.title = this.$t('分配到资源池其他目录')
                 }
+                this.assign.show = true
             },
-            handleCancelAssignBusiness () {
+            handleCancelAssignHosts () {
                 this.assign.id = ''
                 this.assign.show = false
                 this.assign.curSelected = 'empty'
@@ -373,23 +391,51 @@
                 const existAssigned = list.some(item => item['biz'].some(biz => biz.default !== 1))
                 return existAssigned
             },
+            handleConfirmAssign () {
+                this.assign.curSelected === 'toBusiness' ? this.assignHostsToBusiness() : this.changeHostsDir()
+            },
             async assignHostsToBusiness () {
-                await this.$store.dispatch('hostRelation/transferResourcehostToIdleModule', {
+                const moduleId = this.activeDirectory.bk_module_id
+                await this.$store.dispatch('resourceDirectory/assignHostsToBusiness', {
                     params: {
-                        'bk_biz_id': this.assign.id,
-                        'bk_host_id': this.table.checked
+                        bk_module_id: moduleId,
+                        bk_biz_id: this.assign.id,
+                        bk_host_id: this.table.checked
                     },
                     config: {
                         requestId: this.assign.requestId
                     }
                 }).then(() => {
+                    Bus.$emit('refresh-dir-count', {
+                        reduceId: moduleId,
+                        count: this.table.checked.length
+                    })
                     this.$success(this.$t('分配成功'))
                     this.$parent.table.checked = []
                     this.$parent.handlePageChange(1)
-                    this.handleCancelAssignBusiness()
+                    this.handleCancelAssignHosts()
                 }).catch(e => {
                     console.error(e)
                 })
+            },
+            async changeHostsDir () {
+                const originModuleId = this.activeDirectory.bk_module_id
+                const targetModuleId = this.assign.id
+                await this.$http.post('resourceDirectory/changeHostsDirectory', {
+                    params: {
+                        bk_module_id: targetModuleId,
+                        bk_host_id: this.table.checked
+                    }
+                })
+                Bus.$emit('refresh-dir-count', {
+                    reduceId: originModuleId,
+                    addId: targetModuleId,
+                    count: this.table.checked.length
+                })
+                this.$success(this.$t('转移成功'))
+                this.$parent.table.checked = []
+                this.$parent.handlePageChange(1)
+                this.handleCancelAssignHosts()
             },
             getHostCellText (header, item) {
                 const objId = header.objId
@@ -544,8 +590,19 @@
                     [this.$parent.columnsConfigKey]: []
                 })
             },
-            handleApplyOthersDir () {
-                
+            async handleApplyPermission () {
+                try {
+                    const permission = []
+                    const operation = this.$tools.getValue(this.$route.meta, 'auth.operation', {})
+                    if (Object.keys(operation).length) {
+                        const translated = await translateAuth(Object.values(operation))
+                        permission.push(...translated)
+                    }
+                    const url = await this.$store.dispatch('auth/getSkipUrl', { params: permission })
+                    window.open(url)
+                } catch (e) {
+                    console.error(e)
+                }
             }
         }
     }

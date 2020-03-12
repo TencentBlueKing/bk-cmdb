@@ -55,8 +55,10 @@ import setTemplate from './modules/api/set-template.js'
 import cloudarea from './modules/api/cloudarea.js'
 import cloudAccount from './modules/api/cloud-account.js'
 import hostApply from './modules/api/host-apply'
+import resourceDirectory from './modules/api/resource-directory.js'
 
 import businessHost from './modules/view/business-host.js'
+import resourceHost from './modules/view/resource-host.js'
 
 Vue.use(Vuex)
 
@@ -117,6 +119,8 @@ export default new Vuex.Store({
         businessHost,
         cloudarea,
         cloudAccount,
-        hostApply
+        hostApply,
+        resourceHost,
+        resourceDirectory
     }
 })

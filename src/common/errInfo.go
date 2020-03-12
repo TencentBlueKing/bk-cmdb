@@ -765,7 +765,7 @@ const (
 
 	// synchronize_server 1114xxx
 
-	CCErrSynchronizeError = 1114001
+	CCErrSynchronizeError = 1113903
 
 	// operation_server 1116xxx
 	CCErrOperationBizModuleHostAmountFail = 1116001
@@ -791,6 +791,13 @@ const (
 	CCErrTaskLockedTaskFail       = 1117005
 	CCErrTaskUnLockedTaskFail     = 1117006
 	CCErrTaskListTaskFail         = 1117007
+
+	// cloud_server 1118xxx
+	// CCErrCloudVendorNotSupport cloud vendor not support
+	CCErrCloudVendorNotSupport        = 1118001
+	CCErrCloudAccountNameAlreadyExist = 1118002
+	CCErrCloudValidAccountParamFail   = 1118003
+	CCErrCloudAccountIDNoExistFail    = 1118004
 
 	/** TODO: 以下错误码需要改造 **/
 

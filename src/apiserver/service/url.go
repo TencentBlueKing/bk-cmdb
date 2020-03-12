@@ -339,6 +339,8 @@ func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
 	return false
 }
 
+var cloudUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/cloud/.*$", verbs))
+
 // WithCloud transform cloud's url
 func (u *URLPath) WithCloud(req *restful.Request) (isHit bool) {
 	cloudRoot := "/cloud/v3"
@@ -347,7 +349,8 @@ func (u *URLPath) WithCloud(req *restful.Request) (isHit bool) {
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/cloud/"):
 		from, to, isHit = rootPath, cloudRoot, true
-
+	case cloudUrlRegexp.MatchString(string(*u)):
+		from, to, isHit = rootPath, cloudRoot, true
 	default:
 		isHit = false
 	}

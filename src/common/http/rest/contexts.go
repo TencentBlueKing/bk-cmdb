@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -80,6 +81,18 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 		Data: data,
 	}
 	if err != nil {
+		if err == auth.NoAuthorizeError {
+			body, err := json.Marshal(data)
+			if err != nil {
+				blog.ErrorfDepth(2, fmt.Sprintf("rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err))
+				return
+			}
+			if _, err := c.resp.Write(body); err != nil {
+				blog.ErrorfDepth(2, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+				return
+			}
+			return
+		}
 		t, yes := err.(errors.CCErrorCoder)
 		var code int
 		var errMsg string
@@ -250,6 +263,20 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 	}
 
 	c.writeAsJson(&body)
+}
+
+func (c *Contexts) RespHTTPBody(data interface{}) {
+	c.resp.Header().Set("Content-Type", "application/json")
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	body, err := json.Marshal(data)
+	if err != nil {
+		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err))
+		return
+	}
+	if _, err := c.resp.Write(body); err != nil {
+		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+		return
+	}
 }
 
 func (c *Contexts) writeAsJson(resp *metadata.Response) {

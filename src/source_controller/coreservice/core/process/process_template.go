@@ -68,6 +68,14 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 		blog.Errorf("CreateProcessTemplate failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
+
+	// process template bk_port_enable not set vaule, default value must be true
+	if template.Property.PortEnable.AsDefaultValue == nil {
+		blTrue := true
+		template.Property.PortEnable.AsDefaultValue = &blTrue
+		template.Property.PortEnable.Value = &blTrue
+	}
+
 	template.ID = int64(id)
 
 	template.Creator = kit.User

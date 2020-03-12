@@ -25,14 +25,20 @@ import (
 // Errors defined
 var (
 	ErrSessionInfoNotFound = errors.New("session info not found in storage")
-	ErrRedisNotInited = errors.New("redis of TxnManager is not inited")
+	ErrRedisNotInited      = errors.New("redis of TxnManager is not inited")
 )
+
 // a transaction manager
-type TxnManager struct{
-	cache *redis.Client
+type TxnManager struct {
+	// enable remote traction functionality or not.
+	// if false, the local transaction still is enabled.
+	enableTransaction bool
+	cache             *redis.Client
+	// transaction timeout time.
+	timeout time.Duration
 }
 
-var redisCache = map[string][]string{} //{sessionID: [sessionState, txnNumber]}
+var redisCache = map[string][]string{}
 var Sep = "-_-"
 var SessPre = "sessinfo_"
 
@@ -73,7 +79,20 @@ func (t *TxnManager) SaveSession(sess mongo.Session) error {
 		return err
 	}
 	val := info.SessionState + Sep + info.TxnNumber
-	return t.cache.Set(SessPre+info.SessionID, val, time.Minute * 5).Err()
+	return t.cache.Set(SessPre+info.SessionID, val, t.timeout).Err()
+}
+
+// DeleteSession is to delete session in redis storage
+func (t *TxnManager) DeleteSession(sess mongo.Session) error {
+	if t.cache == nil {
+		return ErrRedisNotInited
+	}
+	se := mongo.SessionExposer{}
+	info, err := se.GetSessionInfo(sess)
+	if err != nil {
+		return err
+	}
+	return t.cache.Del(SessPre + info.SessionID).Err()
 }
 
 // GetSessionInfoFromStorage is to get session info from storage
@@ -81,7 +100,7 @@ func (t *TxnManager) GetSessionInfoFromStorage(sessionID string) (*mongo.Session
 	if t.cache == nil {
 		return nil, ErrRedisNotInited
 	}
-	v, err := t.cache.Get(SessPre+sessionID).Result()
+	v, err := t.cache.Get(SessPre + sessionID).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +120,7 @@ func (t *TxnManager) ConvertToSameSession(sess mongo.Session, sessionID string) 
 	if err != nil {
 		return err
 	}
-	//fmt.Printf("*****ConvertToSameSession***, sessInfo:%#v\n", sessInfo)
+
 	se := &mongo.SessionExposer{}
 	return se.SetSessionInfo(sess, sessInfo)
 }

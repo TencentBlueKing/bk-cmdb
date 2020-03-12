@@ -13,23 +13,100 @@
 package cloud
 
 import (
+	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder) {
-	return &metadata.CloudAccount{}, nil
+	if err := c.validCreateAccount(kit, account); nil != err {
+		blog.Errorf("CreateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	id, err := c.dbProxy.NextSequence(kit.Ctx, common.BKTableNameCloudAccount)
+	if nil != err {
+		blog.Errorf("CreateAccount failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
+	}
+	account.AccountID = int64(id)
+	ts := time.Now()
+	account.OwnerID = kit.SupplierAccount
+	account.LastEditor = account.Creator
+	account.CreateTime = ts
+	account.LastTime = ts
+
+	err = c.dbProxy.Table(common.BKTableNameCloudAccount).Insert(kit.Ctx, account)
+	if err != nil {
+		blog.ErrorJSON("CreateAccount failed, db insert failed, accountName: %s, err: %v, rid: %s", account.AccountName, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
+	}
+	// 不返回bk_secret_key的值
+	account.SecreteKey = ""
+	return account, nil
 }
 
 func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchCloudAccountOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
-	return &metadata.MultipleCloudAccount{}, nil
+	results := []metadata.CloudAccount{}
+	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
+	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
+		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &results)
+	if err != nil {
+		blog.ErrorJSON("SearchAccount failed, db insert failed, option: %v, err: %v, rid: %s", option, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	// 不返回bk_secret_key的值
+	for i, _ := range results {
+		results[i].SecreteKey = ""
+	}
+
+	return &metadata.MultipleCloudAccount{int64(len(results)), results}, nil
 }
 
-func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder) {
-	return &metadata.CloudAccount{}, nil
+func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option mapstr.MapStr) errors.CCErrorCoder {
+	if err := c.validUpdateAccount(kit, accountID, option); nil != err {
+		blog.Errorf("CreateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
+		return err
+	}
+	filter := map[string]interface{}{common.BKCloudAccountIDField: accountID}
+	filter = util.SetModOwner(filter, kit.SupplierAccount)
+	option.Set(common.LastTimeField, time.Now())
+	// 确保不会更新云厂商类型、云账户id、开发商id
+	option.Remove(common.BKCloudVendor)
+	option.Remove(common.BKCloudIDField)
+	option.Remove(common.BKOwnerIDField)
+	if e := c.dbProxy.Table(common.BKTableNameCloudAccount).Update(kit.Ctx, filter, option); e != nil {
+		blog.Errorf("DeleteAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+	}
+	return nil
 }
 
 func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CCErrorCoder {
+	if err := c.validDeleteAccount(kit, accountID); nil != err {
+		blog.Errorf("DeleteAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	filter := map[string]interface{}{common.BKCloudAccountIDField: accountID}
+	filter = util.SetModOwner(filter, kit.SupplierAccount)
+	if e := c.dbProxy.Table(common.BKTableNameCloudAccount).Delete(kit.Ctx, filter); e != nil {
+		blog.Errorf("DeleteAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
+	}
 	return nil
+}
+
+func (c *cloudOperation) countAccount(kit *rest.Kit, cond mapstr.MapStr) (uint64, error) {
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+	count, err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(cond).Count(kit.Ctx)
+
+	return count, err
+
 }

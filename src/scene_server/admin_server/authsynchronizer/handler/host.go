@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
 )
@@ -77,11 +78,10 @@ func (ih *IAMHandler) HandleHostResourcePoolSync(task *meta.WorkRequest) error {
 		return errors.New("sync resource pool host, but can not find resource pool business id")
 	}
 
-	bizF, yes := biz.(float64)
-	if !yes {
-		return fmt.Errorf("sync resource pool host, but got invalid biz id: %v", bizF)
+	bizID, err := util.GetInt64ByInterface(biz)
+	if err != nil {
+		return fmt.Errorf("sync resource pool host, but got invalid biz id: %v", biz)
 	}
-	bizID := int64(bizF)
 
 	// step1 get instances by business from core service
 	hosts, err := ih.authManager.CollectHostByBusinessID(context.Background(), *header, bizID)

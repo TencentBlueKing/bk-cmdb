@@ -13,6 +13,7 @@
 package options
 
 import (
+	"configcenter/src/ac/iam"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
@@ -53,6 +54,7 @@ type Config struct {
 	ProcSrvConfig ProcSrvConfig
 	Redis         redis.Config
 	AuthCenter    authcenter.AuthConfig
+	Iam           iam.AuthConfig
 }
 
 type LanguageConfig struct {

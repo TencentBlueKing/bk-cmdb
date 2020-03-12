@@ -30,6 +30,8 @@ type ProcessClientInterface interface {
 	DeleteProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	SearchProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+
+	ListProcessInstancesWithHost(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 }
 
 func NewProcessClientInterface(client rest.ClientInterface) ProcessClientInterface {

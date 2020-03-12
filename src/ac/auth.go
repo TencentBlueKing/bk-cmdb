@@ -13,6 +13,12 @@
 // auth control
 package ac
 
+import (
+	"context"
+	"net/http"
+)
+
 type AuthInterface interface {
-    RegisterSystem()error
+	RegisterSystem(ctx context.Context, host string) error
+	CheckRequestAuthorization(req *http.Request) (bool, error)
 }

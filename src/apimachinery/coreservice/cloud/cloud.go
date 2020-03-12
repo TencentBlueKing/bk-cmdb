@@ -25,7 +25,7 @@ type CloudInterface interface {
 	// cloud account
 	CreateAccount(ctx context.Context, h http.Header, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
 	SearchAccount(ctx context.Context, h http.Header, option *metadata.SearchCloudAccountOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder)
-	UpdateAccount(ctx context.Context, h http.Header, accountID int64, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
+	UpdateAccount(ctx context.Context, h http.Header, accountID int64, option map[string]interface{}) errors.CCErrorCoder
 	DeleteAccount(ctx context.Context, h http.Header, accountID int64) errors.CCErrorCoder
 }
 

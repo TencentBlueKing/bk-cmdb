@@ -7,6 +7,7 @@ import (
 
 	"configcenter/src/common/mapstr"
 	params "configcenter/src/common/paraparse"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/reporter"
 	"configcenter/src/test/util"
@@ -49,7 +50,8 @@ var _ = BeforeSuite(func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			bizId = int64(rsp.Data["bk_biz_id"].(float64))
+			bizId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Describe("add host", func() {
@@ -83,8 +85,10 @@ var _ = BeforeSuite(func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
-			hostId1 = int64(rsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"].(float64))
-			hostId2 = int64(rsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"].(float64))
+			hostId1, err = commonutil.GetInt64ByInterface(rsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+			hostId2, err = commonutil.GetInt64ByInterface(rsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Describe("create set", func() {
@@ -101,9 +105,14 @@ var _ = BeforeSuite(func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_set_name"].(string)).To(Equal("test"))
-			Expect(int64(rsp.Data["bk_parent_id"].(float64))).To(Equal(bizId))
-			Expect(int64(rsp.Data["bk_biz_id"].(float64))).To(Equal(bizId))
-			setId = int64(rsp.Data["bk_set_id"].(float64))
+			parentIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_parent_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parentIdRes).To(Equal(bizId))
+			bizIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bizIdRes).To(Equal(bizId))
+			setId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })
