@@ -13,11 +13,13 @@
 package querybuilder
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
 
 	"configcenter/src/common/util"
+	jsoniter "github.com/json-iterator/go"
 )
 
 var (
@@ -29,7 +31,7 @@ var (
 
 func getType(value interface{}) string {
 	switch value.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float64, float32:
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float64, float32, jsoniter.Number, json.Number:
 		return TypeNumeric
 	case bool:
 		return TypeBoolean
@@ -42,28 +44,28 @@ func getType(value interface{}) string {
 
 func validateBasicType(value interface{}) error {
 	if t := getType(value); t == TypeUnknown {
-		return fmt.Errorf("unknow value type with value: %+v", value)
+		return fmt.Errorf("unknow value type: %s with value: %+v", reflect.TypeOf(value).String(), value)
 	}
 	return nil
 }
 
 func validateNumericType(value interface{}) error {
 	if t := getType(value); t != TypeNumeric {
-		return fmt.Errorf("unknow value type: %s, value: %+v", t, value)
+		return fmt.Errorf("unknow value type: %s, value: %+v", reflect.TypeOf(value).String(), value)
 	}
 	return nil
 }
 
 func validateBoolType(value interface{}) error {
 	if t := getType(value); t != TypeBoolean {
-		return fmt.Errorf("unknow value type: %s, value: %+v", t, value)
+		return fmt.Errorf("unknow value type: %s, value: %+v", reflect.TypeOf(value).String(), value)
 	}
 	return nil
 }
 
 func validateStringType(value interface{}) error {
 	if t := getType(value); t != TypeString {
-		return fmt.Errorf("unknow value type of: %s, value: %+v", t, value)
+		return fmt.Errorf("unknow value type of: %s, value: %+v", reflect.TypeOf(value).String(), value)
 	}
 	return nil
 }
