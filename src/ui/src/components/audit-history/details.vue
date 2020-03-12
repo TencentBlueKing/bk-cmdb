@@ -20,14 +20,14 @@
                     prop="pre_data"
                     :label="$t('变更前')">
                     <template slot-scope="{ row }">
-                        <span v-html="row.pre_data"></span>
+                        <span class="history-cell" v-html="row.pre_data"></span>
                     </template>
                 </bk-table-column>
                 <bk-table-column v-if="!['delete'].includes(details.action)"
                     prop="cur_data"
                     :label="$t('变更后')">
                     <template slot-scope="{ row }" v-html="row.cur_data">
-                        <span v-html="row.cur_data"></span>
+                        <span class="history-cell" v-html="row.cur_data"></span>
                     </template>
                 </bk-table-column>
             </bk-table>
@@ -301,6 +301,12 @@
             color: #333948;
             width: 220px;
         }
+    }
+    .history-cell {
+        display: block;
+        padding: 5px 0;
+        white-space: normal;
+        word-break: break-all;
     }
     .field-btn{
         font-size: 14px;
