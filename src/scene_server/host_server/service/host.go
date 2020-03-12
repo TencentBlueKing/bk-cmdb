@@ -407,19 +407,18 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	hostIDs, success, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, srvData.ownerID, hostList.HostInfo, hostList.InputType)
+	hostIDs, success, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, srvData.ownerID, hostList.HostInfo, hostList.InputType)
 	retData := make(map[string]interface{})
+	retData["success"] = success
 	if err != nil {
-		blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v,input:%+v,rid:%s", success, updateErrRow, err, errRow, hostList, srvData.rid)
+		blog.Errorf("add host failed, success: %v, err: %v, %v,input:%+v,rid:%s", success, err, errRow, hostList, srvData.rid)
 		retData["error"] = errRow
-		retData["update_error"] = updateErrRow
 		_ = resp.WriteEntity(meta.Response{
 			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
 		return
 	}
-	retData["success"] = success
 
 	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDs...); err != nil {
@@ -481,14 +480,13 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	addHost := make(map[int64]map[string]interface{})
 	addHost[1] = agents.HostInfo
 
-	hostIDs, success, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, common.BKDefaultOwnerID, addHost, "")
+	hostIDs, success, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, common.BKDefaultOwnerID, addHost, "")
 	if err != nil {
-		blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v,input:%+v,rid:%s", success, updateErrRow, err, errRow, agents, srvData.rid)
+		blog.Errorf("add host failed, success: %v, err: %v, %v,input:%+v,rid:%s", success, err, errRow, agents, srvData.rid)
 
 		retData := make(map[string]interface{})
 		retData["success"] = success
 		retData["error"] = errRow
-		retData["update_error"] = updateErrRow
 		_ = resp.WriteEntity(meta.Response{
 			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
@@ -1011,14 +1009,13 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	hostIDs, success, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, hostList.ApplicationID, hostList.ModuleID, srvData.ownerID, hostList.HostInfo, common.InputTypeApiNewHostSync)
+	hostIDs, success, errRow, err := srvData.lgc.AddHost(srvData.ctx, hostList.ApplicationID, hostList.ModuleID, srvData.ownerID, hostList.HostInfo, common.InputTypeApiNewHostSync)
 	if err != nil {
-		blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v, rid: %s", success, updateErrRow, err, errRow, srvData.rid)
+		blog.Errorf("add host failed, success: %v, err: %v, %v, rid: %s", success, err, errRow, srvData.rid)
 
 		retData := make(map[string]interface{})
 		retData["success"] = success
 		retData["error"] = errRow
-		retData["update_error"] = updateErrRow
 		_ = resp.WriteEntity(meta.Response{
 			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
@@ -1363,37 +1360,31 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	updateFailedHosts := make([]interface{}, 0)
-	// check authorization
 	hostIDArr := make([]int64, 0)
 	hosts := make(map[int64]map[string]interface{}, 0)
-	for _, hostInfo := range hostList.HostInfo {
+	indexHostIDMap := make(map[int64]int64, 0)
+	var errMsg, successMsg []string
+	for index, hostInfo := range hostList.HostInfo {
+		if hostInfo == nil {
+			continue
+		}
 		var intHostID int64
 		hostID, ok := hostInfo[common.BKHostIDField]
 		if !ok {
 			blog.Errorf("UpdateImportHosts failed, because bk_host_id field not exits innerIp: %v, rid: %v", hostInfo[common.BKHostInnerIPField], srvData.rid)
-			updateFailedHosts = append(updateFailedHosts, hostInfo[common.BKHostInnerIPField])
+			errMsg = append(errMsg, srvData.ccLang.Languagef("import_update_host_miss_hostID", index))
 			continue
 		}
-		switch hostID.(type) {
-		case float64:
-			floatID := hostID.(float64)
-			intHostID = int64(floatID)
-		case string:
-			stringID := hostID.(string)
-			intHostID, err = strconv.ParseInt(stringID, 10, 64)
-			if err != nil {
-				blog.Errorf("UpdateImportHosts failed, host id convert from string to int64 failed, innerIp: %v, rid: %v", hostInfo[common.BKHostInnerIPField], srvData.rid)
-				updateFailedHosts = append(updateFailedHosts, hostInfo[common.BKHostInnerIPField])
-				continue
-			}
-		default:
-			blog.Errorf("UpdateImportHosts failed, got invalid host id(%v) data type,rid:%s", hostID, srvData.rid)
-			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsIsInvalid, "bk_host_id")})
-			return
+		intHostID, err = util.GetInt64ByInterface(hostID)
+		if err != nil {
+			errMsg = append(errMsg, srvData.ccLang.Languagef("import_host_hostID_not_int", index))
+			continue
 		}
+		// bk_host_innerip should not update
+		delete(hostInfo, common.BKHostInnerIPField)
 		hostIDArr = append(hostIDArr, intHostID)
-		hosts[intHostID] = hostInfo
+		hosts[index] = hostInfo
+		indexHostIDMap[index] = intHostID
 	}
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
@@ -1416,11 +1407,6 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 	logPreContents := make(map[int64]*logics.HostLog, 0)
 	for _, hostID := range hostIDArr {
 		audit := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
-		if err := audit.WithPrevious(srvData.ctx, hostID, hostFields); err != nil {
-			blog.Errorf("UpdateImportHosts, but get host[%d] pre data for audit failed, err: %v, rid: %s", hostID, err, srvData.rid)
-			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
-			return
-		}
 		logPreContents[hostID] = audit
 	}
 
@@ -1436,53 +1422,57 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		// get host attributes
 		if hasRules == true {
 			hasHostUpdateWithoutHostApplyFiled = true
-			for hostID, hostInfo := range hosts {
+			for index, hostInfo := range hosts {
 				delete(hostInfo, common.BKHostIDField)
+				intHostID := indexHostIDMap[index]
 				updateData := make(map[string]interface{})
 				for key, value := range hostInfo {
-					properties, ok := hostProperties[hostID]
+					properties, ok := hostProperties[intHostID]
 					if ok == true && util.InStrArr(properties, key) {
 						continue
 					}
 					updateData[key] = value
 				}
 				opt := &meta.UpdateOption{
-					Condition: mapstr.MapStr{common.BKHostIDField: hostID},
+					Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
 					Data:      mapstr.NewFromMap(updateData),
 				}
 				result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
 				if err != nil {
 					blog.Errorf("UpdateImportHosts UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, srvData.rid)
-					_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-					return
+					errMsg = append(errMsg, srvData.ccLang.Languagef("import_host_update_fail", index, err.Error()))
+					continue
 				}
 				if !result.Result {
 					blog.ErrorJSON("UpdateImportHosts failed, UpdateObject failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
-					_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-					return
+					errMsg = append(errMsg, srvData.ccLang.Languagef("import_host_update_fail", index, result.ErrMsg))
+					continue
 				}
+				successMsg = append(successMsg, strconv.FormatInt(index, 10))
 			}
 		}
 	}
 
 	if hasHostUpdateWithoutHostApplyFiled == false {
-		for hostID, hostInfo := range hosts {
+		for index, hostInfo := range hosts {
 			delete(hostInfo, common.BKHostIDField)
+			intHostID := indexHostIDMap[index]
 			opt := &meta.UpdateOption{
-				Condition: mapstr.MapStr{common.BKHostIDField: hostID},
+				Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
 				Data:      mapstr.NewFromMap(hostInfo),
 			}
 			result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
 			if err != nil {
 				blog.ErrorJSON("UpdateImportHosts UpdateInstance http do error, err: %v,input:%+v,param:%+v,rid:%s", err, hostList.HostInfo, opt, srvData.rid)
-				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-				return
+				errMsg = append(errMsg, srvData.ccLang.Languagef("import_host_update_fail", index, err.Error()))
+				continue
 			}
 			if !result.Result {
 				blog.ErrorJSON("UpdateImportHosts failed, UpdateInstance failed, param:%s, response: %s, rid:%s", opt, result, srvData.rid)
-				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-				return
+				errMsg = append(errMsg, srvData.ccLang.Languagef("import_host_update_fail", index, result.ErrMsg))
+				continue
 			}
+			successMsg = append(successMsg, strconv.FormatInt(index, 10))
 		}
 	}
 
@@ -1525,7 +1515,9 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 	}
 
 	retData := map[string]interface{}{
-		"update_fail_hosts": updateFailedHosts,
+		"error":   errMsg,
+		"success": successMsg,
 	}
+
 	_ = resp.WriteEntity(meta.NewSuccessResp(retData))
 }

@@ -379,7 +379,7 @@ func (attribute *Attribute) validInt(ctx context.Context, val interface{}, key s
 		minValue = common.MinInt64
 	}
 	if value > maxValue || value < minValue {
-		blog.Errorf("params %s:%#v not valid, rid: %s", key, val, rid)
+		blog.Errorf("params %s:%#v not valid, value should between %d-%d,  rid: %s", key, val, minValue, maxValue, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
@@ -788,9 +788,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.Name = getString(option["name"])
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOptions = append(enumOptions, enumOption)
 			} else if option, ok := optionVal.(bson.M); ok {
 				enumOption := EnumVal{}
@@ -798,9 +798,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.Name = getString(option["name"])
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOptions = append(enumOptions, enumOption)
 			} else {
 				return nil, fmt.Errorf("unknow val type: %#v", val)
@@ -814,9 +814,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.Name = getString(option["name"])
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOptions = append(enumOptions, enumOption)
 			} else if option, ok := optionVal.(bson.D); ok {
 				opt := option.Map()
@@ -825,9 +825,9 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 				enumOption.Name = getString(opt["name"])
 				enumOption.Type = getString(opt["type"])
 				enumOption.IsDefault = getBool(opt["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
+				if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+					return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+				}
 				enumOptions = append(enumOptions, enumOption)
 			} else {
 				return nil, fmt.Errorf("unknow val type: %#v", val)

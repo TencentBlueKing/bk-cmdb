@@ -24,23 +24,22 @@ import (
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/language"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string, []string, error) {
+func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string, error) {
 	if len(moduleIDs) == 0 {
 		err := lgc.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 	var err error
 	defaultModule, err := lgc.CoreAPI.CoreService().Process().GetBusinessDefaultSetModuleInfo(ctx, lgc.header, appID)
 	if err != nil {
 		blog.Errorf("AddHost failed, get biz default module info failed, appID:%d, err:%s, rid:%s", appID, err.Error(), lgc.rid)
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 	isInternalModule := make([]bool, 0)
 	for _, moduleID := range moduleIDs {
@@ -49,7 +48,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 	isInternalModule = util.BoolArrayUnique(isInternalModule)
 	if len(isInternalModule) > 1 {
 		err := lgc.ccErr.CCError(common.CCErrHostTransferFinalModuleConflict)
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 	toInternalModule := isInternalModule[0]
 
@@ -57,27 +56,26 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 	instance := NewImportInstance(ctx, ownerID, lgc)
 	instance.defaultFields, err = lgc.getHostFields(ctx, ownerID)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	hostIDMap, err := instance.ExtractAlreadyExistHosts(ctx, hostInfos)
 	if err != nil {
 		blog.Errorf("get hosts failed, err:%s, rid:%s", err.Error(), lgc.rid)
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	var errMsg, updateErrMsg, successMsg []string
+	var errMsg, successMsg []string
 	logContents := make([]metadata.AuditLog, 0)
 	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, nil)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	for index, host := range hostInfos {
 		if nil == host {
 			continue
 		}
-
 		innerIP, isOk := host[common.BKHostInnerIPField].(string)
 		if isOk == false || "" == innerIP {
 			errMsg = append(errMsg, lgc.ccLang.Languagef("host_import_innerip_empty", index))
@@ -92,7 +90,6 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 		if nil == iSubArea {
 			iSubArea = common.BKDefaultDirSubArea
 		}
-
 		iSubAreaVal, err := util.GetInt64ByInterface(iSubArea)
 		if err != nil || iSubAreaVal < 0 {
 			errMsg = append(errMsg, lgc.ccLang.Language("import_host_cloudID_invalid"))
@@ -100,63 +97,30 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 		}
 
 		var intHostID int64
-		var existInDB bool
-
-		// we support update host info both base on hostID and innerIP, hostID has higher priority then innerIP
-		hostIDFromInput, bHostIDInInput := host[common.BKHostIDField]
-		if bHostIDInInput == true {
-			intHostID, err = util.GetInt64ByInterface(hostIDFromInput)
-			if err != nil {
-				errMsg = append(errMsg, lgc.ccLang.Language("import_host_hostID_not_int"))
-				continue
-			}
-			existInDB = true
-		} else {
-			// try to get hostID from db
-			key := generateHostCloudKey(innerIP, iSubArea)
-			intHostID, existInDB = hostIDMap[key]
-		}
-		var preData mapstr.MapStr
-		var action metadata.ActionType
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
-		if existInDB {
-			// remove unchangeable fields
-			delete(host, common.BKHostInnerIPField)
-
-			// get host info before really change it
-			preData, _, _ = lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
-
-			// update host instance.
-			if err := instance.updateHostInstance(index, host, intHostID); err != nil {
-				updateErrMsg = append(updateErrMsg, err.Error())
-				continue
-			}
-			action = metadata.AuditUpdate
-		} else {
-			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleIDs, toInternalModule, host)
-			if err != nil {
-				errMsg = append(errMsg, err.Error())
-				continue
-			}
-			host[common.BKHostIDField] = intHostID
-			hostIDMap[generateHostCloudKey(innerIP, iSubArea)] = intHostID
-			action = metadata.AuditCreate
+		intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleIDs, toInternalModule, host)
+		if err != nil {
+			errMsg = append(errMsg, err.Error())
+			continue
 		}
+		host[common.BKHostIDField] = intHostID
+		hostIDMap[generateHostCloudKey(innerIP, iSubArea)] = intHostID
+
 		// add current host operate result to  batch add result
 		successMsg = append(successMsg, strconv.FormatInt(index, 10))
 
 		// host info after it changed
 		curData, _, err := lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			return nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 
 		bizName := ""
 		if appID > 0 {
 			bizName, err = auditlog.NewAudit(lgc.CoreAPI, ctx, lgc.header).GetInstNameByID(common.BKInnerObjIDApp, appID)
 			if err != nil {
-				return nil, nil, nil, nil, err
+				return nil, nil, nil, err
 			}
 		}
 
@@ -164,7 +128,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 		logContents = append(logContents, metadata.AuditLog{
 			AuditType:    metadata.HostType,
 			ResourceType: metadata.HostRes,
-			Action:       action,
+			Action:       metadata.AuditCreate,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
 					BusinessID:   appID,
@@ -172,7 +136,6 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 					ResourceID:   intHostID,
 					ResourceName: innerIP,
 					Details: &metadata.BasicContent{
-						PreData:    preData,
 						CurData:    curData,
 						Properties: auditHeaders,
 					},
@@ -186,15 +149,15 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 	if len(logContents) > 0 {
 		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, logContents...)
 		if err != nil {
-			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			return hostIDs, successMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 	}
 
-	if 0 < len(errMsg) || 0 < len(updateErrMsg) {
-		return hostIDs, successMsg, updateErrMsg, errMsg, errors.New(lgc.ccLang.Language("host_import_err"))
+	if 0 < len(errMsg) {
+		return hostIDs, successMsg, errMsg, errors.New(lgc.ccLang.Language("host_import_err"))
 	}
 
-	return hostIDs, successMsg, updateErrMsg, errMsg, nil
+	return hostIDs, successMsg, errMsg, nil
 }
 
 func (lgc *Logics) getHostFields(ctx context.Context, ownerID string) (map[string]*metadata.ObjAttDes, error) {

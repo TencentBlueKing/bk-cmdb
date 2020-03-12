@@ -260,9 +260,7 @@ func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Prop
 			errMsg = append(errMsg, getErr...)
 			continue
 		}
-		if 0 == len(host) {
-			hosts[index+1] = nil
-		} else {
+		if 0 != len(host) {
 			hosts[index+1] = host
 		}
 	}
