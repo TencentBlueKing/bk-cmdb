@@ -52,8 +52,7 @@ import instanceLabel from './modules/api/instance-label.js'
 import fullTextSearch from './modules/api/full-text-search.js'
 import setSync from './modules/api/set-sync.js'
 import setTemplate from './modules/api/set-template.js'
-import cloudarea from './modules/api/cloudarea.js'
-import cloudAccount from './modules/api/cloud-account.js'
+import cloud from './modules/api/cloud.js'
 import hostApply from './modules/api/host-apply'
 import resourceDirectory from './modules/api/resource-directory.js'
 
@@ -117,8 +116,7 @@ export default new Vuex.Store({
         setSync,
         setTemplate,
         businessHost,
-        cloudarea,
-        cloudAccount,
+        cloud,
         hostApply,
         resourceHost,
         resourceDirectory

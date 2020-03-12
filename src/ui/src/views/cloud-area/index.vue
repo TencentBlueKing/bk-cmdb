@@ -70,7 +70,7 @@
             },
             async handleDelete (row) {
                 try {
-                    await this.$store.dispatch('cloudarea/deleteCloudarea', { id: row.bk_cloud_id })
+                    await this.$store.dispatch('cloud/area/delete', { id: row.bk_cloud_id })
                     this.$success('删除成功')
                     this.getData()
                 } catch (e) {
@@ -79,7 +79,7 @@
             },
             async getData () {
                 try {
-                    const data = await this.$store.dispatch('cloudarea/getCloudarea', {
+                    const data = await this.$store.dispatch('cloud/area/findMany', {
                         params: {
                             ...this.$tools.getPageParams(this.pagination)
                         }

@@ -47,7 +47,7 @@
                 @page-change="handlePageChange"
                 @page-limit-change="handleSizeChange"
                 @selection-change="handleSelectionChange">
-                <bk-table-column type="selection" width="50" :selectable="handleSelectable"></bk-table-column>
+                <bk-table-column type="selection" align="center" width="50" :selectable="handleSelectable"></bk-table-column>
                 <bk-table-column :label="$t('集群名称')" prop="bk_set_name"></bk-table-column>
                 <bk-table-column :label="$t('拓扑路径')" prop="topo_path">
                     <template slot-scope="{ row }">

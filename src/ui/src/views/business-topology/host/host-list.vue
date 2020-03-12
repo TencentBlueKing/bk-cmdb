@@ -12,7 +12,7 @@
             @sort-change="handleSortChange"
             @row-click="handleRowClick"
             @selection-change="handleSelectionChange">
-            <bk-table-column type="selection" width="50"></bk-table-column>
+            <bk-table-column type="selection" width="50" align="center"></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 :key="column.bk_property_id"
                 :label="$tools.getHeaderPropertyName(column)"

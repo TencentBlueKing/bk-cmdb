@@ -145,7 +145,7 @@
             async handleTest () {
                 try {
                     this.verifyResult = null
-                    this.verifyResult = await this.$store.dispatch('cloudAccount/verify', {
+                    this.verifyResult = await this.$store.dispatch('cloud/account/verify', {
                         params: this.verifyParams,
                         config: {
                             requestId: this.request.verify
@@ -172,7 +172,7 @@
             },
             async doCreate () {
                 try {
-                    await this.$store.dispatch('cloudAccount/create', {
+                    await this.$store.dispatch('cloud/account/create', {
                         params: this.form,
                         config: {
                             requestId: this.request.create
@@ -186,7 +186,7 @@
             },
             async doUpdate () {
                 try {
-                    await this.$store.dispatch('cloudAccount/update', {
+                    await this.$store.dispatch('cloud/account/update', {
                         id: this.account.bk_account_id,
                         params: this.form,
                         config: {

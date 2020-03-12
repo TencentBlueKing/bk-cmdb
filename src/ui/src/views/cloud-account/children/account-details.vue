@@ -64,7 +64,7 @@
         methods: {
             async getAccountData () {
                 try {
-                    this.account = await this.$store.dispatch('cloudAccount/searchById', {
+                    this.account = await this.$store.dispatch('cloud/account/findOne', {
                         id: this.id,
                         config: {
                             requestId: this.requestId

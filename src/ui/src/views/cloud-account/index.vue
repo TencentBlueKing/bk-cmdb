@@ -97,7 +97,7 @@
             },
             async getData () {
                 try {
-                    const data = await this.$store.dispatch('cloudAccount/search', {
+                    const data = await this.$store.dispatch('cloud/account/findMany', {
                         config: {
                             requestId: this.request.search
                         }

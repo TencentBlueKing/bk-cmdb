@@ -5,28 +5,33 @@
             <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
         </div>
         <bk-table class="cloud-account-table"
+            v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="list"
             :pagination="pagination"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @cell-click="handleCellClick">
-            <bk-table-column :label="$t('任务名称')" prop="name" class-name="is-highlight"></bk-table-column>
-            <bk-table-column :label="$t('资源')" prop="resource"></bk-table-column>
-            <bk-table-column :label="$t('账户名称')" prop="account_name"></bk-table-column>
-            <bk-table-column :label="$t('账户类型')" prop="account_type"></bk-table-column>
-            <bk-table-column :label="$t('最近同步状态')" prop="status">
+            <bk-table-column :label="$t('任务名称')" prop="bk_task_name" class-name="is-highlight"></bk-table-column>
+            <bk-table-column :label="$t('资源')" prop="bk_resource_type" :formatter="resourceTypeFormatter"></bk-table-column>
+            <bk-table-column :label="$t('账户名称')" prop="bk_account_name"></bk-table-column>
+            <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" :formatter="vendorFormatter"></bk-table-column>
+            <bk-table-column :label="$t('最近同步状态')" prop="bk_sync_status">
                 <div class="row-status"
                     slot-scope="{ row }"
                     v-bk-tooltips.right="{
-                        disabled: !row.error,
-                        content: '异常原因'
+                        disabled: !row.bk_status_description,
+                        content: row.bk_status_description
                     }">
-                    <i :class="['status', { 'is-error': row.error }]"></i>
-                    异常
+                    <i :class="['status', { 'is-error': !row.bk_sync_status }]"></i>
+                    {{row.bk_sync_status ? $t('失败') : $t('成功')}}
                 </div>
             </bk-table-column>
-            <bk-table-column :label="$t('最近同步时间')" prop="last_time"></bk-table-column>
-            <bk-table-column :label="$t('最近编辑人')" prop="account_type"></bk-table-column>
+            <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time">
+                <template slot-scope="{ row }">{{row.bk_last_sync_time | formatter('time')}}</template>
+            </bk-table-column>
+            <bk-table-column :label="$t('最近编辑人')" prop="bk_last_editor">
+                <template slot-scope="{ row }">{{row.bk_last_editor | formatter('singlechar')}}</template>
+            </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <link-button class="mr10" @click="handleEdit(row)">{{$t('编辑')}}</link-button>
@@ -46,6 +51,8 @@
 <script>
     import ResourceCreateSideslider from './children/resource-sideslider.vue'
     import ResourceDetailsSideslider from './children/resource-details-sideslider.vue'
+    import { formatter as resourceTypeFormatter } from '@/dictionary/cloud-resource-type'
+    import { formatter as vendorFormatter } from '@/dictionary/cloud-vendor'
     export default {
         components: {
             ResourceCreateSideslider,
@@ -54,9 +61,10 @@
         data () {
             return {
                 list: [],
-                pagination: {
-                    ...this.$tools.getDefaultPaginationConfig(),
-                    count: 2
+                pagination: this.$tools.getDefaultPaginationConfig(),
+                request: {
+                    findTask: Symbol('findTask'),
+                    findAccount: Symbol('findAccount')
                 }
             }
         },
@@ -108,21 +116,52 @@
             },
             async getData () {
                 try {
-                    const data = await Promise.resolve({
-                        count: 2,
-                        info: [{ id: 1 }, { id: 2 }]
+                    const data = await this.$store.dispatch('cloud/resource/findTask', {
+                        params: {
+                            fields: [],
+                            condition: {},
+                            exact: false,
+                            page: this.$tools.getPageParams(this.pagination)
+                        },
+                        config: {
+                            requestId: this.request.findTask
+                        }
                     })
                     if (data.count && !data.info.length) {
                         this.handlePageChange(this.pagination.current - 1)
                         return
                     }
-                    this.list = data.info
+                    const { info: accounts } = await this.$store.dispatch('cloud/account/findMany', {
+                        params: {
+                            condition: {
+                                bk_account_id: {
+                                    '$in': data.info.map(task => task.bk_account_id)
+                                }
+                            }
+                        },
+                        config: {
+                            requestId: this.request.findAccount
+                        }
+                    })
+                    this.list = data.info.map(task => {
+                        const account = accounts.find(account => account.bk_account_id === task.bk_account_id) || {}
+                        return {
+                            ...task,
+                            bk_account_name: account.bk_account_name
+                        }
+                    })
                     this.pagination.count = data.count
                 } catch (e) {
                     console.error(e)
                     this.list = []
                     this.pagination.count = 0
                 }
+            },
+            resourceTypeFormatter (row, column) {
+                return this.$t(resourceTypeFormatter(row[column.property]))
+            },
+            vendorFormatter (row, column) {
+                return this.$t(vendorFormatter(row[column.property]))
             }
         }
     }

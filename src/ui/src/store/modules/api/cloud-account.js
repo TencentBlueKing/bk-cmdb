@@ -2,7 +2,7 @@ import $http from '@/api'
 
 const actions = {
     search (context, { params, config }) {
-        return $http.post(`search/cloud/account`, params, config)
+        return $http.post(`findmany/cloud/account`, params, config)
     },
     async searchById (context, { id, config }) {
         try {

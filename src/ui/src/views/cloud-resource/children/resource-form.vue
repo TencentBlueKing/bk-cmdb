@@ -17,24 +17,25 @@
                     :readonly="!isCreateMode"
                     :placeholder="$t('请选择xx', { name: $t('账户名称') })"
                     :data-vv-as="$t('账户名称')"
-                    data-vv-name="account_name"
-                    v-model="form.account_name"
+                    :loading="$loading(request.getAccounts)"
+                    data-vv-name="bk_account_id"
+                    v-model="form.bk_account_id"
                     v-validate="'required'">
-                    <bk-option v-for="account in accountList"
-                        :key="account.id"
-                        :name="account.name"
-                        :id="account.id">
+                    <bk-option v-for="account in accounts"
+                        :key="account.bk_account_id"
+                        :name="account.bk_account_name"
+                        :id="account.bk_account_id">
                     </bk-option>
                 </bk-select>
                 <link-button class="form-account-link" @click="handleLinkToCloudAccount">
                     <i class="icon-cc-share"></i>
                     {{$t('跳转账户管理')}}
                 </link-button>
-                <p class="form-tips" v-if="form.account_name">
+                <p class="form-tips" v-if="form.bk_account_id">
                     <i class="icon-cc-exclamation-tips"></i>
                     {{$t('同步频率提示语')}}
                 </p>
-                <p class="form-error" v-if="errors.has('account_name')">{{errors.first('account_name')}}</p>
+                <p class="form-error" v-if="errors.has('bk_account_id')">{{errors.first('bk_account_id')}}</p>
             </bk-form-item>
             <bk-form-item class="form-item" :label="$t('资源类型')" required>
                 <bk-select class="form-meta"
@@ -49,12 +50,9 @@
                 <p class="form-error" v-if="errors.has('resource_type')">{{errors.first('resource_type')}}</p>
             </bk-form-item>
         </bk-form>
-        <bk-form class="form-layout" form-type="inline" :label-width="300" v-if="form.account_name">
+        <bk-form class="form-layout" form-type="inline" :label-width="300" v-if="form.bk_account_id">
             <bk-form-item class="form-item" :label="$t('云区域设定')" required>
-                <bk-radio-group class="form-meta" v-model="form.setting">
-                    <bk-radio :value="settingComponents.custom">{{$t('自定义')}}</bk-radio>
-                    <bk-radio style="margin-left: 85px;" :value="settingComponents.all">{{$t('全部及后续新增')}}</bk-radio>
-                </bk-radio-group>
+                <bk-button @click="handleAddVPC">{{$t('添加VPC')}}</bk-button>
             </bk-form-item>
         </bk-form>
         <div class="form-setting-component">
@@ -67,6 +65,16 @@
             <bk-button theme="primary" @click="handleSumbit">{{$t('提交')}}</bk-button>
             <bk-button class="ml10" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
+        <cmdb-dialog
+            v-model="showVPCSelector"
+            :width="480">
+            <resource-vpc-selector
+                :account-id="form.bk_account_id"
+                :selected="selectedVPC"
+                @change="handleVPCChange"
+                @cancel="handleVPCCancel">
+            </resource-vpc-selector>
+        </cmdb-dialog>
     </cmdb-sticky-layout>
 </template>
 
@@ -74,12 +82,14 @@
     import { MENU_RESOURCE_CLOUD_ACCOUNT } from '@/dictionary/menu-symbol'
     import ResourceFormCustom from './resource-form-custom.vue'
     import ResourceFormAll from './resource-form-all.vue'
+    import ResourceVpcSelector from './resource-vpc-selector.vue'
     import CloudResourceDetailsInfo from './resource-details-info.vue'
     export default {
         name: 'cloud-resource-form',
         components: {
             [ResourceFormCustom.name]: ResourceFormCustom,
-            [ResourceFormAll.name]: ResourceFormAll
+            [ResourceFormAll.name]: ResourceFormAll,
+            [ResourceVpcSelector.name]: ResourceVpcSelector
         },
         props: {
             mission: {
@@ -97,17 +107,22 @@
         },
         data () {
             return {
-                accountList: [{ id: 1, name: '阿里云账户' }],
+                accounts: [],
                 form: {
                     mission_name: '',
-                    account_name: '',
+                    bk_account_id: '',
                     resource_type: 'host',
                     setting: null
                 },
+                selectedVPC: [],
                 settingComponents: {
                     custom: ResourceFormCustom.name,
                     all: ResourceFormAll.name
-                }
+                },
+                request: {
+                    getAccounts: Symbol('getAccounts')
+                },
+                showVPCSelector: false
             }
         },
         computed: {
@@ -116,7 +131,7 @@
             }
         },
         watch: {
-            'form.account_name' (value) {
+            'form.bk_account_id' (value) {
                 if (value) {
                     this.form.setting = this.settingComponents.custom
                 } else {
@@ -124,11 +139,31 @@
                 }
             }
         },
+        created () {
+            this.getAccounts()
+        },
         methods: {
+            async getAccounts () {
+                try {
+                    const { info: accounts } = await this.$store.dispatch('cloud/account/findMany', {
+                        params: {},
+                        config: {
+                            requestId: this.request.getAccounts
+                        }
+                    })
+                    this.accounts = accounts
+                } catch (e) {
+                    console.error(e)
+                    this.accounts = []
+                }
+            },
             handleLinkToCloudAccount () {
                 this.$router.push({
                     name: MENU_RESOURCE_CLOUD_ACCOUNT
                 })
+            },
+            handleAddVPC () {
+                this.showVPCSelector = true
             },
             handleAccountSelected (value) {
                 this.form.setting = this.settingComponents.custom
@@ -172,6 +207,22 @@
                         }
                     })
                 }
+            },
+            handleVPCChange (vpcs, region) {
+                this.showVPCSelector = false
+                const selectedVPC = [...this.selectedVPC]
+                vpcs.forEach(vpc => {
+                    const existIndex = this.selectedVPC.findIndex(selected => selected.bk_region === region && selected.bk_vpc_id === vpc.bk_vpc_id)
+                    if (existIndex > -1) {
+                        selectedVPC.splice(existIndex, 1)
+                    } else {
+                        selectedVPC.unshift(vpc)
+                    }
+                })
+                this.selectedVPC = selectedVPC
+            },
+            handleVPCCancel () {
+                this.showVPCSelector = false
             }
         }
     }

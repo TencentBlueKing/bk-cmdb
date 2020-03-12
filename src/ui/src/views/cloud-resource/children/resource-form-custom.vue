@@ -2,7 +2,7 @@
     <bk-table class="form-table"
         :data="list"
         @selection-change="handleSelectionChange">
-        <bk-table-column type="selection"></bk-table-column>
+        <bk-table-column type="selection" align="center"></bk-table-column>
         <bk-table-column label="VPC" prop="vpc"></bk-table-column>
         <bk-table-column :label="$t('地域')" prop="location"></bk-table-column>
         <bk-table-column :label="$t('主机数量')" prop="host_count"></bk-table-column>
