@@ -69,6 +69,15 @@
                         </span>
                     </cmdb-auth>
                     <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">{{$t('导出')}}</li>
+                    <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+                        :auth="$authResources({ type: $OPERATION.U_HOST })">
+                        <span href="javascript:void(0)"
+                            slot-scope="{ disabled }"
+                            :class="{ disabled: disabled }"
+                            @click="handleExcelUpdate($event)">
+                            {{$t('导入excel更新')}}
+                        </span>
+                    </cmdb-auth>
                 </ul>
             </bk-dropdown-menu>
         </div>
@@ -117,22 +126,21 @@
             v-transfer-dom
             :is-show.sync="sideslider.show"
             :width="600"
-            :title="$t('列表显示属性配置')">
-            <cmdb-columns-config slot="content"
-                v-if="sideslider.render"
-                :properties="columnsConfigProperties"
-                :selected="columnDisplayProperties"
-                :disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']"
+            :title="sideslider.title">
+            <component slot="content"
+                :is="sideslider.component"
+                v-bind="sideslider.componentProps"
                 @on-cancel="sideslider.show = false"
                 @on-apply="handleApplyColumnsConfig"
                 @on-reset="handleResetColumnsConfig">
-            </cmdb-columns-config>
+            </component>
         </bk-sideslider>
     </div>
 </template>
 
 <script>
     import HostFilter from '@/components/hosts/filter'
+    import CmdbImport from '@/components/import/import'
     import EditMultipleHost from './edit-multiple-host.vue'
     import HostSelector from './host-selector.vue'
     import CmdbColumnsConfig from '@/components/columns-config/columns-config'
@@ -146,8 +154,9 @@
         components: {
             HostFilter,
             EditMultipleHost,
-            CmdbColumnsConfig,
-            [HostSelector.name]: HostSelector
+            [CmdbColumnsConfig.name]: CmdbColumnsConfig,
+            [HostSelector.name]: HostSelector,
+            [CmdbImport.name]: CmdbImport
         },
         data () {
             return {
@@ -165,7 +174,9 @@
                 },
                 sideslider: {
                     show: false,
-                    render: false
+                    title: '',
+                    component: null,
+                    componentProps: {}
                 },
                 request: {
                     collection: Symbol('collection')
@@ -371,6 +382,15 @@
                     this.$store.commit('setGlobalLoading', false)
                 }
             },
+            handleExcelUpdate (event) {
+                this.sideslider.component = CmdbImport.name
+                this.sideslider.componentProps = {
+                    templateUrl: `${window.API_HOST}importtemplate/host`,
+                    importUrl: `${window.API_HOST}/hosts/update`
+                }
+                this.sideslider.title = this.$t('更新主机属性')
+                this.sideslider.show = true
+            },
             handleCopy (target) {
                 const copyList = this.$parent.table.selection
                 const copyText = []
@@ -433,7 +453,13 @@
             },
             handleSetColumn () {
                 this.$refs.hostFilter.$refs.filterPopper.instance.hide()
-                this.sideslider.render = true
+                this.sideslider.component = CmdbColumnsConfig.name
+                this.sideslider.componentProps = {
+                    properties: this.columnsConfigProperties,
+                    selected: this.columnDisplayProperties,
+                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                }
+                this.sideslider.title = this.$t('列表显示属性配置')
                 this.sideslider.show = true
             }
         }
