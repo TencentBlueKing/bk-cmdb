@@ -56,7 +56,9 @@
             </bk-form-item>
         </bk-form>
         <div class="form-setting-component">
-            <component :is="form.setting"></component>
+            <cloud-resource-form-custom
+                :selected="selectedVPC">
+            </cloud-resource-form-custom>
         </div>
         <div class="form-options"
             slot="footer"

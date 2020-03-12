@@ -1,15 +1,13 @@
 <template>
     <bk-table class="form-table"
-        :data="list"
-        @selection-change="handleSelectionChange">
-        <bk-table-column type="selection" align="center"></bk-table-column>
-        <bk-table-column label="VPC" prop="vpc"></bk-table-column>
-        <bk-table-column :label="$t('地域')" prop="location"></bk-table-column>
-        <bk-table-column :label="$t('主机数量')" prop="host_count"></bk-table-column>
+        :data="list">
+        <bk-table-column label="VPC" prop="vpc" :formatter="vpcFormatter"></bk-table-column>
+        <bk-table-column :label="$t('地域')" prop="bk_region_name" show-overflow-tooltip></bk-table-column>
+        <bk-table-column :label="$t('主机数量')" prop="bk_host_count"></bk-table-column>
         <bk-table-column :label="$t('主机录入到')" prop="folder" width="250" :render-header="folderHeaderRender">
-            <template slot-scope="{ row }" v-if="isSelected(row)">
+            <template slot-scope="{ row }">
                 <cloud-resource-folder-selector class="form-table-selector"
-                    v-model="folderSelection[row.id]">
+                    v-model="folderSelection[row.bk_vpc_id]">
                 </cloud-resource-folder-selector>
             </template>
         </bk-table-column>
@@ -24,9 +22,12 @@
         components: {
             CloudResourceFolderSelector
         },
+        props: {
+            selected: Array
+        },
         data () {
             return {
-                list: ['', '', '', ''].map((_, index) => ({ id: index, vpc: 'vpc' + index })),
+                list: [],
                 selection: [],
                 folderSelection: {},
                 folders: [{
@@ -35,21 +36,19 @@
                 }]
             }
         },
+        watch: {
+            selected (selected) {
+                this.list = [...selected]
+            }
+        },
         methods: {
-            isSelected (row) {
-                return this.selection.includes(row)
-            },
-            handleSelectionChange (selection) {
-                const folderSelection = {}
-                selection.forEach(row => {
-                    if (this.folderSelection.hasOwnProperty(row.id)) {
-                        folderSelection[row.id] = this.folderSelection[row.id]
-                    } else {
-                        folderSelection[row.id] = ''
-                    }
-                })
-                this.folderSelection = folderSelection
-                this.selection = selection
+            vpcFormatter (row, column) {
+                const vpcId = row.bk_vpc_id
+                const vpcName = row.bk_vpc_name
+                if (vpcId !== vpcName) {
+                    return `${vpcId}(${vpcName})`
+                }
+                return vpcId
             },
             handleMultipleSelected (value) {
                 Object.keys(this.folderSelection).forEach(id => {
@@ -63,7 +62,7 @@
                             data: data,
                             folders: this.folders,
                             batchSelectHandler: this.handleMultipleSelected,
-                            disabled: !this.selection.length
+                            disabled: !this.list.length
                         }
                     })
                 ])

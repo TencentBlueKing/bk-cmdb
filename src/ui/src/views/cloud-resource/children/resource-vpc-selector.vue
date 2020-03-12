@@ -113,7 +113,18 @@
                 }
             },
             handleConfirm () {
-                this.$emit('change', this.form.vpc.map(id => this.VPCList.find(vpc => vpc.bk_vpc_id === id)), this.form.region)
+                this.$emit(
+                    'change',
+                    this.form.vpc.map(id => {
+                        const vpc = this.VPCList.find(vpc => vpc.bk_vpc_id === id)
+                        const region = this.regions.find(region => region.bk_region === this.form.region)
+                        return {
+                            ...vpc,
+                            bk_region_name: region.bk_region_name
+                        }
+                    }),
+                    this.form.region
+                )
             },
             handleCancel () {
                 this.$emit('cancel')

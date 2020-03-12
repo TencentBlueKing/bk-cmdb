@@ -13,7 +13,7 @@
             @cell-click="handleCellClick">
             <bk-table-column :label="$t('任务名称')" prop="bk_task_name" class-name="is-highlight"></bk-table-column>
             <bk-table-column :label="$t('资源')" prop="bk_resource_type" :formatter="resourceTypeFormatter"></bk-table-column>
-            <bk-table-column :label="$t('账户名称')" prop="bk_account_name"></bk-table-column>
+            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" show-overflow-tooltip></bk-table-column>
             <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" :formatter="vendorFormatter"></bk-table-column>
             <bk-table-column :label="$t('最近同步状态')" prop="bk_sync_status">
                 <div class="row-status"
@@ -26,7 +26,7 @@
                     {{row.bk_sync_status ? $t('失败') : $t('成功')}}
                 </div>
             </bk-table-column>
-            <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time">
+            <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row.bk_last_sync_time | formatter('time')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('最近编辑人')" prop="bk_last_editor">
