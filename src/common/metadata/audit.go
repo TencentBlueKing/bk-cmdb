@@ -138,12 +138,6 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
-	case CloudAccountRes:
-		operationDetail := new(CloudAccountOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
 	default:
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -190,12 +184,6 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ModelAssociationRes:
 		operationDetail := new(ModelAssociationOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case CloudAccountRes:
-		operationDetail := new(CloudAccountOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -495,21 +483,4 @@ func GetAuditTypesByCategory(category string) []AuditType {
 		return []AuditType{ModelType, AssociationKindType, EventPushType}
 	}
 	return []AuditType{}
-}
-
-type CloudAccountOpDetail struct {
-	AccountID  int64              `json:"bk_account_id" bson:"bk_account_id"`
-	PreData    CloudAccountOpData `json:"pre_data" bson:"pre_data"`
-	CurData    CloudAccountOpData `json:"cur_data" bson:"cur_data"`
-	Properties []Property         `json:"properties" bson:"properties"`
-}
-
-type CloudAccountOpData struct {
-	AccountName string      `json:"bk_account_name" bson:"bk_account_name"`
-	CloudVendor AccountType `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
-	Description string      `json:"bk_description" bson:"bk_description"`
-}
-
-func (op *CloudAccountOpDetail) WithName() string {
-	return "CloudAccountOpDetail"
 }

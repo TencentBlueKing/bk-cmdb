@@ -12,5 +12,9 @@
     "app_not_exist":"业务不存在",
     "import_row_int_error_str":"%d行%s",
     "property_group":"字段分组",
+    "create": "创建",
+    "update": "更新",
+    "delete": "删除",
+
     "":""
 }

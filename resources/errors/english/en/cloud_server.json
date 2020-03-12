@@ -3,6 +3,7 @@
   "1118002": "Account name already exists",
   "1118003": "Cloud account parameter %s valid failed",
   "1118004": "Cloud account ID %d no exist",
+  "1118005": "%s Cloud account succeeded but failed to add audit log",
 
   "": ""
 }

@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 )
 
 // 云账户连通测试
@@ -76,32 +77,36 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 		return
 	}
 
-	// audiLog should remove SecreteID,SecreteKey
-	res.SecreteID = ""
-	res.SecreteKey = ""
-	curData := metadata.CloudAccountOpData{
-		AccountName: res.AccountName,
-		CloudVendor: res.CloudVendor,
-		Description: res.Description,
+	curData := map[string]interface{}{
+		common.BKCloudAccountName: res.AccountName,
+		common.BKCloudVendor:      res.CloudVendor,
+		common.BKDescriptionField: res.Description,
 	}
 	auditLog := metadata.AuditLog{
 		AuditType:    metadata.CloudResourceType,
 		ResourceType: metadata.CloudAccountRes,
 		Action:       metadata.AuditCreate,
-		OperationDetail: &metadata.CloudAccountOpDetail{
-			AccountID:  res.AccountID,
-			CurData:    curData,
-			Properties: metadata.CloudAccountAudiLogProperty,
+		OperationDetail: &metadata.BasicOpDetail{
+			ResourceID:   res.AccountID,
+			ResourceName: res.AccountName,
+			Details: &metadata.BasicContent{
+				PreData:    nil,
+				CurData:    curData,
+				Properties: metadata.CloudAccountAudiLogProperty,
+			},
 		},
 	}
 
+	language := util.GetLanguage(ctx.Kit.Header)
 	result, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
 	if err != nil {
-		blog.Errorf("CreateAccount success but create audit log failed, http failed, err:%v", err)
+		blog.Errorf("CreateAccount success but create audit log failed, http failed, err:%v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCloudAccountOperateSuccessButAddAudiLogFail, s.Language.Language(language, "create")))
 		return
 	}
 	if !result.Result {
-		blog.Errorf("CreateAccount success but create audit log failed, err code:%d, err msg:%s", result.Code, result.ErrMsg)
+		blog.Errorf("CreateAccount success but create audit log failed, err code:%d, err msg:%s, rid: %s", result.Code, result.ErrMsg, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCloudAccountOperateSuccessButAddAudiLogFail, s.Language.Language(language, "create")))
 		return
 	}
 
@@ -176,15 +181,11 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCloudAccountIDNoExistFail))
 		return
 	}
-	// should remove secreteID, secreteKey
-	res.Info[0].SecreteKey = ""
-	res.Info[0].SecreteID = ""
-	preData := metadata.CloudAccountOpData{
-		AccountName: res.Info[0].AccountName,
-		CloudVendor: res.Info[0].CloudVendor,
-		Description: res.Info[0].Description,
+	preData := map[string]interface{}{
+		common.BKCloudAccountName: res.Info[0].AccountName,
+		common.BKCloudVendor:      res.Info[0].CloudVendor,
+		common.BKDescriptionField: res.Info[0].Description,
 	}
-
 	option := map[string]interface{}{}
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
@@ -207,33 +208,35 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCloudAccountIDNoExistFail))
 		return
 	}
-	// should remove secreteID, secreteKey
-	rsp.Info[0].SecreteKey = ""
-	rsp.Info[0].SecreteID = ""
-	curData := metadata.CloudAccountOpData{
-		AccountName: rsp.Info[0].AccountName,
-		CloudVendor: rsp.Info[0].CloudVendor,
-		Description: rsp.Info[0].Description,
+	curData := map[string]interface{}{
+		common.BKCloudAccountName: rsp.Info[0].AccountName,
+		common.BKCloudVendor:      rsp.Info[0].CloudVendor,
+		common.BKDescriptionField: rsp.Info[0].Description,
 	}
-	// audiLog
 	auditLog := metadata.AuditLog{
 		AuditType:    metadata.CloudResourceType,
 		ResourceType: metadata.CloudAccountRes,
 		Action:       metadata.AuditUpdate,
-		OperationDetail: &metadata.CloudAccountOpDetail{
-			AccountID:  rsp.Info[0].AccountID,
-			PreData:    preData,
-			CurData:    curData,
-			Properties: metadata.CloudAccountAudiLogProperty,
+		OperationDetail: &metadata.BasicOpDetail{
+			ResourceID:   res.Info[0].AccountID,
+			ResourceName: res.Info[0].AccountName,
+			Details: &metadata.BasicContent{
+				PreData:    preData,
+				CurData:    curData,
+				Properties: metadata.CloudAccountAudiLogProperty,
+			},
 		},
 	}
+	language := util.GetLanguage(ctx.Kit.Header)
 	result, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
 	if err != nil {
-		blog.Errorf("UpdateAccount success but create audit log failed, http failed, accountID: %d, err:%v", accountID, err)
+		blog.Errorf("UpdateAccount success but create audit log failed, http failed, err:%v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCloudAccountOperateSuccessButAddAudiLogFail, s.Language.Language(language, "update")))
 		return
 	}
 	if !result.Result {
-		blog.Errorf("UpdateAccount success but create audit log failed, accountID: %d, err code:%d, err msg:%s", accountID, result.Code, result.ErrMsg)
+		blog.Errorf("UpdateAccount success but create audit log failed, err code:%d, err msg:%s, rid: %s", result.Code, result.ErrMsg, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCloudAccountOperateSuccessButAddAudiLogFail, s.Language.Language(language, "update")))
 		return
 	}
 
@@ -263,10 +266,10 @@ func (s *Service) DeleteAccount(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCloudAccountIDNoExistFail))
 		return
 	}
-	preData := metadata.CloudAccountOpData{
-		AccountName: res.Info[0].AccountName,
-		CloudVendor: res.Info[0].CloudVendor,
-		Description: res.Info[0].Description,
+	preData := map[string]interface{}{
+		common.BKCloudAccountName: res.Info[0].AccountName,
+		common.BKCloudVendor:      res.Info[0].CloudVendor,
+		common.BKDescriptionField: res.Info[0].Description,
 	}
 
 	err = s.CoreAPI.CoreService().Cloud().DeleteAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID)
@@ -280,19 +283,27 @@ func (s *Service) DeleteAccount(ctx *rest.Contexts) {
 		AuditType:    metadata.CloudResourceType,
 		ResourceType: metadata.CloudAccountRes,
 		Action:       metadata.AuditDelete,
-		OperationDetail: &metadata.CloudAccountOpDetail{
-			AccountID:  res.Info[0].AccountID,
-			PreData:    preData,
-			Properties: metadata.CloudAccountAudiLogProperty,
+		OperationDetail: &metadata.BasicOpDetail{
+			ResourceID:   res.Info[0].AccountID,
+			ResourceName: res.Info[0].AccountName,
+			Details: &metadata.BasicContent{
+				PreData:    preData,
+				CurData:    nil,
+				Properties: metadata.CloudAccountAudiLogProperty,
+			},
 		},
 	}
+
+	language := util.GetLanguage(ctx.Kit.Header)
 	result, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
 	if err != nil {
-		blog.Errorf("DeleteAccount success but create audit log failed, http failed, accountID: %d, err:%v", accountID, err)
+		blog.Errorf("DeleteAccount success but create audit log failed, http failed, err:%v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCloudAccountOperateSuccessButAddAudiLogFail, s.Language.Language(language, "delete")))
 		return
 	}
 	if !result.Result {
-		blog.Errorf("DeleteAccount success but create audit log failed, accountID: %d, err code:%d, err msg:%s", accountID, result.Code, result.ErrMsg)
+		blog.Errorf("DeleteAccount success but create audit log failed, err code:%d, err msg:%s, rid: %s", result.Code, result.ErrMsg, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCloudAccountOperateSuccessButAddAudiLogFail, s.Language.Language(language, "delete")))
 		return
 	}
 
