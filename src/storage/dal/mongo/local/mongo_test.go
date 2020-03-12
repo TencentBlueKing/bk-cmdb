@@ -22,8 +22,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/types"
 
 	"github.com/stretchr/testify/require"
 )
@@ -39,7 +39,7 @@ func BenchmarkLocalCUD(b *testing.B) {
 
 	header := http.Header{}
 	header.Set(common.BKHTTPCCRequestID, "xxxxx")
-	ctx := context.WithValue(context.Background(), common.CCContextKeyJoinOption, dal.JoinOption{
+	ctx := context.WithValue(context.Background(), common.CCContextKeyJoinOption, types.JoinOption{
 		RequestID: header.Get(common.BKHTTPCCRequestID),
 		TxnID:     header.Get(common.BKHTTPCCTransactionID),
 	})
@@ -131,17 +131,17 @@ func TestIndex(t *testing.T) {
 	}
 
 	// 创建索引
-	createIndexes := map[string]dal.Index{
-		"test_one": dal.Index{
+	createIndexes := map[string]types.Index{
+		"test_one": types.Index{
 			Name: "test_one",
 			Keys: map[string]int32{"a": 1, "b": 1},
 		},
-		"test_backgroud": dal.Index{
+		"test_backgroud": types.Index{
 			Name:       "test_backgroud",
 			Keys:       map[string]int32{"aa": 1, "bb": -1},
 			Background: true,
 		},
-		"test_unique": dal.Index{
+		"test_unique": types.Index{
 			Name:   "test_unique",
 			Keys:   map[string]int32{"aa": 1, "bb": 1},
 			Unique: true,
@@ -198,7 +198,7 @@ func TestInsertAndFind(t *testing.T) {
 
 	resultOne := make(map[string]interface{}, 0)
 	err = table.Find(map[string]string{"test_xxx_xxx": "1"}).One(ctx, &resultOne)
-	if err != dal.ErrDocumentNotFound {
+	if err != types.ErrDocumentNotFound {
 		require.NoError(t, err)
 	}
 	if len(resultOne) != 0 {
@@ -409,7 +409,7 @@ func TestFindOneOpt(t *testing.T) {
 	filter = map[string]string{"ext": "ext"}
 	resultOne = make(map[string]string, 0)
 	err = table.Find(filter).Start(uint64(len(insertDataMany))).One(ctx, &resultOne)
-	if err != dal.ErrDocumentNotFound {
+	if err != types.ErrDocumentNotFound {
 		require.NoError(t, err)
 	}
 	if len(resultOne) > 0 {
@@ -604,10 +604,10 @@ func TestUpdateMulti(t *testing.T) {
 	}
 
 	filter := map[string]string{"ext": "ext"}
-	update := []dal.ModeUpdate{
-		dal.ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
-		dal.ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
-		dal.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
+	update := []types.ModeUpdate{
+		types.ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
+		types.ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
+		types.ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
 	}
 	err = table.UpdateMultiModel(ctx, filter, update...)
 	require.NoError(t, err)

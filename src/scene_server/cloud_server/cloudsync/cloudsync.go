@@ -14,10 +14,11 @@ package cloudsync
 
 import (
 	"configcenter/src/common/mapstr"
+	"configcenter/src/storage/dal/mongo/local"
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
+	//"strings"
 	"sync"
 	"time"
 
@@ -28,23 +29,24 @@ import (
 	"configcenter/src/common/zkclient"
 	"configcenter/src/scene_server/cloud_server/logics"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/reflector"
+	stypes "configcenter/src/storage/stream/types"
 
 	"github.com/samuel/go-zookeeper/zk"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"stathat.com/c/consistent"
 )
 
 type taskProcessor struct {
-	zkClient *zkclient.ZkClient
-	db       dal.RDB
-	logics   *logics.Logics
-	addrport string
-	hashring *consistent.Consistent
-	tasklist map[int64]bool
-	taskChan chan int64
-	mu       sync.RWMutex
+	ctx       context.Context
+	zkClient  *zkclient.ZkClient
+	db        dal.DB
+	logics    *logics.Logics
+	addrport  string
+	reflector reflector.Interface
+	hashring  *consistent.Consistent
+	tasklist  map[int64]bool
+	taskChan  chan int64
+	mu        sync.RWMutex
 }
 
 const (
@@ -63,15 +65,17 @@ type FullDoc struct {
 }
 
 type SyncConf struct {
-	ZKClient *zkclient.ZkClient
-	DB       dal.RDB
-	Logics   *logics.Logics
-	AddrPort string
+	ZKClient  *zkclient.ZkClient
+	DB        dal.DB
+	Logics    *logics.Logics
+	AddrPort  string
+	MongoConf local.MongoConf
 }
 
 // 处理云资源同步任务
 func CloudSync(ctx context.Context, conf *SyncConf) error {
 	t := &taskProcessor{
+		ctx:      ctx,
 		zkClient: conf.ZKClient,
 		db:       conf.DB,
 		logics:   conf.Logics,
@@ -80,6 +84,14 @@ func CloudSync(ctx context.Context, conf *SyncConf) error {
 		tasklist: make(map[int64]bool),
 		taskChan: make(chan int64, 10),
 	}
+
+	var err error
+	t.reflector, err = reflector.NewReflector(conf.MongoConf)
+	if err != nil {
+		blog.Errorf("NewReflector failed, mongoConf: %#v, err: %s", conf.MongoConf, err.Error())
+		return err
+	}
+
 	// 监听任务进程节点
 	if err := t.WatchTaskNode(ctx); err != nil {
 		return err
@@ -88,6 +100,7 @@ func CloudSync(ctx context.Context, conf *SyncConf) error {
 	if err := t.WatchTaskTable(ctx); err != nil {
 		return err
 	}
+
 	// 不断给任务channel提供任务数据
 	t.TaskChanLoop()
 	// 同步云资源
@@ -144,44 +157,39 @@ func (t *taskProcessor) WatchTaskNode(ctx context.Context) error {
 
 // 监控云资源同步任务表事件，发现有变更则判断是否将该任务加入到当前进程的任务列表里
 func (t *taskProcessor) WatchTaskTable(ctx context.Context) error {
-	go func() {
-		// 监听配置
-		matchStage := bson.D{{"$match", bson.D{{"operationType", bson.D{{"$in",
-			bson.A{"insert", "update", "replace", "delete", "drop"}}}}}}}
-		opts := options.ChangeStream().SetMaxAwaitTime(2 * time.Second).SetFullDocument(options.UpdateLookup)
-		col := t.db.Table(common.BKTableNameCloudSyncTask)
-		for {
-			// 监听表事件
-			changeStream, err := col.Watch(context.TODO(), mongo.Pipeline{matchStage}, opts)
-			if err != nil {
-				blog.Errorf("WatchTaskTable Watch err:%s", err.Error())
-				time.Sleep(time.Second * 5)
-				continue
-			}
-			// 获取表事件
-			for changeStream.Next(context.TODO()) {
-				blog.V(3).Infof("changeStream.Current:%s", changeStream.Current)
-				opType := changeStream.Current.Lookup("operationType").String()
+	opts := &stypes.WatchOptions{
+		Options: stypes.Options{
+			EventStruct: new(metadata.CloudSyncTask),
+			Collection:  common.BKTableNameCloudSyncTask,
+		},
+	}
+	cap := &reflector.Capable{
+		reflector.OnChangeEvent{
+			OnAdd:    t.changeOnAdd,
+			OnUpdate: t.changeOnUpdate,
+			OnDelete: t.changeOnDelete,
+		},
+	}
 
-				// 删除记录和删除表时都进行任务重新分配，删除表时watch会失效,需跳出当前循环重新watch
-				// 失效事件可参考mongo文档：https://docs.mongodb.com/manual/reference/change-events/#invalidate-event
-				if strings.Contains(opType, "delete") {
-					t.dispatchTasks(ctx, zkPath)
-				} else if strings.Contains(opType, "drop") {
-					t.dispatchTasks(ctx, zkPath)
-					// 跳出当前循环，重新监听
-					break
-				} else {
-					fulldoc := FullDoc{}
-					doc := changeStream.Current.Lookup("fullDocument")
-					err = doc.Unmarshal(&fulldoc)
-					t.addTask(fulldoc.TaskID)
-				}
-			}
-		}
-	}()
+	return t.reflector.Watcher(ctx, opts, cap)
+}
 
-	return nil
+// 表记录新增处理逻辑
+func (t *taskProcessor) changeOnAdd(event *stypes.Event) {
+	blog.V(4).Infof("OnAdd event, taskid:%d", event.Document.(*metadata.CloudSyncTask).TaskID)
+	t.addTask(event.Document.(*metadata.CloudSyncTask).TaskID)
+}
+
+// 表记录更新处理逻辑
+func (t *taskProcessor) changeOnUpdate(event *stypes.Event) {
+	blog.V(4).Infof("OnUpdate event, taskid:%d", event.Document.(*metadata.CloudSyncTask).TaskID)
+	t.addTask(event.Document.(*metadata.CloudSyncTask).TaskID)
+}
+
+// 表记录删除处理逻辑
+func (t *taskProcessor) changeOnDelete(event *stypes.Event) {
+	blog.V(4).Info("OnDelete event")
+	t.dispatchTasks(t.ctx, zkPath)
 }
 
 // 不断给任务channel提供任务数据

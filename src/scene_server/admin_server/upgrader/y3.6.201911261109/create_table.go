@@ -19,34 +19,35 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 
-	"gopkg.in/mgo.v2"
+    "gopkg.in/mgo.v2"
 )
 
 var CreateTableOptions = []struct {
 	TableName  string
-	TableIndex []dal.Index
+	TableIndex []types.Index
 }{
 	{
 		TableName: common.BKTableNameChartConfig,
-		TableIndex: []dal.Index{
+		TableIndex: []types.Index{
 			{Keys: map[string]int32{"config_id": 1}, Name: "config_id", Unique: true, Background: true},
 			{Name: common.BKObjIDField, Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
 		},
 	},
 	{
 		TableName: common.BKTableNameChartPosition,
-		TableIndex: []dal.Index{
+		TableIndex: []types.Index{
 			{Name: "bk_biz_id", Keys: map[string]int32{"bk_biz_id": 1}, Background: true},
 		},
 	},
 	{
 		TableName:  common.BKTableNameChartData,
-		TableIndex: []dal.Index{},
+		TableIndex: []types.Index{},
 	},
 }
 
-func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableName string, indices []dal.Index) error {
+func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableName string, indices []types.Index) error {
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return fmt.Errorf("check HasTable failed, tableName: %s, err: %+v", tableName, err)

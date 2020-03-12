@@ -139,11 +139,8 @@ func TestDecodeSubStruct(t *testing.T) {
 
 // Classification the classification metadata definition
 type Classification struct {
-	//Name int64     `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
 	Time time.Time `field:"last_time"  json:"last_time" bson:"last_time"`
 }
-
-type Time time.Time
 
 func TestStruct(t *testing.T) {
 	docItem := map[string]interface{}{

@@ -97,6 +97,7 @@
         overflow: auto;
     }
     .main-views {
+        position: relative;
         height: calc(100% - 52px);
         border-top: 1px solid $borderColor;
         margin-top: 52px;

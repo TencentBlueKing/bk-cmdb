@@ -10,26 +10,22 @@
  * limitations under the License.
  */
 
-package dal
+package types
 
 import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	ccErr "configcenter/src/common/errors"
-	"configcenter/src/storage/types"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Errors defind
+// Errors defines
 var (
 	ErrTransactionStated   = errors.New("transaction already started")
 	ErrTransactionNotFound = errors.New("not in transaction environment")
 	ErrDocumentNotFound    = errors.New("document not found")
-	ErrNotImplemented      = errors.New("not implemented")
 	ErrDuplicated          = errors.New("duplicated")
 	ErrSessionNotStarted   = errors.New("session is not started")
 
@@ -37,70 +33,9 @@ var (
 	UpdateOpPull     = "pull"
 )
 
-// RDB rename the RDB into DB
-// Compatible stock code
-type RDB DB
+// Filter condition alias name
+type Filter interface{}
 
-// DB db operation interface
-type DB interface {
-	Clone() DB
-	// Table collection 操作
-	Table(collection string) Table
-
-	// NextSequence 获取新序列号(非事务)
-	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
-	// Ping 健康检查
-	Ping() error // 健康检查
-
-	// HasTable 判断是否存在集合
-	HasTable(ctx context.Context, tablename string) (bool, error)
-	// DropTable 移除集合
-	DropTable(ctx context.Context, tablename string) error
-	// CreateTable 创建集合
-	CreateTable(ctx context.Context, tablename string) error
-
-	IsDuplicatedError(error) bool
-	IsNotFoundError(error) bool
-
-	Close() error
-
-	//StartSession 开启会话
-	StartSession() (DB, error)
-	// EndSession 结束会话
-	EndSession(ctx context.Context) error
-
-	// 监听DB事件
-	Watch(ctx context.Context, pipeline interface{},
-		opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error)
-
-	Transaction
-}
-
-// Transcation db transcation interface
-type Transaction interface {
-	// StartTransaction 开启新事务
-	StartTransaction(context.Context) error
-	// CommitTransaction 提交事务
-	CommitTransaction(context.Context) error
-	// AbortTransaction 取消事务
-	AbortTransaction(context.Context) error
-
-	// Start 开启新事务
-	Start(ctx context.Context) (Transaction, error)
-	// Commit 提交事务
-	Commit(context.Context) error
-	// Abort 取消事务
-	Abort(context.Context) error
-	// TxnInfo 当前事务信息，用于事务发起者往下传递
-	TxnInfo() (*types.Transaction, error)
-
-	// AutoRun Interface for automatic processing of encapsulated transactions
-	// f func return error, abort commit, other commit transcation. transcation commit can be error.
-	// f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
-	AutoRun(ctx context.Context, opt TxnWrapperOption, f func(header http.Header) error) error
-}
-
-// Table collection operation interface
 type Table interface {
 	// Find 查询多个并反序列化到 Result
 	Find(filter Filter) Find
@@ -136,29 +71,6 @@ type Table interface {
 	DropColumn(ctx context.Context, field string) error
 	// 根据条件移除字段
 	DropColumns(ctx context.Context, filter Filter, fields []string) error
-
-	// 监听表事件
-	Watch(ctx context.Context, pipeline interface{},
-		opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error)
-}
-
-// JoinOption defind join transaction options
-type JoinOption struct {
-	TxnID     string // 事务ID,uuid
-	RequestID string // 请求ID,可选项
-	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
-
-	TMAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
-
-	SessionID    string // 会话ID
-	SessionState string // 会话状态
-	TxnNumber    string // 事务Number
-
-}
-
-type TxnWrapperOption struct {
-	Header http.Header
-	CCErr  ccErr.DefaultCCErrorIf
 }
 
 // Find find operation interface
@@ -179,6 +91,12 @@ type Find interface {
 	Count(ctx context.Context) (uint64, error)
 }
 
+// ModeUpdate  根据不同的操作符去更新数据
+type ModeUpdate struct {
+	Op  string
+	Doc interface{}
+}
+
 // Index define the DB index struct
 type Index struct {
 	Keys       map[string]int32 `json:"keys" bson:"key"`
@@ -187,8 +105,28 @@ type Index struct {
 	Background bool             `json:"background" bson:"background"`
 }
 
-// ModeUpdate  根据不同的操作符去更新数据
-type ModeUpdate struct {
-	Op  string
-	Doc interface{}
+type TxnWrapperOption struct {
+	Header http.Header
+	CCErr  ccErr.DefaultCCErrorIf
+}
+
+// JoinOption defind join transaction options
+type JoinOption struct {
+	TxnID     string // 事务ID,uuid
+	RequestID string // 请求ID,可选项
+	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+
+	TMAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
+
+	SessionID    string // 会话ID
+	SessionState string // 会话状态
+	TxnNumber    string // 事务Number
+
+}
+
+type TxnOption struct {
+	// transaction timeout time
+	// min value: 5 * time.Second
+	// default: 5min
+	Timeout time.Duration
 }

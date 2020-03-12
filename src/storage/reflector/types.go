@@ -10,4 +10,19 @@
  * limitations under the License.
  */
 
-package dal
+package reflector
+
+import "configcenter/src/storage/stream/types"
+
+type Capable struct {
+	OnChange OnChangeEvent
+}
+
+type OnChangeEvent struct {
+	// only used when list watch is used.
+	OnLister     func(event *types.Event)
+	OnListerDone func()
+	OnAdd        func(event *types.Event)
+	OnUpdate     func(event *types.Event)
+	OnDelete     func(event *types.Event)
+}

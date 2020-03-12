@@ -13,17 +13,17 @@
 package model
 
 import (
-	"fmt"
+    "fmt"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/json"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/condition"
+    "configcenter/src/common/http/rest"
+    "configcenter/src/common/json"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    "configcenter/src/common/util"
+    "configcenter/src/storage/dal/types"
 )
 
 func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
@@ -328,7 +328,7 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 	}
 
 	if result.UniqueCount > 0 {
-		return dal.ErrDuplicated
+		return types.ErrDuplicated
 	}
 
 	return nil

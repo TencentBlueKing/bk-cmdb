@@ -43,7 +43,28 @@ export default [{
         },
         customInstanceColumn: 'business_topology_table_column_config',
         customFilterProperty: 'business_topology_filter_property_config'
-    })
+    }),
+    children: [{
+        name: MENU_BUSINESS_HOST_DETAILS,
+        path: ':business/host/:id',
+        component: () => import('@/views/host-details/index'),
+        meta: new Meta({
+            owner: MENU_BUSINESS,
+            menu: {
+                i18n: '主机详情',
+                relative: MENU_BUSINESS_HOST_AND_SERVICE
+            },
+            layout: {
+                previous: (view) => ({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query: view.$route.query
+                })
+            },
+            checkAvailable: (to, from, app) => {
+                return parseInt(to.params.business) === app.$store.getters['objectBiz/bizId']
+            }
+        })
+    }]
 }, {
     name: MENU_BUSINESS_TRANSFER_HOST,
     path: 'host/transfer/:type',
@@ -90,26 +111,6 @@ export default [{
                     }
                 }
             }
-        }
-    })
-}, {
-    name: MENU_BUSINESS_HOST_DETAILS,
-    path: ':business/host/:id',
-    component: () => import('@/views/host-details/index'),
-    meta: new Meta({
-        owner: MENU_BUSINESS,
-        menu: {
-            i18n: '主机详情',
-            relative: MENU_BUSINESS_HOST_AND_SERVICE
-        },
-        layout: {
-            previous: (view) => ({
-                name: MENU_BUSINESS_HOST_AND_SERVICE,
-                query: view.$route.query
-            })
-        },
-        checkAvailable: (to, from, app) => {
-            return parseInt(to.params.business) === app.$store.getters['objectBiz/bizId']
         }
     })
 }]
