@@ -853,6 +853,7 @@ const (
 	BKHTTPCookieLanugageKey = "blueking_language"
 	//BKSessionLanugageKey = "language"
 	BKHTTPSupplierID = "bk_supplier_id"
+	BKHTTPRequestAppCode = "req_app_code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
