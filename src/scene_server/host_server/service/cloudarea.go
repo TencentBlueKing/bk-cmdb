@@ -115,6 +115,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 			BaseResp: metadata.SuccessBaseResp,
 			Data:     retData,
 		})
+		return
 	}
 
 	// add host_count
@@ -125,6 +126,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		if err != nil {
 			blog.ErrorJSON("FindManyCloudArea fail with cloudID convert from interface to int64 failed, err: %v, rid: %s", err, rid)
 			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDPlat, common.BKCloudIDField, "int", err.Error())})
+			return
 		}
 		intCloudIDArray = append(intCloudIDArray, intCloudID)
 		mapCloudIDInfo[intCloudID] = area
