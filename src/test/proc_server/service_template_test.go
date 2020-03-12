@@ -9,6 +9,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
@@ -153,7 +154,8 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			moduleId = int64(rsp.Data["bk_module_id"].(float64))
+			moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("search module", func() {
@@ -305,7 +307,8 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			serviceId = int64(rsp.Data.([]interface{})[0].(float64))
+			serviceId, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("search service instance", func() {
@@ -388,7 +391,8 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			processTemplateId = int64(rsp.Data.([]interface{})[0].(float64))
+			processTemplateId, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("search process template", func() {
@@ -547,7 +551,8 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			serviceId1 = int64(rsp.Data.([]interface{})[0].(float64))
+			serviceId1, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("search service instance", func() {
@@ -582,7 +587,8 @@ var _ = Describe("service template test", func() {
 			Expect(data[0].Property["bk_func_name"]).To(Equal("p1"))
 			Expect(data[0].Property["bk_start_param_regex"]).Should(BeNil())
 			Expect(data[0].Relation.HostID).To(Equal(hostId2))
-			processId = int64(data[0].Property["bk_process_id"].(float64))
+			processId, err = commonutil.GetInt64ByInterface(data[0].Property["bk_process_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("create process instance", func() {

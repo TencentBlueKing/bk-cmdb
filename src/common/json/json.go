@@ -14,7 +14,12 @@ package json
 
 import "github.com/json-iterator/go"
 
-var iteratorJson = jsoniter.ConfigCompatibleWithStandardLibrary
+var iteratorJson = jsoniter.Config{
+	EscapeHTML:             true,
+	SortMapKeys:            true,
+	ValidateJsonRawMessage: true,
+	UseNumber:              true,
+}.Froze()
 
 func MarshalToString(v interface{}) (string, error) {
 	return iteratorJson.MarshalToString(v)

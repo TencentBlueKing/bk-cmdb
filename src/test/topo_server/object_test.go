@@ -44,7 +44,8 @@ var _ = Describe("object test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data).To(ContainElement("abc"))
-			bizIdInt = int64(rsp.Data["bk_biz_id"].(float64))
+			bizIdInt, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
 			bizId = strconv.FormatInt(bizIdInt, 10)
 		})
 
@@ -305,7 +306,8 @@ var _ = Describe("object test", func() {
 			Expect(child["bk_obj_id"].(string)).To(Equal("cc_test_object"))
 			Expect(child["bk_obj_name"].(string)).To(Equal("cc_test_object"))
 			Expect(len(child["child"].([]interface{}))).To(Equal(0))
-			childInstIdInt = int64(child["bk_inst_id"].(float64))
+			childInstIdInt, err = commonutil.GetInt64ByInterface(child["bk_inst_id"])
+			Expect(err).NotTo(HaveOccurred())
 			childInstId = strconv.FormatInt(childInstIdInt, 10)
 		})
 
@@ -355,7 +357,7 @@ var _ = Describe("object test", func() {
 			Expect(data["bk_classification_id"].(string)).To(Equal("cc_class"))
 			Expect(data["bk_classification_name"].(string)).To(Equal("新测试分类"))
 			Expect(data["bk_classification_type"].(string)).To(Equal(""))
-			clsId = strconv.FormatInt(int64(data["id"].(float64)), 10)
+			clsId = commonutil.GetStrByInterface(data["id"])
 		})
 
 		It("create classification", func() {
@@ -376,7 +378,7 @@ var _ = Describe("object test", func() {
 			Expect(data["bk_classification_id"].(string)).To(Equal("cc_est_object"))
 			Expect(data["bk_classification_name"].(string)).To(Equal("cc_est_object"))
 			Expect(data["bk_classification_type"].(string)).To(Equal(""))
-			clsId2 = strconv.FormatInt(int64(data["id"].(float64)), 10)
+			clsId2 = commonutil.GetStrByInterface(data["id"])
 		})
 
 		It("create classification same ClassificationID", func() {
@@ -1205,8 +1207,11 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_set_name"].(string)).To(Equal("cc_set"))
 			Expect(commonutil.GetStrByInterface(rsp.Data["bk_parent_id"])).To(Equal(strconv.FormatInt(childInstIdInt, 10)))
-			Expect(int64(rsp.Data["bk_biz_id"].(float64))).To(Equal(bizIdInt))
-			setId = strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)
+
+			bizIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bizIdRes).To(Equal(bizIdInt))
+			setId = commonutil.GetStrByInterface(rsp.Data["bk_set_id"])
 		})
 
 		It(fmt.Sprintf("create set bk_biz_id=%s and bk_parent_id=%s", bizId, childInstId), func() {
@@ -1224,8 +1229,11 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_set_name"].(string)).To(Equal("test"))
 			Expect(commonutil.GetStrByInterface(rsp.Data["bk_parent_id"])).To(Equal(strconv.FormatInt(childInstIdInt, 10)))
-			Expect(int64(rsp.Data["bk_biz_id"].(float64))).To(Equal(bizIdInt))
-			setId1 = strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)
+
+			bizIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bizIdRes).To(Equal(bizIdInt))
+			setId1 = commonutil.GetStrByInterface(rsp.Data["bk_set_id"])
 		})
 
 		It("create set same bk_biz_id and bk_parent_id and bk_set_name", func() {
@@ -1390,7 +1398,10 @@ var _ = Describe("object test", func() {
 			Expect(map[string]interface{}(rsp.Data.Info[rsp.Data.Count-1])).To(HaveKeyWithValue("bk_service_status", "1"))
 			Expect(map[string]interface{}(rsp.Data.Info[rsp.Data.Count-1])).To(HaveKeyWithValue("bk_set_env", "2"))
 			Expect(commonutil.GetStrByInterface(rsp.Data.Info[rsp.Data.Count-1]["bk_parent_id"])).To(Equal(strconv.FormatInt(childInstIdInt, 10)))
-			Expect(int64(rsp.Data.Info[rsp.Data.Count-1]["bk_biz_id"].(float64))).To(Equal(bizIdInt))
+
+			bizIdRes, err := commonutil.GetInt64ByInterface(rsp.Data.Info[rsp.Data.Count-1]["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bizIdRes).To(Equal(bizIdInt))
 		})
 	})
 
@@ -1409,9 +1420,9 @@ var _ = Describe("object test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("cc_module"))
-			Expect(strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)).To(Equal(setId))
+			Expect(commonutil.GetStrByInterface(rsp.Data["bk_set_id"])).To(Equal(setId))
 			Expect(commonutil.GetStrByInterface(rsp.Data["bk_parent_id"])).To(Equal(setId))
-			moduleId = strconv.FormatInt(int64(rsp.Data["bk_module_id"].(float64)), 10)
+			moduleId = commonutil.GetStrByInterface(rsp.Data["bk_module_id"])
 		})
 
 		It(fmt.Sprintf("create module bk_biz_id=%s and bk_set_id=%s", bizId, setId), func() {
@@ -1426,9 +1437,9 @@ var _ = Describe("object test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("test_module"))
-			Expect(strconv.FormatInt(int64(rsp.Data["bk_set_id"].(float64)), 10)).To(Equal(setId))
+			Expect(commonutil.GetStrByInterface(rsp.Data["bk_set_id"])).To(Equal(setId))
 			Expect(commonutil.GetStrByInterface(rsp.Data["bk_parent_id"])).To(Equal(setId))
-			moduleId1 = strconv.FormatInt(int64(rsp.Data["bk_module_id"].(float64)), 10)
+			moduleId1 = commonutil.GetStrByInterface(rsp.Data["bk_module_id"])
 		})
 
 		It("create module same bk_module_name", func() {
@@ -1593,7 +1604,7 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 			Expect(map[string]interface{}(rsp.Data.Info[0])).To(HaveKeyWithValue("bk_module_name", "new_module"))
-			Expect(strconv.FormatInt(int64(rsp.Data.Info[0]["bk_set_id"].(float64)), 10)).To(Equal(setId))
+			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_set_id"])).To(Equal(setId))
 			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_parent_id"])).To(Equal(setId))
 		})
 	})

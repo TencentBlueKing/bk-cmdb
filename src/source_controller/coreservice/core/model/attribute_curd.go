@@ -578,6 +578,20 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 		}
 	}
 
+	if option, exists := data.Get(metadata.AttributeFieldOption); exists {
+		propertyType := dbAttributeArr[0].PropertyType
+		for _, dbAttribute := range dbAttributeArr {
+			if dbAttribute.PropertyType != propertyType {
+				blog.ErrorJSON("update option, but property type not the same, db attributes: %s, rid:%s", dbAttributeArr, ctx.ReqID)
+				return changeRow, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "cond")
+			}
+		}
+		if err := util.ValidPropertyOption(propertyType, option, ctx.Error); err != nil {
+			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, ctx.ReqID)
+			return changeRow, err
+		}
+	}
+
 	// 删除不可更新字段， 避免由于传入数据，修改字段
 	// TODO: 改成白名单方式
 	data.Remove(metadata.AttributeFieldPropertyID)
@@ -586,8 +600,31 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
 
-	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists && (grp == "") {
-		data.Remove(metadata.AttributeFieldPropertyGroup)
+	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists {
+		if grp == "" {
+			data.Remove(metadata.AttributeFieldPropertyGroup)
+		}
+		// check if property group exists in object
+		objIDs := make([]string, 0)
+		for _, dbAttribute := range dbAttributeArr {
+			objIDs = append(objIDs, dbAttribute.ObjectID)
+		}
+		objIDs = util.StrArrayUnique(objIDs)
+		cond := map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: objIDs,
+			},
+			common.BKPropertyGroupIDField: grp,
+		}
+		cnt, err := m.dbProxy.Table(common.BKTableNamePropertyGroup).Find(cond).Count(ctx)
+		if err != nil {
+			blog.ErrorJSON("property group count failed, err: %s, condition: %s, rid: %s", err, cond, ctx.ReqID)
+			return changeRow, err
+		}
+		if cnt != uint64(len(objIDs)) {
+			blog.Errorf("property group invalid, objIDs: %s have %d property groups, rid: %s", objIDs, cnt, ctx.ReqID)
+			return changeRow, ctx.Error.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyGroup)
+		}
 	}
 
 	attribute := metadata.Attribute{}
