@@ -591,6 +591,8 @@ func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *
 				updateHosts = append(updateHosts, id)
 			}
 		}
+	} else {
+		updateHosts = input.HostID
 	}
 
 	cond := map[string]interface{}{

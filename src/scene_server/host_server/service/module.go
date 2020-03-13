@@ -563,10 +563,23 @@ func (s *Service) TransferHostResourceDirectory(req *restful.Request, resp *rest
 		return
 	}
 
+	audit := srvData.lgc.NewHostModuleLog(input.HostID)
+	if err := audit.WithPrevious(srvData.ctx); err != nil {
+		blog.Errorf("TransferHostResourceDirectory, but get prev module host config failed, err: %v, hostIDs:%#v,rid:%s", err, input.HostID, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+		return
+	}
+
 	err := s.CoreAPI.CoreService().Host().TransferHostResourceDirectory(srvData.ctx, srvData.header, input)
 	if err != nil {
 		blog.ErrorJSON("TransferHostResourceDirectory failed with coreservice http failed, input: %v, err: %v, rid: %s", &input, err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		return
+	}
+
+	if err := audit.SaveAudit(srvData.ctx); err != nil {
+		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, input.HostID, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return
 	}
 
