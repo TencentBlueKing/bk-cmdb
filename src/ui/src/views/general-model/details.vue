@@ -32,7 +32,7 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import cmdbProperty from '@/components/model-instance/property'
-    import cmdbAuditHistory from '@/components/audit-history/audit-history'
+    import cmdbAuditHistory from '@/components/model-instance/audit-history'
     import cmdbRelation from '@/components/model-instance/relation'
     export default {
         components: {

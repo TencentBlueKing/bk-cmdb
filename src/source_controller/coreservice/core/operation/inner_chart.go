@@ -27,7 +27,7 @@ import (
 func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
 
 	wg := &sync.WaitGroup{}
-	wg.Add(3)
+	wg.Add(2)
 	go func(wg *sync.WaitGroup) {
 		if err := m.ModelInst(kit, wg); err != nil {
 			blog.Errorf("TimerFreshData, count model's instance, search model info fail ,err: %v, rid: %v", err)
@@ -35,12 +35,14 @@ func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
 		}
 	}(wg)
 
-	go func(wg *sync.WaitGroup) {
+	// 因为审计日志太多，造成执行时间过长，先关闭此项统计
+	/*go func(wg *sync.WaitGroup) {
 		if err := m.ModelInstChange(kit, wg); err != nil {
 			blog.Errorf("TimerFreshData, model inst change count fail, err: %v", err)
 			return
 		}
 	}(wg)
+	*/
 
 	go func(wg *sync.WaitGroup) {
 		if err := m.BizHostCountChange(kit, wg); err != nil {

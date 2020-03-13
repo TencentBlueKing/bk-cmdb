@@ -62,6 +62,7 @@
 
 <script type="text/javascript">
     export default {
+        name: 'cmdb-import',
         props: {
             templateUrl: {
                 type: String,
