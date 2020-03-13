@@ -202,6 +202,20 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	// add auditLog
+	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
+	if err := auditLog.WithCurrent(srvData.ctx, platID); err != nil {
+		blog.ErrorJSON("CreatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
+	if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditCreate); err != nil {
+		blog.ErrorJSON("CreatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     createRes.Data,
@@ -266,17 +280,24 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
+
+	// add auditLog preData
+	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
+	if err := auditLog.WithPrevious(srvData.ctx, platID); err != nil {
+		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
 	delCond := &meta.DeleteOption{
 		Condition: mapstr.MapStr{common.BKCloudIDField: platID},
 	}
-
 	res, err := s.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, delCond)
 	if nil != err {
 		blog.Errorf("DelPlat do error: %v, input:%d,rid:%s", err, platID, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed)})
 		return
 	}
-
 	if false == res.Result {
 		blog.Errorf("DelPlat http response error. err code:%d,err msg:%s,input:%s,rid:%s", res.Code, res.ErrMsg, platID, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
@@ -289,6 +310,12 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("DelPlat success, but DeregisterResource from iam failed, platID: %d, err: %+v,rid:%s", platID, err, srvData.rid)
 		ccErr := srvData.ccErr.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditDelete); err != nil {
+		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -326,6 +353,14 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	// auditLog preData
+	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
+	if err := auditLog.WithPrevious(srvData.ctx, platID); err != nil {
+		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
 	// update plat
 	updateOption := &meta.UpdateOption{
 		Data: input,
@@ -352,7 +387,6 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 			common.BKCloudIDField: platID,
 		},
 	}
-
 	platInfo, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, query)
 	if nil != err {
 		blog.Errorf("UpdatePlat ReadInstance htt do error: %v query:%#v,rid:%s", err, query, srvData.rid)
@@ -372,6 +406,18 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("UpdatePlat success, but UpdateRegisteredPlat failed, plat: %d, err: %v, rid: %s", platID, err, srvData.rid)
 		ccErr := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)}
 		_ = resp.WriteError(http.StatusInternalServerError, ccErr)
+		return
+	}
+
+	// add auditLog
+	if err := auditLog.WithCurrent(srvData.ctx, platID); err != nil {
+		blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditUpdate); err != nil {
+		blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
