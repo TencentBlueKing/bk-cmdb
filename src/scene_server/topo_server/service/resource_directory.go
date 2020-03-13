@@ -76,7 +76,7 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 	audit := auditlog.NewAudit(s.Engine.CoreAPI, ctx.Kit.Ctx, ctx.Kit.Header)
-	properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDHost)
+	properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDModule)
 	if err != nil {
 		blog.ErrorJSON("CreateResourceDirectory success but fail to create audiLog, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -223,7 +223,6 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	blog.Debug(preData.Data.Info)
 	option := &metadata.UpdateOption{
 		Data:      input,
 		Condition: mapstr.MapStr{common.BKModuleIDField: intModuleID},
@@ -266,7 +265,7 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	audit := auditlog.NewAudit(s.Engine.CoreAPI, ctx.Kit.Ctx, ctx.Kit.Header)
-	properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDHost)
+	properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDModule)
 	if err != nil {
 		blog.ErrorJSON("UpdateResourceDirectory success but fail to create audiLog, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -468,7 +467,7 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 	audit := auditlog.NewAudit(s.Engine.CoreAPI, ctx.Kit.Ctx, ctx.Kit.Header)
-	properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDHost)
+	properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDModule)
 	if err != nil {
 		blog.ErrorJSON("DeleteResourceDirectory success but fail to create audiLog, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
