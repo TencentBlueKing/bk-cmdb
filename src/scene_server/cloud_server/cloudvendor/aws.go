@@ -180,8 +180,9 @@ func (c *awsClient) getInstances(region string, opt *ccom.RequestOpt) ([]*metada
 					InstanceName:  *inst.InstanceId,
 					PrivateIp:     *inst.PrivateIpAddress,
 					PublicIp:      *inst.PublicIpAddress,
-					InstanceState: *inst.State.Name,
+					InstanceState: ccom.CovertInstState(*inst.State.Name),
 					VpcId:         *inst.VpcId,
+					OsName:        *inst.Platform,
 				})
 			}
 		}

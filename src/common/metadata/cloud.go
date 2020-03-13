@@ -25,11 +25,11 @@ type CloudAccount struct {
 	Description string `json:"bk_description" bson:"bk_description"`
 	// 是否能删除账户，只有该账户下不存在同步任务了，才能删除，此时才能为true，否则为false
 	CanDeleteAccount bool   `json:"bk_can_delete_account" bson:"bk_can_delete_account"`
-	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Creator    string `json:"bk_creator" bson:"bk_creator"`
-	LastEditor string `json:"bk_last_editor" bson:"bk_last_editor"`
-	CreateTime string `json:"create_time" bson:"create_time"`
-	LastTime   string `json:"last_time" bson:"last_time"`
+	OwnerID          string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator          string `json:"bk_creator" bson:"bk_creator"`
+	LastEditor       string `json:"bk_last_editor" bson:"bk_last_editor"`
+	CreateTime       string `json:"create_time" bson:"create_time"`
+	LastTime         string `json:"last_time" bson:"last_time"`
 }
 
 // 云厂商
@@ -182,6 +182,7 @@ type Instance struct {
 	PublicIp      string `json:"bk_host_outerip" bson:"bk_host_outerip"`
 	InstanceState string `json:"bk_host_status" bson:"bk_host_status"`
 	VpcId         string `json:"bk_vpc_id" bson:"bk_vpc_id"`
+	OsName        string `json:"bk_os_name" bson:"bk_os_name"`
 }
 
 // 云主机资源
@@ -211,6 +212,7 @@ type HostSyncInfo struct {
 	PrivateIp     string `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	PublicIp      string `json:"bk_host_outerip" bson:"bk_host_outerip"`
 	InstanceState string `json:"bk_host_status" bson:"bk_host_status"`
+	OsName        string `json:"bk_os_name" bson:"bk_os_name"`
 }
 
 // 云区域

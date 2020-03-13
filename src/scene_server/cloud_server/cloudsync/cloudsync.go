@@ -212,11 +212,11 @@ func (t *taskProcessor) SyncCloudResource() {
 			for {
 				if taskid, ok := <-t.taskChan; ok {
 					task, err := t.getTaskDetail(taskid)
-					blog.V(3).Infof("processing taskid:%d, resource type:%s", taskid, task.ResourceType)
 					if err != nil {
 						blog.V(3).Infof("getTaskDetail err:%v", err)
 						continue
 					}
+					blog.V(3).Infof("processing taskid:%d, resource type:%s", taskid, task.ResourceType)
 					switch task.ResourceType {
 					case "host":
 						t.SyncCloudHost(task)

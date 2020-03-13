@@ -314,6 +314,7 @@ func (t *taskProcessor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			PrivateIp:     host.PrivateIp,
 			PublicIp:      host.PublicIp,
 			InstanceState: host.InstanceState,
+			OsName:        host.OsName,
 		}
 		if err := t.db.Table(common.BKTableNameBaseHost).Insert(context.Background(), hostSyncInfo); err != nil {
 			blog.Errorf("addHosts insert err:%v", err.Error())
@@ -369,6 +370,7 @@ func (t *taskProcessor) updateHosts(hosts []*metadata.CloudHost) (*metadata.Sync
 			PrivateIp:     host.PrivateIp,
 			PublicIp:      host.PublicIp,
 			InstanceState: host.InstanceState,
+			OsName:        host.OsName,
 		}
 		if err := t.db.Table(common.BKTableNameBaseHost).Update(context.Background(), cond, hostSyncInfo); err != nil {
 			blog.Errorf("updateHosts update err:%v", err.Error())

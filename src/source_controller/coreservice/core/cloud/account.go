@@ -39,6 +39,8 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 	ts := time.Now().Format("2006-01-02 15:04:05")
 	account.OwnerID = kit.SupplierAccount
 	account.LastEditor = account.Creator
+	// 刚创建时，账户的状态是能被删除
+	account.CanDeleteAccount = true
 	account.CreateTime = ts
 	account.LastTime = ts
 
