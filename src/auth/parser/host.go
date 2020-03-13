@@ -323,6 +323,7 @@ const (
 	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
 	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
 	updateHostPropertyBatchPattern    = "/api/v3/hosts/property/batch"
+	cloneHostPropertyBatchPattern     = "/api/v3/hosts/property/clone"
 	findHostsWithModulesPattern       = "/api/v3/findmany/modulehost"
 
 	// 特殊接口，给蓝鲸业务使用
@@ -829,6 +830,19 @@ func (ps *parseStream) host() *parseStream {
 			},
 		}
 
+		return ps
+	}
+
+	// clone hosts property, but can not get the exactly host id.
+	if ps.hitPattern(cloneHostPropertyBatchPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
 		return ps
 	}
 
