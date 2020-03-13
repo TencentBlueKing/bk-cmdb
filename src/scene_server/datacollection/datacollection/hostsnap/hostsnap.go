@@ -133,11 +133,17 @@ func (h *HostSnap) Analyze(mesg string) error {
 		blog.Errorf("failed to update host, error msg: %v", res.ErrMsg)
 		return fmt.Errorf("UpdateInstacne http response error,err code: %d, err msg: %v, opt: %v", res.Code, res.ErrMsg, opt)
 	}
-	defer copyVal(setter, host)
+
+	preData := host.clone()
+	copyVal(setter, host)
 
 	// add auditLog
 	curData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostIdStr)
 	if err != nil {
+		blog.Errorf("GetHostByID http request failed, err: %s, hostID: %s", err, hostIdStr)
+		return err
+	}
+	if !curData.Result {
 		blog.Errorf("GetHostByID http response error, err code:%d, err msg: %s, hostID: %s", curData.Code, curData.ErrMsg, hostIdStr)
 		return err
 	}
@@ -166,7 +172,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 		Model: common.BKInnerObjIDHost,
 		Content: metadata.Content{
 			CurData: curData.Data,
-			PreData: host.data,
+			PreData: preData,
 			Headers: auditHeader,
 		},
 		OpDesc: "update " + common.BKInnerObjIDHost,
@@ -433,6 +439,16 @@ func (h *HostInst) get(key string) interface{} {
 	value := h.data[key]
 	h.RUnlock()
 	return value
+}
+
+func (h *HostInst) clone() map[string]interface{} {
+	cloneHost := make(map[string]interface{})
+	h.RLock()
+	for key, value := range h.data {
+		cloneHost[key] = value
+	}
+	h.RUnlock()
+	return cloneHost
 }
 
 func (h *HostInst) set(key string, value interface{}) {
