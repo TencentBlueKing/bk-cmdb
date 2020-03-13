@@ -459,6 +459,7 @@ const (
 	CCErrorTopoPathParamPaserFailed                = 1101100
 	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
 	CCErrorTopoOnlyResourceDirNameCanBeUpdated     = 1101102
+	CCErrorTopoOperateReourceDirFailNotExist       = 1101103
 
 	// object controller 1102XXX
 
