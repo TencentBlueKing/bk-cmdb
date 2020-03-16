@@ -109,6 +109,7 @@ func (p *setTemplateOperation) CreateSetTemplate(ctx core.ContextParams, bizID i
 		common.BKFieldName:  setTemplate.Name,
 		common.BKAppIDField: setTemplate.BizID,
 	}
+	nameFilter = util.SetModOwner(nameFilter, ctx.SupplierAccount)
 	sameNameCount, err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(nameFilter).Count(ctx.Context)
 	if err != nil {
 		blog.Errorf("create set template failed, filter same name records failed, filter: %+v, err: %+v, rid: %s", nameFilter, err, ctx.ReqID)
@@ -161,7 +162,7 @@ func (p *setTemplateOperation) UpdateSetTemplate(ctx core.ContextParams, setTemp
 	}
 
 	filter := map[string]interface{}{
-		common.BKFieldID:      setTemplateID,
+		common.BKFieldID: setTemplateID,
 	}
 	filter = util.SetModOwner(filter, ctx.SupplierAccount)
 	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter).One(ctx.Context, &setTemplate); err != nil {
@@ -320,8 +321,8 @@ func (p *setTemplateOperation) DeleteSetTemplate(ctx core.ContextParams, bizID i
 func (p *setTemplateOperation) GetSetTemplate(ctx core.ContextParams, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder) {
 	setTemplate := metadata.SetTemplate{}
 	filter := map[string]interface{}{
-		common.BKFieldID:         setTemplateID,
-		common.BKAppIDField:      bizID,
+		common.BKFieldID:    setTemplateID,
+		common.BKAppIDField: bizID,
 	}
 	filter = util.SetQueryOwner(filter, ctx.SupplierAccount)
 	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(filter).One(ctx.Context, &setTemplate); err != nil {
@@ -342,7 +343,7 @@ func (p *setTemplateOperation) ListSetTemplate(ctx core.ContextParams, bizID int
 	}
 
 	filter := map[string]interface{}{
-		common.BKAppIDField:      bizID,
+		common.BKAppIDField: bizID,
 	}
 	filter = util.SetQueryOwner(filter, ctx.SupplierAccount)
 	if option.SetTemplateIDs != nil {
@@ -361,7 +362,7 @@ func (p *setTemplateOperation) ListSetTemplate(ctx core.ContextParams, bizID int
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	}
-	if option.Page.Limit > 0 {
+	if option.Page.Limit > 0 && option.Page.Limit != common.BKNoLimit {
 		query = query.Limit(uint64(option.Page.Limit))
 	}
 	if option.Page.Start > 0 {
