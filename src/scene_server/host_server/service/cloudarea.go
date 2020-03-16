@@ -484,11 +484,8 @@ func (s *Service) whetherAddHostCount(srvData *srvComm, hostCount bool, dataInfo
 	}
 	for cloudID, cloudInfo := range mapCloudIDInfo {
 		cloudInfo["host_count"] = 0
-		for id, count := range cloudHost {
-			if cloudID == id {
-				cloudInfo["host_count"] = count
-				break
-			}
+		if count, ok := cloudHost[cloudID]; ok {
+			cloudInfo["host_count"] = count
 		}
 		result = append(result, cloudInfo)
 	}
