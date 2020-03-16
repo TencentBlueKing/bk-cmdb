@@ -26,6 +26,7 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 
 	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 type AuthService struct {
@@ -34,11 +35,11 @@ type AuthService struct {
 	lgc    *logics.Logics
 }
 
-func NewAuthService(engine *backbone.Engine, auth ac.AuthInterface) *AuthService {
+func NewAuthService(engine *backbone.Engine, auth ac.AuthInterface, cache *redis.Client) *AuthService {
 	return &AuthService{
 		engine: engine,
 		auth:   auth,
-		lgc:    logics.NewLogics(engine.CoreAPI),
+		lgc:    logics.NewLogics(engine.CoreAPI, cache),
 	}
 }
 

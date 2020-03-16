@@ -115,9 +115,7 @@ var AllTables = []string{
 	BKTableNameProcInstanceDetail,
 	BKTableNameProcOperateTask,
 	BKTableNamePropertyGroup,
-	BKTableNameAsstDes,
 	BKTableNameObjDes,
-	BKTableNameObjUnique,
 	BKTableNameObjAttDes,
 	BKTableNameObjClassification,
 	BKTableNameInstAsst,
@@ -162,6 +160,9 @@ var AllTables = []string{
 	BKTableNameAPITask,
 	BKTableNameSetTemplateSyncStatus,
 	BKTableNameSetTemplateSyncHistory,
+	BKTableNameCloudSyncTask,
+	BKTableNameCloudAccount,
+	BKTableNameCloudSyncHistory,
 }
 
 // GetInstTableName returns inst data table name
