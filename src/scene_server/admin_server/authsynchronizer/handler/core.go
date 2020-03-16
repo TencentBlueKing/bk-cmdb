@@ -164,7 +164,7 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 			if len(iamResource) == 0 {
 				continue
 			}
-			if iamResource[0].ResourceName != resource.Name {
+			if iamResource[len(iamResource)-1].ResourceName != resource.Name {
 				needUpdate = append(needUpdate, resource)
 				blog.Infof("need update resource, type: %s, name: %s, id: %d", resource.Type, resource.Name, resource.InstanceID)
 			}
