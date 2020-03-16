@@ -40,9 +40,9 @@ const (
 
 // 同步状态
 const (
-	CloudSyncSuccess    int = 1
-	CloudSyncFail       int = 2
-	CloudSyncInProgress int = 3
+	CloudSyncSuccess    string = "cloud_sync_success"
+	CloudSyncFail       string = "cloud_sync_fail"
+	CloudSyncInProgress string = "cloud_sync_in_progress"
 )
 
 var SupportedCloudVendors = []string{"aws", "tencent_cloud"}
@@ -118,7 +118,7 @@ type CloudSyncTask struct {
 	ResourceType      string        `json:"bk_resource_type" bson:"bk_resource_type"`
 	AccountID         int64         `json:"bk_account_id" bson:"bk_account_id"`
 	CloudVendor       string        `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
-	SyncStatus        int           `json:"bk_sync_status" bson:"bk_sync_status"`
+	SyncStatus        string           `json:"bk_sync_status" bson:"bk_sync_status"`
 	OwnerID           string        `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	StatusDescription string        `json:"bk_status_description" bson:"bk_status_description"`
 	LastSyncTime      string        `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
@@ -243,7 +243,7 @@ type SyncRegion struct {
 type SyncHistory struct {
 	HistoryID         int64      `json:"bk_history_id" bson:"bk_history_id"`
 	TaskID            int64      `json:"bk_task_id" bson:"bk_task_id"`
-	SyncStatus        int        `json:"bk_sync_status" bson:"bk_sync_status"`
+	SyncStatus        string        `json:"bk_sync_status" bson:"bk_sync_status"`
 	StatusDescription string     `json:"bk_status_description" bson:"bk_status_description"`
 	OwnerID           string     `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Detail            SyncDetail `json:"bk_detail" bson:"bk_detail"`

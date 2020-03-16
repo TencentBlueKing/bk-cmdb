@@ -13,7 +13,6 @@
 package cloud
 
 import (
-	"configcenter/src/common/util"
 	"time"
 
 	"configcenter/src/common"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder) {

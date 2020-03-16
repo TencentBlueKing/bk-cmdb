@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
@@ -34,7 +33,6 @@ func (c *cloud) CreateAccount(ctx context.Context, h http.Header, account *metad
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("CreateAccount failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
@@ -57,7 +55,6 @@ func (c *cloud) SearchAccount(ctx context.Context, h http.Header, option *metada
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("SearchAccount failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
@@ -80,7 +77,6 @@ func (c *cloud) UpdateAccount(ctx context.Context, h http.Header, accountID int6
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("UpdateAccount failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
@@ -102,7 +98,6 @@ func (c *cloud) DeleteAccount(ctx context.Context, h http.Header, accountID int6
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("DeleteAccount failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
@@ -125,7 +120,6 @@ func (c *cloud) CreateSyncTask(ctx context.Context, h http.Header, account *meta
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("CreateSyncTask failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
@@ -148,7 +142,6 @@ func (c *cloud) SearchSyncTask(ctx context.Context, h http.Header, option *metad
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("SearchSyncTask failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
@@ -171,7 +164,6 @@ func (c *cloud) UpdateSyncTask(ctx context.Context, h http.Header, taskID int64,
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("UpdateSyncTask failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
@@ -193,7 +185,6 @@ func (c *cloud) DeleteSyncTask(ctx context.Context, h http.Header, taskID int64)
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("DeleteSyncTask failed, http request failed, err: %+v", err)
 		return errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {
@@ -216,7 +207,6 @@ func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, option *me
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("SearchSyncHistory failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.Result == false || ret.Code != 0 {

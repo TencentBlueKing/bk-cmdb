@@ -16,7 +16,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/dal/mongo/local"
 	"context"
-	"encoding/json"
 	"fmt"
 	//"strings"
 	"sync"
@@ -25,19 +24,16 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/types"
 	"configcenter/src/common/zkclient"
 	"configcenter/src/scene_server/cloud_server/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
 	stypes "configcenter/src/storage/stream/types"
 
-	"github.com/samuel/go-zookeeper/zk"
 	"stathat.com/c/consistent"
 )
 
 type taskProcessor struct {
-	ctx       context.Context
 	zkClient  *zkclient.ZkClient
 	db        dal.DB
 	logics    *logics.Logics
@@ -56,14 +52,6 @@ const (
 	checkInterval int = 5
 )
 
-var zkPath string
-
-// The document created or modified by curd operations in mongo
-// 可参考文档https://docs.mongodb.com/manual/reference/change-events/#change-stream-output
-type FullDoc struct {
-	TaskID int64 `json:"bk_task_id" bson:"bk_task_id"`
-}
-
 type SyncConf struct {
 	ZKClient  *zkclient.ZkClient
 	DB        dal.DB
@@ -75,7 +63,6 @@ type SyncConf struct {
 // 处理云资源同步任务
 func CloudSync(ctx context.Context, conf *SyncConf) error {
 	t := &taskProcessor{
-		ctx:      ctx,
 		zkClient: conf.ZKClient,
 		db:       conf.DB,
 		logics:   conf.Logics,
@@ -93,7 +80,7 @@ func CloudSync(ctx context.Context, conf *SyncConf) error {
 	}
 
 	// 监听任务进程节点
-	if err := t.WatchTaskNode(ctx); err != nil {
+	if err := t.WatchTaskNode(); err != nil {
 		return err
 	}
 	// 监听任务表事件
@@ -108,48 +95,12 @@ func CloudSync(ctx context.Context, conf *SyncConf) error {
 	return nil
 }
 
-// 监听zk节点变化，有变化时重新分配当前进程的任务列表
-func (t *taskProcessor) WatchTaskNode(ctx context.Context) error {
-	zkPath = fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, common.GetIdentification())
+// 监听zk的cloudserver节点变化，有变化时重新分配当前进程的任务列表
+func (t *taskProcessor) WatchTaskNode() error {
 	go func() {
-		var ch <-chan zk.Event
-		var err error
-		cnt := 0
-		for {
-			_, ch, err = t.zkClient.WatchChildren(zkPath)
-			if err != nil {
-				blog.Errorf("endpoints watch failed, will watch after 10s, path: %s, err: %s", zkPath, err.Error())
-				switch err {
-				case zk.ErrClosing, zk.ErrConnectionClosed:
-					if conErr := t.zkClient.Connect(); conErr != nil {
-						blog.Errorf("fail to watch register node(%s), reason: connect closed. retry connect err:%s", zkPath, conErr.Error())
-						time.Sleep(5 * time.Second)
-					}
-				}
-				time.Sleep(5 * time.Second)
-				continue
-			}
-
-			// 启动时需执行任务重新分配
-			if cnt == 0 {
-				if err := t.dispatchTasks(ctx, zkPath); err != nil {
-					continue
-				}
-			}
-
-			select {
-			case event := <-ch:
-				cnt++
-				if event.Type != zk.EventNodeChildrenChanged {
-					continue
-				}
-				if err := t.dispatchTasks(ctx, zkPath); err != nil {
-					continue
-				}
-			case <-ctx.Done():
-				blog.Warnf("cloudserver endpoints watch stopped because of context done.")
-				return
-			}
+		for servers := range t.logics.Discovery().CloudServer().GetServersChan() {
+			t.setHashring(servers)
+			t.dispatchTasks()
 		}
 	}()
 	return nil
@@ -189,7 +140,7 @@ func (t *taskProcessor) changeOnUpdate(event *stypes.Event) {
 // 表记录删除处理逻辑
 func (t *taskProcessor) changeOnDelete(event *stypes.Event) {
 	blog.V(4).Info("OnDelete event")
-	t.dispatchTasks(t.ctx, zkPath)
+	t.dispatchTasks()
 }
 
 // 不断给任务channel提供任务数据
@@ -230,9 +181,9 @@ func (t *taskProcessor) SyncCloudResource() {
 }
 
 // 获取资源同步任务表的所有任务
-func (t *taskProcessor) getTasksFromTable(ctx context.Context) ([]int64, error) {
+func (t *taskProcessor) getTasksFromTable() ([]int64, error) {
 	result := make([]*metadata.CloudSyncTask, 0)
-	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(nil).All(ctx, &result)
+	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(nil).All(context.Background(), &result)
 	if err != nil {
 		blog.Errorf("getTasksFromTable failed, err: %v", err)
 		return nil, err
@@ -245,42 +196,20 @@ func (t *taskProcessor) getTasksFromTable(ctx context.Context) ([]int64, error) 
 	return taskids, nil
 }
 
-// 监听zk路径上的任务节点，有变动时重新分配任务
-func (t *taskProcessor) dispatchTasks(ctx context.Context, zkPath string) error {
-	// 获取监控路径下的所有子节点
-	children, err := t.zkClient.GetChildren(zkPath)
-	if err != nil {
-		blog.Errorf("fail to GetChildren(%s), err:%s", zkPath, err.Error())
-		return err
-	}
-	blog.V(3).Infof("dispatchTasks zkPath:%s, children:%#v", zkPath, children)
-	addrArr := []string{}
-	for _, child := range children {
-		childpath := zkPath + "/" + child
-		data, err := t.zkClient.Get(childpath)
-		if err != nil {
-			blog.Errorf("fail to get node(%s), err:%s", childpath, err.Error())
-			continue
-		}
-		info := types.ServerInfo{}
-		err = json.Unmarshal([]byte(data), &info)
-		if err != nil {
-			blog.Errorf("fail to unmarshal data(%v), err:%s", data, err.Error())
-			return err
-		}
-		addrArr = append(addrArr, info.Instance())
-
-	}
+// 根据任务节点设置哈希环
+func (t *taskProcessor) setHashring(serversAddrs []string) {
 	// 清空哈希环
 	t.hashring.Set([]string{})
 	// 添加所有子节点
-	for _, addr := range addrArr {
+	for _, addr := range serversAddrs {
 		t.hashring.Add(addr)
-
 	}
-	// 清空任务列表后，将表中所有任务里属于自己的放入任务队列
+}
+
+// 分配任务，清空任务列表后，将表中所有任务里属于自己的放入任务队列
+func (t *taskProcessor) dispatchTasks() error {
 	t.clearTaskList()
-	taskids, err := t.getTasksFromTable(ctx)
+	taskids, err := t.getTasksFromTable()
 	if err != nil {
 		blog.Errorf("getTasksFromTable err:%s", err.Error())
 		return err
@@ -358,7 +287,7 @@ func (t *taskProcessor) getAccountDetail(accountID int64) (*metadata.CloudAccoun
 }
 
 // 更新任务同步状态
-func (t *taskProcessor) updateTaskState(taskid int64, status int) error {
+func (t *taskProcessor) updateTaskState(taskid int64, status string) error {
 	cond := mapstr.MapStr{common.BKCloudSyncTaskID: taskid}
 	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
 	if status == metadata.CloudSyncSuccess || status == metadata.CloudSyncFail {

@@ -84,7 +84,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		process.Service.SetAuth(authCli)
 		blog.Infof("enable auth center: %v", auth.IsAuthed())
 
-		process.Service.Logics = logics.NewLogics(ctx, service.Engine, db, cache)
+		process.Service.Logics = logics.NewLogics(service.Engine, db, cache)
 
 		syncConf := cloudsync.SyncConf{
 			ZKClient:  service.Engine.ServiceManageClient().Client(),

@@ -13,8 +13,6 @@
 package logics
 
 import (
-	"context"
-
 	"configcenter/src/common/backbone"
 	"configcenter/src/storage/dal"
 
@@ -26,9 +24,8 @@ type Logics struct {
 	*backbone.Engine
 	db    dal.RDB
 	cache *redis.Client
-	ctx   context.Context
 }
 
-func NewLogics(ctx context.Context, engine *backbone.Engine, db dal.RDB, cache *redis.Client) *Logics {
-	return &Logics{ctx: ctx, db: db, Engine: engine, cache: cache}
+func NewLogics(engine *backbone.Engine, db dal.RDB, cache *redis.Client) *Logics {
+	return &Logics{db: db, Engine: engine, cache: cache}
 }

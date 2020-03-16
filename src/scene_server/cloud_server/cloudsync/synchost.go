@@ -171,19 +171,20 @@ func (t *taskProcessor) syncDiffHosts(diffhosts map[string][]*metadata.CloudHost
 	var result *metadata.SyncResult
 	var err error
 	for op, hosts := range diffhosts {
-		if op == "add" {
+		switch op {
+		case "add":
 			result, err = t.addHosts(hosts)
 			if err != nil {
 				return nil, err
 			}
 			syncResult.Detail.NewAdd = result.SuccessInfo
-		} else if op == "update" {
+		case "update":
 			result, err = t.updateHosts(hosts)
 			if err != nil {
 				return nil, err
 			}
 			syncResult.Detail.Update = result.SuccessInfo
-		} else {
+		default:
 			blog.Errorf("syncDiffHosts op:%s is invalid", op)
 			return nil, fmt.Errorf("syncDiffHosts op:%s is invalid", op)
 		}
