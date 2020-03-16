@@ -13,13 +13,13 @@
 package toposerver
 
 import (
-	"configcenter/src/apimachinery/toposerver/resourcedir"
 	"fmt"
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/toposerver/association"
 	"configcenter/src/apimachinery/toposerver/inst"
 	"configcenter/src/apimachinery/toposerver/object"
+	"configcenter/src/apimachinery/toposerver/resourcedir"
 	"configcenter/src/apimachinery/toposerver/settemplate"
 	"configcenter/src/apimachinery/util"
 )
