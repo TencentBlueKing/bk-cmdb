@@ -104,43 +104,11 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	// 查询云区域不需要主机数量
-	if input.HostCount == false {
-		retData := map[string]interface{}{
-			"info":  res.Data.Info,
-			"count": res.Data.Count,
-		}
-
-		_ = resp.WriteEntity(metadata.Response{
-			BaseResp: metadata.SuccessBaseResp,
-			Data:     retData,
-		})
-		return
-	}
-
-	// add host_count
-	mapCloudIDInfo := make(map[int64]mapstr.MapStr, 0)
-	intCloudIDArray := make([]int64, 0)
-	for _, area := range res.Data.Info {
-		intCloudID, err := area.Int64(common.BKCloudIDField)
-		if err != nil {
-			blog.ErrorJSON("FindManyCloudArea fail with cloudID convert from interface to int64 failed, err: %v, rid: %s", err, rid)
-			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDPlat, common.BKCloudIDField, "int", err.Error())})
-			return
-		}
-		intCloudIDArray = append(intCloudIDArray, intCloudID)
-		mapCloudIDInfo[intCloudID] = area
-	}
-	ret, err := s.findManyCloudAreaAddHostCount(srvData, intCloudIDArray, mapCloudIDInfo)
+	retData, err := s.whetherAddHostCount(srvData, input.HostCount, res.Data)
 	if err != nil {
 		blog.ErrorJSON("FindManyCloudArea add field host_count failed, err: %v, rid: %s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostFindManyCloudAreaAddHostCountFieldFail)})
 		return
-	}
-
-	retData := map[string]interface{}{
-		"info":  ret,
-		"count": res.Data.Count,
 	}
 
 	_ = resp.WriteEntity(metadata.Response{
@@ -460,7 +428,30 @@ func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.R
 	})
 }
 
-func (s *Service) findManyCloudAreaAddHostCount(srvData *srvComm, intCloudIDArray []int64, mapCloudIDInfo map[int64]mapstr.MapStr) ([]mapstr.MapStr, error) {
+func (s *Service) whetherAddHostCount(srvData *srvComm, hostCount bool, dataInfo metadata.InstDataInfo) (map[string]interface{}, error) {
+	// 查询云区域不需要主机数量
+	if hostCount == false {
+		retData := map[string]interface{}{
+			"info":  dataInfo.Info,
+			"count": dataInfo.Count,
+		}
+
+		return retData, nil
+	}
+
+	// add host_count
+	mapCloudIDInfo := make(map[int64]mapstr.MapStr, 0)
+	intCloudIDArray := make([]int64, 0)
+	for _, area := range dataInfo.Info {
+		intCloudID, err := area.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.ErrorJSON("FindManyCloudArea fail with cloudID convert from interface to int64 failed, err: %v, rid: %s", err, srvData.rid)
+			return nil, err
+		}
+		intCloudIDArray = append(intCloudIDArray, intCloudID)
+		mapCloudIDInfo[intCloudID] = area
+	}
+
 	condition := mapstr.MapStr{
 		common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: intCloudIDArray},
 	}
@@ -502,5 +493,10 @@ func (s *Service) findManyCloudAreaAddHostCount(srvData *srvComm, intCloudIDArra
 		result = append(result, cloudInfo)
 	}
 
-	return result, nil
+	retData := map[string]interface{}{
+		"info":  result,
+		"count": dataInfo.Count,
+	}
+
+	return retData, nil
 }
