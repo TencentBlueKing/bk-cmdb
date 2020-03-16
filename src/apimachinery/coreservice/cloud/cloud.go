@@ -24,9 +24,15 @@ import (
 type CloudInterface interface {
 	// cloud account
 	CreateAccount(ctx context.Context, h http.Header, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
-	SearchAccount(ctx context.Context, h http.Header, option *metadata.SearchCloudAccountOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder)
+	SearchAccount(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder)
 	UpdateAccount(ctx context.Context, h http.Header, accountID int64, option map[string]interface{}) errors.CCErrorCoder
 	DeleteAccount(ctx context.Context, h http.Header, accountID int64) errors.CCErrorCoder
+
+	CreateSyncTask(ctx context.Context, h http.Header, account *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder)
+	SearchSyncTask(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder)
+	UpdateSyncTask(ctx context.Context, h http.Header, taskID int64, option map[string]interface{}) errors.CCErrorCoder
+	DeleteSyncTask(ctx context.Context, h http.Header, taskID int64) errors.CCErrorCoder
+	SearchSyncHistory(ctx context.Context, h http.Header, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder)
 }
 
 func NewCloudInterfaceClient(client rest.ClientInterface) CloudInterface {

@@ -65,6 +65,7 @@ const (
 	OperationStatistic       ResourceType = "operationStatistic" // 运营统计
 	HostApply                ResourceType = "hostApply"
 	CloudAccount             ResourceType = "cloudAccount"
+	CloudResourceTask        ResourceType = "cloudResourceTask"
 )
 
 const (

@@ -471,7 +471,7 @@ type MultipleProcessInstanceRelationResult struct {
 }
 
 type MultipleHostProcessRelation struct {
-	Count uint64                 `json:"count"`
+	Count uint64                `json:"count"`
 	Info  []HostProcessRelation `json:"info"`
 }
 
@@ -526,4 +526,24 @@ type CloudAccountResult struct {
 type MultipleCloudAccountResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleCloudAccount `json:"data"`
+}
+
+type CreateSyncTaskResult struct {
+	BaseResp `json:",inline"`
+	Data     CloudSyncTask `json:"data"`
+}
+
+type MultipleCloudSyncTaskResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudSyncTask `json:"data"`
+}
+
+type MultipleSyncHistoryResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleSyncHistory `json:"data"`
+}
+
+type MultipleSyncRegionResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleSyncRegion `json:"data"`
 }

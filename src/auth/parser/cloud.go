@@ -28,7 +28,7 @@ func (ps *parseStream) cloudRelated() *parseStream {
 		return ps
 	}
 
-	ps.CloudAccount()
+	ps.CloudAccount().CloudResourceTask()
 
 	return ps
 }
@@ -100,6 +100,93 @@ var CloudAccountConfigs = []AuthConfig{
 	},
 }
 
+var CloudResourceTaskConfigs = []AuthConfig{
+	{
+		Name:           "getCloudAccountVpcRegex",
+		Description:    "查询账户下的vpc数据",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/cloud/account/vpc/([0-9]+)$`),
+		Pattern:        "/api/v3/cloud/account/verify",
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.CloudResourceTask,
+		ResourceAction: meta.SkipAction,
+	}, {
+		Name:           "listCloudResourceTaskPattern",
+		Description:    "查询云资源同步任务",
+		Pattern:        "/api/v3/findmany/cloud/sync/task",
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.CloudResourceTask,
+		ResourceAction: meta.Find,
+	}, {
+		Name:           "createCloudResourceTaskPattern",
+		Description:    "创建云资源同步任务",
+		Pattern:        "/api/v3/create/cloud/sync/task",
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.CloudResourceTask,
+		ResourceAction: meta.Create,
+	}, {
+		Name:           "updateCloudResourceTaskRegex",
+		Description:    "更新云资源同步任务",
+		Regex:          regexp.MustCompile(`^/api/v3/update/cloud/sync/task/([0-9]+)$`),
+		HTTPMethod:     http.MethodPut,
+		ResourceType:   meta.CloudResourceTask,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			subMatch := re.FindStringSubmatch(request.URI)
+			for _, subStr := range subMatch {
+				if strings.Contains(subStr, "api") {
+					continue
+				}
+				id, err := strconv.ParseInt(subStr, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("parse account id to int64 failed, err: %s", err)
+				}
+				return []int64{id}, nil
+			}
+			return nil, errors.New("unexpected error: this code shouldn't be reached")
+		},
+	}, {
+		Name:           "deleteCloudResourceTaskRegex",
+		Description:    "删除云资源同步任务",
+		Regex:          regexp.MustCompile(`^/api/v3/delete/cloud/sync/task/([0-9]+)$`),
+		HTTPMethod:     http.MethodDelete,
+		ResourceType:   meta.CloudResourceTask,
+		ResourceAction: meta.Delete,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			subMatch := re.FindStringSubmatch(request.URI)
+			for _, subStr := range subMatch {
+				if strings.Contains(subStr, "api") {
+					continue
+				}
+				id, err := strconv.ParseInt(subStr, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("parse account id to int64 failed, err: %s", err)
+				}
+				return []int64{id}, nil
+			}
+			return nil, errors.New("unexpected error: this code shouldn't be reached")
+		},
+	}, {
+		Name:           "listCloudResourceTaskHistoryPattern",
+		Description:    "查询云资源同步历史记录",
+		Pattern:        "/api/v3/findmany/cloud/sync/history",
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.CloudResourceTask,
+		ResourceAction: meta.Find,
+	},
+	{
+		Name:           "listCloudResourceRegionPattern",
+		Description:    "查询云资源同步地域信息",
+		Pattern:        "/api/v3/findmany/cloud/sync/region",
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.CloudResourceTask,
+		ResourceAction: meta.SkipAction,
+	},
+}
+
 func (ps *parseStream) CloudAccount() *parseStream {
 	return ParseStreamWithFramework(ps, CloudAccountConfigs)
+}
+
+func (ps *parseStream) CloudResourceTask() *parseStream {
+	return ParseStreamWithFramework(ps, CloudResourceTaskConfigs)
 }

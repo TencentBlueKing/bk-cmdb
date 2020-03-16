@@ -3,6 +3,10 @@
   "1118002": "Account name already exists",
   "1118003": "Cloud account parameter %s valid failed",
   "1118004": "Cloud account ID %d no exist",
+  "1118005": "Task name already exists",
+  "1118006": "Cloud sync task parameter %s valid failed",
+  "1118007": "Parameter bk_vpc_id cannot be empty",
+  "1118008": "Cloud Vendor Interface Called Failed",
 
   "": ""
 }
