@@ -103,7 +103,7 @@ func (e *Event) loopWatch(ctx context.Context,
 
 			base := newStruct.Field(0).Interface().(types.EventStream)
 			currentToken.Data = base.Token.Data
-			byt, _ := json.Marshal(newStruct.Addr().Interface())
+			byt, _ := json.Marshal(newStruct.Field(1).Addr().Interface())
 
 			eventChan <- &types.Event{
 				Oid:           base.DocumentKey.ID.Hex(),
