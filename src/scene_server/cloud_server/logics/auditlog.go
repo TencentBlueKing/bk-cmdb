@@ -34,52 +34,54 @@ type SyncTaskAuditLog struct {
 	ownerID  string
 	taskName string
 	taskID   int64
-	Content  *metadata.BasicContent
+	content  metadata.CloudSyncTaskOpContent
 }
 
-func (lgc *Logics) NewTaskAuditLog(kit *rest.Kit, ownerID string) *SyncTaskAuditLog {
+func (lgc *Logics) NewSyncTaskAuditLog(kit *rest.Kit, ownerID string) *SyncTaskAuditLog {
 	return &SyncTaskAuditLog{
 		logic:   lgc,
 		header:  kit.Header,
 		ownerID: ownerID,
-		Content: new(metadata.BasicContent),
 	}
 }
 
 func (log *SyncTaskAuditLog) WithPrevious(kit *rest.Kit, taskID int64) errors.CCError {
-	option := metadata.SearchCloudOption{}
-	res, err := log.logic.CoreAPI.CoreService().Cloud().SearchSyncTask(kit.Ctx, kit.Header, &option)
+	preData, err := log.buildLogData(kit, taskID)
 	if err != nil {
 		return err
 	}
-	if len(res.Info) <= 0 {
-		return kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, common.BKCloudAccountID)
-	}
-
-	log.Content.Properties = properties
-	log.taskID = taskID
-	log.taskName = res.Info[0].TaskName
-	log.Content.PreData = map[string]interface{}{}
+	log.content.PreData = &preData
 
 	return nil
 }
 
 func (log *SyncTaskAuditLog) WithCurrent(kit *rest.Kit, taskID int64) errors.CCError {
-	option := metadata.SearchCloudOption{}
-	res, err := log.logic.CoreAPI.CoreService().Cloud().SearchSyncTask(kit.Ctx, kit.Header, &option)
+	curData, err := log.buildLogData(kit, taskID)
 	if err != nil {
 		return err
 	}
-	if len(res.Info) <= 0 {
-		return kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, common.BKCloudAccountID)
-	}
-
-	log.Content.Properties = properties
-	log.taskID = taskID
-	log.taskName = res.Info[0].TaskName
-	log.Content.CurData = map[string]interface{}{}
+	log.content.CurData = &curData
 
 	return nil
+}
+
+func (log *SyncTaskAuditLog) buildLogData(kit *rest.Kit, taskID int64) (metadata.CloudSyncTask, errors.CCError) {
+	option := metadata.SearchCloudOption{
+		Condition: mapstr.MapStr{common.BKCloudSyncTaskID: taskID},
+	}
+	res, err := log.logic.CoreAPI.CoreService().Cloud().SearchSyncTask(kit.Ctx, kit.Header, &option)
+	if err != nil {
+		return metadata.CloudSyncTask{}, err
+	}
+	if len(res.Info) <= 0 {
+		return metadata.CloudSyncTask{}, kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, common.BKCloudAccountID)
+	}
+
+	log.taskID = taskID
+	log.taskName = res.Info[0].TaskName
+	log.content.Properties = syncTaskAuditLogProperty
+
+	return res.Info[0], nil
 }
 
 func (log *SyncTaskAuditLog) SaveAuditLog(kit *rest.Kit, action metadata.ActionType) errors.CCError {
@@ -90,8 +92,7 @@ func (log *SyncTaskAuditLog) SaveAuditLog(kit *rest.Kit, action metadata.ActionT
 		OperationDetail: &metadata.CloudSyncTaskOpDetail{
 			TaskName: log.taskName,
 			TaskID:   log.taskID,
-			CurData:  log.Content.CurData,
-			PreData:  log.Content.PreData,
+			Details:  &log.content,
 		},
 	}
 
@@ -200,4 +201,12 @@ var accountAuditLogProperty = []metadata.Property{
 	{"bk_account_name", "账户名称"},
 	{"bk_cloud_vendor", "账户类型"},
 	{"bk_description", "备注"},
+}
+
+var syncTaskAuditLogProperty = []metadata.Property{
+	{"bk_task_id", "任务ID"},
+	{"bk_task_name", "任务名称"},
+	{"bk_account_id", "云账户ID"},
+	{"bk_resource_type", "同步资源类型"},
+	{"bk_last_sync_time", "上次同步时间"},
 }

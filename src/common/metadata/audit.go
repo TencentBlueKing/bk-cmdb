@@ -498,10 +498,15 @@ func GetAuditTypesByCategory(category string) []AuditType {
 }
 
 type CloudSyncTaskOpDetail struct {
-	TaskName string        `json:"bk_task_name" bson:"bk_task_name"`
-	TaskID   int64         `json:"bk_task_id" bson:"bk_task_id"`
-	PreData  CloudSyncTask `json:"pre_data" bson:"pre_data"`
-	CurData  CloudSyncTask `json:"cur_data" bson:"cur_data"`
+	TaskName string                  `json:"bk_task_name" bson:"bk_task_name"`
+	TaskID   int64                   `json:"bk_task_id" bson:"bk_task_id"`
+	Details  *CloudSyncTaskOpContent `json:"details" bson:"details"`
+}
+
+type CloudSyncTaskOpContent struct {
+	PreData    *CloudSyncTask `json:"pre_data" bson:"pre_data"`
+	CurData    *CloudSyncTask `json:"cur_data" bson:"cur_data"`
+	Properties []Property     `json:"properties" bson:"properties"`
 }
 
 func (c *CloudSyncTaskOpDetail) WithName() string {

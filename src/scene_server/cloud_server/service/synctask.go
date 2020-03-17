@@ -64,6 +64,17 @@ func (s *Service) CreateSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
+	// add auditLog
+	auditLog := s.Logics.NewSyncTaskAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+	if err := auditLog.WithCurrent(ctx.Kit, res.TaskID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(res)
 }
 
@@ -123,8 +134,25 @@ func (s *Service) UpdateSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
+	// add auditLog preData
+	auditLog := s.Logics.NewSyncTaskAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+	if err := auditLog.WithPrevious(ctx.Kit, taskID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	err = s.CoreAPI.CoreService().Cloud().UpdateSyncTask(ctx.Kit.Ctx, ctx.Kit.Header, taskID, option)
 	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// add auditLog
+	if err := auditLog.WithCurrent(ctx.Kit, taskID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -140,15 +168,26 @@ func (s *Service) DeleteSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
+	// add auditLog preData
+	auditLog := s.Logics.NewSyncTaskAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+	if err := auditLog.WithPrevious(ctx.Kit, taskID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	err = s.CoreAPI.CoreService().Cloud().DeleteSyncTask(ctx.Kit.Ctx, ctx.Kit.Header, taskID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
+	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(nil)
 }
-
 
 func (s *Service) SearchSyncHistory(ctx *rest.Contexts) {
 	option := metadata.SearchSyncHistoryOption{}
