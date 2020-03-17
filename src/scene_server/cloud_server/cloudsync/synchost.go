@@ -154,7 +154,7 @@ func (t *taskProcessor) getDiffHosts(hostResource *metadata.CloudHostResource) (
 		if _, ok := localIdHostsMap[h.InstanceId]; ok {
 			lh := localIdHostsMap[h.InstanceId]
 			// 判断云主机和本地主机是否有差异，有则需要更新
-			if h.InstanceState != lh.InstanceState || h.PublicIp != lh.PublicIp ||
+			if ccom.CovertInstState(h.InstanceState) != lh.InstanceState || h.PublicIp != lh.PublicIp ||
 				h.PrivateIp != lh.PrivateIp || h.CloudID != lh.CloudID {
 				diffHosts["update"] = append(diffHosts["update"], h)
 			}
@@ -215,7 +215,6 @@ func (t *taskProcessor) addSyncHistory(syncResult *metadata.SyncResult, taskid i
 			break
 		}
 	}
-	summary := fmt.Sprintf("新增主机%d台，更新主机%d台", syncResult.Detail.NewAdd.Count, syncResult.Detail.Update.Count)
 
 	syncHistory := metadata.SyncHistory{
 		HistoryID:         int64(id),
@@ -224,8 +223,7 @@ func (t *taskProcessor) addSyncHistory(syncResult *metadata.SyncResult, taskid i
 		StatusDescription: statusDescription,
 		OwnerID:           fmt.Sprintf("%d", common.BKDefaultSupplierID),
 		Detail:            syncResult.Detail,
-		Summary:           summary,
-		CreateTime:        time.Now().Format("2006-01-02 15:04:05"),
+		CreateTime:        metadata.Now(),
 	}
 	if err := t.db.Table(common.BKTableNameCloudSyncHistory).Insert(context.Background(), syncHistory); err != nil {
 		if err != nil {
@@ -258,7 +256,7 @@ func (t *taskProcessor) createCloudArea(vpc *metadata.VpcSyncInfo, account *meta
 		blog.Errorf("createCloudArea failed, generate id failed, err: %s", err.Error())
 		return nil, err
 	}
-	ts := time.Now().Format("2006-01-02 15:04:05")
+	ts := metadata.Now()
 	cloudArea := metadata.CloudArea{
 		CloudID:     int64(id),
 		CloudName:   fmt.Sprintf("%d_%s", account.AccountID, vpc.VpcID),
@@ -285,7 +283,7 @@ func (t *taskProcessor) createCloudArea(vpc *metadata.VpcSyncInfo, account *meta
 
 // 获取本地数据库中的主机信息
 func (t *taskProcessor) getLocalHosts(instanceIds []string) ([]*metadata.CloudHost, error) {
-	cond := mapstr.MapStr{common.BKHostInstanceIDField: mapstr.MapStr{common.BKDBIN: instanceIds}}
+	cond := mapstr.MapStr{common.BKCloudInstIDField: mapstr.MapStr{common.BKDBIN: instanceIds}}
 	result := make([]*metadata.CloudHost, 0)
 	err := t.db.Table(common.BKTableNameBaseHost).Find(cond).All(context.Background(), &result)
 	if err != nil {
@@ -362,7 +360,7 @@ func (t *taskProcessor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 func (t *taskProcessor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult, error) {
 	syncResult := new(metadata.SyncResult)
 	for _, host := range hosts {
-		cond := mapstr.MapStr{common.BKHostInstanceIDField: host.InstanceId}
+		cond := mapstr.MapStr{common.BKCloudInstIDField: host.InstanceId}
 		hostSyncInfo := metadata.HostSyncInfo{
 			HostID:        host.HostID,
 			CloudID:       host.CloudID,

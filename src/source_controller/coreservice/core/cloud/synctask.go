@@ -13,8 +13,6 @@
 package cloud
 
 import (
-	"time"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -43,7 +41,7 @@ func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncT
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	task.TaskID = int64(id)
-	ts := time.Now().Format("2006-01-02 15:04:05")
+	ts := metadata.Now()
 	task.OwnerID = kit.SupplierAccount
 	task.LastEditor = task.Creator
 	task.CreateTime = ts
@@ -91,7 +89,7 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 
 	filter := map[string]interface{}{common.BKCloudSyncTaskID: taskID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
-	option.Set(common.LastTimeField, time.Now().Format("2006-01-02 15:04:05"))
+	option.Set(common.LastTimeField, metadata.Now())
 	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)
 	option.Remove(common.BKCloudIDField)
@@ -146,13 +144,14 @@ func (c *cloudOperation) SearchSyncHistory(kit *rest.Kit, option *metadata.Searc
 	cond := option.Condition
 	cond.Set(common.BKCloudSyncTaskID, option.TaskID)
 	if option.StarTime != "" {
-		cond.Set(common.CreateTimeField, mapstr.MapStr{common.BKDBGTE: option.StarTime})
+		cond.Set(common.CreateTimeField, mapstr.MapStr{common.BKDBGTE: option.StarTime, common.BKTimeTypeParseFlag: "1",})
 	}
 	if option.EndTime != "" {
-		cond.Set(common.CreateTimeField, mapstr.MapStr{common.BKDBLTE: option.EndTime})
+		cond.Set(common.CreateTimeField, mapstr.MapStr{common.BKDBLTE: option.EndTime, common.BKTimeTypeParseFlag: "1",})
 	}
-
-	err := c.dbProxy.Table(common.BKTableNameCloudSyncHistory).Find(cond).Fields(option.Fields...).
+	query := metadata.QueryInput{Condition: cond}
+	query.ConvTime()
+	err := c.dbProxy.Table(common.BKTableNameCloudSyncHistory).Find(query).Fields(option.Fields...).
 		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &results)
 	if err != nil {
 		blog.ErrorJSON("SearchSyncHistory failed, db find failed, option: %v, err: %v, rid: %s", option, err, kit.Rid)

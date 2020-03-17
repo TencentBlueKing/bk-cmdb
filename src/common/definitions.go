@@ -243,8 +243,8 @@ const (
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
 
-	// BKHostInstanceIDField the host instanceid field
-	BKHostInstanceIDField = "bk_host_instanceid"
+	// BKCloudInstIDField the cloud instance id field
+	BKCloudInstIDField = "bk_cloud_inst_id"
 
 	// TimeTransferModel the time transferModel field
 	TimeTransferModel = "2006-01-02 15:04:05"

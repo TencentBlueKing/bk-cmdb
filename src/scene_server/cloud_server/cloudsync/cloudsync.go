@@ -13,20 +13,19 @@
 package cloudsync
 
 import (
-	"configcenter/src/common/mapstr"
-	"configcenter/src/storage/dal/mongo/local"
 	"context"
 	"fmt"
-	//"strings"
 	"sync"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/zkclient"
 	"configcenter/src/scene_server/cloud_server/logics"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
 	stypes "configcenter/src/storage/stream/types"
 
@@ -51,6 +50,9 @@ const (
 	// 循环检查任务列表的间隔
 	checkInterval int = 5
 )
+
+// mongo server对于满足change stream查询的最大等待时间
+var maxAwaitTime = time.Second * 10
 
 type SyncConf struct {
 	ZKClient  *zkclient.ZkClient
@@ -110,8 +112,9 @@ func (t *taskProcessor) WatchTaskNode() error {
 func (t *taskProcessor) WatchTaskTable(ctx context.Context) error {
 	opts := &stypes.WatchOptions{
 		Options: stypes.Options{
-			EventStruct: new(metadata.CloudSyncTask),
-			Collection:  common.BKTableNameCloudSyncTask,
+			MaxAwaitTime: &maxAwaitTime,
+			EventStruct:  new(metadata.CloudSyncTask),
+			Collection:   common.BKTableNameCloudSyncTask,
 		},
 	}
 	cap := &reflector.Capable{

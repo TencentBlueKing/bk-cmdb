@@ -13,8 +13,6 @@
 package cloud
 
 import (
-	"time"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -36,7 +34,7 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	account.AccountID = int64(id)
-	ts := time.Now().Format("2006-01-02 15:04:05")
+	ts := metadata.Now()
 	account.OwnerID = kit.SupplierAccount
 	account.LastEditor = account.Creator
 	// 刚创建时，账户的状态是能被删除
@@ -85,7 +83,7 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option ma
 	}
 	filter := map[string]interface{}{common.BKCloudAccountID: accountID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
-	option.Set(common.LastTimeField, time.Now().Format("2006-01-02 15:04:05"))
+	option.Set(common.LastTimeField, metadata.Now())
 	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)
 	option.Remove(common.BKCloudIDField)
