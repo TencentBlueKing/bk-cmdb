@@ -5,11 +5,11 @@
                 <bk-input class="form-meta"
                     :placeholder="$t('请输入xx', { name: $t('任务名称') })"
                     :data-vv-as="$t('任务名称')"
-                    data-vv-name="mission_name"
+                    data-vv-name="bk_task_name"
                     v-validate="'required|length:256'"
-                    v-model.trim="form.mission_name">
+                    v-model.trim="form.bk_task_name">
                 </bk-input>
-                <p class="form-error" v-if="errors.has('mission_name')">{{errors.first('mission_name')}}</p>
+                <p class="form-error" v-if="errors.has('bk_task_name')">{{errors.first('bk_task_name')}}</p>
             </bk-form-item>
             <bk-form-item class="form-item" :label="$t('账户名称')" required>
                 <bk-select class="form-meta"
@@ -42,12 +42,12 @@
                     :readonly="true"
                     :placeholder="$t('请选择xx', { name: $t('资源类型') })"
                     :data-vv-as="$t('资源类型')"
-                    data-vv-name="resource_type"
-                    v-model="form.resource_type"
+                    data-vv-name="bk_resource_type"
+                    v-model="form.bk_resource_type"
                     v-validate="'required'">
                     <bk-option id="host" :name="$t('主机')"></bk-option>
                 </bk-select>
-                <p class="form-error" v-if="errors.has('resource_type')">{{errors.first('resource_type')}}</p>
+                <p class="form-error" v-if="errors.has('bk_resource_type')">{{errors.first('bk_resource_type')}}</p>
             </bk-form-item>
         </bk-form>
         <bk-form class="form-layout" form-type="inline" :label-width="300" v-if="form.bk_account_id">
@@ -55,46 +55,52 @@
                 <bk-button @click="handleAddVPC">{{$t('添加VPC')}}</bk-button>
             </bk-form-item>
         </bk-form>
-        <div class="form-setting-component">
-            <cloud-resource-form-custom
-                :selected="selectedVPC">
-            </cloud-resource-form-custom>
+        <div class="form-setting-component" v-if="form.bk_account_id">
+            <task-form-table
+                ref="vpcTable"
+                :selected="selectedVPC"
+                :account="form.bk_account_id">
+            </task-form-table>
         </div>
         <div class="form-options"
             slot="footer"
             slot-scope="{ sticky }"
             :class="{ 'is-sticky': sticky }">
-            <bk-button theme="primary" @click="handleSumbit">{{$t('提交')}}</bk-button>
+            <bk-button theme="primary"
+                :loading="$loading([request.createTask])"
+                @click="handleSumbit">
+                {{$t('提交')}}
+            </bk-button>
             <bk-button class="ml10" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
         <cmdb-dialog
             v-model="showVPCSelector"
-            :width="480">
-            <resource-vpc-selector
-                :account-id="form.bk_account_id"
+            :width="850"
+            :height="460"
+            :show-close-icon="false">
+            <task-vpc-selector
+                :account="form.bk_account_id"
                 :selected="selectedVPC"
                 @change="handleVPCChange"
                 @cancel="handleVPCCancel">
-            </resource-vpc-selector>
+            </task-vpc-selector>
         </cmdb-dialog>
     </cmdb-sticky-layout>
 </template>
 
 <script>
     import { MENU_RESOURCE_CLOUD_ACCOUNT } from '@/dictionary/menu-symbol'
-    import ResourceFormCustom from './resource-form-custom.vue'
-    import ResourceFormAll from './resource-form-all.vue'
-    import ResourceVpcSelector from './resource-vpc-selector.vue'
-    import CloudResourceDetailsInfo from './resource-details-info.vue'
+    import ResourceFormTable from './task-form-table.vue'
+    import ResourceVpcSelector from './task-vpc-selector.vue'
+    import TaskDetailsInfo from './task-details-info.vue'
     export default {
-        name: 'cloud-resource-form',
+        name: 'task-form',
         components: {
-            [ResourceFormCustom.name]: ResourceFormCustom,
-            [ResourceFormAll.name]: ResourceFormAll,
+            [ResourceFormTable.name]: ResourceFormTable,
             [ResourceVpcSelector.name]: ResourceVpcSelector
         },
         props: {
-            mission: {
+            task: {
                 type: Object,
                 default: null
             },
@@ -111,18 +117,14 @@
             return {
                 accounts: [],
                 form: {
-                    mission_name: '',
+                    bk_task_name: '',
                     bk_account_id: '',
-                    resource_type: 'host',
-                    setting: null
+                    bk_resource_type: 'host'
                 },
                 selectedVPC: [],
-                settingComponents: {
-                    custom: ResourceFormCustom.name,
-                    all: ResourceFormAll.name
-                },
                 request: {
-                    getAccounts: Symbol('getAccounts')
+                    getAccounts: Symbol('getAccounts'),
+                    createTask: Symbol('createTask')
                 },
                 showVPCSelector: false
             }
@@ -130,15 +132,6 @@
         computed: {
             isCreateMode () {
                 return this.mode === 'create'
-            }
-        },
-        watch: {
-            'form.bk_account_id' (value) {
-                if (value) {
-                    this.form.setting = this.settingComponents.custom
-                } else {
-                    this.form.setting = null
-                }
             }
         },
         created () {
@@ -167,9 +160,6 @@
             handleAddVPC () {
                 this.showVPCSelector = true
             },
-            handleAccountSelected (value) {
-                this.form.setting = this.settingComponents.custom
-            },
             handleSumbit () {
                 if (this.isCreateMode) {
                     this.doCreate()
@@ -179,7 +169,15 @@
             },
             async doCreate () {
                 try {
-                    await Promise.resolve()
+                    await this.$store.dispatch('cloud/resource/createTask', {
+                        params: {
+                            ...this.form,
+                            bk_sync_vpcs: this.$refs.vpcTable.getSyncVPC()
+                        },
+                        config: {
+                            requestId: this.request.createTask
+                        }
+                    })
                     this.container.hide('request-refresh')
                 } catch (e) {
                     console.error(e)
@@ -189,7 +187,7 @@
                 try {
                     await Promise.resolve()
                     this.container.show({
-                        detailsComponent: CloudResourceDetailsInfo.name,
+                        detailsComponent: TaskDetailsInfo.name,
                         props: {
                             mission: this.mission
                         }
@@ -203,25 +201,16 @@
                     this.container.hide()
                 } else {
                     this.container.show({
-                        detailsComponent: CloudResourceDetailsInfo.name,
+                        detailsComponent: TaskDetailsInfo.name,
                         props: {
                             mission: this.mission
                         }
                     })
                 }
             },
-            handleVPCChange (vpcs, region) {
+            handleVPCChange (vpcs) {
                 this.showVPCSelector = false
-                const selectedVPC = [...this.selectedVPC]
-                vpcs.forEach(vpc => {
-                    const existIndex = this.selectedVPC.findIndex(selected => selected.bk_region === region && selected.bk_vpc_id === vpc.bk_vpc_id)
-                    if (existIndex > -1) {
-                        selectedVPC.splice(existIndex, 1)
-                    } else {
-                        selectedVPC.unshift(vpc)
-                    }
-                })
-                this.selectedVPC = selectedVPC
+                this.selectedVPC = vpcs
             },
             handleVPCCancel () {
                 this.showVPCSelector = false

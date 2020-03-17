@@ -7,16 +7,19 @@
         <component slot="content" ref="component"
             class="slider-content"
             :is="component"
-            :container="this">
+            :container="this"
+            v-bind="componentProps">
         </component>
     </bk-sideslider>
 </template>
 
 <script>
-    import ResourceForm from './resource-form.vue'
+    import TaskForm from './task-form.vue'
+    import TaskDetails from './task-details.vue'
     export default {
         components: {
-            [ResourceForm.name]: ResourceForm
+            [TaskForm.name]: TaskForm,
+            [TaskDetails.name]: TaskDetails
         },
         data () {
             return {
@@ -27,9 +30,15 @@
             }
         },
         methods: {
-            show (options) {
-                this.component = ResourceForm.name
-                this.title = options.title
+            show ({ mode, props, title }) {
+                const componentMap = {
+                    create: TaskForm.name,
+                    update: TaskForm.name,
+                    details: TaskDetails.name
+                }
+                this.component = componentMap[mode]
+                this.componentProps = props
+                this.title = title
                 this.isShow = true
             },
             hide (eventType) {

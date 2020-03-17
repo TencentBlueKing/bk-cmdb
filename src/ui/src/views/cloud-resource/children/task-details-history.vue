@@ -10,10 +10,10 @@
         <div class="history-table">
             <bk-table ref="table" :data="histories" :max-height="$APP.height - 180">
                 <bk-table-column type="expand" width="30" align="center">
-                    <cloud-resource-details-history-content
+                    <task-details-history-content
                         slot-scope="{ row }"
                         :list="row.list">
-                    </cloud-resource-details-history-content>
+                    </task-details-history-content>
                 </bk-table-column>
                 <bk-table-column :label="$t('操作概要')" prop="summary"></bk-table-column>
                 <bk-table-column :label="$t('状态')" prop="xxxx">
@@ -34,11 +34,11 @@
 </template>
 
 <script>
-    import CloudResourceDetailsHistoryContent from './resource-details-history-content.vue'
+    import TaskDetailsHistoryContent from './task-details-history-content.vue'
     export default {
-        name: 'cloud-resource-details-history',
+        name: 'task-details-history',
         components: {
-            [CloudResourceDetailsHistoryContent.name]: CloudResourceDetailsHistoryContent
+            [TaskDetailsHistoryContent.name]: TaskDetailsHistoryContent
         },
         data () {
             function repeate (count) {

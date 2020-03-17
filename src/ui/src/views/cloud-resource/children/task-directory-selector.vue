@@ -1,19 +1,21 @@
 <template>
-    <bk-select v-model="selected"
+    <bk-select
+        v-if="display === 'selector'"
+        v-model="selected"
         ref="selector"
         searchable
         size="small"
         font-size="small"
         :placeholder="$t('请选择xx', { name: $t('资源目录') })"
         @toggle="handleSelectToggle">
-        <bk-option v-for="folder in folders"
-            :key="folder.id"
-            :id="folder.id"
-            :name="folder.name">
+        <bk-option v-for="directory in directories"
+            :key="directory.bk_module_id"
+            :id="directory.bk_module_id"
+            :name="directory.bk_module_name">
         </bk-option>
         <bk-option class="create-option"
             ref="createOptionComponent"
-            :id="createFolderId"
+            :id="createDirectoryId"
             :name="$t('新增目录')"
             :disabled="true"
             @click.native.stop="handleCreateClick">
@@ -23,7 +25,7 @@
                     size="small"
                     font-size="small"
                     :placeholder="$t('请输入目录名称，回车结束')"
-                    v-model.trim="newFolder"
+                    v-model.trim="newDirectory"
                     @enter="handleConfirmCreate">
                 </bk-input>
             </template>
@@ -33,30 +35,32 @@
             {{$t('申请其他目录权限')}}
         </a>
     </bk-select>
+    <span v-else>{{getInfo()}}</span>
 </template>
 
 <script>
     export default {
-        name: 'cloud-resource-folder-selector',
+        name: 'task-directory-selector',
         props: {
             value: {
                 type: [String, Number],
                 default: ''
+            },
+            display: {
+                type: String,
+                default: 'selector'
             }
         },
         data () {
             return {
                 selected: this.value,
                 createMode: false,
-                createFolderId: 'createFolderId',
-                newFolder: '',
-                folders: [{
-                    id: 'ali',
-                    name: '阿里云'
-                }, {
-                    id: 'tcloud',
-                    name: '腾讯云'
-                }]
+                createDirectoryId: 'createDirectoryId',
+                newDirectory: '',
+                directories: [],
+                request: {
+                    findMany: Symbol('findMany')
+                }
             }
         },
         watch: {
@@ -68,7 +72,28 @@
                 this.$emit('change', value, oldValue)
             }
         },
+        created () {
+            this.getDirectories()
+        },
+        beforeRouteLeave (to, from, next) {
+            this.$http.cancelCache(this.request.findMany)
+            next()
+        },
         methods: {
+            async getDirectories () {
+                try {
+                    const { info } = await this.$store.dispatch('resource/directory/findMany', {
+                        config: {
+                            requestId: this.request.findMany,
+                            fromCache: true
+                        }
+                    })
+                    this.directories = info
+                } catch (e) {
+                    this.directories = []
+                    console.error(e)
+                }
+            },
             handleSelectToggle (isVisible) {
                 if (!isVisible) {
                     this.toggleCreate(false)
@@ -84,24 +109,31 @@
                         this.$refs.input.focus()
                     })
                 } else {
-                    this.newFolder = ''
+                    this.newDirectory = ''
                 }
             },
             async handleConfirmCreate () {
-                if (!this.newFolder.length) {
+                if (!this.newDirectory.length) {
                     return false
                 }
                 try {
                     const id = await Promise.resolve(Date.now())
-                    this.folders.push({
+                    this.directories.push({
                         id: id,
-                        name: this.newFolder
+                        name: this.newDirectory
                     })
                     this.selected = id
                     this.toggleCreate(false)
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            getInfo () {
+                const directory = this.directories.find(directory => directory.bk_module_id === this.value)
+                if (directory) {
+                    return directory.bk_module_name
+                }
+                return null
             }
         }
     }

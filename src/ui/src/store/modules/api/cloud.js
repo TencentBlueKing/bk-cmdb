@@ -1,5 +1,5 @@
 import $http from '@/api'
-
+import Vue from 'vue'
 const cloudArea = {
     namespaced: true,
     actions: {
@@ -19,7 +19,16 @@ const cloudAccount = {
             return $http.post(`findmany/cloud/account`, params, config)
         },
         async findOne (context, { id, config }) {
-            return context.dispatch('findmany').then(({ info }) => {
+            return context.dispatch('findMany', {
+                params: {
+                    condition: {
+                        bk_account_id: {
+                            $eq: id
+                        }
+                    }
+                },
+                config
+            }).then(({ info }) => {
                 if (!info.length) {
                     return Promise.reject(new Error('Can not find cloud account with id:' + id))
                 }
@@ -40,12 +49,32 @@ const cloudAccount = {
 
 const cloudResource = {
     namespaced: true,
+    state: {
+        regions: {}
+    },
     actions: {
         createTask (context, { params, config }) {
             return $http.post('create/cloud/sync/task', params, config)
         },
         findTask (context, { params, config }) {
-            return $http.post('findmany/cloud/sync/task')
+            return $http.post('findmany/cloud/sync/task', params, config)
+        },
+        findOneTask (context, { id, config }) {
+            return context.dispatch('findTask', {
+                params: {
+                    condition: {
+                        bk_task_id: {
+                            $eq: id
+                        }
+                    }
+                },
+                config
+            }).then(({ info }) => {
+                if (!info.length) {
+                    return Promise.reject(new Error('Can not find cloud task with id:' + id))
+                }
+                return info[0]
+            })
         },
         updateTask (context, { id, params, config }) {
             return $http.put(`update/cloud/sync/task/${id}`, params, config)
@@ -53,14 +82,25 @@ const cloudResource = {
         deleteTask (context, { id, config }) {
             return $http.delete(`delete/cloud/sync/task/${id}`, config)
         },
-        findRegion (context, { params, config }) {
-            return $http.post('findmany/cloud/sync/region', params, config)
+        findRegion ({ state, commit }, { params, config }) {
+            if (state.regions.hasOwnProperty(params.bk_account_id)) {
+                return Promise.resolve(state.regions[params.bk_account_id])
+            }
+            return $http.post('findmany/cloud/sync/region', params, config).then(data => {
+                commit('setRegions', { account: params.bk_account_id, regions: data.info })
+                return data.info
+            })
         },
         findVPC (context, { id, params, config }) {
             return $http.post(`findmany/cloud/account/vpc/${id}`, params, config)
         },
         findHistory (context, { params, config }) {
             return $http.post('findmany/cloud/sync/history')
+        }
+    },
+    mutations: {
+        setRegions (state, { account, regions }) {
+            Vue.set(state.regions, account, regions)
         }
     }
 }

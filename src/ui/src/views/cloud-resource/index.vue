@@ -11,7 +11,7 @@
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @cell-click="handleCellClick">
-            <bk-table-column :label="$t('任务名称')" prop="bk_task_name" class-name="is-highlight"></bk-table-column>
+            <bk-table-column :label="$t('任务名称')" prop="bk_task_name" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
             <bk-table-column :label="$t('资源')" prop="bk_resource_type" :formatter="resourceTypeFormatter"></bk-table-column>
             <bk-table-column :label="$t('账户名称')" prop="bk_account_name" show-overflow-tooltip></bk-table-column>
             <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" :formatter="vendorFormatter"></bk-table-column>
@@ -22,7 +22,7 @@
                         disabled: !row.bk_status_description,
                         content: row.bk_status_description
                     }">
-                    <i :class="['status', { 'is-error': !row.bk_sync_status }]"></i>
+                    <i :class="['status', { 'is-error': row.bk_sync_status }]"></i>
                     {{row.bk_sync_status ? $t('失败') : $t('成功')}}
                 </div>
             </bk-table-column>
@@ -39,24 +39,19 @@
                 </template>
             </bk-table-column>
         </bk-table>
-        <resource-create-sideslider ref="resourceCreateSideslider"
+        <task-sideslider ref="taskSideslider"
             @request-refresh="getData">
-        </resource-create-sideslider>
-        <resource-details-sideslider ref="resourceDetailsSideslider"
-            @request-refresh="getData">
-        </resource-details-sideslider>
+        </task-sideslider>
     </div>
 </template>
 
 <script>
-    import ResourceCreateSideslider from './children/resource-sideslider.vue'
-    import ResourceDetailsSideslider from './children/resource-details-sideslider.vue'
+    import TaskSideslider from './children/task-sideslider.vue'
     import { formatter as resourceTypeFormatter } from '@/dictionary/cloud-resource-type'
     import { formatter as vendorFormatter } from '@/dictionary/cloud-vendor'
     export default {
         components: {
-            ResourceCreateSideslider,
-            ResourceDetailsSideslider
+            TaskSideslider
         },
         data () {
             return {
@@ -73,11 +68,11 @@
         },
         methods: {
             handleCreate () {
-                this.$refs.resourceCreateSideslider.show({
-                    type: 'form',
+                this.$refs.taskSideslider.show({
+                    mode: 'create',
                     title: this.$t('新建发现任务'),
                     props: {
-                        mode: 'create'
+                        type: 'create'
                     }
                 })
             },
@@ -91,16 +86,16 @@
                 this.getData()
             },
             handleCellClick (row, column) {
-                if (column.property === 'name') {
+                if (column.property === 'bk_task_name') {
                     this.handleView(row)
                 }
             },
             handleView (row) {
-                this.$refs.resourceDetailsSideslider.show({
-                    type: 'details',
-                    title: `${this.$t('任务详情')} 【${row.name}】`,
+                this.$refs.taskSideslider.show({
+                    mode: 'details',
+                    title: `${this.$t('任务详情')} 【${row.bk_task_name}】`,
                     props: {
-                        id: row.id
+                        id: row.bk_task_id
                     }
                 })
             },
@@ -189,6 +184,9 @@
             height: 7px;
             border-radius: 50%;
             background-color: $successColor;
+            &.is-error {
+                background-color: $dangerColor;
+            }
         }
     }
 </style>

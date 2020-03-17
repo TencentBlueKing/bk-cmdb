@@ -10,16 +10,16 @@
             <i class="icon-cc-batch-update"
                 v-bk-tooltips="{
                     content: $t('请选择xx', { name: 'VPC' }),
-                    disabled: !disabled
+                    disabled: disabled
                 }"
                 :class="{ 'is-disabled': disabled }"
                 @click="handleClick">
             </i>
             <bk-form form-type="vertical" slot="content">
                 <bk-form-item :label="$t('批量编辑')">
-                    <cloud-resource-folder-selector class="folder-selector"
+                    <task-directory-selector class="directory-selector"
                         v-model="selected">
-                    </cloud-resource-folder-selector>
+                    </task-directory-selector>
                     <div class="selector-options">
                         <link-button class="selector-link-button" @click="handleConfirm">{{$t('确定')}}</link-button>
                         <link-button class="selector-link-button ml10" @click="handleCancel">{{$t('取消')}}</link-button>
@@ -31,19 +31,15 @@
 </template>
 
 <script>
-    import CloudResourceFolderSelector from './resource-folder-selector.vue'
+    import TaskDirectorySelector from './task-directory-selector.vue'
     export default {
-        name: 'cloud-resource-custom-header',
+        name: 'task-table-header',
         components: {
-            CloudResourceFolderSelector
+            TaskDirectorySelector
         },
         props: {
             data: {
                 type: Object,
-                required: true
-            },
-            folders: {
-                type: Array,
                 required: true
             },
             batchSelectHandler: {
@@ -59,6 +55,9 @@
         },
         methods: {
             handleClick () {
+                if (this.disabled) {
+                    return false
+                }
                 this.$refs.popover.instance.show()
             },
             handleConfirm () {
@@ -89,10 +88,11 @@
             }
             &.is-disabled {
                 color: #c4c6cc;
+                cursor: not-allowed;
             }
         }
     }
-    .folder-selector {
+    .directory-selector {
         width: 235px;
     }
     .selector-options {

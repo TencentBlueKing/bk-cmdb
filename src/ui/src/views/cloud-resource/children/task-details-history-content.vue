@@ -24,7 +24,7 @@
 
 <script>
     export default {
-        name: 'cloud-resource-details-history-content',
+        name: 'task-details-history-content',
         props: {
             list: {
                 type: Array,
