@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/storage/stream/types"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -102,12 +103,13 @@ func (e *Event) loopWatch(ctx context.Context,
 
 			base := newStruct.Field(0).Interface().(types.EventStream)
 			currentToken.Data = base.Token.Data
+			byt, _ := json.Marshal(newStruct.Addr().Interface())
 
 			eventChan <- &types.Event{
 				Oid:           base.DocumentKey.ID.Hex(),
 				OperationType: base.OperationType,
 				Document:      newStruct.Field(1).Addr().Interface(),
-				DocBytes:      []byte(stream.Current.String()),
+				DocBytes:      byt,
 			}
 		}
 
