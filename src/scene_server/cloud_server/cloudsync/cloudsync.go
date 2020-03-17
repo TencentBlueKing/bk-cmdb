@@ -234,6 +234,7 @@ func (t *taskProcessor) getTasksFromTable(ctx context.Context) ([]int64, error) 
 	result := make([]*metadata.CloudSyncTask, 0)
 	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(nil).All(ctx, &result)
 	if err != nil {
+		blog.Errorf("getTasksFromTable failed, err: %v", err)
 		return nil, err
 	}
 	taskids := []int64{}

@@ -21,9 +21,8 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/paraparse"
 	ccom "configcenter/src/scene_server/cloud_server/common"
-
 )
 
 // 云账户连通测试
@@ -64,6 +63,17 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 
 	res, err := s.CoreAPI.CoreService().Cloud().CreateAccount(ctx.Kit.Ctx, ctx.Kit.Header, account)
 	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// add auditLog
+	auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+	if err := auditLog.WithCurrent(ctx.Kit, res.AccountID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -126,14 +136,30 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 		return
 	}
 
+	// auditLog preData
+	auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+	if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	option := map[string]interface{}{}
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	err = s.CoreAPI.CoreService().Cloud().UpdateAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID, option)
 	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// add auditLog
+	if err := auditLog.WithCurrent(ctx.Kit, accountID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -151,8 +177,19 @@ func (s *Service) DeleteAccount(ctx *rest.Contexts) {
 		return
 	}
 
+	// add auditLog
+	auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+	if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 	err = s.CoreAPI.CoreService().Cloud().DeleteAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID)
 	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
