@@ -196,13 +196,16 @@ func (s *Service) ListSetTemplateWeb(params types.ContextParams, pathParams, que
 		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	setTemplates, err := s.ListSetTemplate(params, pathParams, queryParams, data)
-	if err != nil {
-		return nil, err
+	listOption := metadata.ListSetTemplateOption{}
+	if err := data.MarshalJSONInto(&listOption); err != nil {
+		return nil, params.Err.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
-	listResult := setTemplates.(*metadata.MultipleSetTemplateResult)
-	if listResult == nil {
-		return nil, nil
+	listOption.Page.Limit = common.BKNoLimit
+
+	listResult, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTemplate(params.Context, params.Header, bizID, listOption)
+	if err != nil {
+		blog.Errorf("ListSetTemplate failed, do core service ListSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, listOption, err, params.ReqID)
+		return nil, err
 	}
 
 	// count template instances
