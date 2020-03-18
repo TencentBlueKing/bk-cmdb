@@ -436,7 +436,7 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 
 	for idx, serviceInstance := range serviceInstanceDetails {
 		processInfo, ok := serviceInstanceMap[serviceInstance.ID]
-		if ok {
+		if !ok {
 			continue
 		}
 		serviceInstanceDetails[idx].ProcessInstances = processInfo
