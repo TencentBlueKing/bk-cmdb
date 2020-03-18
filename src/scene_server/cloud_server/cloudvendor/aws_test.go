@@ -23,7 +23,7 @@ import (
 var awsTestClient VendorClient
 
 func init() {
-	conf := ccom.AccountConf{
+	conf := metadata.AccountConf{
 		metadata.AWS,
 		os.Getenv("AWS_SECRET_ID"),
 		os.Getenv("AWS_SECRET_KEY"),

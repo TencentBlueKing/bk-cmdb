@@ -344,14 +344,6 @@ type DeleteHostFromBizParameter struct {
 	HostIDArr []int64 `json:"bk_host_ids"`
 }
 
-// CloudAreaParameter search cloud area parameter
-type CloudAreaSearchParam struct {
-	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
-	Page      BasePage      `json:"page" bson:"page" field:"page"`
-	Fields    []string      `json:"fields,omitempty"`
-	Exact     bool          `json:"exact"`
-}
-
 type TopoNode struct {
 	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" mapstructure:"bk_obj_id"`
 	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id" mapstructure:"bk_inst_id"`

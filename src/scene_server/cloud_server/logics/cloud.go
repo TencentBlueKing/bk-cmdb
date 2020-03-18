@@ -25,7 +25,7 @@ import (
 	ccom "configcenter/src/scene_server/cloud_server/common"
 )
 
-func (lgc *Logics) AccountVerify(conf ccom.AccountConf) (bool, error) {
+func (lgc *Logics) AccountVerify(conf metadata.AccountConf) (bool, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
 		blog.Errorf("AccountVerify GetVendorClient err:%s", err.Error())
@@ -43,7 +43,7 @@ func (lgc *Logics) AccountVerify(conf ccom.AccountConf) (bool, error) {
 }
 
 // 获取地域信息
-func (lgc *Logics) GetRegionsInfo(withHostCount bool, conf ccom.AccountConf) (*metadata.MultipleSyncRegion, error) {
+func (lgc *Logics) GetRegionsInfo(withHostCount bool, conf metadata.AccountConf) (*metadata.MultipleSyncRegion, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
 		blog.Errorf("GetRegionsInfo GetVendorClient err:%s", err.Error())
@@ -104,7 +104,7 @@ func (lgc *Logics) GetRegionsInfo(withHostCount bool, conf ccom.AccountConf) (*m
 }
 
 // 获取地域下的vpc详情和主机数
-func (lgc *Logics) GetVpcHostCnt(region string, conf ccom.AccountConf) (*metadata.VpcHostCntResult, error) {
+func (lgc *Logics) GetVpcHostCnt(region string, conf metadata.AccountConf) (*metadata.VpcHostCntResult, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
 		blog.Errorf("GetVpcHostCnt GetVendorClient err:%s", err.Error())
@@ -163,7 +163,7 @@ func (lgc *Logics) GetVpcHostCnt(region string, conf ccom.AccountConf) (*metadat
 }
 
 // 获取地域下的vpc和主机详情
-func (lgc *Logics) GetCloudHostResource(syncVpcs []metadata.VpcSyncInfo, conf ccom.AccountConf) (*metadata.CloudHostResource, error) {
+func (lgc *Logics) GetCloudHostResource(syncVpcs []metadata.VpcSyncInfo, conf metadata.AccountConf) (*metadata.CloudHostResource, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
 		blog.Errorf("GetCloudHostResource GetVendorClient err:%s", err.Error())
@@ -219,8 +219,8 @@ func (lgc *Logics) GetCloudHostResource(syncVpcs []metadata.VpcSyncInfo, conf cc
 }
 
 // 获取云厂商账户配置
-func (lgc *Logics) GetAccountConf(accountID int64) (*ccom.AccountConf, error) {
-	result := []ccom.AccountConf{}
+func (lgc *Logics) GetAccountConf(accountID int64) (*metadata.AccountConf, error) {
+	result := []metadata.AccountConf{}
 	option := mapstr.MapStr{common.BKCloudAccountID: accountID}
 	err := lgc.db.Table(common.BKTableNameCloudAccount).Find(option).All(context.Background(), &result)
 	if err != nil {

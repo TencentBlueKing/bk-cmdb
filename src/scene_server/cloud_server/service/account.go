@@ -21,8 +21,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
-	ccom "configcenter/src/scene_server/cloud_server/common"
+	params "configcenter/src/common/paraparse"
 )
 
 // 云账户连通测试
@@ -35,7 +34,7 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 
 	var pass bool
 	var err error
-	conf := ccom.AccountConf{account.CloudVendor, account.SecretID, account.SecretKey}
+	conf := metadata.AccountConf{account.CloudVendor, account.SecretID, account.SecretKey}
 	pass, err = s.Logics.AccountVerify(conf)
 	if err != nil {
 		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err, ctx.Kit.Rid)

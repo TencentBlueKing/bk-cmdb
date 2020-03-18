@@ -38,7 +38,7 @@ func Register(vendorName string, client VendorClient) {
 }
 
 // GetVendorClient 获取云厂商客户端
-func GetVendorClient(conf ccom.AccountConf) (VendorClient, error) {
+func GetVendorClient(conf metadata.AccountConf) (VendorClient, error) {
 	var client VendorClient
 	var ok bool
 	if client, ok = vendorClients[conf.VendorName]; !ok {

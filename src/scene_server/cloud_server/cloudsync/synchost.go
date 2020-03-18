@@ -1,6 +1,7 @@
 package cloudsync
 
 import (
+	"configcenter/src/storage/dal"
 	"context"
 	"fmt"
 	"time"
@@ -9,21 +10,32 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/cloud_server/logics"
 	ccom "configcenter/src/scene_server/cloud_server/common"
 )
 
+// 云主机同步器
+type HostSyncor struct{
+	logics    *logics.Logics
+	db        dal.DB
+}
+
+func NewHostSyncor(logics *logics.Logics, db dal.DB) *HostSyncor {
+	return &HostSyncor{logics, db}
+}
+
 // 同步云主机
-func (t *taskProcessor) SyncCloudHost(task *metadata.CloudSyncTask) error {
+func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	startTime := time.Now()
 	// 根据账号id获取账号详情
-	account, err := t.getAccountDetail(task.AccountID)
+	account, err := h.getAccountDetail(task.AccountID)
 	if err != nil {
 		blog.Errorf("getAccountDetail err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
 	}
 
 	// 根据任务详情和账号信息获取要同步的云主机资源
-	hostResource, err := t.getCloudHostResource(task, account)
+	hostResource, err := h.getCloudHostResource(task, account)
 	if err != nil {
 		blog.Errorf("getCloudHostResource err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
@@ -36,14 +48,14 @@ func (t *taskProcessor) SyncCloudHost(task *metadata.CloudSyncTask) error {
 	blog.V(4).Infof("taskid:%d, vpc count:%d", task.TaskID, len(hostResource.HostResource))
 
 	// 查询vpc对应的云区域，没有则创建,并更新云主机资源信息里的云区域id
-	t.addCLoudId(hostResource, account)
+	h.addCLoudId(hostResource, account)
 	if err != nil {
 		blog.Errorf("addCLoudId err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
 	}
 
 	// 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
-	diffHosts, err := t.getDiffHosts(hostResource)
+	diffHosts, err := h.getDiffHosts(hostResource)
 	if err != nil {
 		blog.Errorf("getDiffHosts err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
@@ -56,7 +68,7 @@ func (t *taskProcessor) SyncCloudHost(task *metadata.CloudSyncTask) error {
 	}
 
 	// 有差异的更新任务同步状态为同步中
-	err = t.updateTaskState(task.TaskID, metadata.CloudSyncInProgress)
+	err = h.updateTaskState(task.TaskID, metadata.CloudSyncInProgress)
 	if err != nil {
 		blog.Errorf("updateTaskState err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
@@ -64,14 +76,14 @@ func (t *taskProcessor) SyncCloudHost(task *metadata.CloudSyncTask) error {
 
 	// todo 后面几个表操作放在同一个事务里
 	// 同步有差异的主机数据
-	syncResult, err := t.syncDiffHosts(diffHosts)
+	syncResult, err := h.syncDiffHosts(diffHosts)
 	if err != nil {
 		blog.Errorf("syncDiffHosts err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
 	}
 
 	// 增加任务同步历史记录
-	_, err = t.addSyncHistory(syncResult, task.TaskID, startTime)
+	_, err = h.addSyncHistory(syncResult, task.TaskID, startTime)
 	if err != nil {
 		blog.Errorf("addSyncHistory err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
@@ -82,7 +94,7 @@ func (t *taskProcessor) SyncCloudHost(task *metadata.CloudSyncTask) error {
 	if syncResult.FailInfo.Count > 0 {
 		syncState = metadata.CloudSyncFail
 	}
-	err = t.updateTaskState(task.TaskID, syncState)
+	err = h.updateTaskState(task.TaskID, syncState)
 	if err != nil {
 		blog.Errorf("updateTaskState err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
@@ -96,21 +108,21 @@ func (t *taskProcessor) SyncCloudHost(task *metadata.CloudSyncTask) error {
 }
 
 // 根据任务详情和账号信息获取要同步的云主机资源
-func (t *taskProcessor) getCloudHostResource(task *metadata.CloudSyncTask, account *metadata.CloudAccount) (*metadata.CloudHostResource, error) {
-	conf := ccom.AccountConf{account.CloudVendor, account.SecretID, account.SecretKey}
-	return t.logics.GetCloudHostResource(task.SyncVpcs, conf)
+func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask, account *metadata.CloudAccount) (*metadata.CloudHostResource, error) {
+	conf := metadata.AccountConf{account.CloudVendor, account.SecretID, account.SecretKey}
+	return h.logics.GetCloudHostResource(task.SyncVpcs, conf)
 }
 
 // 查询vpc对应的云区域，没有则创建,并更新云主机资源信息里的云区域id
-func (t *taskProcessor) addCLoudId(hostResource *metadata.CloudHostResource, account *metadata.CloudAccount) (*metadata.CloudHostResource, error) {
+func (h *HostSyncor) addCLoudId(hostResource *metadata.CloudHostResource, account *metadata.CloudAccount) (*metadata.CloudHostResource, error) {
 	for _, hostRes := range hostResource.HostResource {
-		cloudID, err := t.getCloudId(hostRes.Vpc.VpcID)
+		cloudID, err := h.getCloudId(hostRes.Vpc.VpcID)
 		if err != nil {
 			continue
 		}
 		// 没有则创建
 		if cloudID == 0 {
-			cloudArea, err := t.createCloudArea(hostRes.Vpc, account)
+			cloudArea, err := h.createCloudArea(hostRes.Vpc, account)
 			if err != nil {
 				continue
 			}
@@ -122,7 +134,7 @@ func (t *taskProcessor) addCLoudId(hostResource *metadata.CloudHostResource, acc
 }
 
 // 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
-func (t *taskProcessor) getDiffHosts(hostResource *metadata.CloudHostResource) (map[string][]*metadata.CloudHost, error) {
+func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map[string][]*metadata.CloudHost, error) {
 	hosts := make([]*metadata.CloudHost, 0)
 	for _, hostRes := range hostResource.HostResource {
 		for _, host := range hostRes.Instances {
@@ -139,7 +151,7 @@ func (t *taskProcessor) getDiffHosts(hostResource *metadata.CloudHostResource) (
 	}
 	blog.V(4).Infof("taskid:%d, host instanceIds:%#v", hostResource.TaskID, instanceIds)
 
-	localHosts, err := t.getLocalHosts(instanceIds)
+	localHosts, err := h.getLocalHosts(instanceIds)
 	if err != nil {
 		return nil, err
 	}
@@ -166,20 +178,20 @@ func (t *taskProcessor) getDiffHosts(hostResource *metadata.CloudHostResource) (
 }
 
 // 同步有差异的主机数据
-func (t *taskProcessor) syncDiffHosts(diffhosts map[string][]*metadata.CloudHost) (*metadata.SyncResult, error) {
+func (h *HostSyncor) syncDiffHosts(diffhosts map[string][]*metadata.CloudHost) (*metadata.SyncResult, error) {
 	syncResult := new(metadata.SyncResult)
 	var result *metadata.SyncResult
 	var err error
 	for op, hosts := range diffhosts {
 		switch op {
 		case "add":
-			result, err = t.addHosts(hosts)
+			result, err = h.addHosts(hosts)
 			if err != nil {
 				return nil, err
 			}
 			syncResult.Detail.NewAdd = result.SuccessInfo
 		case "update":
-			result, err = t.updateHosts(hosts)
+			result, err = h.updateHosts(hosts)
 			if err != nil {
 				return nil, err
 			}
@@ -200,8 +212,8 @@ func (t *taskProcessor) syncDiffHosts(diffhosts map[string][]*metadata.CloudHost
 }
 
 // 增加任务同步历史记录
-func (t *taskProcessor) addSyncHistory(syncResult *metadata.SyncResult, taskid int64, startTime time.Time) (*metadata.SyncHistory, error) {
-	id, err := t.db.NextSequence(context.Background(), common.BKTableNameCloudSyncHistory)
+func (h *HostSyncor) addSyncHistory(syncResult *metadata.SyncResult, taskid int64, startTime time.Time) (*metadata.SyncHistory, error) {
+	id, err := h.db.NextSequence(context.Background(), common.BKTableNameCloudSyncHistory)
 	if nil != err {
 		blog.Errorf("createCloudArea failed, generate id failed, err: %s", err.Error())
 		return nil, err
@@ -225,7 +237,7 @@ func (t *taskProcessor) addSyncHistory(syncResult *metadata.SyncResult, taskid i
 		Detail:            syncResult.Detail,
 		CreateTime:        metadata.Now(),
 	}
-	if err := t.db.Table(common.BKTableNameCloudSyncHistory).Insert(context.Background(), syncHistory); err != nil {
+	if err := h.db.Table(common.BKTableNameCloudSyncHistory).Insert(context.Background(), syncHistory); err != nil {
 		if err != nil {
 			blog.Errorf("addSyncHistory insert err:%v", err.Error())
 			return nil, err
@@ -235,10 +247,10 @@ func (t *taskProcessor) addSyncHistory(syncResult *metadata.SyncResult, taskid i
 }
 
 // 根据账号vpcID获取云区域ID，没有则创建
-func (t *taskProcessor) getCloudId(vpcID string) (int64, error) {
+func (h *HostSyncor) getCloudId(vpcID string) (int64, error) {
 	cond := mapstr.MapStr{common.BKVpcID: vpcID}
 	result := make([]*metadata.CloudArea, 0)
-	err := t.db.Table(common.BKTableNameBasePlat).Find(cond).All(context.Background(), &result)
+	err := h.db.Table(common.BKTableNameBasePlat).Find(cond).All(context.Background(), &result)
 	if err != nil {
 		blog.Errorf("getCloudId err:%v", err.Error())
 		return int64(0), err
@@ -250,8 +262,8 @@ func (t *taskProcessor) getCloudId(vpcID string) (int64, error) {
 }
 
 // 创建vpc对应的云区域
-func (t *taskProcessor) createCloudArea(vpc *metadata.VpcSyncInfo, account *metadata.CloudAccount) (*metadata.CloudArea, error) {
-	id, err := t.db.NextSequence(context.Background(), common.BKTableNameBasePlat)
+func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, account *metadata.CloudAccount) (*metadata.CloudArea, error) {
+	id, err := h.db.NextSequence(context.Background(), common.BKTableNameBasePlat)
 	if nil != err {
 		blog.Errorf("createCloudArea failed, generate id failed, err: %s", err.Error())
 		return nil, err
@@ -272,7 +284,7 @@ func (t *taskProcessor) createCloudArea(vpc *metadata.VpcSyncInfo, account *meta
 		LastEditor:  "cc_system",
 		LastTime:    ts,
 	}
-	if err := t.db.Table(common.BKTableNameBasePlat).Insert(context.Background(), cloudArea); err != nil {
+	if err := h.db.Table(common.BKTableNameBasePlat).Insert(context.Background(), cloudArea); err != nil {
 		if err != nil {
 			blog.Errorf("createCloudArea insert err:%v", err.Error())
 			return nil, err
@@ -282,10 +294,10 @@ func (t *taskProcessor) createCloudArea(vpc *metadata.VpcSyncInfo, account *meta
 }
 
 // 获取本地数据库中的主机信息
-func (t *taskProcessor) getLocalHosts(instanceIds []string) ([]*metadata.CloudHost, error) {
+func (h *HostSyncor) getLocalHosts(instanceIds []string) ([]*metadata.CloudHost, error) {
 	cond := mapstr.MapStr{common.BKCloudInstIDField: mapstr.MapStr{common.BKDBIN: instanceIds}}
 	result := make([]*metadata.CloudHost, 0)
-	err := t.db.Table(common.BKTableNameBaseHost).Find(cond).All(context.Background(), &result)
+	err := h.db.Table(common.BKTableNameBaseHost).Find(cond).All(context.Background(), &result)
 	if err != nil {
 		blog.Errorf("getLocalHosts err:%v", err.Error())
 		return nil, err
@@ -294,10 +306,10 @@ func (t *taskProcessor) getLocalHosts(instanceIds []string) ([]*metadata.CloudHo
 }
 
 // 添加云主机到本地数据库和主机资源池目录对应关系
-func (t *taskProcessor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult, error) {
+func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult, error) {
 	syncResult := new(metadata.SyncResult)
 	for _, host := range hosts {
-		id, err := t.db.NextSequence(context.Background(), common.BKTableNameBaseHost)
+		id, err := h.db.NextSequence(context.Background(), common.BKTableNameBaseHost)
 		if nil != err {
 			blog.Errorf("addHosts failed, generate id failed, err: %s", err.Error())
 			syncResult.FailInfo.Count++
@@ -318,7 +330,7 @@ func (t *taskProcessor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			CreateTime: ts,
 			LastTime: ts,
 		}
-		if err := t.db.Table(common.BKTableNameBaseHost).Insert(context.Background(), hostSyncInfo); err != nil {
+		if err := h.db.Table(common.BKTableNameBaseHost).Insert(context.Background(), hostSyncInfo); err != nil {
 			blog.Errorf("addHosts insert err:%v", err.Error())
 			syncResult.FailInfo.Count++
 			syncResult.FailInfo.IPError[host.PrivateIp] = err.Error()
@@ -331,7 +343,7 @@ func (t *taskProcessor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		// 获取资源池目录信息
 		cond := mapstr.MapStr{common.BKModuleIDField: host.SyncDir}
 		result := make([]*metadata.ModuleInst, 0)
-		err = t.db.Table(common.BKTableNameBaseModule).Find(cond).All(context.Background(), &result)
+		err = h.db.Table(common.BKTableNameBaseModule).Find(cond).All(context.Background(), &result)
 		if err != nil {
 			blog.Errorf("resource dir find err:%v", err.Error())
 			return nil, err
@@ -350,7 +362,7 @@ func (t *taskProcessor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			SetID:    module.ParentID,
 			OwnerID:  fmt.Sprintf("%d", common.BKDefaultSupplierID),
 		}
-		if err := t.db.Table(common.BKTableNameModuleHostConfig).Insert(context.Background(), modulehost); err != nil {
+		if err := h.db.Table(common.BKTableNameModuleHostConfig).Insert(context.Background(), modulehost); err != nil {
 			blog.Errorf("add module host relationship err:%s", err.Error())
 			return nil, fmt.Errorf("add module host relationship err:%s", err.Error())
 		}
@@ -360,7 +372,7 @@ func (t *taskProcessor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 }
 
 // 更新云主机到本地数据库
-func (t *taskProcessor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult, error) {
+func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult, error) {
 	syncResult := new(metadata.SyncResult)
 	for _, host := range hosts {
 		cond := mapstr.MapStr{common.BKCloudInstIDField: host.InstanceId}
@@ -372,7 +384,7 @@ func (t *taskProcessor) updateHosts(hosts []*metadata.CloudHost) (*metadata.Sync
 			common.BKHostNameField: host.InstanceName,
 			common.LastTimeField: metadata.Now(),
 		}
-		if err := t.db.Table(common.BKTableNameBaseHost).Update(context.Background(), cond, updateInfo); err != nil {
+		if err := h.db.Table(common.BKTableNameBaseHost).Update(context.Background(), cond, updateInfo); err != nil {
 			blog.Errorf("updateHosts update err:%v", err.Error())
 			syncResult.FailInfo.Count++
 			syncResult.FailInfo.IPError[host.PrivateIp] = err.Error()
@@ -384,4 +396,36 @@ func (t *taskProcessor) updateHosts(hosts []*metadata.CloudHost) (*metadata.Sync
 	}
 	return syncResult, nil
 	return nil, nil
+}
+
+// 根据账号id获取账号详情
+func (h *HostSyncor) getAccountDetail(accountID int64) (*metadata.CloudAccount, error) {
+	cond := mapstr.MapStr{common.BKCloudAccountID: accountID}
+	result := make([]*metadata.CloudAccount, 0)
+	err := h.db.Table(common.BKTableNameCloudAccount).Find(cond).All(context.Background(), &result)
+	if err != nil {
+		blog.Errorf("getAccountDetail err:%v", err.Error())
+		return nil, err
+	}
+	if len(result) > 0 {
+		return result[0], nil
+	}
+	return nil, nil
+}
+
+// 更新任务同步状态
+func (h *HostSyncor) updateTaskState(taskid int64, status string) error {
+	cond := mapstr.MapStr{common.BKCloudSyncTaskID: taskid}
+	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
+	if status == metadata.CloudSyncSuccess || status == metadata.CloudSyncFail {
+
+		option.Set(common.BKCloudLastSyncTime, metadata.Now())
+	}
+	if err := h.db.Table(common.BKTableNameCloudSyncTask).Update(context.Background(), cond, option); err != nil {
+		if err != nil {
+			blog.Errorf("updateTaskState err:%v", err.Error())
+			return err
+		}
+	}
+	return nil
 }

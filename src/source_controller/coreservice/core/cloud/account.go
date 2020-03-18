@@ -37,8 +37,6 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 	ts := metadata.Now()
 	account.OwnerID = kit.SupplierAccount
 	account.LastEditor = account.Creator
-	// 刚创建时，账户的状态是能被删除
-	account.CanDeleteAccount = true
 	account.CreateTime = ts
 	account.LastTime = ts
 
@@ -53,17 +51,17 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 }
 
 func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
-	results := []metadata.CloudAccount{}
+	accounts := []metadata.CloudAccount{}
 	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
-		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &results)
+		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &accounts)
 	if err != nil {
 		blog.ErrorJSON("SearchAccount failed, db insert failed, option: %s, err: %s, rid: %s", option, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	// 不返回bk_secret_key的值
-	for i, _ := range results {
-		results[i].SecretKey = ""
+	for i, _ := range accounts {
+		accounts[i].SecretKey = ""
 	}
 
 	// 账户总个数
@@ -71,6 +69,23 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 	if err != nil {
 		blog.ErrorJSON("SearchAccount countAccount error %s, option: %s, rid: %s", err, option.Condition, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// 增加账户是否能被删除的信息
+	accountTaskcntMap, err := c.getAcccountTaskcntMap(kit)
+	if err != nil {
+		blog.ErrorJSON("getAcccountTaskcntMap error %s, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	results := make([]metadata.CloudAccountWithExtraInfo, 0)
+	for i, _ := range accounts {
+		canDeleteAccount := false
+		// 账户下没有同步任务，则可以删除
+		if accountTaskcntMap[accounts[i].AccountID] == 0 {
+			canDeleteAccount = true
+		}
+		results = append(results, metadata.CloudAccountWithExtraInfo{accounts[i], canDeleteAccount})
 	}
 
 	return &metadata.MultipleCloudAccount{Count: int64(count), Info: results}, nil
@@ -110,9 +125,37 @@ func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CC
 	return nil
 }
 
+// 获取账户总个数
 func (c *cloudOperation) countAccount(kit *rest.Kit, cond mapstr.MapStr) (uint64, error) {
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	count, err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(cond).Count(kit.Ctx)
 	return count, err
 
+}
+
+// 获取各个账户的同步任务数
+func (c *cloudOperation) getAcccountTaskcntMap(kit *rest.Kit) (map[int64]int64, error) {
+	accountTaskcntMap := make(map[int64]int64)
+	aggregateCond := []interface{}{
+		map[string]interface{}{
+			"$group": map[string]interface{}{
+				"_id": "$" + common.BKCloudAccountID,
+				"num": map[string]interface{}{"$sum": 1},
+			},
+		},
+	}
+	type accountTaskcnt struct {
+		AccountID int64 `bson:"_id"`
+		Num       int64 `bson:"num"`
+	}
+	resultAll := make([]accountTaskcnt, 0)
+	if err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).AggregateAll(kit.Ctx, aggregateCond, &resultAll); err != nil {
+		return nil, err
+	}
+
+	for _, r := range resultAll {
+		accountTaskcntMap[r.AccountID] = r.Num
+	}
+
+	return accountTaskcntMap, nil
 }

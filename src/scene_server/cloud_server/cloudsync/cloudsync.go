@@ -45,8 +45,8 @@ type taskProcessor struct {
 }
 
 const (
-	// 任务处理者数量
-	processorNum int = 10
+	// 同步器数量
+	syncorNum int = 10
 	// 循环检查任务列表的间隔
 	checkInterval int = 5
 )
@@ -62,6 +62,11 @@ type SyncConf struct {
 	MongoConf local.MongoConf
 }
 
+// 云同步接口
+type CloudSyncInterface interface {
+	Sync(task chan metadata.CloudSyncTask) error
+}
+
 // 处理云资源同步任务
 func CloudSync(ctx context.Context, conf *SyncConf) error {
 	t := &taskProcessor{
@@ -71,7 +76,7 @@ func CloudSync(ctx context.Context, conf *SyncConf) error {
 		addrport: conf.AddrPort,
 		hashring: consistent.New(),
 		tasklist: make(map[int64]bool),
-		taskChan: make(chan int64, 10),
+		taskChan: make(chan int64, 20),
 	}
 
 	var err error
@@ -81,12 +86,13 @@ func CloudSync(ctx context.Context, conf *SyncConf) error {
 		return err
 	}
 
-	// 监听任务进程节点
-	if err := t.WatchTaskNode(); err != nil {
-		return err
-	}
 	// 监听任务表事件
 	if err := t.WatchTaskTable(ctx); err != nil {
+		return err
+	}
+
+	// 监听服务进程节点
+	if err := t.WatchTaskNode(); err != nil {
 		return err
 	}
 
@@ -161,25 +167,36 @@ func (t *taskProcessor) TaskChanLoop() {
 
 // 同步云资源
 func (t *taskProcessor) SyncCloudResource() {
-	for i := 0; i < processorNum; i++ {
-		go func() {
-			for {
-				if taskid, ok := <-t.taskChan; ok {
-					task, err := t.getTaskDetail(taskid)
-					if err != nil {
-						blog.V(3).Infof("getTaskDetail err:%v", err)
-						continue
-					}
-					blog.V(3).Infof("processing taskid:%d, resource type:%s", taskid, task.ResourceType)
-					switch task.ResourceType {
-					case "host":
-						t.SyncCloudHost(task)
-					default:
-						blog.V(3).Infof("unknown resource type:%s, ignore it!", task.ResourceType)
-					}
+	hostChan := make(chan *metadata.CloudSyncTask, 10)
+	// 根据任务类型，将任务放入不同的任务channel
+	go func() {
+		for {
+			if taskid, ok := <-t.taskChan; ok {
+				task, err := t.getTaskDetail(taskid)
+				if err != nil {
+					blog.V(3).Infof("getTaskDetail err:%v", err)
+					continue
+				}
+				blog.V(3).Infof("processing taskid:%d, resource type:%s", taskid, task.ResourceType)
+				switch task.ResourceType {
+				case "host":
+					hostChan <- task
+				default:
+					blog.V(3).Infof("unknown resource type:%s, ignore it!", task.ResourceType)
 				}
 			}
-		}()
+		}
+	}()
+
+	// 云主机同步器处理同步任务
+	for i := 0; i < syncorNum; i++ {
+		syncor := NewHostSyncor(t.logics, t.db)
+		go func(syncor *HostSyncor) {
+			for {
+				task := <- hostChan
+				syncor.Sync(task)
+			}
+		}(syncor)
 	}
 }
 
@@ -199,7 +216,7 @@ func (t *taskProcessor) getTasksFromTable() ([]int64, error) {
 	return taskids, nil
 }
 
-// 根据任务节点设置哈希环
+// 根据服务节点设置哈希环
 func (t *taskProcessor) setHashring(serversAddrs []string) {
 	// 清空哈希环
 	t.hashring.Set([]string{})
@@ -272,36 +289,4 @@ func (t *taskProcessor) getTaskDetail(taskid int64) (*metadata.CloudSyncTask, er
 		return result[0], nil
 	}
 	return nil, nil
-}
-
-// 根据账号id获取账号详情
-func (t *taskProcessor) getAccountDetail(accountID int64) (*metadata.CloudAccount, error) {
-	cond := mapstr.MapStr{common.BKCloudAccountID: accountID}
-	result := make([]*metadata.CloudAccount, 0)
-	err := t.db.Table(common.BKTableNameCloudAccount).Find(cond).All(context.Background(), &result)
-	if err != nil {
-		blog.Errorf("getAccountDetail err:%v", err.Error())
-		return nil, err
-	}
-	if len(result) > 0 {
-		return result[0], nil
-	}
-	return nil, nil
-}
-
-// 更新任务同步状态
-func (t *taskProcessor) updateTaskState(taskid int64, status string) error {
-	cond := mapstr.MapStr{common.BKCloudSyncTaskID: taskid}
-	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
-	if status == metadata.CloudSyncSuccess || status == metadata.CloudSyncFail {
-
-		option.Set(common.BKCloudLastSyncTime, time.Now().Format("2006-01-02 15:04:05"))
-	}
-	if err := t.db.Table(common.BKTableNameCloudSyncTask).Update(context.Background(), cond, option); err != nil {
-		if err != nil {
-			blog.Errorf("updateTaskState err:%v", err.Error())
-			return err
-		}
-	}
-	return nil
 }

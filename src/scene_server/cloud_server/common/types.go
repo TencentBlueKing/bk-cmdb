@@ -16,13 +16,6 @@ import (
 	"errors"
 )
 
-// 云厂商账户配置
-type AccountConf struct {
-	VendorName string `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
-	SecretID   string `json:"bk_secret_id" bson:"bk_secret_id"`
-	SecretKey  string `json:"bk_secret_key" bson:"bk_secret_key"`
-}
-
 // 云厂商接口请求选项
 type RequestOpt struct {
 	// 请求过滤条件

@@ -23,13 +23,18 @@ type CloudAccount struct {
 	SecretID    string `json:"bk_secret_id" bson:"bk_secret_id"`
 	SecretKey   string `json:"bk_secret_key" bson:"bk_secret_key"`
 	Description string `json:"bk_description" bson:"bk_description"`
+	OwnerID     string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator     string `json:"bk_creator" bson:"bk_creator"`
+	LastEditor  string `json:"bk_last_editor" bson:"bk_last_editor"`
+	CreateTime  Time   `json:"create_time" bson:"create_time"`
+	LastTime    Time   `json:"last_time" bson:"last_time"`
+}
+
+// 带有额外信息的云账户
+type CloudAccountWithExtraInfo struct {
+	CloudAccount `json:",inline"`
 	// 是否能删除账户，只有该账户下不存在同步任务了，才能删除，此时才能为true，否则为false
-	CanDeleteAccount bool   `json:"bk_can_delete_account" bson:"bk_can_delete_account"`
-	OwnerID          string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Creator          string `json:"bk_creator" bson:"bk_creator"`
-	LastEditor       string `json:"bk_last_editor" bson:"bk_last_editor"`
-	CreateTime       Time   `json:"create_time" bson:"create_time"`
-	LastTime         Time   `json:"last_time" bson:"last_time"`
+	CanDeleteAccount bool `json:"bk_can_delete_account" bson:"bk_can_delete_account"`
 }
 
 // 云厂商
@@ -46,6 +51,13 @@ const (
 )
 
 var SupportedCloudVendors = []string{"aws", "tencent_cloud"}
+
+// 云厂商账户配置
+type AccountConf struct {
+	VendorName string `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
+	SecretID   string `json:"bk_secret_id" bson:"bk_secret_id"`
+	SecretKey  string `json:"bk_secret_key" bson:"bk_secret_key"`
+}
 
 type SearchCloudOption struct {
 	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
@@ -83,8 +95,8 @@ type MultipleSyncRegion struct {
 }
 
 type MultipleCloudAccount struct {
-	Count int64          `json:"count"`
-	Info  []CloudAccount `json:"info"`
+	Count int64                       `json:"count"`
+	Info  []CloudAccountWithExtraInfo `json:"info"`
 }
 
 type CloudAccountVerify struct {
@@ -121,7 +133,7 @@ type CloudSyncTask struct {
 	SyncStatus        string        `json:"bk_sync_status" bson:"bk_sync_status"`
 	OwnerID           string        `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	StatusDescription string        `json:"bk_status_description" bson:"bk_status_description"`
-	LastSyncTime      string        `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
+	LastSyncTime      Time          `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
 	SyncAll           bool          `json:"bk_sync_all" bson:"bk_sync_all"`
 	SyncAllDir        int64         `json:"bk_sync_all_dir" bson:"bk_sync_all_dir"`
 	SyncVpcs          []VpcSyncInfo `json:"bk_sync_vpcs" bson:"bk_sync_vpcs"`

@@ -35,7 +35,7 @@ import (
 func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	rid := srvData.rid
-	input := new(metadata.CloudAreaSearchParam)
+	input := new(metadata.SearchCloudOption)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); nil != err {
 		blog.Errorf("FindManyCloudArea , but decode body failed, err: %s,rid:%s", err.Error(), rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
