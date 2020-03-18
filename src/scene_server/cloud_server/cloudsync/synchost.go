@@ -20,6 +20,7 @@ type HostSyncor struct{
 	db        dal.DB
 }
 
+// 创建云主机同步器
 func NewHostSyncor(logics *logics.Logics, db dal.DB) *HostSyncor {
 	return &HostSyncor{logics, db}
 }
@@ -28,14 +29,14 @@ func NewHostSyncor(logics *logics.Logics, db dal.DB) *HostSyncor {
 func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	startTime := time.Now()
 	// 根据账号id获取账号详情
-	account, err := h.getAccountDetail(task.AccountID)
+	accountConf, err := h.logics.GetCloudAccountConf(task.AccountID)
 	if err != nil {
-		blog.Errorf("getAccountDetail err, taskid:%d, err:%s", task.TaskID, err.Error())
+		blog.Errorf("GetCloudAccountConf err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
 	}
 
 	// 根据任务详情和账号信息获取要同步的云主机资源
-	hostResource, err := h.getCloudHostResource(task, account)
+	hostResource, err := h.getCloudHostResource(task, accountConf)
 	if err != nil {
 		blog.Errorf("getCloudHostResource err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
@@ -48,7 +49,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	blog.V(4).Infof("taskid:%d, vpc count:%d", task.TaskID, len(hostResource.HostResource))
 
 	// 查询vpc对应的云区域，没有则创建,并更新云主机资源信息里的云区域id
-	h.addCLoudId(account, hostResource)
+	h.addCLoudId(accountConf, hostResource)
 	if err != nil {
 		blog.Errorf("addCLoudId err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
@@ -108,13 +109,12 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 }
 
 // 根据任务详情和账号信息获取要同步的云主机资源
-func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask, account *metadata.CloudAccount) (*metadata.CloudHostResource, error) {
-	conf := metadata.AccountConf{account.CloudVendor, account.SecretID, account.SecretKey}
-	return h.logics.GetCloudHostResource(conf, task.SyncVpcs)
+func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask, accountConf *metadata.CloudAccountConf) (*metadata.CloudHostResource, error) {
+	return h.logics.GetCloudHostResource(*accountConf, task.SyncVpcs)
 }
 
 // 查询vpc对应的云区域，没有则创建,并更新云主机资源信息里的云区域id
-func (h *HostSyncor) addCLoudId(account *metadata.CloudAccount, hostResource *metadata.CloudHostResource) (*metadata.CloudHostResource, error) {
+func (h *HostSyncor) addCLoudId(accountConf *metadata.CloudAccountConf, hostResource *metadata.CloudHostResource) (*metadata.CloudHostResource, error) {
 	for _, hostRes := range hostResource.HostResource {
 		cloudID, err := h.getCloudId(hostRes.Vpc.VpcID)
 		if err != nil {
@@ -122,7 +122,7 @@ func (h *HostSyncor) addCLoudId(account *metadata.CloudAccount, hostResource *me
 		}
 		// 没有则创建
 		if cloudID == 0 {
-			cloudArea, err := h.createCloudArea(hostRes.Vpc, account)
+			cloudArea, err := h.createCloudArea(hostRes.Vpc, accountConf)
 			if err != nil {
 				continue
 			}
@@ -262,7 +262,7 @@ func (h *HostSyncor) getCloudId(vpcID string) (int64, error) {
 }
 
 // 创建vpc对应的云区域
-func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, account *metadata.CloudAccount) (*metadata.CloudArea, error) {
+func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *metadata.CloudAccountConf) (*metadata.CloudArea, error) {
 	id, err := h.db.NextSequence(context.Background(), common.BKTableNameBasePlat)
 	if nil != err {
 		blog.Errorf("createCloudArea failed, generate id failed, err: %s", err.Error())
@@ -271,14 +271,14 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, account *metadat
 	ts := metadata.Now()
 	cloudArea := metadata.CloudArea{
 		CloudID:     int64(id),
-		CloudName:   fmt.Sprintf("%d_%s", account.AccountID, vpc.VpcID),
+		CloudName:   fmt.Sprintf("%d_%s", accountConf.AccountID, vpc.VpcID),
 		Status:      1,
-		CloudVendor: account.CloudVendor,
+		CloudVendor: accountConf.VendorName,
 		OwnerID:     fmt.Sprintf("%d", common.BKDefaultSupplierID),
 		VpcID:       vpc.VpcID,
 		VpcName:     vpc.VpcName,
 		Region:      vpc.Region,
-		AccountID:   account.AccountID,
+		AccountID:   accountConf.AccountID,
 		Creator:     "cc_system",
 		CreateTime:  ts,
 		LastEditor:  "cc_system",
@@ -398,34 +398,17 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 	return nil, nil
 }
 
-// 根据账号id获取账号详情
-func (h *HostSyncor) getAccountDetail(accountID int64) (*metadata.CloudAccount, error) {
-	cond := mapstr.MapStr{common.BKCloudAccountID: accountID}
-	result := make([]*metadata.CloudAccount, 0)
-	err := h.db.Table(common.BKTableNameCloudAccount).Find(cond).All(context.Background(), &result)
-	if err != nil {
-		blog.Errorf("getAccountDetail err:%v", err.Error())
-		return nil, err
-	}
-	if len(result) > 0 {
-		return result[0], nil
-	}
-	return nil, nil
-}
-
 // 更新任务同步状态
 func (h *HostSyncor) updateTaskState(taskid int64, status string) error {
-	cond := mapstr.MapStr{common.BKCloudSyncTaskID: taskid}
 	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
 	if status == metadata.CloudSyncSuccess || status == metadata.CloudSyncFail {
-
 		option.Set(common.BKCloudLastSyncTime, metadata.Now())
 	}
-	if err := h.db.Table(common.BKTableNameCloudSyncTask).Update(context.Background(), cond, option); err != nil {
-		if err != nil {
-			blog.Errorf("updateTaskState err:%v", err.Error())
-			return err
-		}
+
+	if err := h.logics.CoreAPI.CoreService().Cloud().UpdateSyncTask(context.Background(), header, taskid, option); err != nil {
+		blog.Errorf("UpdateSyncTask failed, taskid: %v, err: %s", taskid, err.Error())
+		return err
 	}
+
 	return nil
 }

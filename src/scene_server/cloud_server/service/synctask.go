@@ -37,7 +37,7 @@ func (s *Service) SearchVpc(ctx *rest.Contexts) {
 		return
 	}
 
-	accountConf, err := s.Logics.GetAccountConf(accountID)
+	accountConf, err := s.Logics.GetCloudAccountConf(accountID)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
@@ -238,7 +238,7 @@ func (s *Service) SearchSyncRegion(ctx *rest.Contexts) {
 		return
 	}
 
-	accountConf, err := s.Logics.GetAccountConf(option.AccountID)
+	accountConf, err := s.Logics.GetCloudAccountConf(option.AccountID)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return

@@ -53,7 +53,8 @@ const (
 var SupportedCloudVendors = []string{"aws", "tencent_cloud"}
 
 // 云厂商账户配置
-type AccountConf struct {
+type CloudAccountConf struct {
+	AccountID  int64  `json:"bk_account_id" bson:"bk_account_id"`
 	VendorName string `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
 	SecretID   string `json:"bk_secret_id" bson:"bk_secret_id"`
 	SecretKey  string `json:"bk_secret_key" bson:"bk_secret_key"`
@@ -92,6 +93,11 @@ type MultipleSyncHistory struct {
 type MultipleCloudAccount struct {
 	Count int64                       `json:"count"`
 	Info  []CloudAccountWithExtraInfo `json:"info"`
+}
+
+type MultipleCloudAccountConf struct {
+	Count int64              `json:"count"`
+	Info  []CloudAccountConf `json:"info"`
 }
 
 type CloudAccountVerify struct {

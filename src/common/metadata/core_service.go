@@ -528,6 +528,11 @@ type MultipleCloudAccountResult struct {
 	Data     MultipleCloudAccount `json:"data"`
 }
 
+type MultipleCloudAccountConfResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleCloudAccountConf `json:"data"`
+}
+
 type CreateSyncTaskResult struct {
 	BaseResp `json:",inline"`
 	Data     CloudSyncTask `json:"data"`

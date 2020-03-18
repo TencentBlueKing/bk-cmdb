@@ -23,7 +23,7 @@ import (
 var tcTestClient VendorClient
 
 func init() {
-	conf := metadata.AccountConf{
+	conf := metadata.CloudAccountConf{
 		metadata.TencentCloud,
 		os.Getenv("TENCENTCLOUD_SECRET_ID"),
 		os.Getenv("TENCENTCLOUD_SECRET_KEY"),

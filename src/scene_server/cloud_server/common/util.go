@@ -13,7 +13,10 @@
 package common
 
 import (
+	"net/http"
 	"strings"
+
+	"configcenter/src/common"
 )
 
 // 将不同云厂商的实例状态转为统一的实例状态
@@ -31,4 +34,14 @@ func CovertInstState(instState string) string {
 		return "unknow"
 	}
 	return instState
+}
+
+// 获取api调用的header
+func GetHeader() http.Header {
+	header := make(http.Header)
+	header.Add(common.BKHTTPOwnerID, "0")
+	header.Add(common.BKSupplierIDField, "0")
+	header.Add(common.BKHTTPHeaderUser, "admin")
+	header.Add("Content-Type", "application/json")
+	return header
 }

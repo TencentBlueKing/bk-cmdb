@@ -107,6 +107,28 @@ func (c *cloud) DeleteAccount(ctx context.Context, h http.Header, accountID int6
 	return nil
 }
 
+func (c *cloud) SearchAccountConf(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf, errors.CCErrorCoder) {
+	ret := new(metadata.MultipleCloudAccountConfResult)
+	subPath := "/findmany/cloud/accountconf"
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
 func (c *cloud) CreateSyncTask(ctx context.Context, h http.Header, account *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder) {
 	ret := new(metadata.CreateSyncTaskResult)
 	subPath := "/create/cloud/sync/task"

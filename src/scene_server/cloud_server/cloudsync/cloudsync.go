@@ -20,7 +20,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/zkclient"
 	"configcenter/src/scene_server/cloud_server/logics"
@@ -28,6 +27,7 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
 	stypes "configcenter/src/storage/stream/types"
+	ccom "configcenter/src/scene_server/cloud_server/common"
 
 	"stathat.com/c/consistent"
 )
@@ -39,8 +39,8 @@ type taskProcessor struct {
 	addrport  string
 	reflector reflector.Interface
 	hashring  *consistent.Consistent
-	tasklist  map[int64]bool
-	taskChan  chan int64
+	tasklist  map[int64]*metadata.CloudSyncTask
+	taskChan  chan *metadata.CloudSyncTask
 	mu        sync.RWMutex
 }
 
@@ -51,9 +51,11 @@ const (
 	checkInterval int = 5
 )
 
-// mongo server对于满足change stream查询的最大等待时间
-var maxAwaitTime = time.Second * 10
-
+var(
+	// mongo server对于满足change stream查询的最大等待时间
+	maxAwaitTime = time.Second * 10
+	header = ccom.GetHeader()
+)
 type SyncConf struct {
 	ZKClient  *zkclient.ZkClient
 	DB        dal.DB
@@ -64,7 +66,7 @@ type SyncConf struct {
 
 // 云同步接口
 type CloudSyncInterface interface {
-	Sync(task chan metadata.CloudSyncTask) error
+	Sync(task chan *metadata.CloudSyncTask) error
 }
 
 // 处理云资源同步任务
@@ -75,8 +77,8 @@ func CloudSync(ctx context.Context, conf *SyncConf) error {
 		logics:   conf.Logics,
 		addrport: conf.AddrPort,
 		hashring: consistent.New(),
-		tasklist: make(map[int64]bool),
-		taskChan: make(chan int64, 20),
+		tasklist: make(map[int64]*metadata.CloudSyncTask),
+		taskChan: make(chan *metadata.CloudSyncTask, 20),
 	}
 
 	var err error
@@ -137,18 +139,19 @@ func (t *taskProcessor) WatchTaskTable(ctx context.Context) error {
 // 表记录新增处理逻辑
 func (t *taskProcessor) changeOnAdd(event *stypes.Event) {
 	blog.V(4).Infof("OnAdd event, taskid:%d", event.Document.(*metadata.CloudSyncTask).TaskID)
-	t.addTask(event.Document.(*metadata.CloudSyncTask).TaskID)
+	t.addTask(event.Document.(*metadata.CloudSyncTask))
 }
 
 // 表记录更新处理逻辑
 func (t *taskProcessor) changeOnUpdate(event *stypes.Event) {
 	blog.V(4).Infof("OnUpdate event, taskid:%d", event.Document.(*metadata.CloudSyncTask).TaskID)
-	t.addTask(event.Document.(*metadata.CloudSyncTask).TaskID)
+	t.addTask(event.Document.(*metadata.CloudSyncTask))
 }
 
 // 表记录删除处理逻辑
 func (t *taskProcessor) changeOnDelete(event *stypes.Event) {
 	blog.V(4).Info("OnDelete event")
+	// 由于不知道删除的是哪一个任务，故进行任务的重新分配
 	t.dispatchTasks()
 }
 
@@ -156,9 +159,9 @@ func (t *taskProcessor) changeOnDelete(event *stypes.Event) {
 func (t *taskProcessor) TaskChanLoop() {
 	go func() {
 		for {
-			taskids := t.getTaskList()
-			for _, taskid := range taskids {
-				t.taskChan <- taskid
+			tasks := t.getTaskList()
+			for i, _ := range tasks {
+				t.taskChan <- tasks[i]
 			}
 			time.Sleep(time.Second * time.Duration(checkInterval))
 		}
@@ -171,13 +174,8 @@ func (t *taskProcessor) SyncCloudResource() {
 	// 根据任务类型，将任务放入不同的任务channel
 	go func() {
 		for {
-			if taskid, ok := <-t.taskChan; ok {
-				task, err := t.getTaskDetail(taskid)
-				if err != nil {
-					blog.V(3).Infof("getTaskDetail err:%v", err)
-					continue
-				}
-				blog.V(3).Infof("processing taskid:%d, resource type:%s", taskid, task.ResourceType)
+			if task, ok := <-t.taskChan; ok {
+				blog.V(3).Infof("processing taskid:%d, resource type:%s", task.TaskID, task.ResourceType)
 				switch task.ResourceType {
 				case "host":
 					hostChan <- task
@@ -201,19 +199,21 @@ func (t *taskProcessor) SyncCloudResource() {
 }
 
 // 获取资源同步任务表的所有任务
-func (t *taskProcessor) getTasksFromTable() ([]int64, error) {
-	result := make([]*metadata.CloudSyncTask, 0)
-	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(nil).All(context.Background(), &result)
+func (t *taskProcessor) getTasksFromTable() ([]*metadata.CloudSyncTask, error) {
+	option := &metadata.SearchCloudOption{Page:metadata.BasePage{
+		Limit: common.BKNoLimit,
+	}}
+	result, err := t.logics.CoreAPI.CoreService().Cloud().SearchSyncTask(context.Background(), header, option)
 	if err != nil {
 		blog.Errorf("getTasksFromTable failed, err: %v", err)
 		return nil, err
 	}
-	taskids := []int64{}
-	for _, v := range result {
-		taskids = append(taskids, v.TaskID)
+	res := make([]*metadata.CloudSyncTask, 0)
+	for i, _ := range result.Info {
+		res = append(res, &result.Info[i])
 	}
-	blog.V(3).Infof("getTasksFromTable len(taskids):%d", len(taskids))
-	return taskids, nil
+	blog.V(3).Infof("getTasksFromTable len(tasks):%d", len(res))
+	return res, nil
 }
 
 // 根据服务节点设置哈希环
@@ -229,37 +229,53 @@ func (t *taskProcessor) setHashring(serversAddrs []string) {
 // 分配任务，清空任务列表后，将表中所有任务里属于自己的放入任务队列
 func (t *taskProcessor) dispatchTasks() error {
 	t.clearTaskList()
-	taskids, err := t.getTasksFromTable()
+	tasks, err := t.getTasksFromTable()
 	if err != nil {
 		blog.Errorf("getTasksFromTable err:%s", err.Error())
 		return err
 	}
-	for _, taskid := range taskids {
-		t.addTask(taskid)
+	for i, _ := range tasks {
+		t.addTask(tasks[i])
 	}
-	blog.V(3).Infof("finished dispatchTasks, tasklist:%#v", t.tasklist)
+	blog.V(3).Infof("dispatchTasks is done, taskids:%#v", t.getTaskids())
 	return nil
 }
 
 // 添加属于自己的任务到当前任务队列
-func (t *taskProcessor) addTask(taskid int64) error {
-	if node, err := t.hashring.Get(fmt.Sprintf("%d", taskid)); err != nil {
+func (t *taskProcessor) addTask(task *metadata.CloudSyncTask) error {
+	if node, err := t.hashring.Get(fmt.Sprintf("%d", task.TaskID)); err != nil {
 		blog.Errorf("hashring Get err:%s", err.Error())
 		return err
 	} else {
 		if node == t.addrport {
 			t.mu.Lock()
 			defer t.mu.Unlock()
-			if _, ok := t.tasklist[taskid]; !ok {
-				t.tasklist[taskid] = true
-			}
+			t.tasklist[task.TaskID] = task
 		}
 	}
 	return nil
 }
 
 // 获取任务列表的所有任务
-func (t *taskProcessor) getTaskList() []int64 {
+func (t *taskProcessor) getTaskList() []*metadata.CloudSyncTask {
+	tasks := []*metadata.CloudSyncTask{}
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	for taskid, _ := range t.tasklist {
+		tasks = append(tasks, t.tasklist[taskid])
+	}
+	return tasks
+}
+
+// 清空任务列表
+func (t *taskProcessor) clearTaskList() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.tasklist = map[int64]*metadata.CloudSyncTask{}
+}
+
+// 获取任务列表的所有任务id
+func (t *taskProcessor) getTaskids() []int64 {
 	taskids := []int64{}
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -267,26 +283,4 @@ func (t *taskProcessor) getTaskList() []int64 {
 		taskids = append(taskids, taskid)
 	}
 	return taskids
-}
-
-// 清空任务列表
-func (t *taskProcessor) clearTaskList() {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.tasklist = map[int64]bool{}
-}
-
-// 根据任务id获取任务详情
-func (t *taskProcessor) getTaskDetail(taskid int64) (*metadata.CloudSyncTask, error) {
-	cond := mapstr.MapStr{common.BKCloudSyncTaskID: taskid}
-	result := make([]*metadata.CloudSyncTask, 0)
-	err := t.db.Table(common.BKTableNameCloudSyncTask).Find(cond).All(context.Background(), &result)
-	if err != nil {
-		blog.Errorf("getTaskDetail err:%v", err.Error())
-		return nil, err
-	}
-	if len(result) > 0 {
-		return result[0], nil
-	}
-	return nil, nil
 }

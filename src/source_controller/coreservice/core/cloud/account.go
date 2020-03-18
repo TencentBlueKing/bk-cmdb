@@ -125,6 +125,27 @@ func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CC
 	return nil
 }
 
+// 查询云厂商账户配置
+func (c *cloudOperation) SearchAccountConf(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf, errors.CCErrorCoder) {
+	accountconfs := []metadata.CloudAccountConf{}
+	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
+	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
+		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &accountconfs)
+	if err != nil {
+		blog.ErrorJSON("SearchAccount failed, db insert failed, option: %s, err: %s, rid: %s", option, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// 账户总个数
+	count, err := c.countAccount(kit, option.Condition)
+	if err != nil {
+		blog.ErrorJSON("SearchAccount countAccount error %s, option: %s, rid: %s", err, option.Condition, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return &metadata.MultipleCloudAccountConf{Count: int64(count), Info: accountconfs}, nil
+}
+
 // 获取账户总个数
 func (c *cloudOperation) countAccount(kit *rest.Kit, cond mapstr.MapStr) (uint64, error) {
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)

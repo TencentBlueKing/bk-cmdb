@@ -94,3 +94,19 @@ func (s *coreService) DeleteAccount(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(nil)
 }
+
+// 查询云厂商账户配置
+func (s *coreService) SearchAccountConf(ctx *rest.Contexts) {
+	option := metadata.SearchCloudOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.core.CloudOperation().SearchAccountConf(ctx.Kit, &option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+}
