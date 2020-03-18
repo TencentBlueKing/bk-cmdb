@@ -11,7 +11,7 @@
                 :key="head.id"
                 :prop="head.id"
                 :label="head.name">
-                <template slot-scope="{ row }">{{row[head.id] | formatter(head.type)}}</template>
+                <template slot-scope="{ row }">{{row[head.id] | formatter(head.property)}}</template>
             </bk-table-column>
         </bk-table>
     </section>
@@ -29,40 +29,61 @@
         data () {
             return {
                 serviceCategory: '',
-                header: [{
-                    id: 'bk_func_name',
-                    name: this.$t('进程名称'),
-                    type: 'singlechar'
-                }, {
-                    id: 'bind_ip',
-                    name: this.$t('监听IP'),
-                    type: 'singlechar'
-                }, {
-                    id: 'port',
-                    name: this.$t('端口'),
-                    type: 'singlechar'
-                }, {
-                    id: 'work_path',
-                    name: this.$t('启动路径'),
-                    type: 'longchar'
-                }, {
-                    id: 'user',
-                    name: this.$t('启动用户'),
-                    type: 'singlechar'
-                }],
-                processes: []
+                processes: [],
+                properties: []
             }
         },
-        created () {
+        computed: {
+            header () {
+                const display = [
+                    'bk_func_name',
+                    'bk_process_name',
+                    'bk_start_param_regex',
+                    'bind_ip',
+                    'port',
+                    'protocol',
+                    'work_path',
+                    'user'
+                ]
+                const header = display.map(id => {
+                    const property = this.properties.find(property => property.bk_property_id === id) || {}
+                    return {
+                        id: property.bk_property_id,
+                        name: this.$tools.getHeaderPropertyName(property),
+                        property
+                    }
+                })
+                return header
+            }
+        },
+        async created () {
             setTimeout(() => {
                 this.$refs.table.doLayout()
             }, 0)
+            this.getProcessProperties()
             this.getTitle()
             this.getServiceProcesses()
         },
         methods: {
             close () {
                 this.visible = false
+            },
+            async getProcessProperties () {
+                try {
+                    const action = 'objectModelProperty/searchObjectAttribute'
+                    this.properties = await this.$store.dispatch(action, {
+                        params: {
+                            bk_obj_id: 'process',
+                            bk_supplier_account: this.$store.getters.supplierAccount
+                        },
+                        config: {
+                            requestId: 'get_service_process_properties',
+                            fromCache: true
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                }
             },
             async getServiceProcesses () {
                 try {
