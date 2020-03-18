@@ -48,7 +48,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	blog.V(4).Infof("taskid:%d, vpc count:%d", task.TaskID, len(hostResource.HostResource))
 
 	// 查询vpc对应的云区域，没有则创建,并更新云主机资源信息里的云区域id
-	h.addCLoudId(hostResource, account)
+	h.addCLoudId(account, hostResource)
 	if err != nil {
 		blog.Errorf("addCLoudId err, taskid:%d, err:%s", task.TaskID, err.Error())
 		return err
@@ -110,11 +110,11 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 // 根据任务详情和账号信息获取要同步的云主机资源
 func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask, account *metadata.CloudAccount) (*metadata.CloudHostResource, error) {
 	conf := metadata.AccountConf{account.CloudVendor, account.SecretID, account.SecretKey}
-	return h.logics.GetCloudHostResource(task.SyncVpcs, conf)
+	return h.logics.GetCloudHostResource(conf, task.SyncVpcs)
 }
 
 // 查询vpc对应的云区域，没有则创建,并更新云主机资源信息里的云区域id
-func (h *HostSyncor) addCLoudId(hostResource *metadata.CloudHostResource, account *metadata.CloudAccount) (*metadata.CloudHostResource, error) {
+func (h *HostSyncor) addCLoudId(account *metadata.CloudAccount, hostResource *metadata.CloudHostResource) (*metadata.CloudHostResource, error) {
 	for _, hostRes := range hostResource.HostResource {
 		cloudID, err := h.getCloudId(hostRes.Vpc.VpcID)
 		if err != nil {

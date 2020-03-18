@@ -89,11 +89,6 @@ type MultipleSyncHistory struct {
 	Info  []SyncHistory `json:"info"`
 }
 
-type MultipleSyncRegion struct {
-	Count int64        `json:"count"`
-	Info  []SyncRegion `json:"info"`
-}
-
 type MultipleCloudAccount struct {
 	Count int64                       `json:"count"`
 	Info  []CloudAccountWithExtraInfo `json:"info"`
@@ -159,11 +154,6 @@ type MultipleCloudSyncTask struct {
 type VpcHostCntResult struct {
 	Count int64         `json:"count"`
 	Info  []VpcSyncInfo `json:"info"`
-}
-
-type RegionsInfo struct {
-	Count     int64     `json:"count" bson:"count"`
-	RegionSet []*Region `json:"region_set" bson:"region_set"`
 }
 
 type Region struct {

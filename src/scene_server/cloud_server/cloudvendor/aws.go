@@ -33,7 +33,10 @@ type awsClient struct {
 	secretKey  string
 }
 
-const awsMaxPageSize int64 = 1000
+const (
+	awsMinPageSize int64 = 5
+	awsMaxPageSize int64 = 1000
+)
 
 var regionIdNameMap = map[string]string{
 	"us-east-1":      "美国东部（弗吉尼亚北部）",
@@ -66,7 +69,7 @@ func (c *awsClient) SetCredential(secretID, secretKey string) {
 // 获取地域列表
 // API文档：https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeRegions.html
 // 对于获取地域列表的请求，不让设置过滤条件和分页参数，直接获取所有地域
-func (c *awsClient) GetRegions(opt *ccom.RequestOpt) (*metadata.RegionsInfo, error) {
+func (c *awsClient) GetRegions(opt *ccom.RequestOpt) ([]*metadata.Region, error) {
 	sess, err := c.newSession("us-west-1")
 	if err != nil {
 		return nil, err
@@ -79,20 +82,19 @@ func (c *awsClient) GetRegions(opt *ccom.RequestOpt) (*metadata.RegionsInfo, err
 		return nil, err
 	}
 
-	regionsInfo := new(metadata.RegionsInfo)
+	regionSet := make([]*metadata.Region, 0)
 	for _, region := range resp.Regions {
-		regionsInfo.RegionSet = append(regionsInfo.RegionSet, &metadata.Region{
+		regionSet = append(regionSet, &metadata.Region{
 			RegionId:   *region.RegionName,
 			RegionName: regionIdNameMap[*region.RegionName],
 		})
 	}
-	regionsInfo.Count = int64(len(regionsInfo.RegionSet))
-	return regionsInfo, nil
+	return regionSet, nil
 }
 
 // 获取vpc列表
 // API文档：https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVpcs.html
-// 单个用户在单个地域下的vpc配额是5个，因此直接设置limit为最大值，一次性获取该地域所有vpc
+// 单个用户在单个地域下的vpc最大配额是5个，刚好为awsMinPageSize，因此直接设置limit为最大值，一次性获取该地域所有vpc
 func (c *awsClient) GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.VpcsInfo, error) {
 	sess, err := c.newSession(region)
 	if err != nil {
@@ -103,7 +105,7 @@ func (c *awsClient) GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.Vpcs
 	vpcsInfo := new(metadata.VpcsInfo)
 	loopCnt := 0
 	if opt == nil {
-		opt = &ccom.RequestOpt{}
+		opt = new(ccom.RequestOpt)
 	}
 	opt.Limit = ccom.Int64Ptr(ccom.MaxLimit)
 	input := c.newDescribeVpcsInput(opt)
@@ -140,38 +142,42 @@ func (c *awsClient) GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.Vpcs
 // API文档：https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
 func (c *awsClient) GetInstances(region string, opt *ccom.RequestOpt) (*metadata.InstancesInfo, error) {
 	instancesInfo := new(metadata.InstancesInfo)
-	instances, err := c.getInstances(region, opt)
+	instances, isAll, err := c.getInstances(region, opt)
 	if err != nil {
 		return nil, err
 	}
 	instancesInfo.InstanceSet = instances
 
 	totalCnt := int64(len(instances))
-	// limit没有设置为MaxLimit，则去获取实例总数
-	if opt == nil || opt.Limit == nil || *opt.Limit != ccom.MaxLimit {
+	// 如果查到的不是全量，则去获取实例总数
+	if !isAll {
 		totalCnt, err = c.GetInstancesTotalCnt(region, opt)
+		if err != nil {
+			return nil, err
+		}
 	}
 	instancesInfo.Count = totalCnt
 
 	return instancesInfo, nil
 }
 
-// 获取实例列表，不包含实例总个数
-func (c *awsClient) getInstances(region string, opt *ccom.RequestOpt) ([]*metadata.Instance, error) {
+// 获取实例列表以及查到的是否为全量的bool值，不包含实例总个数
+func (c *awsClient) getInstances(region string, opt *ccom.RequestOpt) ([]*metadata.Instance, bool, error) {
 	sess, err := c.newSession(region)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	ec2Svc := ec2.New(sess)
 
 	instances := make([]*metadata.Instance, 0)
 	loopCnt := 0
+	var nextToken *string
 	input := c.newDescribeInstancesInput(opt)
 	// 在limit小于全部数据量的情况下，获取limit数量的数据，否则获取全部数据
 	for {
 		output, err := ec2Svc.DescribeInstances(input)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		for _, reservation := range output.Reservations {
 			for _, inst := range reservation.Instances {
@@ -182,10 +188,10 @@ func (c *awsClient) getInstances(region string, opt *ccom.RequestOpt) ([]*metada
 					PublicIp:      *inst.PublicIpAddress,
 					InstanceState: ccom.CovertInstState(*inst.State.Name),
 					VpcId:         *inst.VpcId,
-					OsName:        *inst.Platform,
 				})
 			}
 		}
+		nextToken = output.NextToken
 		// 在获取到limit数量或者全部数据的情况下，退出循环
 		if opt == nil || opt.Limit == nil || *opt.Limit == int64(len(instances)) || output.NextToken == nil || *output.NextToken == "" {
 			break
@@ -195,10 +201,14 @@ func (c *awsClient) getInstances(region string, opt *ccom.RequestOpt) ([]*metada
 		loopCnt++
 		if loopCnt > ccom.MaxLoopCnt {
 			blog.Errorf("DescribeVpcs loopCnt:%d, bigger than MaxLoopCnt, len(instances):%d", loopCnt, instances)
-			return nil, ccom.ErrorLoopCnt
+			return nil, false, ccom.ErrorLoopCnt
 		}
 	}
-	return instances, nil
+	isAll := false
+	if nextToken == nil || *nextToken == "" {
+		isAll = true
+	}
+	return instances, isAll, nil
 }
 
 // 获取实例总个数
@@ -207,7 +217,7 @@ func (c *awsClient) GetInstancesTotalCnt(region string, opt *ccom.RequestOpt) (i
 		opt = &ccom.RequestOpt{}
 	}
 	opt.Limit = ccom.Int64Ptr(ccom.MaxLimit)
-	instances, err := c.getInstances(region, opt)
+	instances, _, err := c.getInstances(region, opt)
 	if err != nil {
 		return int64(0), err
 	}
@@ -256,8 +266,14 @@ func (c *awsClient) newDescribeVpcsInput(opt *ccom.RequestOpt) *ec2.DescribeVpcs
 		}
 	}
 
-	// 按API要求，设置的MaxResults的取值范围为5～1000，不在该范围内的值会报错，这里设为最大值
-	input.MaxResults = ccom.Int64Ptr(awsMaxPageSize)
+	// 按API要求，设置的MaxResults的取值范围为5～1000，不在该范围内的值会报错，不在该范围的设为最大值
+	if opt.Limit != nil {
+		limit := *opt.Limit
+		if  *opt.Limit < awsMinPageSize || *opt.Limit > awsMaxPageSize {
+			limit = awsMaxPageSize
+		}
+		input.MaxResults = &limit
+	}
 	input.NextToken = opt.NextToken
 	return input
 }
@@ -276,8 +292,14 @@ func (c *awsClient) newDescribeInstancesInput(opt *ccom.RequestOpt) *ec2.Describ
 		}
 	}
 
-	// 按API要求，设置的MaxResults的取值范围为5～1000，不在该范围内的值会报错，这里设为最大值
-	input.MaxResults = ccom.Int64Ptr(awsMaxPageSize)
+	// 按API要求，设置的MaxResults的取值范围为5～1000，不在该范围内的值会报错，不在该范围的设为最大值
+	if opt.Limit != nil {
+		limit := *opt.Limit
+		if  *opt.Limit < awsMinPageSize || *opt.Limit > awsMaxPageSize {
+			limit = awsMaxPageSize
+		}
+		input.MaxResults = &limit
+	}
 	input.NextToken = opt.NextToken
 	return input
 }

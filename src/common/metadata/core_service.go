@@ -545,5 +545,5 @@ type MultipleSyncHistoryResult struct {
 
 type MultipleSyncRegionResult struct {
 	BaseResp `json:",inline"`
-	Data     MultipleSyncRegion `json:"data"`
+	Data     []*Region `json:"data"`
 }

@@ -37,12 +37,11 @@ func init() {
 
 func TestAWSGetRegions(t *testing.T) {
 	opt := &ccom.RequestOpt{}
-	regionsInfo, err := awsTestClient.GetRegions(opt)
+	regionSet, err := awsTestClient.GetRegions(opt)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("regions count:%#v\n", regionsInfo.Count)
-	for i, region := range regionsInfo.RegionSet {
+	for i, region := range regionSet {
 		t.Logf("i:%d, region:%#v\n", i, *region)
 	}
 }
@@ -71,6 +70,16 @@ func TestAWSGetInstances(t *testing.T) {
 	for i, instance := range instancesInfo.InstanceSet {
 		t.Logf("i:%d, instance:%#v\n", i, *instance)
 	}
+}
+
+func TestAWSGetInstancesTotalCnt(t *testing.T) {
+	opt := &ccom.RequestOpt{}
+	region := "us-west-1"
+	count, err := awsTestClient.GetInstancesTotalCnt(region, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("instances count:%#v\n", count)
 }
 
 func TestAWSRequestOpt(t *testing.T) {

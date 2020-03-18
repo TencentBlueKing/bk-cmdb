@@ -37,12 +37,11 @@ func init() {
 
 func TestTCGetRegions(t *testing.T) {
 	opt := &ccom.RequestOpt{}
-	regionsInfo, err := tcTestClient.GetRegions(opt)
+	regionSet, err := tcTestClient.GetRegions(opt)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("regions count:%#v\n", regionsInfo.Count)
-	for i, region := range regionsInfo.RegionSet {
+	for i, region := range regionSet {
 		t.Logf("i:%d, vpc:%#v\n",i, *region)
 	}
 }
@@ -62,7 +61,7 @@ func TestTCGetVpcs(t *testing.T) {
 
 func TestTCGetInstances(t *testing.T) {
 	opt := &ccom.RequestOpt{}
-	region := "ap-guangzhou"
+	region := "ap-hongkong"
 	instancesInfo, err := tcTestClient.GetInstances(region, opt)
 	if err != nil {
 		t.Fatal(err)
@@ -73,11 +72,21 @@ func TestTCGetInstances(t *testing.T) {
 	}
 }
 
+func TestTCGetInstancesTotalCnt(t *testing.T) {
+	opt := &ccom.RequestOpt{}
+	region := "ap-hongkong"
+	count, err := tcTestClient.GetInstancesTotalCnt(region, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("instances count:%#v\n", count)
+}
+
 func TestTCRequestOpt(t *testing.T) {
 	//opt := &ccom.RequestOpt{Limit: ccom.Int64Ptr(int64(1))}
 	opt := &ccom.RequestOpt{
-		Limit: ccom.Int64Ptr(int64(1)),
-		Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-name"), ccom.StringPtrs([]string{"game"})}},
+		Limit: ccom.Int64Ptr(int64(10)),
+		Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-name"), ccom.StringPtrs([]string{"Default"})}},
 	}
 	region := "ap-guangzhou"
 	vpcsInfo, err := tcTestClient.GetVpcs(region, opt)

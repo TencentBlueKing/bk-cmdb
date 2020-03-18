@@ -36,7 +36,10 @@ type tcClient struct {
 	secretKey  string
 }
 
-const tcMaxPageSize int64 = 100
+const (
+	tcMinPageSize int64 = 1
+	tcMaxPageSize int64 = 100
+)
 
 // 设置账号密码
 func (c *tcClient) SetCredential(secretID, secretKey string) {
@@ -46,7 +49,7 @@ func (c *tcClient) SetCredential(secretID, secretKey string) {
 
 // 获取地域列表
 // API文档：https://cloud.tencent.com/document/api/213/15708
-func (c *tcClient) GetRegions(opt *ccom.RequestOpt) (*metadata.RegionsInfo, error) {
+func (c *tcClient) GetRegions(opt *ccom.RequestOpt) ([]*metadata.Region, error) {
 	credential := c.newCredential(c.secretID, c.secretKey)
 	client, err := cvm.NewClient(credential, regions.Guangzhou, profile.NewClientProfile())
 	if err != nil {
@@ -59,17 +62,16 @@ func (c *tcClient) GetRegions(opt *ccom.RequestOpt) (*metadata.RegionsInfo, erro
 		return nil, err
 	}
 
-	regionsInfo := new(metadata.RegionsInfo)
+	regionSet := make([]*metadata.Region, 0)
 	for _, region := range resp.Response.RegionSet {
-		regionsInfo.RegionSet = append(regionsInfo.RegionSet, &metadata.Region{
+		regionSet = append(regionSet, &metadata.Region{
 			RegionId:    *region.Region,
 			RegionName:  *region.RegionName,
 			RegionState: *region.RegionState,
 		})
 	}
-	regionsInfo.Count = int64(*resp.Response.TotalCount)
 
-	return regionsInfo, nil
+	return regionSet, nil
 }
 
 // 获取vpc列表
@@ -166,6 +168,17 @@ func (c *tcClient) GetInstances(region string, opt *ccom.RequestOpt) (*metadata.
 	return instancesInfo, nil
 }
 
+// 获取实例总个数
+func (c *tcClient) GetInstancesTotalCnt(region string, opt *ccom.RequestOpt) (int64, error) {
+	// 直接将limit设为最小值，能最快地获取到实例总个数
+	opt.Limit = ccom.Int64Ptr(tcMinPageSize)
+	instsInfo, err := c.GetInstances(region, opt)
+	if err != nil {
+		return 0, err
+	}
+	return instsInfo.Count, nil
+}
+
 func (c *tcClient) newCredential(secretID, secretKey string) *tcCommon.Credential {
 	return tcCommon.NewCredential(secretID, secretKey)
 }
@@ -191,7 +204,7 @@ func (c *tcClient) NewDescribeVpcsRequest(opt *ccom.RequestOpt) *tcVpc.DescribeV
 	}
 	if opt.Limit != nil {
 		limit := fmt.Sprintf("%d", *opt.Limit)
-		if *opt.Limit > tcMaxPageSize {
+		if *opt.Limit < tcMinPageSize || *opt.Limit > tcMaxPageSize {
 			limit = fmt.Sprintf("%d", tcMaxPageSize)
 		}
 		request.Limit = &limit
@@ -219,7 +232,7 @@ func (c *tcClient) NewDescribeInstancesRequest(opt *ccom.RequestOpt) *cvm.Descri
 	}
 	if opt.Limit != nil {
 		limit := *opt.Limit
-		if *opt.Limit > tcMaxPageSize {
+		if  *opt.Limit < tcMinPageSize || *opt.Limit > tcMaxPageSize {
 			limit = tcMaxPageSize
 		}
 		request.Limit = &limit

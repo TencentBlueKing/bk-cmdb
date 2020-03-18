@@ -42,7 +42,7 @@ func (s *Service) SearchVpc(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
 	}
-	result, err := s.Logics.GetVpcHostCnt(vpcOpt.Region, *accountConf)
+	result, err := s.Logics.GetVpcHostCnt(*accountConf, vpcOpt.Region)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed))
 		return
@@ -244,7 +244,7 @@ func (s *Service) SearchSyncRegion(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.Logics.GetRegionsInfo(option.WithHostCount, *accountConf)
+	result, err := s.Logics.GetRegionsInfo(*accountConf, option.WithHostCount)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed))
 		return
