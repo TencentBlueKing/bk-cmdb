@@ -28,8 +28,8 @@ type CloudAccount struct {
 	OwnerID          string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Creator          string `json:"bk_creator" bson:"bk_creator"`
 	LastEditor       string `json:"bk_last_editor" bson:"bk_last_editor"`
-	CreateTime       Time `json:"create_time" bson:"create_time"`
-	LastTime         Time `json:"last_time" bson:"last_time"`
+	CreateTime       Time   `json:"create_time" bson:"create_time"`
+	LastTime         Time   `json:"last_time" bson:"last_time"`
 }
 
 // 云厂商
@@ -118,7 +118,7 @@ type CloudSyncTask struct {
 	ResourceType      string        `json:"bk_resource_type" bson:"bk_resource_type"`
 	AccountID         int64         `json:"bk_account_id" bson:"bk_account_id"`
 	CloudVendor       string        `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
-	SyncStatus        string           `json:"bk_sync_status" bson:"bk_sync_status"`
+	SyncStatus        string        `json:"bk_sync_status" bson:"bk_sync_status"`
 	OwnerID           string        `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	StatusDescription string        `json:"bk_status_description" bson:"bk_status_description"`
 	LastSyncTime      string        `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
@@ -126,9 +126,9 @@ type CloudSyncTask struct {
 	SyncAllDir        int64         `json:"bk_sync_all_dir" bson:"bk_sync_all_dir"`
 	SyncVpcs          []VpcSyncInfo `json:"bk_sync_vpcs" bson:"bk_sync_vpcs"`
 	Creator           string        `json:"bk_creator" bson:"bk_creator"`
-	CreateTime        Time        `json:"create_time" bson:"create_time"`
+	CreateTime        Time          `json:"create_time" bson:"create_time"`
 	LastEditor        string        `json:"bk_last_editor" bson:"bk_last_editor"`
-	LastTime          Time        `json:"last_time" bson:"last_time"`
+	LastTime          Time          `json:"last_time" bson:"last_time"`
 }
 
 type VpcSyncInfo struct {
@@ -213,6 +213,8 @@ type HostSyncInfo struct {
 	PublicIp      string `json:"bk_host_outerip" bson:"bk_host_outerip"`
 	InstanceState string `json:"bk_cloud_host_status" bson:"bk_cloud_host_status"`
 	OsName        string `json:"bk_os_name" bson:"bk_os_name"`
+	CreateTime    Time   `json:"create_time" bson:"create_time"`
+	LastTime      Time   `json:"last_time" bson:"last_time"`
 }
 
 // 云区域
@@ -227,9 +229,9 @@ type CloudArea struct {
 	Region      string `json:"bk_region" bson:"bk_region"`
 	AccountID   int64  `json:"bk_account_id" bson:"bk_account_id"`
 	Creator     string `json:"bk_creator" bson:"bk_creator"`
-	CreateTime  Time `json:"create_time" bson:"create_time"`
+	CreateTime  Time   `json:"create_time" bson:"create_time"`
 	LastEditor  string `json:"bk_last_editor" bson:"bk_last_editor"`
-	LastTime    Time `json:"last_time" bson:"last_time"`
+	LastTime    Time   `json:"last_time" bson:"last_time"`
 }
 
 type SyncRegion struct {
@@ -243,11 +245,11 @@ type SyncRegion struct {
 type SyncHistory struct {
 	HistoryID         int64      `json:"bk_history_id" bson:"bk_history_id"`
 	TaskID            int64      `json:"bk_task_id" bson:"bk_task_id"`
-	SyncStatus        string        `json:"bk_sync_status" bson:"bk_sync_status"`
+	SyncStatus        string     `json:"bk_sync_status" bson:"bk_sync_status"`
 	StatusDescription string     `json:"bk_status_description" bson:"bk_status_description"`
 	OwnerID           string     `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Detail            SyncDetail `json:"bk_detail" bson:"bk_detail"`
-	CreateTime        Time     `json:"create_time" bson:"create_time"`
+	CreateTime        Time       `json:"create_time" bson:"create_time"`
 }
 
 type SyncDetail struct {

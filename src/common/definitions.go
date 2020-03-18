@@ -246,6 +246,9 @@ const (
 	// BKCloudInstIDField the cloud instance id field
 	BKCloudInstIDField = "bk_cloud_inst_id"
 
+	// BKCloudHostStatusField the cloud host status field
+	BKCloudHostStatusField = "bk_cloud_host_status"
+
 	// TimeTransferModel the time transferModel field
 	TimeTransferModel = "2006-01-02 15:04:05"
 

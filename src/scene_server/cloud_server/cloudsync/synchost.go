@@ -305,6 +305,7 @@ func (t *taskProcessor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			continue
 		}
 		host.HostID = int64(id)
+		ts := metadata.Now()
 		hostSyncInfo := metadata.HostSyncInfo{
 			HostID:        host.HostID,
 			CloudID:       host.CloudID,
@@ -314,6 +315,8 @@ func (t *taskProcessor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			PublicIp:      host.PublicIp,
 			InstanceState: host.InstanceState,
 			OsName:        host.OsName,
+			CreateTime: ts,
+			LastTime: ts,
 		}
 		if err := t.db.Table(common.BKTableNameBaseHost).Insert(context.Background(), hostSyncInfo); err != nil {
 			blog.Errorf("addHosts insert err:%v", err.Error())
@@ -361,17 +364,15 @@ func (t *taskProcessor) updateHosts(hosts []*metadata.CloudHost) (*metadata.Sync
 	syncResult := new(metadata.SyncResult)
 	for _, host := range hosts {
 		cond := mapstr.MapStr{common.BKCloudInstIDField: host.InstanceId}
-		hostSyncInfo := metadata.HostSyncInfo{
-			HostID:        host.HostID,
-			CloudID:       host.CloudID,
-			InstanceId:    host.InstanceId,
-			InstanceName:  host.InstanceName,
-			PrivateIp:     host.PrivateIp,
-			PublicIp:      host.PublicIp,
-			InstanceState: host.InstanceState,
-			OsName:        host.OsName,
+		updateInfo := mapstr.MapStr{
+			common.BKCloudIDField :  host.CloudID,
+			common.BKHostInnerIPField: host.PrivateIp,
+			common.BKHostOuterIPField: host.PublicIp,
+			common.BKCloudHostStatusField: host.InstanceState,
+			common.BKHostNameField: host.InstanceName,
+			common.LastTimeField: metadata.Now(),
 		}
-		if err := t.db.Table(common.BKTableNameBaseHost).Update(context.Background(), cond, hostSyncInfo); err != nil {
+		if err := t.db.Table(common.BKTableNameBaseHost).Update(context.Background(), cond, updateInfo); err != nil {
 			blog.Errorf("updateHosts update err:%v", err.Error())
 			syncResult.FailInfo.Count++
 			syncResult.FailInfo.IPError[host.PrivateIp] = err.Error()

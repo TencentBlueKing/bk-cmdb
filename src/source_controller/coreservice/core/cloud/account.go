@@ -44,7 +44,7 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 
 	err = c.dbProxy.Table(common.BKTableNameCloudAccount).Insert(kit.Ctx, account)
 	if err != nil {
-		blog.ErrorJSON("CreateAccount failed, db insert failed, accountName: %s, err: %v, rid: %s", account.AccountName, err, kit.Rid)
+		blog.ErrorJSON("CreateAccount failed, db insert failed, accountName: %s, err: %s, rid: %s", account.AccountName, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 	}
 	// 不返回bk_secret_key的值
@@ -58,7 +58,7 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
 		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &results)
 	if err != nil {
-		blog.ErrorJSON("SearchAccount failed, db insert failed, option: %#v, err: %v, rid: %s", *option, err, kit.Rid)
+		blog.ErrorJSON("SearchAccount failed, db insert failed, option: %s, err: %s, rid: %s", option, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	// 不返回bk_secret_key的值
@@ -69,7 +69,7 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 	// 账户总个数
 	count, err := c.countAccount(kit, option.Condition)
 	if err != nil {
-		blog.ErrorJSON("SearchAccount countAccount error %v, option: %v, rid: %s", err, option.Condition, kit.Rid)
+		blog.ErrorJSON("SearchAccount countAccount error %s, option: %s, rid: %s", err, option.Condition, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 

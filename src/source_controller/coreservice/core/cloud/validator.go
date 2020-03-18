@@ -25,7 +25,7 @@ import (
 func (c *cloudOperation) validCreateAccount(kit *rest.Kit, account *metadata.CloudAccount) errors.CCErrorCoder {
 	// cloud vendor check
 	if !util.InStrArr(metadata.SupportedCloudVendors, string(account.CloudVendor)) {
-		blog.ErrorJSON("[validCreateAccount] not support cloud vendor: %s, rid: %v", account.CloudVendor, kit.Rid)
+		blog.ErrorJSON("[validCreateAccount] not support cloud vendor: %s, rid: %s", account.CloudVendor, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCloudVendorNotSupport)
 	}
 
@@ -33,7 +33,7 @@ func (c *cloudOperation) validCreateAccount(kit *rest.Kit, account *metadata.Clo
 	cond := mapstr.MapStr{common.BKCloudAccountName: account.AccountName}
 	count, err := c.countAccount(kit, cond)
 	if nil != err {
-		blog.ErrorJSON("[validCreateAccount] count account error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
+		blog.ErrorJSON("[validCreateAccount] count account error %s, condition: %s, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
@@ -53,11 +53,11 @@ func (c *cloudOperation) validUpdateAccount(kit *rest.Kit, accountID int64, opti
 	if option.Exists(common.BKCloudVendor) {
 		cloudVendor, err := option.String(common.BKCloudVendor)
 		if err != nil {
-			blog.ErrorJSON("[validUpdateAccount] not invalid cloud vendor, option: %v, rid: %v", option, kit.Rid)
+			blog.ErrorJSON("[validUpdateAccount] not invalid cloud vendor, option: %s, rid: %s", option, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCloudValidAccountParamFail, common.BKCloudVendor)
 		}
 		if !util.InStrArr(metadata.SupportedCloudVendors, cloudVendor) {
-			blog.ErrorJSON("[validUpdateAccount] not support cloud vendor: %s, rid: %v", cloudVendor, kit.Rid)
+			blog.ErrorJSON("[validUpdateAccount] not support cloud vendor: %s, rid: %s", cloudVendor, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCloudVendorNotSupport)
 		}
 	}
@@ -66,14 +66,14 @@ func (c *cloudOperation) validUpdateAccount(kit *rest.Kit, accountID int64, opti
 	if option.Exists(common.BKCloudAccountName) {
 		cloudAccountName, err := option.String(common.BKCloudAccountName)
 		if err != nil {
-			blog.ErrorJSON("[validUpdateAccount] not invalid cloud vendor, option: %v, rid: %v", option, kit.Rid)
+			blog.ErrorJSON("[validUpdateAccount] not invalid cloud vendor, option: %s, rid: %s", option, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCloudValidAccountParamFail, cloudAccountName)
 		}
 		cond := mapstr.MapStr{common.BKCloudAccountName: cloudAccountName,
 			common.BKCloudAccountID: map[string]interface{}{common.BKDBNE: accountID}}
 		count, err := c.countAccount(kit, cond)
 		if nil != err {
-			blog.ErrorJSON("[validUpdateAccount] count account error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
+			blog.ErrorJSON("[validUpdateAccount] count account error %s, condition: %s, rid: %s", err, cond, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if count > 0 {
@@ -97,7 +97,7 @@ func (c *cloudOperation) validAccountExist(kit *rest.Kit, accountID int64) error
 	cond := mapstr.MapStr{common.BKCloudAccountID: accountID}
 	count, err := c.countAccount(kit, cond)
 	if nil != err {
-		blog.ErrorJSON("[validAccountExist] count account error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
+		blog.ErrorJSON("[validAccountExist] count account error %s, condition: %s, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count <= 0 {
@@ -113,11 +113,11 @@ func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.Cloud
 	cond := mapstr.MapStr{common.BKCloudAccountID: task.AccountID}
 	count, err := c.countAccount(kit, cond)
 	if nil != err {
-		blog.ErrorJSON("[validCreateSyncTask] accountID valid failed, error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
+		blog.ErrorJSON("[validCreateSyncTask] accountID valid failed, error %s, condition: %s, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count <= 0 {
-		blog.ErrorJSON("[validCreateSyncTask] accountID: %d does not exist, bk_task_name: %s", task.AccountID, task.TaskName, kit.Rid)
+		blog.ErrorJSON("[validCreateSyncTask] accountID: %s does not exist, bk_task_name: %s", task.AccountID, task.TaskName, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, common.BKCloudAccountID)
 	}
 
@@ -126,7 +126,7 @@ func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.Cloud
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	taskCount, err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Find(cond).Count(kit.Ctx)
 	if nil != err {
-		blog.ErrorJSON("[validCreateSycTask] count task error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
+		blog.ErrorJSON("[validCreateSycTask] count task error %s, condition: %s, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if taskCount > 0 {
@@ -153,11 +153,11 @@ func (c *cloudOperation) validUpdateSyncTask(kit *rest.Kit, taskID int64, option
 		cond := mapstr.MapStr{common.BKCloudAccountID: option[common.BKCloudAccountID]}
 		count, err := c.countAccount(kit, cond)
 		if nil != err {
-			blog.ErrorJSON("[validCreateSyncTask] accountID valid failed, error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
+			blog.ErrorJSON("[validCreateSyncTask] accountID valid failed, error %s, condition: %s, rid: %s", err, cond, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if count <= 0 {
-			blog.ErrorJSON("[validCreateSyncTask] accountID: %d does not exist, rid: %s", option[common.BKCloudAccountID], kit.Rid)
+			blog.ErrorJSON("[validCreateSyncTask] accountID: %s does not exist, rid: %s", option[common.BKCloudAccountID], kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, common.BKCloudAccountID)
 		}
 	}
@@ -166,14 +166,14 @@ func (c *cloudOperation) validUpdateSyncTask(kit *rest.Kit, taskID int64, option
 	if option.Exists(common.BKCloudSyncTaskName) {
 		taskName, err := option.String(common.BKCloudSyncTaskName)
 		if err != nil {
-			blog.ErrorJSON("[validUpdateSyncTask] not invalid task name, option: %v, rid: %v", option, kit.Rid)
+			blog.ErrorJSON("[validUpdateSyncTask] not invalid task name, option: %s, rid: %s", option, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, taskName)
 		}
 		cond := mapstr.MapStr{common.BKCloudSyncTaskName: taskName,
 			common.BKCloudSyncTaskID: map[string]interface{}{common.BKDBNE: taskID}}
 		count, err := c.countTask(kit, cond)
 		if nil != err {
-			blog.ErrorJSON("[validUpdateSyncTask] count task name failed error %v, condition: %#v, rid: %s", err, cond, kit.Rid)
+			blog.ErrorJSON("[validUpdateSyncTask] count task name failed error %s, condition: %s, rid: %s", err, cond, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if count > 0 {
