@@ -1065,7 +1065,9 @@
             background-color: #dcdee5;
         }
         .icon-refresh {
-            top: -1px;
+            font-size: 12px;
+            vertical-align: middle;
+            line-height: 18px;
         }
     }
     .tables {
