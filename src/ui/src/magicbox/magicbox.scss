@@ -25,9 +25,8 @@
 .bk-date-picker-transfer {
     z-index: 2600 !important;
 }
-
-.bk-sideslider {
-    z-index: 1003 !important;
+.bk-date-picker-dropdown {
+    z-index: 2601 !important;
 }
 
 .bk-select-full-width {
@@ -75,6 +74,7 @@
     .bk-table-body {
         .is-highlight {
             color: #3A84FF;
+            cursor: pointer;
         }
         tr.hover-row>td {
             background-color: #f0f1f5;
@@ -165,4 +165,8 @@
     .bk-icon {
         vertical-align: unset;
     }
+}
+
+.bk-dropdown-menu {
+    vertical-align: middle;
 }

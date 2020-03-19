@@ -583,19 +583,6 @@
         .group-item {
             position: relative;
             padding: 10px 0 20px;
-            >.icon-angle-double-down {
-                position: absolute;
-                left: 50%;
-                bottom: -5px;
-                margin-left: -5px;
-                padding: 5px;
-                font-size: 12px;
-                cursor: pointer;
-                transition: all .2s;
-                &.rotate {
-                    transform: rotate(180deg);
-                }
-            }
         }
         .group-title {
             display: inline-block;
@@ -802,7 +789,7 @@
             width: 58px;
             height: 58px;
             line-height: 58px;
-            font-size: 30px;
+            font-size: 50px;
             font-weight: bold;
             color: #fff;
             border-radius: 50%;

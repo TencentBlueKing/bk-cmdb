@@ -74,7 +74,7 @@
                     :auto-select="false"
                     v-model="filter.value"
                     font-size="medium"
-                    @on-selected="getTableData(true)">
+                    @on-selected="handlePageChange(1, true)">
                 </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
@@ -83,7 +83,8 @@
                     right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData(true)">
+                    @enter="handlePageChange(1, true)"
+                    @clear="handlePageChange(1)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
@@ -92,7 +93,8 @@
                     right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData(true)">
+                    @enter="handlePageChange(1, true)"
+                    @clear="handlePageChange(1)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
@@ -101,7 +103,8 @@
                     right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData(true)">
+                    @enter="handlePageChange(1, true)"
+                    @clear="handlePageChange(1)">
                 </bk-input>
             </div>
         </div>
@@ -123,7 +126,8 @@
                 :prop="column.id"
                 :label="column.name"
                 :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
-                :fixed="column.id === 'bk_inst_name'">
+                :fixed="column.id === 'bk_inst_name'"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <span>{{row[column.id] | formatter(column.property)}}</span>
                 </template>
@@ -474,9 +478,9 @@
                 this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
-            handlePageChange (page) {
+            handlePageChange (page, withFilter = false) {
                 this.table.pagination.current = page
-                this.getTableData()
+                this.getTableData(withFilter)
             },
             handleSelectChange (selection) {
                 this.table.checked = selection.map(row => row.bk_inst_id)
@@ -488,7 +492,7 @@
                     config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
                 })
             },
-            getTableData (event) {
+            getTableData (withFilter) {
                 this.getInstList({ cancelPrevious: true, globalPermission: false }).then(data => {
                     if (data.count && !data.info.length) {
                         this.table.pagination.current -= 1
@@ -497,9 +501,7 @@
                     this.table.list = data.info
                     this.table.pagination.count = data.count
 
-                    if (event) {
-                        this.table.stuff.type = 'search'
-                    }
+                    this.table.stuff.type = withFilter ? 'search' : 'default'
 
                     return data
                 }).catch(({ permission }) => {

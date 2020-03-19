@@ -155,7 +155,7 @@
             margin-right: 10px;
         }
         .icon-angle-down {
-            font-size: 12px;
+            font-size: 20px;
             vertical-align: baseline;
             transition: transform .2s linear;
         }
