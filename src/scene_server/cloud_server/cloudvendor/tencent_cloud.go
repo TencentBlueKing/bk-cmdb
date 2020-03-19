@@ -171,6 +171,9 @@ func (c *tcClient) GetInstances(region string, opt *ccom.RequestOpt) (*metadata.
 // 获取实例总个数
 func (c *tcClient) GetInstancesTotalCnt(region string, opt *ccom.RequestOpt) (int64, error) {
 	// 直接将limit设为最小值，能最快地获取到实例总个数
+	if opt == nil {
+		opt = new(ccom.RequestOpt)
+	}
 	opt.Limit = ccom.Int64Ptr(tcMinPageSize)
 	instsInfo, err := c.GetInstances(region, opt)
 	if err != nil {

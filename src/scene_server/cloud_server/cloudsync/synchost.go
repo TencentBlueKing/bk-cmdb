@@ -1,23 +1,24 @@
 package cloudsync
 
 import (
-	"configcenter/src/storage/dal"
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/cloud_server/logics"
 	ccom "configcenter/src/scene_server/cloud_server/common"
+	"configcenter/src/scene_server/cloud_server/logics"
+	"configcenter/src/storage/dal"
 )
 
 // 云主机同步器
-type HostSyncor struct{
-	logics    *logics.Logics
-	db        dal.DB
+type HostSyncor struct {
+	logics *logics.Logics
+	db     dal.DB
 }
 
 // 创建云主机同步器
@@ -219,11 +220,12 @@ func (h *HostSyncor) addSyncHistory(syncResult *metadata.SyncResult, taskid int6
 		return nil, err
 	}
 	syncStatus := metadata.CloudSyncSuccess
-	statusDescription := fmt.Sprintf("同步耗时%ds", time.Since(startTime)/time.Second)
+	costTime, _ := strconv.ParseFloat(fmt.Sprintf("%.1f", float64(time.Since(startTime)/time.Millisecond)/1000.0), 64)
+	statusDesc := metadata.SyncStatusDesc{CostTime: costTime}
 	if syncResult.FailInfo.Count > 0 {
 		syncStatus = metadata.CloudSyncFail
 		for _, errinfo := range syncResult.FailInfo.IPError {
-			statusDescription = errinfo
+			statusDesc.ErrorInfo = errinfo
 			break
 		}
 	}
@@ -232,7 +234,7 @@ func (h *HostSyncor) addSyncHistory(syncResult *metadata.SyncResult, taskid int6
 		HistoryID:         int64(id),
 		TaskID:            taskid,
 		SyncStatus:        syncStatus,
-		StatusDescription: statusDescription,
+		StatusDescription: statusDesc,
 		OwnerID:           fmt.Sprintf("%d", common.BKDefaultSupplierID),
 		Detail:            syncResult.Detail,
 		CreateTime:        metadata.Now(),
@@ -327,8 +329,8 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 			PublicIp:      host.PublicIp,
 			InstanceState: host.InstanceState,
 			OsName:        host.OsName,
-			CreateTime: ts,
-			LastTime: ts,
+			CreateTime:    ts,
+			LastTime:      ts,
 		}
 		if err := h.db.Table(common.BKTableNameBaseHost).Insert(context.Background(), hostSyncInfo); err != nil {
 			blog.Errorf("addHosts insert err:%v", err.Error())
@@ -377,12 +379,12 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 	for _, host := range hosts {
 		cond := mapstr.MapStr{common.BKCloudInstIDField: host.InstanceId}
 		updateInfo := mapstr.MapStr{
-			common.BKCloudIDField :  host.CloudID,
-			common.BKHostInnerIPField: host.PrivateIp,
-			common.BKHostOuterIPField: host.PublicIp,
+			common.BKCloudIDField:         host.CloudID,
+			common.BKHostInnerIPField:     host.PrivateIp,
+			common.BKHostOuterIPField:     host.PublicIp,
 			common.BKCloudHostStatusField: host.InstanceState,
-			common.BKHostNameField: host.InstanceName,
-			common.LastTimeField: metadata.Now(),
+			common.BKHostNameField:        host.InstanceName,
+			common.LastTimeField:          metadata.Now(),
 		}
 		if err := h.db.Table(common.BKTableNameBaseHost).Update(context.Background(), cond, updateInfo); err != nil {
 			blog.Errorf("updateHosts update err:%v", err.Error())
