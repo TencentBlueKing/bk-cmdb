@@ -233,6 +233,8 @@ function initConfig (method, url, userConfig) {
         fromCache: false,
         // 是否在请求发起前清楚缓存
         clearCache: false,
+        // 缓存过期时间, 'project' | 'page'
+        cacheExpire: 'project',
         // 响应结果是否返回原始数据
         originalResponse: false,
         // 转换返回数据，仅返回data对象

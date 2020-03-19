@@ -166,3 +166,11 @@
         vertical-align: unset;
     }
 }
+
+.bk-popconfirm-content {
+    .popconfirm-operate {
+        button {
+            margin-left: 10px;
+        }
+    }
+}

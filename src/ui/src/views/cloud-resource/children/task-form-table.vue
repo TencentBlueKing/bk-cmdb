@@ -3,14 +3,20 @@
         :data="list">
         <bk-table-column label="VPC" prop="vpc" :formatter="vpcFormatter"></bk-table-column>
         <bk-table-column :label="$t('地域')" prop="bk_region_name" show-overflow-tooltip>
-            <template slot-scope="{ row }">{{getRegionName(row)}}</template>
+            <task-region-selector slot-scope="{ row }"
+                display="info"
+                :account="account"
+                :value="row.bk_region">
+            </task-region-selector>
         </bk-table-column>
         <bk-table-column :label="$t('主机数量')" prop="bk_host_count"></bk-table-column>
         <bk-table-column :label="$t('主机录入到')" prop="directory" width="250" :render-header="directoryHeaderRender">
             <template slot-scope="{ row }">
                 <task-directory-selector class="form-table-selector"
                     v-model="directorySelection[row.bk_vpc_id]"
-                    :batch-select-handler="handleDirectoryBatchSelect">
+                    v-validate="'required'"
+                    :data-vv-name="`directory-selector-${row.bk_vpc_id}`"
+                    :class="{ 'is-error': errors.has(`directory-selector-${row.bk_vpc_id}`) }">
                 </task-directory-selector>
             </template>
         </bk-table-column>
@@ -20,10 +26,12 @@
 <script>
     import TaskFormTableHeader from './task-form-table-header.vue'
     import TaskDirectorySelector from './task-directory-selector.vue'
+    import TaskRegionSelector from './task-region-selector.vue'
     export default {
         name: 'task-form-table',
         components: {
-            TaskDirectorySelector
+            TaskDirectorySelector,
+            TaskRegionSelector
         },
         props: {
             selected: Array,
@@ -34,11 +42,7 @@
                 list: [],
                 directorySelection: {},
                 selection: [],
-                directorys: [],
-                request: {
-                    region: Symbol('region')
-                },
-                regions: []
+                directorys: []
             }
         },
         watch: {
@@ -49,31 +53,13 @@
                 }
             }
         },
-        created () {
-            this.getRegions()
-        },
         methods: {
-            async getRegions () {
-                try {
-                    this.regions = await this.$store.dispatch('cloud/resource/findRegion', {
-                        params: {
-                            bk_account_id: this.account,
-                            with_host_account: false
-                        },
-                        config: {
-                            requestId: this.request.region
-                        }
-                    })
-                } catch (e) {
-                    console.error(e)
-                }
-            },
             updateData () {
                 this.list = [...this.selected]
-                const vpcIds = this.list.map(vpc => vpc.bk_vpc_id)
                 const newSelection = {}
-                vpcIds.forEach(id => {
-                    newSelection[id] = this.directorySelection[id] || ''
+                this.list.forEach(vpc => {
+                    const id = vpc.bk_vpc_id
+                    newSelection[id] = this.directorySelection[id] || vpc.bk_sync_dir || ''
                 })
                 this.directorySelection = newSelection
             },
@@ -101,22 +87,15 @@
                     })
                 ])
             },
-            handleDirectoryBatchSelect (id) {
-                for (const key in this.directorySelection) {
-                    this.directorySelection[key] = id
-                }
-            },
             getSyncVPC () {
                 return this.list.map(vpc => {
                     return {
                         bk_vpc_id: vpc.bk_vpc_id,
-                        bk_sync_dir: this.directorySelection[vpc.bk_vpc_id]
+                        bk_vpc_name: vpc.bk_vpc_name,
+                        bk_sync_dir: this.directorySelection[vpc.bk_vpc_id],
+                        bk_region: vpc.bk_region
                     }
                 })
-            },
-            getRegionName (vpc) {
-                const region = this.regions.find(region => region.bk_region === vpc.bk_region)
-                return region ? region.bk_region_name : '--'
             }
         }
     }
@@ -126,6 +105,9 @@
     .form-table {
         .form-table-selector {
             width: 100%;
+            &.is-error {
+                border-color: $dangerColor;
+            }
         }
     }
 </style>

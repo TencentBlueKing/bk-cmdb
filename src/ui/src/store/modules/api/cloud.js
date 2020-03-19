@@ -1,5 +1,4 @@
 import $http from '@/api'
-import Vue from 'vue'
 const cloudArea = {
     namespaced: true,
     actions: {
@@ -49,9 +48,6 @@ const cloudAccount = {
 
 const cloudResource = {
     namespaced: true,
-    state: {
-        regions: {}
-    },
     actions: {
         createTask (context, { params, config }) {
             return $http.post('create/cloud/sync/task', params, config)
@@ -83,24 +79,13 @@ const cloudResource = {
             return $http.delete(`delete/cloud/sync/task/${id}`, config)
         },
         findRegion ({ state, commit }, { params, config }) {
-            if (state.regions.hasOwnProperty(params.bk_account_id)) {
-                return Promise.resolve(state.regions[params.bk_account_id])
-            }
-            return $http.post('findmany/cloud/sync/region', params, config).then(data => {
-                commit('setRegions', { account: params.bk_account_id, regions: data.info })
-                return data.info
-            })
+            return $http.post('findmany/cloud/sync/region', params, config)
         },
         findVPC (context, { id, params, config }) {
             return $http.post(`findmany/cloud/account/vpc/${id}`, params, config)
         },
         findHistory (context, { params, config }) {
-            return $http.post('findmany/cloud/sync/history')
-        }
-    },
-    mutations: {
-        setRegions (state, { account, regions }) {
-            Vue.set(state.regions, account, regions)
+            return $http.post('findmany/cloud/sync/history', params, config)
         }
     }
 }

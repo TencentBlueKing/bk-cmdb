@@ -10,24 +10,31 @@
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @cell-click="handleCellClick">
-            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" class-name="is-highlight" id="name"></bk-table-column>
+            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" class-name="is-highlight" id="name" show-overflow-tooltip></bk-table-column>
             <bk-table-column :label="$t('账号类型')" prop="bk_cloud_vendor"></bk-table-column>
-            <bk-table-column :label="$t('修改人')" prop="bk_last_editor"></bk-table-column>
+            <bk-table-column :label="$t('修改人')" prop="bk_last_editor" show-overflow-tooltip>
+                <template slot-scope="{ row }">{{row.bk_last_editor | formatter('singlechar')}}</template>
+            </bk-table-column>
             <bk-table-column :label="$t('修改时间')" prop="last_time">
                 <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <link-button class="mr10" @click="handleView(row)">{{$t('查看')}}</link-button>
-                    <link-button
-                        :disabled="row.pending"
-                        v-bk-tooltips="{
-                            disabled: !row.pending,
-                            content: '发现任务正在进行中，不能删除'
-                        }"
-                        @click="handleDelete(row)">
-                        {{$t('删除')}}
-                    </link-button>
+                    <bk-popconfirm
+                        trigger="click"
+                        :disabled="!row.bk_can_delete_account"
+                        :title="$t('确定删除该云账户')"
+                        @confirm="handleDelete(row)">
+                        <link-button
+                            :disabled="!row.bk_can_delete_account"
+                            v-bk-tooltips="{
+                                disabled: row.bk_can_delete_account,
+                                content: '发现任务正在进行中，不能删除'
+                            }">
+                            {{$t('删除')}}
+                        </link-button>
+                    </bk-popconfirm>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -98,6 +105,9 @@
             async getData () {
                 try {
                     const data = await this.$store.dispatch('cloud/account/findMany', {
+                        params: {
+                            ...this.$tools.getPageParams(this.pagination)
+                        },
                         config: {
                             requestId: this.request.search
                         }

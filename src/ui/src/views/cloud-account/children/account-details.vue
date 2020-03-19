@@ -20,7 +20,7 @@
         </bk-form>
         <bk-form class="extra-info-form" :label-width="105">
             <bk-form-item class="details-item" :label="$t('创建人')">
-                {{account.bk_creator}}
+                {{account.bk_creator | formatter('singlechar')}}
             </bk-form-item>
             <bk-form-item class="details-item" :label="$t('创建时间')">
                 {{account.create_time | formatter('time')}}

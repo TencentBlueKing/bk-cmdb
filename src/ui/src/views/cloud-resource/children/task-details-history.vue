@@ -12,17 +12,19 @@
                 <bk-table-column type="expand" width="30" align="center">
                     <task-details-history-content
                         slot-scope="{ row }"
-                        :list="row.list">
+                        :details="row.bk_detail">
                     </task-details-history-content>
                 </bk-table-column>
-                <bk-table-column :label="$t('操作概要')" prop="summary"></bk-table-column>
-                <bk-table-column :label="$t('状态')" prop="xxxx">
+                <bk-table-column :label="$t('操作概要')" prop="bk_summary" show-overflow-tooltip></bk-table-column>
+                <bk-table-column :label="$t('状态')" prop="bk_sync_status">
                     <div class="row-status" slot-scope="{ row }">
-                        <i :class="['status', { 'is-error': row.error }]"></i>
-                        异常
+                        <i :class="['status', { 'is-error': row.bk_sync_status !== 1 }]"></i>
+                        {{row.bk_sync_status === 1 ? $t('成功') : $t('失败')}}
                     </div>
                 </bk-table-column>
-                <bk-table-column :label="$t('时间')" prop="last_time"></bk-table-column>
+                <bk-table-column :label="$t('时间')" prop="create_time">
+                    <template slot-scope="{ row }">{{row.create_time | formatter('time')}}</template>
+                </bk-table-column>
                 <bk-table-column :label="$t('详情')">
                     <template slot-scope="{ row }">
                         <link-button @click="handleView(row)">{{$t('查看详情')}}</link-button>
@@ -40,16 +42,37 @@
         components: {
             [TaskDetailsHistoryContent.name]: TaskDetailsHistoryContent
         },
+        props: {
+            id: Number
+        },
         data () {
-            function repeate (count) {
-                return Array(count).fill(Symbol('any')).map((_, index) => ({ isCreate: index % 2 === 0, bk_host_innerip: '192.168.1.1' }))
-            }
             return {
-                timeRange: [],
-                histories: [{ list: repeate(200) }, { list: repeate(100) }]
+                timeRange: [new Date(Date.now() - 8.64e7), new Date()],
+                histories: [],
+                pagination: this.$tools.getDefaultPaginationConfig()
             }
         },
+        created () {
+            this.getHistory()
+        },
         methods: {
+            async getHistory () {
+                try {
+                    const data = await this.$store.dispatch('cloud/resource/findHistory', {
+                        params: {
+                            bk_task_id: this.id,
+                            start_time: this.$tools.formatTime(this.timeRange[0]),
+                            end_time: this.$tools.formatTime(this.timeRange[0]),
+                            page: this.$tools.getPageParams(this.pagination)
+                        }
+                    })
+                    this.pagination.count = data.count
+                    this.histories = data.info
+                } catch (e) {
+                    console.error(e)
+                    this.histories = []
+                }
+            },
             handleView (row) {
                 this.$refs.table.toggleRowExpansion(row)
             }

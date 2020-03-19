@@ -13,7 +13,12 @@
             @cell-click="handleCellClick">
             <bk-table-column :label="$t('任务名称')" prop="bk_task_name" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
             <bk-table-column :label="$t('资源')" prop="bk_resource_type" :formatter="resourceTypeFormatter"></bk-table-column>
-            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" show-overflow-tooltip></bk-table-column>
+            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" show-overflow-tooltip>
+                <task-account-selector slot-scope="{ row }"
+                    display="info"
+                    :value="row.bk_account_id">
+                </task-account-selector>
+            </bk-table-column>
             <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" :formatter="vendorFormatter"></bk-table-column>
             <bk-table-column :label="$t('最近同步状态')" prop="bk_sync_status">
                 <div class="row-status"
@@ -22,8 +27,8 @@
                         disabled: !row.bk_status_description,
                         content: row.bk_status_description
                     }">
-                    <i :class="['status', { 'is-error': row.bk_sync_status }]"></i>
-                    {{row.bk_sync_status ? $t('失败') : $t('成功')}}
+                    <i :class="['status', { 'is-error': row.bk_sync_status !== 'cloud_sync_success' }]"></i>
+                    {{row.bk_sync_status !== 'cloud_sync_success' ? $t('失败') : $t('成功')}}
                 </div>
             </bk-table-column>
             <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time" show-overflow-tooltip>
@@ -32,10 +37,15 @@
             <bk-table-column :label="$t('最近编辑人')" prop="bk_last_editor">
                 <template slot-scope="{ row }">{{row.bk_last_editor | formatter('singlechar')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('操作')">
+            <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
                     <link-button class="mr10" @click="handleEdit(row)">{{$t('编辑')}}</link-button>
-                    <link-button @click="handleDelete(row)">{{$t('删除')}}</link-button>
+                    <bk-popconfirm
+                        trigger="click"
+                        :title="$t('确定删除该任务')"
+                        @confirm="handleDelete(row)">
+                        <link-button>{{$t('删除')}}</link-button>
+                    </bk-popconfirm>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -49,9 +59,13 @@
     import TaskSideslider from './children/task-sideslider.vue'
     import { formatter as resourceTypeFormatter } from '@/dictionary/cloud-resource-type'
     import { formatter as vendorFormatter } from '@/dictionary/cloud-vendor'
+    import TaskAccountSelector from './children/task-account-selector.vue'
+    import TaskForm from './children/task-form.vue'
+    import Bus from '@/utils/bus.js'
     export default {
         components: {
-            TaskSideslider
+            TaskSideslider,
+            TaskAccountSelector
         },
         data () {
             return {
@@ -64,7 +78,11 @@
             }
         },
         created () {
+            Bus.$on('request-refresh', this.getData)
             this.getData()
+        },
+        beforeDestroy () {
+            Bus.$off('request-refresh', this.getData)
         },
         methods: {
             handleCreate () {
@@ -99,10 +117,21 @@
                     }
                 })
             },
-            handleEdit (row) {},
+            handleEdit (row) {
+                this.$refs.taskSideslider.show({
+                    mode: 'details',
+                    title: `${this.$t('任务详情')} 【${row.bk_task_name}】`,
+                    props: {
+                        id: row.bk_task_id,
+                        defaultComponent: TaskForm.name
+                    }
+                })
+            },
             async handleDelete (row) {
                 try {
-                    await Promise.resolve()
+                    await this.$store.dispatch('cloud/resource/deleteTask', {
+                        id: row.bk_task_id
+                    })
                     this.$success('删除成功')
                     this.getData()
                 } catch (e) {
@@ -126,25 +155,7 @@
                         this.handlePageChange(this.pagination.current - 1)
                         return
                     }
-                    const { info: accounts } = await this.$store.dispatch('cloud/account/findMany', {
-                        params: {
-                            condition: {
-                                bk_account_id: {
-                                    '$in': data.info.map(task => task.bk_account_id)
-                                }
-                            }
-                        },
-                        config: {
-                            requestId: this.request.findAccount
-                        }
-                    })
-                    this.list = data.info.map(task => {
-                        const account = accounts.find(account => account.bk_account_id === task.bk_account_id) || {}
-                        return {
-                            ...task,
-                            bk_account_name: account.bk_account_name
-                        }
-                    })
+                    this.list = data.info
                     this.pagination.count = data.count
                 } catch (e) {
                     console.error(e)

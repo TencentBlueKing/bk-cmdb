@@ -43,7 +43,6 @@
             },
             hide (eventType) {
                 this.isShow = false
-                eventType && this.$emit(eventType)
             },
             handleHidden () {
                 this.component = null

@@ -6,6 +6,7 @@
         searchable
         size="small"
         font-size="small"
+        :clearable="false"
         :placeholder="$t('请选择xx', { name: $t('资源目录') })"
         @toggle="handleSelectToggle">
         <bk-option v-for="directory in directories"
@@ -53,39 +54,40 @@
         },
         data () {
             return {
-                selected: this.value,
                 createMode: false,
                 createDirectoryId: 'createDirectoryId',
                 newDirectory: '',
                 directories: [],
                 request: {
-                    findMany: Symbol('findMany')
+                    findMany: 'taskDirectorySelectorFindMany'
                 }
             }
         },
-        watch: {
-            value (value) {
-                this.selected = value
-            },
-            selected (value, oldValue) {
-                this.$emit('input', value)
-                this.$emit('change', value, oldValue)
+        computed: {
+            selected: {
+                get () {
+                    return this.value
+                },
+                set (value, oldValue) {
+                    this.$emit('input', value)
+                    this.$emit('change', value, oldValue)
+                }
             }
         },
         created () {
             this.getDirectories()
         },
-        beforeRouteLeave (to, from, next) {
-            this.$http.cancelCache(this.request.findMany)
-            next()
-        },
         methods: {
             async getDirectories () {
                 try {
                     const { info } = await this.$store.dispatch('resource/directory/findMany', {
+                        params: {
+                            sort: 'bk_module_id'
+                        },
                         config: {
                             requestId: this.request.findMany,
-                            fromCache: true
+                            fromCache: true,
+                            cacheExpire: 'page'
                         }
                     })
                     this.directories = info

@@ -25,23 +25,28 @@
             <bk-table-column :label="$t('VPC')" prop="bk_vpc_name">
                 <template slot-scope="{ row }">{{row.bk_vpc_name | formatter('singlechar')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('主机数量')" prop="bk_host_count">
-                <template slot-scope="{ row }">{{row.bk_host_count | formatter('int')}}</template>
+            <bk-table-column :label="$t('主机数量')" prop="host_count">
+                <template slot-scope="{ row }">{{row.host_count | formatter('int')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('最近编辑')" prop="last_time">
                 <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
             <bk-table-column :label="$t('操作')">
-                <link-button slot-scope="{ row }"
-                    :disabled="!!row.bk_host_count"
-                    v-bk-tooltips="{
-                        disabled: !row.host_count,
-                        content: $t('主机不为空，不能删除')
-                    }"
-                    @click="handleDelete(row)">
-                    {{$t('删除')}}
-                </link-button>
+                <bk-popconfirm slot-scope="{ row }"
+                    trigger="click"
+                    :disabled="!!row.host_count"
+                    :title="$t('确定删除该云区域')"
+                    @confirm="handleDelete(row)">
+                    <link-button
+                        :disabled="!!row.host_count"
+                        v-bk-tooltips="{
+                            disabled: !row.host_count,
+                            content: $t('主机不为空，不能删除')
+                        }">
+                        {{$t('删除')}}
+                    </link-button>
+                </bk-popconfirm>
             </bk-table-column>
         </bk-table>
     </div>
@@ -81,7 +86,8 @@
                 try {
                     const data = await this.$store.dispatch('cloud/area/findMany', {
                         params: {
-                            ...this.$tools.getPageParams(this.pagination)
+                            ...this.$tools.getPageParams(this.pagination),
+                            host_count: true
                         }
                     })
                     if (data.count && !data.info.length) {

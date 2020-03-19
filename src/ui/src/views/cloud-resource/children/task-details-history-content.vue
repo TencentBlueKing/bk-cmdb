@@ -13,9 +13,9 @@
             </h3>
             <ul class="host-list">
                 <li class="host-item"
-                    v-for="(host, hostIndex) in group.list"
-                    :key="hostIndex">
-                    {{host.bk_host_innerip}}
+                    v-for="(ip, ipIndex) in group.list"
+                    :key="ipIndex">
+                    {{ip}}
                 </li>
             </ul>
         </div>
@@ -26,26 +26,23 @@
     export default {
         name: 'task-details-history-content',
         props: {
-            list: {
-                type: Array,
-                default: () => ([])
+            details: {
+                type: Object,
+                default: () => ({})
             }
         },
         computed: {
             groupedList () {
-                const created = []
-                const updated = []
-                this.list.forEach(item => {
-                    item.isCreate ? created.push(item) : updated.push(item)
-                })
-                const groupedList = [{ type: this.$t('新增'), list: created }, { type: this.$t('更新'), list: updated }]
+                const newAddList = (this.details.new_add || {}).ips || []
+                const updateList = (this.details.update || {}).ips || []
+                const groupedList = [{ type: this.$t('新增'), list: newAddList }, { type: this.$t('更新'), list: updateList }]
                 return groupedList.filter(group => group.list.length)
             }
         },
         methods: {
             async handleCopy (event, group) {
                 try {
-                    await this.$copyText(group.list.map(item => item.bk_host_innerip).join('\n'))
+                    await this.$copyText(group.list.map(ip => ip).join('\n'))
                     const target = event.currentTarget
                     target.classList.add('show-tips')
                     setTimeout(() => {

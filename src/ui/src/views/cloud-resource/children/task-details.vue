@@ -6,12 +6,11 @@
             <bk-tab-panel name="history" :label="$t('录入历史')">
             </bk-tab-panel>
         </bk-tab>
-        <keep-alive>
-            <component class="details-component" :is="component"
-                :container="this"
-                :task="task">
-            </component>
-        </keep-alive>
+        <component class="details-component" :is="component"
+            :container="this"
+            :task="task"
+            :id="id">
+        </component>
     </div>
 </template>
 
@@ -30,14 +29,15 @@
             id: {
                 type: Number,
                 required: true
-            }
+            },
+            defaultComponent: String
         },
         data () {
             return {
                 task: null,
                 title: '',
                 active: 'details',
-                detailsComponent: TaskDetailsInfo.name,
+                detailsComponent: this.defaultComponent || TaskDetailsInfo.name,
                 request: {
                     findOneTask: Symbol('findOneTask')
                 }
@@ -73,6 +73,7 @@
             },
             show (options) {
                 this.title = options.title || this.title
+                this.task = options.task || this.task
                 this.detailsComponent = options.detailsComponent || TaskDetailsInfo.name
             },
             hide (eventType) {

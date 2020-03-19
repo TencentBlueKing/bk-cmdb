@@ -2,16 +2,10 @@
     <div class="vpc-selector clearfix">
         <div class="left-column fl">
             <h2 class="left-title">{{$t('添加VPC')}}</h2>
-            <bk-select class="region-selector"
-                searchable
-                v-model="currentRegion"
-                :loading="$loading(request.region)">
-                <bk-option v-for="region in regions"
-                    :key="region.bk_region"
-                    :id="region.bk_region"
-                    :name="region.bk_region_name">
-                </bk-option>
-            </bk-select>
+            <task-region-selector class="region-selector"
+                :account="account"
+                v-model="currentRegion">
+            </task-region-selector>
             <div class="vpc-wrapper" v-bkloading="{ isLoading: $loading([request.vpc, request.region]) }">
                 <template v-if="hasVpc">
                     <div class="vpc-options clearfix">
@@ -54,7 +48,11 @@
                     <template slot-scope="{ row }">{{getVpcName(row)}}</template>
                 </bk-table-column>
                 <bk-table-column :label="$t('地域')" prop="bk_region_name" show-overflow-tooltip>
-                    <template slot-scope="{ row }">{{getRegionName(row)}}</template>
+                    <task-region-selector slot-scope="{ row }"
+                        display="info"
+                        :value="row.bk_region"
+                        :account="account">
+                    </task-region-selector>
                 </bk-table-column>
                 <bk-table-column :label="$t('主机数量')" prop="bk_host_count"></bk-table-column>
                 <bk-table-column :label="$t('操作')">
@@ -73,8 +71,12 @@
 </template>
 
 <script>
+    import TaskRegionSelector from './task-region-selector.vue'
     export default {
         name: 'task-vpc-selector',
+        components: {
+            [TaskRegionSelector.name]: TaskRegionSelector
+        },
         props: {
             account: {
                 type: Number,
@@ -88,7 +90,6 @@
         data () {
             return {
                 currentRegion: '',
-                regions: [],
                 regionVPC: {},
                 selection: [...this.selected],
                 request: {
@@ -122,28 +123,7 @@
                 this.getVpcList()
             }
         },
-        created () {
-            this.getRegions()
-        },
         methods: {
-            async getRegions () {
-                try {
-                    const regions = await this.$store.dispatch('cloud/resource/findRegion', {
-                        params: {
-                            bk_account_id: this.account,
-                            with_host_count: false
-                        },
-                        config: {
-                            requestId: this.request.region
-                        }
-                    })
-                    this.regions = regions
-                    this.currentRegion = regions[0] ? regions[0].bk_region : ''
-                } catch (e) {
-                    console.error(e)
-                    this.regions = []
-                }
-            },
             async getVpcList () {
                 try {
                     if (this.regionVPC.hasOwnProperty(this.currentRegion)) {
@@ -201,10 +181,6 @@
                     return id
                 }
                 return `${id}(${name})`
-            },
-            getRegionName (vpc) {
-                const region = this.regions.find(region => region.bk_region === vpc.bk_region)
-                return region ? region.bk_region_name : '--'
             }
         }
     }

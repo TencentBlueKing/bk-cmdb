@@ -12,7 +12,7 @@ const directory = {
             return $http.put(`update/resource/directory/${id}`, params, config)
         },
         findMany (context, { params, config }) {
-            return $http.post('findmany/resource/directory', { params, config })
+            return $http.post('findmany/resource/directory', params, config)
         }
     }
 }
