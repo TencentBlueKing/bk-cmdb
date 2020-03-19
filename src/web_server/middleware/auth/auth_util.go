@@ -32,6 +32,7 @@ var (
 	deleteObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 	deleteObjectInstanceBatchRegexp = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/batch/?$`)
 	updateObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	updateObjectInstanceBatchRegexp = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/batch/?$`)
 	searchObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/search/[^\s/]+/[^\s/]+/?$`)
 	searchObjectInstAndAssoRegexp   = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/detail/?$`)
 	instSearchRegexp                = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
@@ -60,6 +61,9 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 		objName = pathArr[len(pathArr)-2]
 
 	case updateObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPut:
+		objName = pathArr[len(pathArr)-2]
+
+	case updateObjectInstanceBatchRegexp.MatchString(pathStr) && method == http.MethodPut:
 		objName = pathArr[len(pathArr)-2]
 
 	case searchObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPost:
