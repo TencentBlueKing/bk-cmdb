@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"strings"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/util"
 )
@@ -28,7 +29,7 @@ const (
 
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
-func ParseFilterToMongo(filter *FilterExpression, resourceType string) (map[string]interface{}, error) {
+func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
 	operator := filter.Operator
 
 	// parse filter which is composed of multiple sub filters
@@ -65,10 +66,16 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType string) (map[stri
 		return nil, fmt.Errorf("filter operator %s field %s not in the form of 'resourceType.attribute'", operator, field)
 	}
 	// if field is another resource's attribute, then the filter isn't for this resource, ignore it
-	if fieldArr[0] != resourceType {
+	if fieldArr[0] != string(resourceType) {
 		return nil, nil
 	}
 	value := filter.Value
+	if value == IDField {
+		value = GetResourceIDField(resourceType)
+	}
+	if value == "display_name" {
+		value = GetResourceNameField(resourceType)
+	}
 
 	switch operator {
 	case OperatorEqual, OperatorNotEqual:
@@ -171,4 +178,68 @@ func getValueType(value interface{}) string {
 		return booleanType
 	}
 	return ""
+}
+
+// get resource id's actual field
+func GetResourceIDField(resourceType iam.ResourceTypeID) string {
+	switch resourceType {
+	case iam.SysHostInstance, iam.BizHostInstance:
+		return common.BKHostIDField
+	case iam.SysEventPushing:
+		return common.BKSubscriptionIDField
+	case iam.SysModelGroup:
+		return common.BKClassificationIDField
+	case iam.SysModel:
+		return common.BKObjIDField
+	case iam.SysInstance:
+		return common.BKInstIDField
+	case iam.SysAssociationType:
+		return common.AssociationKindIDField
+	case iam.SysResourcePoolDirectory:
+		return common.BKModuleIDField
+	case iam.SysCloudArea:
+		return common.BKCloudIDField
+	case iam.SysCloudAccount:
+		return common.BKCloudAccountIDField
+	case iam.SysCloudResourceTask:
+		return common.BKCloudTaskID
+	case iam.Business:
+		return common.BKAppIDField
+	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
+		return common.BKFieldID
+	default:
+		return ""
+	}
+}
+
+// get resource display name's actual field
+func GetResourceNameField(resourceType iam.ResourceTypeID) string {
+	switch resourceType {
+	case iam.SysHostInstance, iam.BizHostInstance:
+		return common.BKHostInnerIPField
+	case iam.SysEventPushing:
+		return common.BKSubscriptionNameField
+	case iam.SysModelGroup:
+		return common.BKClassificationNameField
+	case iam.SysModel:
+		return common.BKObjNameField
+	case iam.SysInstance:
+		return common.BKInstNameField
+	case iam.SysAssociationType:
+		return common.AssociationKindNameField
+	case iam.SysResourcePoolDirectory:
+		return common.BKModuleNameField
+	case iam.SysCloudArea:
+		return common.BKCloudNameField
+	case iam.SysCloudAccount:
+		return common.BKCloudAccountName
+	case iam.SysCloudResourceTask:
+		return common.BKCloudSyncTaskName
+	case iam.Business:
+		return common.BKAppNameField
+	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
+		return common.BKFieldName
+	default:
+		return ""
+	}
 }

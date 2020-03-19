@@ -26,6 +26,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/auditlog"
+	"configcenter/src/source_controller/coreservice/core/auth"
 	"configcenter/src/source_controller/coreservice/core/cloud"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
@@ -123,6 +124,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		hostApplyRuleCore,
 		dbSystem.New(db),
 		cloud.New(db),
+		auth.New(db),
 	)
 	return nil
 }

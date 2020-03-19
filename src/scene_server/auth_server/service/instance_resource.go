@@ -20,10 +20,10 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 )
 
-// pull resource whose actions don't need to be related to instance
-func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
-	query := new(types.PullResourceReq)
-	err := ctx.DecodeInto(query)
+// pull model instance related resource
+func (s *AuthService) PullInstanceResource(ctx *rest.Contexts) {
+	query := types.PullResourceReq{}
+	err := ctx.DecodeInto(&query)
 	if err != nil {
 		ctx.RespHTTPBody(types.BaseResp{
 			Code:    types.InternalServerErrorCode,
@@ -33,7 +33,7 @@ func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
 	}
 
 	switch query.Type {
-	case iam.SysSystemBase, iam.SysOperationStatistic, iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply, iam.BizTopology:
+	case iam.SysHostInstance, iam.BizHostInstance, iam.Business, iam.SysCloudArea, iam.SysInstance:
 	default:
 		ctx.RespHTTPBody(types.BaseResp{
 			Code:    types.NotFoundErrorCode,
@@ -44,33 +44,82 @@ func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
 
 	switch query.Method {
 	case types.ListAttrMethod:
+		res, err := s.lgc.ListAttr(ctx.Kit, query.Type)
+		if err != nil {
+			ctx.RespHTTPBody(types.BaseResp{
+				Code:    types.InternalServerErrorCode,
+				Message: err.Error(),
+			})
+			return
+		}
 		ctx.RespHTTPBody(types.ListAttrResourceResp{
 			BaseResp: types.SuccessBaseResp,
-			Data:     []types.AttrResource{},
+			Data:     res,
 		})
 		return
 	case types.ListAttrValueMethod:
+		res, err := s.lgc.ListAttrValue(ctx.Kit, query)
+		if err != nil {
+			ctx.RespHTTPBody(types.BaseResp{
+				Code:    types.InternalServerErrorCode,
+				Message: err.Error(),
+			})
+			return
+		}
 		ctx.RespHTTPBody(types.ListAttrValueResourceResp{
 			BaseResp: types.SuccessBaseResp,
-			Data: types.ListAttrValueResult{
-				Count:   0,
-				Results: []types.AttrValueResource{},
-			},
+			Data:     *res,
 		})
 		return
-	case types.ListInstanceMethod, types.ListInstanceByPolicyMethod:
+	case types.ListInstanceMethod:
+		var res *types.ListInstanceResult
+		var err error
+		switch query.Type {
+		case iam.SysHostInstance, iam.BizHostInstance:
+			res, err = s.lgc.ListHostInstance(ctx.Kit, query)
+		case iam.Business, iam.SysCloudArea, iam.SysResourcePoolDirectory:
+			res, err = s.lgc.ListSystemInstance(ctx.Kit, query)
+		case iam.SysInstance:
+			res, err = s.lgc.ListModelInstance(ctx.Kit, query)
+		}
+		if err != nil {
+			ctx.RespHTTPBody(types.BaseResp{
+				Code:    types.InternalServerErrorCode,
+				Message: err.Error(),
+			})
+			return
+		}
 		ctx.RespHTTPBody(types.ListInstanceResourceResp{
 			BaseResp: types.SuccessBaseResp,
-			Data: types.ListInstanceResult{
-				Count:   0,
-				Results: []types.InstanceResource{},
-			},
+			Data:     *res,
 		})
 		return
 	case types.FetchInstanceInfoMethod:
+		res, err := s.lgc.FetchInstanceInfo(ctx.Kit, query)
+		if err != nil {
+			ctx.RespHTTPBody(types.BaseResp{
+				Code:    types.InternalServerErrorCode,
+				Message: err.Error(),
+			})
+			return
+		}
 		ctx.RespHTTPBody(types.FetchInstanceInfoResp{
 			BaseResp: types.SuccessBaseResp,
-			Data:     []map[string]interface{}{},
+			Data:     res,
+		})
+		return
+	case types.ListInstanceByPolicyMethod:
+		res, err := s.lgc.ListInstanceByPolicy(ctx.Kit, query)
+		if err != nil {
+			ctx.RespHTTPBody(types.BaseResp{
+				Code:    types.InternalServerErrorCode,
+				Message: err.Error(),
+			})
+			return
+		}
+		ctx.RespHTTPBody(types.ListInstanceResourceResp{
+			BaseResp: types.SuccessBaseResp,
+			Data:     *res,
 		})
 		return
 	default:
