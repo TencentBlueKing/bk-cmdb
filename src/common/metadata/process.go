@@ -1445,7 +1445,6 @@ type ServiceInstance struct {
 	// it can be 0 when the service is not created with a service template.
 	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
 	HostID            int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
-	InnerIP           string `field:"bk_host_innerip" json:"bk_host_innerip" bson:"bk_host_innerip"`
 
 	// the module that this service belongs to.
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id"`
