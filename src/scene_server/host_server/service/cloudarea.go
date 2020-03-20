@@ -104,9 +104,11 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	retData := map[string]interface{}{
-		"info":  res.Data.Info,
-		"count": res.Data.Count,
+	retData, err := s.whetherAddHostCount(srvData, input.HostCount, res.Data)
+	if err != nil {
+		blog.ErrorJSON("FindManyCloudArea add field host_count failed, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostFindManyCloudAreaAddHostCountFieldFail)})
+		return
 	}
 
 	_ = resp.WriteEntity(metadata.Response{
@@ -165,6 +167,20 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("CreatePlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
 		ccErr := srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	// add auditLog
+	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
+	if err := auditLog.WithCurrent(srvData.ctx, platID); err != nil {
+		blog.ErrorJSON("CreatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
+	if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditCreate); err != nil {
+		blog.ErrorJSON("CreatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -232,17 +248,24 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
+
+	// add auditLog preData
+	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
+	if err := auditLog.WithPrevious(srvData.ctx, platID); err != nil {
+		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
 	delCond := &meta.DeleteOption{
 		Condition: mapstr.MapStr{common.BKCloudIDField: platID},
 	}
-
 	res, err := s.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, delCond)
 	if nil != err {
 		blog.Errorf("DelPlat do error: %v, input:%d,rid:%s", err, platID, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed)})
 		return
 	}
-
 	if false == res.Result {
 		blog.Errorf("DelPlat http response error. err code:%d,err msg:%s,input:%s,rid:%s", res.Code, res.ErrMsg, platID, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
@@ -255,6 +278,12 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("DelPlat success, but DeregisterResource from iam failed, platID: %d, err: %+v,rid:%s", platID, err, srvData.rid)
 		ccErr := srvData.ccErr.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
+		return
+	}
+
+	if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditDelete); err != nil {
+		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -292,6 +321,14 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	// auditLog preData
+	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
+	if err := auditLog.WithPrevious(srvData.ctx, platID); err != nil {
+		blog.ErrorJSON("DelPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
 	// update plat
 	updateOption := &meta.UpdateOption{
 		Data: input,
@@ -318,7 +355,6 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 			common.BKCloudIDField: platID,
 		},
 	}
-
 	platInfo, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, query)
 	if nil != err {
 		blog.Errorf("UpdatePlat ReadInstance htt do error: %v query:%#v,rid:%s", err, query, srvData.rid)
@@ -338,6 +374,18 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("UpdatePlat success, but UpdateRegisteredPlat failed, plat: %d, err: %v, rid: %s", platID, err, srvData.rid)
 		ccErr := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)}
 		_ = resp.WriteError(http.StatusInternalServerError, ccErr)
+		return
+	}
+
+	// add auditLog
+	if err := auditLog.WithCurrent(srvData.ctx, platID); err != nil {
+		blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditUpdate); err != nil {
+		blog.ErrorJSON("UpdatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -378,4 +426,74 @@ func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.R
 		BaseResp: meta.SuccessBaseResp,
 		Data:     "",
 	})
+}
+
+func (s *Service) whetherAddHostCount(srvData *srvComm, hostCount bool, dataInfo metadata.InstDataInfo) (map[string]interface{}, error) {
+	// 查询云区域不需要主机数量
+	if hostCount == false {
+		retData := map[string]interface{}{
+			"info":  dataInfo.Info,
+			"count": dataInfo.Count,
+		}
+
+		return retData, nil
+	}
+
+	// add host_count
+	mapCloudIDInfo := make(map[int64]mapstr.MapStr, 0)
+	intCloudIDArray := make([]int64, 0)
+	for _, area := range dataInfo.Info {
+		intCloudID, err := area.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.ErrorJSON("FindManyCloudArea fail with cloudID convert from interface to int64 failed, err: %v, rid: %s", err, srvData.rid)
+			return nil, err
+		}
+		intCloudIDArray = append(intCloudIDArray, intCloudID)
+		mapCloudIDInfo[intCloudID] = area
+	}
+
+	condition := mapstr.MapStr{
+		common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: intCloudIDArray},
+	}
+	cond := &metadata.QueryCondition{
+		Fields:    []string{common.BKCloudIDField},
+		Condition: condition,
+	}
+	rsp, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, cond)
+	if nil != err {
+		blog.Errorf("findManyCloudAreaAddHostCount htt do error: %v cond:%#v,rid:%s", err, cond, srvData.rid)
+		return nil, err
+	}
+	if false == rsp.Result {
+		blog.Errorf("findManyCloudAreaAddHostCount http reply error.  cond:%#v, err code:%d, err msg:%s, rid:%s", cond, rsp.Code, rsp.ErrMsg, srvData.rid)
+		return nil, srvData.ccErr.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	result := make([]mapstr.MapStr, 0)
+	cloudHost := make(map[int64]int64, 0)
+	for _, info := range rsp.Data.Info {
+		intID, err := info.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.ErrorJSON("findManyCloudAreaAddHostCount fail, cloudID convert from interface to int64 failed, err: %v, rid: %s", err, srvData.rid)
+			return nil, err
+		}
+		if _, ok := cloudHost[intID]; !ok {
+			cloudHost[intID] = 0
+		}
+		cloudHost[intID] += 1
+	}
+	for cloudID, cloudInfo := range mapCloudIDInfo {
+		cloudInfo["host_count"] = 0
+		if count, ok := cloudHost[cloudID]; ok {
+			cloudInfo["host_count"] = count
+		}
+		result = append(result, cloudInfo)
+	}
+
+	retData := map[string]interface{}{
+		"info":  result,
+		"count": dataInfo.Count,
+	}
+
+	return retData, nil
 }
