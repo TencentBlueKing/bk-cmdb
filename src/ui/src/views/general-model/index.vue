@@ -153,9 +153,9 @@
         <cmdb-slider
             :is-show.sync="importSlider.show"
             :title="$t('HostResourcePool[\'批量导入\']')">
-            <cmdb-import v-if="importSlider.show" slot="content" 
-                :templateUrl="url.template" 
-                :importUrl="url.import" 
+            <cmdb-import v-if="importSlider.show" slot="content"
+                :templateUrl="url.template"
+                :importUrl="url.import"
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
@@ -569,6 +569,7 @@
                     }
                 }).then(() => {
                     this.$success(this.$t('Common["修改成功"]'))
+                    this.slider.show = false
                     this.handlePageChange(1)
                 })
             },
@@ -676,7 +677,7 @@
         z-index: 1;
         &.button-delete {
             color: $cmdbDangerColor;
-            border-color: $cmdbDangerColor; 
+            border-color: $cmdbDangerColor;
         }
     }
 }
