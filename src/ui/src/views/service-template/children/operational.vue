@@ -687,17 +687,16 @@
                     cursor: pointer;
                     &.form-confirm {
                         color: #0082ff;
+                        font-size: 20px;
                         &:before {
                             display: inline-block;
-                            transform: scale(0.83);
                         }
                     }
                     &.form-cancel {
                         color: #979ba5;
-                        font-size: 14px;
+                        font-size: 20px;
                         &:before {
                             display: inline-block;
-                            transform: scale(0.66);
                         }
                     }
                     &:hover {
@@ -756,9 +755,10 @@
                     }
                 }
                 .icon-plus {
-                    font-size: 12px;
+                    font-size: 20px;
                     line-height: normal;
                     font-weight: bold;
+                    margin: 0 -4px;
                 }
                 .create-tips {
                     color: #979Ba5;
@@ -783,7 +783,7 @@
             width: 60px;
             height: 60px;
             line-height: 60px;
-            font-size: 30px;
+            font-size: 50px;
             font-weight: bold;
             color: #ffffff;
             border-radius: 50%;

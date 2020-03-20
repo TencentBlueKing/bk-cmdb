@@ -209,7 +209,8 @@
             .bk-icon {
                 display: inline-block;
                 vertical-align: -1px;
-                font-size: 12px;
+                font-size: 20px;
+                margin-left: -4px;
                 transition: transform .2s linear;
                 &.is-all-show {
                     transform: rotate(-180deg);

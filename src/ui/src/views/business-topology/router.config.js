@@ -54,12 +54,15 @@ export default [{
             relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
         layout: {
-            previous: (view) => ({
-                name: MENU_BUSINESS_HOST_AND_SERVICE,
-                query: {
-                    node: view.$route.query.node
+            previous: (view) => {
+                if (view.$route.query.from) {
+                    return { path: view.$route.query.from }
                 }
-            })
+                return {
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query: { node: view.$route.query.node }
+                }
+            }
         }
     })
 }, {

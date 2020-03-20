@@ -47,7 +47,7 @@
                     :auto-select="false"
                     v-model="filter.value"
                     font-size="medium"
-                    @on-selected="handleFilterData">
+                    @on-selected="handleFilterData(true)">
                 </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
@@ -56,7 +56,8 @@
                     font-size="medium"
                     right-icon="icon-search"
                     :placeholder="$t('快速查询')"
-                    @enter="handleFilterData">
+                    @enter="handleFilterData(true)"
+                    @clear="handleFilterData(false)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
@@ -65,7 +66,8 @@
                     font-size="medium"
                     right-icon="icon-search"
                     :placeholder="$t('快速查询')"
-                    @enter="handleFilterData">
+                    @enter="handleFilterData(true)"
+                    @clear="handleFilterData(false)">
                 </bk-input>
             </div>
         </div>
@@ -86,15 +88,16 @@
                 :fixed="column.id === 'bk_biz_name'"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <cmdb-table-empty
                 slot="empty"
                 :stuff="table.stuff"
                 :auth="$authResources({ type: $OPERATION.C_BUSINESS })"
-                @create="handleCreate"
-            ></cmdb-table-empty>
+                @create="handleCreate">
+            </cmdb-table-empty>
         </bk-table>
         <bk-sideslider
             v-transfer-dom
@@ -360,10 +363,10 @@
                     config: Object.assign({ requestId: 'post_searchBusiness_list' }, config)
                 })
             },
-            handleFilterData () {
+            handleFilterData (withFilter = true) {
                 this.table.pagination.current = 1
                 this.filter.sendValue = this.filter.value
-                this.getTableData(true)
+                this.getTableData(withFilter)
             },
             getTableData (event) {
                 this.getBusinessList({ cancelPrevious: true, globalPermission: false }).then(data => {
@@ -374,9 +377,7 @@
                     this.table.list = data.info
                     this.table.pagination.count = data.count
 
-                    if (event) {
-                        this.table.stuff.type = 'search'
-                    }
+                    this.table.stuff.type = event ? 'search' : 'default'
 
                     return data
                 }).catch(({ permission }) => {

@@ -929,6 +929,11 @@
                 font-size: 16px;
                 width: 16px;
                 height: 16px;
+                &.icon-arrows-down,
+                &.icon-arrows-up {
+                    font-size: 30px;
+                    text-indent: -7px;
+                }
             }
             &:hover .icon-btn {
                 display: inline-block;

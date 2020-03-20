@@ -93,12 +93,14 @@
             <bk-table-column
                 sortable="custom"
                 prop="op_desc"
-                :label="$t('描述')">
+                :label="$t('描述')"
+                show-overflow-tooltip>
             </bk-table-column>
             <bk-table-column
                 sortable="custom"
                 prop="bk_biz_id"
-                :label="$t('所属业务')">
+                :label="$t('所属业务')"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row.bk_biz_name}}</template>
             </bk-table-column>
             <bk-table-column
