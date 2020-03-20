@@ -49,7 +49,7 @@ func (m *operationManager) SearchInstCount(ctx core.ContextParams, inputParam ma
 	return count, nil
 }
 
-func (m *operationManager) SearchChartDataCommon(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) SearchChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 	switch inputParam.ReportType {
 	case common.HostCloudChart:
 		data, err := m.HostCloudChartData(ctx, inputParam)
