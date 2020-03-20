@@ -868,7 +868,7 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	//BKSessionLanugageKey = "language"
-	BKHTTPSupplierID = "bk_supplier_id"
+	BKHTTPSupplierID     = "bk_supplier_id"
 	BKHTTPRequestAppCode = "req_app_code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
@@ -1139,14 +1139,18 @@ const (
 
 // cloud sync const
 const (
-	BKCloudAccountID        = "bk_account_id"
-	BKCloudAccountName      = "bk_account_name"
-	BKCloudVendor           = "bk_cloud_vendor"
-	BKCloudSyncTaskName     = "bk_task_name"
-	BKCloudSyncTaskID       = "bk_task_id"
-	BKCloudSyncStatus       = "bk_sync_status"
-	BKCloudLastSyncTime     = "bk_last_sync_time"
-	BKCloudCanDeleteAccount = "bk_can_delete_account"
+	BKCloudAccountID    = "bk_account_id"
+	BKCloudAccountName  = "bk_account_name"
+	BKCloudVendor       = "bk_cloud_vendor"
+	BKCloudSyncTaskName = "bk_task_name"
+	BKCloudSyncTaskID   = "bk_task_id"
+	BKCloudSyncStatus   = "bk_sync_status"
+	BKCloudLastSyncTime = "bk_last_sync_time"
+	BKCreator = "bk_creator"
+	BKStatus = "bk_status"
+	BKLastEditor = "bk_last_editor"
 
-	BKVpcID = "bk_vpc_id"
+	BKVpcID   = "bk_vpc_id"
+	BKVpcName = "bk_vpc_name"
+	BKReion   = "bk_region"
 )

@@ -123,11 +123,10 @@ func (h *HostSyncor) addCLoudId(accountConf *metadata.CloudAccountConf, hostReso
 		}
 		// 没有则创建
 		if cloudID == 0 {
-			cloudArea, err := h.createCloudArea(hostRes.Vpc, accountConf)
+			cloudID, err = h.createCloudArea(hostRes.Vpc, accountConf)
 			if err != nil {
 				continue
 			}
-			cloudID = cloudArea.CloudID
 		}
 		hostRes.CloudID = cloudID
 	}
@@ -264,35 +263,26 @@ func (h *HostSyncor) getCloudId(vpcID string) (int64, error) {
 }
 
 // 创建vpc对应的云区域
-func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *metadata.CloudAccountConf) (*metadata.CloudArea, error) {
-	id, err := h.db.NextSequence(context.Background(), common.BKTableNameBasePlat)
-	if nil != err {
-		blog.Errorf("createCloudArea failed, generate id failed, err: %s", err.Error())
-		return nil, err
+func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *metadata.CloudAccountConf) (int64, error) {
+
+	cloudArea := map[string]interface{}{
+		common.BKCloudNameField: fmt.Sprintf("%d_%s", accountConf.AccountID, vpc.VpcID),
+		common.BKCloudVendor: 		metadata.VendorNameIDs[accountConf.VendorName],
+		common.BKVpcID: vpc.VpcID,
+		common.BKVpcName: vpc.VpcName,
+		common.BKReion: vpc.Region,
+		common.BKCloudAccountID: accountConf.AccountID,
+		common.BKCreator: common.CCSystemOperatorUserName,
 	}
-	ts := metadata.Now()
-	cloudArea := metadata.CloudArea{
-		CloudID:     int64(id),
-		CloudName:   fmt.Sprintf("%d_%s", accountConf.AccountID, vpc.VpcID),
-		Status:      1,
-		CloudVendor: accountConf.VendorName,
-		OwnerID:     fmt.Sprintf("%d", common.BKDefaultSupplierID),
-		VpcID:       vpc.VpcID,
-		VpcName:     vpc.VpcName,
-		Region:      vpc.Region,
-		AccountID:   accountConf.AccountID,
-		Creator:     "cc_system",
-		CreateTime:  ts,
-		LastEditor:  "cc_system",
-		LastTime:    ts,
+
+	resp, err := h.logics.CoreAPI.HostServer().CreateCloudArea(context.Background(), header, cloudArea)
+	if err != nil {
+		blog.Errorf("createCloudArea failed, vpcID: %s, err: %s", vpc.VpcID, err.Error())
+		return int64(0), err
 	}
-	if err := h.db.Table(common.BKTableNameBasePlat).Insert(context.Background(), cloudArea); err != nil {
-		if err != nil {
-			blog.Errorf("createCloudArea insert err:%v", err.Error())
-			return nil, err
-		}
-	}
-	return &cloudArea, nil
+
+
+	return int64(resp.Data.Created.ID), nil
 }
 
 // 获取本地数据库中的主机信息

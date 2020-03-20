@@ -89,13 +89,14 @@ func (s *Service) SearchSyncTask(ctx *rest.Contexts) {
 	if option.Page.Limit == 0 {
 		option.Page.Limit = common.BKDefaultLimit
 	}
-	// set default sort
-	if option.Page.Sort == "" {
-		option.Page.Sort = "-" + common.CreateTimeField
-	}
 	if option.Page.IsIllegal() {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
+	}
+
+	// set default sort
+	if option.Page.Sort == "" {
+		option.Page.Sort = "-" + common.CreateTimeField
 	}
 
 	// if not exact search, change the string query to regexp
@@ -200,13 +201,14 @@ func (s *Service) SearchSyncHistory(ctx *rest.Contexts) {
 	if option.Page.Limit == 0 {
 		option.Page.Limit = common.BKDefaultLimit
 	}
-	// set default sort
-	if option.Page.Sort == "" {
-		option.Page.Sort = "-" + common.CreateTimeField
-	}
 	if option.Page.IsIllegal() {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
+	}
+
+	// set default sort
+	if option.Page.Sort == "" {
+		option.Page.Sort = "-" + common.CreateTimeField
 	}
 
 	// if not exact search, change the string query to regexp

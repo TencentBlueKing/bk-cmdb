@@ -52,6 +52,11 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		return
 	}
 
+	// set default sort
+	if input.Page.Sort == "" {
+		input.Page.Sort = "-" + common.CreateTimeField
+	}
+
 	// if not exact search, change the string query to regexp
 	if input.Exact != true {
 		for k, v := range input.Condition {
@@ -128,6 +133,10 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	}
 	// read supplier account from header
 	input[common.BkSupplierAccount] = util.GetOwnerID(req.Request.Header)
+
+	// set field default value
+	input[common.BKStatus] = "1"
+	input[common.BKLastEditor] = input[common.BKCreator]
 
 	// bk_cloud_name is required and unique
 	_, ok := input[common.BKCloudNameField]

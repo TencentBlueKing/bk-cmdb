@@ -52,6 +52,11 @@ const (
 
 var SupportedCloudVendors = []string{"aws", "tencent_cloud"}
 
+var VendorNameIDs = map[string]string{
+	"aws": "1",
+	"tencent_cloud": "2",
+}
+
 // 云厂商账户配置
 type CloudAccountConf struct {
 	AccountID  int64  `json:"bk_account_id" bson:"bk_account_id"`
