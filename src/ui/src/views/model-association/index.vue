@@ -39,14 +39,14 @@
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange">
-            <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom" class-name="is-highlight"></bk-table-column>
-            <bk-table-column prop="bk_asst_name" :label="$t('名称')" sortable="custom">
+            <bk-table-column prop="bk_asst_id" :label="$t('唯一标识')" sortable="custom" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
+            <bk-table-column prop="bk_asst_name" :label="$t('名称')" sortable="custom" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{row['bk_asst_name'] || '--'}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="src_des" :label="$t('源->目标描述')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="dest_des" :label="$t('目标->源描述')" sortable="custom"></bk-table-column>
+            <bk-table-column prop="src_des" :label="$t('源->目标描述')" sortable="custom" show-overflow-tooltip></bk-table-column>
+            <bk-table-column prop="dest_des" :label="$t('目标->源描述')" sortable="custom" show-overflow-tooltip></bk-table-column>
             <bk-table-column prop="count" :label="$t('使用数')"></bk-table-column>
             <bk-table-column v-if="isAdminView"
                 fixed="right"

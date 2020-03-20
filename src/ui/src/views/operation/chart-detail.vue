@@ -1,11 +1,12 @@
 <template>
     <div>
-        <bk-dialog v-model="showDia" :position="{ top: 100 }"
+        <bk-dialog v-model="showDia"
             class="bk-dialog-no-padding bk-dialog-no-tools"
             :close-icon="false"
             :mask-close="false"
             :show-footer="false"
-            :width="720">
+            :width="720"
+            ref="dialog">
             <div class="dialog-content">
                 <div class="model-header">
                     <p class="title">{{ editTitle }}</p>
@@ -268,6 +269,9 @@
             this.chartType = this.chartData.report_type === 'custom'
             this.chartData.bk_obj_id && this.getDemList(this.chartData.bk_obj_id)
             if (this.chartType && this.chartData.bk_obj_id !== 'host') this.getStaList()
+        },
+        mounted () {
+            this.$refs.dialog.dialogIndex = this.$refs.dialog.getDialogIndex()
         },
         methods: {
             ...mapActions('operationChart', [

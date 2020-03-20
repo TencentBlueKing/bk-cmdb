@@ -29,10 +29,6 @@
     z-index: 2601 !important;
 }
 
-.bk-sideslider {
-    z-index: 1003 !important;
-}
-
 .bk-select-full-width {
     width: 100%;
 }
@@ -169,4 +165,8 @@
     .bk-icon {
         vertical-align: unset;
     }
+}
+
+.bk-dropdown-menu {
+    vertical-align: middle;
 }

@@ -16,7 +16,8 @@
                 clearable
                 v-model="ip"
                 :placeholder="$t('请输入xx', { name: 'IP' })"
-                @enter="handlePageChange(1)">
+                @enter="handlePageChange(1)"
+                @clear="handlePageChange(1)">
             </bk-input>
         </div>
         <bk-table class="history-table"
@@ -30,12 +31,17 @@
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{ row[column.id] | formatter(column.property) }}</template>
             </bk-table-column>
-            <bk-table-column prop="op_time" :label="$t('更新时间')">
+            <bk-table-column prop="op_time" :label="$t('更新时间')" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{$tools.formatTime(row.op_time)}}</template>
             </bk-table-column>
+            <cmdb-table-empty
+                slot="empty"
+                :stuff="emptyStuff">
+            </cmdb-table-empty>
         </bk-table>
     </div>
 </template>
@@ -70,6 +76,10 @@
                     'module': 'bk_module_id',
                     'biz': 'bk_biz_id',
                     'plat': 'bk_plat_id'
+                },
+                emptyStuff: {
+                    type: 'search',
+                    payload: {}
                 }
             }
         },

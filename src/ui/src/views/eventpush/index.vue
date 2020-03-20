@@ -24,13 +24,13 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="subscription_name" :label="$t('订阅名称')" sortable="custom">
+            <bk-table-column prop="subscription_name" :label="$t('订阅名称')" sortable="custom" show-overflow-tooltip>
             </bk-table-column>
-            <bk-table-column prop="system_name" :label="$t('系统名称')" sortable="custom">
+            <bk-table-column prop="system_name" :label="$t('系统名称')" sortable="custom" show-overflow-tooltip>
             </bk-table-column>
-            <bk-table-column prop="operator" :label="$t('操作人')" sortable="custom">
+            <bk-table-column prop="operator" :label="$t('操作人')" sortable="custom" show-overflow-tooltip>
             </bk-table-column>
-            <bk-table-column prop="last_time" :label="$t('更新时间')" sortable="custom">
+            <bk-table-column prop="last_time" :label="$t('更新时间')" sortable="custom" show-overflow-tooltip>
             </bk-table-column>
             <bk-table-column prop="operation" :label="$t('推送情况（近一周）')">
                 <template slot-scope="{ row }">
