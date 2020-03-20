@@ -21,9 +21,9 @@ func (s *operation) SearchInstCount(ctx context.Context, h http.Header, data int
 	return
 }
 
-func (s *operation) SearchChartDataCommon(ctx context.Context, h http.Header, data metadata.ChartConfig) (resp *metadata.Response, err error) {
+func (s *operation) SearchChartData(ctx context.Context, h http.Header, data metadata.ChartConfig) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/find/operation/chart/data/common"
+	subPath := "/find/operation/chart/data"
 
 	err = s.client.Post().
 		WithContext(ctx).
@@ -93,7 +93,7 @@ func (s *operation) UpdateOperationChart(ctx context.Context, h http.Header, dat
 
 func (s *operation) SearchTimerChartData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/find/operation/chart/data"
+	subPath := "/find/operation/timer/chart/data"
 
 	err = s.client.Post().
 		WithContext(ctx).

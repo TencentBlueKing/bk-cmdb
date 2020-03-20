@@ -179,9 +179,9 @@ func (s *coreService) initOperation() {
 	s.addAction(http.MethodPost, "/find/operation/chart/common", s.SearchChartCommon, nil)
 
 	s.addAction(http.MethodPost, "/find/operation/inst/count", s.SearchInstCount, nil)
-	s.addAction(http.MethodPost, "/find/operation/chart/data/common", s.SearchChartDataCommon, nil)
+	s.addAction(http.MethodPost, "/find/operation/chart/data", s.SearchChartData, nil)
 	s.addAction(http.MethodPost, "/update/operation/chart/position", s.UpdateChartPosition, nil)
-	s.addAction(http.MethodPost, "/find/operation/chart/data", s.SearchTimerChartData, nil)
+	s.addAction(http.MethodPost, "/find/operation/timer/chart/data", s.SearchTimerChartData, nil)
 	s.addAction(http.MethodPost, "/start/operation/chart/timer", s.TimerFreshData, nil)
 }
 
