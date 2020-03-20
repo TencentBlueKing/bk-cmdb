@@ -13,6 +13,8 @@
 package host_server_test
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/test"
 	"context"
 
 	"configcenter/src/test/util"
@@ -138,7 +140,7 @@ var _ = Describe("cloud area test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(int64(3)))
+			Expect(rsp.Data.Count).To(Equal(int64(2)))
 		})
 
 		It("search with configured conditon", func() {
@@ -157,9 +159,9 @@ var _ = Describe("cloud area test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(int64(3)))
-			Expect(rsp.Data.Info[1].String("bk_cloud_name")).To(Equal(testData1["bk_cloud_name"]))
-			Expect(rsp.Data.Info[2].String("bk_cloud_name")).To(Equal(testData2["bk_cloud_name"]))
+			Expect(rsp.Data.Count).To(Equal(int64(2)))
+			Expect(rsp.Data.Info[0].String("bk_cloud_name")).To(Equal(testData1["bk_cloud_name"]))
+			Expect(rsp.Data.Info[1].String("bk_cloud_name")).To(Equal(testData2["bk_cloud_name"]))
 		})
 
 		It("search with configured limit", func() {
@@ -202,7 +204,7 @@ var _ = Describe("cloud area test", func() {
 	var _ = Describe("cloud area test delete", func() {
 
 		It("delete with normal data", func() {
-			cloudID := int64(2)
+			cloudID := cloudID1
 			rsp, err := hostServerClient.DeleteCloudArea(context.Background(), header, cloudID)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
@@ -214,26 +216,9 @@ var _ = Describe("cloud area test", func() {
 var cloudID1, cloudID2, cloudIDTmp int64
 
 func prepareCloudData() {
-	if cloudID1 != 0 {
-		rsp, err := hostServerClient.DeleteCloudArea(context.Background(), header, cloudID1)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-	}
-
-	if cloudID2 != 0 {
-		rsp, err := hostServerClient.DeleteCloudArea(context.Background(), header, cloudID2)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-	}
-
-	if cloudIDTmp != 0 {
-		rsp, err := hostServerClient.DeleteCloudArea(context.Background(), header, cloudIDTmp)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-	}
+	//删除云区域表
+	err := test.GetDB().DropTable(context.Background(), common.BKTableNameBasePlat)
+	Expect(err).NotTo(HaveOccurred())
 
 	resp, err := hostServerClient.CreateCloudArea(context.Background(), header, testData1)
 	cloudID1 = int64(resp.Data.Created.ID)
