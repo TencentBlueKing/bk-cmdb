@@ -43,7 +43,6 @@
                                 <cmdb-selector
                                     class="fl"
                                     :placeholder="$t('请选择一级分类')"
-                                    :auto-select="false"
                                     :searchable="true"
                                     :list="mainList"
                                     v-validate="'required'"
