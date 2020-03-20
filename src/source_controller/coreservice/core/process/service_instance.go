@@ -70,7 +70,6 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 		blog.Errorf("CreateServiceInstance failed, host id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 	}
-	instance.InnerIP = innerIP
 
 	// make sure biz id identical with service template
 	if serviceTemplate != nil && serviceTemplate.BizID != bizID {
@@ -91,7 +90,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 			return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if count > 0 {
-			return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceInstanceAlreadyExist, instance.InnerIP)
+			return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceInstanceAlreadyExist, innerIP)
 		}
 	}
 
