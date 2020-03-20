@@ -73,3 +73,16 @@ type QueryBusinessRequest struct {
 type UpdateBusinessStatusOption struct {
 	BizName string `json:"bk_biz_name" mapstructure:"bk_biz_name"`
 }
+
+type SearchResourceDirParams struct {
+	Condition mapstr.MapStr `json:"condition"`
+	Exact     bool          `json:"exact"`
+}
+
+type SearchResourceDirResult struct {
+	BizID      int64  `json:"bk_biz_id"`
+	ModuleID   int64  `json:"bk_module_id"`
+	ModuleName string `json:"bk_module_name"`
+	SetID      int64  `json:"bk_set_id"`
+	HostCount  int64  `json:"host_count"`
+}

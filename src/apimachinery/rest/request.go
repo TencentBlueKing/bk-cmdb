@@ -369,7 +369,7 @@ func (r *Result) Into(obj interface{}) error {
 	}
 
 	if 0 != len(r.Body) {
-        err := json.Unmarshal(r.Body, obj)
+		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
 			if r.StatusCode >= 300 {
 				return fmt.Errorf("http request err: %s", string(r.Body))

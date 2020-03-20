@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/dal/types"
 )
 
 type setIdentifierFlag struct {

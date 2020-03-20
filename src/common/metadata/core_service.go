@@ -471,7 +471,7 @@ type MultipleProcessInstanceRelationResult struct {
 }
 
 type MultipleHostProcessRelation struct {
-	Count uint64                 `json:"count"`
+	Count uint64                `json:"count"`
 	Info  []HostProcessRelation `json:"info"`
 }
 
@@ -526,4 +526,9 @@ type CloudAccountResult struct {
 type MultipleCloudAccountResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleCloudAccount `json:"data"`
+}
+
+type TransferHostResourceDirectory struct {
+	ModuleID int64   `json:"bk_module_id"`
+	HostID   []int64 `json:"bk_host_id"`
 }

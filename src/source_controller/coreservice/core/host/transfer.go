@@ -13,6 +13,7 @@
 package host
 
 import (
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -48,4 +49,8 @@ func (hm *hostManager) RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHos
 
 func (hm *hostManager) GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
 	return hm.hostTransfer.GetHostModuleRelation(kit, input)
+}
+
+func (hm *hostManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+	return hm.hostTransfer.TransferResourceDirectory(kit, input)
 }

@@ -553,3 +553,36 @@ func (s *Service) GetAppHostTopoRelation(req *restful.Request, resp *restful.Res
 	_ = resp.WriteEntity(metadata.NewSuccessResp(result))
 	return
 }
+
+func (s *Service) TransferHostResourceDirectory(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	input := new(metadata.TransferHostResourceDirectory)
+	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+		blog.Errorf("TransferHostResourceDirectory failed with decode body err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	audit := srvData.lgc.NewHostModuleLog(input.HostID)
+	if err := audit.WithPrevious(srvData.ctx); err != nil {
+		blog.Errorf("TransferHostResourceDirectory, but get prev module host config failed, err: %v, hostIDs:%#v,rid:%s", err, input.HostID, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+		return
+	}
+
+	err := s.CoreAPI.CoreService().Host().TransferHostResourceDirectory(srvData.ctx, srvData.header, input)
+	if err != nil {
+		blog.ErrorJSON("TransferHostResourceDirectory failed with coreservice http failed, input: %v, err: %v, rid: %s", &input, err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		return
+	}
+
+	if err := audit.SaveAudit(srvData.ctx); err != nil {
+		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, input.HostID, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+		return
+	}
+
+	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+	return
+}

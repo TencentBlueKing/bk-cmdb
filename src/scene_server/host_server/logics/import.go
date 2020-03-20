@@ -264,38 +264,38 @@ func (lgc *Logics) AddHostToResourcePool(ctx context.Context, hostList metadata.
 			Index:  index,
 			HostID: hostID,
 		})
-		
+
 		curData, _, err := lgc.GetHostInstanceDetails(ctx, lgc.ownerID, strconv.FormatInt(hostID, 10))
 		if err != nil {
 			return hostIDs, res, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
-        bizName := ""
-        if bizID > 0 {
-            bizName, err = auditlog.NewAudit(lgc.CoreAPI, ctx, lgc.header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
-            if err != nil {
-                return hostIDs, res, err
-            }
-        }
+		bizName := ""
+		if bizID > 0 {
+			bizName, err = auditlog.NewAudit(lgc.CoreAPI, ctx, lgc.header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
+			if err != nil {
+				return hostIDs, res, err
+			}
+		}
 
-        logContents = append(logContents, metadata.AuditLog{
-            AuditType:    metadata.HostType,
-            ResourceType: metadata.HostRes,
-            Action:       metadata.AuditCreate,
-            OperationDetail: &metadata.InstanceOpDetail{
-                BasicOpDetail: metadata.BasicOpDetail{
-                    BusinessID:   bizID,
-                    BusinessName: bizName,
-                    ResourceID:   hostID,
-                    ResourceName: host[common.BKHostInnerIPField].(string),
-                    Details: &metadata.BasicContent{
-                        PreData:    nil,
-                        CurData:    curData,
-                        Properties: auditHeaders,
-                    },
-                },
-                ModelID: common.BKInnerObjIDHost,
-            },
-        })
+		logContents = append(logContents, metadata.AuditLog{
+			AuditType:    metadata.HostType,
+			ResourceType: metadata.HostRes,
+			Action:       metadata.AuditCreate,
+			OperationDetail: &metadata.InstanceOpDetail{
+				BasicOpDetail: metadata.BasicOpDetail{
+					BusinessID:   bizID,
+					BusinessName: bizName,
+					ResourceID:   hostID,
+					ResourceName: host[common.BKHostInnerIPField].(string),
+					Details: &metadata.BasicContent{
+						PreData:    nil,
+						CurData:    curData,
+						Properties: auditHeaders,
+					},
+				},
+				ModelID: common.BKInnerObjIDHost,
+			},
+		})
 	}
 
 	if len(logContents) > 0 {

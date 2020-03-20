@@ -46,7 +46,7 @@
 	"1110053": "Failed to get resource pool information, %s",
 	"1110054": "%s module not found",
 	"1110055": "The host failed to delete the business.",
-	"1110056": "operation failed, host not belong to business idle module, host:[%s] ",
+	"1110056": "Operation failed, the following host does not belong to the target module: %s",
 	"1110057": "Module does not exist or there are multiple built-in modules",
 	"1110058": "The object in the parameter is missing the bk_inst_id field",
 	"1110059": "set ID [%d] not found",

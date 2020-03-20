@@ -13,22 +13,22 @@
 package model
 
 import (
-    "context"
-    "fmt"
-    "strings"
-    "sync"
-    "time"
-    "unicode/utf8"
+	"context"
+	"fmt"
+	"strings"
+	"sync"
+	"time"
+	"unicode/utf8"
 
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/http/rest"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    "configcenter/src/common/universalsql"
-    "configcenter/src/common/universalsql/mongo"
-    "configcenter/src/common/util"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql"
+	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/types"
 )
 
 var (

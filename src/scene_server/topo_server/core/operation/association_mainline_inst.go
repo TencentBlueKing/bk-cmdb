@@ -578,10 +578,10 @@ func (assoc *association) fillMainlineChildInst(kit *rest.Kit, childObj model.Ob
 		parentInst.Child = append(parentInst.Child, childInstMap[parentInst.InstID]...)
 	}
 
-    if childObj.Object().ObjectID == common.BKInnerObjIDModule {
-        return nil
-    }
-    
+	if childObj.Object().ObjectID == common.BKInnerObjIDModule {
+		return nil
+	}
+
 	// get next level object ID
 	nextLevelObj, err := childObj.GetMainlineChildObject()
 	if err == io.EOF {

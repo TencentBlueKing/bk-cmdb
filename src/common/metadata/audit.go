@@ -30,21 +30,21 @@ type AuditQueryResult struct {
 }
 
 type AuditQueryCondition struct {
-	AuditType     AuditType       `json:"audit_type"`
-	User          string          `json:"user"`
-	ResourceType  []ResourceType  `json:"resource_type" `
-	Action        []ActionType    `json:"action"`
-	OperateFrom   OperateFromType `json:"operate_from"`
-	BizID         int64           `json:"bk_biz_id"`
-	ResourceID    int64           `json:"resource_id"`
+	AuditType    AuditType       `json:"audit_type"`
+	User         string          `json:"user"`
+	ResourceType []ResourceType  `json:"resource_type" `
+	Action       []ActionType    `json:"action"`
+	OperateFrom  OperateFromType `json:"operate_from"`
+	BizID        int64           `json:"bk_biz_id"`
+	ResourceID   int64           `json:"resource_id"`
 	// ResourceName filters audit logs by resource name, such as instance name, host ip etc., support fuzzy query
-	ResourceName  string          `json:"resource_name"`
+	ResourceName string `json:"resource_name"`
 	// OperationTime is an array of start time and end time, filters audit logs between them
-	OperationTime []string        `json:"operation_time"`
+	OperationTime []string `json:"operation_time"`
 	// Label filters audit logs with these labels
-	Label         []string        `json:"label"`
+	Label []string `json:"label"`
 	// Category is used by front end, filters audit logs as business(business resource and host operation related to business), resource(instance resource not related to business) or other category
-	Category      string          `json:"category"`
+	Category string `json:"category"`
 }
 
 type AuditLog struct {
