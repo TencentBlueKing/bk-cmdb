@@ -53,7 +53,7 @@ const (
 var SupportedCloudVendors = []string{"aws", "tencent_cloud"}
 
 var VendorNameIDs = map[string]string{
-	"aws": "1",
+	"aws":           "1",
 	"tencent_cloud": "2",
 }
 
@@ -131,22 +131,22 @@ type VpcInstancesCnt struct {
 
 // 云同步任务
 type CloudSyncTask struct {
-	TaskID            int64         `json:"bk_task_id" bson:"bk_task_id"`
-	TaskName          string        `json:"bk_task_name" bson:"bk_task_name"`
-	ResourceType      string        `json:"bk_resource_type" bson:"bk_resource_type"`
-	AccountID         int64         `json:"bk_account_id" bson:"bk_account_id"`
-	CloudVendor       string        `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
-	SyncStatus        string        `json:"bk_sync_status" bson:"bk_sync_status"`
-	OwnerID           string        `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	StatusDescription string        `json:"bk_status_description" bson:"bk_status_description"`
-	LastSyncTime      Time          `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
-	SyncAll           bool          `json:"bk_sync_all" bson:"bk_sync_all"`
-	SyncAllDir        int64         `json:"bk_sync_all_dir" bson:"bk_sync_all_dir"`
-	SyncVpcs          []VpcSyncInfo `json:"bk_sync_vpcs" bson:"bk_sync_vpcs"`
-	Creator           string        `json:"bk_creator" bson:"bk_creator"`
-	CreateTime        Time          `json:"create_time" bson:"create_time"`
-	LastEditor        string        `json:"bk_last_editor" bson:"bk_last_editor"`
-	LastTime          Time          `json:"last_time" bson:"last_time"`
+	TaskID            int64          `json:"bk_task_id" bson:"bk_task_id"`
+	TaskName          string         `json:"bk_task_name" bson:"bk_task_name"`
+	ResourceType      string         `json:"bk_resource_type" bson:"bk_resource_type"`
+	AccountID         int64          `json:"bk_account_id" bson:"bk_account_id"`
+	CloudVendor       string         `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
+	SyncStatus        string         `json:"bk_sync_status" bson:"bk_sync_status"`
+	OwnerID           string         `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	StatusDescription SyncStatusDesc `json:"bk_status_description" bson:"bk_status_description"`
+	LastSyncTime      Time           `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
+	SyncAll           bool           `json:"bk_sync_all" bson:"bk_sync_all"`
+	SyncAllDir        int64          `json:"bk_sync_all_dir" bson:"bk_sync_all_dir"`
+	SyncVpcs          []VpcSyncInfo  `json:"bk_sync_vpcs" bson:"bk_sync_vpcs"`
+	Creator           string         `json:"bk_creator" bson:"bk_creator"`
+	CreateTime        Time           `json:"create_time" bson:"create_time"`
+	LastEditor        string         `json:"bk_last_editor" bson:"bk_last_editor"`
+	LastTime          Time           `json:"last_time" bson:"last_time"`
 }
 
 type VpcSyncInfo struct {
@@ -286,7 +286,9 @@ type SyncFailInfo struct {
 }
 
 type SyncResult struct {
-	SuccessInfo SyncSuccessInfo `json:"success_info" bson:"success_info"`
-	FailInfo    SyncFailInfo    `json:"fail_info" bson:"fail_info"`
-	Detail      SyncDetail      `json:"detail" bson:"detail"`
+	SuccessInfo       SyncSuccessInfo `json:"success_info" bson:"success_info"`
+	FailInfo          SyncFailInfo    `json:"fail_info" bson:"fail_info"`
+	Detail            SyncDetail      `json:"detail" bson:"detail"`
+	SyncStatus        string          `json:"bk_sync_status" bson:"bk_sync_status"`
+	StatusDescription SyncStatusDesc  `json:"bk_status_description" bson:"bk_status_description"`
 }

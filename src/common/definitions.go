@@ -1139,16 +1139,17 @@ const (
 
 // cloud sync const
 const (
-	BKCloudAccountID    = "bk_account_id"
-	BKCloudAccountName  = "bk_account_name"
-	BKCloudVendor       = "bk_cloud_vendor"
-	BKCloudSyncTaskName = "bk_task_name"
-	BKCloudSyncTaskID   = "bk_task_id"
-	BKCloudSyncStatus   = "bk_sync_status"
-	BKCloudLastSyncTime = "bk_last_sync_time"
-	BKCreator = "bk_creator"
-	BKStatus = "bk_status"
-	BKLastEditor = "bk_last_editor"
+	BKCloudAccountID             = "bk_account_id"
+	BKCloudAccountName           = "bk_account_name"
+	BKCloudVendor                = "bk_cloud_vendor"
+	BKCloudSyncTaskName          = "bk_task_name"
+	BKCloudSyncTaskID            = "bk_task_id"
+	BKCloudSyncStatus            = "bk_sync_status"
+	BKCloudSyncStatusDescription = "bk_status_description"
+	BKCloudLastSyncTime          = "bk_last_sync_time"
+	BKCreator                    = "bk_creator"
+	BKStatus                     = "bk_status"
+	BKLastEditor                 = "bk_last_editor"
 
 	BKVpcID   = "bk_vpc_id"
 	BKVpcName = "bk_vpc_name"

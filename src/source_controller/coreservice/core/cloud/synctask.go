@@ -85,6 +85,10 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 	filter := map[string]interface{}{common.BKCloudSyncTaskID: taskID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	option.Set(common.LastTimeField, metadata.Now())
+	// 将最近同步时间存为时间类型，而不是字符串
+	if option.Exists(common.BKCloudLastSyncTime) {
+		option.Set(common.BKCloudLastSyncTime, metadata.Now())
+	}
 	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)
 	option.Remove(common.BKCloudIDField)

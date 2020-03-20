@@ -187,8 +187,8 @@ func (t *taskProcessor) SyncCloudResource() {
 	}()
 
 	// 云主机同步器处理同步任务
-	for i := 0; i < syncorNum; i++ {
-		syncor := NewHostSyncor(t.logics, t.db)
+	for i := 1; i <= syncorNum; i++ {
+		syncor := NewHostSyncor(i, t.logics, t.db)
 		go func(syncor *HostSyncor) {
 			for {
 				task := <- hostChan
