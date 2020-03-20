@@ -7,8 +7,13 @@
                 <span class="title-type">{{group.type}}</span>
                 <span class="title-count">({{group.list.length}})</span>
                 <i class="title-copy icon-cc-details-copy"
+                    v-bk-tooltips="{
+                        content: $t('复制成功'),
+                        trigger: 'manual',
+                        placement: 'top',
+                        boundary: 'window'
+                    }"
                     @click="handleCopy($event, group)">
-                    <span class="copy-tips">{{$t('复制成功')}}</span>
                 </i>
             </h3>
             <ul class="host-list">
@@ -44,9 +49,9 @@
                 try {
                     await this.$copyText(group.list.map(ip => ip).join('\n'))
                     const target = event.currentTarget
-                    target.classList.add('show-tips')
+                    target._tippy.show()
                     setTimeout(() => {
-                        target.classList.remove('show-tips')
+                        target._tippy.hide(0)
                     }, 500)
                 } catch (e) {
                     console.error(e)

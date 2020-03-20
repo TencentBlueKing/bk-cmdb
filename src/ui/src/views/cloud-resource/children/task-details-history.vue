@@ -4,10 +4,11 @@
             <bk-date-picker class="options-date"
                 type="datetimerange"
                 :placeholder="$t('请选择xx', { name: '时间范围' })"
-                v-model="timeRange">
+                v-model="timeRange"
+                @change="getHistory">
             </bk-date-picker>
         </div>
-        <div class="history-table">
+        <div class="history-table" v-bkloading="{ isLoading: $loading(requestId) }">
             <bk-table ref="table" :data="histories" :max-height="$APP.height - 180">
                 <bk-table-column type="expand" width="30" align="center">
                     <task-details-history-content
@@ -15,7 +16,12 @@
                         :details="row.bk_detail">
                     </task-details-history-content>
                 </bk-table-column>
-                <bk-table-column :label="$t('操作概要')" prop="bk_summary" show-overflow-tooltip></bk-table-column>
+                <bk-table-column :label="$t('操作概要')" prop="bk_summary" width="200" show-overflow-tooltip>
+                    <i18n slot-scope="{ row }" path="新增N台主机，更新M台主机">
+                        <span class="summary-count" place="new">{{getCount(row, 'new_add')}}</span>
+                        <span class="summary-count" place="update">{{getCount(row, 'update')}}</span>
+                    </i18n>
+                </bk-table-column>
                 <bk-table-column :label="$t('状态')" prop="bk_sync_status">
                     <div class="row-status" slot-scope="{ row }">
                         <i :class="['status', { 'is-error': row.bk_sync_status !== 1 }]"></i>
@@ -25,7 +31,7 @@
                 <bk-table-column :label="$t('时间')" prop="create_time">
                     <template slot-scope="{ row }">{{row.create_time | formatter('time')}}</template>
                 </bk-table-column>
-                <bk-table-column :label="$t('详情')">
+                <bk-table-column :label="$t('详情')" width="80">
                     <template slot-scope="{ row }">
                         <link-button @click="handleView(row)">{{$t('查看详情')}}</link-button>
                     </template>
@@ -49,7 +55,8 @@
             return {
                 timeRange: [new Date(Date.now() - 8.64e7), new Date()],
                 histories: [],
-                pagination: this.$tools.getDefaultPaginationConfig()
+                pagination: this.$tools.getDefaultPaginationConfig(),
+                requestId: Symbol('getHistory')
             }
         },
         created () {
@@ -62,8 +69,11 @@
                         params: {
                             bk_task_id: this.id,
                             start_time: this.$tools.formatTime(this.timeRange[0]),
-                            end_time: this.$tools.formatTime(this.timeRange[0]),
+                            end_time: this.$tools.formatTime(this.timeRange[1]),
                             page: this.$tools.getPageParams(this.pagination)
+                        },
+                        config: {
+                            requestId: this.requestId
                         }
                     })
                     this.pagination.count = data.count
@@ -72,6 +82,9 @@
                     console.error(e)
                     this.histories = []
                 }
+            },
+            getCount (row, type) {
+                return (row.bk_detail[type] || {}).count || 0
             },
             handleView (row) {
                 this.$refs.table.toggleRowExpansion(row)
@@ -95,6 +108,10 @@
                     padding: 0;
                 }
             }
+        }
+        .summary-count {
+            font-weight: bold;
+            padding: 0 2px;
         }
         .row-status {
             display: inline-block;
