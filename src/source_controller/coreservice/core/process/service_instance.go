@@ -70,7 +70,6 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance metadat
 		blog.Errorf("CreateServiceInstance failed, host id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 	}
-	instance.InnerIP = innerIP
 
 	// make sure biz id identical with service template
 	if serviceTemplate != nil && serviceTemplate.BizID != bizID {
@@ -91,7 +90,7 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance metadat
 			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if count > 0 {
-			return nil, kit.CCError.CCErrorf(common.CCErrCoreServiceInstanceAlreadyExist, instance.InnerIP)
+			return nil, kit.CCError.CCErrorf(common.CCErrCoreServiceInstanceAlreadyExist, innerIP)
 		}
 	}
 

@@ -841,8 +841,13 @@
                     box-sizing: border-box;
                     cursor: pointer;
                     margin-left: 3px;
-                    border: 1px solid rgba(99,101,110,0);
                     padding: 1px;
+                    font-size: 12px;
+                    &.icon-arrows-down,
+                    &.icon-arrows-up {
+                        font-size: 20px;
+                        margin: 0 -3px;
+                    }
                     &:hover{
                          color: #2D6ACF
                     }

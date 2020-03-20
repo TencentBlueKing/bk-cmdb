@@ -649,11 +649,12 @@
                     width: 32px;
                     text-align: center;
                     margin-right: -6px;
-                    font-size: 12px;
+                    font-size: 20px;
                     font-weight: bold;
                     transition: all .5s;
+                    vertical-align: top;
                     &.up{
-                        transform: rotate(180deg);
+                        transform: rotate(-90deg);
                     }
                 }
                 ul{

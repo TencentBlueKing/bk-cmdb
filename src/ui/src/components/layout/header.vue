@@ -160,8 +160,9 @@
                 @include ellipsis;
             }
             .user-icon {
+                margin-left: -4px;
                 transition: transform .2s linear;
-                font-size: 12px;
+                font-size: 20px;
                 color: #fff;
             }
         }

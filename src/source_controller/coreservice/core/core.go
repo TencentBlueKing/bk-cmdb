@@ -13,10 +13,10 @@
 package core
 
 import (
-	"configcenter/src/common/http/rest"
 	"context"
 	"net/http"
 
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -172,7 +172,7 @@ type AuditOperation interface {
 
 type StatisticOperation interface {
 	SearchInstCount(kit *rest.Kit, inputParam map[string]interface{}) (uint64, error)
-	SearchChartDataCommon(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
+	SearchChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
 	SearchOperationChart(kit *rest.Kit, inputParam interface{}) (*metadata.ChartClassification, error)
 	CreateOperationChart(kit *rest.Kit, inputParam metadata.ChartConfig) (uint64, error)
 	UpdateChartPosition(kit *rest.Kit, inputParam interface{}) (interface{}, error)
