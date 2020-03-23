@@ -113,7 +113,7 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 		}
 		if _, err := s.Core.SetTemplateOperation().UpdateSetSyncStatus(ctx.Kit, set.SetID); err != nil {
 			blog.Errorf("UpdateSetTemplate failed, UpdateSetSyncStatus failed, setID: %d, err: %+v, rid: %s", set.SetID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(err.GetCode()))
 			return
 		}
 	}
