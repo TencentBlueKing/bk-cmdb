@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"configcenter/src/common"
+	"configcenter/src/test"
 	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
@@ -51,7 +52,7 @@ var _ = Describe("resource pool directory test", func() {
 
 	var _ = Describe("delete resource pool directory test", func() {
 
-		It("create with normal data", func() {
+		It("delete with normal data", func() {
 			id := moduleID1
 			rsp, err := topoServerClient.ResourceDirectory().DeleteResourceDirectory(context.Background(), header, id)
 			util.RegisterResponse(rsp)
@@ -134,21 +135,11 @@ var _ = Describe("resource pool directory test", func() {
 var moduleID1, moduleID2 int64
 
 func prepareData() {
-	if moduleID1 != 0 {
-		id := moduleID1
-		rsp, err := topoServerClient.ResourceDirectory().DeleteResourceDirectory(context.Background(), header, id)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-	}
-	if moduleID2 != 0 {
-		id := moduleID2
-		rsp, err := topoServerClient.ResourceDirectory().DeleteResourceDirectory(context.Background(), header, id)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-	}
+	// 删除资源池目录表
+	err := test.GetDB().DropTable(context.Background(), common.BKTableNameBaseModule)
+	Expect(err).NotTo(HaveOccurred())
 
+	// 准备测试数据
 	rsp, err := topoServerClient.ResourceDirectory().CreateResourceDirectory(context.Background(), header, testData1)
 	util.RegisterResponse(rsp)
 	Expect(err).NotTo(HaveOccurred())

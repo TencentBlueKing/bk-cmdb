@@ -295,13 +295,6 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		return nil, lgc.ccErr.Error(common.CCErrCommNotFound)
 	}
 
-	filter := mapstr.MapStr{common.BKModuleIDField: conf.ModuleID}
-	moduleInfo, err := lgc.GetModuleMapByCond(ctx, []string{}, filter)
-	if 0 == len(moduleInfo) {
-		blog.Errorf("assign host to app error, not foud app moduleID: %d,input:%+v,rid:%s", conf.ModuleID, conf, lgc.rid)
-		return nil, lgc.ccErr.Error(common.CCErrCommNotFound)
-	}
-
 	ownerAppID, err := lgc.GetDefaultAppID(ctx)
 	if err != nil {
 		blog.Errorf("assign host to app, but get default appid failed, err: %v,input:%+v,rid:%s", err, conf, lgc.rid)
@@ -314,14 +307,42 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		return nil, nil
 	}
 
-	errHostID, err := lgc.notExistAppModuleHost(ctx, ownerAppID, conf.ModuleID, conf.HostIDs)
+	resourceModuleID := conf.ModuleID
+	// if not resource default diretory module
+	if resourceModuleID != 0 {
+		filter := mapstr.MapStr{common.BKModuleIDField: conf.ModuleID}
+		moduleInfo, err := lgc.GetModuleMapByCond(ctx, []string{}, filter)
+		if err != nil {
+			blog.Errorf("assign host to app failed, err: %v, moduleID:%d, input:%+v,rid:%s", err, resourceModuleID, conf, lgc.rid)
+			return nil, err
+		}
+		if 0 == len(moduleInfo) {
+			blog.Errorf("assign host to app error, not foud app moduleID: %d,input:%+v,rid:%s", resourceModuleID, conf, lgc.rid)
+			return nil, lgc.ccErr.Error(common.CCErrCommNotFound)
+		}
+
+	} else {
+		conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
+		ownerModuleID, err := lgc.GetResourcePoolModuleID(ctx, conds.MapStr())
+		if err != nil {
+			blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), lgc.rid)
+			return nil, err
+		}
+		if 0 == ownerModuleID {
+			blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), lgc.rid)
+			return nil, lgc.ccErr.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)
+		}
+		resourceModuleID = ownerModuleID
+	}
+
+	errHostID, err := lgc.notExistAppModuleHost(ctx, ownerAppID, resourceModuleID, conf.HostIDs)
 	if err != nil {
-		blog.Errorf("move host to resource pool, notExistAppModuleHost error, err: %v, input:%+v, rid:%s", err, conf, lgc.rid)
+		blog.Errorf("assign host to app, notExistAppModuleHost error, err: %v, input:%+v, rid:%s", err, conf, lgc.rid)
 		return nil, err
 	}
 	if len(errHostID) > 0 {
 		errHostIP := lgc.convertHostIDToHostIP(ctx, errHostID)
-		blog.Errorf("move host to resource pool, notExistAppModuleHost error, has host not belong to idle module , input:%+v, rid:%s", conf, lgc.rid)
+		blog.Errorf("assign host to app, notExistAppModuleHost error, has host not belong to resource directory module , input:%+v, rid:%s", conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrHostModuleConfigNotMatch, strings.Join(errHostIP, ","))
 	}
 
