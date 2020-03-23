@@ -13,10 +13,10 @@
 package host_server_test
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/test"
 	"context"
 
+	"configcenter/src/common"
+	"configcenter/src/test"
 	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
