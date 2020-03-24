@@ -53,6 +53,11 @@ export default [{
         menu: {
             relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
+        auth: {
+            operation: {
+                U_HOST
+            }
+        },
         layout: {
             previous: (view) => {
                 if (view.$route.query.from) {
