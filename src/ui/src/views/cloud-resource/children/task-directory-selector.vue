@@ -59,7 +59,8 @@
                 newDirectory: '',
                 directories: [],
                 request: {
-                    findMany: 'taskDirectorySelectorFindMany'
+                    findMany: 'taskDirectorySelectorFindMany',
+                    create: Symbol('create')
                 }
             }
         },
@@ -90,6 +91,7 @@
                             cacheExpire: 'page'
                         }
                     })
+                    // 直接进行赋值，后面新增目录后，其他的地方也能获得相同的数据
                     this.directories = info
                 } catch (e) {
                     this.directories = []
@@ -112,6 +114,7 @@
                     })
                 } else {
                     this.newDirectory = ''
+                    this.$refs.selector.close()
                 }
             },
             async handleConfirmCreate () {
@@ -119,12 +122,19 @@
                     return false
                 }
                 try {
-                    const id = await Promise.resolve(Date.now())
-                    this.directories.push({
-                        id: id,
-                        name: this.newDirectory
+                    const data = await this.$store.dispatch('resource/directory/create', {
+                        params: {
+                            bk_module_name: this.newDirectory
+                        },
+                        config: {
+                            requestId: this.request.create
+                        }
                     })
-                    this.selected = id
+                    this.directories.push({
+                        bk_module_id: data.created.id,
+                        bk_module_name: this.newDirectory
+                    })
+                    this.selected = data.created.id
                     this.toggleCreate(false)
                 } catch (e) {
                     console.error(e)
