@@ -35,7 +35,6 @@ func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) (bool, error) {
 	_, err = client.GetRegions(nil)
 	if err != nil {
 		blog.Errorf("AccountVerify GetRegions err:%s", err.Error())
-
 		return false, err
 	}
 

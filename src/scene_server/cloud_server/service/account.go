@@ -49,7 +49,7 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 		rData["error_msg"] = err.Error()
 	}
 
-	ctx.RespEntity(nil)
+	ctx.RespEntity(rData)
 }
 
 // 新建云账户
