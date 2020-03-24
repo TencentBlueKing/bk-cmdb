@@ -13,14 +13,11 @@
 package service
 
 import (
-	"reflect"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
 )
 
 func (s *Service) SearchVpc(ctx *rest.Contexts) {
@@ -37,14 +34,9 @@ func (s *Service) SearchVpc(ctx *rest.Contexts) {
 		return
 	}
 
-	accountConf, err := s.Logics.GetCloudAccountConf(accountID)
+	result, err := s.Logics.SearchVpc(ctx.Kit, accountID, vpcOpt)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
-		return
-	}
-	result, err := s.Logics.GetVpcHostCnt(*accountConf, vpcOpt.Region)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed))
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -58,24 +50,13 @@ func (s *Service) CreateSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
-	res, err := s.CoreAPI.CoreService().Cloud().CreateSyncTask(ctx.Kit.Ctx, ctx.Kit.Header, task)
+	result, err := s.Logics.CreateSyncTask(ctx.Kit, task)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	// add auditLog
-	auditLog := s.Logics.NewSyncTaskAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
-	if err := auditLog.WithCurrent(ctx.Kit, res.TaskID); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntity(res)
+	ctx.RespEntity(result)
 }
 
 func (s *Service) SearchSyncTask(ctx *rest.Contexts) {
@@ -85,40 +66,13 @@ func (s *Service) SearchSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
-	// set default limit
-	if option.Page.Limit == 0 {
-		option.Page.Limit = common.BKDefaultLimit
-	}
-	if option.Page.IsIllegal() {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
-		return
-	}
-
-	// set default sort
-	if option.Page.Sort == "" {
-		option.Page.Sort = "-" + common.CreateTimeField
-	}
-
-	// if not exact search, change the string query to regexp
-	if option.Exact != true {
-		for k, v := range option.Condition {
-			if reflect.TypeOf(v).Kind() == reflect.String {
-				field := v.(string)
-				option.Condition[k] = mapstr.MapStr{
-					common.BKDBLIKE: params.SpecialCharChange(field),
-					"$options":      "i",
-				}
-			}
-		}
-	}
-
-	res, err := s.CoreAPI.CoreService().Cloud().SearchSyncTask(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	result, err := s.Logics.SearchSyncTask(ctx.Kit, &option)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(res)
+	ctx.RespEntity(result)
 }
 
 func (s *Service) UpdateSyncTask(ctx *rest.Contexts) {
@@ -135,25 +89,8 @@ func (s *Service) UpdateSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
-	// add auditLog preData
-	auditLog := s.Logics.NewSyncTaskAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
-	if err := auditLog.WithPrevious(ctx.Kit, taskID); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	err = s.CoreAPI.CoreService().Cloud().UpdateSyncTask(ctx.Kit.Ctx, ctx.Kit.Header, taskID, option)
+	err = s.Logics.UpdateSyncTask(ctx.Kit, taskID, option)
 	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	// add auditLog
-	if err := auditLog.WithCurrent(ctx.Kit, taskID); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -169,20 +106,8 @@ func (s *Service) DeleteSyncTask(ctx *rest.Contexts) {
 		return
 	}
 
-	// add auditLog preData
-	auditLog := s.Logics.NewSyncTaskAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
-	if err := auditLog.WithPrevious(ctx.Kit, taskID); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	err = s.CoreAPI.CoreService().Cloud().DeleteSyncTask(ctx.Kit.Ctx, ctx.Kit.Header, taskID)
+	err = s.Logics.DeleteSyncTask(ctx.Kit, taskID)
 	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -197,40 +122,13 @@ func (s *Service) SearchSyncHistory(ctx *rest.Contexts) {
 		return
 	}
 
-	// set default limit
-	if option.Page.Limit == 0 {
-		option.Page.Limit = common.BKDefaultLimit
-	}
-	if option.Page.IsIllegal() {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
-		return
-	}
-
-	// set default sort
-	if option.Page.Sort == "" {
-		option.Page.Sort = "-" + common.CreateTimeField
-	}
-
-	// if not exact search, change the string query to regexp
-	if option.Exact != true {
-		for k, v := range option.Condition {
-			if reflect.TypeOf(v).Kind() == reflect.String {
-				field := v.(string)
-				option.Condition[k] = mapstr.MapStr{
-					common.BKDBLIKE: params.SpecialCharChange(field),
-					"$options":      "i",
-				}
-			}
-		}
-	}
-
-	res, err := s.CoreAPI.CoreService().Cloud().SearchSyncHistory(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	result, err := s.Logics.SearchSyncHistory(ctx.Kit, &option)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(res)
+	ctx.RespEntity(result)
 }
 
 func (s *Service) SearchSyncRegion(ctx *rest.Contexts) {
@@ -240,15 +138,9 @@ func (s *Service) SearchSyncRegion(ctx *rest.Contexts) {
 		return
 	}
 
-	accountConf, err := s.Logics.GetCloudAccountConf(option.AccountID)
+	result, err := s.Logics.SearchSyncRegion(ctx.Kit, &option)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
-		return
-	}
-
-	result, err := s.Logics.GetRegionsInfo(*accountConf, option.WithHostCount)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed))
+		ctx.RespAutoError(err)
 		return
 	}
 

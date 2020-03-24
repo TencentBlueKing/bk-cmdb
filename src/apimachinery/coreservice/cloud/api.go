@@ -216,6 +216,28 @@ func (c *cloud) DeleteSyncTask(ctx context.Context, h http.Header, taskID int64)
 	return nil
 }
 
+func (c *cloud) CreateSyncHistory(ctx context.Context, h http.Header, history *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder) {
+	ret := new(metadata.CreateSyncHistoryesult)
+	subPath := "/create/cloud/sync/history"
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(history).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
 func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleSyncHistoryResult)
 	subPath := "/findmany/cloud/sync/history"

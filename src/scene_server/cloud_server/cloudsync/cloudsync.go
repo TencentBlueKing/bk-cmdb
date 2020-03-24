@@ -55,6 +55,7 @@ var(
 	// mongo server对于满足change stream查询的最大等待时间
 	maxAwaitTime = time.Second * 10
 	header = ccom.GetHeader()
+	kit = ccom.GetKit(header)
 )
 type SyncConf struct {
 	ZKClient  *zkclient.ZkClient

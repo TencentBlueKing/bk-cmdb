@@ -225,28 +225,18 @@ func (h *HostSyncor) syncDiffHosts(diffhosts map[string][]*metadata.CloudHost) (
 
 // 增加任务同步历史记录
 func (h *HostSyncor) addSyncHistory(syncResult *metadata.SyncResult, taskid int64) (*metadata.SyncHistory, error) {
-	id, err := h.db.NextSequence(context.Background(), common.BKTableNameCloudSyncHistory)
-	if nil != err {
-		blog.Errorf("createCloudArea failed, generate id failed, err: %s", err.Error())
-		return nil, err
-	}
-
 	syncHistory := metadata.SyncHistory{
-		HistoryID:         int64(id),
 		TaskID:            taskid,
 		SyncStatus:        syncResult.SyncStatus,
 		StatusDescription: syncResult.StatusDescription,
-		OwnerID:           fmt.Sprintf("%d", common.BKDefaultSupplierID),
 		Detail:            syncResult.Detail,
-		CreateTime:        metadata.Now(),
 	}
-	if err := h.db.Table(common.BKTableNameCloudSyncHistory).Insert(context.Background(), syncHistory); err != nil {
-		if err != nil {
-			blog.Errorf("addSyncHistory insert err:%v", err.Error())
-			return nil, err
-		}
+	result, err := h.logics.CreateSyncHistory(kit, &syncHistory)
+	if err != nil {
+		blog.Errorf("addSyncHistory err:%v", err.Error())
+		return nil, err
 	}
-	return &syncHistory, nil
+	return result, nil
 }
 
 // 设置SyncResult的状态信息
@@ -269,21 +259,31 @@ func (h *HostSyncor) SetSyncResultStatus(syncResult *metadata.SyncResult, startT
 // 根据账号vpcID获取云区域ID，没有则创建
 func (h *HostSyncor) getCloudId(vpcID string) (int64, error) {
 	cond := mapstr.MapStr{common.BKVpcID: vpcID}
-	result := make([]*metadata.CloudArea, 0)
-	err := h.db.Table(common.BKTableNameBasePlat).Find(cond).All(context.Background(), &result)
+	query := &metadata.QueryCondition{
+		Condition: cond,
+	}
+	res, err := h.logics.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDPlat, query)
+	if nil != err {
+		blog.Errorf("getCloudId failed, error: %v query:%#v", err, query)
+		return 0, err
+	}
+	if false == res.Result {
+		blog.Errorf("getCloudId failed, query:%#v, err code:%d, err msg:%s", query, res.Code, res.ErrMsg)
+		return 0, fmt.Errorf("%s", res.ErrMsg)
+	}
+	if len(res.Data.Info) == 0 {
+		return 0, nil
+	}
+	cloudID, err := res.Data.Info[0].Int64(common.BKCloudIDField)
 	if err != nil {
-		blog.Errorf("getCloudId err:%v", err.Error())
-		return int64(0), err
+		blog.Errorf("getCloudId failed, err:%v, query:%#v", err, query)
+		return 0, nil
 	}
-	if len(result) == 0 {
-		return int64(0), nil
-	}
-	return result[0].CloudID, nil
+	return cloudID, nil
 }
 
 // 创建vpc对应的云区域
 func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *metadata.CloudAccountConf) (int64, error) {
-
 	cloudArea := map[string]interface{}{
 		common.BKCloudNameField: fmt.Sprintf("%d_%s", accountConf.AccountID, vpc.VpcID),
 		common.BKCloudVendor:    metadata.VendorNameIDs[accountConf.VendorName],
@@ -292,15 +292,27 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 		common.BKReion:          vpc.Region,
 		common.BKCloudAccountID: accountConf.AccountID,
 		common.BKCreator:        common.CCSystemOperatorUserName,
+		common.BkSupplierAccount: fmt.Sprintf("%d",common.BKDefaultSupplierID),
+		common.BKStatus: "1",
+		common.BKLastEditor: common.CCSystemOperatorUserName,
 	}
 
-	resp, err := h.logics.CoreAPI.HostServer().CreateCloudArea(context.Background(), header, cloudArea)
-	if err != nil {
-		blog.Errorf("createCloudArea failed, vpcID: %s, err: %s", vpc.VpcID, err.Error())
-		return int64(0), err
+	instInfo := &metadata.CreateModelInstance{
+		Data: mapstr.NewFromMap(cloudArea),
 	}
 
-	return int64(resp.Data.Created.ID), nil
+	createRes, err := h.logics.CoreAPI.CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDPlat, instInfo)
+	if nil != err {
+		blog.Errorf("createCloudArea failed, error: %s, input:%#v", err.Error(), cloudArea)
+		return 0, err
+	}
+
+	if false == createRes.Result {
+		blog.Errorf("createCloudArea failed, error code:%d,err msg:%s,input:%#v", createRes.Code, createRes.ErrMsg, cloudArea)
+		return 0, fmt.Errorf("%s", createRes.ErrMsg)
+	}
+
+	return int64(createRes.Data.Created.ID), nil
 }
 
 // 获取本地数据库中的主机信息
@@ -416,7 +428,7 @@ func (h *HostSyncor) updateTaskState(taskid int64, status string, syncStatusDesc
 		option.Set(common.BKCloudSyncStatusDescription, syncStatusDesc)
 	}
 
-	if err := h.logics.CoreAPI.CoreService().Cloud().UpdateSyncTask(context.Background(), header, taskid, option); err != nil {
+	if err := h.logics.UpdateSyncTask(kit, taskid, option); err != nil {
 		blog.Errorf("UpdateSyncTask failed, taskid: %v, err: %s", taskid, err.Error())
 		return err
 	}

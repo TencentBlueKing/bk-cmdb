@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/cloud_server/app/options"
 	"configcenter/src/scene_server/cloud_server/cloudsync"
@@ -83,6 +84,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}
 		process.Service.SetAuth(authCli)
 		blog.Infof("enable auth center: %v", auth.IsAuthed())
+
+		errors.SetGlobalCCError(engine.CCErr)
 
 		process.Service.Logics = logics.NewLogics(service.Engine, db, cache)
 

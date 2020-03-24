@@ -298,6 +298,7 @@ func (s *coreService) initCloudAccount(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/task", Handler: s.SearchSyncTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/sync/task/{bk_task_id}", Handler: s.UpdateSyncTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/sync/task/{bk_task_id}", Handler: s.DeleteSyncTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/sync/history", Handler: s.CreateSyncHistory})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/history", Handler: s.SearchSyncHistory})
 
 	utility.AddToRestfulWebService(web)

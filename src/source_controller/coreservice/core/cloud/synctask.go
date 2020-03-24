@@ -120,6 +120,25 @@ func (c *cloudOperation) DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCEr
 	return nil
 }
 
+func (c *cloudOperation) CreateSyncHistory(kit *rest.Kit, history *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder) {
+	id, err := c.dbProxy.NextSequence(kit.Ctx, common.BKTableNameCloudSyncHistory)
+	if nil != err {
+		blog.Errorf("CreateSyncTask failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
+	}
+	history.HistoryID = int64(id)
+	history.OwnerID = kit.SupplierAccount
+	history.CreateTime = metadata.Now()
+
+	err = c.dbProxy.Table(common.BKTableNameCloudSyncHistory).Insert(kit.Ctx, history)
+	if err != nil {
+		blog.ErrorJSON("CreateSyncHistory failed, db insert failed, taskID: %s, err: %s, rid: %s", history.TaskID, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
+	}
+
+	return history, nil
+}
+
 func (c *cloudOperation) SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder) {
 	results := make([]metadata.SyncHistory, 0)
 	// 设置查询条件

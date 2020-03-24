@@ -17,6 +17,8 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/util"
 )
 
 // 将不同云厂商的实例状态转为统一的实例状态
@@ -42,6 +44,25 @@ func GetHeader() http.Header {
 	header.Add(common.BKHTTPOwnerID, "0")
 	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
+	header.Add(common.BKHTTPLanguage, "cn")
 	header.Add("Content-Type", "application/json")
 	return header
+}
+
+// 获取api调用的header
+func GetKit(header http.Header) *rest.Kit {
+	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.GetHTTPCCRequestID(header)
+	user := util.GetUser(header)
+	supplierAccount := util.GetOwnerID(header)
+	defaultCCError := util.GetDefaultCCError(header)
+
+	return &rest.Kit{
+		Rid:             rid,
+		Header:          header,
+		Ctx:             ctx,
+		CCError:         defaultCCError,
+		User:            user,
+		SupplierAccount: supplierAccount,
+	}
 }
