@@ -17,7 +17,7 @@ import (
 
 // 云主机同步器
 type HostSyncor struct {
-	id int
+	id     int
 	logics *logics.Logics
 	db     dal.DB
 }
@@ -285,16 +285,16 @@ func (h *HostSyncor) getCloudId(vpcID string) (int64, error) {
 // 创建vpc对应的云区域
 func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *metadata.CloudAccountConf) (int64, error) {
 	cloudArea := map[string]interface{}{
-		common.BKCloudNameField: fmt.Sprintf("%d_%s", accountConf.AccountID, vpc.VpcID),
-		common.BKCloudVendor:    metadata.VendorNameIDs[accountConf.VendorName],
-		common.BKVpcID:          vpc.VpcID,
-		common.BKVpcName:        vpc.VpcName,
-		common.BKReion:          vpc.Region,
-		common.BKCloudAccountID: accountConf.AccountID,
-		common.BKCreator:        common.CCSystemOperatorUserName,
-		common.BkSupplierAccount: fmt.Sprintf("%d",common.BKDefaultSupplierID),
-		common.BKStatus: "1",
-		common.BKLastEditor: common.CCSystemOperatorUserName,
+		common.BKCloudNameField:  fmt.Sprintf("%d_%s", accountConf.AccountID, vpc.VpcID),
+		common.BKCloudVendor:     metadata.VendorNameIDs[accountConf.VendorName],
+		common.BKVpcID:           vpc.VpcID,
+		common.BKVpcName:         vpc.VpcName,
+		common.BKReion:           vpc.Region,
+		common.BKCloudAccountID:  accountConf.AccountID,
+		common.BKCreator:         common.CCSystemOperatorUserName,
+		common.BkSupplierAccount: fmt.Sprintf("%d", common.BKDefaultSupplierID),
+		common.BKStatus:          "1",
+		common.BKLastEditor:      common.CCSystemOperatorUserName,
 	}
 
 	instInfo := &metadata.CreateModelInstance{
@@ -349,6 +349,7 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 			PublicIp:      host.PublicIp,
 			InstanceState: host.InstanceState,
 			OsName:        host.OsName,
+			OwnerID:       fmt.Sprintf("%d", common.BKDefaultSupplierID),
 			CreateTime:    ts,
 			LastTime:      ts,
 		}

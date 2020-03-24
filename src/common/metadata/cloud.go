@@ -226,6 +226,7 @@ type HostSyncInfo struct {
 	PublicIp      string `json:"bk_host_outerip" bson:"bk_host_outerip"`
 	InstanceState string `json:"bk_cloud_host_status" bson:"bk_cloud_host_status"`
 	OsName        string `json:"bk_os_name" bson:"bk_os_name"`
+	OwnerID       string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	CreateTime    Time   `json:"create_time" bson:"create_time"`
 	LastTime      Time   `json:"last_time" bson:"last_time"`
 }
