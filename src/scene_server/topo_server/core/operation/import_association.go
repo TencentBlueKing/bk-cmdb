@@ -354,7 +354,7 @@ func (ia *importAssociation) getInstDataByConds() error {
 	for objID, valArr := range ia.queryInstConds {
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		if objID == common.BKInnerObjIDHost && len(valArr) > 0 {
-			for _, val := range valArr {
+			for idx, val := range valArr {
 				if ok := val.Exists(common.BKCloudIDField); !ok {
 					continue
 				}
@@ -363,9 +363,8 @@ func (ia *importAssociation) getInstDataByConds() error {
 				if err != nil {
 					return err
 				}
-				val[common.BKCloudIDField] = intCloudID
+				valArr[idx][common.BKCloudIDField] = intCloudID
 			}
-
 		}
 		conds := condition.CreateCondition()
 		conds.NewOR().MapStrArr(valArr)
