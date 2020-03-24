@@ -25,6 +25,7 @@ import (
 	"configcenter/src/storage/dal"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 var _ core.AuditOperation = (*auditManager)(nil)
@@ -85,18 +86,22 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) 
 }
 
 // instNotChange Determine whether the data is consistent before and after the change
+// notice: getIgnoreOptions用来设置不参与对比变化的字段，这些字段发生变化，在instNotChange不在返回数据发生变化
 func instNotChange(ctx context.Context, content metadata.DetailFactory) bool {
 	rid := util.ExtractRequestIDFromContext(ctx)
+	modelID := ""
 	var basicContent *metadata.BasicOpDetail
 	switch content.WithName() {
 	case "BasicDetail":
 		basicContent = content.(*metadata.BasicOpDetail)
 	case "InstanceOpDetail":
 		instanceContent := content.(*metadata.InstanceOpDetail)
+		modelID = instanceContent.ModelID
 		basicContent = &instanceContent.BasicOpDetail
 	case "HostTransferOpDetail":
 		hostTransferContent := content.(*metadata.HostTransferOpDetail)
-		bl := cmp.Equal(hostTransferContent.PreData, hostTransferContent.CurData)
+		// ignore default field
+		bl := cmp.Equal(hostTransferContent.PreData, hostTransferContent.CurData, getIgnoreOptions(""))
 		if bl {
 			blog.V(5).Infof("inst data same, %+v, rid: %s", content, rid)
 		}
@@ -105,13 +110,44 @@ func instNotChange(ctx context.Context, content metadata.DetailFactory) bool {
 	if basicContent == nil || basicContent.Details == nil || basicContent.Details.PreData == nil || basicContent.Details.CurData == nil {
 		return false
 	}
+	
 	preData := basicContent.Details.PreData
 	curData := basicContent.Details.CurData
-	delete(preData, common.LastTimeField)
-	delete(curData, common.LastTimeField)
-	bl := cmp.Equal(preData, curData)
+	bl := cmp.Equal(preData, curData, getIgnoreOptions(modelID))
 	if bl {
 		blog.V(5).Infof("inst data same, %+v, rid: %s", content, rid)
 	}
 	return bl
 }
+
+// getIgnoreOptions ignore fields options,不参与对比变化的字段，这些字段发生变化，在instNotChange不在返回数据发生变化
+// params objID 模型id，预留字段，为根据不同模型实现不同忽略字段,
+func getIgnoreOptions(objID string) cmp.Option {
+	field := make(map[string]interface{}, 0)
+	switch objID {
+	default:
+		field = ignoreCmpFields["default"]
+	}
+	if len(field) == 0 {
+		return nil
+	}
+	ignoreCmpFunc := func(key string, val interface{}) bool {
+		if _, ok := field[key]; ok {
+			return ok
+		}
+		return false
+	}
+
+	option := cmpopts.IgnoreMapEntries(ignoreCmpFunc)
+	return option
+}
+
+var (
+	ignoreCmpFields = map[string]map[string]interface{}{
+		// default 默认情况下忽略的字段
+		"default": map[string]interface{}{
+			"_id":                nil,
+			common.LastTimeField: nil,
+		},
+	}
+)

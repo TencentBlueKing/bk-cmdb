@@ -1784,7 +1784,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 			return ps
 		}
 
-		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		objectID := attribute[0].ObjectID
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
 		if err != nil {
 			ps.err = err
@@ -1818,13 +1818,6 @@ func (ps *parseStream) objectAttribute() *parseStream {
 			return ps
 		}
 
-		objectID := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		// get attribute related bizID
 		filter := mapstr.MapStr{
 			common.BKFieldID: attrID,
@@ -1837,6 +1830,13 @@ func (ps *parseStream) objectAttribute() *parseStream {
 		bizID, err := metadata.BizIDFromMetadata(attribute[0].Metadata)
 		if err != nil {
 			ps.err = fmt.Errorf("parse bizID from metadata failed, err: %s", err.Error())
+			return ps
+		}
+
+		objectID := attribute[0].ObjectID
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objectID})
+		if err != nil {
+			ps.err = err
 			return ps
 		}
 

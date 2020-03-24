@@ -109,7 +109,9 @@
                 color: #FFF;
                 font-size: 30px;
             }
-
+            &.icon-check-1 {
+                font-size: 50px;
+            }
             &.icon-error {
                 background-color: $dangerColor;
             }

@@ -15,7 +15,8 @@
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
@@ -111,7 +112,9 @@
                     'bk_start_param_regex',
                     'bind_ip',
                     'port',
-                    'work_path'
+                    'protocol',
+                    'work_path',
+                    'user'
                 ]
                 const header = display.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}

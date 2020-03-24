@@ -172,7 +172,7 @@ type AuditOperation interface {
 
 type StatisticOperation interface {
 	SearchInstCount(kit *rest.Kit, inputParam map[string]interface{}) (uint64, error)
-	SearchChartDataCommon(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
+	SearchChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
 	SearchOperationChart(kit *rest.Kit, inputParam interface{}) (*metadata.ChartClassification, error)
 	CreateOperationChart(kit *rest.Kit, inputParam metadata.ChartConfig) (uint64, error)
 	UpdateChartPosition(kit *rest.Kit, inputParam interface{}) (interface{}, error)
@@ -241,8 +241,8 @@ type ProcessOperation interface {
 	GetProcessInstanceRelation(kit *rest.Kit, processInstanceID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	UpdateProcessInstanceRelation(kit *rest.Kit, processInstanceID int64, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	ListProcessInstanceRelation(kit *rest.Kit, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder)
-    ListHostProcessRelation(kit *rest.Kit, option *metadata.ListProcessInstancesWithHostOption) (*metadata.MultipleHostProcessRelation, errors.CCErrorCoder)
-    DeleteProcessInstanceRelation(kit *rest.Kit, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
+	ListHostProcessRelation(kit *rest.Kit, option *metadata.ListProcessInstancesWithHostOption) (*metadata.MultipleHostProcessRelation, errors.CCErrorCoder)
+	DeleteProcessInstanceRelation(kit *rest.Kit, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
 
 	GetBusinessDefaultSetModuleInfo(kit *rest.Kit, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
 	GetProc2Module(kit *rest.Kit, option *metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder)

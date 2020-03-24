@@ -39,14 +39,14 @@ func (s *coreService) SearchInstCount(ctx *rest.Contexts) {
 	ctx.RespEntity(count)
 }
 
-func (s *coreService) SearchChartDataCommon(ctx *rest.Contexts) {
+func (s *coreService) SearchChartData(ctx *rest.Contexts) {
 	condition := metadata.ChartConfig{}
 	if err := ctx.DecodeInto(&condition); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	result, err := s.core.StatisticOperation().SearchChartDataCommon(ctx.Kit, condition)
+	result, err := s.core.StatisticOperation().SearchChartData(ctx.Kit, condition)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

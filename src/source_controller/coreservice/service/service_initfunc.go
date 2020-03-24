@@ -239,7 +239,7 @@ func (s *coreService) initOperation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart/common", Handler: s.SearchChartCommon})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/operation/inst/count", Handler: s.SearchInstCount})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/operation/chart/data/common", Handler: s.SearchChartDataCommon})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/operation/chart/data/common", Handler: s.SearchChartData})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position", Handler: s.UpdateChartPosition})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart/data", Handler: s.SearchTimerChartData})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/start/operation/chart/timer", Handler: s.TimerFreshData})

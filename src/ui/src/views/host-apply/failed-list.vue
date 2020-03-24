@@ -12,15 +12,15 @@
             @page-limit-change="handleSizeChange"
             @row-click="handleRowClick"
         >
-            <bk-table-column :label="$t('内网IP')" prop="host.bk_host_innerip" class-name="is-highlight"></bk-table-column>
-            <bk-table-column :label="$t('云区域')">
-                <div slot-scope="{ row }">
+            <bk-table-column :label="$t('内网IP')" prop="host.bk_host_innerip" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
+            <bk-table-column :label="$t('云区域')" show-overflow-tooltip>
+                <template slot-scope="{ row }">
                     {{getCloudName(row.host.bk_cloud_id)}}
-                </div>
+                </template>
             </bk-table-column>
-            <bk-table-column :label="$t('固资编号')" prop="host.bk_asset_id"></bk-table-column>
-            <bk-table-column :label="$t('主机名称')" prop="host.bk_host_name"></bk-table-column>
-            <bk-table-column :label="$t('所属拓扑')" :formatter="getTopopath"></bk-table-column>
+            <bk-table-column :label="$t('固资编号')" prop="host.bk_asset_id" show-overflow-tooltip></bk-table-column>
+            <bk-table-column :label="$t('主机名称')" prop="host.bk_host_name" show-overflow-tooltip></bk-table-column>
+            <bk-table-column :label="$t('所属拓扑')" :formatter="getTopopath" show-overflow-tooltip></bk-table-column>
             <bk-table-column :label="$t('失败原因')">
                 <div class="fail-reason" slot-scope="{}">
                     网络中断

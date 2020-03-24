@@ -1238,5 +1238,7 @@
     "修改实例": "Modify instance",
     "删除实例": "Delete instance",
     "分配到业务": "Assign host",
-    "新增N台主机，更新M台主机": "Added {new} hosts，updated {update} hosts"
+    "新增N台主机，更新M台主机": "Added {new} hosts，updated {update} hosts",
+    "更新主机属性": "Update host attributes",
+    "导入excel更新": "Import excel to update"
 }

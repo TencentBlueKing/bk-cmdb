@@ -608,10 +608,11 @@
         }
         .icon-close {
             color: #d8d8d8;
-            font-size: 14px;
+            font-size: 20px;
             font-weight: bold;
             line-height: 32px;
-            margin: 0 0 0 6px;
+            height: 32px;
+            margin: 0 0 0 3px;
             cursor: pointer;
             opacity: 0;
             &:hover {
