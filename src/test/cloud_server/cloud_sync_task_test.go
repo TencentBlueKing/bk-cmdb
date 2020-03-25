@@ -103,6 +103,7 @@ var _ = Describe("cloud sync task test", func() {
 	var _ = Describe("create cloud sync task test", func() {
 
 		It("create task with normal data", func() {
+			clearSyncTaskData()
 			rsp, err := cloudServerClient.CreateSyncTask(context.Background(), header, tmpData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
