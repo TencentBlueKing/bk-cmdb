@@ -101,7 +101,10 @@ func validateParameter(input *BackboneParameter) error {
 	if input.ConfigUpdate == nil {
 		return fmt.Errorf("service config change funcation can not be emtpy")
 	}
-
+	// to prevent other components which doesn't set it from failing
+	if input.SrvInfo.RegisterIP == "" {
+		input.SrvInfo.RegisterIP = input.SrvInfo.IP
+	}
 	return nil
 }
 

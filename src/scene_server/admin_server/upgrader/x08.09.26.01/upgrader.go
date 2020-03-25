@@ -33,7 +33,7 @@ var dataWithCondition = []inputDatas{
 	inputDatas{
 		data: mapstr.MapStr{
 			metadata.AttributeFieldPropertyIndex: -3,
-			metadata.AttributeFieldPlaceHoler:    `对外显示的服务名</br> 比如程序的二进制名称为java的服务zookeeper，则填zookeeper`,
+			metadata.AttributeFieldPlaceHolder:   `对外显示的服务名</br> 比如程序的二进制名称为java的服务zookeeper，则填zookeeper`,
 		},
 		cond: mapstr.MapStr{
 			metadata.AttributeFieldPropertyID: common.BKProcessNameField,
@@ -45,7 +45,7 @@ var dataWithCondition = []inputDatas{
 			metadata.AttributeFieldPropertyIndex: -2,
 			metadata.AttributeFieldIsRequired:    true,
 			metadata.AttributeFieldPropertyGroup: mCommon.BaseInfo,
-			metadata.AttributeFieldPlaceHoler:    `程序的二进制名称</br> 比如zookeeper的二进制名称是java，则填java`,
+			metadata.AttributeFieldPlaceHolder:   `程序的二进制名称</br> 比如zookeeper的二进制名称是java，则填java`,
 		},
 		cond: mapstr.MapStr{
 			metadata.AttributeFieldPropertyID: "bk_func_name",
@@ -56,7 +56,7 @@ var dataWithCondition = []inputDatas{
 	inputDatas{
 		data: mapstr.MapStr{
 			metadata.AttributeFieldPropertyIndex: -1,
-			metadata.AttributeFieldPlaceHoler:    `程序启动参数</br> 唯一识别一个进程，比如zookeeper的启动参数包含 zookeeper`,
+			metadata.AttributeFieldPlaceHolder:   `程序启动参数</br> 唯一识别一个进程，比如zookeeper的启动参数包含 zookeeper`,
 		},
 		cond: mapstr.MapStr{
 			metadata.AttributeFieldPropertyID: "bk_start_param_regex",
