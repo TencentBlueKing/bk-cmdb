@@ -104,7 +104,22 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	retData, err := s.whetherAddHostCount(srvData, input.HostCount, res.Data)
+	// 查询云区域不需要主机数量
+	if input.HostCount == false {
+		retData := map[string]interface{}{
+			"info":  res.Data.Info,
+			"count": res.Data.Count,
+		}
+
+		_ = resp.WriteEntity(metadata.Response{
+			BaseResp: metadata.SuccessBaseResp,
+			Data:     retData,
+		})
+
+		return
+	}
+
+	retData, err := s.searchPlatAddHostCount(srvData, res.Data)
 	if err != nil {
 		blog.ErrorJSON("FindManyCloudArea add field host_count failed, err: %v, rid: %s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostFindManyCloudAreaAddHostCountFieldFail)})
@@ -428,17 +443,7 @@ func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.R
 	})
 }
 
-func (s *Service) whetherAddHostCount(srvData *srvComm, hostCount bool, dataInfo metadata.InstDataInfo) (map[string]interface{}, error) {
-	// 查询云区域不需要主机数量
-	if hostCount == false {
-		retData := map[string]interface{}{
-			"info":  dataInfo.Info,
-			"count": dataInfo.Count,
-		}
-
-		return retData, nil
-	}
-
+func (s *Service) searchPlatAddHostCount(srvData *srvComm, dataInfo metadata.InstDataInfo) (map[string]interface{}, error) {
 	// add host_count
 	mapCloudIDInfo := make(map[int64]mapstr.MapStr, 0)
 	intCloudIDArray := make([]int64, 0)
