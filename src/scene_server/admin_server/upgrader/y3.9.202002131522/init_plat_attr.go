@@ -57,12 +57,12 @@ func initPlatAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 
 		id, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
 		if err != nil {
-			return fmt.Errorf("upgrade y3.9.202002181444, insert plat attrName: %s, but get NextSequence failed, err: %v", r.PropertyName, err)
+			return fmt.Errorf("upgrade y3.9.y3_9_202002131522, insert plat attrName: %s, but get NextSequence failed, err: %v", r.PropertyName, err)
 		}
 		r.ID = int64(id)
 
 		if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, r); err != nil {
-			return fmt.Errorf("upgrade y3.9.202002181444, but insert plat attrName: %s, failed, err: %v", r.PropertyName, err)
+			return fmt.Errorf("upgrade y3.9.y3_9_202002131522, but insert plat attrName: %s, failed, err: %v", r.PropertyName, err)
 		}
 	}
 

@@ -44,10 +44,10 @@ var testData2 = map[string]interface{}{
 	"creator":         "admin",
 }
 
-// wrong testData
+// tmpTestData
 var tmpTestData = map[string]interface{}{
 	"bk_cloud_name":   "LPL39区",
-	"bk_status":       "3",
+	"bk_status":       "1",
 	"bk_cloud_vendor": "2",
 	"bk_region":       "1111",
 	"bk_vpc_id":       "1",

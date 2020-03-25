@@ -57,5 +57,18 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade y3.9.202002131522] upgradeCloudArea failed, error  %s", err.Error())
 		return err
 	}
+
+	err = addCloudHostAttr(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202002131522] addCloudHostAttr failed, error  %s", err.Error())
+		return err
+	}
+
+	err = addCloudHostIndex(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202002131522] addCloudHostIndex failed, error  %s", err.Error())
+		return err
+	}
+
 	return nil
 }
