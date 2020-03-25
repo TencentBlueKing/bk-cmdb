@@ -71,7 +71,8 @@
                 :class-name="index === 0 ? 'is-highlight' : ''"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{(row.property || {})[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
         </bk-table>

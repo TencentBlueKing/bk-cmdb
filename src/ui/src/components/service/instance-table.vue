@@ -345,6 +345,9 @@
             text-align: center;
             cursor: pointer;
             @include inlineBlock;
+            &.icon-close {
+                font-size: 20px;
+            }
         }
         .icon-exclamation {
             font-size: 14px;
@@ -377,6 +380,10 @@
         .bk-icon,
         span {
             @include inlineBlock;
+        }
+        .icon-plus {
+            font-size: 20px;
+            margin-right: -4px;
         }
     }
 </style>

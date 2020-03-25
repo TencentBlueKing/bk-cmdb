@@ -22,11 +22,9 @@
             @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
-            <bk-table-column :label="$t('集群名称')" prop="bk_set_name"></bk-table-column>
-            <bk-table-column :label="$t('拓扑路径')" prop="topo_path">
-                <template slot-scope="{ row }">
-                    <span>{{getTopoPath(row)}}</span>
-                </template>
+            <bk-table-column :label="$t('集群名称')" prop="bk_set_name" show-overflow-tooltip></bk-table-column>
+            <bk-table-column :label="$t('拓扑路径')" prop="topo_path" show-overflow-tooltip>
+                <template slot-scope="{ row }">{{getTopoPath(row)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('状态')" prop="status">
                 <template slot-scope="{ row }">
@@ -49,9 +47,9 @@
                     <span v-else>--</span>
                 </template>
             </bk-table-column>
-            <bk-table-column :label="$t('同步时间')" prop="last_time" sortable="custom">
+            <bk-table-column :label="$t('同步时间')" prop="last_time" sortable="custom" show-overflow-tooltip>
                 <template slot-scope="{ row }">
-                    <span>{{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ss') : '--'}}</span>
+                    {{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ss') : '--'}}
                 </template>
             </bk-table-column>
             <bk-table-column :label="$t('同步人')" prop="sync_user">
