@@ -138,12 +138,18 @@ const checkOwner = async (to, from) => {
     }
 }
 
+const clearPageAPICache = () => {
+    const pageCache = Object.values(router.app.$http.cache.pageCache)
+    router.app.$http.cache.delete(pageCache)
+}
+
 const setupStatus = {
     preload: true,
     afterload: true
 }
 
 router.beforeEach((to, from, next) => {
+    clearPageAPICache()
     Vue.nextTick(async () => {
         try {
             setLoading(true)
