@@ -437,3 +437,101 @@ func (h *HostModuleLog) getApps(ctx context.Context, appIDs []int64) ([]mapstr.M
 	}
 	return result.Data.Info, nil
 }
+
+type CloudAreaAuditLog struct {
+	logic     *Logics
+	header    http.Header
+	ownerID   string
+	CloudName string
+	CloudID   int64
+	Content   *metadata.BasicContent
+}
+
+func (lgc *Logics) NewCloudAreaLog(ctx context.Context, ownerID string) *CloudAreaAuditLog {
+	return &CloudAreaAuditLog{
+		logic:   lgc,
+		header:  lgc.header,
+		ownerID: ownerID,
+		Content: new(metadata.BasicContent),
+	}
+}
+
+func (c *CloudAreaAuditLog) WithPrevious(ctx context.Context, platID int64) errors.CCError {
+	preData, err := c.buildAuditLogData(ctx, platID)
+	if err != nil {
+		return err
+	}
+
+	c.Content.PreData = preData
+	return nil
+}
+
+func (c *CloudAreaAuditLog) WithCurrent(ctx context.Context, platID int64) errors.CCError {
+	curData, err := c.buildAuditLogData(ctx, platID)
+	if err != nil {
+		return err
+	}
+
+	c.Content.CurData = curData
+	return nil
+}
+
+func (c *CloudAreaAuditLog) SaveAuditLog(ctx context.Context, action metadata.ActionType) errors.CCError {
+	auditLog := metadata.AuditLog{
+		AuditType:    metadata.CloudResourceType,
+		ResourceType: metadata.CloudAreaRes,
+		Action:       action,
+		OperationDetail: &metadata.InstanceOpDetail{
+			BasicOpDetail: metadata.BasicOpDetail{
+				ResourceID:   c.CloudID,
+				ResourceName: c.CloudName,
+				Details:      c.Content,
+			},
+			ModelID: common.BKInnerObjIDPlat,
+		},
+	}
+
+	auditResult, err := c.logic.CoreAPI.CoreService().Audit().SaveAuditLog(ctx, c.header, auditLog)
+	if err != nil {
+		blog.ErrorJSON("SaveAuditLog add cloud area audit log failed, err: %s, result: %+v,rid:%s", err, auditResult, c.logic.rid)
+		return c.logic.ccErr.Errorf(common.CCErrAuditSaveLogFailed)
+	}
+	if auditResult.Result != true {
+		blog.ErrorJSON("SaveAuditLog add cloud area audit log failed, err: %s, result: %s,rid:%s", err, auditResult, c.logic.rid)
+		return c.logic.ccErr.Errorf(common.CCErrAuditSaveLogFailed)
+	}
+
+	return nil
+}
+
+func (c *CloudAreaAuditLog) buildAuditLogData(ctx context.Context, platID int64) (map[string]interface{}, errors.CCError) {
+	var err error
+	if len(c.Content.Properties) == 0 {
+		audit := auditlog.NewAudit(c.logic.CoreAPI, ctx, c.header)
+		properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDPlat)
+		if err != nil {
+			return nil, err
+		}
+		c.Content.Properties = properties
+	}
+
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKCloudIDField: platID},
+	}
+	res, err := c.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, c.header, common.BKInnerObjIDPlat, query)
+	if nil != err {
+		return nil, err
+	}
+	if len(res.Data.Info) <= 0 {
+		return nil, errors.New(common.CCErrTopoCloudNotFound, "")
+	}
+
+	c.CloudID = platID
+	cloudName, err := res.Data.Info[0].String(common.BKCloudNameField)
+	if err != nil {
+		return nil, err
+	}
+	c.CloudName = cloudName
+
+	return res.Data.Info[0], nil
+}

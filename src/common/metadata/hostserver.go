@@ -350,6 +350,7 @@ type CloudAreaSearchParam struct {
 	Page      BasePage      `json:"page" bson:"page" field:"page"`
 	Fields    []string      `json:"fields,omitempty"`
 	Exact     bool          `json:"exact"`
+	HostCount bool          `json:"host_count"`
 }
 
 type TopoNode struct {

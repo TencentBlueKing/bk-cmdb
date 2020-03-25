@@ -665,6 +665,7 @@ const (
 	CCErrHostModuleNotBelongSetErr                            = 1110062
 	CCErrHostPlatCloudNameIsrequired                          = 1110063
 	CCErrHostPlatCloudNameAlreadyExist                        = 1110064
+	CCErrHostFindManyCloudAreaAddHostCountFieldFail           = 1110065
 
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
