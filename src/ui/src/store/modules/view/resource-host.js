@@ -3,7 +3,7 @@ const state = {
 }
 
 const getters = {
-    activeDirectory: state => state.activeDirectory
+    activeDirectory: state => state.activeDirectory || {}
 }
 
 const mutations = {

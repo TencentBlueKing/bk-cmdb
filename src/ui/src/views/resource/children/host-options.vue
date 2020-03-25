@@ -309,7 +309,7 @@
                         name: item.bk_biz_name
                     }))
                 }
-                return this.dirList.map(item => ({
+                return this.dirList.filter(item => item.bk_module_id !== this.activeDirectory.bk_module_id).map(item => ({
                     id: item.bk_module_id,
                     name: item.bk_module_name
                 }))
@@ -327,7 +327,7 @@
                 await this.getFullAmountBusiness()
                 await this.getDirectoryList()
             } catch (e) {
-                console.error(e)
+                console.error(e.message)
             }
         },
         methods: {
@@ -419,23 +419,25 @@
                 })
             },
             async changeHostsDir () {
-                const originModuleId = this.activeDirectory.bk_module_id
-                const targetModuleId = this.assign.id
-                await this.$http.post('resourceDirectory/changeHostsDirectory', {
-                    params: {
-                        bk_module_id: targetModuleId,
-                        bk_host_id: this.table.checked
-                    }
-                })
-                Bus.$emit('refresh-dir-count', {
-                    reduceId: originModuleId,
-                    addId: targetModuleId,
-                    count: this.table.checked.length
-                })
-                this.$success(this.$t('转移成功'))
-                this.$parent.table.checked = []
-                this.$parent.handlePageChange(1)
-                this.handleCancelAssignHosts()
+                try {
+                    await this.$store.dispatch('resource/host/transfer/directory', {
+                        params: {
+                            bk_module_id: this.assign.id,
+                            bk_host_id: this.table.checked
+                        }
+                    })
+                    Bus.$emit('refresh-dir-count', {
+                        reduceId: this.activeDirectory.bk_module_id,
+                        addId: this.assign.id,
+                        count: this.table.checked.length
+                    })
+                    this.$success(this.$t('转移成功'))
+                    this.$parent.table.checked = []
+                    this.$parent.handlePageChange(1)
+                    this.handleCancelAssignHosts()
+                } catch (e) {
+                    console.error(e)
+                }
             },
             getHostCellText (header, item) {
                 const objId = header.objId

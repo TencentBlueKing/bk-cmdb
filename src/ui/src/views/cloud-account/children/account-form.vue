@@ -14,9 +14,9 @@
             <bk-form-item class="create-form-item" :label="$t('账户类型')" required>
                 <bk-select class="create-form-meta"
                     :placeholder="$t('请选择xx', { name: $t('账户类型') })"
-                    :data-vv-as="$t('账户类型')"
                     :readonly="!isCreateMode"
-                    data-vv-name="type"
+                    :data-vv-as="$t('账户类型')"
+                    data-vv-name="bk_cloud_vendor"
                     v-model="form.bk_cloud_vendor"
                     v-validate="'required'">
                     <bk-option v-for="vendor in vendors"
@@ -25,7 +25,9 @@
                         :id="vendor.id">
                     </bk-option>
                 </bk-select>
-                <p class="create-form-error" v-if="errors.has('bk_cloud_vendor')">{{errors.first('bk_cloud_vendor')}}</p>
+                <p class="create-form-error" v-if="errors.has('bk_cloud_vendor')">
+                    {{errors.first('bk_cloud_vendor')}}
+                </p>
             </bk-form-item>
             <bk-form-item class="create-form-item" label="ID" required>
                 <bk-input class="create-form-meta"
@@ -36,11 +38,12 @@
                     v-validate="'required|length:256'">
                 </bk-input>
                 <link-button class="create-form-link">如何获取ID和Key?</link-button>
-                <p class="create-form-error" v-if="errors.has('bk_secret_id')">{{errors.first('bk_secret_id')}}</p>
+                <p class="create-form-error" v-if="errors.has('bk_secret_id')">
+                    {{errors.first('bk_secret_id')}}
+                </p>
             </bk-form-item>
             <bk-form-item class="create-form-item clearfix" label="Key" required>
                 <bk-button class="create-form-button fr"
-                    :disabled="!verifyAvailable"
                     :loading="$loading(request.verify)"
                     @click="handleTest">
                     {{$t('连通测试')}}
@@ -52,17 +55,19 @@
                     v-model.trim="form.bk_secret_key"
                     v-validate="'required|length:256'">
                 </bk-input>
-                <template v-if="verifyResult">
+                <template v-if="verifyResult.hasOwnProperty('done')">
                     <p class="create-verify-success" v-if="verifyResult.connected">
                         <i class="bk-icon icon-check-circle-shape"></i>
                         {{$t('账户连通成功')}}
                     </p>
                     <p class="create-verify-fail" v-else>
                         <i class="bk-icon icon-close-circle-shape"></i>
-                        {{verifyResult.error_msg}}
+                        {{$t('账户连通成功')}}
                     </p>
                 </template>
-                <p class="create-form-error" v-else-if="errors.has('bk_secret_key')">{{errors.first('bk_secret_key')}}</p>
+                <p class="create-form-error" v-else-if="errors.has('bk_secret_key')">
+                    {{errors.first('bk_secret_key')}}
+                </p>
             </bk-form-item>
             <bk-form-item class="create-form-item" :label="$t('备注')">
                 <bk-input class="create-form-meta" type="textarea"
@@ -74,10 +79,10 @@
                 </bk-input>
                 <p class="create-form-error" v-if="errors.has('bk_description')">{{errors.first('bk_description')}}</p>
             </bk-form-item>
-            <bk-form-item class="create-form-options">
+            <div class="create-form-options">
                 <bk-button class="mr10" theme="primary" @click.stop.prevent="handleSubmit">{{isCreateMode ? $t('提交') : $t('保存')}}</bk-button>
                 <bk-button theme="default" @click.stop.prevent="handleCancel(null)">{{$t('取消')}}</bk-button>
-            </bk-form-item>
+            </div>
         </bk-form>
     </div>
 </template>
@@ -113,7 +118,7 @@
                 form: {
                     ...DEFAULT_FORM
                 },
-                verifyResult: null,
+                verifyResult: {},
                 request: {
                     create: Symbol('create'),
                     update: Symbol('update'),
@@ -132,36 +137,61 @@
                     bk_secret_key: this.form.bk_secret_key
                 }
             },
-            verifyAvailable () {
-                return Object.values(this.verifyParams).every(value => !!value)
+            verifyRequired () {
+                const changed = ['bk_cloud_vendor', 'bk_secret_id', 'bk_secret_key'].some(key => this.form[key] !== this.verifyResult[key])
+                return changed || !this.verifyResult.connected
             }
         },
         created () {
             if (!this.isCreateMode) {
-                this.form = Object.assign({}, DEFAULT_FORM, this.account)
+                Object.keys(DEFAULT_FORM).forEach(key => {
+                    this.form[key] = this.account[key]
+                })
+                this.verifyResult = {
+                    bk_cloud_vendor: this.account.bk_cloud_vendor,
+                    bk_secret_id: this.account.bk_secret_id,
+                    bk_secret_key: this.account.bk_secret_key,
+                    connected: true
+                }
             }
         },
         methods: {
             async handleTest () {
+                const isValid = await this.$validator.validateAll()
+                if (!isValid) {
+                    return false
+                }
+                const params = { ...this.verifyParams }
                 try {
-                    this.verifyResult = null
-                    this.verifyResult = await this.$store.dispatch('cloud/account/verify', {
-                        params: this.verifyParams,
+                    this.verifyResult = {}
+                    const result = await this.$store.dispatch('cloud/account/verify', {
+                        params: params,
                         config: {
                             requestId: this.request.verify
                         }
                     })
-                } catch (e) {
-                    console.error(e)
                     this.verifyResult = {
+                        ...result,
+                        ...params,
+                        done: true
+                    }
+                } catch (e) {
+                    this.verifyResult = {
+                        ...params,
+                        done: true,
                         connected: false,
                         error_msg: e.message
                     }
+                    console.error(e.message)
                 }
             },
             async handleSubmit () {
                 const valid = await this.$validator.validateAll()
                 if (!valid) {
+                    return false
+                }
+                if (this.verifyRequired) {
+                    this.$error(this.$t('账户连通测试提示'))
                     return false
                 }
                 if (this.isCreateMode) {
@@ -262,7 +292,7 @@
                 color: $dangerColor;
             }
         }
-        .create-form-options.bk-form-item {
+        .create-form-options {
             margin-top: 20px;
         }
     }

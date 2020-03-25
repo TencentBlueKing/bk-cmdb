@@ -24,11 +24,14 @@
                 <div class="row-status"
                     slot-scope="{ row }"
                     v-bk-tooltips.right="{
-                        disabled: !row.bk_status_description,
-                        content: row.bk_status_description
+                        disabled: !(row.bk_status_description && row.bk_status_description.error_info),
+                        content: row.bk_status_description && row.bk_status_description.error_info
                     }">
-                    <i :class="['status', { 'is-error': row.bk_sync_status !== 'cloud_sync_success' }]"></i>
-                    {{row.bk_sync_status !== 'cloud_sync_success' ? $t('失败') : $t('成功')}}
+                    <template v-if="row.bk_sync_status">
+                        <i :class="['status', { 'is-error': row.bk_sync_status !== 'cloud_sync_success' }]"></i>
+                        {{row.bk_sync_status !== 'cloud_sync_success' ? $t('失败') : $t('成功')}}
+                    </template>
+                    <template v-else>--</template>
                 </div>
             </bk-table-column>
             <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time" show-overflow-tooltip>

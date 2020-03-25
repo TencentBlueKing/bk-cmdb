@@ -1,20 +1,14 @@
 <template>
     <div class="diractory-layout">
         <bk-input class="dir-search"
-            v-model="dirSearch"
-            :placeholder="$t('分组目录')"
-            @enter="getDirectoryList">
+            v-model.trim="dirSearch"
+            :placeholder="$t('分组目录')">
         </bk-input>
         <div class="dir-header">
             <span class="title">{{$t('资源池')}}</span>
             <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleShowCreate"></i>
         </div>
         <ul class="dir-list">
-            <li class="dir-item" :class="{ 'selected': acitveDirId === defaultDir.bk_module_id }" @click="handleSearchHost(defaultDir)">
-                <i class="icon-cc-memory"></i>
-                <span class="dir-name" :title="$t('默认')">{{$t('默认')}}</span>
-                <span class="host-count">{{defaultDir.host_count}}</span>
-            </li>
             <li class="dir-item edit-status" v-if="createInfo.active">
                 <bk-input
                     ref="createdDir"
@@ -98,7 +92,6 @@
     export default {
         data () {
             return {
-                searching: false,
                 dirSearch: '',
                 resetName: false,
                 createInfo: {
@@ -120,22 +113,10 @@
         },
         computed: {
             filterDirList () {
-                return this.searching ? this.dirList : this.dirList.slice(1)
-            },
-            params () {
-                if (this.searching) {
-                    return {
-                        condition: {
-                            bk_module_name: this.dirSearch
-                        }
-                    }
+                if (this.dirSearch) {
+                    return this.dirList.filter(module => module.bk_module_name.indexOf(this.dirSearch) > -1)
                 }
-                return {}
-            }
-        },
-        watch: {
-            dirSearch (val) {
-                this.searching = !!val
+                return [...this.dirList]
             }
         },
         created () {
@@ -149,18 +130,19 @@
             async getDirectoryList () {
                 try {
                     const data = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
-                        params: this.params,
+                        params: {
+                            page: {
+                                sort: '-bk_module_id'
+                            }
+                        },
                         config: {
                             requestId: 'getDirectoryList'
                         }
                     })
                     this.dirList = data.info || []
-                    if (!this.searching) {
-                        const firstDir = this.dirList[0] || {}
-                        this.defaultDir = firstDir
-                        this.acitveDirId = firstDir.bk_module_id
-                        this.$store.commit('resourceHost/setActiveDirectory', firstDir)
-                    }
+                    const firstDir = this.dirList[0] || {}
+                    this.acitveDirId = firstDir.bk_module_id
+                    this.$store.commit('resourceHost/setActiveDirectory', firstDir)
                 } catch (e) {
                     console.error(e)
                     this.dirList = []

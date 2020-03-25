@@ -24,8 +24,8 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('状态')" prop="bk_sync_status">
                     <div class="row-status" slot-scope="{ row }">
-                        <i :class="['status', { 'is-error': row.bk_sync_status !== 1 }]"></i>
-                        {{row.bk_sync_status === 1 ? $t('成功') : $t('失败')}}
+                        <i :class="['status', { 'is-error': row.bk_sync_status !== 'cloud_sync_success' }]"></i>
+                        {{row.bk_sync_status === 'cloud_sync_success' ? $t('成功') : $t('失败')}}
                     </div>
                 </bk-table-column>
                 <bk-table-column :label="$t('时间')" prop="create_time">

@@ -6,24 +6,21 @@
             :pagination="pagination"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange">
-            <bk-table-column :label="$t('云区域名称')" prop="bk_cloud_name" class-name="is-highlight"></bk-table-column>
+            <bk-table-column :label="$t('云区域名称')" prop="bk_cloud_name" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
             <bk-table-column :label="$t('状态')" prop="bk_status">
                 <div class="row-status" slot-scope="{ row }">
-                    <i :class="['status', { 'is-error': row.bk_status !== 1 }]"></i>
-                    {{row.bk_status === 1 ? $t('正常') : $t('异常')}}
+                    <i :class="['status', { 'is-error': row.bk_status !== '1' }]"></i>
+                    {{row.bk_status === '1' ? $t('正常') : $t('异常')}}
                 </div>
             </bk-table-column>
             <bk-table-column :label="$t('所属云厂商')" prop="bk_cloud_vendor">
                 <template slot-scope="{ row }">{{row.bk_cloud_vendor | formatter('singlechar')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('国家')" prop="bk_region">
+            <bk-table-column :label="$t('区域')" prop="bk_region">
                 <template slot-scope="{ row }">{{row.bk_region | formatter('singlechar')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('省份/州')" prop="bk_province">
-                <template slot-scope="{ row }">{{row.bk_province | formatter('singlechar')}}</template>
-            </bk-table-column>
-            <bk-table-column :label="$t('VPC')" prop="bk_vpc_name">
-                <template slot-scope="{ row }">{{row.bk_vpc_name | formatter('singlechar')}}</template>
+            <bk-table-column :label="$t('VPC')" prop="bk_vpc_name" show-overflow-tooltip>
+                <template slot-scope="{ row }">{{getVpcInfo(row) | formatter('singlechar')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('主机数量')" prop="host_count">
                 <template slot-scope="{ row }">{{row.host_count | formatter('int')}}</template>
@@ -32,7 +29,7 @@
                 <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
-            <bk-table-column :label="$t('操作')">
+            <bk-table-column :label="$t('操作')" fixed="right">
                 <bk-popconfirm slot-scope="{ row }"
                     trigger="click"
                     :disabled="!!row.host_count"
@@ -101,6 +98,14 @@
                     this.list = []
                     this.pagination.count = 0
                 }
+            },
+            getVpcInfo (row) {
+                const id = row.bk_vpc_id
+                const name = row.bk_vpc_name
+                if (name && id !== name) {
+                    return `${id}(${name})`
+                }
+                return id
             }
         }
     }
