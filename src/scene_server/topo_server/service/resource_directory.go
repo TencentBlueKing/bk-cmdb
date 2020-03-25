@@ -13,19 +13,19 @@
 package service
 
 import (
-	"configcenter/src/common/auditlog"
-	"configcenter/src/common/util"
 	"fmt"
 	"reflect"
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 )
 
 func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
@@ -112,6 +112,9 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 				},
 			},
 			ModelID: common.BKInnerObjIDModule,
+		},
+		Label: map[string]string{
+			metadata.LabelBizTopology: "",
 		},
 	}
 	auditResult, err := s.Engine.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
@@ -288,6 +291,9 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 				},
 			},
 			ModelID: common.BKInnerObjIDModule,
+		},
+		Label: map[string]string{
+			metadata.LabelBizTopology: "",
 		},
 	}
 	auditResult, err := s.Engine.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
@@ -490,6 +496,9 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 				},
 			},
 			ModelID: common.BKInnerObjIDModule,
+		},
+		Label: map[string]string{
+			metadata.LabelBizTopology: "",
 		},
 	}
 	auditResult, err := s.Engine.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
