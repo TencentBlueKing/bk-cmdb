@@ -1150,8 +1150,8 @@ const (
 	BKCreator                    = "bk_creator"
 	BKStatus                     = "bk_status"
 	BKLastEditor                 = "bk_last_editor"
-
-	BKVpcID   = "bk_vpc_id"
-	BKVpcName = "bk_vpc_name"
-	BKReion   = "bk_region"
+	BKSecretID                   = "bk_secret_id"
+	BKVpcID                      = "bk_vpc_id"
+	BKVpcName                    = "bk_vpc_name"
+	BKReion                      = "bk_region"
 )

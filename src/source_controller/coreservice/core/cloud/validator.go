@@ -41,6 +41,18 @@ func (c *cloudOperation) validCreateAccount(kit *rest.Kit, account *metadata.Clo
 		return kit.CCError.CCError(common.CCErrCloudAccountNameAlreadyExist)
 	}
 
+	// SecretID check, one SecretID can only have one account
+	option := &metadata.SearchCloudOption{Condition:mapstr.MapStr{common.BKSecretID: account.SecretID}}
+	multiAccount, err := c.SearchAccount(kit, option)
+	if nil != err {
+		blog.ErrorJSON("[validCreateAccount] SearchAccount error %s, option: %s, rid: %s", err, option, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if len(multiAccount.Info) > 0 {
+		blog.ErrorJSON("[validCreateAccount] same SecretID %s has already exist in cloud account:%s, rid: %s", account.SecretID, multiAccount.Info[0].AccountName, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCloudAccountSecretIDAlreadyExist, multiAccount.Info[0].AccountName)
+	}
+
 	return nil
 }
 
@@ -142,6 +154,18 @@ func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.Cloud
 				return kit.CCError.CCError(common.CCErrCloudVpcIDIsRequired)
 			}
 		}
+	}
+
+	// account task count check, one account can only have one task
+	option := &metadata.SearchCloudOption{Condition:mapstr.MapStr{common.BKCloudAccountID: task.AccountID}}
+	multiTask, err := c.SearchSyncTask(kit, option)
+	if nil != err {
+		blog.ErrorJSON("[validCreateSycTask] SearchSyncTask error %s, option: %s, rid: %s", err, option, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if len(multiTask.Info) > 0 {
+		blog.ErrorJSON("[validCreateSycTask] this cloud account has had cloud sync task %s, rid: %s", multiTask.Info[0].TaskName, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCloudTaskAlreadyExistInAccount, multiTask.Info[0].TaskName)
 	}
 
 	return nil

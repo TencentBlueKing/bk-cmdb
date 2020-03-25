@@ -803,6 +803,8 @@ const (
 	CCErrCloudValidSyncTaskParamFail      = 1118006
 	CCErrCloudVpcIDIsRequired             = 1118007
 	CCErrCloudVendorInterfaceCalledFailed = 1118008
+	CCErrCloudAccountSecretIDAlreadyExist = 1118009
+	CCErrCloudTaskAlreadyExistInAccount   = 1118010
 
 	/** TODO: 以下错误码需要改造 **/
 
