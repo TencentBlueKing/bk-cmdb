@@ -25,7 +25,7 @@ const (
 	AttributeFieldPropertyGroup   = "bk_property_group"
 	AttributeFieldPropertyIndex   = "bk_property_index"
 	AttributeFieldUnit            = "unit"
-	AttributeFieldPlaceHoler      = "placeholder"
+	AttributeFieldPlaceHolder     = "placeholder"
 	AttributeFieldIsEditable      = "editable"
 	AttributeFieldIsPre           = "ispre"
 	AttributeFieldIsRequired      = "isrequired"
