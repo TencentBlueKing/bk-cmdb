@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
 )
 
@@ -49,7 +48,7 @@ func (m *operationManager) SearchInstCount(ctx core.ContextParams, inputParam ma
 	return count, nil
 }
 
-func (m *operationManager) SearchChartDataCommon(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) SearchChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 	switch inputParam.ReportType {
 	case common.HostCloudChart:
 		data, err := m.HostCloudChartData(ctx, inputParam)
@@ -100,7 +99,39 @@ func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputPar
 		blog.Errorf("model's instance count aggregate fail, chartName: %v, objID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, ctx.ReqID)
 		return nil, err
 	}
-	option, err := instances.ParseEnumOption(ctx, attribute.Option)
+
+	instCount := uint64(0)
+	cond := M{}
+	var countErr error
+	if inputParam.ObjID == common.BKInnerObjIDHost {
+		instCount, countErr = m.dbProxy.Table(common.BKTableNameBaseHost).Find(cond).Count(ctx)
+		if countErr != nil {
+			blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, countErr, ctx.ReqID)
+			return nil, countErr
+		}
+		if instCount > 0 {
+			pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+			if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
+				blog.Errorf("host os type count aggregate fail, chartName: %v, err: %v, rid: %v", inputParam.Name, err, ctx.ReqID)
+				return nil, err
+			}
+		}
+	} else {
+		instCount, countErr = m.dbProxy.Table(common.BKTableNameBaseInst).Find(cond).Count(ctx)
+		if countErr != nil {
+			blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, countErr, ctx.ReqID)
+			return nil, countErr
+		}
+		if instCount > 0 {
+			pipeline := []M{{"$match": M{"bk_obj_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+			if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &commonCount); err != nil {
+				blog.Errorf("model's instance count aggregate fail, chartName: %v, ObjID: %v, err: %v, rid: %v", inputParam.Name, inputParam.ObjID, err, ctx.ReqID)
+				return nil, err
+			}
+		}
+	}
+
+	option, err := metadata.ParseEnumOption(ctx, attribute.Option)
 	if err != nil {
 		blog.Errorf("count model's instance, parse enum option fail, ObjID: %v, err:%v, rid: %v", inputParam.ObjID, err, ctx.ReqID)
 		return nil, err

@@ -12,8 +12,9 @@
             @sort-change="handleSortChange"
             @row-click="handleRowClick"
             @selection-change="handleSelectionChange">
-            <bk-table-column type="selection" width="50"></bk-table-column>
+            <bk-table-column type="selection" width="50" align="center"></bk-table-column>
             <bk-table-column v-for="column in table.header"
+                show-overflow-tooltip
                 :key="column.bk_property_id"
                 :label="$tools.getHeaderPropertyName(column)"
                 :sortable="getColumnSortable(column)"
@@ -21,10 +22,9 @@
                 :width="column.bk_property_id === 'bk_host_innerip' ? 130 : 'auto'"
                 :fixed="column.bk_property_id === 'bk_host_innerip'"
                 :class-name="column.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
-                <div slot-scope="{ row }"
-                    :title="row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column)">
+                <template slot-scope="{ row }">
                     {{ row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) }}
-                </div>
+                </template>
             </bk-table-column>
         </bk-table>
         <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="dialog.height">
@@ -317,7 +317,8 @@
                         sourceModel: this.selectedNode.data.bk_obj_id,
                         sourceId: this.selectedNode.data.bk_inst_id,
                         targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-                        resources: this.table.selection.map(item => item.host.bk_host_id).join(',')
+                        resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
+                        node: this.selectedNode.id
                     }
                 })
             },

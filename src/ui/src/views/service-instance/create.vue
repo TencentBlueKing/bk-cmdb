@@ -264,7 +264,8 @@
                 this.$router.replace({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
-                        node: 'module-' + this.moduleId
+                        node: 'module-' + this.moduleId,
+                        tab: this.$route.query.tab
                     }
                 })
             }
@@ -302,8 +303,9 @@
             position: static;
             height: 30px;
             line-height: 30px;
-            font-size: 12px;
+            font-size: 20px;
             font-weight: bold;
+            margin: 0 -4px;
             @include inlineBlock(top);
         }
         /deep/ span {

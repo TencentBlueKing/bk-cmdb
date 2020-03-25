@@ -122,6 +122,22 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 
 	data.Remove(metadata.BKMetadata)
 
+	listRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: []int64{id},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	ruleResult, err := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(params.Context, params.Header, 0, listRuleOption)
+	if err != nil {
+		blog.Errorf("delete object attribute failed, ListHostApplyRule failed, listRuleOption: %+v, err: %+v, rid: %s", listRuleOption, err, params.ReqID)
+		return nil, err
+	}
+	ruleIDs := make([]int64, 0)
+	for _, item := range ruleResult.Info {
+		ruleIDs = append(ruleIDs, item.ID)
+	}
+
 	// auth: update registered resource
 	if err := s.AuthManager.DeregisterModelAttributeByID(params.Context, params.Header, id); err != nil {
 		blog.Errorf("delete object attribute failed, deregister model attribute to auth failed, err: %+v, rid: %s", err, params.ReqID)
@@ -129,6 +145,20 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 	}
 
 	err = s.Core.AttributeOperation().DeleteObjectAttribute(params, cond)
+	if err != nil {
+		blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", params, err, params.ReqID)
+		return nil, err
+	}
+
+	if len(ruleIDs) > 0 {
+		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+			RuleIDs: ruleIDs,
+		}
+		if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(params.Context, params.Header, 0, deleteRuleOption); err != nil {
+			blog.Errorf("delete object attribute success, but DeleteHostApplyRule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err, params.ReqID)
+			return nil, err
+		}
+	}
 
 	return nil, err
 }
@@ -155,4 +185,34 @@ func (s *Service) UpdateObjectAttributeIndex(params types.ContextParams, pathPar
 	}
 
 	return result, nil
+}
+
+// ListHostModelAttribute list host model's attributes
+func (s *Service) ListHostModelAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	cond := condition.CreateCondition()
+	data.Remove(metadata.PageName)
+	if err := cond.Parse(data); nil != err {
+		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
+	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
+	attributes, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
+	if err != nil {
+		return nil, err
+	}
+	hostAttributes := make([]metadata.HostObjAttDes, 0)
+	for _, item := range attributes {
+		if item == nil {
+			continue
+		}
+		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(item.PropertyID)
+		hostAttribute := metadata.HostObjAttDes{
+			ObjAttDes:        *item,
+			HostApplyEnabled: hostApplyEnabled,
+		}
+		hostAttributes = append(hostAttributes, hostAttribute)
+	}
+	return hostAttributes, nil
 }

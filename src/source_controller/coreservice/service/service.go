@@ -37,6 +37,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/auditlog"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
+	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
@@ -112,19 +113,22 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	s.cache = cache
 
 	// connect the remote mongodb
+	instance := instances.New(db, s, cache)
+	hostApplyRuleCore := hostapplyrule.New(db, instance)
 	s.core = core.New(
 		model.New(db, s, cache),
-		instances.New(db, s, cache),
+		instance,
 		association.New(db, s),
 		datasynchronize.New(db, s),
-		mainline.New(db),
-		host.New(db, cache, s),
+		mainline.New(db, s.language),
+		host.New(db, cache, s, hostApplyRuleCore),
 		auditlog.New(db),
 		process.New(db, s, cache),
 		label.New(db),
-		dbSystem.New(db),
 		settemplate.New(db),
 		operation.New(db),
+		hostApplyRuleCore,
+		dbSystem.New(db),
 	)
 	return nil
 }

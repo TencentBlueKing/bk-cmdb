@@ -252,9 +252,9 @@
             }
             .icon-arrows-right{
                 position: absolute;
-                top: 14px;
-                right: 18px;
-                font-size: 15px;
+                top: 11px;
+                right: 15px;
+                font-size: 20px;
             }
             .icon-close{
                 position: absolute;
@@ -265,6 +265,7 @@
                 line-height: 42px;
                 text-align: center;
                 color: #c4c6cc;
+                font-size: 20px;
                 &:hover {
                     color: #7d8088;
                 }

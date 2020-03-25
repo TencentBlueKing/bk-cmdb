@@ -34,6 +34,7 @@
                 </div>
                 <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST, parent_layers: parentLayers })">
                     <bk-button slot-scope="{ disabled }"
+                        hover-theme="danger"
                         class="models-button button-delete"
                         :disabled="!table.checked.length || disabled"
                         @click="handleMultipleDelete">
@@ -73,7 +74,7 @@
                     :auto-select="false"
                     v-model="filter.value"
                     font-size="medium"
-                    @on-selected="getTableData(true)">
+                    @on-selected="handlePageChange(1, true)">
                 </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
@@ -82,7 +83,8 @@
                     right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData(true)">
+                    @enter="handlePageChange(1, true)"
+                    @clear="handlePageChange(1)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
@@ -91,7 +93,8 @@
                     right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData(true)">
+                    @enter="handlePageChange(1, true)"
+                    @clear="handlePageChange(1)">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
@@ -100,7 +103,8 @@
                     right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getTableData(true)">
+                    @enter="handlePageChange(1, true)"
+                    @clear="handlePageChange(1)">
                 </bk-input>
             </div>
         </div>
@@ -122,7 +126,8 @@
                 :prop="column.id"
                 :label="column.name"
                 :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
-                :fixed="column.id === 'bk_inst_name'">
+                :fixed="column.id === 'bk_inst_name'"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <span>{{row[column.id] | formatter(column.property)}}</span>
                 </template>
@@ -195,7 +200,7 @@
         <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
-                :properties="properties"
+                :properties="columnProperties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
                 @on-apply="handleApplyColumnsConfig"
@@ -321,6 +326,15 @@
                     resource_id: this.model.id,
                     resource_type: 'model'
                 }]
+            },
+            columnProperties () {
+                const instId = {
+                    bk_property_id: 'bk_inst_id',
+                    bk_property_name: 'ID'
+                }
+                const properties = this.properties
+                properties.push(instId)
+                return properties
             }
         },
         watch: {
@@ -425,7 +439,7 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customColumns, this.columnsConfig.disabledColumns)
+                    const headerProperties = this.$tools.getHeaderProperties(this.columnProperties, this.customColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.updateTableHeader(properties)
@@ -464,9 +478,9 @@
                 this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
-            handlePageChange (page) {
+            handlePageChange (page, withFilter = false) {
                 this.table.pagination.current = page
-                this.getTableData()
+                this.getTableData(withFilter)
             },
             handleSelectChange (selection) {
                 this.table.checked = selection.map(row => row.bk_inst_id)
@@ -478,7 +492,7 @@
                     config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
                 })
             },
-            getTableData (event) {
+            getTableData (withFilter) {
                 this.getInstList({ cancelPrevious: true, globalPermission: false }).then(data => {
                     if (data.count && !data.info.length) {
                         this.table.pagination.current -= 1
@@ -487,9 +501,7 @@
                     this.table.list = data.info
                     this.table.pagination.count = data.count
 
-                    if (event) {
-                        this.table.stuff.type = 'search'
-                    }
+                    this.table.stuff.type = withFilter ? 'search' : 'default'
 
                     return data
                 }).catch(({ permission }) => {
@@ -776,14 +788,6 @@
         position: relative;
         &:hover{
             z-index: 1;
-            &.button-delete {
-                color: $cmdbDangerColor;
-                border-color: $cmdbDangerColor;
-            }
-            /deep/ &.bk-button.bk-default[disabled] {
-                border-color: #dcdee5 !important;
-                color: #c4c6cc !important;
-            }
         }
     }
     .models-table{

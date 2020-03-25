@@ -192,13 +192,13 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 		blog.V(5).Infof("Authorize skip. auth attribute: %+v", a)
 		return meta.Decision{Authorized: true}, nil
 	}
-	batchresult, err := ac.AuthorizeBatch(ctx, a.User, a.Resources...)
+	batchResult, err := ac.AuthorizeBatch(ctx, a.User, a.Resources...)
 	if err != nil {
 		blog.Errorf("AuthorizeBatch error. err:%s", err.Error())
 		return meta.Decision{}, err
 	}
 	noAuth := make([]string, 0)
-	for i, item := range batchresult {
+	for i, item := range batchResult {
 		if !item.Authorized {
 			noAuth = append(noAuth, fmt.Sprintf("resource [%v] permission deny by reason: %s", a.Resources[i].Type, item.Reason))
 		}

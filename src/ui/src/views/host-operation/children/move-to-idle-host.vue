@@ -4,23 +4,26 @@
             :tips-style="{
                 background: 'none',
                 border: 'none',
-                fontSize: '12px'
+                fontSize: '12px',
+                lineHeight: '30px',
+                padding: 0
             }"
             :icon-style="{
                 color: '#63656E',
-                fontSize: '14px'
+                fontSize: '14px',
+                lineHeight: '30px'
             }">
             {{$t('移动到空闲机的主机提示')}}
         </cmdb-tips>
         <bk-table class="table" :data="list">
-            <bk-table-column :label="$t('操作')">
+            <bk-table-column :label="$t('操作')" show-overflow-tooltip>
                 <!-- eslint-disable-next-line -->
                 <template slot-scope="{ row }">{{$t('转移到空闲机的主机')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('IP')" prop="bk_host_innerip">
+            <bk-table-column :label="$t('IP')" prop="bk_host_innerip" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{getHostValue(row, 'bk_host_innerip') | singlechar}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('云区域')" prop="bk_cloud_id">
+            <bk-table-column :label="$t('云区域')" prop="bk_cloud_id" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{getHostValue(row, 'bk_cloud_id') | foreignkey}}</template>
             </bk-table-column>
         </bk-table>

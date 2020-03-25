@@ -17,12 +17,17 @@ import (
 	"errors"
 	"net/http"
 
+	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
+
+func (a *apiServer) Client() rest.ClientInterface {
+	return a.client
+}
 
 func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)

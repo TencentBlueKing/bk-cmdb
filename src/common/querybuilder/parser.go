@@ -15,8 +15,11 @@ package querybuilder
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"configcenter/src/common/mapstr"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type RuleGroup struct {
@@ -88,7 +91,7 @@ func (qf *QueryFilter) MarshalJSON() ([]byte, error) {
 	if qf.Rule != nil {
 		return json.Marshal(qf.Rule)
 	}
-	return nil, nil
+	return make([]byte, 0), nil
 }
 
 func (qf *QueryFilter) UnmarshalJSON(raw []byte) error {
@@ -98,4 +101,27 @@ func (qf *QueryFilter) UnmarshalJSON(raw []byte) error {
 	}
 	qf.Rule = rule
 	return nil
+}
+
+func MapToQueryFilterHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if t != reflect.TypeOf(QueryFilter{}) {
+			return data, nil
+		}
+		if f.Kind() != reflect.Map {
+			return data, nil
+		}
+		dataMap, ok := data.(map[string]interface{})
+		if ok == false {
+			return data, nil
+		}
+		rule, errKey, err := ParseRule(dataMap)
+		if err != nil {
+			return nil, fmt.Errorf("key: %s, err: %s", errKey, err.Error())
+		}
+		filter := QueryFilter{
+			Rule: rule,
+		}
+		return filter, nil
+	}
 }

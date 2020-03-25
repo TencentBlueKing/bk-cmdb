@@ -400,6 +400,7 @@ type Process struct {
 	Description     *string       `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
 	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
+	PortEnable      *bool         `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
 }
 
 type ServiceCategory struct {
@@ -630,6 +631,10 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.StartParamRegex = property.StartParamRegex.Value
 	}
 
+	processInstance.PortEnable = nil
+	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) {
+		processInstance.PortEnable = property.PortEnable.Value
+	}
 	return processInstance
 }
 
@@ -668,6 +673,8 @@ func GetAllProcessPropertyFields() []string {
 	fields = append(fields, "bind_ip")
 	fields = append(fields, "priority")
 	fields = append(fields, "start_cmd")
+	fields = append(fields, common.BKProcPortEnable)
+
 	return fields
 }
 
@@ -953,6 +960,19 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 		}
 	}
 
+	if IsAsDefaultValue(t.PortEnable.AsDefaultValue) {
+		if t.PortEnable.Value == nil && i.PortEnable != nil {
+			process[common.BKProcPortEnable] = nil
+			changed = true
+		} else if t.PortEnable.Value != nil && i.PortEnable == nil {
+			process[common.BKProcPortEnable] = *t.PortEnable.Value
+			changed = true
+		} else if t.PortEnable.Value != nil && i.PortEnable != nil && *t.PortEnable.Value != *i.PortEnable {
+			process[common.BKProcPortEnable] = *t.PortEnable.Value
+			changed = true
+		}
+	}
+
 	return process, changed
 }
 
@@ -1033,6 +1053,9 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	}
 	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == false {
 		editableFields = append(editableFields, "start_cmd")
+	}
+	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) == false {
+		editableFields = append(editableFields, common.BKProcPortEnable)
 	}
 	return editableFields
 }
@@ -1146,6 +1169,11 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data["start_cmd"] = *input.StartCmd
 		}
 	}
+	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) == false {
+		if input.PortEnable != nil {
+			data[common.BKProcPortEnable] = *input.PortEnable
+		}
+	}
 	return data
 }
 
@@ -1171,6 +1199,7 @@ type ProcessProperty struct {
 	Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
 	Description        PropertyString   `field:"description" json:"description" bson:"description"`
 	StartParamRegex    PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
+	PortEnable         PropertyBool     `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
@@ -1227,6 +1256,7 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 			return "priority", fmt.Errorf("field %s value must in range [1, 10000]", "priority")
 		}
 	}
+
 	return "", nil
 }
 
@@ -1415,7 +1445,6 @@ type ServiceInstance struct {
 	// it can be 0 when the service is not created with a service template.
 	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
 	HostID            int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
-	InnerIP           string `field:"bk_host_innerip" json:"bk_host_innerip" bson:"bk_host_innerip"`
 
 	// the module that this service belongs to.
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id"`

@@ -23,9 +23,9 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
-            <bk-table-column prop="op_desc" :label="$t('变更内容')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="operator" :label="$t('操作账号')" sortable="custom"></bk-table-column>
-            <bk-table-column prop="op_time" :label="$t('操作时间')" sortable="custom">
+            <bk-table-column prop="op_desc" :label="$t('变更内容')" sortable="custom" show-overflow-tooltip></bk-table-column>
+            <bk-table-column prop="operator" :label="$t('操作账号')" sortable="custom" show-overflow-tooltip></bk-table-column>
+            <bk-table-column prop="op_time" :label="$t('操作时间')" sortable="custom" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row['op_time'])}}
                 </template>

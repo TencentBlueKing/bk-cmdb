@@ -15,12 +15,12 @@
                 ref="instanceTable"
                 v-bkloading="{ isLoading: $loading(Object.values(request)) || table.filtering }"
                 :data="table.data">
-                <bk-table-column :label="$t('模块名称')" prop="bk_module_name"></bk-table-column>
-                <bk-table-column :label="$t('拓扑路径')" sortable :sort-method="sortByPath">
-                    <div slot-scope="{ row }" :title="row._path_">{{row._path_}}</div>
+                <bk-table-column :label="$t('模块名称')" prop="bk_module_name" show-overflow-tooltip></bk-table-column>
+                <bk-table-column :label="$t('拓扑路径')" sortable :sort-method="sortByPath" show-overflow-tooltip>
+                    <template slot-scope="{ row }">{{row._path_}}</template>
                 </bk-table-column>
-                <bk-table-column :label="$t('上次同步时间')" sortable :sort-method="sortByTime">
-                    <div slot-scope="{ row }" :title="row.last_time | time">{{row.last_time | time}}</div>
+                <bk-table-column :label="$t('上次同步时间')" sortable :sort-method="sortByTime" show-overflow-tooltip>
+                    <template slot-scope="{ row }">{{row.last_time | time}}</template>
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')">
                     <template slot-scope="{ row }">
@@ -172,7 +172,11 @@
                 this.table.filtering = true
                 this.$nextTick(() => {
                     if (this.table.filter) {
-                        this.table.data = this.table.backup.filter(row => row._path_.indexOf(this.table.filter) > -1)
+                        this.table.data = this.table.backup.filter(row => {
+                            const path = row._path_.replace(/\s*(\/)\s*/g, '$1')
+                            const filter = this.table.filter.replace(/\s*(\/)\s*/g, '$1')
+                            return path.indexOf(filter) > -1
+                        })
                     } else {
                         this.table.data = [...this.table.backup]
                     }

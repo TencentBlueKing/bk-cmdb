@@ -27,12 +27,14 @@ type SetInst struct {
 	SetStatus     string `bson:"bk_service_status" json:"bk_service_status" mapstructure:"bk_service_status"`
 	SetEnv        string `bson:"bk_set_env" json:"bk_set_env" mapstructure:"bk_set_env"`
 	SetTemplateID int64  `bson:"set_template_id" json:"set_template_id" mapstructure:"set_template_id"`
-    ParentID  int64  `bson:"bk_parent_id" json:"bk_parent_id" mapstructure:"bk_parent_id"`
-	
+	ParentID      int64  `bson:"bk_parent_id" json:"bk_parent_id" mapstructure:"bk_parent_id"`
+
 	Creator         string `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
 	CreateTime      Time   `field:"create_time" json:"create_time,omitempty" bson:"create_time" mapstructure:"create_time"`
 	LastTime        Time   `field:"last_time" json:"last_time,omitempty" bson:"last_time" mapstructure:"last_time"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+
+	SetTemplateVersion int64 `bson:"set_template_version" json:"set_template_version" mapstructure:"set_template_version"`
 }
 
 // ModuleInst contains partial fields of a real module
@@ -46,6 +48,7 @@ type ModuleInst struct {
 	ParentID          int64  `bson:"bk_parent_id" json:"bk_parent_id" field:"bk_parent_id" mapstructure:"bk_parent_id"`
 	SetTemplateID     int64  `bson:"set_template_id" json:"set_template_id" field:"set_template_id" mapstructure:"set_template_id"`
 	Default           int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
+	HostApplyEnabled  bool   `bson:"host_apply_enabled" json:"host_apply_enabled" field:"host_apply_enabled" mapstructure:"host_apply_enabled"`
 }
 
 type BizInst struct {
@@ -61,8 +64,8 @@ type BizBasicInfo struct {
 }
 
 type CloudInst struct {
-	CloudID   int64  `bson:"bk_cloud_id"`
-	CloudName string `bson:"bk_cloud_name"`
+	CloudID   int64  `bson:"bk_cloud_id" json:"bk_cloud_id"`
+	CloudName string `bson:"bk_cloud_name" json:"bk_cloud_name"`
 }
 
 type ProcessInst struct {
@@ -109,6 +112,7 @@ type HostIdentProcess struct {
 	FuncName        string  `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
 	StartParamRegex string  `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
 	BindModules     []int64 `json:"bind_modules" bson:"bind_modules"`                 // 进程绑定的模块ID，数字数组
+	PortEnable      bool    `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
 }
 
 type HostIdentProcessSorter []HostIdentProcess

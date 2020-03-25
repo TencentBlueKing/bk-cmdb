@@ -184,7 +184,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 
 // hostCloudAreaURLRegexp host server opeator cloud area api regex
 var hostCloudAreaURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(cloudarea|cloudarea/.*)$", verbs))
-var hostURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(host|hosts/.*)$", verbs))
+var hostURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(host|hosts|host_apply_rule|host_apply_plan)/.*$", verbs))
 
 // WithHost transform the host's url
 func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {

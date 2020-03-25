@@ -110,8 +110,8 @@ func (o *OperationServer) newOperationService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart", Handler: o.CreateOperationChart})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart/{id}", Handler: o.DeleteOperationChart})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart", Handler: o.UpdateOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/search/operation/chart", Handler: o.SearchOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart/data", Handler: o.SearchChartData})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/operation/chart", Handler: o.SearchOperationChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/chart/data", Handler: o.SearchChartData})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position", Handler: o.UpdateChartPosition})
 
 	utility.AddToRestfulWebService(web)

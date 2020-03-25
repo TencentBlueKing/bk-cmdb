@@ -155,7 +155,6 @@ maxIDleConns = 1000
 address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
-enable = $auth_enabled
 '''
     template = FileTemplate(host_file_template_str)
     result = template.substitute(**context)

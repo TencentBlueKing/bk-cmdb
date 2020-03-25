@@ -240,7 +240,7 @@ func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams,
 		}
 	}
 
-	if parameterEnough == false {
+	if !parameterEnough {
 		blog.Errorf("DeleteProcessInstanceRelation failed, filter parameters not enough, filter: %+v, rid: %s", deleteFilter, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommParametersCountNotEnough)
 	}

@@ -338,7 +338,8 @@
                     query: {
                         sourceModel: this.selectedNode.data.bk_obj_id,
                         sourceId: this.selectedNode.data.bk_inst_id,
-                        resources: this.$parent.table.selection.map(item => item.host.bk_host_id).join(',')
+                        resources: this.$parent.table.selection.map(item => item.host.bk_host_id).join(','),
+                        node: this.selectedNode.id
                     }
                 })
             },
@@ -411,7 +412,8 @@
                     },
                     query: {
                         resources: selected.map(item => item.host.bk_host_id).join(','),
-                        title: this.selectedNode.data.bk_inst_name
+                        title: this.selectedNode.data.bk_inst_name,
+                        node: this.selectedNode.id
                     }
                 })
             },
@@ -452,11 +454,12 @@
             width: 200px;
         }
         .dropdown-icon {
+            margin: 0 -4px;
             display: inline-block;
             vertical-align: middle;
-            line-height: 19px;
             height: auto;
             top: 0px;
+            font-size: 20px;
             &.open {
                 top: -1px;
                 transform: rotate(180deg);
@@ -516,6 +519,8 @@
             .icon-close {
                 display: none;
                 color: #979BA5;
+                font-size: 20px;
+                margin-right: -4px;
             }
         }
     }

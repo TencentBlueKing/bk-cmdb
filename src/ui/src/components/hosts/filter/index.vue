@@ -83,6 +83,7 @@
                         <component class="filter-value"
                             v-else
                             :is="`cmdb-form-${filterItem.bk_property_type}`"
+                            :unit="filterItem.unit"
                             v-model="filterItem.value">
                         </component>
                         <i class="bk-icon icon-close" @click.stop="handleDeteleFilter(filterItem)"></i>
@@ -458,7 +459,8 @@
                                 bk_property_type: property.bk_property_type,
                                 option: property.option,
                                 operator: filter.operator,
-                                value: filter.value
+                                value: filter.value,
+                                unit: property.unit
                             }
                             const existCondition = oldCondition.find(old => {
                                 return old.bk_obj_id === property.bk_obj_id
@@ -601,10 +603,11 @@
         }
         .icon-close {
             color: #d8d8d8;
-            font-size: 14px;
+            font-size: 20px;
             font-weight: bold;
             line-height: 32px;
-            margin: 0 0 0 6px;
+            height: 32px;
+            margin: 0 0 0 3px;
             cursor: pointer;
             opacity: 0;
             &:hover {

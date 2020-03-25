@@ -5,6 +5,8 @@
                 v-model="localValue"
                 :rows="rows"
                 :placeholder="placeholder || $t('请输入关键词')"
+                :disabled="disabled"
+                :maxlength="maxlength"
                 @focus="handleFocus"
                 @blur="handleBlur"
                 @input="setValue"
@@ -33,6 +35,14 @@
             placeholder: {
                 type: String,
                 default: ''
+            },
+            disabled: {
+                type: Boolean,
+                default: false
+            },
+            maxlength: {
+                type: Number,
+                default: 2000
             }
         },
         data () {
@@ -57,6 +67,7 @@
             setLocalValue () {
                 if (this.localValue !== this.value) {
                     this.localValue = this.value
+                    this.$emit('on-change', this.localValue)
                 }
             },
             setValue () {
@@ -82,11 +93,14 @@
                 this.isFocus = false
                 this.timer = setTimeout(() => {
                     this.rows = 1
-                    this.$refs.textarea.scrollTop = 0
+                    if (this.$refs.textarea) {
+                        this.$refs.textarea.scrollTop = 0
+                    }
                 }, 200)
             },
             handleEnter () {
                 this.rows = Math.min(this.rows + 1, 5)
+                this.$emit('enter', this.localValue)
             },
             handleDelete () {
                 this.$nextTick(() => {
@@ -122,6 +136,12 @@
                 resize: none;
                 font-size: 14px;
                 @include scrollbar-y;
+                &:disabled {
+                    color: #c4c6cc;
+                    background-color: #fafbfd!important;
+                    cursor: not-allowed;
+                    border-color: #dcdee5!important;
+                }
             }
             .icon-close {
                 display: none;
@@ -133,7 +153,7 @@
                 line-height: 28px;
                 text-align: center;
                 transform: translate3d(0, -50%, 0) scale(.5);
-                font-size: 12px;
+                font-size: 20px;
                 border-radius: 50%;
                 background-color: #C4C6CC;
                 color: #fff;

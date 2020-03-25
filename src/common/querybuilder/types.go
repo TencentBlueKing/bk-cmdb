@@ -24,6 +24,7 @@ type Rule interface {
 	GetDeep() int
 	Validate() (string, error)
 	ToMgo() (mgoFilter map[string]interface{}, errKey string, err error)
+	Match(matcher Matcher) bool
 }
 
 // *************** define condition ************************
@@ -126,7 +127,7 @@ var SupportOperators = map[Operator]bool{
 	OperatorIsNull:    false,
 	OperatorIsNotNull: false,
 
-	OperatorExist:    false,
+	OperatorExist:    true,
 	OperatorNotExist: false,
 }
 
@@ -161,9 +162,15 @@ func (r AtomRule) Validate() (string, error) {
 	return "", nil
 }
 
+type Matcher func(r AtomRule) bool
+
+func (r AtomRule) Match(matcher Matcher) bool {
+	return matcher(r)
+}
+
 var (
 	// TODO: should we support dot field separator here?
-	ValidFieldPattern = regexp.MustCompile(`^[a-zA-Z][\d\w\-_.]*$`)
+	ValidFieldPattern = regexp.MustCompile(`^[a-zA-Z0-9][\d\w\-_.]*$`)
 )
 
 func (r AtomRule) validateField() error {
@@ -332,7 +339,8 @@ type CombinedRule struct {
 
 var (
 	// 嵌套层级的深度按树的高度计算，查询条件最大深度为3即最多嵌套2层
-	MaxDeep = 3
+	MaxDeep           = 3
+	HostSearchMaxDeep = 3
 )
 
 func (r CombinedRule) GetDeep() int {
@@ -353,9 +361,6 @@ func (r CombinedRule) Validate() (string, error) {
 	if r.Rules == nil || len(r.Rules) == 0 {
 		return "rules", fmt.Errorf("combined rules shouldn't be empty")
 	}
-	if r.GetDeep() > MaxDeep {
-		return "rules", fmt.Errorf("exceed max query condition deepth: %d", MaxDeep)
-	}
 	for idx, rule := range r.Rules {
 		if key, err := rule.Validate(); err != nil {
 			return fmt.Sprintf("rules[%d].%s", idx, key), err
@@ -370,9 +375,6 @@ func (r CombinedRule) ToMgo() (mgoFilter map[string]interface{}, key string, err
 	}
 	if r.Rules == nil || len(r.Rules) == 0 {
 		return nil, "rules", fmt.Errorf("combined rules shouldn't be empty")
-	}
-	if r.GetDeep() > MaxDeep {
-		return nil, "rules", fmt.Errorf("exceed max query condition deepth: %d", MaxDeep)
 	}
 	filters := make([]map[string]interface{}, 0)
 	for idx, rule := range r.Rules {
@@ -390,4 +392,29 @@ func (r CombinedRule) ToMgo() (mgoFilter map[string]interface{}, key string, err
 		mgoOperator: filters,
 	}
 	return mgoFilter, "", nil
+}
+
+func (r CombinedRule) Match(matcher Matcher) bool {
+	if len(r.Rules) == 0 {
+		return true
+	}
+
+	switch r.Condition {
+	case ConditionAnd:
+		for _, rule := range r.Rules {
+			if rule.Match(matcher) == false {
+				return false
+			}
+		}
+		return true
+	case ConditionOr:
+		for _, rule := range r.Rules {
+			if rule.Match(matcher) == true {
+				return true
+			}
+		}
+		return false
+	default:
+		panic(fmt.Sprintf("unexpected condition %s", r.Condition))
+	}
 }

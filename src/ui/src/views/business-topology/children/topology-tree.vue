@@ -38,7 +38,7 @@
                         </i>
                         <i v-else-if="data.set_template_id"
                             class="node-button disabled-node-button"
-                            v-bk-tooltips="{ content: $t('模板集群添加模块提示'), placement: 'top', interactive: false }">
+                            v-bk-tooltips="{ content: $t('需在集群模板中新建'), placement: 'top', interactive: false }">
                             {{$t('新建')}}
                         </i>
                         <bk-button v-else class="node-button"
@@ -544,8 +544,7 @@
         }
     }
     .node-info {
-        &:hover,
-        &.is-selected {
+        &:hover {
             .info-create-trigger {
                 display: inline-block;
                 & ~ .node-count {

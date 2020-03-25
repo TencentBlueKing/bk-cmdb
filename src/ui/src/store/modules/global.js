@@ -19,19 +19,6 @@ const state = {
     },
     userList: [],
     headerTitle: '',
-    featureTipsParams: {
-        process: true,
-        customQuery: true,
-        model: true,
-        modelBusiness: true,
-        association: true,
-        eventpush: true,
-        adminTips: true,
-        serviceTemplate: true,
-        category: true,
-        hostServiceInstanceCheckView: true,
-        customFields: true
-    },
     permission: [],
     appHeight: window.innerHeight,
     isAdminView: true,
@@ -63,7 +50,6 @@ const getters = {
     showBack: state => state.header.back,
     userList: state => state.userList,
     headerTitle: state => state.headerTitle,
-    featureTipsParams: state => state.featureTipsParams,
     permission: state => state.permission,
     title: state => state.title,
     businessSelectorVisible: state => state.businessSelectorVisible,
@@ -104,20 +90,6 @@ const mutations = {
     },
     setAdminView (state, isAdminView) {
         state.isAdminView = isAdminView
-    },
-    setFeatureTipsParams (state, tab) {
-        const local = window.localStorage.getItem('featureTipsParams')
-        if (tab) {
-            state.featureTipsParams[tab] = false
-            window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
-        } else if (local) {
-            state.featureTipsParams = {
-                ...state.featureTipsParams,
-                ...JSON.parse(window.localStorage.getItem('featureTipsParams'))
-            }
-        } else {
-            window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
-        }
     },
     setPermission (state, permission) {
         state.permission = permission

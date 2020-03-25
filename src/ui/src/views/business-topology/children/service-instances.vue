@@ -305,9 +305,12 @@
             }
         },
         watch: {
-            async currentNode (node) {
-                if (node && node.data.bk_obj_id === 'module') {
-                    this.getData()
+            currentNode: {
+                immediate: true,
+                handler (node) {
+                    if (node && node.data.bk_obj_id === 'module') {
+                        this.getData()
+                    }
                 }
             },
             bindIp (value) {
@@ -315,9 +318,6 @@
             },
             checked () {
                 this.isCheckAll = (this.checked.length === this.instances.length) && this.checked.length !== 0
-            },
-            searchSelectData (searchSelectData) {
-                if (!searchSelectData.length && this.inSearch) this.inSearch = false
             }
         },
         async created () {
@@ -437,6 +437,10 @@
                     this.isExpandAll = false
                     this.instances = data.info
                     this.pagination.count = data.count
+                    if (!this.searchSelectData.length && this.inSearch) this.inSearch = false
+                    this.$nextTick(() => {
+                        data.info.length && this.handleCheckALL(false)
+                    })
                 } catch (e) {
                     console.error(e)
                     this.instances = []
@@ -729,19 +733,19 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        title: this.currentNode.data.bk_inst_name
+                        title: this.currentNode.data.bk_inst_name,
+                        node: this.currentNode.id,
+                        tab: 'serviceInstance'
                     }
                 })
             },
             handleCheckALL (checked) {
-                this.searchSelectData = []
                 this.isCheckAll = checked
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.checked = checked
                 })
             },
             handleExpandAll (expanded) {
-                this.searchSelectData = []
                 this.isExpandAll = expanded
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.localExpanded = expanded
@@ -996,7 +1000,6 @@
             cursor: pointer;
             &:before {
                 display: block;
-                transform: scale(.7);
             }
             &:hover {
                 background-color: #ccc;
@@ -1013,8 +1016,7 @@
     .clipboard-trigger{
         padding: 0 16px;
         .icon-angle-down {
-            font-size: 12px;
-            top: 0;
+            font-size: 20px;
         }
     }
     .clipboard-list{
@@ -1063,7 +1065,9 @@
             background-color: #dcdee5;
         }
         .icon-refresh {
-            top: -1px;
+            font-size: 12px;
+            vertical-align: middle;
+            line-height: 18px;
         }
     }
     .tables {

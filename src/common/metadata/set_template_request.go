@@ -110,6 +110,8 @@ type SetDiff struct {
 	SetDetail   SetInst                    `json:"set_detail"`
 	TopoPath    []TopoInstanceNodeSimplify `json:"topo_path"`
 	NeedSync    bool                       `json:"need_sync"`
+
+	SetTemplateVersion int64 `json:"set_template_version"`
 }
 
 func (sd *SetDiff) UpdateNeedSyncField() {
@@ -132,6 +134,8 @@ type SyncModuleTask struct {
 	Set         SetInst                    `json:"set"`
 	SetTopoPath []TopoInstanceNodeSimplify `json:"set_topo_path"`
 	ModuleDiff  SetModuleDiff              `json:"module_diff"`
+
+	SetTemplateVersion int64 `json:"set_template_version"`
 }
 
 var (
@@ -201,4 +205,21 @@ func (option ListSetTemplateSyncStatusOption) ToFilter() map[string]interface{} 
 type MultipleSetTemplateSyncStatus struct {
 	Count int64                   `json:"count"`
 	Info  []SetTemplateSyncStatus `field:"info" json:"info" bson:"info" mapstructure:"info"`
+}
+
+type SetUpdateToDateStatus struct {
+	SetID              int64 `json:"bk_set_id"`
+	SetTemplateVersion int64 `json:"set_template_version"`
+	NeedSync           bool  `json:"need_sync"`
+}
+
+type SetTemplateUpdateToDateStatus struct {
+	Sets               []SetUpdateToDateStatus `json:"sets"`
+	SetTemplateVersion int64                   `json:"set_template_version"`
+	SetTemplateID      int64                   `json:"set_template_id"`
+	NeedSync           bool                    `json:"need_sync"`
+}
+
+type BatchCheckSetInstUpdateToDateStatusOption struct {
+	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids" mapstructure:"set_template_ids"`
 }

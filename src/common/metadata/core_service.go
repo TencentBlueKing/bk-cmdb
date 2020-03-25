@@ -200,7 +200,11 @@ func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanc
 	return node.TraversalFindNode(common.BKInnerObjIDModule, targetID)
 }
 
+// common.BKInnerObjIDObject used for matching custom level node
 func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int64) []*TopoInstanceNode {
+	if objectType == common.BKInnerObjIDObject && !common.IsInnerModel(node.ObjectID) && node.InstanceID == targetID {
+		return []*TopoInstanceNode{node}
+	}
 	if node.ObjectID == objectType && node.InstanceID == targetID {
 		return []*TopoInstanceNode{node}
 	}
@@ -261,11 +265,11 @@ type TransferHostsCrossBusinessRequest struct {
 
 // HostModuleRelationRequest gethost module relation request parameter
 type HostModuleRelationRequest struct {
-	ApplicationID int64    `json:"bk_biz_id" bson:"bk_biz_id" field:"bk_biz_id"`
-	SetIDArr      []int64  `json:"bk_set_ids" bson:"bk_set_ids" field:"bk_set_ids"`
-	HostIDArr     []int64  `json:"bk_host_ids" bson:"bk_host_ids" field:"bk_host_ids"`
-	ModuleIDArr   []int64  `json:"bk_module_ids" bson:"bk_module_ids" field:"bk_module_ids"`
-	Page          BasePage `json:"page" bson:"page" field:"page"`
+	ApplicationID int64    `json:"bk_biz_id" bson:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
+	SetIDArr      []int64  `json:"bk_set_ids" bson:"bk_set_ids" field:"bk_set_ids" mapstructure:"bk_set_ids"`
+	HostIDArr     []int64  `json:"bk_host_ids" bson:"bk_host_ids" field:"bk_host_ids" mapstructure:"bk_host_ids"`
+	ModuleIDArr   []int64  `json:"bk_module_ids" bson:"bk_module_ids" field:"bk_module_ids" mapstructure:"bk_module_ids"`
+	Page          BasePage `json:"page" bson:"page" field:"page" mapstructure:"page"`
 }
 
 // Empty empty struct

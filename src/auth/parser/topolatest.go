@@ -1651,8 +1651,9 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 }
 
 const (
-	createObjectAttributeLatestPattern = "/api/v3/create/objectattr"
-	findObjectAttributeLatestPattern   = "/api/v3/find/objectattr"
+	createObjectAttributeLatestPattern   = "/api/v3/create/objectattr"
+	findObjectAttributeLatestPattern     = "/api/v3/find/objectattr"
+	findHostObjectAttributeLatestPattern = "/api/v3/find/objectattr/host"
 )
 
 var (
@@ -1865,6 +1866,35 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 		return ps
 	}
 
+	if ps.hitPattern(findHostObjectAttributeLatestPattern, http.MethodPost) {
+		// 注意：业务ID是否为0表示两种不同的操作
+		// case 0: 读取模型的公有属性
+		// case ~0: 读取业务私有属性+公有属性
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.V(5).Infof("get business id in metadata failed, err: %v", err)
+		}
+
+		models, err := ps.searchModels(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDHost})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		for _, model := range models {
+
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:   meta.ModelAttribute,
+						Action: meta.FindMany,
+					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+				})
+		}
+		return ps
+	}
+
 	return ps
 }
 
@@ -1877,6 +1907,7 @@ var (
 	deleteMainlineObjectLatestRegexp                       = regexp.MustCompile(`^/api/v3/delete/topomodelmainline/object/[^\s/]+/?$`)
 	findBusinessInstanceTopologyLatestRegexp               = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
 	findBusinessInstanceTopologyPathRegexp                 = regexp.MustCompile(`^/api/v3/find/topopath/biz/[0-9]+/?$`)
+	findHostApplyRelatedObjectTopologyRegex                = regexp.MustCompile(`^/api/v3/find/topoinst/bk_biz_id/([0-9]+)/host_apply_rule_related/?$`)
 	findBusinessInstanceTopologyWithStatisticsLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst_with_statistics/biz/[0-9]+/?$`)
 	// TODO remove it, interface implementation not found
 	findMainlineSubInstanceTopoLatestRegexp = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
@@ -1962,6 +1993,31 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("find mainline object's sub instance topology, but got invalid business id %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.MainlineInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// 根据主机属性自动应用规则查找拓扑节点
+	if ps.hitRegexp(findHostApplyRelatedObjectTopologyRegex, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("find host apply rule related topo node, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find host apply rule related topo node, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{

@@ -11,6 +11,7 @@ import {
     MENU_BUSINESS_SET_TEMPLATE,
     MENU_BUSINESS_SERVICE_CATEGORY,
     MENU_BUSINESS_CUSTOM_FIELDS,
+    MENU_BUSINESS_HOST_APPLY,
 
     MENU_RESOURCE_EVENTPUSH,
     MENU_RESOURCE_MANAGEMENT,
@@ -91,6 +92,11 @@ const menus = [{
         i18n: '服务分类',
         icon: 'icon-cc-nav-service-topo',
         route: getMenuRoute(businessViews, MENU_BUSINESS_SERVICE_CATEGORY, 'business')
+    }, {
+        id: MENU_BUSINESS_HOST_APPLY,
+        i18n: '主机自动应用',
+        icon: 'icon-cc-host-apply',
+        route: getMenuRoute(businessViews, MENU_BUSINESS_HOST_APPLY, 'business')
     }, {
         id: MENU_BUSINESS_CUSTOM_QUERY,
         i18n: '动态分组',

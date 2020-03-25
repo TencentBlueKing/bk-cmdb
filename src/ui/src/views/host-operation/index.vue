@@ -4,11 +4,14 @@
     }">
         <div class="info clearfix mb20">
             <label class="info-label fl">{{$t('已选主机')}}：</label>
-            <i18n tag="div" path="N台主机" class="info-content">
-                <b class="info-count" place="count">{{resources.length}}</b>
-            </i18n>
+            <div class="info-content">
+                <i18n path="N台主机">
+                    <b class="info-count" place="count">{{resources.length}}</b>
+                </i18n>
+                <i class="edit-trigger icon icon-cc-edit" @click="handleChangeHost"></i>
+            </div>
         </div>
-        <div class="info clearfix mb20" v-if="type !== 'remove'">
+        <div class="info clearfix mb10" v-if="type !== 'remove'">
             <label class="info-label fl">{{$t('转移到')}}：</label>
             <div class="info-content">
                 <ul class="module-list">
@@ -47,8 +50,8 @@
                                 :key="item.id"
                                 @click="handleTabClick(item)">
                                 <span class="tab-label">{{item.label}}</span>
-                                <span :class="['tab-count', { 'has-badge': !item.confirmed }]">
-                                    {{item.props.info.length}}
+                                <span :class="['tab-count', { 'unconfirmed': !item.confirmed }]">
+                                    {{item.props.info.length > 999 ? '999+' : item.props.info.length}}
                                 </span>
                             </li>
                         </template>
@@ -74,7 +77,7 @@
             <bk-button theme="primary" :disabled="isSameModule" @click="handleConfrim">{{confirmText}}</bk-button>
             <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
-        <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="460">
+        <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="460" :body-scroll="false">
             <component
                 :is="dialog.component"
                 :confirm-text="$t('确定')"
@@ -91,6 +94,8 @@
     import DeletedServiceInstance from './children/deleted-service-instance.vue'
     import MoveToIdleHost from './children/move-to-idle-host.vue'
     import ModuleSelector from '@/views/business-topology/host/module-selector.vue'
+    import HostSelector from '@/views/business-topology/host/host-selector.vue'
+    import HostAttrsAutoApply from './children/host-attrs-auto-apply.vue'
     import {
         MENU_BUSINESS_TRANSFER_HOST,
         MENU_BUSINESS_HOST_AND_SERVICE
@@ -102,7 +107,9 @@
             [CreateServiceInstance.name]: CreateServiceInstance,
             [DeletedServiceInstance.name]: DeletedServiceInstance,
             [MoveToIdleHost.name]: MoveToIdleHost,
-            [ModuleSelector.name]: ModuleSelector
+            [ModuleSelector.name]: ModuleSelector,
+            [HostSelector.name]: HostSelector,
+            [HostAttrsAutoApply.name]: HostAttrsAutoApply
         },
         data () {
             return {
@@ -142,6 +149,14 @@
                     props: {
                         info: []
                     }
+                }, {
+                    id: 'hostAttrsAutoApply',
+                    label: this.$t('属性自动应用'),
+                    confirmed: false,
+                    component: HostAttrsAutoApply.name,
+                    props: {
+                        info: []
+                    }
                 }],
                 request: {
                     preview: Symbol('review'),
@@ -176,9 +191,9 @@
             },
             availableTabList () {
                 const map = {
-                    remove: ['deletedServiceInstance', 'moveToIdleHost'],
-                    idle: ['deletedServiceInstance'],
-                    business: ['createServiceInstance', 'deletedServiceInstance']
+                    remove: ['deletedServiceInstance', 'moveToIdleHost', 'hostAttrsAutoApply'],
+                    idle: ['deletedServiceInstance', 'hostAttrsAutoApply'],
+                    business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply']
                 }
                 const available = map[this.type]
                 return this.tabList.filter(tab => available.includes(tab.id) && tab.props.info.length > 0)
@@ -194,8 +209,11 @@
                         tab.confirmed = false
                     }
                 })
+                const hasActiveTab = tabList.find(tab => tab === this.activeTab)
+                if (!hasActiveTab) this.tab.active = null
             },
             activeTab (tab) {
+                if (!tab) return
                 tab.confirmed = true
             }
         },
@@ -214,8 +232,9 @@
         beforeDestroy () {
             removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
         },
-        beforeRouteUpdate (to, from, next) {
+        async beforeRouteUpdate (to, from, next) {
             this.resolveData(to)
+            await this.getHostInfo()
             this.$nextTick(this.setBreadcrumbs)
             this.getPreviewData()
             next()
@@ -281,11 +300,13 @@
                         `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}/preview`,
                         this.confirmParams,
                         {
-                            requestId: this.request.preview
+                            requestId: this.request.preview,
+                            globalPermission: false
                         }
                     )
                     this.setConfirmState(data)
                     this.setModulePathInfo(data)
+                    this.setHostAttrsAutoApply(data)
                     this.setCreateServiceInstance(data)
                     this.setDeletedServiceInstance(data)
                     if (this.type === 'remove') {
@@ -295,6 +316,9 @@
                 } catch (e) {
                     console.error(e)
                     this.loading = false
+                    if (e.code === 9900403) {
+                        this.$route.meta.view = 'permission'
+                    }
                 }
             },
             setConfirmState (data) {
@@ -334,6 +358,12 @@
                 const info = this.moduleMap[id] || []
                 const path = info.map(node => node.bk_inst_name).reverse().join(' / ')
                 return path
+            },
+            setHostAttrsAutoApply (data) {
+                const conflictInfo = (data || []).map(item => item.host_apply_plan)
+                const conflictList = conflictInfo.filter(item => item.conflicts.length || item.update_fields.length)
+                const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
+                tab.props.info = Object.freeze(conflictList)
             },
             setCreateServiceInstance (data) {
                 const instanceInfo = []
@@ -461,6 +491,18 @@
                 this.dialog.component = ModuleSelector.name
                 this.dialog.show = true
             },
+            handleChangeHost () {
+                const props = {
+                    exist: [...this.hostInfo]
+                }
+                if (this.type === 'remove') {
+                    props.displayNodes = [`${this.$route.query.sourceModel}-${this.$route.query.sourceId}`]
+                }
+                this.dialog.props = props
+                this.dialog.width = 850
+                this.dialog.component = HostSelector.name
+                this.dialog.show = true
+            },
             handleDialogCancel () {
                 this.dialog.show = false
             },
@@ -468,7 +510,22 @@
                 if (this.dialog.component === ModuleSelector.name) {
                     this.gotoTransferPage(...arguments)
                     this.dialog.show = false
+                } else if (this.dialog.component === HostSelector.name) {
+                    this.refreshRemoveHost(...arguments)
+                    this.dialog.show = false
                 }
+            },
+            refreshRemoveHost (hosts) {
+                this.$router.replace({
+                    name: MENU_BUSINESS_TRANSFER_HOST,
+                    params: {
+                        type: this.$route.params.type
+                    },
+                    query: {
+                        ...this.$route.query,
+                        resources: hosts.map(data => data.host.bk_host_id).join(',')
+                    }
+                })
             },
             gotoTransferPage (modules) {
                 this.$router.replace({
@@ -486,19 +543,36 @@
                 try {
                     const params = { ...this.confirmParams }
                     const createComponent = this.$refs.createServiceInstance && this.$refs.createServiceInstance[0]
-                    if (createComponent) {
-                        params.options = {
-                            service_instance_options: createComponent.$refs.serviceInstance.map((component, index) => {
+                    const hostAttrsComponent = this.$refs.hostAttrsAutoApply && this.$refs.hostAttrsAutoApply[0]
+                    if (createComponent || hostAttrsComponent) {
+                        params.options = {}
+                        if (createComponent) {
+                            params.options.service_instance_options = createComponent.$refs.serviceInstance.map((component, index) => {
                                 const instance = createComponent.instances[index]
                                 return {
                                     bk_module_id: instance.bk_module_id,
                                     bk_host_id: instance.bk_host_id,
                                     processes: component.processList.map((process, listIndex) => ({
-                                        process_template_id: component.templates[listIndex].id,
+                                        process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
                                         process_info: process
                                     }))
                                 }
                             })
+                        }
+                        if (hostAttrsComponent) {
+                            const conflictResolveResult = hostAttrsComponent.$refs.confirmTable.conflictResolveResult
+                            const conflictResolvers = []
+                            Object.keys(conflictResolveResult).forEach(key => {
+                                const propertyList = conflictResolveResult[key]
+                                propertyList.forEach(property => {
+                                    conflictResolvers.push({
+                                        bk_host_id: Number(key),
+                                        bk_attribute_id: property.id,
+                                        bk_property_value: property.__extra__.value
+                                    })
+                                })
+                            })
+                            params.options.host_apply_conflict_resolvers = conflictResolvers
                         }
                     }
                     await this.$http.post(
@@ -543,10 +617,11 @@
             font-weight: bold;
             color: $textColor;
             text-align: right;
+            padding-top: 8px;
         }
         .info-content {
             overflow: hidden;
-            padding: 0 20px 0 8px;
+            padding: 8px 20px 0 8px;
             font-size: 14px;
             .info-count {
                 font-weight: bold;
@@ -554,6 +629,15 @@
             .module-grep {
                 border-top: 1px solid $borderColor;
                 margin-top: 10px;
+            }
+            .edit-trigger {
+                @include inlineBlock;
+                margin-left: 10px;
+                color: $primaryColor;
+                cursor: pointer;
+                &:hover {
+                    color: #1964E1;
+                }
             }
         }
     }
@@ -579,11 +663,16 @@
                 padding: 0 12px 0 25px;
             }
             &.is-trigger {
-                width: 40px;
                 padding: 0;
                 text-align: center;
                 font-size: 0;
                 cursor: pointer;
+                border-color: transparent;
+                color: $primaryColor;
+                &:hover {
+                    color: #1964E1;
+                    border-color: transparent;
+                }
                 .icon-cc-edit {
                     font-size: 14px;
                 }
@@ -649,7 +738,7 @@
         .tab-grep {
             width: 2px;
             height: 19px;
-            margin: 0 8px;
+            margin: 0 15px;
             background-color: #C4C6CC;
         }
         .tab-item {
@@ -659,10 +748,6 @@
             cursor: pointer;
             &.active {
                 color: $primaryColor;
-                .tab-count {
-                    color: #FFF;
-                    background-color: $primaryColor;
-                }
             }
             &.active:after {
                 content: "";
@@ -676,30 +761,25 @@
             .tab-label {
                 display: inline-block;
                 vertical-align: middle;
-                margin-right: 7px;
+                margin-left: 10px;
+                margin-right: 4px;
                 font-size: 14px;
             }
             .tab-count {
-                position: relative;
                 display: inline-block;
                 vertical-align: middle;
                 height: 16px;
                 padding: 0 5px;
-                border-radius: 4px;
-                line-height: 16px;
+                border-radius: 8px;
+                line-height: 14px;
                 font-size: 12px;
                 color: #FFF;
-                background-color: #979BA5;
-                &.has-badge:after {
-                    position: absolute;
-                    top: -3px;
-                    right: -3px;
-                    width: 6px;
-                    height: 6px;
-                    border-radius: 50%;
-                    border: 1px solid #FFF;
-                    background-color: $dangerColor;
-                    content: "";
+                background-color: #C4C6CC;
+                text-align: center;
+                border: 1px solid #fff;
+
+                &.unconfirmed {
+                    background-color: #FF5656;
                 }
             }
         }

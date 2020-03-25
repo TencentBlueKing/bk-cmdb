@@ -211,9 +211,10 @@ const (
 	// one argument: maxValue
 	CCErrExceedMaxOperationRecordsAtOnce = 1199081
 
-	CCErrCommListAuthorizedResourceFromIAMFailed             = 1199082
-	CCErrCommModifyFieldForbidden                            = 1199083
-	CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
+	CCErrCommListAuthorizedResourceFromIAMFailed = 1199082
+    CCErrCommModifyFieldForbidden                            = 1199083
+    CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI = 1199084
+	CCErrCommUnexpectedFieldType   = 1199085
 
 	CCErrCommGetBusinessIDByHostIDFailed = 1199086
 

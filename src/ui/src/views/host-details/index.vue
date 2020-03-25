@@ -13,14 +13,14 @@
             <bk-tab-panel name="property" :label="$t('主机属性')">
                 <cmdb-host-property></cmdb-host-property>
             </bk-tab-panel>
-            <bk-tab-panel name="association" :label="$t('关联')">
-                <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
+            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="isBusinessHost">
+                <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
             </bk-tab-panel>
             <bk-tab-panel name="status" :label="$t('实时状态')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tab-panel>
-            <bk-tab-panel name="service" :label="$t('服务列表')" :visible="!isAdminView">
-                <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
+            <bk-tab-panel name="association" :label="$t('关联')">
+                <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
             </bk-tab-panel>
             <bk-tab-panel name="history" :label="$t('变更记录')">
                 <cmdb-host-history v-if="active === 'history'"></cmdb-host-history>
@@ -53,8 +53,8 @@
             }
         },
         computed: {
-            ...mapState('hostDetails', ['info']),
-            ...mapGetters(['isAdminView']),
+            ...mapState('hostDetails', ['info', 'isBusinessHost']),
+            ...mapGetters('hostDetails', ['isBusinessHost']),
             id () {
                 return parseInt(this.$route.params.id)
             },

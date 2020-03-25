@@ -14,10 +14,10 @@
     "sync-magicbox": "node build/sync-magicbox.js"
   },
   "dependencies": {
-    "@icon-cool/bk-icon-cmdb": "0.0.9",
     "@blueking/paas-login": "0.0.3",
+    "@icon-cool/bk-icon-cmdb": "0.0.12",
     "axios": "0.18.0",
-    "bk-magic-vue": "2.1.8-beta.7",
+    "bk-magic-vue": "2.1.11",
     "cytoscape": "3.10.0",
     "cytoscape-dagre": "2.2.2",
     "cytoscape-edgehandles": "3.6.0",
@@ -32,7 +32,7 @@
     "lodash.throttle": "4.1.1",
     "md5": "2.2.1",
     "moment": "2.22.2",
-    "plotly.js": "^1.49.4",
+    "plotly.js": "^1.51.3",
     "sortablejs": "1.8.4",
     "utf8-byte-length": "^1.0.4",
     "v-click-outside": "1.0.5",
@@ -46,7 +46,7 @@
     "vuex": "3.0.1"
   },
   "devDependencies": {
-    "@babel/helper-module-imports": "^7.0.0",
+    "@babel/helper-module-imports": "^7.7.4",
     "autoprefixer": "^7.1.2",
     "babel-core": "^6.22.1",
     "babel-eslint": "^10.0.1",
@@ -66,7 +66,7 @@
     "eslint-friendly-formatter": "^4.0.1",
     "eslint-loader": "^2.1.2",
     "eslint-plugin-html": "^4.0.5",
-    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-import": "^2.19.1",
     "eslint-plugin-node": "^8.0.1",
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0",

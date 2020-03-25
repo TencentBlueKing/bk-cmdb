@@ -102,7 +102,6 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 		blog.Errorf("FindManyCloudArea http reply error.  query:%#v, err code:%d, err msg:%s, rid:%s", query, res.Code, res.ErrMsg, rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
 		return
-
 	}
 
 	retData := map[string]interface{}{

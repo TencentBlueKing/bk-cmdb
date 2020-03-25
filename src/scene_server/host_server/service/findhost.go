@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -131,8 +132,14 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 
 	parameter := meta.ListHostsParameter{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&parameter); err != nil {
-		blog.Errorf("ListHostByTopoNode failed, decode body failed, err: %#v, rid:%s", err, rid)
+		blog.Errorf("ListBizHosts failed, decode body failed, err: %#v, rid:%s", err, rid)
 		ccErr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+		return
+	}
+	if key, err := parameter.Validate(); err != nil {
+		blog.ErrorJSON("ListBizHosts failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter, err, srvData.rid)
+		ccErr := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, key)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
@@ -214,12 +221,14 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
-	if parameter.Page.IsIllegal() {
-		blog.Errorf("ListHostsWithNoBiz failed, page limit %d illegal, rid:%s", parameter.Page.Limit, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "page.limit")})
+	if key, err := parameter.Validate(); err != nil {
+		blog.ErrorJSON("ListHostsWithNoBiz failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter, err, srvData.rid)
+		ccErr := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, key)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
+
+	parameter.Page.Limit = common.BKMaxPageSize
 	option := meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,
@@ -247,6 +256,12 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	if err := json.NewDecoder(req.Request.Body).Decode(parameter); err != nil {
 		blog.Errorf("ListHostByTopoNode failed, decode body failed, err: %#v, rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	if key, err := parameter.Validate(); err != nil {
+		blog.ErrorJSON("ListHostByTopoNode failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter, err, srvData.rid)
+		ccErr := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, key)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
 	bizID, err := util.GetInt64ByInterface(req.PathParameter("bk_biz_id"))

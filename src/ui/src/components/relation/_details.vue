@@ -184,8 +184,11 @@
                     position: absolute;
                     right: 6px;
                     top: 12px;
-                    padding: 6px;
-                    font-size: 12px;
+                    width: 24px;
+                    height: 24px;
+                    line-height: 24px;
+                    text-align: center;
+                    font-size: 20px;
                     cursor: pointer;
                     color: #333948;
                     border-radius: 50%;

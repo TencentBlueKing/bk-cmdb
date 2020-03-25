@@ -186,9 +186,10 @@ type ObjectClsDes struct {
 }
 
 type InnerModule struct {
-	ModuleID   int64  `json:"bk_module_id" field:"bk_module_id"`
-	ModuleName string `json:"bk_module_name" field:"bk_module_name"`
-	Default    int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
+	ModuleID         int64  `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id" mapstructure:"bk_module_id"`
+	ModuleName       string `field:"bk_module_name" bson:"bk_module_name" json:"bk_module_name" mapstructure:"bk_module_name"`
+	Default          int64  `field:"default" bson:"default" json:"default" mapstructure:"default"`
+	HostApplyEnabled bool   `field:"host_apply_enabled" bson:"host_apply_enabled" json:"host_apply_enabled" mapstructure:"host_apply_enabled"`
 }
 
 type InnterAppTopo struct {

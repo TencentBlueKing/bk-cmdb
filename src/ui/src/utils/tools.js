@@ -90,7 +90,11 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
         } else if (['int', 'float'].includes(propertyType)) {
             values[propertyId] = [null, undefined].includes(inst[propertyId]) ? '' : inst[propertyId]
         } else if (['bool'].includes(propertyType)) {
-            values[propertyId] = !!inst[propertyId]
+            if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
+                values[propertyId] = typeof property['option'] === 'boolean' ? property['option'] : false
+            } else {
+                values[propertyId] = !!inst[propertyId]
+            }
         } else if (['enum'].includes(propertyType)) {
             values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
         } else if (['timezone'].includes(propertyType)) {
@@ -263,7 +267,7 @@ export function getValidateRules (property) {
         rules.required = true
     }
     if (option) {
-        if (propertyType === 'int') {
+        if (['int', 'float'].includes(propertyType)) {
             if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
                 rules['min_value'] = option.min
             }

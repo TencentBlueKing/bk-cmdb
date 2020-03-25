@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
+	"configcenter/src/common/querybuilder"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -346,4 +348,147 @@ func (s *Service) SearchModule(params types.ContextParams, pathParams, queryPara
 	result.Set("info", instItems)
 
 	return result, nil
+}
+
+func (s *Service) SearchRuleRelatedTopoNodes(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("SearchRuleRelatedModules failed, parse bk_biz_id failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+	}
+
+	requestBody := metadata.SearchRuleRelatedModulesOption{}
+	if err := mapstruct.Decode2Struct(data, &requestBody); err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, parse request body failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+	if requestBody.QueryFilter == nil {
+		blog.V(3).Info("SearchRuleRelatedModules failed, search query_filter should'nt be empty, rid: %s", params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "query_filter")
+	}
+	if key, err := requestBody.QueryFilter.Validate(); err != nil {
+		blog.V(3).Info("SearchRuleRelatedModules failed, search query_filter.%s validate failed, err: %+v, rid: %s", key, err, params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "query_filter."+key)
+	}
+
+	modules, err := s.Engine.CoreAPI.CoreService().HostApplyRule().SearchRuleRelatedModules(params.Context, params.Header, bizID, requestBody)
+	if err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(params.Context, params.Header, bizID, false)
+	if err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, SearchMainlineInstanceTopo failed, bizID: %d, err: %s, rid: %s", bizID, err.Error(), params.ReqID)
+		return nil, err
+	}
+	matchNodes := make([]metadata.TopoNode, 0)
+	for _, module := range modules {
+		matchNodes = append(matchNodes, metadata.TopoNode{
+			ObjectID:   common.BKInnerObjIDModule,
+			InstanceID: module.ModuleID,
+		})
+	}
+	topoRoot.DeepFirstTraversal(func(node *metadata.TopoInstanceNode) {
+		matched := requestBody.QueryFilter.Match(func(r querybuilder.AtomRule) bool {
+			if r.Field != metadata.TopoNodeKeyword {
+				return false
+			}
+			valueStr, ok := r.Value.(string)
+			if ok == false {
+				return false
+			}
+			// case-insensitive contains
+			if r.Operator == querybuilder.OperatorContains {
+				if util.CaseInsensitiveContains(node.InstanceName, valueStr) {
+					return true
+				}
+			}
+			return false
+		})
+		if matched {
+			matchNodes = append(matchNodes, metadata.TopoNode{
+				ObjectID:   node.ObjectID,
+				InstanceID: node.InstanceID,
+			})
+		}
+	})
+
+	// unique result
+	finalNodes := make([]metadata.TopoNode, 0)
+	existMap := make(map[string]bool)
+	for _, item := range matchNodes {
+		if _, exist := existMap[item.Key()]; exist == true {
+			continue
+		}
+		existMap[item.Key()] = true
+		finalNodes = append(finalNodes, item)
+	}
+
+	return finalNodes, nil
+}
+
+func (s *Service) UpdateModuleHostApplyEnableStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("UpdateModuleHostApplyEnableStatus failed, parse bk_biz_id failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)
+	}
+
+	moduleID, err := strconv.ParseInt(pathParams(common.BKModuleIDField), 10, 64)
+	if nil != err {
+		blog.Errorf("UpdateModuleHostApplyEnableStatus failed, parse bk_module_id failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKModuleIDField)
+	}
+
+	requestBody := metadata.UpdateModuleHostApplyEnableStatusOption{}
+	if err := mapstruct.Decode2Struct(data, &requestBody); err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, parse request body failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+	updateOption := &metadata.UpdateOption{
+		Condition: map[string]interface{}{
+			common.BKAppIDField:    bizID,
+			common.BKModuleIDField: moduleID,
+		},
+		Data: map[string]interface{}{
+			common.HostApplyEnabledField: requestBody.Enable,
+		},
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(params.Context, params.Header, common.BKInnerObjIDModule, updateOption)
+	if err != nil {
+		blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if ccErr := result.CCError(); ccErr != nil {
+		blog.ErrorJSON("SearchRuleRelatedModules failed, update module instance failed, updateOption: %s, response: %s, rid: %s", updateOption, result, params.ReqID)
+		return nil, ccErr
+	}
+	if requestBody.ClearRules {
+		listRuleOption := metadata.ListHostApplyRuleOption{
+			ModuleIDs: []int64{moduleID},
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+		listRuleResult, ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(params.Context, params.Header, bizID, listRuleOption)
+		if ccErr != nil {
+			blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, params.ReqID)
+			return nil, ccErr
+		}
+		ruleIDs := make([]int64, 0)
+		for _, item := range listRuleResult.Info {
+			ruleIDs = append(ruleIDs, item.ID)
+		}
+		if len(ruleIDs) > 0 {
+			deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+				RuleIDs: ruleIDs,
+			}
+			if ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(params.Context, params.Header, bizID, deleteRuleOption); ccErr != nil {
+				blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, params.ReqID)
+				return nil, ccErr
+			}
+		}
+	}
+	return result.Data, nil
 }

@@ -218,7 +218,7 @@ func (assoc *association) SetMainlineInstAssociation(params types.ContextParams,
 	return nil
 }
 
-func (assoc *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64, withStatistics bool) ([]*metadata.TopoInstRst, error) {
+func (assoc *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64, withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, error) {
 
 	cond := &metadata.QueryInput{}
 	cond.Condition = mapstr.MapStr{
@@ -232,12 +232,14 @@ func (assoc *association) SearchMainlineAssociationInstTopo(params types.Context
 	}
 
 	results := make([]*metadata.TopoInstRst, 0)
+	instIDs := make([]int64, 0)
 	for _, biz := range bizInsts {
 		instID, err := biz.GetInstID()
 		if nil != err {
 			blog.Errorf("[SearchMainlineAssociationInstTopo] GetInstID for %+v failed: %v, rid: %s", biz, err, params.ReqID)
 			return nil, err
 		}
+		instIDs = append(instIDs, instID)
 		instName, err := biz.GetInstName()
 		if nil != err {
 			blog.Errorf("[SearchMainlineAssociationInstTopo] GetInstName for %+v failed: %v, rid: %s", biz, err, params.ReqID)
@@ -254,9 +256,50 @@ func (assoc *association) SearchMainlineAssociationInstTopo(params types.Context
 		results = append(results, tmp)
 	}
 
-	if err = assoc.fillMainlineChildInst(params, obj, results); err != nil {
+	childObj, err := obj.GetMainlineChildObject()
+	if err == io.EOF {
+		return nil, nil
+	}
+	if err != nil {
+		blog.Errorf("[fillMainlineChildInst] GetMainlineChildObject for %+v failed: %v, rid: %s", obj, err, params.ReqID)
+		return nil, err
+	}
+
+	childFilter := map[string]interface{}{
+		common.BKInstParentStr: map[string]interface{}{
+			common.BKDBIN: instIDs,
+		},
+	}
+	if childObj.IsCommon() {
+		childFilter[common.BKObjIDField] = childObj.Object().ObjectID
+	}
+	// 不包含内置节点时
+	if withDefault == false || childObj.Object().ObjectID != common.BKInnerObjIDSet {
+		if childObj.Object().ObjectID == common.BKInnerObjIDSet {
+			childFilter[common.BKDefaultField] = map[string]interface{}{
+				common.BKDBNE: common.DefaultResSetFlag,
+			}
+		}
+	}
+	if err = assoc.fillMainlineChildInst(params, childObj, results, withDefault, childFilter); err != nil {
 		blog.Errorf("[SearchMainlineAssociationInstTopo] fillMainlineChildInst for %+v failed: %v, rid: %s", results, err, params.ReqID)
 		return nil, err
+	}
+
+	if withDefault == true &&
+		obj.Object().ObjectID == common.BKInnerObjIDApp &&
+		childObj.Object().ObjectID != common.BKInnerObjIDSet {
+		// 追加空闲机集群
+		delete(childFilter, common.BKObjIDField)
+		childFilter[common.BKDefaultField] = common.DefaultResSetFlag
+		setObj, err := obj.GetSetObject()
+		if nil != err {
+			return nil, err
+		}
+		if err = assoc.fillMainlineChildInst(params, setObj, results, withDefault, childFilter); err != nil {
+			blog.Errorf("[SearchMainlineAssociationInstTopo] fillMainlineChildInst of idle set for %+v failed: %v, rid: %s", results, err, params.ReqID)
+			return nil, err
+		}
 	}
 	if withStatistics && len(bizInsts) > 0 {
 		instance := bizInsts[0]
@@ -335,6 +378,9 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 		common.BKAppIDField: bizID,
 	}
 	moduleQueryCondition := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
 		Condition: mapstr.MapStr(moduleFilter),
 	}
 	modules, e := assoc.clientSet.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKInnerObjIDModule, moduleQueryCondition)
@@ -345,15 +391,19 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 	moduleServiceTemplateIDMap := make(map[int64]int64)
 	moduleSetTemplateIDMap := make(map[int64]int64)
 	setSetTemplateIDMap := make(map[int64]int64)
+	hostApplyEnabledMap := make(map[int64]bool)
+	moduleIDs := make([]int64, 0)
 	for _, module := range modules.Data.Info {
 		moduleStruct := &metadata.ModuleInst{}
 		if err := module.ToStructByTag(moduleStruct, "field"); err != nil {
 			blog.Errorf("fillStatistics failed, parse module data to struct failed, module: %+v, err: %s, rid: %s", module, e.Error(), params.ReqID)
 			return err
 		}
+		moduleIDs = append(moduleIDs, moduleStruct.ModuleID)
 		moduleServiceTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.ServiceTemplateID
 		moduleSetTemplateIDMap[moduleStruct.ModuleID] = moduleStruct.SetTemplateID
 		setSetTemplateIDMap[moduleStruct.ParentID] = moduleStruct.SetTemplateID
+		hostApplyEnabledMap[moduleStruct.ModuleID] = moduleStruct.HostApplyEnabled
 	}
 
 	exactNodes := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule}
@@ -377,6 +427,10 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 				}
 				if id, exist := moduleSetTemplateIDMap[node.InstID]; exist == true {
 					node.SetTemplateID = id
+				}
+				node.HostApplyEnabled = new(bool)
+				if enabled, exist := hostApplyEnabledMap[node.InstID]; exist == true {
+					*node.HostApplyEnabled = enabled
 				}
 			}
 			if node.ObjID == common.BKInnerObjIDSet {
@@ -419,47 +473,64 @@ func (assoc *association) fillStatistics(params types.ContextParams, bizID int64
 			node.HostCount = int64(len(hostCount[customLevel][node.InstID]))
 		})
 	}
+
+	// fill host apply rules
+	listApplyRuleOption := metadata.ListHostApplyRuleOption{
+		ModuleIDs: moduleIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	hostApplyRules, err := assoc.clientSet.CoreService().HostApplyRule().ListHostApplyRule(params.Context, params.Header, bizID, listApplyRuleOption)
+	if err != nil {
+		blog.Errorf("fillStatistics failed, ListHostApplyRule failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, listApplyRuleOption, err, params.ReqID)
+		return err
+	}
+	moduleRuleCount := make(map[int64]int64)
+	for _, item := range hostApplyRules.Info {
+		if _, exist := moduleRuleCount[item.ModuleID]; exist == false {
+			moduleRuleCount[item.ModuleID] = 0
+		}
+		moduleRuleCount[item.ModuleID] += 1
+	}
+	for _, tir := range parentInsts {
+		tir.DeepFirstTraverse(func(node *metadata.TopoInstRst) {
+			if node.ObjID == common.BKInnerObjIDModule {
+				node.HostApplyRuleCount = new(int64)
+				*node.HostApplyRuleCount, _ = moduleRuleCount[node.InstID]
+			}
+		})
+	}
+
 	return nil
 }
 
-func (assoc *association) fillMainlineChildInst(params types.ContextParams, object model.Object, parentInsts []*metadata.TopoInstRst) error {
-	childObj, err := object.GetMainlineChildObject()
-	if err == io.EOF {
+// fillMainlineChildInst 将每个parentInsts实例的childObj类型子节点追加到Child字段
+func (assoc *association) fillMainlineChildInst(params types.ContextParams, childObj model.Object, parentInsts []*metadata.TopoInstRst, withDefault bool, cond map[string]interface{}) error {
+	filter := &metadata.QueryInput{
+		Condition: cond,
+		Sort:      "default:1",
+	}
+	_, childInsts, err := assoc.inst.FindInst(params, childObj, filter, false)
+	if err != nil {
+		blog.Errorf("[fillMainlineChildInst] FindInst for %+v failed: %v, rid: %s", cond, err, params.ReqID)
+		return err
+	}
+	if len(childInsts) == 0 {
 		return nil
-	}
-	if err != nil {
-		blog.Errorf("[fillMainlineChildInst] GetMainlineChildObject for %+v failed: %v, rid: %s", object, err, params.ReqID)
-		return err
-	}
-
-	parentIDs := make([]int64, 0)
-	for index := range parentInsts {
-		parentIDs = append(parentIDs, parentInsts[index].InstID)
-	}
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKInstParentStr).In(parentIDs)
-	if childObj.IsCommon() {
-		cond.Field(common.BKObjIDField).Eq(childObj.Object().ObjectID)
-	} else if childObj.Object().ObjectID == common.BKInnerObjIDSet {
-		cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
-	}
-
-	_, childInsts, err := assoc.inst.FindInst(params, childObj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
-	if err != nil {
-		blog.Errorf("[fillMainlineChildInst] FindInst for %+v failed: %v, rid: %s", cond.ToMapStr(), err, params.ReqID)
-		return err
 	}
 
 	// parentID mapping to child topo instances
 	childInstMap := map[int64][]*metadata.TopoInstRst{}
 	childTopoInsts := make([]*metadata.TopoInstRst, 0)
+	childInstIDs := make([]int64, 0)
 	for _, childInst := range childInsts {
 		childInstID, err := childInst.GetInstID()
 		if err != nil {
 			blog.Errorf("[fillMainlineChildInst] GetInstID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
 			return err
 		}
+		childInstIDs = append(childInstIDs, childInstID)
 		childInstName, err := childInst.GetInstName()
 		if nil != err {
 			blog.Errorf("[fillMainlineChildInst] GetInstName for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
@@ -470,21 +541,74 @@ func (assoc *association) fillMainlineChildInst(params types.ContextParams, obje
 			blog.Errorf("[fillMainlineChildInst] GetParentID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
 			return err
 		}
+		defaultValue := int64(0)
+		defaultFieldValue, exist := childInst.GetValues()[common.BKDefaultField]
+		if exist == true {
+			defaultValue, err = util.GetInt64ByInterface(defaultFieldValue)
+			if err != nil {
+				blog.Errorf("[fillMainlineChildInst] GetParentID for %+v failed: %v, rid: %s", childInst, err, params.ReqID)
+				return err
+			}
+		}
 
 		object := childInst.GetObject().Object()
-		tmp := &metadata.TopoInstRst{Child: []*metadata.TopoInstRst{}}
-		tmp.InstID = childInstID
-		tmp.InstName = childInstName
-		tmp.ObjID = object.ObjectID
-		tmp.ObjName = object.ObjectName
 
-		childInstMap[parentID] = append(childInstMap[parentID], tmp)
-		childTopoInsts = append(childTopoInsts, tmp)
+		childInst := &metadata.TopoInstRst{
+			TopoInst: metadata.TopoInst{
+				InstID:               childInstID,
+				InstName:             childInstName,
+				ObjID:                object.ObjectID,
+				ObjName:              object.ObjectName,
+				Default:              int(defaultValue),
+				HostCount:            0,
+				ServiceInstanceCount: 0,
+				ServiceTemplateID:    0,
+				SetTemplateID:        0,
+				HostApplyEnabled:     nil,
+				HostApplyRuleCount:   nil,
+			},
+			Child: []*metadata.TopoInstRst{},
+		}
+
+		childInstMap[parentID] = append(childInstMap[parentID], childInst)
+		childTopoInsts = append(childTopoInsts, childInst)
 	}
 
 	for _, parentInst := range parentInsts {
 		parentInst.Child = append(parentInst.Child, childInstMap[parentInst.InstID]...)
 	}
 
-	return assoc.fillMainlineChildInst(params, childObj, childTopoInsts)
+    if childObj.Object().ObjectID == common.BKInnerObjIDModule {
+        return nil
+    }
+    
+	// get next level object ID
+	nextLevelObj, err := childObj.GetMainlineChildObject()
+	if err == io.EOF {
+		return nil
+	}
+	if err != nil {
+		blog.Errorf("[fillMainlineChildInst] GetMainlineChildObject for %+v failed: %v, rid: %s", childObj, err, params.ReqID)
+		return err
+	}
+
+	// next level instance filter
+	childFilter := map[string]interface{}{
+		common.BKInstParentStr: map[string]interface{}{
+			common.BKDBIN: childInstIDs,
+		},
+	}
+	if nextLevelObj.IsCommon() {
+		childFilter[common.BKObjIDField] = nextLevelObj.Object().ObjectID
+	}
+	// 不包含内置节点时
+	if nextLevelObj.Object().ObjectID == common.BKInnerObjIDSet {
+		if withDefault == false || childObj.Object().ObjectID != common.BKInnerObjIDApp {
+			childFilter[common.BKDefaultField] = map[string]interface{}{
+				common.BKDBNE: common.DefaultResSetFlag,
+			}
+		}
+	}
+
+	return assoc.fillMainlineChildInst(params, nextLevelObj, childTopoInsts, withDefault, childFilter)
 }

@@ -303,6 +303,8 @@ const (
 	// BKModuleNameField the module name field
 	BKModuleNameField = "bk_module_name"
 
+	HostApplyEnabledField = "host_apply_enabled"
+
 	// BKSubscriptionIDField the subscription id field
 	BKSubscriptionIDField = "subscription_id"
 	// BKSubscriptionNameField the subscription name field
@@ -450,6 +452,9 @@ const (
 	// BKPort the port
 	BKPort = "port"
 
+	// BKProcPortEnable whether enable port,  enable port use for monitor app. default value
+	BKProcPortEnable = "bk_port_enable"
+
 	// BKUser the user
 	BKUser = "user"
 
@@ -467,7 +472,10 @@ const (
 	BKProcessTemplateIDField = "process_template_id"
 	BKServiceCategoryIDField = "service_category_id"
 
-	BKSetTemplateIDField = "set_template_id"
+	BKSetTemplateIDField      = "set_template_id"
+	BKSetTemplateVersionField = "set_template_version"
+
+	HostApplyRuleIDField = "host_apply_rule_id"
 
 	BKParentIDField = "bk_parent_id"
 	BKRootIDField   = "bk_root_id"
@@ -593,6 +601,8 @@ const (
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
 	BKGroupField               = "group"
+
+	BKAttributeIDField = "bk_attribute_id"
 )
 
 const (
@@ -870,7 +880,7 @@ const (
 	BKHTTPCookieLanugageKey = "blueking_language"
 	//BKSessionLanugageKey = "language"
 	BKHTTPSupplierID = "bk_supplier_id"
-	BKHTTPRequestAppCode = "req_app_code"
+	BKHTTPRequestAppCode = "Bk-App-Code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"

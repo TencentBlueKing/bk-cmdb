@@ -1,15 +1,14 @@
 <template>
-    <div class="group-wrapper" :style="{ 'padding-top': showFeatureTips ? '100px' : '52px' }">
-        <cmdb-main-inject
+    <div class="group-wrapper" :style="{ 'padding-top': topPadding + 'px' }">
+        <cmdb-main-inject ref="mainInject"
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
-            <feature-tips class="feature-tips"
-                :feature-name="'model'"
-                :show-tips="showFeatureTips"
-                :desc="$t('模型顶部提示')"
-                :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement'"
-                @close-tips="showFeatureTips = false">
-            </feature-tips>
+            <cmdb-tips
+                class="mb10"
+                tips-key="modelTips"
+                :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement'">
+                {{$t('模型顶部提示')}}
+            </cmdb-tips>
             <div class="fl">
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.C_MODEL })">
                     <bk-button slot-scope="{ disabled }"
@@ -218,9 +217,9 @@
 <script>
     import cmdbMainInject from '@/components/layout/main-inject'
     import theCreateModel from '@/components/model-manage/_create-model'
-    import featureTips from '@/components/feature-tips/index'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
     import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { MENU_RESOURCE_HOST, MENU_RESOURCE_BUSINESS, MENU_RESOURCE_INSTANCE } from '@/dictionary/menu-symbol'
     export default {
         filters: {
@@ -234,14 +233,13 @@
         components: {
             // theModel,
             theCreateModel,
-            cmdbMainInject,
-            featureTips
+            cmdbMainInject
         },
         data () {
             return {
-                showFeatureTips: false,
                 scrollHandler: null,
                 scrollTop: 0,
+                topPadding: 0,
                 modelType: 'enable',
                 searchModel: '',
                 filterClassifications: [],
@@ -271,7 +269,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected', 'featureTipsParams']),
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
@@ -349,9 +347,12 @@
                 this.searchModel = this.$route.query.searchModel
                 window.location.hash = hash.substring(0, hash.indexOf('?'))
             }
-            this.showFeatureTips = this.featureTipsParams['model']
+        },
+        mounted () {
+            addResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
         },
         beforeDestroy () {
+            removeResizeListener(this.$refs.mainInject.$el, this.handleSetPadding)
             removeMainScrollListener(this.scrollHandler)
         },
         methods: {
@@ -369,6 +370,9 @@
             ...mapActions('objectModel', [
                 'createObject'
             ]),
+            handleSetPadding () {
+                this.topPadding = this.$refs.mainInject.$el.offsetHeight
+            },
             isEditable (classification) {
                 if (classification['bk_classification_type'] === 'inner') {
                     return false
@@ -539,9 +543,6 @@
         &.sticky {
             box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
         }
-        .feature-tips {
-            margin-bottom: 15px;
-        }
     }
     .model-search-options {
         .search-model {
@@ -582,19 +583,6 @@
         .group-item {
             position: relative;
             padding: 10px 0 20px;
-            >.icon-angle-double-down {
-                position: absolute;
-                left: 50%;
-                bottom: -5px;
-                margin-left: -5px;
-                padding: 5px;
-                font-size: 12px;
-                cursor: pointer;
-                transition: all .2s;
-                &.rotate {
-                    transform: rotate(180deg);
-                }
-            }
         }
         .group-title {
             display: inline-block;
@@ -801,7 +789,7 @@
             width: 58px;
             height: 58px;
             line-height: 58px;
-            font-size: 30px;
+            font-size: 50px;
             font-weight: bold;
             color: #fff;
             border-radius: 50%;

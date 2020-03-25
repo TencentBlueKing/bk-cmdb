@@ -72,10 +72,14 @@
             </service-instance-table>
         </div>
         <bk-table v-if="!instances.length" :data="[]" class="mb10">
-            <div slot="empty" class="empty-text">
-                <img src="../../../assets/images/empty-content.png" alt="">
-                <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
-            </div>
+            <cmdb-table-empty
+                slot="empty"
+                :stuff="emptyStuff">
+                <div class="empty-text">
+                    <img src="../../../assets/images/empty-content.png" alt="">
+                    <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
+                </div>
+            </cmdb-table-empty>
         </bk-table>
         <bk-pagination v-if="instances.length"
             class="pagination"
@@ -115,6 +119,7 @@
             serviceInstanceTable
         },
         data () {
+            const serverSwitchViewTips = window.localStorage.getItem('serverSwitchViewTips')
             return {
                 searchSelect: [
                     {
@@ -151,7 +156,7 @@
                 filter: [],
                 instances: [],
                 currentView: 'label',
-                checkViewTipsStatus: this.$store.getters['featureTipsParams'].hostServiceInstanceCheckView,
+                checkViewTipsStatus: serverSwitchViewTips === null,
                 historyLabels: {},
                 propertyGroups: [],
                 properties: [],
@@ -163,6 +168,12 @@
             ...mapState('hostDetails', ['info']),
             host () {
                 return this.info.host || {}
+            },
+            emptyStuff () {
+                return {
+                    type: this.searchSelectData.length ? 'search' : 'default',
+                    payload: {}
+                }
             }
         },
         watch: {
@@ -223,17 +234,18 @@
                     const searchKey = this.searchSelectData.find(item => (item.id === 0 && item.hasOwnProperty('values'))
                         || (![0, 1].includes(item.id) && !item.hasOwnProperty('values')))
                     const data = await this.$store.dispatch('serviceInstance/getHostServiceInstances', {
-                        params: this.$injectMetadata({
+                        params: {
                             page: {
                                 start: (this.pagination.current - 1) * this.pagination.size,
                                 limit: this.pagination.size
                             },
                             bk_host_id: this.host.bk_host_id,
+                            bk_biz_id: this.info.biz[0].bk_biz_id,
                             search_key: searchKey
                                 ? searchKey.hasOwnProperty('values') ? searchKey.values[0].name : searchKey.name
                                 : '',
                             selectors: this.getSelectorParams()
-                        }, { injectBizId: true })
+                        }
                     })
                     if (data.count && !data.info.length) {
                         this.pagination.current -= 1
@@ -294,7 +306,9 @@
             },
             async getHistoryLabel () {
                 const historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
-                    params: this.$injectMetadata({}, { injectBizId: true }),
+                    params: {
+                        bk_biz_id: this.info.biz[0].bk_biz_id
+                    },
                     config: {
                         requestId: 'getHistoryLabel',
                         cancelPrevious: true
@@ -402,7 +416,7 @@
                 this.currentView = value
             },
             handleCheckViewStatus () {
-                this.$store.commit('setFeatureTipsParams', 'hostServiceInstanceCheckView')
+                window.localStorage.setItem('serverSwitchViewTips', false)
                 this.$refs.popoverCheckView.instance.hide()
             },
             handleConditionSelect (cur, index) {

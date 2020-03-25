@@ -1,12 +1,11 @@
 <template>
     <div class="push-wrapper">
-        <feature-tips
-            :feature-name="'eventpush'"
-            :show-tips="showFeatureTips"
-            :desc="$t('事件推送顶部提示')"
-            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'"
-            @close-tips="showFeatureTips = false">
-        </feature-tips>
+        <cmdb-tips
+            class="mb10"
+            tips-key="eventPushTips"
+            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'">
+            {{$t('事件推送顶部提示')}}
+        </cmdb-tips>
         <div class="btn-wrapper clearfix">
             <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_EVENT })">
                 <bk-button slot-scope="{ disabled }"
@@ -25,13 +24,13 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="subscription_name" :label="$t('订阅名称')" sortable="custom">
+            <bk-table-column prop="subscription_name" :label="$t('订阅名称')" sortable="custom" show-overflow-tooltip>
             </bk-table-column>
-            <bk-table-column prop="system_name" :label="$t('系统名称')" sortable="custom">
+            <bk-table-column prop="system_name" :label="$t('系统名称')" sortable="custom" show-overflow-tooltip>
             </bk-table-column>
-            <bk-table-column prop="operator" :label="$t('操作人')" sortable="custom">
+            <bk-table-column prop="operator" :label="$t('操作人')" sortable="custom" show-overflow-tooltip>
             </bk-table-column>
-            <bk-table-column prop="last_time" :label="$t('更新时间')" sortable="custom">
+            <bk-table-column prop="last_time" :label="$t('更新时间')" sortable="custom" show-overflow-tooltip>
             </bk-table-column>
             <bk-table-column prop="operation" :label="$t('推送情况（近一周）')">
                 <template slot-scope="{ row }">
@@ -94,17 +93,14 @@
 
 <script>
     import { formatTime } from '@/utils/tools'
-    import featureTips from '@/components/feature-tips/index'
     import vPushDetail from './push-detail'
-    import { mapActions, mapGetters } from 'vuex'
+    import { mapActions } from 'vuex'
     export default {
         components: {
-            vPushDetail,
-            featureTips
+            vPushDetail
         },
         data () {
             return {
-                showFeatureTips: false,
                 curPush: {},
                 table: {
                     list: [],
@@ -128,12 +124,8 @@
                 }
             }
         },
-        computed: {
-            ...mapGetters(['featureTipsParams'])
-        },
         created () {
             this.getTableData()
-            this.showFeatureTips = this.featureTipsParams['eventpush']
         },
         methods: {
             ...mapActions('eventSub', [

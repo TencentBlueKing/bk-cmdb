@@ -14,6 +14,7 @@ package extensions
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -33,8 +34,8 @@ func (am *AuthManager) collectAttributesGroupByIDs(ctx context.Context, header h
 
 	// get attribute group by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(agIDs)
-	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNamePropertyGroup, queryCond)
+	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
+	resp, err := am.clientSet.CoreService().Model().ReadAttributeGroupByCondition(ctx, header, queryCond)
 	if err != nil {
 		return nil, fmt.Errorf("get model attribute group by id: %+v failed, err: %+v", agIDs, err)
 	}
@@ -48,10 +49,15 @@ func (am *AuthManager) collectAttributesGroupByIDs(ctx context.Context, header h
 	pgs := make([]metadata.Group, 0)
 	for _, item := range resp.Data.Info {
 		pg := metadata.Group{}
-		_, err := pg.Parse(item)
+		data, err := json.Marshal(item)
 		if err != nil {
-			blog.Errorf("collectAttributesGroupByAttributeIDs %+v failed, parse attribute group %+v failed, err: %+v, rid: %s", agIDs, item, err, rid)
-			return nil, fmt.Errorf("parse attribute group from db data failed, err: %+v", err)
+			blog.ErrorJSON("collectAttributesGroupByIDs %s failed, parse attribute group %s failed, err: %s, rid: %s", agIDs, item, err, rid)
+			return nil, fmt.Errorf("collectAttributesGroupByIDs marshel json %+v failed, err: %+v", item, err)
+		}
+		err = json.Unmarshal(data, &pg)
+		if err != nil {
+			blog.Errorf("collectAttributesGroupByIDs %+v failed, parse attribute group %s failed, err: %s, rid: %s", agIDs, string(data), err, rid)
+			return nil, fmt.Errorf("collectAttributesGroupByIDs unmarshel json %s failed, err: %+v", string(data), err)
 		}
 		pgs = append(pgs, pg)
 	}

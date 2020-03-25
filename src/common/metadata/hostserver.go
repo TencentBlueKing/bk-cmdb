@@ -130,9 +130,43 @@ type ListHostsParameter struct {
 	Page               BasePage                  `json:"page"`
 }
 
+func (option ListHostsParameter) Validate() (string, error) {
+	if key, err := option.Page.Validate(false); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		}
+	}
+
+	return "", nil
+}
+
 type ListHostsWithNoBizParameter struct {
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
 	Page               BasePage                  `json:"page"`
+}
+
+func (option ListHostsWithNoBizParameter) Validate() (string, error) {
+	if key, err := option.Page.Validate(false); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		}
+	}
+
+	return "", nil
 }
 
 type CountTopoNodeHostsOption struct {
@@ -163,6 +197,9 @@ func (option ListHosts) Validate() (errKey string, err error) {
 	if option.HostPropertyFilter != nil {
 		if key, err := option.HostPropertyFilter.Validate(); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
 		}
 	}
 
@@ -221,8 +258,8 @@ type Topo struct {
 }
 
 type Module struct {
-	ModuleID   int64  `json:"bk_module_id"`
-	ModuleName string `json:"bk_module_name"`
+	ModuleID   int64  `json:"bk_module_id" bson:"bk_module_id" mapstructure:"bk_module_id"`
+	ModuleName string `json:"bk_module_name" bson:"bk_module_name" mapstructure:"bk_module_name"`
 }
 
 func (sh SearchHost) ExtractHostIDs() *[]int64 {
@@ -399,6 +436,10 @@ type TopoNode struct {
 	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id" mapstructure:"bk_inst_id"`
 }
 
+func (node TopoNode) Key() string {
+	return fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+}
+
 func (node TopoNode) String() string {
 	return fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
 }
@@ -409,25 +450,29 @@ type TopoNodeHostCount struct {
 }
 
 type TransferHostWithAutoClearServiceInstanceOption struct {
+	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids"`
+
 	RemoveFromNode *TopoNode `field:"remove_from_node" json:"remove_from_node"`
-	HostIDs        []int64   `field:"bk_host_ids" json:"bk_host_ids"`
 	AddToModules   []int64   `field:"add_to_modules" json:"add_to_modules"`
 	// 主机从 RemoveFromNode 移除后如果不再属于其它模块， 默认转移到空闲机模块
 	// DefaultInternalModule 支持调整这种模型行为，可设置成待回收模块或者故障机模块
-	DefaultInternalModule int64           `field:"default_internal_module" json:"default_internal_module"`
-	Options               TransferOptions `field:"options" json:"options"`
+	DefaultInternalModule int64 `field:"default_internal_module" json:"default_internal_module"`
+
+	Options TransferOptions `field:"options" json:"options"`
 }
 
 type TransferOptions struct {
-	ServiceInstanceOptions []CreateServiceInstanceOption `field:"service_instance_options" json:"service_instance_options"`
+	ServiceInstanceOptions     []CreateServiceInstanceOption `field:"service_instance_options" json:"service_instance_options"`
+	HostApplyConflictResolvers []HostApplyConflictResolver   `field:"host_apply_conflict_resolvers" json:"host_apply_conflict_resolvers" bson:"host_apply_conflict_resolvers" mapstructure:"host_apply_conflict_resolvers"`
 }
 
 type HostTransferPlan struct {
-	HostID                  int64   `field:"bk_host_id" json:"bk_host_id"`
-	FinalModules            []int64 `field:"final_modules" json:"final_modules"`
-	ToRemoveFromModules     []int64 `field:"to_remove_from_modules" json:"to_remove_from_modules"`
-	ToAddToModules          []int64 `field:"to_add_to_modules" json:"to_add_to_modules"`
-	IsTransferToInnerModule bool    `field:"is_transfer_to_inner_module" json:"is_transfer_to_inner_module"`
+	HostID                  int64            `field:"bk_host_id" json:"bk_host_id"`
+	FinalModules            []int64          `field:"final_modules" json:"final_modules"`
+	ToRemoveFromModules     []int64          `field:"to_remove_from_modules" json:"to_remove_from_modules"`
+	ToAddToModules          []int64          `field:"to_add_to_modules" json:"to_add_to_modules"`
+	IsTransferToInnerModule bool             `field:"is_transfer_to_inner_module" json:"is_transfer_to_inner_module"`
+	HostApplyPlan           OneHostApplyPlan `field:"host_apply_plan" json:"host_apply_plan" mapstructure:"host_apply_plan"`
 }
 
 type RemoveFromModuleInfo struct {
@@ -445,6 +490,7 @@ type HostTransferPreview struct {
 	FinalModules        []int64                `field:"final_modules" json:"final_modules"`
 	ToRemoveFromModules []RemoveFromModuleInfo `field:"to_remove_from_modules" json:"to_remove_from_modules"`
 	ToAddToModules      []AddToModuleInfo      `field:"to_add_to_modules" json:"to_add_to_modules"`
+	HostApplyPlan       OneHostApplyPlan       `field:"host_apply_plan" json:"host_apply_plan"`
 }
 
 type UpdateHostCloudAreaFieldOption struct {

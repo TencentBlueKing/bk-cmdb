@@ -43,7 +43,7 @@
                                 <cmdb-selector
                                     class="fl"
                                     :placeholder="$t('请选择一级分类')"
-                                    :auto-select="false"
+                                    :searchable="true"
                                     :list="mainList"
                                     v-validate="'required'"
                                     name="mainClassificationId"
@@ -57,6 +57,7 @@
                                     class="fl"
                                     :placeholder="$t('请选择二级分类')"
                                     :auto-select="true"
+                                    :searchable="true"
                                     :list="secondaryList"
                                     :empty-text="emptyText"
                                     v-validate="'required'"
@@ -421,6 +422,8 @@
                         && ['enum', 'int', 'float', 'list'].includes(property.bk_property_type)
                         && (!data[key].value || !data[key].as_default_value)) {
                         data[key].value = null
+                    } else if (property && property.bk_property_type === 'bool' && !data[key].as_default_value) {
+                        data[key].value = null
                     } else if (!data[key].as_default_value) {
                         data[key].value = ''
                     }
@@ -534,7 +537,9 @@
                 } else {
                     if (!this.processList.length) {
                         this.$bkInfo({
-                            title: this.$t('服务模板创建没进程提示'),
+                            title: this.$t('确认提交'),
+                            subTitle: this.$t('服务模板创建没进程提示'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 this.handleCreateTemplate()
                             }
@@ -681,17 +686,16 @@
                     cursor: pointer;
                     &.form-confirm {
                         color: #0082ff;
+                        font-size: 20px;
                         &:before {
                             display: inline-block;
-                            transform: scale(0.83);
                         }
                     }
                     &.form-cancel {
                         color: #979ba5;
-                        font-size: 14px;
+                        font-size: 20px;
                         &:before {
                             display: inline-block;
-                            transform: scale(0.66);
                         }
                     }
                     &:hover {
@@ -750,9 +754,10 @@
                     }
                 }
                 .icon-plus {
-                    font-size: 12px;
+                    font-size: 20px;
                     line-height: normal;
                     font-weight: bold;
+                    margin: 0 -4px;
                 }
                 .create-tips {
                     color: #979Ba5;
@@ -777,7 +782,7 @@
             width: 60px;
             height: 60px;
             line-height: 60px;
-            font-size: 30px;
+            font-size: 50px;
             font-weight: bold;
             color: #ffffff;
             border-radius: 50%;

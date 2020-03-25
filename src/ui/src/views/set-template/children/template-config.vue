@@ -364,7 +364,7 @@
             width: 58px;
             height: 58px;
             line-height: 58px;
-            font-size: 30px;
+            font-size: 50px;
             color: #fff;
             border-radius: 50%;
             background-color: #2dcb56;

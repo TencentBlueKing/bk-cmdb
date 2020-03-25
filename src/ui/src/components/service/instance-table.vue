@@ -6,8 +6,8 @@
                 <i class="bk-icon icon-right-shape" v-else></i>
                 {{name}}
             </div>
-            <div class="fr">
-                <span v-if="topology" class="service-topology">{{topology}}</span>
+            <div class="fr right-content">
+                <span v-if="topology" class="service-topology" :title="topology">{{topology}}</span>
                 <i class="bk-icon icon-close" v-if="deletable" @click.stop="handleDelete"></i>
             </div>
         </div>
@@ -345,6 +345,9 @@
             text-align: center;
             cursor: pointer;
             @include inlineBlock;
+            &.icon-close {
+                font-size: 20px;
+            }
         }
         .icon-exclamation {
             font-size: 14px;
@@ -352,6 +355,10 @@
             background: #f0b659;
             border-radius: 50%;
             transform: scale(.6);
+        }
+        .right-content {
+            max-width: 70%;
+            @include ellipsis;
         }
         .service-topology {
             padding: 0 5px;
@@ -373,6 +380,10 @@
         .bk-icon,
         span {
             @include inlineBlock;
+        }
+        .icon-plus {
+            font-size: 20px;
+            margin-right: -4px;
         }
     }
 </style>

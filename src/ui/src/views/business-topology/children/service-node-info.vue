@@ -55,6 +55,7 @@
         </div>
         <cmdb-details class="topology-details"
             v-if="type === 'details'"
+            :class="{ pt10: !isSetNode && !isModuleNode }"
             :properties="properties"
             :property-groups="propertyGroups"
             :inst="instance"
@@ -74,12 +75,12 @@
                     <template slot-scope="{ disabled }">
                         <span class="inline-block-middle" v-if="moduleFromSetTemplate"
                             v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
-                            <bk-button class="btn-delete" disabled>
+                            <bk-button class="btn-delete" hover-theme="danger" disabled>
                                 {{$t('删除节点')}}
                             </bk-button>
                         </span>
                         <bk-button class="btn-delete" v-else
-                            theme="default"
+                            hover-theme="danger"
                             :disabled="disabled"
                             @click="handleDelete">
                             {{$t('删除节点')}}
@@ -222,7 +223,7 @@
                 immediate: true,
                 handler (active) {
                     if (active) {
-                        this.refresh()
+                        this.refresh && this.refresh()
                     }
                 }
             }
@@ -655,6 +656,10 @@
                     params: {
                         templateId: this.instance.service_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
+                    },
+                    query: {
+                        node: this.selectedNode.id,
+                        tab: 'nodeInfo'
                     }
                 })
             },
@@ -665,6 +670,10 @@
                         mode: 'view',
                         templateId: this.instance.set_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
+                    },
+                    query: {
+                        node: this.selectedNode.id,
+                        tab: 'nodeInfo'
                     }
                 })
             },
@@ -767,7 +776,9 @@
         }
     }
     .topology-details {
-        padding: 0 !important;
+        width: calc(100% + 40px);
+        height: calc(100vh - 250px) !important;
+        margin: 0 -20px;
         /deep/ {
             .property-list {
                 margin-left: 36px;
@@ -844,11 +855,6 @@
     }
     .btn-delete{
         min-width: 76px;
-        &:not(.is-disabled):hover {
-            color: #ffffff;
-            border-color: #ff5656;
-            background-color: #ff5656;
-        }
     }
     .sync-set-btn {
         position: relative;

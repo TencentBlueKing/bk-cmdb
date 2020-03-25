@@ -58,7 +58,7 @@ func (mm *ModelMainline) constructTopoTree(ctx context.Context) error {
 	for _, association := range mm.associations {
 		blog.V(5).Infof("association: %+v, rid: %s", association, rid)
 		parentObjectID := association.AsstObjID
-		if _, exist := topoModelNodeMap[parentObjectID]; exist == false {
+		if _, exist := topoModelNodeMap[parentObjectID]; !exist {
 			topoModelNodeMap[parentObjectID] = &metadata.TopoModelNode{
 				ObjectID: parentObjectID,
 				Children: []*metadata.TopoModelNode{},
@@ -73,7 +73,7 @@ func (mm *ModelMainline) constructTopoTree(ctx context.Context) error {
 		}
 
 		childObjectID := association.ObjectID
-		if _, exist := topoModelNodeMap[childObjectID]; exist == false {
+		if _, exist := topoModelNodeMap[childObjectID]; !exist {
 			topoModelNodeMap[childObjectID] = &metadata.TopoModelNode{
 				ObjectID: childObjectID,
 				Children: []*metadata.TopoModelNode{},
@@ -96,7 +96,7 @@ func (mm *ModelMainline) GetRoot(ctx context.Context, header http.Header, withDe
 		blog.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v", err)
 	}
-	if withDetail == true {
+	if withDetail {
 		// thinking what's detail actually
 		panic("detail option not implemented yet.")
 	}

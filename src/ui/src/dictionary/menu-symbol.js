@@ -13,6 +13,14 @@ export const MENU_BUSINESS_ADVANCED = 'menu_business_advanced'
 export const MENU_BUSINESS_HOST_AND_SERVICE = 'menu_business_host_and_service'
 export const MENU_BUSINESS_SERVICE_TEMPLATE = 'menu_business_service_template'
 export const MENU_BUSINESS_SET_TEMPLATE = 'menu_business_set_template'
+
+// 主机属性自动应用
+export const MENU_BUSINESS_HOST_APPLY = 'menu_business_host_apply'
+export const MENU_BUSINESS_HOST_APPLY_EDIT = 'menu_business_host_apply_edit'
+export const MENU_BUSINESS_HOST_APPLY_CONFIRM = 'menu_business_host_apply_confirm'
+export const MENU_BUSINESS_HOST_APPLY_CONFLICT = 'menu_business_host_apply_conflict'
+export const MENU_BUSINESS_HOST_APPLY_FAILED = 'menu_business_host_apply_failed'
+
 export const MENU_BUSINESS_SERVICE_CATEGORY = 'menu_business_service_category'
 export const MENU_BUSINESS_CUSTOM_QUERY = 'menu_business_custom_query'
 export const MENU_BUSINESS_CUSTOM_FIELDS = 'menu_business_custom_fields'

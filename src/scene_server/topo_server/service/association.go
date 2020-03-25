@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common/mapstruct"
 	"context"
 	"sort"
 	"strconv"
@@ -21,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -158,7 +158,11 @@ func (s *Service) searchBusinessTopo(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id, withStatistics)
+	withDefault := false
+	if len(queryParams("with_default")) > 0 {
+		withDefault = true
+	}
+	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id, withStatistics, withDefault)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +204,7 @@ func (s *Service) SearchMainLineChildInstTopo(params types.ContextParams, pathPa
 		return nil, err
 	}
 
-	return s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, obj, instID, false)
+	return s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, obj, instID, false, false)
 }
 
 func (s *Service) SearchAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

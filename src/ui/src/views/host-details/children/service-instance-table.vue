@@ -71,7 +71,8 @@
                 :class-name="index === 0 ? 'is-highlight' : ''"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{(row.property || {})[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
         </bk-table>
@@ -83,6 +84,7 @@
         MENU_BUSINESS_HOST_AND_SERVICE,
         MENU_BUSINESS_DELETE_SERVICE
     } from '@/dictionary/menu-symbol'
+    import { mapState } from 'vuex'
     export default {
         props: {
             instance: {
@@ -114,6 +116,7 @@
             }
         },
         computed: {
+            ...mapState('hostDetails', ['info']),
             withTemplate () {
                 return this.isModuleNode && !!this.instance.service_template_id
             },
@@ -191,9 +194,10 @@
             async getServiceProcessList () {
                 try {
                     this.list = await this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
-                        params: this.$injectMetadata({
-                            service_instance_id: this.instance.id
-                        }, { injectBizId: true }),
+                        params: {
+                            service_instance_id: this.instance.id,
+                            bk_biz_id: this.info.biz[0].bk_biz_id
+                        },
                         config: {
                             requestId: this.requestId.processList
                         }

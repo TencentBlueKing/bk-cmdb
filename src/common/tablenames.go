@@ -103,6 +103,9 @@ const (
 	BKTableNameAPITask                    = "cc_APITask"
 	BKTableNameSetTemplateSyncStatus      = "cc_SetTemplateSyncStatus"
 	BKTableNameSetTemplateSyncHistory     = "cc_SetTemplateSyncHistory"
+
+	// rule for host property auto apply
+	BKTableNameHostApplyRule = "cc_HostApplyRule"
 )
 
 // AllTables alltables
@@ -158,6 +161,7 @@ var AllTables = []string{
 	BKTableNameChartConfig,
 	BKTableNameChartPosition,
 	BKTableNameChartData,
+	BKTableNameHostApplyRule,
 }
 
 // GetInstTableName returns inst data table name
@@ -169,32 +173,12 @@ func GetInstTableName(objID string) string {
 		return BKTableNameBaseSet
 	case BKInnerObjIDModule:
 		return BKTableNameBaseModule
-	// case BKInnerObjIDObject:
-	// 	return BKTableNameBaseInst
 	case BKInnerObjIDHost:
 		return BKTableNameBaseHost
 	case BKInnerObjIDProc:
 		return BKTableNameBaseProcess
 	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
-	case BKTableNameInstAsst:
-		return BKTableNameInstAsst
-	case BKTableNameModuleHostConfig:
-		return BKTableNameModuleHostConfig
-	case BKTableNameObjClassifiction:
-		return BKTableNameObjClassifiction
-	case BKTableNameObjAttDes:
-		return BKTableNameObjAttDes
-	case BKTableNamePropertyGroup:
-		return BKTableNamePropertyGroup
-	case BKTableNameObjUnique:
-		return BKTableNameObjUnique
-	case BKTableNameAsstDes:
-		return BKTableNameAsstDes
-	case BKTableNameOperationLog:
-		return BKTableNameOperationLog
-	case BKTableNameUserAPI:
-		return BKTableNameUserAPI
 	default:
 		return BKTableNameBaseInst
 	}

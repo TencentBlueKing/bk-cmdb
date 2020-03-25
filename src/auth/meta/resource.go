@@ -63,6 +63,7 @@ const (
 	SystemConfig             ResourceType = "systemConfig" // syste config
 	SetTemplate              ResourceType = "setTemplate"
 	OperationStatistic       ResourceType = "operationStatistic" // 运营统计
+	HostApply                ResourceType = "hostApply"
 )
 
 const (

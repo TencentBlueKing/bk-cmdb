@@ -1,31 +1,32 @@
 <template>
-    <ul class="form-list-wrapper">
-        <li class="form-item clearfix" v-for="(item, index) in list" :key="index">
-            <div class="list-label">
-                {{$t('选项')}}{{index + 1}}
-            </div>
-            <div class="list-name">
-                <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`name${index}`) }">
-                    <bk-input type="text"
-                        class="cmdb-form-input"
-                        :placeholder="$t('请输入名称英文数字')"
-                        v-model.trim="item.name"
-                        v-validate="`required|enumName|repeat:${getOtherName(index)}`"
-                        @input="handleInput"
-                        :disabled="isReadOnly"
-                        :name="`name${index}`">
-                    </bk-input>
-                    <p class="form-error">{{errors.first(`name${index}`)}}</p>
+    <div class="form-list-layout">
+        <p class="title mb10">{{$t('列表值')}}</p>
+        <ul class="form-list-wrapper">
+            <li class="form-item clearfix" v-for="(item, index) in list" :key="index">
+                <div class="list-name">
+                    <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`name${index}`) }">
+                        <bk-input type="text"
+                            class="cmdb-form-input"
+                            :placeholder="$t('请输入值')"
+                            v-model.trim="item.name"
+                            v-validate="`required|enumName|repeat:${getOtherName(index)}`"
+                            @input="handleInput"
+                            :disabled="isReadOnly"
+                            :name="`name${index}`"
+                            :ref="`name${index}`">
+                        </bk-input>
+                        <p class="form-error">{{errors.first(`name${index}`)}}</p>
+                    </div>
                 </div>
-            </div>
-            <button class="list-btn" @click="deleteList(index)" :disabled="list.length === 1 || isReadOnly">
-                <i class="icon-cc-del"></i>
-            </button>
-            <button class="list-btn" @click="addList" :disabled="isReadOnly" v-if="index === list.length - 1">
-                <i class="bk-icon icon-plus"></i>
-            </button>
-        </li>
-    </ul>
+                <bk-button text class="list-btn" @click="deleteList(index)" :disabled="list.length === 1 || isReadOnly">
+                    <i class="bk-icon icon-minus-circle-shape"></i>
+                </bk-button>
+                <bk-button text class="list-btn" @click="addList(index)" :disabled="isReadOnly" v-if="index === list.length - 1">
+                    <i class="bk-icon icon-plus-circle-shape"></i>
+                </bk-button>
+            </li>
+        </ul>
+    </div>
 </template>
 
 <script>
@@ -79,8 +80,11 @@
                     }
                 })
             },
-            addList () {
+            addList (index) {
                 this.list.push({ name: '' })
+                this.$nextTick(() => {
+                    this.$refs[`name${index + 1}`] && this.$refs[`name${index + 1}`][0].focus()
+                })
             },
             deleteList (index) {
                 this.list.splice(index, 1)
@@ -94,17 +98,16 @@
 </script>
 
 <style lang="scss" scoped>
+    .title {
+        font-size: 14px;
+    }
     .form-list-wrapper {
-        >.form-item {
+        .form-item {
+            display: flex;
+            align-items: center;
             font-size: 0;
             &:not(:first-child) {
-                margin-top: 15px;
-            }
-            .list-label {
-                font-size: 14px;
-                line-height: 36px;
-                text-align: center;
-                width: 55px;
+                margin-top: 20px;
             }
             .list-name {
                 float: left;
@@ -114,22 +117,15 @@
                 }
             }
             .list-btn {
-                display: inline-block;
-                width: 32px;
-                height: 32px;
-                margin-left: 5px;
-                vertical-align: middle;
-                text-align: center;
-                font-size: 14px;
-                line-height: 1;
-                border: 1px solid $cmdbFnMainColor;
-                background-color: $cmdbDefaultColor;
-                outline: 0;
-                &:disabled {
-                    cursor: not-allowed;
-                    background-color: #eee;
-                    border-color: #eee;
-                    color: $cmdbFnMainColor;
+                font-size: 0;
+                color: #c4c6cc;
+                margin: -2px 0 0 6px;
+                .bk-icon {
+                    width: 18px;
+                    height: 18px;
+                    line-height: 18px;
+                    font-size: 18px;
+                    text-align: center;
                 }
             }
         }
