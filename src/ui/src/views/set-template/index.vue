@@ -33,14 +33,14 @@
             :row-style="{ cursor: 'pointer' }"
             @row-click="handleRowClick">
             <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight">
-                <div slot-scope="{ row }"
+                <div slot-scope="{ row }" v-bk-overflow-tips
                     :class="['template-name', { 'need-sync': row._need_sync_ }]">
                     {{row.name}}
                 </div>
             </bk-table-column>
             <bk-table-column :label="$t('应用数量')" prop="set_instance_count"></bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="modifier"></bk-table-column>
-            <bk-table-column :label="$t('修改时间')" prop="last_time">
+            <bk-table-column :label="$t('修改时间')" prop="last_time" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <span>{{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm')}}</span>
                 </template>

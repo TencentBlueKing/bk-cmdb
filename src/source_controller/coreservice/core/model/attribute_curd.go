@@ -182,7 +182,7 @@ func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribut
 		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
 		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
 		if nil != err || !match {
-			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHoler)
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHolder)
 		}
 	}
 
@@ -563,12 +563,16 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 		}
 	}
 
-	// 预定义字段，只能更新分组和分组内排序
+	// 预定义字段，只能更新分组、分组内排序、名称、单位、提示语和option
 	if hasIsPreProperty {
 		hasNotAllowField := false
 		_ = data.ForEach(func(key string, val interface{}) error {
 			if key != metadata.AttributeFieldPropertyGroup &&
-				key != metadata.AttributeFieldPropertyIndex {
+				key != metadata.AttributeFieldPropertyIndex &&
+				key != metadata.AttributeFieldPropertyName &&
+				key != metadata.AttributeFieldUnit &&
+				key != metadata.AttributeFieldPlaceHolder &&
+				key != metadata.AttributeFieldOption {
 				hasNotAllowField = true
 			}
 			return nil
@@ -600,6 +604,7 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 	data.Remove(metadata.AttributeFieldSupplierAccount)
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
+	data.Remove(metadata.AttributeFieldIsPre)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
 
 	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists {

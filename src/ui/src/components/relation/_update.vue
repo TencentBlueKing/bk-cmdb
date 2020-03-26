@@ -32,10 +32,11 @@
             @page-limit-change="setPageLimit"
             @sort-change="setCurrentSort">
             <bk-table-column :prop="instanceIdKey" label="ID"></bk-table-column>
-            <bk-table-column :prop="instanceNameKey" :label="instanceName"></bk-table-column>
+            <bk-table-column :prop="instanceNameKey" :label="instanceName" show-overflow-tooltip></bk-table-column>
             <bk-table-column v-if="filter.id !== instanceNameKey && getLabelText"
                 :prop="filter.id"
-                :label="getLabelText">
+                :label="getLabelText"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row[filter.id] | formatter(getProperty(filter.id))}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">

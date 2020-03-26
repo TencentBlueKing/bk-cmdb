@@ -30,22 +30,22 @@
                     <span class="relation-id">{{row['bk_obj_asst_id']}}</span>
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_asst_name" :label="$t('关联类型')">
+            <bk-table-column prop="bk_asst_name" :label="$t('关联类型')" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{getRelationName(row['bk_asst_id'])}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="mapping" :label="$t('源-目标约束')">
+            <bk-table-column prop="mapping" :label="$t('源-目标约束')" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{mappingMap[row.mapping]}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_obj_name" :label="$t('源模型')">
+            <bk-table-column prop="bk_obj_name" :label="$t('源模型')" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{getModelName(row['bk_obj_id'])}}
                 </template>
             </bk-table-column>
-            <bk-table-column prop="bk_asst_obj_name" :label="$t('目标模型')">
+            <bk-table-column prop="bk_asst_obj_name" :label="$t('目标模型')" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{getModelName(row['bk_asst_obj_id'])}}
                 </template>

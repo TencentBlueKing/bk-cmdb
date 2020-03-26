@@ -454,11 +454,12 @@
             width: 200px;
         }
         .dropdown-icon {
+            margin: 0 -4px;
             display: inline-block;
             vertical-align: middle;
-            line-height: 19px;
             height: auto;
             top: 0px;
+            font-size: 20px;
             &.open {
                 top: -1px;
                 transform: rotate(180deg);
@@ -518,6 +519,8 @@
             .icon-close {
                 display: none;
                 color: #979BA5;
+                font-size: 20px;
+                margin-right: -4px;
             }
         }
     }

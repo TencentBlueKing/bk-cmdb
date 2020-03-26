@@ -26,9 +26,9 @@
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
-            <bk-table-column :label="$t('变更内容')" prop="op_desc"></bk-table-column>
-            <bk-table-column :label="$t('操作账号')" prop="operator"></bk-table-column>
-            <bk-table-column :label="$t('操作时间')" prop="op_time">
+            <bk-table-column :label="$t('变更内容')" prop="op_desc" show-overflow-tooltip></bk-table-column>
+            <bk-table-column :label="$t('操作账号')" prop="operator" show-overflow-tooltip></bk-table-column>
+            <bk-table-column :label="$t('操作时间')" prop="op_time" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{row.op_time | formatter('time')}}
                 </template>
@@ -223,10 +223,10 @@
             padding: 0 40px;
             font-weight: bold;
             .icon-close{
-                font-size: 14px;
+                font-size: 20px;
                 position: absolute;
                 right: 12px;
-                top: 0;
+                top: 3px;
                 cursor: pointer;
             }
         }

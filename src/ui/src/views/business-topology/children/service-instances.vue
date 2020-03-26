@@ -1000,7 +1000,6 @@
             cursor: pointer;
             &:before {
                 display: block;
-                transform: scale(.7);
             }
             &:hover {
                 background-color: #ccc;
@@ -1017,8 +1016,7 @@
     .clipboard-trigger{
         padding: 0 16px;
         .icon-angle-down {
-            font-size: 12px;
-            top: 0;
+            font-size: 20px;
         }
     }
     .clipboard-list{
@@ -1067,7 +1065,9 @@
             background-color: #dcdee5;
         }
         .icon-refresh {
-            top: -1px;
+            font-size: 12px;
+            vertical-align: middle;
+            line-height: 18px;
         }
     }
     .tables {

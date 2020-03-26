@@ -303,8 +303,9 @@
             position: static;
             height: 30px;
             line-height: 30px;
-            font-size: 12px;
+            font-size: 20px;
             font-weight: bold;
+            margin: 0 -4px;
             @include inlineBlock(top);
         }
         /deep/ span {

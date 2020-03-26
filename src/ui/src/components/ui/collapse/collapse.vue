@@ -97,9 +97,9 @@
             .collapse-arrow {
                 display: inline-block;
                 vertical-align: middle;
-                font-size: 12px;
+                font-size: 20px;
                 font-weight: 700;
-                margin-right: 6px;
+                margin: 0 2px 0 -4px;
                 transition: transform .2s ease-in-out;
                 &.is-collapsed {
                     transform: rotate(-90deg);
