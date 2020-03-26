@@ -20,14 +20,15 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/zkclient"
+	ccom "configcenter/src/scene_server/cloud_server/common"
 	"configcenter/src/scene_server/cloud_server/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/reflector"
 	stypes "configcenter/src/storage/stream/types"
-	ccom "configcenter/src/scene_server/cloud_server/common"
 
 	"stathat.com/c/consistent"
 )
@@ -51,12 +52,13 @@ const (
 	checkInterval int = 5
 )
 
-var(
+var (
 	// mongo server对于满足change stream查询的最大等待时间
 	maxAwaitTime = time.Second * 10
-	header = ccom.GetHeader()
-	kit = ccom.GetKit(header)
+	header       = ccom.GetHeader()
 )
+var kit *rest.Kit
+
 type SyncConf struct {
 	ZKClient  *zkclient.ZkClient
 	DB        dal.DB
@@ -81,6 +83,8 @@ func CloudSync(ctx context.Context, conf *SyncConf) error {
 		tasklist: make(map[int64]*metadata.CloudSyncTask),
 		taskChan: make(chan *metadata.CloudSyncTask, 20),
 	}
+
+	kit = ccom.GetKit(header)
 
 	var err error
 	t.reflector, err = reflector.NewReflector(conf.MongoConf)
@@ -192,7 +196,7 @@ func (t *taskProcessor) SyncCloudResource() {
 		syncor := NewHostSyncor(i, t.logics, t.db)
 		go func(syncor *HostSyncor) {
 			for {
-				task := <- hostChan
+				task := <-hostChan
 				syncor.Sync(task)
 			}
 		}(syncor)
@@ -201,7 +205,7 @@ func (t *taskProcessor) SyncCloudResource() {
 
 // 获取资源同步任务表的所有任务
 func (t *taskProcessor) getTasksFromTable() ([]*metadata.CloudSyncTask, error) {
-	option := &metadata.SearchCloudOption{Page:metadata.BasePage{
+	option := &metadata.SearchCloudOption{Page: metadata.BasePage{
 		Limit: common.BKNoLimit,
 	}}
 	result, err := t.logics.CoreAPI.CoreService().Cloud().SearchSyncTask(context.Background(), header, option)

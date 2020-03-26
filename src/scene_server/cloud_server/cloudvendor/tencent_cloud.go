@@ -141,12 +141,10 @@ func (c *tcClient) GetInstances(region string, opt *ccom.RequestOpt) (*metadata.
 		for _, inst := range resp.Response.InstanceSet {
 			instancesInfo.InstanceSet = append(instancesInfo.InstanceSet, &metadata.Instance{
 				InstanceId:    *inst.InstanceId,
-				InstanceName:  *inst.InstanceName,
 				PrivateIp:     *inst.PrivateIpAddresses[0],
 				PublicIp:      *inst.PublicIpAddresses[0],
 				InstanceState: ccom.CovertInstState(*inst.InstanceState),
 				VpcId:         *inst.VirtualPrivateCloud.VpcId,
-				OsName:        *inst.OsName,
 			})
 		}
 		totalCnt = int64(*resp.Response.TotalCount)

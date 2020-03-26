@@ -24,9 +24,9 @@ var awsTestClient VendorClient
 
 func init() {
 	conf := metadata.CloudAccountConf{
-		metadata.AWS,
-		os.Getenv("AWS_SECRET_ID"),
-		os.Getenv("AWS_SECRET_KEY"),
+		VendorName: metadata.AWS,
+		SecretID:   os.Getenv("AWS_SECRET_ID"),
+		SecretKey:  os.Getenv("AWS_SECRET_KEY"),
 	}
 	var err error
 	awsTestClient, err = GetVendorClient(conf)
@@ -94,6 +94,6 @@ func TestAWSRequestOpt(t *testing.T) {
 	}
 	t.Logf("vpc count:%#v\n", vpcsInfo.Count)
 	for i, vpc := range vpcsInfo.VpcSet {
-		t.Logf("i:%d, vpc:%#v\n",i, *vpc)
+		t.Logf("i:%d, vpc:%#v\n", i, *vpc)
 	}
 }
