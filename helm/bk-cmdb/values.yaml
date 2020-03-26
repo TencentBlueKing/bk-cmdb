@@ -133,7 +133,7 @@ logLevel: debug
 adminserver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -172,7 +172,7 @@ webserver:
     tls:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -201,7 +201,7 @@ webserver:
 apiserver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -222,7 +222,7 @@ apiserver:
 hostserver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -243,7 +243,7 @@ hostserver:
 tmserver:
   enabled: false
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -264,7 +264,7 @@ tmserver:
 synchronizeserver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -284,7 +284,7 @@ synchronizeserver:
 procserver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -305,7 +305,7 @@ procserver:
 coreservice:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -326,7 +326,7 @@ coreservice:
 operationserver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -347,7 +347,7 @@ operationserver:
 eventserver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -367,7 +367,7 @@ eventserver:
 datacollection:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -409,7 +409,7 @@ taskserver:
 tmserver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -430,7 +430,7 @@ tmserver:
 toposerver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -451,7 +451,7 @@ toposerver:
 taskserver:
   enabled: true
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   replicas: 1
   port: 80
@@ -616,7 +616,7 @@ ApiVersion:
   Deployment: "apps/v1"
 migrate:
   image:
-    repository: bk-cmdb
+    repository: hoffermei/bk-cmdb
     tag: v3.6.3
   enabled: true
   bootstrapShellCommand: "/data/cmdb/cmdb_adminserver/init_db.sh"
