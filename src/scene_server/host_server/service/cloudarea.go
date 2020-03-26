@@ -225,9 +225,9 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	if 0 == platID {
-		blog.Errorf("DelPlat search host, input:%+v,rid:%s", platID, srvData.rid)
-		// try delete default area. tip: has host
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoHasHostCheckFailed)})
+		blog.Errorf("DelPlat failed, can't delete default cloud area, input:%+v,rid:%s", platID, srvData.rid)
+		// can't delete default cloud area
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrDeleteDefaultCloudAreaFail)})
 		return
 	}
 
