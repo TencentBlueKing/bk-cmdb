@@ -19,6 +19,7 @@
                                             v-if="property['placeholder']"
                                             v-bk-tooltips="htmlEncode(property['placeholder'])">
                                         </i>
+                                        <form-tips :type="type" :property="property" :render="renderTips"></form-tips>
                                     </div>
                                     <div class="property-value clearfix">
                                         <slot :name="property.bk_property_id">
@@ -73,8 +74,12 @@
 <script>
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
+    import FormTips from './form-tips.js'
     export default {
         name: 'cmdb-form',
+        components: {
+            FormTips
+        },
         mixins: [formMixins],
         props: {
             inst: {
@@ -100,7 +105,8 @@
             saveAuth: {
                 type: [String, Array],
                 default: ''
-            }
+            },
+            renderTips: Function
         },
         data () {
             return {

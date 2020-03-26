@@ -1231,5 +1231,7 @@
     "默认值设置": "Default setting",
     "列表值": "List value",
     "转移到空闲机的主机": "Host transferred to idle machine",
-    "转移到空闲机": "Transfer to idle machine"
+    "转移到空闲机": "Transfer to idle machine",
+    "进程表单锁定提示": "Uneditable，defined in template, {link}",
+    "跳转服务模板": "view in template"
 }
