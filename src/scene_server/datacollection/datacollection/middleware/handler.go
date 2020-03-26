@@ -216,8 +216,8 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	blog.Infof("get inst result: %v", inst)
 
 	instIDField := common.GetInstIDField(objID)
-	audit := auditlog.NewAudit(d.CoreAPI, d.ctx, d.httpHeader)
-	properties, err := audit.GetAuditLogProperty(objID)
+	audit := auditlog.NewAudit(d.CoreAPI, d.httpHeader)
+	properties, err := audit.GetAuditLogProperty(d.ctx, objID)
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			}
 			bizName := ""
 			if bizID > 0 {
-				bizName, err = audit.GetInstNameByID(common.BKInnerObjIDApp, bizID)
+				bizName, err = audit.GetInstNameByID(d.ctx, common.BKInnerObjIDApp, bizID)
 				if err != nil {
 					return err
 				}
@@ -379,7 +379,7 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		}
 		bizName := ""
 		if bizID > 0 {
-			bizName, err = audit.GetInstNameByID(common.BKInnerObjIDApp, bizID)
+			bizName, err = audit.GetInstNameByID(d.ctx, common.BKInnerObjIDApp, bizID)
 			if err != nil {
 				return err
 			}

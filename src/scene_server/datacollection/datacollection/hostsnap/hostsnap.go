@@ -157,8 +157,8 @@ func (h *HostSnap) Analyze(mesg string) error {
 		return fmt.Errorf("[data-collection][hostsnap] get moduleHostConfig failed, fail to create auditLog")
 	}
 
-	audit := auditlog.NewAudit(h.CoreAPI, h.ctx, h.httpHeader)
-	properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDHost)
+	audit := auditlog.NewAudit(h.CoreAPI, h.httpHeader)
+	properties, err := audit.GetAuditLogProperty(h.ctx, common.BKInnerObjIDHost)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 	}
 	bizName := ""
 	if bizID > 0 {
-		bizName, err = audit.GetInstNameByID(common.BKInnerObjIDApp, bizID)
+		bizName, err = audit.GetInstNameByID(h.ctx, common.BKInnerObjIDApp, bizID)
 		if err != nil {
 			return err
 		}

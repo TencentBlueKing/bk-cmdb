@@ -100,6 +100,14 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 	}
 	transferResult := make([]HostTransferResult, 0)
 	var firstErr errors.CCErrorCoder
+
+	audit := srvData.lgc.NewHostModuleLog(option.HostIDs)
+	if err := audit.WithPrevious(srvData.ctx); err != nil {
+		blog.Errorf("TransferHostWithAutoClearServiceInstance failed, get prev module host config for audit failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		return
+	}
+
 	for _, plan := range transferPlans {
 		ccErr := s.runTransferPlans(srvData, bizID, plan)
 		hostTransferResult := HostTransferResult{
@@ -139,6 +147,12 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 			Data: transferResult,
 		}
 		_ = resp.WriteEntity(response)
+		return
+	}
+
+	if err := audit.SaveAudit(srvData.ctx); err != nil {
+		blog.Errorf("TransferHostWithAutoClearServiceInstance failed, save audit log failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
 	}
 
