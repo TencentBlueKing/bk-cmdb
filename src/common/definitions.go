@@ -868,8 +868,8 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	//BKSessionLanugageKey = "language"
-	BKHTTPSupplierID     = "bk_supplier_id"
-	BKHTTPRequestAppCode = "req_app_code"
+	BKHTTPSupplierID = "bk_supplier_id"
+	BKHTTPRequestAppCode = "Bk-App-Code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"

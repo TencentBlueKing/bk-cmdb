@@ -15,7 +15,8 @@ package model
 import (
     "context"
     "fmt"
-    "strings"
+	"regexp"
+	"strings"
     "sync"
     "time"
     "unicode/utf8"
@@ -178,8 +179,14 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 
 	if attribute.Placeholder != "" {
 		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
+
 		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
+		}
+		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
+		if nil != err || !match {
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHolder)
+
 		}
 	}
 
@@ -555,12 +562,16 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		}
 	}
 
-	// 预定义字段，只能更新分组和分组内排序
+	// 预定义字段，只能更新分组、分组内排序、名称、单位、提示语和option
 	if hasIsPreProperty {
 		hasNotAllowField := false
 		_ = data.ForEach(func(key string, val interface{}) error {
 			if key != metadata.AttributeFieldPropertyGroup &&
-				key != metadata.AttributeFieldPropertyIndex {
+				key != metadata.AttributeFieldPropertyIndex &&
+				key != metadata.AttributeFieldPropertyName &&
+				key != metadata.AttributeFieldUnit &&
+				key != metadata.AttributeFieldPlaceHolder &&
+				key != metadata.AttributeFieldOption {
 				hasNotAllowField = true
 			}
 			return nil
@@ -592,6 +603,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	data.Remove(metadata.AttributeFieldSupplierAccount)
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
+	data.Remove(metadata.AttributeFieldIsPre)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
 
 	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists {
