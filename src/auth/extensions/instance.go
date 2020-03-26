@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -200,20 +201,22 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		objectIDMap[object.ID] = object
 	}
 
-	mainlineTopo, err := am.clientSet.CoreService().Mainline().SearchMainlineModelTopo(ctx, header, false)
+	mainlineAsst, err := am.clientSet.CoreService().Association().ReadModelAssociation(ctx, header,
+		&metadata.QueryCondition{Condition: mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}})
 	if err != nil {
 		blog.Errorf("list mainline models failed, err: %+v, rid: %s", err, rid)
 		return nil, err
 	}
-	mainlineModels := mainlineTopo.LeftestObjectIDList()
 
 	resultResources := make([]meta.ResourceAttribute, 0)
 	for objID, instances := range objectIDInstancesMap {
 		object := objectIDMap[objID]
 
 		resourceType := meta.ModelInstance
-		if util.InStrArr(mainlineModels, object.ObjectID) {
-			resourceType = meta.MainlineInstance
+		for _, mainline := range mainlineAsst.Data.Info {
+			if mainline.ObjectID == mainline.ObjectID {
+				resourceType = meta.MainlineInstance
+			}
 		}
 
 		parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, object)
