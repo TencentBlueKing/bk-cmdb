@@ -13,6 +13,7 @@
 package y3_9_202002131522
 
 import (
+	"configcenter/src/common/metadata"
 	"context"
 
 	"configcenter/src/common"
@@ -23,9 +24,15 @@ import (
 
 // removeResourceFaultRecycle 资源池目录不需要"故障机"和"待回收"
 func removeResourceFaultRecycle(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	bizInfo := &metadata.BizInst{}
+	cond := mapstr.MapStr{common.BKDefaultField: 1}
+	if err := db.Table(common.BKTableNameBaseApp).Find(cond).One(ctx, bizInfo); err != nil {
+		return err
+	}
+
 	shouldRemoveModules := []int64{2, 3}
 	filter := mapstr.MapStr{
-		common.BKAppIDField:   1,
+		common.BKAppIDField:   bizInfo.BizID,
 		common.BKDefaultField: mapstr.MapStr{common.BKDBIN: shouldRemoveModules},
 	}
 	if err := db.Table(common.BKTableNameBaseModule).Delete(ctx, filter); err != nil {
