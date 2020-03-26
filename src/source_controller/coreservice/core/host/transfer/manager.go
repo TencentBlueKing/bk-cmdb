@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
-
 	"gopkg.in/redis.v5"
 )
 
@@ -579,25 +578,23 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID 
 
 func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
 	// validate input bk_module_id
-	errHostID, err := manager.validTransferResourceDirParams(kit, input)
+	existHostIDs, err := manager.validTransferResourceDirParams(kit, input)
 	if err != nil {
-		blog.ErrorJSON("TransferResourceDirectory fail with validTransferResourceDirParams failed, err: %v, rid: %v", err, kit.Rid)
+		blog.ErrorJSON("TransferResourceDirectory fail with validTransferResourceDirParams failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-	updateHosts := make([]int64, 0)
-	if 0 != len(errHostID) {
+	wrongHostIDs := make([]int64, 0)
+	if len(existHostIDs) < len(input.HostID) {
 		for _, id := range input.HostID {
-			if !util.ContainsInt64(errHostID, id) {
-				updateHosts = append(updateHosts, id)
+			if !util.ContainsInt64(existHostIDs, id) {
+				wrongHostIDs = append(wrongHostIDs, id)
 			}
 		}
-	} else {
-		updateHosts = input.HostID
 	}
 
 	cond := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: updateHosts,
+			common.BKDBIN: existHostIDs,
 		},
 	}
 	data := map[string]interface{}{
@@ -609,21 +606,21 @@ func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	if len(errHostID) > 0 {
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotUnderAnyResourceDirectory, errHostID)
+	if len(wrongHostIDs) > 0 {
+		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotUnderAnyResourceDirectory, wrongHostIDs)
 	}
 
 	return nil
 }
 
 func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) ([]int64, errors.CCErrorCoder) {
-	// valid bk_module_id
+	// valid bk_module_id,资源池目录default=4,空闲机default=1
 	cond := mapstr.MapStr{}
 	cond[common.BKModuleIDField] = input.ModuleID
-	cond[common.BKDefaultField] = 4
+	cond[common.BKDBOR] = []mapstr.MapStr{{common.BKDefaultField: 1}, {common.BKDefaultField: 4}}
 	count, err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%v, rid: %s", err.Error(), cond, kit.Rid)
+		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%s, rid: %s", err.Error(), cond, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if count <= 0 {
@@ -636,23 +633,21 @@ func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit, in
 	filter := mapstr.MapStr{common.BKDefaultField: 1}
 	err = manager.dbProxy.Table(common.BKTableNameBaseApp).Find(filter).One(kit.Ctx, bizInfo)
 	if err != nil {
-		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%v, rid: %s", err.Error(), cond, kit.Rid)
+		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%s, rid: %s", err.Error(), cond, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	opt := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.HostID}}
+	opt := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.HostID}, common.BKAppIDField: bizInfo.BizID}
 	moduleHost := make([]metadata.ModuleHost, 0)
 	if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(opt).All(kit.Ctx, &moduleHost); err != nil {
 		blog.ErrorJSON("validTransferResourceDirParams failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, opt, err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	wrongHostID := make([]int64, 0)
+	existHostIDs := make([]int64, 0)
 	for _, host := range moduleHost {
-		if host.AppID != bizInfo.BizID {
-			wrongHostID = append(wrongHostID, host.HostID)
-		}
+		existHostIDs = append(existHostIDs, host.HostID)
 	}
 
-	return wrongHostID, nil
+	return existHostIDs, nil
 }

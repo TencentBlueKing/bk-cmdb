@@ -460,6 +460,7 @@ const (
 	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
 	CCErrorTopoOnlyResourceDirNameCanBeUpdated     = 1101102
 	CCErrorTopoOperateReourceDirFailNotExist       = 1101103
+	CCErrorTopoResourceDirIdleModuleCanNotRemove   = 1101104
 
 	// object controller 1102XXX
 
