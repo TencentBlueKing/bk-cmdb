@@ -113,9 +113,6 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 			},
 			ModelID: common.BKInnerObjIDModule,
 		},
-		Label: map[string]string{
-			metadata.LabelBizTopology: "",
-		},
 	}
 	auditResult, err := s.Engine.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
 	if err != nil {
@@ -292,9 +289,6 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 			},
 			ModelID: common.BKInnerObjIDModule,
 		},
-		Label: map[string]string{
-			metadata.LabelBizTopology: "",
-		},
 	}
 	auditResult, err := s.Engine.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
 	if err != nil {
@@ -429,8 +423,8 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 	if hasHost {
-		blog.ErrorJSON("DeleteResourceDirectory fail, resource directory has host")
-		ctx.RespErrorCodeF(common.CCErrTopoHasHostCheckFailed, "DeleteResourceDirectory, resource directory has hosts, rid: %s", ctx.Kit.Rid)
+		blog.ErrorJSON("DeleteResourceDirectory fail, resource directory has host, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoHasHostCheckFailed))
 		return
 	}
 
@@ -450,6 +444,19 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 	if len(curData.Data.Info) <= 0 {
 		blog.Errorf("DeleteResourceDirectory fail, resource pool directory not exist, bk_module_id: %d, rid: %s", intModuleID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrorTopoOperateReourceDirFailNotExist, s.Language.Language(language, "delete")))
+		return
+	}
+
+	// 空闲机目录不能被删除
+	moduleDefault, err := curData.Data.Info[0].Int64(common.BKDefaultField)
+	if err != nil {
+		blog.ErrorJSON("DeleteResourceDirectory fail, idle module can not delete, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if moduleDefault == 1 {
+		blog.ErrorJSON("DeleteResourceDirectory fail, idle module can not delete, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoResourceDirIdleModuleCanNotRemove))
 		return
 	}
 
@@ -496,9 +503,6 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 				},
 			},
 			ModelID: common.BKInnerObjIDModule,
-		},
-		Label: map[string]string{
-			metadata.LabelBizTopology: "",
 		},
 	}
 	auditResult, err := s.Engine.CoreAPI.CoreService().Audit().SaveAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditLog)
