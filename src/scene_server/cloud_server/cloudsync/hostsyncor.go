@@ -318,13 +318,42 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 
 // 获取本地数据库中的主机信息
 func (h *HostSyncor) getLocalHosts(instanceIds []string) ([]*metadata.CloudHost, error) {
-	cond := mapstr.MapStr{common.BKCloudInstIDField: mapstr.MapStr{common.BKDBIN: instanceIds}}
 	result := make([]*metadata.CloudHost, 0)
-	err := h.db.Table(common.BKTableNameBaseHost).Find(cond).All(context.Background(), &result)
-	if err != nil {
-		blog.Errorf("getLocalHosts err:%v", err.Error())
+	cond := mapstr.MapStr{common.BKCloudInstIDField: mapstr.MapStr{common.BKDBIN: instanceIds}}
+	query := &metadata.QueryCondition{
+		Condition: cond,
+	}
+	res, err := h.logics.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDHost, query)
+	if nil != err {
+		blog.Errorf("getLocalHosts failed, error: %v query:%#v", err, query)
 		return nil, err
 	}
+	if false == res.Result {
+		blog.Errorf("getLocalHosts failed, query:%#v, err code:%d, err msg:%s", query, res.Code, res.ErrMsg)
+		return nil, fmt.Errorf("%s", res.ErrMsg)
+	}
+	if len(res.Data.Info) == 0 {
+		return nil, nil
+	}
+	for _, host := range res.Data.Info {
+		instID, _ := host.String(common.BKCloudInstIDField)
+		hostStatus, _ := host.String(common.BKCloudHostStatusField)
+		privateIp, _ := host.String(common.BKHostInnerIPField)
+		publicIp, _ := host.String(common.BKHostOuterIPField)
+		cloudID, _ := host.Int64(common.BKCloudIDField)
+		hostID, _ := host.Int64(common.BKHostIDField)
+		result = append(result, &metadata.CloudHost{
+			Instance: metadata.Instance{
+				InstanceId:    instID,
+				InstanceState: hostStatus,
+				PrivateIp:     privateIp,
+				PublicIp:      publicIp,
+			},
+			CloudID: cloudID,
+			HostID:  hostID,
+		})
+	}
+
 	return result, nil
 }
 
