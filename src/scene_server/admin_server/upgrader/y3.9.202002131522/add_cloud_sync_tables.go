@@ -20,8 +20,6 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
-
-	"gopkg.in/mgo.v2"
 )
 
 var CreateTableOptions = []struct {
@@ -54,7 +52,7 @@ func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableNa
 		return fmt.Errorf("check HasTable failed, tableName: %s, err: %+v", tableName, err)
 	}
 	if exists == false {
-		if err = db.CreateTable(ctx, tableName); err != nil && !mgo.IsDup(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !db.IsDuplicatedError(err) {
 			return fmt.Errorf("CreateTable failed, tableName: %s, err: %+v", tableName, err)
 		}
 	}
