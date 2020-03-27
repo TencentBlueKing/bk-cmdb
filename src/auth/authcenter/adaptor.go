@@ -151,6 +151,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizHostApply
 	case meta.CloudAccount:
 		iamResourceType = SysCloudAccount
+	case meta.CloudResourceTask:
+		iamResourceType = SysCloudResourceTask
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -174,6 +176,7 @@ const (
 	SysAuditLog           ResourceTypeID = "sys_audit_log"
 	SysOperationStatistic ResourceTypeID = "sys_operation_statistic"
 	SysCloudAccount       ResourceTypeID = "sys_cloud_account"
+	SysCloudResourceTask  ResourceTypeID = "sys_cloud_resource_task"
 )
 
 // Business Resource

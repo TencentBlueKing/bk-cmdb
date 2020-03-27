@@ -138,6 +138,12 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+	case CloudSyncTaskRes:
+		operationDetail := new(CloudSyncTaskOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
 	default:
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -184,6 +190,12 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ModelAssociationRes:
 		operationDetail := new(ModelAssociationOpDetail)
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case CloudSyncTaskRes:
+		operationDetail := new(CloudSyncTaskOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -485,4 +497,20 @@ func GetAuditTypesByCategory(category string) []AuditType {
 		return []AuditType{ModelType, AssociationKindType, EventPushType}
 	}
 	return []AuditType{}
+}
+
+type CloudSyncTaskOpDetail struct {
+	TaskName string                  `json:"bk_task_name" bson:"bk_task_name"`
+	TaskID   int64                   `json:"bk_task_id" bson:"bk_task_id"`
+	Details  *CloudSyncTaskOpContent `json:"details" bson:"details"`
+}
+
+type CloudSyncTaskOpContent struct {
+	PreData    *CloudSyncTask `json:"pre_data" bson:"pre_data"`
+	CurData    *CloudSyncTask `json:"cur_data" bson:"cur_data"`
+	Properties []Property     `json:"properties" bson:"properties"`
+}
+
+func (c *CloudSyncTaskOpDetail) WithName() string {
+	return "CloudSyncTaskOpDetail"
 }

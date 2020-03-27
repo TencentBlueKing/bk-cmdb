@@ -15,12 +15,13 @@ package y3_9_202002131522
 import (
 	"context"
 	"fmt"
-	"gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"gopkg.in/mgo.v2"
 )
 
 var CreateTableOptions = []struct {

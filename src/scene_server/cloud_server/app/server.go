@@ -24,8 +24,10 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/cloud_server/app/options"
+	"configcenter/src/scene_server/cloud_server/cloudsync"
 	"configcenter/src/scene_server/cloud_server/logics"
 	svc "configcenter/src/scene_server/cloud_server/service"
 	"configcenter/src/storage/dal/mongo"
@@ -63,7 +65,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
+		mongoConf := process.Config.MongoDB.GetMongoConf()
+		db, err := local.NewMgo(mongoConf, time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
 		}
@@ -82,7 +85,21 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		process.Service.SetAuth(authCli)
 		blog.Infof("enable auth center: %v", auth.IsAuthed())
 
-		process.Service.Logics = logics.NewLogics(ctx, service.Engine, db, cache)
+		errors.SetGlobalCCError(engine.CCErr)
+
+		process.Service.Logics = logics.NewLogics(service.Engine, db, cache)
+
+		syncConf := cloudsync.SyncConf{
+			ZKClient:  service.Engine.ServiceManageClient().Client(),
+			DB:        db,
+			Logics:    process.Service.Logics,
+			AddrPort:  input.SrvInfo.Instance(),
+			MongoConf: mongoConf,
+		}
+		err = cloudsync.CloudSync(ctx, &syncConf)
+		if err != nil {
+			return fmt.Errorf("ProcessTask failed: %v", err)
+		}
 
 		break
 	}

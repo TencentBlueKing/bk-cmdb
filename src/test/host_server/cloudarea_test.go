@@ -38,19 +38,19 @@ var testData2 = map[string]interface{}{
 	"bk_status":       "2",
 	"bk_cloud_vendor": "2",
 	"bk_region":       "1111",
-	"bk_vpc_id":       1,
+	"bk_vpc_id":       "1",
 	"bk_vpc_name":     "Default-VPC",
 	"bk_account_id":   2,
 	"creator":         "admin",
 }
 
-// wrong testData
+// tmpTestData
 var tmpTestData = map[string]interface{}{
 	"bk_cloud_name":   "LPL39区",
-	"bk_status":       "3",
+	"bk_status":       "1",
 	"bk_cloud_vendor": "2",
 	"bk_region":       "1111",
-	"bk_vpc_id":       1,
+	"bk_vpc_id":       "1",
 	"bk_vpc_name":     "Default-VPC",
 	"bk_account_id":   2,
 	"creator":         "admin",
@@ -220,6 +220,7 @@ func prepareCloudData() {
 	err := test.GetDB().DropTable(context.Background(), common.BKTableNameBasePlat)
 	Expect(err).NotTo(HaveOccurred())
 
+	// 准备数据
 	resp, err := hostServerClient.CreateCloudArea(context.Background(), header, testData1)
 	cloudID1 = int64(resp.Data.Created.ID)
 	util.RegisterResponse(resp)

@@ -91,6 +91,8 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return hostApplyResourceID(resourceType, attribute)
 	case meta.CloudAccount:
 		return cloudAccountResourceID(resourceType, attribute)
+	case meta.CloudResourceTask:
+		return cloudResourceTaskResourceID(resourceType, attribute)
 	}
 	return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 }
@@ -480,6 +482,15 @@ func hostApplyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAt
 }
 
 func cloudAccountResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	return []RscTypeAndID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
+}
+
+func cloudResourceTaskResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,

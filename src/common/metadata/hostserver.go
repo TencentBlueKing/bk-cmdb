@@ -346,11 +346,8 @@ type DeleteHostFromBizParameter struct {
 
 // CloudAreaParameter search cloud area parameter
 type CloudAreaSearchParam struct {
-	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
-	Page      BasePage      `json:"page" bson:"page" field:"page"`
-	Fields    []string      `json:"fields,omitempty"`
-	Exact     bool          `json:"exact"`
-	HostCount bool          `json:"host_count"`
+	SearchCloudOption `json:",inline"`
+	HostCount         bool `json:"host_count"`
 }
 
 type TopoNode struct {
