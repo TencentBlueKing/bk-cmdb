@@ -164,7 +164,15 @@
                                 name: this.$t('Hosts["模块"]')
                             }]
                         })
-                    } else if (classify['bk_classification_id'] !== 'bk_host_manage') {
+                    } else if (classify['bk_classification_id'] === 'bk_host_manage') {
+                        classifications.push({
+                            name: classify['bk_classification_name'],
+                            children: [{
+                                id: 'host',
+                                name: this.$t('Hosts["主机"]')
+                            }]
+                        })
+                    } else {
                         if (classify['bk_objects'].length) {
                             let children = []
                             classify['bk_objects'].map(({bk_obj_id: bkObjId, bk_obj_name: bkObjName}) => {
