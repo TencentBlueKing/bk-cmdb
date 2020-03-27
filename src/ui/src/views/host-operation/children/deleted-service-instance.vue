@@ -22,8 +22,8 @@
                 <!-- eslint-disable-next-line -->
                 <template slot-scope="{ row }">{{$t('删除')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('服务实例')" prop="name"></bk-table-column>
-            <bk-table-column :label="$t('所属模块')" prop="bk_module_id">
+            <bk-table-column :label="$t('服务实例')" prop="name" show-overflow-tooltip></bk-table-column>
+            <bk-table-column :label="$t('所属模块')" prop="bk_module_id" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{$parent.getModulePath(row.bk_module_id)}}</template>
             </bk-table-column>
         </bk-table>

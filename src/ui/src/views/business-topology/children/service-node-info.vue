@@ -847,7 +847,9 @@
         }
     }
     .topology-details {
-        padding-left: 0 !important;
+        width: calc(100% + 40px);
+        height: calc(100vh - 250px) !important;
+        margin: 0 -20px;
         /deep/ {
             .property-list {
                 margin-left: 36px;

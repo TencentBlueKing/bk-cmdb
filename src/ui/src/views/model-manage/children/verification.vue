@@ -25,7 +25,7 @@
                 cursor: 'pointer'
             }"
             @cell-click="handleShowDetails">
-            <bk-table-column :label="$t('校验规则')" class-name="is-highlight">
+            <bk-table-column :label="$t('校验规则')" class-name="is-highlight" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{getRuleName(row.keys)}}
                 </template>

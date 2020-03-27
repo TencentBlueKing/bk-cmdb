@@ -370,6 +370,10 @@ func (s *iamDiscovery) GetServers() ([]string, error) {
 	}
 }
 
+func (s *iamDiscovery) GetServersChan() chan []string {
+	return nil
+}
+
 type ScopeInfo struct {
 	ScopeType string `json:"scope_type,omitempty"`
 	ScopeID   string `json:"scope_id,omitempty"`

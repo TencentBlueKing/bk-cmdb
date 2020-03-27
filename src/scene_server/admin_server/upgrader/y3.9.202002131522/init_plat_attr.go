@@ -36,7 +36,7 @@ func initPlatAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 		{ObjectID: objID, PropertyID: "bk_vpc_id", PropertyName: "VPC唯一标识", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		{ObjectID: objID, PropertyID: "bk_vpc_name", PropertyName: "VPC名称", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		{ObjectID: objID, PropertyID: "bk_account_id", PropertyName: "云账户ID", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: ""},
-		{ObjectID: objID, PropertyID: "bk_region", PropertyName: "VPC所属区域", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
+		{ObjectID: objID, PropertyID: "bk_region", PropertyName: "VPC所属地域", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		{ObjectID: objID, PropertyID: "bk_creator", PropertyName: "创建者", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		{ObjectID: objID, PropertyID: "bk_last_editor", PropertyName: "最后修改人", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 	}

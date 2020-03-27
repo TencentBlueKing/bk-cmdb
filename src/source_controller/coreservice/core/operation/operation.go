@@ -47,7 +47,7 @@ func (m *operationManager) SearchInstCount(kit *rest.Kit, inputParam map[string]
 	return count, nil
 }
 
-func (m *operationManager) SearchChartDataCommon(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) SearchChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
 	switch inputParam.ReportType {
 	case common.HostCloudChart:
 		data, err := m.HostCloudChartData(kit, inputParam)

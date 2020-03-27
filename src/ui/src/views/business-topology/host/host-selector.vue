@@ -33,7 +33,7 @@
                             <span class="repeat-row" v-if="repeatSelected.includes(row)">{{$t('IP重复')}}</span>
                         </template>
                     </bk-table-column>
-                    <bk-table-column :label="$t('云区域')">
+                    <bk-table-column :label="$t('云区域')" show-overflow-tooltip>
                         <template slot-scope="{ row }">{{row.host.bk_cloud_id | foreignkey}}</template>
                     </bk-table-column>
                     <bk-table-column :label="$t('操作')">

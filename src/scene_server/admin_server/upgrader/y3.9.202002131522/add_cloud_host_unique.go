@@ -26,7 +26,7 @@ func addHostOuterIPUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	// find bk_cloud_inst_id property's id
 	attrCond := condition.CreateCondition()
 	attrCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
-	attrCond.Field(common.BKPropertyIDField).Eq("bk_cloud_inst_id")
+	attrCond.Field(common.BKPropertyIDField).Eq(common.BKCloudInstIDField)
 	attrCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
 	attr := new(metadata.Attribute)
 	err := db.Table(common.BKTableNameObjAttDes).Find(attrCond.ToMapStr()).One(ctx, attr)

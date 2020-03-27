@@ -243,41 +243,20 @@ const (
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
 
+	// BKCloudInstIDField the cloud instance id field
+	BKCloudInstIDField = "bk_cloud_inst_id"
+
+	// BKCloudHostStatusField the cloud host status field
+	BKCloudHostStatusField = "bk_cloud_host_status"
+
 	// TimeTransferModel the time transferModel field
 	TimeTransferModel = "2006-01-02 15:04:05"
-
-	// BKLastTimeCloudSync the last time cloud sync
-	BKLastTimeCloudSync = "bk_last_sync_time"
 
 	// BKCloudTaskID the cloud sync task id
 	BKCloudTaskID = "bk_task_id"
 
-	// BKSyncStatus the cloud sync status
-	BKSyncStatus = "bk_sync_status"
-
 	// BKNewAddHost the cloud sync new add hosts
 	BKNewAddHost = "new_add"
-
-	// BKAttrChangedHost the cloud sync attr changed hosts
-	BKAttrChangedHost = "attr_changed"
-
-	// BKCloudConfirm whether new add cloud hosts need confirm
-	BKCloudConfirm = "bk_confirm"
-
-	// BKAttrConfirm the cloud hosts attr changed need confirm
-	BKAttrConfirm = "bk_attr_confirm"
-
-	// BKCloudSyncTaskName the cloud sync task name field
-	BKCloudSyncTaskName = "bk_task_name"
-
-	// BKCloudAccountType the cloud account type field
-	BKCloudAccountType = "bk_account_type"
-
-	// BKCloudSyncAccountAdmin the cloud sync account admin
-	BKCloudSyncAccountAdmin = "bk_account_admin"
-
-	// BKResourceType the cloud sync resource type
-	BKResourceType = "bk_resource_type"
 
 	// BKImportFrom the host import from field
 	BKImportFrom = "import_from"
@@ -890,7 +869,7 @@ const (
 	BKHTTPCookieLanugageKey = "blueking_language"
 	//BKSessionLanugageKey = "language"
 	BKHTTPSupplierID = "bk_supplier_id"
-	BKHTTPRequestAppCode = "req_app_code"
+	BKHTTPRequestAppCode = "Bk-App-Code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
@@ -1160,7 +1139,19 @@ const (
 
 // cloud sync const
 const (
-	BKCloudAccountIDField = "bk_account_id"
-	BKCloudAccountName = "bk_account_name"
-	BKCloudVendor = "bk_cloud_vendor"
+	BKCloudAccountID             = "bk_account_id"
+	BKCloudAccountName           = "bk_account_name"
+	BKCloudVendor                = "bk_cloud_vendor"
+	BKCloudSyncTaskName          = "bk_task_name"
+	BKCloudSyncTaskID            = "bk_task_id"
+	BKCloudSyncStatus            = "bk_sync_status"
+	BKCloudSyncStatusDescription = "bk_status_description"
+	BKCloudLastSyncTime          = "bk_last_sync_time"
+	BKCreator                    = "bk_creator"
+	BKStatus                     = "bk_status"
+	BKLastEditor                 = "bk_last_editor"
+	BKSecretID                   = "bk_secret_id"
+	BKVpcID                      = "bk_vpc_id"
+	BKVpcName                    = "bk_vpc_name"
+	BKReion                      = "bk_region"
 )

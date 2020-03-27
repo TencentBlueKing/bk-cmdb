@@ -19,7 +19,9 @@ import (
 	"time"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/storage/stream/types"
+	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -144,14 +146,19 @@ func (e *Event) lister(ctx context.Context, cnt int64, opts *types.ListWatchOpti
 					e.database, opts.Collection, err)
 
 				reset()
-				cursor.Close(context.Background())
+				cursor.Close(ctx)
 				goto retry
 			}
 
+			byt, _ := json.Marshal(result.Addr().Interface())
+			oid := gjson.GetBytes(byt, "_id").String()
+
 			// send the event now
 			ch <- &types.Event{
+				Oid:           oid,
 				Document:      result.Interface(),
 				OperationType: types.Lister,
+				DocBytes:      byt,
 			}
 		}
 
@@ -159,10 +166,10 @@ func (e *Event) lister(ctx context.Context, cnt int64, opts *types.ListWatchOpti
 			blog.Errorf("list watch operation, but list db: %s, collection: %s with cursor failed, will *retry later*, err: %v",
 				e.database, opts.Collection, err)
 			reset()
-			cursor.Close(context.Background())
+			cursor.Close(ctx)
 			goto retry
 		}
-		cursor.Close(context.Background())
+		cursor.Close(ctx)
 	}
 
 }
