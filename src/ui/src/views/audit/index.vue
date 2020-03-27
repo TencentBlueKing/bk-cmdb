@@ -246,7 +246,6 @@
                     id: 'set',
                     name: '集群'
                 }]
-                console.log(this.actionList)
                 this.actionList.forEach(item => {
                     if (item.id === 'biz_topology') {
                         list.push(...topoOperation)
@@ -272,7 +271,6 @@
                 operations.forEach(action => {
                     actionSet[action.id] = this.$t(action.name)
                 })
-                console.log(actionSet)
                 return actionSet
             },
             params () {
@@ -349,7 +347,6 @@
                 return (row.basic_detail && row.basic_detail.resource_name) || '--'
             },
             getResourceAction (row) {
-                console.log(row)
                 if (row.label) {
                     const label = Object.keys(row.label)[0]
                     return this.actionSet[`${row.resource_type}-${row.action}-${label}`]

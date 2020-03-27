@@ -120,7 +120,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -170,7 +170,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -387,6 +387,8 @@ const (
 
 	// host related operation type
 	HostRes ResourceType = "host"
+
+	ResourceDirRes ResourceType = "resource_directory"
 )
 
 type OperateFromType string

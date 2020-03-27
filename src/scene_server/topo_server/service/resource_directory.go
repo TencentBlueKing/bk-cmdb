@@ -96,8 +96,8 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	auditLog := metadata.AuditLog{
-		AuditType:    metadata.BusinessResourceType,
-		ResourceType: metadata.ModuleRes,
+		AuditType:    metadata.ModelInstanceType,
+		ResourceType: metadata.ResourceDirRes,
 		Action:       metadata.AuditCreate,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
@@ -272,8 +272,8 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 	auditLog := metadata.AuditLog{
-		AuditType:    metadata.BusinessResourceType,
-		ResourceType: metadata.ModuleRes,
+		AuditType:    metadata.ModelInstanceType,
+		ResourceType: metadata.ResourceDirRes,
 		Action:       metadata.AuditUpdate,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
@@ -487,8 +487,8 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 	auditLog := metadata.AuditLog{
-		AuditType:    metadata.BusinessResourceType,
-		ResourceType: metadata.ModuleRes,
+		AuditType:    metadata.ModelInstanceType,
+		ResourceType: metadata.ResourceDirRes,
 		Action:       metadata.AuditDelete,
 		OperationDetail: &metadata.InstanceOpDetail{
 			BasicOpDetail: metadata.BasicOpDetail{
