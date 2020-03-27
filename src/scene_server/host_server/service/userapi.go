@@ -126,7 +126,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 
 	id := req.PathParameter("id")
 	if err := s.AuthManager.UpdateRegisteredDynamicGroupByID(srvData.ctx, srvData.header, id); err != nil {
-		blog.Errorf("UpdateRegisteredDynamicGroupByID failed, dynamicgroupid:%d, err:%+v, rid:%s", id, err, srvData.rid)
+		blog.Errorf("UpdateRegisteredDynamicGroupByID failed, dynamicgroupid: %s, err:%+v, rid:%s", id, err, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
