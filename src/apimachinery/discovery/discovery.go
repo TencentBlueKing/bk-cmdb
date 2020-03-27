@@ -45,7 +45,10 @@ type DiscoveryInterface interface {
 }
 
 type Interface interface {
+	// 获取注册在zk上的所有服务节点
 	GetServers() ([]string, error)
+	// 最新的服务节点信息存放在该channel里，可被用来消费，以监听服务节点的变化
+	GetServersChan() chan []string
 }
 
 // NewServiceDiscovery new a simple discovery module which can be used to get alive server address

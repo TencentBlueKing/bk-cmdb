@@ -34,20 +34,10 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 
 	var pass bool
 	var err error
-	switch account.CloudVendor {
-	case metadata.AWS:
-		pass, err = s.Logics.AwsAccountVerify(ctx.Kit, account.SecretID, account.SecretKey)
-		if err != nil {
-			blog.ErrorJSON("aws cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
-		}
-	case metadata.TencentCloud:
-		pass, err = s.Logics.TecentCloudVerify(ctx.Kit, account.SecretID, account.SecretKey)
-		if err != nil {
-			blog.ErrorJSON("tencent cloud account verify failed, err :%v, rid: %s", err, ctx.Kit.Rid)
-		}
-	default:
-		ctx.RespErrorCodeOnly(common.CCErrCloudVendorNotSupport, "VerifyConnectivity failed, not support cloud vendor: %v", account.CloudVendor)
-		return
+	conf := metadata.CloudAccountConf{VendorName: account.CloudVendor, SecretID: account.SecretID, SecretKey: account.SecretKey}
+	pass, err = s.Logics.AccountVerify(conf)
+	if err != nil {
+		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err, ctx.Kit.Rid)
 	}
 
 	rData := mapstr.MapStr{
@@ -76,12 +66,23 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 		return
 	}
 
+	// add auditLog
+	auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+	if err := auditLog.WithCurrent(ctx.Kit, res.AccountID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(res)
 }
 
 // 查询云账户
 func (s *Service) SearchAccount(ctx *rest.Contexts) {
-	option := metadata.SearchCloudAccountOption{}
+	option := metadata.SearchCloudOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -91,15 +92,14 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 	if option.Page.Limit == 0 {
 		option.Page.Limit = common.BKDefaultLimit
 	}
+	if option.Page.IsIllegal() {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
 
 	// set default sort
 	if option.Page.Sort == "" {
 		option.Page.Sort = "-" + common.CreateTimeField
-	}
-
-	if option.Page.IsIllegal() {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
-		return
 	}
 
 	// if not exact search, change the string query to regexp
@@ -127,10 +127,17 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 // 更新云账户
 func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 	//get accountID
-	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
+	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountID))
+		return
+	}
+
+	// auditLog preData
+	auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+	if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -139,9 +146,18 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	err = s.CoreAPI.CoreService().Cloud().UpdateAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID, option)
 	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// add auditLog
+	if err := auditLog.WithCurrent(ctx.Kit, accountID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -152,15 +168,26 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 // 删除云账户
 func (s *Service) DeleteAccount(ctx *rest.Contexts) {
 	//get accountID
-	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountIDField)
+	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudAccountID))
 		return
 	}
 
+	// add auditLog
+	auditLog := s.Logics.NewAccountAuditLog(ctx.Kit, ctx.Kit.SupplierAccount)
+	if err := auditLog.WithPrevious(ctx.Kit, accountID); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 	err = s.CoreAPI.CoreService().Cloud().DeleteAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID)
 	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := auditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

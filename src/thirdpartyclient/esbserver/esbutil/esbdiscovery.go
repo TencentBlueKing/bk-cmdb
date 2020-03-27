@@ -67,6 +67,10 @@ func (esb *EsbConfigSrv) GetServers() ([]string, error) {
 	return []string{esb.addrs}, nil
 }
 
+func (esb *EsbConfigSrv) GetServersChan() chan []string {
+	return nil
+}
+
 func (esb *EsbConfigSrv) GetConfig() EsbConfig {
 	esb.RLock()
 	defer esb.RUnlock()

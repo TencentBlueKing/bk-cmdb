@@ -42,6 +42,9 @@ type Reflector struct {
 }
 
 func (r *Reflector) Watcher(ctx context.Context, opts *types.WatchOptions, cap *Capable) error {
+	if cap == nil {
+		return errors.New("invalid Capable value, must be a pointer and not nil")
+	}
 	if cap.OnChange.OnAdd == nil || cap.OnChange.OnUpdate == nil || cap.OnChange.OnDelete == nil {
 		return errors.New("invalid Capable value")
 	}
@@ -60,6 +63,9 @@ func (r *Reflector) Watcher(ctx context.Context, opts *types.WatchOptions, cap *
 }
 
 func (r *Reflector) ListWatcher(ctx context.Context, opts *types.ListWatchOptions, cap *Capable) error {
+	if cap == nil {
+		return errors.New("invalid Capable value, must be a pointer and not nil")
+	}
 	if cap.OnChange.OnLister == nil || cap.OnChange.OnAdd == nil ||
 		cap.OnChange.OnUpdate == nil || cap.OnChange.OnDelete == nil {
 		return errors.New("invalid Capable value")
