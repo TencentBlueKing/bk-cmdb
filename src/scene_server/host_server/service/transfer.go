@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -23,7 +24,6 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
 	"github.com/emicklei/go-restful"
 )
 
@@ -87,12 +87,36 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 		}
 	}
 
-	transferPlans, err := s.generateTransferPlans(srvData, bizID, option)
+	transferPlans, err := s.generateTransferPlans(srvData, bizID, false, option)
 	if err != nil {
 		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, generateTransferPlans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
 	}
+
+	err = s.removeServiceInstanceRelatedResource(srvData, transferPlans, bizID)
+	if err != nil {
+		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, delete service instance failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		return
+	}
+
+	// get service instance modules
+	moduleIDs := make([]int64, 0)
+	for _, item := range option.Options.ServiceInstanceOptions {
+		moduleIDs = append(moduleIDs, item.ModuleID)
+	}
+	modules, err := s.getModules(srvData, bizID, moduleIDs)
+	if err != nil {
+		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance, get modules failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+		return
+	}
+	moduleMap := make(map[int64]int64)
+	for _, mod := range modules {
+		moduleMap[mod.ModuleID] = mod.ServiceTemplateID
+	}
+
 	type HostTransferResult struct {
 		HostID  int64  `json:"bk_host_id"`
 		Code    int    `json:"code"`
@@ -100,33 +124,46 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 	}
 	transferResult := make([]HostTransferResult, 0)
 	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 300)
 	for _, plan := range transferPlans {
-		ccErr := s.runTransferPlans(srvData, bizID, plan)
-		hostTransferResult := HostTransferResult{
-			HostID: plan.HostID,
-		}
-		if ccErr == nil {
-			// create or update related service instance
-			for _, item := range option.Options.ServiceInstanceOptions {
-				if item.HostID != plan.HostID {
-					continue
-				}
-				if util.InArray(item.ModuleID, plan.FinalModules) == false {
-					continue
-				}
-				if ccErr = s.createOrUpdateServiceInstance(srvData, bizID, plan.HostID, item); ccErr != nil {
-					break
+		pipeline <- true
+		go func(plan metadata.HostTransferPlan) {
+			ccErr := s.runTransferPlans(srvData, bizID, plan)
+			hostTransferResult := HostTransferResult{
+				HostID: plan.HostID,
+			}
+			if ccErr == nil {
+				// create or update related service instance
+				for _, item := range option.Options.ServiceInstanceOptions {
+					if item.HostID != plan.HostID {
+						continue
+					}
+					if util.InArray(item.ModuleID, plan.FinalModules) == false {
+						continue
+					}
+					serviceTemplateID, exist := moduleMap[item.ModuleID]
+					if !exist {
+						blog.ErrorJSON("TransferHostWithAutoClearServiceInstance, but can not find module: %d, bizID: %s, option: %s, err: %s, rid: %s", item.ModuleID, bizID, option, err.Error(), srvData.rid)
+						ccErr = errors.New(common.CCErrCommParamsInvalid, fmt.Sprintf("module %d not exist", item.ModuleID))
+						break
+					}
+					if ccErr = s.createOrUpdateServiceInstance(srvData, bizID, plan.HostID, serviceTemplateID, item); ccErr != nil {
+						break
+					}
 				}
 			}
-		}
-		if ccErr != nil {
-			hostTransferResult.Code = ccErr.GetCode()
-			hostTransferResult.Message = ccErr.Error()
-			if firstErr == nil {
-				firstErr = ccErr
+
+			if ccErr != nil {
+				hostTransferResult.Code = ccErr.GetCode()
+				hostTransferResult.Message = ccErr.Error()
+				if firstErr == nil {
+					firstErr = ccErr
+				}
 			}
-		}
-		transferResult = append(transferResult, hostTransferResult)
+			transferResult = append(transferResult, hostTransferResult)
+			<-pipeline
+		}(plan)
+
 	}
 	if firstErr != nil {
 		response := metadata.Response{
@@ -149,15 +186,10 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 	return
 }
 
-func (s *Service) createOrUpdateServiceInstance(srvData *srvComm, bizID int64, hostID int64, serviceInstanceOption metadata.CreateServiceInstanceOption) errors.CCErrorCoder {
+func (s *Service) createOrUpdateServiceInstance(srvData *srvComm, bizID int64, hostID int64, svcTemplateID int64, serviceInstanceOption metadata.CreateServiceInstanceOption) errors.CCErrorCoder {
 	rid := srvData.rid
-	module, err := s.getModule(srvData, bizID, serviceInstanceOption.ModuleID)
-	if err != nil {
-		blog.Errorf("createOrUpdateServiceInstance failed, get module failed, bizID: %d, moduleID: %d, err: %s, rid: %s",
-			bizID, module, err.Error(), rid)
-		return err
-	}
-	if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
+
+	if svcTemplateID == common.ServiceTemplateIDNotSet {
 		input := map[string]interface{}{
 			common.BKAppIDField: bizID,
 			"bk_module_id":      serviceInstanceOption.ModuleID,
@@ -227,23 +259,83 @@ func (s *Service) createOrUpdateServiceInstance(srvData *srvComm, bizID int64, h
 
 func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan metadata.HostTransferPlan) errors.CCErrorCoder {
 	rid := srvData.rid
+	// step3 transfer host
+	var transferHostResult *metadata.OperaterException
+	var err error
+	var option interface{}
+	if transferPlan.IsTransferToInnerModule == true {
+		transferOption := &metadata.TransferHostToInnerModule{
+			ApplicationID: bizID,
+			HostID:        []int64{transferPlan.HostID},
+			ModuleID:      transferPlan.FinalModules[0],
+		}
+		option = transferOption
+		transferHostResult, err = s.CoreAPI.CoreService().Host().TransferToInnerModule(srvData.ctx, srvData.header, transferOption)
+	} else {
+		transferOption := &metadata.HostsModuleRelation{
+			ApplicationID: bizID,
+			HostID:        []int64{transferPlan.HostID},
+			ModuleID:      transferPlan.FinalModules,
+			IsIncrement:   false,
+		}
+		option = transferOption
+		transferHostResult, err = s.CoreAPI.CoreService().Host().TransferToNormalModule(srvData.ctx, srvData.header, transferOption)
+	}
+	if err != nil {
+		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
+		return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if transferHostResult.Result == false {
+		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, result: %s, rid: %s", option, transferHostResult, rid)
+		return errors.New(transferHostResult.Code, transferHostResult.ErrMsg)
+	}
 
-	// step1 compute to be delete service instances
+	return nil
+}
+
+func (s *Service) removeServiceInstanceRelatedResource(srvData *srvComm, transferPlan []metadata.HostTransferPlan, bizID int64) errors.CCErrorCoder {
+	rid := srvData.rid
+
+	// Step1 calculate to be delete service instances
+	// we list the service instance with host ids in and modules ids in
+	// It's obvious that we may find service instance more than we want,
+	// so we need to remove these later.
+	allHostIDs, allRemovedModuleIDs := make([]int64, 0), make([]int64, 0)
+	allHostIDsMap := make(map[int64]map[int64]bool)
+	for _, plan := range transferPlan {
+		allHostIDs = append(allHostIDs, plan.HostID)
+		if allHostIDsMap[plan.HostID] == nil {
+			allHostIDsMap[plan.HostID] = make(map[int64]bool)
+		}
+		for _, modID := range plan.ToRemoveFromModules {
+			allHostIDsMap[plan.HostID][modID] = true
+		}
+		allRemovedModuleIDs = append(allRemovedModuleIDs, plan.ToRemoveFromModules...)
+	}
+
 	listServiceInstanceOption := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
-		HostIDs:    []int64{transferPlan.HostID},
-		ModuleIDs:  transferPlan.ToRemoveFromModules,
+		HostIDs:    allHostIDs,
+		ModuleIDs:  allRemovedModuleIDs,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 	}
 	serviceInstances, ccErr := s.CoreAPI.CoreService().Process().ListServiceInstance(srvData.ctx, srvData.header, listServiceInstanceOption)
 	if ccErr != nil {
-		blog.ErrorJSON("runTransferPlans failed, ListServiceInstance failed, option: %s, err: %s, rid: %s", listServiceInstanceOption, ccErr.Error(), rid)
+		blog.ErrorJSON("delete service instance, ListServiceInstance failed, option: %s, err: %s, rid: %s", listServiceInstanceOption, ccErr.Error(), rid)
 		return ccErr
 	}
 	serviceInstanceIDs := make([]int64, 0)
 	for _, instance := range serviceInstances.Info {
+		// filter out the real service instance, the others will be ignored.
+		_, exist := allHostIDsMap[instance.HostID][instance.ModuleID]
+		if !exist {
+			// this service instance is not what we need.
+			// it's because this service instance is belong to this host, but do not belongs to
+			// the modules that this host to be removed from
+			continue
+		}
 		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
 	}
 
@@ -308,42 +400,10 @@ func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan m
 			return ccErr
 		}
 	}
-
-	// step3 transfer host
-	var transferHostResult *metadata.OperaterException
-	var err error
-	var option interface{}
-	if transferPlan.IsTransferToInnerModule == true {
-		transferOption := &metadata.TransferHostToInnerModule{
-			ApplicationID: bizID,
-			HostID:        []int64{transferPlan.HostID},
-			ModuleID:      transferPlan.FinalModules[0],
-		}
-		option = transferOption
-		transferHostResult, err = s.CoreAPI.CoreService().Host().TransferToInnerModule(srvData.ctx, srvData.header, transferOption)
-	} else {
-		transferOption := &metadata.HostsModuleRelation{
-			ApplicationID: bizID,
-			HostID:        []int64{transferPlan.HostID},
-			ModuleID:      transferPlan.FinalModules,
-			IsIncrement:   false,
-		}
-		option = transferOption
-		transferHostResult, err = s.CoreAPI.CoreService().Host().TransferToNormalModule(srvData.ctx, srvData.header, transferOption)
-	}
-	if err != nil {
-		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, err: %s, rid: %s", option, err.Error(), rid)
-		return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if transferHostResult.Result == false {
-		blog.ErrorJSON("runTransferPlans failed, transfer hosts failed, option: %s, result: %s, rid: %s", option, transferHostResult, rid)
-		return errors.New(transferHostResult.Code, transferHostResult.ErrMsg)
-	}
-
 	return nil
 }
 
-func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option metadata.TransferHostWithAutoClearServiceInstanceOption) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
+func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, withHostApply bool, option metadata.TransferHostWithAutoClearServiceInstanceOption) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
 	rid := srvData.rid
 
 	// step1. resolve host remove from modules
@@ -432,6 +492,11 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, option me
 			}
 		}
 		transferPlans = append(transferPlans, transferPlan)
+	}
+
+	// if do not need host apply, then return directly.
+	if !withHostApply {
+		return transferPlans, nil
 	}
 
 	// generate host apply plans
@@ -726,7 +791,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstancePreview(req *restful.R
 		}
 	}
 
-	transferPlans, ccErr := s.generateTransferPlans(srvData, bizID, option)
+	transferPlans, ccErr := s.generateTransferPlans(srvData, bizID, true, option)
 	if ccErr != nil {
 		blog.ErrorJSON("TransferHostWithAutoClearServiceInstancePreview failed, generateTransferPlans failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, ccErr.Error(), srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: ccErr})
