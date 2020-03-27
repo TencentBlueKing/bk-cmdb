@@ -98,6 +98,11 @@ func (t *genericTransfer) Transfer(ctx core.ContextParams, hostID int64) errors.
 	// must be slice ptr address, Each assignment will change the address
 	defer t.generateEvent(ctx, &originDatas, &curDatas, hostInfo)
 
+	// remove service instance if necessary
+	if err := t.removeHostServiceInstance(ctx, hostID); err != nil {
+		return err
+	}
+
 	originDatas, err = t.delHostModuleRelation(ctx, hostID)
 	if err != nil {
 		// It is not the time to merge and base the time. When it fails,
@@ -454,6 +459,82 @@ func (t *genericTransfer) autoCreateServiceInstance(ctx core.ContextParams, host
 	return nil
 }
 
+// remove service instances bound to hosts with process instances in certain modules
+func (t *genericTransfer) removeHostServiceInstance(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
+	// increment transfer don't need to remove service instance
+	if t.isIncrement {
+		return nil
+	}
+	// get all service instance IDs that need to be removed
+	serviceInstanceFilter := map[string]interface{}{
+		common.BKHostIDField: hostID,
+	}
+	if len(t.moduleIDArr) > 0 {
+		serviceInstanceFilter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBNIN: t.moduleIDArr,
+		}
+	}
+	instances := make([]metadata.ServiceInstance, 0)
+	err := t.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(ctx, &instances)
+	if err != nil {
+		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %s, rid: %s", err, serviceInstanceFilter, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if len(instances) == 0 {
+		return nil
+	}
+	serviceInstanceIDs := make([]int64, 0)
+	for _, instance := range instances {
+		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
+	}
+
+	// get all process IDs of the service instances to be removed
+	processRelationFilter := map[string]interface{}{
+		common.BKServiceInstanceIDField: map[string]interface{}{
+			common.BKDBIN: serviceInstanceIDs,
+		},
+	}
+	relations := make([]metadata.ProcessInstanceRelation, 0)
+	if err := t.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).All(ctx.Context, &relations); nil != err {
+		blog.Errorf("removeHostServiceInstance failed, get process instance relation failed, err: %s, filter: %s, rid: %s", err, processRelationFilter, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	processIDs := make([]int64, 0)
+	for _, relation := range relations {
+		processIDs = append(processIDs, relation.ProcessID)
+	}
+
+	// delete all process relations and instances
+	if len(processIDs) > 0 {
+		if err := t.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(ctx, processRelationFilter); nil != err {
+			blog.Errorf("removeHostServiceInstance failed, delete process instance relation failed, err: %s, filter: %s, rid: %s", err, processRelationFilter, ctx.ReqID)
+			return ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
+		}
+
+		processFilter := map[string]interface{}{
+			common.BKProcessIDField: map[string]interface{}{
+				common.BKDBIN: processIDs,
+			},
+		}
+		if err := t.dbProxy.Table(common.BKTableNameBaseProcess).Delete(ctx, processFilter); nil != err {
+			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %s, rid: %s", err, processFilter, ctx.ReqID)
+			return ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
+		}
+	}
+
+	// delete service instances
+	serviceInstanceIDFilter := map[string]interface{}{
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: serviceInstanceIDs,
+		},
+	}
+	if err := t.dbProxy.Table(common.BKTableNameServiceInstance).Delete(ctx, serviceInstanceIDFilter); nil != err {
+		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %s, rid: %s", err, serviceInstanceIDFilter, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
+	}
+	return nil
+}
+
 // getInnerModuleIDArr get default module
 func (t *genericTransfer) getInnerModuleIDArr(ctx core.ContextParams) errors.CCErrorCoder {
 	bizID := t.bizID
@@ -515,29 +596,6 @@ func (t *genericTransfer) HasInnerModule(ctx core.ContextParams) (bool, error) {
 
 	}
 	return false, nil
-}
-
-// DoTransferToInnerCheck check whether could be transfer to inner module
-func (t *genericTransfer) DoTransferToInnerCheck(ctx core.ContextParams, hostIDs []int64) error {
-	if len(hostIDs) == 0 {
-		return nil
-	}
-
-	// check: 不能有服务实例/进程实例绑定主机实例
-	filter := map[string]interface{}{
-		common.BKHostIDField: map[string][]int64{common.BKDBIN: hostIDs},
-	}
-	var count uint64
-	count, err := t.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context)
-	if err != nil {
-		blog.Errorf("DoTransferToInnerCheck failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-	if count > 0 {
-		return ctx.Error.CCErrorf(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
-	}
-
-	return nil
 }
 
 func (t *genericTransfer) getModuleInfoByModuleID(ctx core.ContextParams, appID int64, moduleID []int64, fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
