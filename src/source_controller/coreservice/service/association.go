@@ -87,7 +87,15 @@ func (s *coreService) SearchAssociationKind(params core.ContextParams, pathParam
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.AssociationOperation().SearchAssociationKind(params, inputData)
+	result, err := s.core.AssociationOperation().SearchAssociationKind(params, inputData)
+	if err != nil {
+		return result, err
+	}
+	// translate
+	for idx := range result.Info {
+		s.TranslateAssociationType(params.Lang, &result.Info[idx])
+	}
+	return result, nil
 }
 
 func (s *coreService) CreateModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -97,6 +105,15 @@ func (s *coreService) CreateModelAssociation(params core.ContextParams, pathPara
 		return nil, err
 	}
 	return s.core.AssociationOperation().CreateModelAssociation(params, inputData)
+}
+
+func (s *coreService) CreateMainlineModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.CreateModelAssociation{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().CreateMainlineModelAssociation(params, inputData)
 }
 
 func (s *coreService) SetModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

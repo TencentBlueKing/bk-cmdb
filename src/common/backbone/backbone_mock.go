@@ -27,10 +27,6 @@ func NewMockBackbone(c *Config) (*Engine, error) {
 		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),
 	}
 
-	if err := ListenServer(c.Server); err != nil {
-		return nil, err
-	}
-
 	return engine, nil
 }
 
@@ -45,5 +41,13 @@ func (*mockDisc) Stop() error {
 }
 
 func (*mockDisc) Register(path string, c types.ServerInfo) error {
+	return nil
+}
+
+func (*mockDisc) Cancel() {
+
+}
+
+func (*mockDisc) ClearRegisterPath() error {
 	return nil
 }

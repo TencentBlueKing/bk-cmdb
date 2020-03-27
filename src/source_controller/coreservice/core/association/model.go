@@ -27,6 +27,21 @@ type associationModel struct {
 }
 
 func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
+	enableMainlineAssociationType := false
+	return m.createModelAssociation(ctx, inputParam, enableMainlineAssociationType)
+}
+
+// CreateMainlineModelAssociation used for create association of type bk_mainline, as it can only create by special method,
+// for example add a level to business modle
+func (m *associationModel) CreateMainlineModelAssociation(ctx core.ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
+	enableMainlineAssociationType := true
+	return m.createModelAssociation(ctx, inputParam, enableMainlineAssociationType)
+}
+
+func (m *associationModel) createModelAssociation(ctx core.ContextParams, inputParam metadata.CreateModelAssociation, enableMainlineAssociationType bool) (*metadata.CreateOneDataResult, error) {
+	// enableMainlineAssociationType used for distinguish two creation mode
+	// when enableMainlineAssociationType enabled, only bk_mainline type could be create
+	// when enableMainlineAssociationType disabled, all type except bk_mainline could be create
 
 	inputParam.Spec.OwnerID = ctx.SupplierAccount
 	if err := m.isValid(ctx, inputParam); nil != err {
@@ -42,10 +57,10 @@ func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputP
 	}
 	if exists {
 		blog.Warnf("request(%s): it is failed create a new association, because of the association ID (%s) is exists", ctx.ReqID, inputParam.Spec.AsstKindID)
-		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.AssociationName)
 	}
 
-	exists, err = m.isExistsAssociationObjectWithAnotherObject(ctx, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
+	exists, err = m.isExistsAssociationObjectWithAnotherObject(ctx, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, inputParam.Spec.AsstKindID)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to create a new association, because of it is failed to check if the association (%s=>%s) is exists, error info is %s", ctx.ReqID, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, err.Error())
 		return &metadata.CreateOneDataResult{}, err
@@ -53,6 +68,21 @@ func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputP
 	if exists {
 		blog.Warnf("request(%s): it is failed to create a new association, because of it (%s=>%s) is exists", ctx.ReqID, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
 		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrTopoAssociationAlreadyExist, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
+	}
+
+	asstKindID := inputParam.Spec.AsstKindID
+	if enableMainlineAssociationType == false {
+		// AsstKindID shouldn't be use bk_mainline
+		if asstKindID == common.AssociationKindMainline {
+			blog.Errorf("use inner association type: %v is forbidden, rid: %s", common.AssociationKindMainline, ctx.ReqID)
+			return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrorTopoAssociationKindMainlineUnavailable, asstKindID)
+		}
+	} else {
+		// AsstKindID could only be bk_mainline
+		if asstKindID != common.AssociationKindMainline {
+			blog.Errorf("use CreateMainlineObjectAssociation method but bk_asst_id is: %s, rid: %s", asstKindID, ctx.ReqID)
+			return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrorTopoAssociationKindInconsistent, asstKindID)
+		}
 	}
 
 	id, err := m.save(ctx, &inputParam.Spec)
@@ -84,7 +114,24 @@ func (m *associationModel) UpdateModelAssociation(ctx core.ContextParams, inputP
 		return &metadata.UpdatedCount{}, ctx.Error.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
-	cnt, err := m.update(ctx, inputParam.Data, updateCond)
+	// only field in white list could be update
+	// bk_asst_obj_id is allowed for add business model level
+	validFields := []string{"bk_obj_asst_name", "bk_asst_obj_id"}
+	validData := map[string]interface{}{}
+	filterOutFields := []string{}
+	for key, val := range inputParam.Data {
+		if isValidField := util.Contains(validFields, key); isValidField == false {
+			filterOutFields = append(filterOutFields, key)
+			continue
+		}
+		validData[key] = val
+	}
+
+	if len(filterOutFields) > 0 {
+		blog.Warnf("update object association got invalid fields: %v, rid: %s", filterOutFields, ctx.ReqID)
+	}
+
+	cnt, err := m.update(ctx, validData, updateCond)
 	if nil != err {
 		blog.Errorf("request(%s): it is to update the association by the condition (%#v), error info is %s", ctx.ReqID, updateCond.ToMapStr(), err.Error())
 		return &metadata.UpdatedCount{}, err

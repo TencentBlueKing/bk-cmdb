@@ -20,10 +20,10 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (g *modelAttributeGroup) count(ctx core.ContextParams, cond universalsql.Condition) (cnt int64, err error) {
+func (g *modelAttributeGroup) count(ctx core.ContextParams, cond universalsql.Condition) (count int64, err error) {
 
-	icnt, err := g.dbProxy.Table(common.BKTableNamePropertyGroup).Find(cond.ToMapStr()).Count(ctx)
-	return int64(icnt), err
+	iCount, err := g.dbProxy.Table(common.BKTableNamePropertyGroup).Find(cond.ToMapStr()).Count(ctx)
+	return int64(iCount), err
 }
 
 func (g *modelAttributeGroup) save(ctx core.ContextParams, group metadata.Group) (uint64, error) {
@@ -53,7 +53,7 @@ func (g *modelAttributeGroup) delete(ctx core.ContextParams, cond universalsql.C
 
 func (g *modelAttributeGroup) search(ctx core.ContextParams, cond universalsql.Condition) ([]metadata.Group, error) {
 
-	dataResult := []metadata.Group{}
+	dataResult := make([]metadata.Group, 0)
 	err := g.dbProxy.Table(common.BKTableNamePropertyGroup).Find(cond.ToMapStr()).All(ctx, &dataResult)
 	return dataResult, err
 }

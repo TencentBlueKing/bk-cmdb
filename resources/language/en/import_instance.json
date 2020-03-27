@@ -16,6 +16,8 @@
     "excel_association_dst_inst": "target instance",
     "import_association_id_not_found": "The association [%s]  does not exist",
     "import_association_operate_not_found":"operate not found",
+    "import_host_hostID_not_int":"the value of the hostID is not a numeric type",
+    "import_host_cloudID_invalid":"the value of the cloudID is invalid",
 
     "": ""
 }

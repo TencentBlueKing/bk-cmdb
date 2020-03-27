@@ -32,11 +32,11 @@ func (lgc *Logics) IsPlatExist(ctx context.Context, cond mapstr.MapStr) (bool, e
 
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDPlat, query)
 	if err != nil {
-		blog.Errorf("IsPlatExist http do error, err:%s, cond:%+v,rid:%s", err.Error(), cond, lgc.rid)
+		blog.Errorf("IsPlatExist http do error, err:%s, cond:%#v,rid:%s", err.Error(), cond, lgc.rid)
 		return false, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("IsPlatExist http response error, err:%s, cond:%+v,rid:%s", err.Error(), cond, lgc.rid)
+		blog.Errorf("IsPlatExist http response error, err code:%d, err msg:%s, cond:%#v,rid:%s", result.Code, result.ErrMsg, cond, lgc.rid)
 		return false, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 

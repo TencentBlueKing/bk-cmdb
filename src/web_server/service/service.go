@@ -14,12 +14,9 @@ package service
 
 import (
 	"plugin"
-	"strings"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
@@ -29,7 +26,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
@@ -38,39 +35,25 @@ type Service struct {
 	Engine   *backbone.Engine
 	CacheCli *redis.Client
 	*logics.Logics
-	Disc   discovery.DiscoveryInterface
-	Config options.Config
+	Config  *options.Config
+	Session sessions.RedisStore
 }
 
 func (s *Service) WebService() *gin.Engine {
 	ws := gin.Default()
 
-	var store sessions.RedisStore
-	var redisErr error
-	if 0 == len(s.Config.Session.Address) {
-		address := s.Config.Session.Host + ":" + s.Config.Session.Port
-		store, redisErr = sessions.NewRedisStore(10, "tcp", address, s.Config.Session.Secret, []byte("secret"))
-		if redisErr != nil {
-			blog.Fatal("failed to create new redis store, error info is %v", redisErr)
-		}
-	} else {
-		address := strings.Split(s.Config.Session.Address, ";")
-		store, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, s.Config.Session.MasterName, "tcp", s.Config.Session.Secret, []byte("secret"))
-		if redisErr != nil {
-			blog.Fatal("failed to create new redis store, error info is %v", redisErr)
-		}
-	}
-
-	ws.Use(sessions.Sessions(s.Config.Session.Name, store))
+	ws.Use(middleware.RequestIDMiddleware)
+	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
+	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
 	middleware.Engine = s.Engine
-	ws.Use(middleware.ValidLogin(s.Config, s.Disc))
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
 	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot + "/index.html")
 
 	ws.POST("/hosts/import", s.ImportHost)
 	ws.POST("/hosts/export", s.ExportHost)
-	ws.GET("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
+	ws.GET("/hosts/:bk_host_id/listen_ip_options", s.ListenIPOptions)
+	ws.POST("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportInst)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportInst)
 	ws.POST("/logout", s.LogOutUser)
@@ -78,11 +61,21 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportObject)
 	ws.GET("/user/list", s.GetUserList)
 	ws.GET("/user/language/:language", s.UpdateUserLanguage)
+	// get current login user info
 	ws.GET("/userinfo", s.UserInfo)
 	ws.PUT("/user/current/supplier/:id", s.UpdateSupplier)
+	ws.POST("/biz/search/web", s.SearchBusiness)
 
 	ws.GET("/healthz", s.Healthz)
 	ws.GET("/", s.Index)
+
+	ws.POST("/netdevice/import", s.ImportNetDevice)
+	ws.POST("/netdevice/export", s.ExportNetDevice)
+	ws.GET("/netcollect/importtemplate/netdevice", s.BuildDownLoadNetDeviceExcelTemplate)
+	ws.POST("/netproperty/import", s.ImportNetProperty)
+	ws.POST("/netproperty/export", s.ExportNetProperty)
+	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
+
 	return ws
 }
 

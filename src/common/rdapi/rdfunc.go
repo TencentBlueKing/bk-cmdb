@@ -17,145 +17,24 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime/debug"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
-
-var (
-	srvNames map[string]int = make(map[string]int) // servername mapping
-)
-
-type addrSrv interface {
-	GetServer(servType string) (string, error)
-}
-
-func GetRdAddrSrvHandle(typeSrv string, addrSrv api.AddrSrv) func() string {
-	srvNames[typeSrv] = 1
-	return func() string {
-		url, err := addrSrv.GetServer(typeSrv)
-		blog.V(3).Infof("GetRdAddrSrvHandle  get %s url:%s", typeSrv, url)
-		if nil != err {
-			blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
-			return ""
-		}
-		if "" == url {
-			blog.Errorf("get %s addr from service discovery module,no available service found", typeSrv)
-			return ""
-		}
-		return url
-	}
-
-}
-
-func FilterRdAddrSrv(typeSrv string) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-	srvNames[typeSrv] = 1
-	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		cli := api.NewAPIResource()
-
-		url, err := cli.AddrSrv.GetServer(typeSrv)
-		language := util.GetActionLanguage(req)
-		if nil == cli.Error {
-			rsp, _ := createAPIRspStr(common.CCErrCommConfMissItem, "config file is missing err item")
-			io.WriteString(resp, rsp)
-			return
-		}
-		blog.V(3).Infof("FilterRdAddrSrv %s url:%s", typeSrv, url)
-
-		defErr := cli.Error.CreateDefaultCCErrorIf(language)
-		if nil != err {
-			blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
-			resp.WriteHeader(http.StatusInternalServerError)
-			rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-			if nil != rsperr {
-				blog.Errorf("create response failed, error information is %v", rsperr)
-			} else {
-				// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-				io.WriteString(resp, rsp)
-			}
-			return
-
-		} else if "" == url {
-			blog.Errorf("get %s addr from service discovery module,no available service found", typeSrv)
-			resp.WriteHeader(http.StatusInternalServerError)
-			rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-			if nil != rsperr {
-				blog.Errorf("create response failed, error information is %v", rsperr)
-			} else {
-				// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-				io.WriteString(resp, rsp)
-			}
-			return
-		}
-		fchain.ProcessFilter(req, resp)
-		return
-	}
-}
-
-func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-	for _, typeSrv := range typeSrvs {
-		srvNames[typeSrv] = 1
-	}
-
-	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		cli := api.NewAPIResource()
-		language := util.GetActionLanguage(req)
-		if nil == cli.Error {
-			rsp, _ := createAPIRspStr(common.CCErrCommConfMissItem, "config file is missing err item")
-			io.WriteString(resp, rsp)
-			return
-		}
-		defErr := cli.Error.CreateDefaultCCErrorIf(language)
-
-		for _, typeSrv := range typeSrvs {
-			url, err := cli.AddrSrv.GetServer(typeSrv)
-			blog.V(3).Infof("FilterRdAddrSrv %s url:%s", typeSrv, url)
-			if nil != err {
-				blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
-				resp.WriteHeader(http.StatusInternalServerError)
-				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-				if nil != rsperr {
-					blog.Errorf("create response failed, error information is %v", rsperr)
-				} else {
-					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-					io.WriteString(resp, rsp)
-				}
-				return
-
-			} else if "" == url {
-				blog.Errorf("get %s addr from service discovery module,no available service found", typeSrv)
-				resp.WriteHeader(http.StatusInternalServerError)
-				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-				if nil != rsperr {
-					blog.Errorf("create response failed, error information is %v", rsperr)
-				} else {
-					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-					io.WriteString(resp, rsp)
-				}
-				return
-			}
-		}
-		fchain.ProcessFilter(req, resp)
-
-		return
-	}
-
-}
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
-	util.SetActionOwerIDAndAccount(req)
-	ownerId, user := util.GetActionOnwerIDAndUser(req)
-	if "" == ownerId {
+	util.SetOwnerIDAndAccount(req)
+	if "" == util.GetOwnerID(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
 	}
-	if "" == user {
+	if "" == util.GetUser(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "user").Error()
 	}
 
@@ -165,16 +44,26 @@ func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, s
 
 func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		defer func() {
+			if fetalErr := recover(); fetalErr != nil {
+				rid := util.GetHTTPCCRequestID(req.Request.Header)
+				blog.Errorf("server panic, err:%#v, rid:%s, debug strace:%s", fetalErr, rid, debug.Stack())
+				ccErrTip := errFunc().CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)).Errorf(common.CCErrCommInternalServerError, common.GetIdentification())
+				respErrInfo := &metadata.RespError{Msg: ccErrTip}
+				io.WriteString(resp, respErrInfo.Error())
+			}
+
+		}()
 		generateHttpHeaderRID(req, resp)
 
-		whilteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
-		for _, url := range whilteListSuffix {
+		whiteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
+		for _, url := range whiteListSuffix {
 			if strings.HasSuffix(req.Request.URL.Path, url) {
 				fchain.ProcessFilter(req, resp)
 				return
 			}
 		}
-		language := util.GetActionLanguage(req)
+		language := util.GetLanguage(req.Request.Header)
 		defErr := errFunc().CreateDefaultCCErrorIf(language)
 
 		errNO, errMsg := checkHTTPAuth(req, defErr)
@@ -196,57 +85,12 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 	}
 }
 
-func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+func HTTPRequestIDFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		cli := api.NewAPIResource()
-		language := util.GetActionLanguage(req)
-		if nil == cli.Error {
-			rsp, _ := createAPIRspStr(common.CCErrCommConfMissItem, "config file is missing err item")
-			io.WriteString(resp, rsp)
-			return
-		}
-		defErr := cli.Error.CreateDefaultCCErrorIf(language)
-
-		errNO, errMsg := checkHTTPAuth(req, defErr)
-		if common.CCSuccess != errNO {
-			resp.WriteHeader(http.StatusInternalServerError)
-			rsp, _ := createAPIRspStr(errNO, errMsg)
-			io.WriteString(resp, rsp)
-			return
-		}
-
+		generateHttpHeaderRID(req, resp)
 		if 1 < len(fchain.Filters) {
 			fchain.ProcessFilter(req, resp)
 			return
-		}
-
-		for _, typeSrv := range typeSrvs {
-			url, err := cli.AddrSrv.GetServer(typeSrv)
-			blog.V(3).Infof("GlobalFilter %s url:%s", typeSrv, url)
-			if nil != err {
-				blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
-				resp.WriteHeader(http.StatusInternalServerError)
-				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-				if nil != rsperr {
-					blog.Errorf("create response failed, error information is %v", rsperr)
-				} else {
-					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-					io.WriteString(resp, rsp)
-				}
-				return
-
-			} else if "" == url {
-				blog.Errorf("get %s addr from service discovery module,no available service found", typeSrv)
-				resp.WriteHeader(http.StatusInternalServerError)
-				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
-				if nil != rsperr {
-					blog.Errorf("create response failed, error information is %v", rsperr)
-				} else {
-					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
-					io.WriteString(resp, rsp)
-				}
-				return
-			}
 		}
 
 		fchain.ProcessFilter(req, resp)
@@ -274,14 +118,16 @@ func createAPIRspStr(errcode int, info string) (string, error) {
 func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 	cid := util.GetHTTPCCRequestID(req.Request.Header)
 	if "" == cid {
-		cid = getHTTPOtherRequestID(req.Request.Header)
+		cid = GetHTTPOtherRequestID(req.Request.Header)
 		if cid == "" {
 			cid = util.GenerateRID()
+		} else {
+			content, _ := util.PeekRequest(req.Request)
+			blog.Infof("ESB Request: uri: %v, header: %v, body: %s", req.Request.RequestURI, req.Request.Header, content)
 		}
+
 		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
-	// todo support esb request id
-
 	resp.Header().Set(common.BKHTTPCCRequestID, cid)
 }
 
@@ -297,7 +143,6 @@ func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *r
 }
 
 // getHTTPOtherRequestID return other system request id from http header
-func getHTTPOtherRequestID(header http.Header) string {
-	rid := header.Get(common.BKHTTPOtherRequestID)
-	return rid
+func GetHTTPOtherRequestID(header http.Header) string {
+	return header.Get(common.BKHTTPOtherRequestID)
 }

@@ -2,46 +2,48 @@
     <div class="config-layout clearfix">
         <div class="config-wrapper config-unselected fl">
             <div class="wrapper-header unselected-header">
-                <label class="header-label">{{$t("Inst['隐藏属性']")}}</label>
-                <input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter">
+                <bk-input class="header-filter"
+                    type="text"
+                    clearable
+                    right-icon="bk-icon icon-search"
+                    :placeholder="$t('搜索属性')"
+                    v-model.trim="filter">
+                </bk-input>
             </div>
             <ul class="property-list property-list-unselected">
-                <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" @click="selectProperty(property)">
+                <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" :key="index" @click="selectProperty(property)">
                     <span class="property-name">{{property['bk_property_name']}}</span>
-                    <i class="bk-icon icon-angle-right"></i>
+                    <i class="bk-icon icon-arrows-right"></i>
                 </li>
             </ul>
         </div>
         <div class="config-wrapper config-selected fl">
             <div class="wrapper-header selected-header">
-                <label class="header-label">{{$t("Inst['已显示属性']")}}</label>
+                <label class="header-label">{{$t('已选属性')}}</label>
             </div>
             <div class="property-list-layout">
                 <ul class="property-list property-list-selected">
                     <li class="property-item disabled"
-                        v-for="(property, index) in undragbbleProperties">
+                        v-for="(property, index) in undragbbleProperties" :key="index">
                         <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                     </li>
                 </ul>
                 <vue-draggable element="ul" class="property-list property-list-selected"
                     v-model="drabbleProperties"
-                    :options="{animation: 150}">
+                    :options="{ animation: 150 }">
                     <li class="property-item"
-                        v-for="(property, index) in drabbleProperties">
+                        v-for="(property, index) in drabbleProperties" :key="index">
                         <i class="icon-triple-dot"></i>
                         <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
-                        <i class="bk-icon icon-eye-slash-shape"
-                            v-tooltip="$t('Common[\'隐藏\']')"
-                            @click="unselectProperty(property)">
-                        </i>
+                        <i class="bk-icon icon-close" @click="unselectProperty(property)"></i>
                     </li>
                 </vue-draggable>
             </div>
         </div>
         <div class="config-options clearfix">
-            <bk-button class="config-button fl" type="primary" @click="handleApply">{{$t('Inst[\'应用\']')}}</bk-button>
-            <bk-button class="config-button fl" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
-            <bk-button class="config-button fr" type="default" @click="handleReset">{{$t("Common['还原默认']")}}</bk-button>
+            <bk-button class="config-button fl" theme="primary" @click="handleApply">{{$t('应用')}}</bk-button>
+            <bk-button class="config-button fl" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+            <bk-button class="config-button fr" theme="default" @click="handleReset">{{$t('还原默认')}}</bk-button>
         </div>
     </div>
 </template>
@@ -90,7 +92,7 @@
         computed: {
             sortedProperties () {
                 return [...this.properties].sort((propertyA, propertyB) => {
-                    return propertyA['bk_property_name'].localeCompare(propertyB['bk_property_name'], 'zh-Hans-CN', {sensitivity: 'accent'})
+                    return propertyA['bk_property_name'].localeCompare(propertyB['bk_property_name'], 'zh-Hans-CN', { sensitivity: 'accent' })
                 })
             },
             unselectedProperties () {
@@ -146,14 +148,14 @@
                 if (this.localSelected.length < this.max) {
                     this.localSelected.push(property['bk_property_id'])
                 } else {
-                    this.$info(this.$t('Common["最多选择N项"]', {n: this.max}))
+                    this.$info(this.$t('最多选择N项', { n: this.max }))
                 }
             },
             unselectProperty (property) {
                 if (this.localSelected.length > this.min) {
                     this.localSelected = this.localSelected.filter(propertyId => propertyId !== property['bk_property_id'])
                 } else {
-                    this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
+                    this.$info(this.$t('至少选择N项', { n: this.min }))
                 }
             },
             checkDisabled (property) {
@@ -161,9 +163,9 @@
             },
             handleApply () {
                 if (this.localSelected.length > this.max) {
-                    this.$info(this.$t('Common["最多选择N项"]', {n: this.max}))
+                    this.$info(this.$t('最多选择N项', { n: this.max }))
                 } else if (this.localSelected.length < this.min) {
-                    this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
+                    this.$info(this.$t('至少选择N项', { n: this.min }))
                 } else {
                     this.$emit('on-apply', [...this.undragbbleProperties, ...this.drabbleProperties])
                 }
@@ -173,7 +175,9 @@
             },
             handleReset () {
                 this.$bkInfo({
-                    title: this.$t("Common['是否要还原回系统默认显示属性？']"),
+                    title: this.$t('确认还原配置'),
+                    subTitle: this.$t('是否还原为系统默认的列表属性配置？'),
+                    extCls: 'bk-dialog-sub-header-center',
                     confirmFn: () => {
                         this.$emit('on-reset')
                     }
@@ -186,6 +190,7 @@
 <style lang="scss" scoped>
     .config-layout{
         height: 100%;
+        font-size: 14px;
     }
     .config-wrapper{
         width: 50%;
@@ -195,8 +200,6 @@
             height: 78px;
             padding: 20px;
             line-height: 36px;
-            border-top: 1px solid #e7e9ef;
-            border-bottom: 1px solid #e7e9ef;
             .header-label{
                 display: inline-block;
                 vertical-align: middle;
@@ -205,17 +208,13 @@
             .header-filter{
                 display: inline-block;
                 vertical-align: middle;
-                width: 120px;
-                height: 36px;
-                padding: 0 15px;
-                border: 1px solid $cmdbBorderColor;
-                border-radius: 2px;
+                width: 100%;
             }
         }
     }
     .property-list-layout {
         height: calc(100% - 78px);
-        padding: 15px 0;
+        padding: 0;
         @include scrollbar-y;
     }
     .property-list {
@@ -251,12 +250,13 @@
                 left: 15px;
                 top: 19px;
             }
-            .icon-angle-right{
+            .icon-arrows-right{
                 position: absolute;
-                top: 14px;
-                right: 18px;
+                top: 11px;
+                right: 15px;
+                font-size: 20px;
             }
-            .icon-eye-slash-shape{
+            .icon-close{
                 position: absolute;
                 top: 0;
                 right: 0;
@@ -264,9 +264,11 @@
                 height: 42px;
                 line-height: 42px;
                 text-align: center;
-            }
-            .icon-eye-slash-shape:hover{
-                color: #f00;
+                color: #c4c6cc;
+                font-size: 20px;
+                &:hover {
+                    color: #7d8088;
+                }
             }
         }
     }

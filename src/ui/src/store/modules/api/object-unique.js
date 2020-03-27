@@ -54,8 +54,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    deleteObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, config }) {
-        return $http.delete(`delete/objectunique/object/${objId}/unique/${id}`, config)
+    deleteObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, params, config }) {
+        return $http.post(`delete/objectunique/object/${objId}/unique/${id}`, params, config)
     },
     /**
      * 删除模型唯一约束

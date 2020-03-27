@@ -57,11 +57,8 @@ var shouldAddSupplierAccountFieldTables = []string{
 	"cc_Subscription",
 	"cc_TopoGraphics",
 	"cc_InstAsst",
-	"cc_Privilege",
 	"cc_History",
 	"cc_HostFavourite",
 	"cc_UserAPI",
 	"cc_UserCustom",
-	"cc_UserGroup",
-	"cc_UserGroupPrivilege",
 }

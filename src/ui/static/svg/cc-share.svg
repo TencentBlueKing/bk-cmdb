@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="13px" height="13px" viewBox="0 0 13 13" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 55.2 (78181) - https://sketchapp.com -->
+    <title>查看详情</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <path d="M219.664651,29.7475022 L227.164651,29.7475022 L227.164651,31.2475022 L219.664651,31.2475022 L221.914651,33.4975022 L220.789651,34.6225022 L216.664651,30.4975022 L220.789651,26.3725022 L221.914651,27.4975022 L219.664651,29.7475022 Z M222.444982,36.3311332 L223.505642,35.270473 L225.096632,36.8614633 L231.460593,30.4975022 L225.096632,24.1335412 L223.505642,25.7245315 L222.444982,24.6638713 L224.035972,23.072881 C224.621758,22.4870946 225.571506,22.4870946 226.157292,23.072881 L232.521253,29.4368421 C233.10704,30.0226285 233.10704,30.972376 232.521253,31.5581624 L226.157292,37.9221234 C225.571506,38.5079099 224.621758,38.5079099 224.035972,37.9221234 L222.444982,36.3311332 Z" id="path-1"></path>
+    </defs>
+    <g id="页面1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="样式02--模型界面" transform="translate(-765.000000, -438.000000)">
+            <g id="第一组" transform="translate(279.000000, 383.000000)">
+                <g id="字段组" transform="translate(268.294779, 30.000000)">
+                    <g id="Repeat-Group" transform="translate(0.000000, 1.000000)">
+                        <g id="Group-2">
+                            <mask id="mask-2" fill="white">
+                                <use xlink:href="#path-1"></use>
+                            </mask>
+                            <use id="查看详情" fill="#3A84FF" fill-rule="nonzero" transform="translate(224.812622, 30.497502) rotate(-225.000000) translate(-224.812622, -30.497502) " xlink:href="#path-1"></use>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

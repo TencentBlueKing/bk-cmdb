@@ -24,9 +24,8 @@ import (
 	"configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
 
-	"github.com/stretchr/testify/require"
-
 	restful "github.com/emicklei/go-restful"
+	"github.com/stretchr/testify/require"
 )
 
 var defaultHeader = func() http.Header {
@@ -41,7 +40,7 @@ var defaultHeader = func() http.Header {
 
 func startCoreService(t *testing.T, ip string, port uint) {
 
-	// create a core service
+	// create a logics service
 	coreService := service.New()
 
 	// register the server hander

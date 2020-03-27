@@ -14,9 +14,11 @@ package core
 
 import (
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
+	"configcenter/src/scene_server/topo_server/core/settemplate"
 )
 
 // Core Provides management interfaces for models and instances
@@ -30,13 +32,12 @@ type Core interface {
 	GroupOperation() operation.GroupOperationInterface
 	InstOperation() operation.InstOperationInterface
 	ObjectOperation() operation.ObjectOperationInterface
-	PermissionOperation() operation.PermissionOperationInterface
-	CompatibleV2Operation() operation.CompatibleV2OperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AuditOperation() operation.AuditOperationInterface
 	HealthOperation() operation.HealthOperationInterface
 	UniqueOperation() operation.UniqueOperationInterface
+	SetTemplateOperation() settemplate.SetTemplate
 }
 
 type core struct {
@@ -49,37 +50,35 @@ type core struct {
 	group          operation.GroupOperationInterface
 	inst           operation.InstOperationInterface
 	object         operation.ObjectOperationInterface
-	permission     operation.PermissionOperationInterface
-	compatibleV2   operation.CompatibleV2OperationInterface
 	graphics       operation.GraphicsOperationInterface
 	audit          operation.AuditOperationInterface
 	identifier     operation.IdentifierOperationInterface
 	health         operation.HealthOperationInterface
 	unique         operation.UniqueOperationInterface
+	setTemplate    settemplate.SetTemplate
 }
 
-// New create a core manager
-func New(client apimachinery.ClientSetInterface) Core {
+// New create a logics manager
+func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Core {
 
 	// health
-	healthOpeartion := operation.NewHealthOperation(client)
+	healthOperation := operation.NewHealthOperation(client)
 
-	// create insts
-	attributeOperation := operation.NewAttributeOperation(client)
-	classificationOperation := operation.NewClassificationOperation(client)
+	// create instances
+	attributeOperation := operation.NewAttributeOperation(client, authManager)
+	classificationOperation := operation.NewClassificationOperation(client, authManager)
 	groupOperation := operation.NewGroupOperation(client)
-	objectOperation := operation.NewObjectOperation(client)
+	objectOperation := operation.NewObjectOperation(client, authManager)
 	instOperation := operation.NewInstOperation(client)
-	moduleOperation := operation.NewModuleOperation(client)
+	moduleOperation := operation.NewModuleOperation(client, authManager)
 	setOperation := operation.NewSetOperation(client)
-	businessOperation := operation.NewBusinessOperation(client)
-	associationOperation := operation.NewAssociationOperation(client)
-	permissionOperation := operation.NewPermissionOperation(client)
-	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
-	graphics := operation.NewGraphics(client)
+	businessOperation := operation.NewBusinessOperation(client, authManager)
+	associationOperation := operation.NewAssociationOperation(client, authManager)
+	graphics := operation.NewGraphics(client, authManager)
 	identifier := operation.NewIdentifier(client)
 	audit := operation.NewAuditOperation(client)
-	unique := operation.NewUniqueOperation(client)
+	unique := operation.NewUniqueOperation(client, authManager)
+	setTemplate := settemplate.NewSetTemplate(client)
 
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
@@ -108,13 +107,12 @@ func New(client apimachinery.ClientSetInterface) Core {
 		classification: classificationOperation,
 		group:          groupOperation,
 		object:         objectOperation,
-		permission:     permissionOperation,
-		compatibleV2:   compatibleV2Operation,
 		graphics:       graphics,
 		audit:          audit,
 		identifier:     identifier,
-		health:         healthOpeartion,
+		health:         healthOperation,
 		unique:         unique,
+		setTemplate:    setTemplate,
 	}
 }
 
@@ -148,12 +146,6 @@ func (c *core) InstOperation() operation.InstOperationInterface {
 func (c *core) ObjectOperation() operation.ObjectOperationInterface {
 	return c.object
 }
-func (c *core) PermissionOperation() operation.PermissionOperationInterface {
-	return c.permission
-}
-func (c *core) CompatibleV2Operation() operation.CompatibleV2OperationInterface {
-	return c.compatibleV2
-}
 func (c *core) GraphicsOperation() operation.GraphicsOperationInterface {
 	return c.graphics
 }
@@ -168,4 +160,7 @@ func (c *core) HealthOperation() operation.HealthOperationInterface {
 }
 func (c *core) UniqueOperation() operation.UniqueOperationInterface {
 	return c.unique
+}
+func (c *core) SetTemplateOperation() settemplate.SetTemplate {
+	return c.setTemplate
 }

@@ -38,6 +38,7 @@ func (d *delete) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 
 	msg := types.OPDeleteOperation{}
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
 		return reply, err
@@ -55,6 +56,7 @@ func (d *delete) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 	if nil == err {
 		reply.Success = true
 	} else {
+		blog.ErrorJSON("delete execute error.  errr: %s, raw data: %s, rid:%s", err.Error(), msg, msg.RequestID)
 		reply.Message = err.Error()
 	}
 	return reply, err

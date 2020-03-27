@@ -21,28 +21,29 @@ import (
 )
 
 // CreateClassification create a new object classification
-func (s *topoService) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	cls, err := s.core.ClassificationOperation().CreateClassification(params, data)
+func (s *Service) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	cls, err := s.Core.ClassificationOperation().CreateClassification(params, data)
 	if nil != err {
 		return nil, err
 	}
+
 	return cls.ToMapStr()
 }
 
 // SearchClassificationWithObjects search the classification with objects
-func (s *topoService) SearchClassificationWithObjects(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchClassificationWithObjects(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
 
 		page, err := data.MapStr(metadata.PageName)
 		if nil != err {
-			blog.Errorf("failed to get the page , error info is %s", err.Error())
+			blog.Errorf("failed to get the page , error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, err
 		}
 
 		if err = cond.SetPage(page); nil != err {
-			blog.Errorf("failed to parse the page, error info is %s", err.Error())
+			blog.Errorf("failed to parse the page, error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, err
 		}
 
@@ -50,68 +51,74 @@ func (s *topoService) SearchClassificationWithObjects(params types.ContextParams
 	}
 
 	if err := cond.Parse(data); nil != err {
-		blog.Errorf("failed to parse the condition, error info is %s", err.Error())
+		blog.Errorf("failed to parse the condition, error info is %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
-	return s.core.ClassificationOperation().FindClassificationWithObjects(params, cond)
+	return s.Core.ClassificationOperation().FindClassificationWithObjects(params, cond)
 }
 
 // SearchClassification search the classifications
-func (s *topoService) SearchClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
 
 		page, err := data.MapStr(metadata.PageName)
 		if nil != err {
-			blog.Errorf("failed to get the page , error info is %s", err.Error())
+			blog.Errorf("failed to get the page , error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, err
 		}
 
 		if err = cond.SetPage(page); nil != err {
-			blog.Errorf("failed to parse the page, error info is %s", err.Error())
+			blog.Errorf("failed to parse the page, error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, err
 		}
 
 		data.Remove(metadata.PageName)
 	}
-	cond.Parse(data)
+	if err := cond.Parse(data); err != nil {
+		blog.Errorf("parse condition from data failed, err: %s, rid: %s", err.Error(), params.ReqID)
+		return nil, err
+	}
 
-	return s.core.ClassificationOperation().FindClassification(params, cond)
+	return s.Core.ClassificationOperation().FindClassification(params, cond)
 }
 
 // UpdateClassification update the object classification
-func (s *topoService) UpdateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 	data.Remove(metadata.BKMetadata)
 
-	err = s.core.ClassificationOperation().UpdateClassification(params, data, id, cond)
+	err = s.Core.ClassificationOperation().UpdateClassification(params, data, id, cond)
+	if err != nil {
+		return nil, err
+	}
+
 	return nil, err
 }
 
 // DeleteClassification delete the object classification
-func (s *topoService) DeleteClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
-		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
+		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", pathParams("id"), err.Error(), params.ReqID)
 		return nil, err
 	}
 
-	data.Remove(metadata.BKMetadata)
-
-	err = s.core.ClassificationOperation().DeleteClassification(params, id, data, cond)
+	// data.Remove(metadata.BKMetadata)
+	err = s.Core.ClassificationOperation().DeleteClassification(params, id, data, cond)
 	return nil, err
 }

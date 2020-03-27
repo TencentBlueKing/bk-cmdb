@@ -20,7 +20,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -39,8 +38,8 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 	}
 
 	objCond := map[string]interface{}{
-		common.BKOwnerIDField:          util.GetOwnerID(pheader),
-		common.BKClassificationIDField: common.BKNetwork}
+		common.BKClassificationIDField: common.BKNetwork,
+	}
 
 	if "" != objName {
 		objCond[common.BKObjNameField] = objName
@@ -49,7 +48,7 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 		objCond[common.BKObjIDField] = objID
 	}
 
-	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
+	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pheader, &meta.QueryCondition{Condition: objCond})
 	if nil != err {
 		blog.Errorf("[NetCollect] check net device object, get net device object fail, error: %v, condition [%#v]", err, objCond)
 		return "", "", defErr.Errorf(common.CCErrObjectSelectInstFailed)
@@ -60,12 +59,12 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 		return "", "", defErr.New(objResult.Code, objResult.ErrMsg)
 	}
 
-	if nil == objResult.Data || 0 == len(objResult.Data) {
+	if 0 == len(objResult.Data.Info) {
 		blog.Errorf("[NetCollect] check net device object, device object is not exist, condition [%#v]", objCond)
 		return "", "", defErr.Errorf(common.CCErrCollectObjIDNotNetDevice)
 	}
 
-	return objResult.Data[0].ObjectID, objResult.Data[0].ObjectName, nil
+	return objResult.Data.Info[0].Spec.ObjectID, objResult.Data.Info[0].Spec.ObjectName, nil
 }
 
 // by checking if bk_property_id and bk_property_name function parameter are valid net device object property or not
@@ -84,7 +83,6 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 	}
 
 	propertyCond := map[string]interface{}{
-		common.BKOwnerIDField: util.GetOwnerID(pheader),
 		common.BKObjIDField:   netDeviceObjID}
 
 	if "" != propertyName {
@@ -94,7 +92,7 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 		propertyCond[common.BKPropertyIDField] = propertyID
 	}
 
-	attrResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, propertyCond)
+	attrResult, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), pheader, &meta.QueryCondition{Condition: propertyCond})
 	if nil != err {
 		blog.Errorf("[NetCollect] get object attribute fail, error: %v, condition [%#v]", err, propertyCond)
 		return "", defErr.Errorf(common.CCErrTopoObjectAttributeSelectFailed)
@@ -104,12 +102,12 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 		return "", defErr.New(attrResult.Code, attrResult.ErrMsg)
 	}
 
-	if nil == attrResult.Data || 0 == len(attrResult.Data) {
+	if 0 == len(attrResult.Data.Info) {
 		blog.Errorf("[NetCollect] check net device object property, property is not exist, condition [%#v]", propertyCond)
 		return "", defErr.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist)
 	}
 
-	return attrResult.Data[0].PropertyID, nil
+	return attrResult.Data.Info[0].PropertyID, nil
 }
 
 // by checking if bk_device_id and bk_device_name function parameter are valid net device or not
@@ -133,12 +131,12 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID uint64, dev
 	}
 
 	deviceData := meta.NetcollectDevice{}
-	if err := lgc.Instance.Table(common.BKTableNameNetcollectDevice).Find(deviceCond).Fields(common.BKDeviceIDField, common.BKObjIDField).
+	if err := lgc.db.Table(common.BKTableNameNetcollectDevice).Find(deviceCond).Fields(common.BKDeviceIDField, common.BKObjIDField).
 		One(lgc.ctx, &deviceData); nil != err {
 
 		blog.Errorf("[NetCollect] check net device exist fail, error: %v, condition [%#v]", err, deviceCond)
 
-		if lgc.Instance.IsNotFoundError(err) {
+		if lgc.db.IsNotFoundError(err) {
 			return 0, "", defErr.Error(common.CCErrCollectNetDeviceGetFail)
 		}
 		return 0, "", err
@@ -149,14 +147,14 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID uint64, dev
 
 // get net property id by device ID and property ID
 func (lgc *Logics) getNetPropertyID(propertyID string, deviceID uint64, ownerID string) (uint64, error) {
-	queryParams := mapstr.MapStr{
+	queryParams := map[string]interface{}{
 		common.BKDeviceIDField:   deviceID,
 		common.BKPropertyIDField: propertyID,
 		common.BKOwnerIDField:    ownerID,
 	}
 
 	result := meta.NetcollectProperty{}
-	if err := lgc.Instance.Table(common.BKTableNameNetcollectProperty).Find(queryParams).Fields(common.BKNetcollectPropertyIDField).
+	if err := lgc.db.Table(common.BKTableNameNetcollectProperty).Find(queryParams).Fields(common.BKNetcollectPropertyIDField).
 		One(lgc.ctx, &result); nil != err {
 
 		blog.Errorf(

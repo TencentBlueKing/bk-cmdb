@@ -30,7 +30,7 @@ const getters = {
         }
         const modelConfig = state.privilege['model_config']
         let modelAuthority = []
-        for (let classifyId in modelConfig) {
+        for (const classifyId in modelConfig) {
             if (modelConfig[classifyId].hasOwnProperty(modelId)) {
                 modelAuthority = modelConfig[classifyId][modelId]
                 break

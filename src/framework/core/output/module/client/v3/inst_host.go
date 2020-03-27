@@ -404,8 +404,6 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New("data is empty")
 	}
 
-	//log.Infof("the host result:%s", dataStr)
-
 	hostMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &hostMap)
 	if nil != err {

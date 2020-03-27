@@ -2,22 +2,25 @@
     <div>
         <div class="clearfix">
             <bk-button
-                type="primary"
+                theme="primary"
                 @click="batchConfirm"
                 :disabled="!table.checked.length">
-                <span>{{$t("Cloud['批量确认']")}}</span>
+                <span>{{$t('批量确认')}}</span>
             </bk-button>
             <div class="confirm-options-button fr">
-                <bk-button class="button-history" v-tooltip.bottom="$t('Cloud[\'查看确认记录\']')" @click="confirmHistory">
+                <bk-button class="button-history" v-bk-tooltips.bottom="$t('查看确认记录')" @click="confirmHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
             </div>
             <div class="confirm-options-filter clearfix fr">
-                <bk-selector
-                    class="confirm-filter-selector fl"
-                    :list="selector.list"
-                    :selected.sync="selector.defaultDemo.selected">
-                </bk-selector>
+                <bk-select class="confirm-filter-selector fl"
+                    v-model="selector.defaultDemo.selected">
+                    <bk-option v-for="(option, index) in selector.list"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
                 <cmdb-form-enum
                     class="confirm-filter-value fl"
                     v-if="filter.type === 'enum'"
@@ -26,48 +29,62 @@
                     v-model="filter.value"
                     @on-selected="getTableData">
                 </cmdb-form-enum>
-                <input
+                <bk-input
                     class="confirm-filter-value cmdb-form-input fl"
                     type="text"
+                    clearable
                     v-else
                     v-model.trim="filter.text"
-                    @keydown.enter="getTableData">
+                    @enter="getTableData">
+                </bk-input>
                 <i class="confirm-filter-search bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
-        <cmdb-table class="cloud-table" ref="table"
-            :loading="$loading('searchConfirm')"
-            :header="table.header"
-            :checked.sync="table.checked"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
-            :wrapperMinusHeight="157"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
-                <template slot="bk_resource_type" slot-scope="{ item }">
-                    <span class="attr-changed" v-if="item.bk_resource_type === 'change'">
-                        {{$t('Cloud["变更"]')}}
+        <bk-table class="cloud-table"
+            v-bkloading="{ isLoading: $loading('searchConfirm') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 160"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange"
+            @selection-change="handleSelectChange">
+            <bk-table-column type="selection" fixed width="60" align="center" class-name="bk-table-selection"></bk-table-column>
+            <bk-table-column prop="bk_host_innerip" :label="$t('资源名称')"></bk-table-column>
+            <bk-table-column prop="bk_resource_type" :label="$t('资源类型')">
+                <template slot-scope="{ row }">
+                    <span class="attr-changed" v-if="row.bk_resource_type === 'change'">
+                        {{$t('变更')}}
                     </span>
                     <span class="new-add" v-else>
-                        {{$t('Cloud["新增"]')}}
+                        {{$t('新增')}}
                     </span>
                 </template>
-                <template slot="bk_account_type" slot-scope="{ item }">
-                    <span>{{$t('Cloud["腾讯云"]')}}</span>
+            </bk-table-column>
+            <bk-table-column prop="bk_obj_id" :label="$t('模型')">
+                <template>
+                    {{ $t('主机')}}
                 </template>
-                <template slot="bk_obj_id" slot-scope="{ item }">
-                    {{ $t('Hosts["主机"]')}}
+            </bk-table-column>
+            <bk-table-column prop="bk_task_name" :label="$t('任务名称')"></bk-table-column>
+            <bk-table-column prop="bk_account_type" :label="$t('账号类型')">
+                <template slot-scope="{ row }">
+                    <span v-if="row.bk_account_type === 'tencent_cloud'">{{$t('腾讯云')}}</span>
+                    <span v-else>{{row.bk_account_type}}</span>
                 </template>
-                <template slot="operation" slot-scope="{ item }">
-                    <span class="text-primary mr20" @click.stop="singleConfirm(item)">{{$t('Hosts["确认"]')}}</span>
+            </bk-table-column>
+            <bk-table-column prop="bk_account_admin" :label="$t('任务维护人')"></bk-table-column>
+            <bk-table-column prop="create_time" :label="$t('发现时间')"></bk-table-column>
+            <bk-table-column :label="$t('操作')" fixed="right">
+                <template slot-scope="{ row }">
+                    <span class="text-primary mr20" @click.stop="singleConfirm(row)">{{$t('确认')}}</span>
                 </template>
-                <div class="empty-info" slot="data-empty">
-                    <p>{{$t("Cloud['暂时没有数据，请确保先添加云资源发现任务，']")}}
-                        <span class="text-primary" @click="handleAdd">{{ $t('Cloud["去添加"]')}}</span>
-                    </p>
-                </div>
-        </cmdb-table>
+            </bk-table-column>
+            <div class="empty-info" slot="empty">
+                <p>{{$t('暂时没有数据，请确保先添加云资源发现任务，')}}
+                    <span class="text-primary" @click="handleAdd">{{ $t('去添加')}}</span>
+                </p>
+            </div>
+        </bk-table>
     </div>
 </template>
 
@@ -79,10 +96,10 @@
                 selector: {
                     list: [{
                         id: 0,
-                        name: this.$t('Cloud["模型"]')
+                        name: this.$t('模型')
                     }, {
                         id: 1,
-                        name: this.$t('Cloud["账号类型"]')
+                        name: this.$t('账号类型')
                     }],
                     defaultDemo: {
                         selected: 1
@@ -107,38 +124,6 @@
                     businessResolver: null
                 },
                 table: {
-                    header: [ {
-                        id: 'bk_resource_id',
-                        type: 'checkbox'
-                    }, {
-                        id: 'bk_host_innerip',
-                        name: this.$t('Cloud["资源名称"]')
-                    }, {
-                        id: 'bk_resource_type',
-                        name: this.$t('Cloud["资源类型"]')
-                    }, {
-                        id: 'bk_obj_id',
-                        name: this.$t('Cloud["模型"]')
-                    }, {
-                        id: 'bk_task_name',
-                        name: this.$t('Cloud["任务名称"]')
-                    }, {
-                        id: 'bk_account_type',
-                        name: this.$t('Cloud["账号类型"]')
-                    }, {
-                        id: 'bk_account_admin',
-                        sortable: false,
-                        name: this.$t('Cloud["任务维护人"]')
-                    }, {
-                        id: 'create_time',
-                        width: 160,
-                        name: this.$t('Cloud["发现时间"]')
-                    }, {
-                        id: 'operation',
-                        sortable: false,
-                        width: 100,
-                        name: this.$t('Common["操作"]')
-                    }],
                     list: [],
                     allList: [],
                     pagination: {
@@ -155,13 +140,12 @@
         computed: {
             batchConfirmTips () {
                 let tips = {}
-                tips = this.$t("Cloud['您将批量确认']") + this.table.checked.length + this.$t("Cloud['个资源实例，']") +
-                    this.$t("Cloud['确认后的资源实例将被录入到主机资源池中']")
+                tips = this.$t('您将批量确认') + this.table.checked.length + this.$t('个资源实例，')
+                    + this.$t('确认后的资源实例将被录入到主机资源池中')
                 return tips
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Cloud["资源确认"]'))
             this.getTableData()
         },
         methods: {
@@ -171,10 +155,10 @@
                 'addConfirmHistory'
             ]),
             async getTableData () {
-                let pagination = this.table.pagination
-                let params = {}
-                let attr = {}
-                let page = {
+                const pagination = this.table.pagination
+                const params = {}
+                const attr = {}
+                const page = {
                     start: (pagination.current - 1) * pagination.size,
                     limit: pagination.size,
                     sort: this.table.sort
@@ -190,7 +174,7 @@
                     }
                 }
                 params['page'] = page
-                let res = await this.getResourceConfirm({params, config: {requestID: 'searchConfirm'}})
+                const res = await this.getResourceConfirm({ params, config: { requestID: 'searchConfirm' } })
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
                     return data
@@ -198,7 +182,12 @@
                 pagination.count = res.count
             },
             confirmHistory () {
-                this.$router.push({name: 'resourceConfirmHistory'})
+                this.$router.push({
+                    name: 'confirmHistory'
+                })
+            },
+            handleSelectChange (selection) {
+                this.table.checked = selection.map(row => row.bk_resource_id)
             },
             handleSizeChange (size) {
                 this.table.pagination.size = size
@@ -209,44 +198,49 @@
                 this.getTableData()
             },
             batchConfirm () {
-                let params = {}
+                const params = {}
                 params['bk_resource_id'] = this.table.checked
                 this.$bkInfo({
-                    title: this.$t("Cloud['批量资源确认']"),
-                    content: this.batchConfirmTips,
+                    title: this.$t('批量资源确认'),
+                    subTitle: this.batchConfirmTips,
                     confirmFn: async () => {
                         await this.handleConfirm(params)
-                        this.$success(this.$t('Cloud["资源批量确认确认成功"]'))
+                        this.$success(this.$t('资源批量确认确认成功'))
                         this.handlePageChange(1)
                     }
                 })
             },
             singleConfirm (item) {
-                let params = {}
-                let arr = []
+                const params = {}
+                const arr = []
                 arr.push(item['bk_resource_id'])
                 params['bk_resource_id'] = arr
                 this.$bkInfo({
-                    title: this.$t("Cloud['资源确认']"),
-                    content: this.$t("Cloud['确认后的资源实例将被录入到主机资源池中']"),
+                    title: this.$t('资源确认'),
+                    subTitle: this.$t('确认后的资源实例将被录入到主机资源池中'),
                     confirmFn: async () => {
                         await this.handleConfirm(params)
-                        this.$success(this.$t('Cloud["确认成功"]'))
+                        this.$success(this.$t('确认成功'))
                         this.handlePageChange(1)
                     }
                 })
             },
             handleConfirm (params) {
                 return Promise.all([
-                    this.addConfirmHistory({params}),
-                    this.resourceConfirm({params})
+                    this.addConfirmHistory({ params }),
+                    this.resourceConfirm({ params })
                 ])
             },
             handleCheckAll () {
                 this.table.checked = this.table.list.map(inst => inst['bk_resource_id'])
             },
             handleAdd () {
-                this.$router.push({name: 'cloud', params: { type: 'create' }})
+                this.$router.push({
+                    name: 'cloudDiscover',
+                    params: {
+                        type: 'create'
+                    }
+                })
             }
         }
     }

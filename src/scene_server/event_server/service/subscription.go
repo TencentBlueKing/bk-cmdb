@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -32,110 +33,172 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-// Subscribe  Subscribe events
 func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	var err error
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	ownerID := util.GetOwnerID(pheader)
+	header := req.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	ownerID := util.GetOwnerID(header)
 
 	sub := &metadata.Subscription{}
-	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
-		blog.Errorf("add subscription, but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if err = json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
+		blog.Errorf("add subscription, but decode body failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
-	now := metadata.Now()
+	if len(sub.SubscriptionName) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionName")})
+		return
+	}
+	if len(sub.CallbackURL) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "CallbackURL")})
+		return
+	}
+	if len(sub.SubscriptionForm) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionForm")})
+		return
+	}
 	sub.Operator = util.GetUser(req.Request.Header)
-	if sub.TimeOut <= 0 {
-		sub.TimeOut = 10
+	if sub.TimeOutSeconds <= 0 {
+		sub.TimeOutSeconds = 10
 	}
-	if sub.ConfirmMode == metadata.ConfirmmodeHttpstatus && sub.ConfirmPattern == "" {
-		sub.ConfirmPattern = "200"
+	if sub.ConfirmMode != metadata.ConfirmModeHTTPStatus && sub.ConfirmMode != metadata.ConfirmModeRegular {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "ConfirmMode")})
+		return
 	}
+	if sub.ConfirmMode == metadata.ConfirmModeHTTPStatus && sub.ConfirmPattern == "" {
+		sub.ConfirmPattern = strconv.FormatInt(http.StatusOK, 10)
+	}
+	now := metadata.Now()
 	sub.LastTime = now
 	sub.OwnerID = ownerID
 
-	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
+	eventTypesStr := strings.Replace(sub.SubscriptionForm, " ", "", -1)
+	eventTypes := strings.Split(eventTypesStr, ",")
+	sort.Strings(eventTypes)
+	sub.SubscriptionForm = strings.Join(eventTypes, ",")
 
-	events := strings.Split(sub.SubscriptionForm, ",")
-	sort.Strings(events)
-	sub.SubscriptionForm = strings.Join(events, ",")
-
-	exists := []metadata.Subscription{}
-	err = s.db.Table(common.BKTableNameSubscription).Find(map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID}).All(s.ctx, &exists)
-	if err != nil {
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "subscription_name")})
+	// do create or update operation
+	existSubscriptions := make([]metadata.Subscription, 0)
+	filter := map[string]interface{}{
+		common.BKSubscriptionNameField: sub.SubscriptionName,
+		common.BKOwnerIDField:          ownerID,
+	}
+	if err := s.db.Table(common.BKTableNameSubscription).Find(filter).All(s.ctx, &existSubscriptions); err != nil {
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommDuplicateItem, common.BKSubscriptionNameField),
+		}
+		resp.WriteError(http.StatusOK, result)
 		return
 	}
 
-	if len(exists) > 0 {
-		if err = s.rebook(exists[0].SubscriptionID, ownerID, sub); err != nil {
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
-			return
+	if len(existSubscriptions) > 0 {
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommDuplicateItem, common.BKSubscriptionNameField),
 		}
-	} else {
-		nid, err := s.db.NextSequence(s.ctx, common.BKTableNameSubscription)
-		sub.SubscriptionID = int64(nid)
-		if nil != err {
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
-			return
-		}
-		// save to the storage
-		if err := s.db.Table(common.BKTableNameSubscription).Insert(s.ctx, sub); err != nil {
-			blog.Errorf("create subscription failed, error:%s", err.Error())
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
-			return
-		}
-
-		// save to subscribeform in cache
-		for _, event := range events {
-			if err := s.cache.SAdd(types.EventSubscriberCacheKey(ownerID, event), sub.SubscriptionID).Err(); err != nil {
-				blog.Errorf("create subscription failed, error:%s", err.Error())
-				resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
-				return
-			}
-		}
-
-		mesg, _ := json.Marshal(&sub)
-		s.cache.Publish(types.EventCacheProcessChannel, "create"+string(mesg))
-		s.cache.Del(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(sub.SubscriptionID))
+		resp.WriteError(http.StatusOK, result)
+		return
 	}
 
-	resp.WriteEntity(metadata.RspSubscriptionCreate{
+	// generate id field
+	subscriptionID, err := s.db.NextSequence(s.ctx, common.BKTableNameSubscription)
+	sub.SubscriptionID = int64(subscriptionID)
+	if nil != err {
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+
+	// save to storage
+	if err := s.db.Table(common.BKTableNameSubscription).Insert(s.ctx, sub); err != nil {
+		blog.Errorf("create subscription failed, error:%s, rid: %s", err.Error(), rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+
+	// add new add subscriber to event receivers
+	for _, eventType := range eventTypes {
+		// TODO: how to clear dirty subscription?
+		if err := s.cache.SAdd(types.EventSubscriberCacheKey(ownerID, eventType), sub.SubscriptionID).Err(); err != nil {
+			blog.Errorf("create subscription failed, add new add subscriber to event receivers failed, error:%s, rid: %s", err.Error(), rid)
+			result := &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)}
+			resp.WriteError(http.StatusInternalServerError, result)
+			return
+		}
+	}
+	msg, _ := json.Marshal(&sub)
+	s.cache.Publish(types.EventCacheProcessChannel, "create"+string(msg))
+	s.cache.Del(types.EventCacheDistCallBackCountPrefix + strconv.FormatInt(sub.SubscriptionID, 10))
+
+	// register subscription to iam
+	iamResource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Name:       sub.SubscriptionName,
+			Type:       meta.EventPushing,
+			InstanceID: sub.SubscriptionID,
+		},
+	}
+	if err = s.auth.RegisterResource(s.ctx, iamResource); err != nil {
+		blog.Errorf("register subscribe to iam failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
+		resp.WriteError(http.StatusOK, result)
+		return
+	}
+
+	result := NewCreateSubscriptionResult(sub.SubscriptionID)
+	resp.WriteEntity(result)
+}
+
+func NewCreateSubscriptionResult(subscriptionID int64) *metadata.RspSubscriptionCreate {
+	result := &metadata.RspSubscriptionCreate{
 		BaseResp: metadata.SuccessBaseResp,
 		Data: struct {
 			SubscriptionID int64 `json:"subscription_id"`
 		}{
-			SubscriptionID: sub.SubscriptionID,
+			SubscriptionID: subscriptionID,
 		},
-	})
-
+	}
+	return result
 }
 
 func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	ownerID := util.GetOwnerID(pheader)
+	header := req.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	ownerID := util.GetOwnerID(header)
 
 	id, err := strconv.ParseInt(req.PathParameter("subscribeID"), 10, 64)
 	if nil != err {
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		result := &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
 
 	// query old Subscription
 	sub := metadata.Subscription{}
-	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
-	if err := s.db.Table(common.BKTableNameSubscription).Find(condiction).One(s.ctx, &sub); err != nil {
-		blog.Errorf("fail to get subscription by id %v, error information is %v", id, err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
+	condition := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
+	if err := s.db.Table(common.BKTableNameSubscription).Find(condition).One(s.ctx, &sub); err != nil {
+		blog.Errorf("fail to get subscription by id %v, error information is %v, rid: %s", id, err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 	// execute delete command
-	if delerr := s.db.Table(common.BKTableNameSubscription).Delete(s.ctx, condiction); nil != delerr {
-		blog.Errorf("fail to delete subscription by id %v, error information is %v", id, delerr)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
+	if delErr := s.db.Table(common.BKTableNameSubscription).Delete(s.ctx, condition); nil != delErr {
+		blog.Errorf("fail to delete subscription by id %v, error information is %v, rid: %s", id, delErr, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
 	}
 
 	subID := fmt.Sprint(id)
@@ -143,8 +206,12 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	for _, eventType := range eventTypes {
 		eventType = strings.TrimSpace(eventType)
 		if err := s.cache.SRem(types.EventSubscriberCacheKey(ownerID, eventType), subID).Err(); err != nil {
-			blog.Errorf("delete subscription failed, error:%s", err.Error())
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
+			blog.Errorf("delete subscription failed, error:%s, rid: %s", err.Error(), rid)
+			result := &metadata.RespError{
+				Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed),
+			}
+			resp.WriteError(http.StatusInternalServerError, result)
+			return
 		}
 	}
 
@@ -152,91 +219,158 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 		types.EventCacheDistQueuePrefix+subID,
 		types.EventCacheDistDonePrefix+subID)
 
-	mesg, _ := json.Marshal(&sub)
-	s.cache.Publish(types.EventCacheProcessChannel, "delete"+string(mesg))
+	msg, _ := json.Marshal(&sub)
+	s.cache.Publish(types.EventCacheProcessChannel, "delete"+string(msg))
+
+	// deregister subscription from iam
+	iamResource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Name:       sub.SubscriptionName,
+			Type:       meta.EventPushing,
+			InstanceID: sub.SubscriptionID,
+		},
+	}
+	if err = s.auth.DeregisterResource(s.ctx, iamResource); err != nil {
+		blog.Errorf("deregister subscribe to iam failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed, err)}
+		resp.WriteError(http.StatusOK, result)
+		return
+	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	ownerID := util.GetOwnerID(pheader)
+func (s *Service) UpdateSubscription(req *restful.Request, resp *restful.Response) {
+	header := req.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	ownerID := util.GetOwnerID(header)
 
 	id, err := strconv.ParseInt(req.PathParameter("subscribeID"), 10, 64)
 	if nil != err {
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		result := &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
-	blog.Infof("update subscription %v", id)
+	blog.Infof("update subscription %v, rid: %s", id, rid)
 
 	sub := &metadata.Subscription{}
-	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
-		blog.Errorf("update subscription, but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if err = json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
+		blog.Errorf("update subscription, but decode body failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
+	}
+	if len(sub.SubscriptionName) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionName")})
+		return
+	}
+	if len(sub.CallbackURL) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "CallbackURL")})
+		return
+	}
+	if len(sub.SubscriptionForm) == 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "SubscriptionForm")})
+		return
+	}
+	if sub.ConfirmMode != metadata.ConfirmModeHTTPStatus && sub.ConfirmMode != metadata.ConfirmModeRegular {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "ConfirmMode")})
+		return
+	}
+	if sub.ConfirmMode == metadata.ConfirmModeHTTPStatus && sub.ConfirmPattern == "" {
+		sub.ConfirmPattern = strconv.FormatInt(http.StatusOK, 10)
 	}
 	sub.Operator = util.GetUser(req.Request.Header)
-	if err = s.rebook(id, ownerID, sub); err != nil {
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
+	if err = s.updateSubscription(header, id, ownerID, sub); err != nil {
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
+
+	// deregister subscription from iam
+	iamResource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Name:       sub.SubscriptionName,
+			Type:       meta.EventPushing,
+			InstanceID: sub.SubscriptionID,
+		},
+	}
+	if err := s.auth.UpdateResource(s.ctx, &iamResource); err != nil {
+		blog.Errorf("update subscribe to iam failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)}
+		resp.WriteError(http.StatusOK, result)
+		return
+	}
+
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-func (s *Service) rebook(id int64, ownerID string, sub *metadata.Subscription) error {
+func (s *Service) updateSubscription(header http.Header, id int64, ownerID string, sub *metadata.Subscription) error {
+	rid := util.GetHTTPCCRequestID(header)
 	// query old Subscription
-	oldsub := metadata.Subscription{}
-	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
-	if err := s.db.Table(common.BKTableNameSubscription).Find(condiction).One(s.ctx, &oldsub); err != nil {
-		blog.Errorf("fail to get subscription by id %v, error information is %v", id, err)
+	oldSub := metadata.Subscription{}
+	condition := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
+	if err := s.db.Table(common.BKTableNameSubscription).Find(condition).One(s.ctx, &oldSub); err != nil {
+		blog.Errorf("fail to get subscription by id %v, err: %v, rid: %s", id, err, rid)
 		return err
 	}
-	if oldsub.SubscriptionName != sub.SubscriptionName {
-		count, err := s.db.Table(common.BKTableNameSubscription).Find(map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID}).Count(s.ctx)
+	if oldSub.SubscriptionName != sub.SubscriptionName {
+		filter := map[string]interface{}{
+			common.BKSubscriptionNameField: sub.SubscriptionName,
+			common.BKOwnerIDField:          ownerID,
+		}
+		count, err := s.db.Table(common.BKTableNameSubscription).Find(filter).Count(s.ctx)
 		if err != nil {
-			blog.Errorf("get subscription count error: %v", err)
+			blog.Errorf("get subscription count error: %v, rid: %s", err, rid)
 			return err
 		}
 		if count > 0 {
-			blog.Error("duplicate subscription name")
+			blog.Errorf("duplicate subscription name, rid: %s", rid)
 			return err
 		}
 	}
 
-	sub.SubscriptionID = oldsub.SubscriptionID
-	if sub.TimeOut <= 0 {
-		sub.TimeOut = 10
+	sub.SubscriptionID = oldSub.SubscriptionID
+	if sub.TimeOutSeconds <= 0 {
+		sub.TimeOutSeconds = 10
 	}
 	now := metadata.Now()
 	sub.LastTime = now
 	sub.OwnerID = ownerID
 
-	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
+	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", -1)
 	events := strings.Split(sub.SubscriptionForm, ",")
 	sort.Strings(events)
 	sub.SubscriptionForm = strings.Join(events, ",")
 
-	if updateerr := s.db.Table(common.BKTableNameSubscription).Update(s.ctx, util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build(), sub); nil != updateerr {
-		blog.Errorf("fail update subscription by condition, error information is %s", updateerr.Error())
-		return updateerr
+	filter := map[string]interface{}{
+		common.BKSubscriptionIDField: id,
+		common.BKOwnerIDField:        ownerID,
+	}
+	if updateErr := s.db.Table(common.BKTableNameSubscription).Update(s.ctx, filter, sub); nil != updateErr {
+		blog.Errorf("fail update subscription by condition, error information is %s, rid: %s", updateErr.Error(), rid)
+		return updateErr
 	}
 
 	eventTypes := strings.Split(sub.SubscriptionForm, ",")
-	oldeventTypes := strings.Split(oldsub.SubscriptionForm, ",")
+	oldEventTypes := strings.Split(oldSub.SubscriptionForm, ",")
 
-	subs, plugs := util.CalSliceDiff(oldeventTypes, eventTypes)
+	subs, plugs := util.CalSliceDiff(oldEventTypes, eventTypes)
 
 	for _, eventType := range subs {
 		eventType = strings.TrimSpace(eventType)
 		if err := s.cache.SRem(types.EventSubscriberCacheKey(ownerID, eventType), id).Err(); err != nil {
-			blog.Errorf("delete subscription failed, error:%s", err.Error())
+			blog.Errorf("delete subscription failed, error:%s, rid: %s", err.Error(), rid)
 			return err
 		}
 	}
 	for _, event := range plugs {
 		if err := s.cache.SAdd(types.EventSubscriberCacheKey(ownerID, event), sub.SubscriptionID).Err(); err != nil {
-			blog.Errorf("create subscription failed, error:%s", err.Error())
+			blog.Errorf("create subscription failed, error:%s, rid: %s", err.Error(), rid)
 			return err
 		}
 	}
@@ -248,101 +382,116 @@ func (s *Service) rebook(id int64, ownerID string, sub *metadata.Subscription) e
 	return s.cache.Publish(types.EventCacheProcessChannel, "update"+string(mesg)).Err()
 }
 
-func (s *Service) Query(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	ownerID := util.GetOwnerID(pheader)
+func (s *Service) ListSubscriptions(req *restful.Request, resp *restful.Response) {
+	header := req.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	ownerID := util.GetOwnerID(header)
 
-	blog.Info("select subscription")
+	blog.Infof("select subscription, rid: %s", rid)
 
-	var dat metadata.ParamSubscriptionSearch
-	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
-		blog.Errorf("search subscription, but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	var data metadata.ParamSubscriptionSearch
+	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
+		blog.Errorf("search subscription, but decode body failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
 
-	fields := dat.Fields
-	condition := dat.Condition
+	fields := data.Fields
+	condition := data.Condition
 	condition = util.SetModOwner(condition, ownerID)
 
-	skip := dat.Page.Start
-	limit := dat.Page.Limit
+	skip := data.Page.Start
+	limit := data.Page.Limit
 	if limit <= 0 {
 		limit = common.BKNoLimit
 	}
-	sort := dat.Page.Sort
+	sortOption := data.Page.Sort
 
 	count, err := s.db.Table(common.BKTableNameSubscription).Find(condition).Count(s.ctx)
 	if err != nil {
-		blog.Errorf("get host count error, input:%+v error:%v", dat, err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed)})
+		blog.Errorf("get host count error, input:%+v error:%v, rid: %s", data, err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
 
-	results := []metadata.Subscription{}
-	blog.Debug("selector:%+v", condition)
+	results := make([]metadata.Subscription, 0)
 
-	if selerr := s.db.Table(common.BKTableNameSubscription).Find(condition).Fields(fields...).Sort(sort).Start(uint64(skip)).Limit(uint64(limit)).All(s.ctx, &results); nil != selerr {
-		blog.Errorf("select data failed, error information is %s, input:%v", selerr, dat)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed)})
+	if selErr := s.db.Table(common.BKTableNameSubscription).Find(condition).Fields(fields...).Sort(sortOption).Start(uint64(skip)).Limit(uint64(limit)).All(s.ctx, &results); nil != selErr {
+		blog.Errorf("select data failed, error information is %s, input:%v, rid: %s", selErr, data, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
 
 	for index := range results {
 		val := s.cache.HGetAll(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(results[index].SubscriptionID)).Val()
-		failue, err := strconv.ParseInt(val["failue"], 10, 64)
+		failure, err := strconv.ParseInt(val["failue"], 10, 64)
 		if nil != err {
-			blog.Errorf("get failue value error %s", err.Error())
+			blog.Warnf("get failure value error %s, rid: %s", err.Error(), rid)
 		}
 		total, err := strconv.ParseInt(val["total"], 10, 64)
 		if nil != err {
-			blog.Errorf("get total value error %s", err.Error())
+			blog.Warnf("get total value error %s, rid: %s", err.Error(), rid)
 		}
 		results[index].Statistics = &metadata.Statistics{
 			Total:   total,
-			Failure: failue,
+			Failure: failure,
 		}
 	}
 
 	info := make(map[string]interface{})
 	info["count"] = count
 	info["info"] = results
-	resp.WriteEntity(
-		metadata.NewSuccessResp(
-			metadata.RspSubscriptionSearch{
-				Count: count,
-				Info:  results,
-			}))
+	result := metadata.RspSubscriptionSearch{
+		Count: count,
+		Info:  results,
+	}
+	resp.WriteEntity(metadata.NewSuccessResp(result))
 }
 
 func (s *Service) Ping(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	header := req.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
-	var dat metadata.ParamSubscriptionTestCallback
-	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
-		blog.Errorf("ping subscription, but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	var data metadata.ParamSubscriptionTestCallback
+	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
+		blog.Errorf("ping subscription failed, decode request body failed, err: %+v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
 
-	callbackurl := dat.CallbackUrl
-	callbackBody := dat.Data
+	callbackUrl := data.CallbackUrl
+	callbackBody := data.Data
 
-	blog.Infof("requesting callback: %v,%s", callbackurl, callbackBody)
-	callbackreq, _ := http.NewRequest("POST", callbackurl, bytes.NewBufferString(callbackBody))
-	callbackResp, err := http.DefaultClient.Do(callbackreq)
+	blog.Infof("requesting callback url: %s, data: %s, rid: %s", callbackUrl, callbackBody, rid)
+	callbackReq, _ := http.NewRequest(http.MethodPost, callbackUrl, bytes.NewBufferString(callbackBody))
+	callbackResp, err := http.DefaultClient.Do(callbackReq)
 	if err != nil {
-		blog.Errorf("test distribute error:%v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribePingFailed)})
+		blog.Errorf("test distribute failed, do http request failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrEventSubscribePingFailed),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
 	defer callbackResp.Body.Close()
 
 	callbackRespBody, err := ioutil.ReadAll(callbackResp.Body)
 	if err != nil {
-		blog.Errorf("test distribute error:%v", err)
+		blog.Errorf("test distribute failed, read response body failed, err:%v, rid: %s", err, rid)
 	}
 	result := metadata.RspSubscriptionTestCallback{}
 	result.HttpStatus = callbackResp.StatusCode
@@ -352,27 +501,36 @@ func (s *Service) Ping(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) Telnet(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	var dat metadata.ParamSubscriptionTelnet
-	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
-		blog.Errorf("telnet subscription, but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	header := req.Request.Header
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+
+	var data metadata.ParamSubscriptionTelnet
+	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
+		blog.Errorf("telnet subscription failed, decode request body failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
-	callbackurl := dat.CallbackUrl
-	uri, err := util.GetDailAddress(callbackurl)
+	callbackUrl := data.CallbackUrl
+	uri, err := util.GetDailAddress(callbackUrl)
 	if err != nil {
-		blog.Errorf("telent callback error:%v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_callback_url")})
+		blog.Errorf("telnet callback failed, err:%+v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "bk_callback_url"),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
-	blog.Infof("telnet %", uri)
+	blog.Infof("telnet url: %, rid: %s", uri, rid)
 
 	conn, err := net.Dial("tcp", uri)
 	if err != nil {
-		blog.Errorf("telent callback error:%v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeTelnetFailed)})
+		blog.Errorf("telnet callback failed, err: %v, rid: %s", err, rid)
+		result := &metadata.RespError{
+			Msg: defErr.Error(common.CCErrEventSubscribeTelnetFailed),
+		}
+		resp.WriteError(http.StatusBadRequest, result)
 		return
 	}
 	conn.Close()

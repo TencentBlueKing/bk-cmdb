@@ -56,7 +56,7 @@ func (a *attribute) SetAttribute(attr metadata.Attribute) {
 }
 
 func (a *attribute) IsMainlineField() bool {
-	return a.attr.PropertyID == common.BKChildStr
+	return a.attr.PropertyID == common.BKInstParentStr || a.attr.PropertyID == common.BKChildStr
 }
 
 func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
@@ -67,12 +67,12 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 	}
 	rsp, err := a.clientSet.CoreService().Model().ReadModel(context.Background(), a.params.Header, &input)
 	if nil != err {
-		blog.Errorf("failed to request the object controller, err: %s", err.Error())
+		blog.Errorf("failed to request the object controller, err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to search the object(%s), err: %s", objID, rsp.ErrMsg)
+		blog.Errorf("failed to search the object(%s), err: %s, rid: %s", objID, rsp.ErrMsg, a.params.ReqID)
 		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -150,12 +150,22 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 			return a.params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 
-		if option, exists := data.Get(metadata.AttributeFieldOption); exists && (propertyType == common.FieldTypeInt || propertyType == common.FieldTypeEnum) {
+		option, exists := data.Get(metadata.AttributeFieldOption)
+		if exists && a.isPropertyTypeIntEnumList(propertyType) {
 			if err := util.ValidPropertyOption(propertyType, option, a.params.Err); nil != err {
 				return err
 			}
 		}
 	}
+
+	if val, ok := data[metadata.AttributeFieldPlaceHolder]; ok && val != "" {
+		if placeholder, ok := val.(string); ok {
+			if err := a.FieldValid.ValidPlaceHoler(a.params, placeholder); nil != err {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -170,19 +180,26 @@ func (a *attribute) Create() error {
 
 	// create a new record
 	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
-	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(context.Background(), a.params.Header, a.attr.ObjectID, &input)
+	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(a.params.Context, a.params.Header, a.attr.ObjectID, &input)
 	if nil != err {
-		blog.Errorf("faield to request the object controller, the err: %s", err.Error())
-		return err
+		blog.ErrorJSON("failed to request coreService to create model attrs, the err: %s, ObjectID: %s, input: %s, rid: %s", err.Error(), a.attr.ObjectID, input, a.params.ReqID)
+		return a.params.Err.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		return err
+		blog.ErrorJSON("create model attrs failed, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.params.ReqID)
+		return rsp.CCError()
 	}
 
-	for _, id := range rsp.Data.Created {
-		a.attr.ID = int64(id.ID)
+	for _, exception := range rsp.Data.Exceptions {
+		return a.params.Err.New(int(exception.Code), exception.Message)
 	}
+
+	if len(rsp.Data.Created) != 1 {
+		blog.ErrorJSON("create model attrs created amount error, ObjectID: %s, input: %s, rid: %s", a.attr.ObjectID, input, a.params.ReqID)
+		return a.params.Err.CCError(common.CCErrTopoObjectAttributeCreateFailed)
+	}
+	a.attr.ID = int64(rsp.Data.Created[0].ID)
 
 	return nil
 }
@@ -204,7 +221,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 	}
 
 	if exists {
-		return a.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
+		return a.params.Err.Errorf(common.CCErrCommDuplicateItem, a.attr.PropertyName)
 	}
 
 	input := metadata.UpdateOption{
@@ -213,28 +230,27 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 	}
 	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), a.params.Header, a.attr.ObjectID, &input)
 	if nil != err {
-		blog.Errorf("failed to request object controller, err: %s", err.Error())
+		blog.Errorf("failed to request object controller, err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to update the object attribute(%s), err: %s", a.attr.PropertyID, rsp.ErrMsg)
-		return a.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
+		blog.Errorf("failed to update the object attribute(%s), err: %s, rid: %s", a.attr.PropertyID, rsp.ErrMsg, a.params.ReqID)
+		return a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
-
 	return nil
 }
 func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {
 
 	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(context.Background(), a.params.Header, a.attr.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("failed to request to object controller, err: %s", err.Error())
+		blog.Errorf("failed to request to object controller, err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return nil, err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to query the object controller, cond: %#v, err: %s", cond, rsp.ErrMsg)
-		return nil, a.params.Err.Error(common.CCErrTopoObjectAttributeSelectFailed)
+		blog.Errorf("failed to query the object controller, cond: %#v, err: %s, rid: %s", cond, rsp.ErrMsg, a.params.ReqID)
+		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return rsp.Data.Info, nil
@@ -305,12 +321,12 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 
 	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), a.params.Header, a.attr.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-grp] failed to request the object controller, err: %s", err.Error())
+		blog.Errorf("[model-grp] failed to request the coreservice, err: %s, rid: %s", err.Error(), a.params.ReqID)
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), err: %s", a.attr.ObjectID, cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), err: %s, rid: %s", a.attr.ObjectID, cond.ToMapStr(), rsp.ErrMsg, a.params.ReqID)
 		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -323,4 +339,13 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 
 func (a *attribute) SetSupplierAccount(supplierAccount string) {
 	a.attr.OwnerID = supplierAccount
+}
+
+func (a *attribute) isPropertyTypeIntEnumList(propertyType string) bool {
+	switch propertyType {
+	case common.FieldTypeInt, common.FieldTypeEnum, common.FieldTypeList:
+		return true
+	default:
+		return false
+	}
 }

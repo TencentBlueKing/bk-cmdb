@@ -17,6 +17,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (s *topoService) Health(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	return s.core.HealthOperation().Health(params)
+func (s *Service) Health(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	return s.Core.HealthOperation().Health(params)
 }

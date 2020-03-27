@@ -21,16 +21,15 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
 )
 
 func (dh *DistHandler) StartDistribute() (err error) {
 	defer func() {
-		syserror := recover()
-		if syserror != nil {
-			err = fmt.Errorf("system error: %v", syserror)
+		sysError := recover()
+		if sysError != nil {
+			err = fmt.Errorf("system error: %v", sysError)
 		}
 		if err != nil {
 			blog.Errorf("distribute process stop with error: %v, stack:%s", err, debug.Stack())
@@ -39,10 +38,10 @@ func (dh *DistHandler) StartDistribute() (err error) {
 
 	blog.Info("distribution handle process started")
 
-	rccler := newReconciler(dh.ctx, dh.cache, dh.db)
-	rccler.loadAll()
-	rccler.reconcile()
-	subscribers := rccler.persistedSubscribers
+	reconciler := newReconciler(dh.ctx, dh.cache, dh.db)
+	reconciler.loadAll()
+	reconciler.reconcile()
+	subscribers := reconciler.persistedSubscribers
 
 	chErr := make(chan error, 1)
 	routines := map[int64]chan struct{}{}
@@ -67,9 +66,9 @@ func (dh *DistHandler) StartDistribute() (err error) {
 
 	go func() {
 		for range time.Tick(time.Second * 60) {
-			rccler.loadAll()
-			rccler.reconcile()
-			for _, sub := range rccler.persistedSubscribers {
+			reconciler.loadAll()
+			reconciler.reconcile()
+			for _, sub := range reconciler.persistedSubscribers {
 				MsgChan <- "update" + sub
 			}
 		}
@@ -78,19 +77,19 @@ func (dh *DistHandler) StartDistribute() (err error) {
 	go func() {
 		blog.Infof("discovering subscriber change")
 
-		defer blog.Warn("discovering subscriber change process stoped")
+		defer blog.Warn("discovering subscriber change process stopped")
 		for {
-			mesg := <-MsgChan
-			mesgAction := getChangeAction(mesg)
-			mesgBody := getChangeBody(mesg)
+			msg := <-MsgChan
+			msgAction := extractChangeAction(msg)
+			msgBody := extractChangeBody(msg)
 
 			subscriber := metadata.Subscription{}
-			blog.Infof("mesg: action:%s ,body:%s", mesgAction, mesgBody)
-			if err := json.Unmarshal([]byte(mesgBody), &subscriber); err != nil {
+			blog.Infof("msg: action:%s, body:%s", msgAction, msgBody)
+			if err := json.Unmarshal([]byte(msgBody), &subscriber); err != nil {
 				chErr <- err
 				return
 			}
-			switch mesgAction {
+			switch msgAction {
 			case "create":
 				blog.Infof("starting subscribers process %d", subscriber.SubscriptionID)
 				if renewCh, ok := renewMaps[subscriber.SubscriptionID]; ok {
@@ -109,13 +108,13 @@ func (dh *DistHandler) StartDistribute() (err error) {
 				renewMaps[subscriber.SubscriptionID] = renewCh
 			case "update":
 				blog.Infof("renew subscribers process %d", subscriber.SubscriptionID)
-				if renewCh, ok := renewMaps[subscriber.SubscriptionID]; ok {
+				if renewCh, exist := renewMaps[subscriber.SubscriptionID]; exist == true {
 					renewCh <- subscriber
 				} else {
-					MsgChan <- "create" + mesgBody
+					MsgChan <- "create" + msgBody
 				}
 			case "delete":
-				blog.Infof("stoping subscribers process %d", subscriber.SubscriptionID)
+				blog.Infof("subscriber has been deleted, now stopping subscribe process, subscriberID: %d", subscriber.SubscriptionID)
 				if routines[subscriber.SubscriptionID] != nil {
 					close(routines[subscriber.SubscriptionID])
 					delete(routines, subscriber.SubscriptionID)
@@ -132,12 +131,12 @@ func (dh *DistHandler) StartDistribute() (err error) {
 func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan metadata.Subscription, done chan struct{}) (err error) {
 	blog.Infof("start handle dist %v", param.SubscriptionID)
 	defer func() {
-		syserror := recover()
-		if syserror != nil {
-			err = fmt.Errorf("system error: %v", syserror)
+		sysError := recover()
+		if sysError != nil {
+			err = fmt.Errorf("system error: %v", sysError)
 		}
 		if err != nil {
-			blog.Infof("event inst handle process stoped by %v: %s", err, debug.Stack())
+			blog.Infof("event inst handle process stopped by %v: %s", err, debug.Stack())
 		}
 	}()
 	sub := param
@@ -148,14 +147,17 @@ func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan m
 		case nsub := <-chNew:
 			if nsub.GetCacheKey() != sub.GetCacheKey() {
 				sub = nsub
-				blog.Infof("refreshed subcriber %v", sub.GetCacheKey())
+				blog.Infof("refreshed subscriber %v", sub.GetCacheKey())
 			} else {
-				blog.Infof("refresh ignore, subcriber cache key not change\nold:%s\nnew:%s ", sub.GetCacheKey(), nsub.GetCacheKey())
+				blog.Infof("refresh ignore, subscriber cache key not change\nold:%s\nnew:%s ", sub.GetCacheKey(), nsub.GetCacheKey())
 			}
 		case <-ticker.C:
-			count, counterr := dh.db.Table(common.BKTableNameSubscription).Find(condition.CreateCondition().Field(common.BKSubscriptionIDField).Eq(sub.SubscriptionID).ToMapStr()).Count(context.Background())
-			if counterr != nil {
-				blog.Errorf("get subscription count error %v", counterr)
+			filter := map[string]interface{}{
+				common.BKSubscriptionIDField: sub.SubscriptionID,
+			}
+			count, countErr := dh.db.Table(common.BKTableNameSubscription).Find(filter).Count(context.Background())
+			if countErr != nil {
+				blog.Errorf("get subscription count error %v", countErr)
 				continue
 			}
 			if count <= 0 {
@@ -180,8 +182,8 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 	blog.Infof("handling dist %s", dist.Raw)
 	distID := fmt.Sprint(dist.DstbID - 1)
 	subscriberID := fmt.Sprint(dist.SubscriptionID)
-	runningkey := types.EventCacheDistRunningPrefix + subscriberID + "_" + distID
-	if err = saveRunning(dh.cache, runningkey, timeout+sub.GetTimeout()); err != nil {
+	runningKey := types.EventCacheDistRunningPrefix + subscriberID + "_" + distID
+	if err = saveRunning(dh.cache, runningKey, timeout+sub.GetTimeout()); err != nil {
 		if ErrProcessExists == err {
 			blog.Infof("process exist, continue")
 			return nil
@@ -189,34 +191,34 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 		return err
 	}
 
-	priviousID := fmt.Sprint(dist.DstbID - 1)
-	priviousRunningkey := types.EventCacheDistRunningPrefix + subscriberID + "_" + priviousID
-	done, err := checkFromDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, priviousID)
+	previousID := fmt.Sprint(dist.DstbID - 1)
+	previousRunningKey := types.EventCacheDistRunningPrefix + subscriberID + "_" + previousID
+	done, err := checkFromDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, previousID)
 	if err != nil {
 		return err
 	}
 	if !done {
 
-		running, checkErr := checkFromRunning(dh.cache, priviousRunningkey)
+		running, checkErr := checkFromRunning(dh.cache, previousRunningKey)
 		if checkErr != nil {
 			return checkErr
 		}
 		if !running {
 
 			time.Sleep(time.Second * 5)
-			running, checkErr = checkFromRunning(dh.cache, priviousRunningkey)
+			running, checkErr = checkFromRunning(dh.cache, previousRunningKey)
 			if checkErr != nil {
 				return checkErr
 			}
 		}
 		if running {
 
-			blog.Infof("waitting previous id: " + priviousID)
-			if checkErr = waitPreviousDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, priviousID, sub.GetTimeout()); checkErr != nil && checkErr != ErrWaitTimeout {
+			blog.Infof("waiting previous id: " + previousID)
+			if checkErr = waitPreviousDone(dh.cache, types.EventCacheDistDonePrefix+subscriberID, previousID, sub.GetTimeout()); checkErr != nil && checkErr != ErrWaitTimeout {
 				return checkErr
 			}
 			if checkErr == ErrWaitTimeout {
-				blog.Infof("wait timeout previous id: %v, begin send callback", priviousID)
+				blog.Infof("wait timeout previous id: %v, begin send callback", previousID)
 			}
 		}
 	}
@@ -237,20 +239,20 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 }
 
 func (dh *DistHandler) popDistInst(subID int64) *metadata.DistInstCtx {
-	eventslice := dh.cache.BLPop(time.Second*10, types.EventCacheDistQueuePrefix+fmt.Sprint(subID)).Val()
+	eventSlice := dh.cache.BLPop(time.Second*10, types.EventCacheDistQueuePrefix+fmt.Sprint(subID)).Val()
 
-	if len(eventslice) <= 0 {
+	if len(eventSlice) <= 0 {
 		return nil
 	}
 
-	eventbytes := []byte(eventslice[1])
+	eventBytes := []byte(eventSlice[1])
 	event := metadata.DistInst{}
-	if err := json.Unmarshal(eventbytes, &event); err != nil {
-		blog.Errorf("event distribute fail, unmarshal error: %v, date=[%s]", err, eventbytes)
+	if err := json.Unmarshal(eventBytes, &event); err != nil {
+		blog.Errorf("event distribute fail, unmarshal error: %v, data=[%s]", err, eventBytes)
 		return nil
 	}
 
-	return &metadata.DistInstCtx{DistInst: event, Raw: eventslice[1]}
+	return &metadata.DistInstCtx{DistInst: event, Raw: eventSlice[1]}
 }
 
 func (dh *DistHandler) saveDistDone(dist *metadata.DistInstCtx) (err error) {
@@ -263,9 +265,9 @@ func (dh *DistHandler) saveDistDone(dist *metadata.DistInstCtx) (err error) {
 	return
 }
 
-func getChangeAction(mesg string) string {
-	return mesg[:6]
+func extractChangeAction(msg string) string {
+	return msg[:6]
 }
-func getChangeBody(mesg string) string {
-	return mesg[6:]
+func extractChangeBody(msg string) string {
+	return msg[6:]
 }

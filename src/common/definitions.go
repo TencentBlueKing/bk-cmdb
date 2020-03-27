@@ -30,14 +30,13 @@ const (
 	// HTTPDelete delete method
 	HTTPDelete = "DELETE"
 
-	// BKTrue the true definition
-	BKTrue = 1
-
-	// BKFalse the false definition
-	BKFalse = 2
-
 	// BKNoLimit no limit definition
 	BKNoLimit = 999999999
+	// max limit of a page
+	BKMaxPageSize = 1000
+
+	// 一次最大操作记录数
+	BKMaxRecordsAtOnce = 2000
 
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
@@ -130,6 +129,9 @@ const (
 )
 
 const (
+	// used only for host search
+	BKDBMULTIPLELike = "$multilike"
+
 	// BKDBIN the db operator
 	BKDBIN = "$in"
 
@@ -187,6 +189,12 @@ const (
 	// BKDBUNSET the db opeartor
 	BKDBUNSET = "$unset"
 
+	// BKDBAddToSet The $addToSet operator adds a value to an array unless the value is already present, in which case $addToSet does nothing to that array.
+	BKDBAddToSet = "$addToSet"
+
+	// BKDBPull The $pull operator removes from an existing array all instances of a value or values that match a specified condition.
+	BKDBPull = "$pull"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
@@ -196,11 +204,14 @@ const (
 	DefaultResModuleName string = "空闲机"
 	// DefaultFaultModuleName the default fault module name
 	DefaultFaultModuleName string = "故障机"
+	// DefaultRecycleModuleName the default fault module name
+	DefaultRecycleModuleName string = "待回收"
 )
 
 const (
 	// BKFieldID the id definition
-	BKFieldID = "id"
+	BKFieldID   = "id"
+	BKFieldName = "name"
 
 	// BKDefaultField the default field
 	BKDefaultField = "default"
@@ -219,6 +230,9 @@ const (
 
 	// BKAssetIDField  the asset id field
 	BKAssetIDField = "bk_asset_id"
+
+	// BKSNField  the sn  field
+	BKSNField = "bk_sn"
 
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
@@ -289,6 +303,8 @@ const (
 	// BKModuleNameField the module name field
 	BKModuleNameField = "bk_module_name"
 
+	HostApplyEnabledField = "host_apply_enabled"
+
 	// BKSubscriptionIDField the subscription id field
 	BKSubscriptionIDField = "subscription_id"
 	// BKSubscriptionNameField the subscription name field
@@ -333,6 +349,9 @@ const (
 	// BKInstNameField the inst name field
 	BKInstNameField = "bk_inst_name"
 
+	// ExportCustomFields the use custom display columns
+	ExportCustomFields = "export_custom_fields"
+
 	// BKProcIDField the proc id field
 	BKProcIDField = "bk_process_id"
 
@@ -359,6 +378,8 @@ const (
 
 	// BKPropertyNameField the property name field
 	BKPropertyNameField = "bk_property_name"
+
+	BKPropertyIndexField = "bk_property_index"
 
 	// BKPropertyTypeField the property type field
 	BKPropertyTypeField = "bk_property_type"
@@ -398,15 +419,6 @@ const (
 	// BKOptionField the option field
 	BKOptionField = "option"
 
-	// BKPrivilegeField the privilege field
-	BKPrivilegeField = "privilege"
-
-	// BKUserGroupIDField the group id field
-	BKUserGroupIDField = "group_id"
-
-	// BKUserListField the user list field
-	BKUserListField = "user_list"
-
 	// BKContentField the content field
 	BKContentField = "content"
 
@@ -440,14 +452,33 @@ const (
 	// BKPort the port
 	BKPort = "port"
 
+	// BKProcPortEnable whether enable port,  enable port use for monitor app. default value
+	BKProcPortEnable = "bk_port_enable"
+
 	// BKUser the user
 	BKUser = "user"
 
 	// BKProtocol the protocol
 	BKProtocol = "protocol"
 
+	// the process object name
+	BKProcessObjectName = "process"
+
 	// BKProcessIDField the process id field
 	BKProcessIDField = "bk_process_id"
+
+	BKServiceInstanceIDField = "service_instance_id"
+	BKServiceTemplateIDField = "service_template_id"
+	BKProcessTemplateIDField = "process_template_id"
+	BKServiceCategoryIDField = "service_category_id"
+
+	BKSetTemplateIDField      = "set_template_id"
+	BKSetTemplateVersionField = "set_template_version"
+
+	HostApplyRuleIDField = "host_apply_rule_id"
+
+	BKParentIDField = "bk_parent_id"
+	BKRootIDField   = "bk_root_id"
 
 	// BKProcessNameField the process name field
 	BKProcessNameField = "bk_process_name"
@@ -457,6 +488,8 @@ const (
 
 	// BKFuncName the function name
 	BKFuncName = "bk_func_name"
+
+	BKStartParamRegex = "bk_start_param_regex"
 
 	// BKBindIP the bind ip
 	BKBindIP = "bind_ip"
@@ -469,6 +502,8 @@ const (
 
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"
+
+	BKIsCollapseField = "is_collapse"
 
 	// BKProxyListField the proxy list field
 	BKProxyListField = "bk_proxy_list"
@@ -565,6 +600,9 @@ const (
 
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
+	BKGroupField               = "group"
+
+	BKAttributeIDField = "bk_attribute_id"
 )
 
 const (
@@ -616,6 +654,8 @@ const (
 // DefaultResSetFlag the default resource set flat
 const DefaultResSetFlag int = 1
 
+const DefaultFlagDefaultValue int = 0
+
 // DefaultAppFlag the default app flag
 const DefaultAppFlag int = 1
 
@@ -623,6 +663,8 @@ const DefaultAppFlag int = 1
 const DefaultAppName string = "资源池"
 
 const DefaultCloudName string = "default area"
+
+const DefaultInstName string = "实例名"
 
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
@@ -644,7 +686,21 @@ const (
 
 	// DefaultFaultModuleFlag the default fault module flag
 	DefaultFaultModuleFlag int = 2
+
+	// NormalModuleFlag create module by user , default =0
+	NormalModuleFlag int = 0
+
+	// NormalSetDefaultFlag user create set default field value
+	NormalSetDefaultFlag int64 = 0
+
+	// default recycle module flat
+	DefaultRecycleModuleFlag int = 3
 )
+
+const (
+	DefaultModuleType string = "1"
+)
+
 const (
 	// FieldTypeSingleChar the single char filed type
 	FieldTypeSingleChar string = "singlechar"
@@ -670,26 +726,29 @@ const (
 	// FieldTypeUser the user field type
 	FieldTypeUser string = "objuser"
 
-	// FieldTypeSingleAsst the single association
-	FieldTypeSingleAsst string = "singleasst"
-
-	// FieldTypeMultiAsst the multi association
-	FieldTypeMultiAsst string = "multiasst"
-
-	// FieldTypeForeignKey the multi association
-	FieldTypeForeignKey string = "foreignkey"
-
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"
 
 	// FieldTypeBool the bool type
 	FieldTypeBool string = "bool"
 
+	// FieldTypeList the lis type
+	FieldTypeList string = "list"
+
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 2000
+	FieldTypeLongLenChar int = 15000
+
+	//FieldTypeStrictCharRegexp the single char regex expression
+	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
+
+	//FieldTypeSingleCharRegexp the single char regex expression
+	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+
+	//FieldTypeLongCharRegexp the single char regex expression
+	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
 )
 
 const (
@@ -819,15 +878,17 @@ const (
 	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
-	BKSessionLanugageKey    = "language"
-	BKHTTPSupplierID        = "bk_supplier_id"
+	//BKSessionLanugageKey = "language"
+	BKHTTPSupplierID = "bk_supplier_id"
+	BKHTTPRequestAppCode = "Bk-App-Code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
-	BKHTTPCCRequestID = "CC_REQUEST_ID"
+	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime   = "CC_REQUEST_TIME"
-	BKHTTPCCTransactionID = "CC_TXN_ID"
+	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime     = "Cc_Request_Time"
+	BKHTTPCCTransactionID   = "Cc_Txn_Id"
+	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
 )
 
 type CCContextKey string
@@ -845,11 +906,7 @@ const (
 const (
 	HostOSTypeEnumLinux   = "1"
 	HostOSTypeEnumWindows = "2"
-)
-
-const (
-	// InstAsstIDSplit instance associated fields, separators between mulitple ids of associated objects
-	InstAsstIDSplit = ","
+	HostOSTypeEnumAIX     = "3"
 )
 
 // integer const
@@ -866,13 +923,9 @@ const (
 	MinFloat64 = -math.MaxFloat64
 )
 
-//flag
+// flag
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
-
-const (
-	BKHTTPMIMEJSON = "application/json"
-)
 
 const (
 	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
@@ -881,8 +934,8 @@ const (
 
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
-	// multiple url separeted by commas
-	URLFilterWhiteListSuffix = "/healthz"
+	// multiple url separated by commas
+	URLFilterWhiteListSuffix = "/healthz,/version"
 
 	URLFilterWhiteListSepareteChar = ","
 )
@@ -923,8 +976,8 @@ const (
 	WEBSessionOwnerUinListeKey = "owner_uin_list"
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
-	WEBSessionLanguageKey      = "language"
-	WEBSessionSupplierID       = "supplier_id"
+	//WEBSessionLanguageKey      = "language"
+	WEBSessionSupplierID = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
@@ -949,7 +1002,8 @@ const (
 )
 
 const (
-	BKProcInstanceOpUser = "proc instance user"
+	BKProcInstanceOpUser             = "proc instance user"
+	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
 )
 
 const (
@@ -970,7 +1024,6 @@ const (
 	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
 	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
 	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
-	RedisCloudSyncStartLockKey                = BKCacheKeyV3Prefix + "lock:cloudsyncstart"
 )
 
 // association fields
@@ -999,4 +1052,96 @@ const (
 
 const (
 	BKBizDefault = "bizdefault"
+)
+
+const (
+	// MetaDataSynchronizeField Synchronous data aggregation field
+	MetaDataSynchronizeField = "sync"
+	// MetaDataSynchronizeFlagField synchronize flag
+	MetaDataSynchronizeFlagField = "flag"
+	// MetaDataSynchronizeVersionField synchronize version
+	MetaDataSynchronizeVersionField = "version"
+	// MetaDataSynchronizeIdentifierField 数据需要同步cmdb系统的身份标识， 值是数组
+	MetaDataSynchronizeIdentifierField = "identifier"
+	// MetaDataSynchronIdentifierFlagSyncAllValue 数据可以被任何系统同步
+	MetaDataSynchronIdentifierFlagSyncAllValue = "__bk_cmdb__"
+
+	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
+	SynchronizeSignPrefix = "sync_blueking"
+
+	/* synchronize model description classify*/
+
+	// SynchronizeModelTypeClassification synchroneize model classification
+	SynchronizeModelTypeClassification = "model_classification"
+	// SynchronizeModelTypeAttribute synchroneize model attribute
+	SynchronizeModelTypeAttribute = "model_attribute"
+	// SynchronizeModelTypeAttributeGroup synchroneize model attribute group
+	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
+	// SynchronizeModelTypeBase synchroneize model attribute
+	SynchronizeModelTypeBase = "model"
+
+	/* synchronize instance assoication sign*/
+
+	// SynchronizeAssociationTypeModelHost synchroneize model ggroup
+	SynchronizeAssociationTypeModelHost = "module_host"
+)
+
+const (
+	AttributePlaceHolderMaxLength = 300
+	AttributeOptionMaxLength      = 1000
+	AttributeIDMaxLength          = 20
+	AttributeNameMaxLength        = 20
+	AttributeUnitMaxLength        = 20
+	AttributeOptionValueMaxLength = 128
+	AttributeOptionArrayMaxLength = 200
+)
+
+const (
+	NameFieldMaxLength = 256
+
+	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
+	ServiceTemplateIDNotSet = 0
+	SetTemplateIDNotSet     = 0
+
+	MetadataLabelBiz = "metadata.label.bk_biz_id"
+
+	DefaultServiceCategoryName = "Default"
+)
+
+const (
+	ContextRequestIDField    = "request_id"
+	ContextRequestUserField  = "request_user"
+	ContextRequestOwnerField = "request_owner"
+)
+
+const (
+	OperationCustom      = "custom"
+	OperationReportType  = "report_type"
+	OperationConfigID    = "config_id"
+	BizModuleHostChart   = "biz_module_host_chart"
+	HostOSChart          = "host_os_chart"
+	HostBizChart         = "host_biz_chart"
+	HostCloudChart       = "host_cloud_chart"
+	HostChangeBizChart   = "host_change_biz_chart"
+	ModelAndInstCount    = "model_and_inst_count"
+	ModelInstChart       = "model_inst_chart"
+	ModelInstChangeChart = "model_inst_change_chart"
+	CreateObject         = "create object"
+	DeleteObject         = "delete object"
+	UpdateObject         = "update object"
+	OperationDescription = "op_desc"
+	OptionOther          = "其他"
+	TimerPattern         = "^[\\d]+\\:[\\d]+$"
+	SyncSetTaskName      = "sync-settemplate2set"
+
+	BKHostState = "bk_state"
+)
+
+// 云同步
+const (
+	CloudSyncTaskID            = "bk_task_id"
+	CloudSyncTaskName          = "bk_task_name"
+	CloudSyncResourceConfirmID = "bk_resource_id"
+	CloudSyncConfirmTime       = "confirm_time"
+	CloudSyncConfirmHistoryID  = "confirm_history_id"
 )

@@ -20,9 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -31,59 +30,30 @@ import (
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/rpc"
-
-	"github.com/emicklei/go-restful"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	service := svc.NewService(ctx)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_EVENTSERVER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
 
 	process := new(EventServer)
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_EVENTSERVER,
-		op.ServConf.ExConfig,
-		process.onHostConfigUpdate,
-		discover,
-		bonC)
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: process.onHostConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -98,46 +68,65 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+
 		if err != nil {
-			return fmt.Errorf("connect mongo server failed %s", err.Error())
+			return fmt.Errorf("connect tmserver failed, err: %s", err.Error())
+		}
+
+		var db dal.RDB
+		var rpcCli rpc.Client
+		if process.Config.MongoDB.Enable == "true" {
+			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		} else {
+			rpcCli, err = rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
+			if err != nil {
+				return fmt.Errorf("connect rpc server failed, err: %s", err.Error())
+			}
+			db, err = remote.NewWithDiscover(process.Core)
+		}
+		if err != nil {
+			return fmt.Errorf("connect mongo server failed, err: %s", err.Error())
 		}
 		process.Service.SetDB(db)
 
 		cache, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
-			return fmt.Errorf("connect redis server failed %s", err.Error())
+			return fmt.Errorf("connect redis server failed, err: %s", err.Error())
 		}
 		process.Service.SetCache(cache)
 
-		var rpccli *rpc.Client
-		if process.Config.RPC.Address != "" {
-			rpccli, err = rpc.Dial(process.Config.RPC.Address)
-			if err != nil {
-				return fmt.Errorf("connect rpc server failed %s", err.Error())
-			}
-		}
-
-		subcli, err := redis.NewFromConfig(process.Config.Redis)
+		subCli, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
-			return fmt.Errorf("connect subcli redis server failed %s", err.Error())
+			return fmt.Errorf("connect subcli redis server failed, err: %s", err.Error())
 		}
 
+		authCli, err := authcenter.NewAuthCenter(nil, process.Config.Auth, engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
+		}
+		process.Service.SetAuth(authCli)
+		blog.Infof("enable auth center: %v", auth.IsAuthed())
+
 		go func() {
-			errCh <- distribution.SubscribeChannel(subcli)
+			errCh <- distribution.SubscribeChannel(subCli)
 		}()
 
 		go func() {
-			errCh <- distribution.Start(ctx, cache, db, rpccli)
+			errCh <- distribution.Start(ctx, cache, db, rpcCli)
 		}()
+
 		break
+	}
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
+	if err != nil {
+		return err
 	}
 	select {
 	case <-ctx.Done():
 	case err = <-errCh:
-		blog.V(3).Infof("distribution routine stoped %v", err)
+		blog.V(3).Infof("distribution routine stopped, err: %v", err)
 	}
-	blog.V(3).Infof("process stoped")
+	blog.V(3).Infof("process stopped")
 
 	return nil
 }
@@ -151,13 +140,15 @@ type EventServer struct {
 var configLock sync.Mutex
 
 func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	var err error
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		// ignore err, cause ConfigMap is map[string]string
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.Infof("config updated: \n%s", out)
 		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 		h.Config.MongoDB = mongoConf
@@ -166,6 +157,11 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Redis = redisConf
 
 		h.Config.RPC.Address = current.ConfigMap["rpc.address"]
+
+		h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+		if err != nil {
+			blog.Errorf("parse auth center config failed: %v", err)
+		}
 	}
 }
 

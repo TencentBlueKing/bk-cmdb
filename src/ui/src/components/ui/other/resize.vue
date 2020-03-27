@@ -1,11 +1,14 @@
 <template>
     <div class="resize-layout" :class="localDirections">
         <slot></slot>
-        <i v-for="(direction, index) in localDirections"
-            :class="['resize-handler', direction]"
-            :style="getHandlerStyle(direction)"
-            @mousedown.left="handleMousedown($event, direction)">
-        </i>
+        <template v-if="!disabled">
+            <i v-for="(_direction, index) in localDirections"
+                :key="index"
+                :class="['resize-handler', _direction]"
+                :style="getHandlerStyle(_direction)"
+                @mousedown.left="handleMousedown($event, _direction)">
+            </i>
+        </template>
         <i :class="['resize-proxy', state.direction]" ref="resizeProxy"></i>
         <div class="resize-mask" ref="resizeMask"></div>
     </div>
@@ -58,7 +61,8 @@
             handlerOffset: {
                 type: Number,
                 default: 0
-            }
+            },
+            disabled: Boolean
         },
         data () {
             return {
@@ -139,8 +143,12 @@
                     $resizeProxy.style.top = this.state.startTop + 'px'
                     $resizeMask.style.cursor = 'row-resize'
                 }
-                document.onselectstart = () => { return false }
-                document.ondragstart = () => { return false }
+                document.onselectstart = () => {
+                    return false
+                }
+                document.ondragstart = () => {
+                    return false
+                }
                 const handleMouseMove = (event) => {
                     if (direction === 'right') {
                         const deltaLeft = event.clientX - this.state.startMouseLeft

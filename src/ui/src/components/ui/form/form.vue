@@ -1,59 +1,69 @@
 <template>
     <div class="form-layout">
-        <div class="form-groups">
+        <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
                     :key="groupIndex"
                     v-if="checkGroupAvailable(groupedProperties[groupIndex])">
-                    <h3 class="group-name">{{group['bk_group_name']}}</h3>
-                    <ul class="property-list clearfix">
-                        <li class="property-item fl"
-                            v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                            v-if="checkEditable(property)"
-                            :key="propertyIndex">
-                            <div class="property-name">
-                                <span class="property-name-text" :class="{required: property['isrequired']}">{{property['bk_property_name']}}</span>
-                                <i class="property-name-tooltips bk-icon icon-info-circle-shape" v-if="property['placeholder']" v-tooltip="htmlEncode(property['placeholder'])"></i>
-                            </div>
-                            <div class="property-value">
-                                <component class="form-component"
-                                    v-if="property['bk_property_type'] === 'enum'"
-                                    :is="`cmdb-form-${property['bk_property_type']}`"
-                                    :class="{error: errors.has(property['bk_property_id'])}"
-                                    :disabled="checkDisabled(property)"
-                                    :options="property.option || []"
-                                    :data-vv-name="property['bk_property_id']"
-                                    :data-vv-as="property['bk_property_name']"
-                                    v-validate="getValidateRules(property)"
-                                    v-model.trim="values[property['bk_property_id']]">
-                                </component>
-                                 <component class="form-component"
-                                    v-else
-                                    :is="`cmdb-form-${property['bk_property_type']}`"
-                                    :class="{error: errors.has(property['bk_property_id'])}"
-                                    :disabled="checkDisabled(property)"
-                                    :data-vv-name="property['bk_property_id']"
-                                    :data-vv-as="property['bk_property_name']"
-                                    v-validate="getValidateRules(property)"
-                                    v-model.trim="values[property['bk_property_id']]">
-                                </component>
-                                <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
-                            </div>
-                        </li>
-                    </ul>
+                    <cmdb-collapse
+                        :label="group['bk_group_name']"
+                        :collapse.sync="groupState[group['bk_group_id']]">
+                        <ul class="property-list">
+                            <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
+                                <li class="property-item"
+                                    v-if="checkEditable(property)"
+                                    :key="propertyIndex">
+                                    <div class="property-name">
+                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        <i class="property-name-tooltips icon-cc-tips"
+                                            v-if="property['placeholder']"
+                                            v-bk-tooltips="htmlEncode(property['placeholder'])">
+                                        </i>
+                                    </div>
+                                    <div class="property-value clearfix">
+                                        <slot :name="property.bk_property_id">
+                                            <component class="form-component"
+                                                :is="`cmdb-form-${property['bk_property_type']}`"
+                                                :class="{ error: errors.has(property['bk_property_id']) }"
+                                                :unit="property['unit']"
+                                                :row="2"
+                                                :disabled="checkDisabled(property)"
+                                                :options="property.option || []"
+                                                :data-vv-name="property['bk_property_id']"
+                                                :data-vv-as="property['bk_property_name']"
+                                                :placeholder="getPlaceholder(property)"
+                                                :auto-select="false"
+                                                v-validate="getValidateRules(property)"
+                                                v-model.trim="values[property['bk_property_id']]">
+                                            </component>
+                                            <span class="form-error"
+                                                :title="errors.first(property['bk_property_id'])">
+                                                {{errors.first(property['bk_property_id'])}}
+                                            </span>
+                                        </slot>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </cmdb-collapse>
                 </div>
             </template>
         </div>
         <div class="form-options"
             v-if="showOptions"
-            :class="{sticky: scrollbar}">
+            :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <bk-button class="button-save" type="primary"
-                    :disabled="!authority.includes('update') || !hasChange || $loading()"
-                    @click="handleSave">
-                    {{$t("Common['保存']")}}
-                </bk-button>
-                <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
+                <cmdb-auth class="inline-block-middle" :auth="saveAuthResources">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-save"
+                        theme="primary"
+                        :loading="$loading()"
+                        :disabled="disabled || (type !== 'create' && !hasChange)"
+                        @click="handleSave">
+                        {{type === 'create' ? $t('提交') : $t('保存')}}
+                    </bk-button>
+                </cmdb-auth>
+                <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
         </div>
@@ -87,11 +97,9 @@
                 type: Boolean,
                 default: true
             },
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
+            saveAuth: {
+                type: [String, Array],
+                default: ''
             }
         },
         data () {
@@ -104,7 +112,7 @@
         computed: {
             changedValues () {
                 const changedValues = {}
-                for (let propertyId in this.values) {
+                for (const propertyId in this.values) {
                     if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
@@ -118,6 +126,12 @@
                 return this.$groupedProperties.map(properties => {
                     return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                 })
+            },
+            saveAuthResources () {
+                const auth = this.saveAuth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
             }
         },
         watch: {
@@ -132,10 +146,10 @@
             this.initValues()
         },
         mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$el, this.checkScrollbar)
+            RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
         },
         beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$el, this.checkScrollbar)
+            RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
         },
         methods: {
             checkScrollbar () {
@@ -143,7 +157,7 @@
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
-                this.values = this.$tools.getInstFormValues(this.properties, this.inst)
+                this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
                 this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
@@ -156,59 +170,48 @@
                 if (this.type === 'create') {
                     return !property['bk_isapi']
                 }
-                return property.editable && !property['bk_isapi']
+                return property.editable && !property['bk_isapi'] && !this.uneditableProperties.includes(property.bk_property_id)
             },
             checkDisabled (property) {
                 if (this.type === 'create') {
                     return false
                 }
-                return !property.editable || property.isreadonly
+                return !property.editable || property.isreadonly || this.disabledProperties.includes(property.bk_property_id)
             },
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')
                 temp.innerHTML = placeholder
-                let output = temp.innerText
+                const output = temp.innerText
                 temp = null
                 return output
             },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             getValidateRules (property) {
-                const rules = {}
-                const {
-                    bk_property_type: propertyType,
-                    option,
-                    isrequired
-                } = property
-                if (isrequired) {
-                    rules.required = true
-                }
-                if (option) {
-                    if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                            rules['min_value'] = option.min
-                        }
-                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                            rules['max_value'] = option.max
-                        }
-                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
-                    }
-                }
-                if (['singlechar', 'longchar'].includes(propertyType)) {
-                    rules[propertyType] = true
-                }
-                if (propertyType === 'int') {
-                    rules['numeric'] = true
-                }
-                if (propertyType === 'float') {
-                    rules['float'] = true
-                }
-                return rules
+                return this.$tools.getValidateRules(property)
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (result) {
-                        this.$emit('on-submit', this.values, this.changedValues, this.inst, this.type)
+                        this.$emit(
+                            'on-submit',
+                            this.$tools.formatValues(this.values, this.properties),
+                            this.$tools.formatValues(this.changedValues, this.properties),
+                            this.inst,
+                            this.type
+                        )
+                    } else {
+                        this.uncollapseGroup()
                     }
+                })
+            },
+            uncollapseGroup () {
+                this.errors.items.forEach(item => {
+                    const property = this.properties.find(property => property['bk_property_id'] === item.field)
+                    const group = property['bk_property_group']
+                    this.groupState[group] = false
                 })
             },
             handleCancel () {
@@ -240,14 +243,16 @@
     }
     .property-list{
         padding: 4px 0;
+        display: flex;
+        flex-wrap: wrap;
         .property-item{
-            width: 50%;
             margin: 12px 0 0;
             padding: 0 54px 0 0;
             font-size: 12px;
+            flex: 0 0 50%;
             .property-name{
                 display: block;
-                margin: 6px 0 9px;
+                margin: 6px 0 10px;
                 color: $cmdbTextColor;
                 line-height: 16px;
                 font-size: 0;
@@ -258,7 +263,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: middle;
-                font-size: 12px;
+                font-size: 14px;
                 @include ellipsis;
                 &.required:after{
                     position: absolute;
@@ -275,13 +280,16 @@
                 width: 16px;
                 height: 16px;
                 font-size: 16px;
-                color: #ffb400;
+                color: #c3cdd7;
             }
             .property-value{
-                height: 36px;
-                line-height: 36px;
-                font-size: 12px;
+                font-size: 0;
                 position: relative;
+                /deep/ .control-append-group {
+                    .bk-input-text {
+                        flex: 1;
+                    }
+                }
             }
         }
     }
@@ -290,12 +298,13 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 28px 32px 0;
+        padding: 10px 32px 0;
         font-size: 0;
         &.sticky {
             padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
+            z-index: 100;
         }
         .button-save{
             min-width: 76px;
@@ -314,5 +323,7 @@
         line-height: 14px;
         font-size: 12px;
         color: #ff5656;
+        max-width: 100%;
+        @include ellipsis;
     }
 </style>

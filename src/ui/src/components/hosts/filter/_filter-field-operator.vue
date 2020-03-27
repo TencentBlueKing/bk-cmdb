@@ -1,39 +1,51 @@
 <template>
-    <bk-selector :list="list" :selected.sync="localSelected" :disabled="disabled"></bk-selector>
+    <bk-select
+        v-model="localSelected"
+        :clearable="false"
+        :popover-min-width="75"
+        :disabled="disabled"
+        :popover-options="{
+            boundary: 'window'
+        }">
+        <bk-option
+            v-for="(option, index) in list"
+            :key="index"
+            :id="option.id"
+            :name="option.name">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>
     export default {
+        // eslint-disable-next-line
         props: ['value', 'type', 'disabled'],
         data () {
             return {
                 operatorMap: {
                     'common': [{
                         id: '$eq',
-                        name: this.$t('Common[\'等于\']')
+                        name: this.$t('等于')
                     }, {
                         id: '$ne',
-                        name: this.$t('Common[\'不等于\']')
+                        name: this.$t('不等于')
                     }],
                     'char': [{
-                        id: '$regex',
-                        name: this.$t('Common[\'包含\']')
+                        id: '$multilike',
+                        name: this.$t('包含')
                     }, {
                         id: '$eq',
-                        name: this.$t('Common[\'等于\']')
+                        name: this.$t('等于')
                     }, {
                         id: '$ne',
-                        name: this.$t('Common[\'不等于\']')
+                        name: this.$t('不等于')
                     }],
                     'name': [{
                         id: '$in',
-                        name: 'IN'
-                    }, {
-                        id: '$eq',
-                        name: this.$t('Common[\'等于\']')
+                        name: this.$t('等于')
                     }, {
                         id: '$ne',
-                        name: this.$t('Common[\'不等于\']')
+                        name: this.$t('不等于')
                     }]
                 },
                 localSelected: ''

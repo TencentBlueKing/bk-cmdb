@@ -19,18 +19,17 @@ import (
 	"sync"
 	"time"
 
+	"gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/rpc"
-
-	redis "gopkg.in/redis.v5"
 )
 
-func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client) error {
+func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) error {
 	chErr := make(chan error, 1)
 	err := migrateIDToMongo(ctx, cache, db)
 	if err != nil {
@@ -39,7 +38,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client)
 
 	eh := &EventHandler{cache: cache}
 	go func() {
-		chErr <- eh.StartHandleInsts()
+		chErr <- eh.Run()
 	}()
 
 	dh := &DistHandler{cache: cache, db: db, ctx: ctx}
@@ -49,18 +48,22 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client)
 
 	ih := identifier.NewIdentifierHandler(ctx, cache, db)
 	go func() {
-		chErr <- ih.StartHandleInsts()
+		chErr <- ih.Run()
 	}()
 
-	th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, commited: make(chan string, 100), shouldClose: util.NewBool(false)}
-	go func() {
-		for {
-			if err := th.Run(); err != nil {
-				blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+	go cleanExpiredEvents(cache)
+
+	if rc != nil {
+		th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, committed: make(chan string, 100), shouldClose: util.NewBool(false)}
+		go func() {
+			for {
+				if err := th.Run(); err != nil {
+					blog.Errorf("TxnHandler stopped with error: %v, we will try 1s later", err)
+				}
+				time.Sleep(time.Second)
 			}
-			time.Sleep(time.Second)
-		}
-	}()
+		}()
+	}
 
 	return <-chErr
 }
@@ -82,13 +85,13 @@ func migrateIDToMongo(ctx context.Context, cache *redis.Client, db dal.RDB) erro
 		return err
 	}
 
-	docs := mapstr.MapStr{
+	docs := map[string]interface{}{
 		"_id":        common.EventCacheEventIDKey,
 		"SequenceID": id,
 	}
 
 	err = db.Table(common.BKTableNameIDgenerator).Insert(ctx, docs)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		return err
 	}
 
@@ -103,11 +106,11 @@ type DistHandler struct {
 }
 
 type TxnHandler struct {
-	rc          *rpc.Client
+	rc          rpc.Client
 	cache       *redis.Client
 	db          dal.RDB
 	ctx         context.Context
-	commited    chan string
+	committed   chan string
 	shouldClose *util.AtomicBool
 	wg          sync.WaitGroup
 }

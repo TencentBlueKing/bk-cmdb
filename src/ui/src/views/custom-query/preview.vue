@@ -1,21 +1,29 @@
 <template>
     <div class="userapi-preview-wrapper">
-        <div class="userapi-preview" v-click-outside="closePreview">
-            <h3 class="preview-title">{{$t("CustomQuery['预览查询']")}}</h3>
+        <div class="mask" @click="closePreview"></div>
+        <div class="userapi-preview">
+            <h3 class="preview-title">{{$t('预览查询')}}</h3>
             <i class="bk-icon icon-close" @click="closePreview"></i>
-            <cmdb-table
-                :loading="$loading('searchHost')"
-                :header="table.header"
-                :list="table.list"
-                :pagination.sync="table.pagination"
-                :wrapperMinusHeight="220"
-                @handlePageChange="handlePageChange"
-                @handleSizeChange="handleSizeChange"
-                @handleSortChange="handleSortChange">
-                <template v-for="({id,name, property}, index) in table.header" :slot="id" slot-scope="{ item }">
-                    <template>{{getHostCellText(property, item)}}</template>
-                </template>
-            </cmdb-table>
+            <div class="preview-table">
+                <bk-table
+                    ref="table"
+                    v-bkloading="{ isLoading: $loading('searchHost') }"
+                    :data="table.list"
+                    :pagination="table.pagination"
+                    :height="379"
+                    @page-change="handlePageChange"
+                    @page-limit-change="handleSizeChange"
+                    @sort-change="handleSortChange">
+                    <bk-table-column v-for="column in table.header"
+                        :sortable="unSortableProperty.includes(column.id) ? false : 'custom'"
+                        :key="column.id"
+                        :prop="column.id"
+                        :label="column.name"
+                        show-overflow-tooltip>
+                        <template slot-scope="{ row }">{{getHostCellText(column.property, row)}}</template>
+                    </bk-table-column>
+                </bk-table>
+            </div>
         </div>
     </div>
 </template>
@@ -44,7 +52,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     },
                     sort: ''
                 }
@@ -53,27 +61,44 @@
         computed: {
             allProperties () {
                 let allProperties = []
-                for (let key in this.attribute) {
+                for (const key in this.attribute) {
                     allProperties = [...allProperties, ...this.attribute[key].properties]
                 }
                 return allProperties
             },
             previewParams () {
-                let condition = this.$tools.clone(this.apiParams['info']['condition'])
-                let hostCondition = condition.find(({bk_obj_id: objId}) => {
+                const conditions = this.$tools.clone(this.apiParams['info']['condition'])
+                const hostCondition = conditions.find(({ bk_obj_id: objId }) => {
                     return objId === 'host'
                 })
                 hostCondition['fields'] = this.previewFields
-                let previewParams = {
+                conditions.forEach(model => {
+                    const modelCondition = model.condition || []
+                    const newConditions = []
+                    if (modelCondition.length) {
+                        modelCondition.forEach(condition => {
+                            const value = condition.value
+                            if ((condition.operator === '$multilike' && value !== null && value !== undefined && String(value).length)
+                                || condition.operator !== '$multilike') {
+                                newConditions.push(condition)
+                            }
+                        })
+                    }
+                    model.condition = newConditions
+                })
+                const previewParams = {
                     'bk_biz_id': this.apiParams['bk_biz_id'],
-                    condition: condition,
+                    condition: conditions,
                     page: {
-                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                        limit: this.table.pagination.size,
+                        start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                        limit: this.table.pagination.limit,
                         sort: this.table.sort
                     }
                 }
                 return previewParams
+            },
+            unSortableProperty () {
+                return ['bk_set_name', 'bk_module_name', 'bk_cloud_id']
             }
         },
         created () {
@@ -87,10 +112,10 @@
             getHostCellText (property, item) {
                 const objId = property['bk_obj_id']
                 const originalValues = item[objId] instanceof Array ? item[objId] : [item[objId]]
-                let text = []
+                const text = []
                 originalValues.forEach(value => {
-                    const flatternedText = this.$tools.getPropertyText(property, value)
-                    flatternedText ? text.push(flatternedText) : void (0)
+                    const flattenedText = this.$tools.getPropertyText(property, value)
+                    flattenedText ? text.push(flattenedText) : void (0)
                 })
                 return text.join(',') || '--'
             },
@@ -100,29 +125,31 @@
                 })
             },
             setTableHeader () {
-                let headerList = []
+                const headerList = []
                 this.tableHeader.map(propertyId => {
                     let header = null
                     if (propertyId === 'bk_set_name') {
                         header = {
                             objId: 'set',
                             id: 'bk_set_name',
-                            name: this.$t("Hosts['集群']")
+                            name: this.$t('集群'),
+                            sortable: false
                         }
                     } else if (propertyId === 'bk_module_name') {
                         header = {
                             objId: 'module',
                             id: 'bk_module_name',
-                            name: this.$t("Hosts['模块']")
+                            name: this.$t('模块'),
+                            sortable: false
                         }
                     } else if (propertyId === 'bk_biz_name') {
                         header = {
                             objId: 'biz',
                             id: 'bk_biz_name',
-                            name: this.$t("Common['业务']")
+                            name: this.$t('业务')
                         }
                     } else {
-                        let property = this.attribute.host.properties.find(property => propertyId === property['bk_property_id'])
+                        const property = this.attribute.host.properties.find(property => propertyId === property['bk_property_id'])
                         if (property) {
                             header = {
                                 objId: 'host',
@@ -148,21 +175,28 @@
                 })
                 this.table.pagination.count = res.count
                 this.table.list = res.info
+                this.fixPageLimitPosition()
             },
             handlePageChange (current) {
                 this.table.pagination.current = current
                 this.getPreviewList()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.getPreviewList()
             },
             closePreview () {
                 this.$emit('close')
+            },
+            fixPageLimitPosition () {
+                this.$nextTick(() => {
+                    const limitRefs = this.$refs.table.$el.querySelector('.bk-table-pagination .bk-page-count .bk-tooltip-ref')
+                    limitRefs && limitRefs._tippy.set({ boundary: 'window' })
+                })
             }
         }
     }
@@ -175,25 +209,33 @@
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 99;
+        z-index: 2400;
+        .mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1;
+        }
         .userapi-preview {
             position: absolute;
-            max-width: 80%;
-            min-width: 50%;
+            width: 880px;
             max-height: 80%;
             min-height: 300px;
-            margin: 0 auto;
+            margin: 20px auto;
             top: 50%;
             left: 50%;
+            z-index: 2;
             transform: translate(-50%, -50%);
             background: #fff;
             box-shadow: 0 0 8px 4px rgba(0, 0, 0, 0.1);
             border-radius: 2px;
             .preview-title {
-                padding-left: 24px;
-                line-height: 68px;
-                font-size: 20px;
-                color: #333948;
+                padding: 15px 0 15px 24px;
+                font-size: 24px;
+                color: #444444;
                 font-weight: normal;
             }
             .icon-close {
@@ -201,8 +243,12 @@
                 top: 12px;
                 right: 12px;
                 cursor: pointer;
-                font-size: 12px;
+                font-size: 14px;
+                font-weight: bold;
             }
+        }
+        .preview-table {
+            padding: 0 20px 20px;
         }
     }
 </style>

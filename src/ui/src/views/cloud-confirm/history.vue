@@ -1,30 +1,37 @@
 <template>
     <div class="confirm-history-layout">
         <div class="confirm-history-options clearfix">
-            <bk-button class="fl" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
-            <cmdb-form-date-range class="confirm-filter" v-model="dateRange" position="left"></cmdb-form-date-range>
+            <bk-button class="fl" theme="primary" @click="back">{{$t('返回')}}</bk-button>
+            <cmdb-form-date-range class="confirm-filter" v-model="dateRange"></cmdb-form-date-range>
         </div>
-        <cmdb-table ref="table"
-            :loading="$loading('getConfirHistory')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange">
-                <template slot="bk_resource_type" slot-scope="{ item }">
-                    <span class="change-span" v-if="item.bk_resource_type === 'change'">
-                        {{$t('Cloud["变更"]')}}
-                    </span>
-                    <span class="new-add-span" v-else>
-                        {{$t('Cloud["新增"]')}}
-                    </span>
+        <bk-table
+            v-bkloading="{ isLoading: $loading('getConfirHistory') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 220"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange">
+            <bk-table-column v-for="column in table.header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name">
+                <template slot-scope="{ row }">
+                    <template v-if="column.id === 'bk_resource_type'">
+                        <span class="change-span" v-if="row.bk_resource_type === 'change'">
+                            {{$t('变更')}}
+                        </span>
+                        <span class="new-add-span" v-else>
+                            {{$t('新增')}}
+                        </span>
+                    </template>
+                    <template v-else-if="column.id === 'bk_account_type' && row.bk_account_type === 'tencent_cloud'">
+                        {{$t('腾讯云')}}
+                    </template>
+                    <template v-else>{{row[column.id]}}</template>
                 </template>
-                <template slot="bk_account_type" slot-scope="{ item }">
-                    <span>{{$t('Cloud["腾讯云"]')}}</span>
-                </template>
-        </cmdb-table>
+            </bk-table-column>
+        </bk-table>
     </div>
 </template>
 
@@ -45,40 +52,40 @@
                 dateRange: [],
                 operator: '',
                 table: {
-                    header: [ {
+                    header: [{
                         id: 'bk_host_innerip',
-                        name: this.$t('Cloud["资源名称"]')
+                        name: this.$t('资源名称')
                     }, {
                         id: 'bk_resource_type',
-                        name: this.$t('Cloud["资源类型"]')
+                        name: this.$t('资源类型')
                     }, {
                         id: 'bk_obj_id',
-                        name: this.$t('Cloud["模型"]')
+                        name: this.$t('模型')
                     }, {
                         id: 'bk_task_name',
-                        name: this.$t('Cloud["任务名称"]')
+                        name: this.$t('任务名称')
                     }, {
                         id: 'bk_account_type',
-                        name: this.$t('Cloud["账号类型"]')
+                        name: this.$t('账号类型')
                     }, {
                         id: 'bk_account_admin',
                         sortable: false,
-                        name: this.$t('Cloud["任务维护人"]')
+                        name: this.$t('任务维护人')
                     }, {
                         id: 'create_time',
                         width: 180,
-                        name: this.$t('Cloud["发现时间"]')
+                        name: this.$t('发现时间')
                     }, {
                         id: 'confirm_time',
                         width: 180,
-                        name: this.$t('Cloud["确认时间"]')
+                        name: this.$t('确认时间')
                     }],
                     list: [],
                     allList: [],
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     },
                     checked: [],
                     defaultSort: '-confirm_history_id',
@@ -100,7 +107,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Cloud["确认记录"]'))
             this.initDateRange()
             this.getTableData()
         },
@@ -112,23 +118,23 @@
                 this.dateRange = [start, end]
             },
             async getTableData () {
-                let pagination = this.table.pagination
-                let params = {}
-                let innerParams = {}
-                let page = {
-                    start: (pagination.current - 1) * pagination.size,
-                    limit: pagination.size,
+                const pagination = this.table.pagination
+                const params = {}
+                const innerParams = {}
+                const page = {
+                    start: (pagination.current - 1) * pagination.limit,
+                    limit: pagination.limit,
                     sort: this.table.sort
                 }
                 innerParams['$gte'] = this.filterRange[0]
                 innerParams['$lte'] = this.filterRange[1]
                 params['confirm_time'] = innerParams
                 params['page'] = page
-                let res = await this.searchConfirmHistory({params, config: {requestID: 'getConfirHistory'}})
+                const res = await this.searchConfirmHistory({ params, config: { requestID: 'getConfirHistory' } })
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['confirm_time'] = this.$tools.formatTime(data['confirm_time'], 'YYYY-MM-DD HH:mm:ss')
-                    data['bk_obj_id'] = this.$t('Hosts["主机"]')
+                    data['bk_obj_id'] = this.$t('主机')
                     return data
                 })
                 pagination.count = res.count
@@ -138,14 +144,14 @@
                 this.getTableData()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             back () {
                 this.$router.go(-1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.getTableData()
             }
         }

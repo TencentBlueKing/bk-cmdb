@@ -1,13 +1,15 @@
 <template>
-    <div class="cmdb-form form-int">
-        <input class="cmdb-form-input form-int-input" type="text"
-            :placeholder="$t('Form[\'请输入数字\']')"
-            :value="value"
-            :maxlength="maxlength"
-            :disabled="disabled"
-            @input="handleInput($event)"
-            @change="handleChange">
-    </div>
+    <bk-input type="text" ref="input"
+        :placeholder="placeholder || $t('请输入数字')"
+        :value="value"
+        :maxlength="maxlength"
+        :disabled="disabled"
+        @blur="handleInput"
+        @change="handleChange">
+        <template slot="append" v-if="unit">
+            <div class="unit" :title="unit">{{unit}}</div>
+        </template>
+    </bk-input>
 </template>
 
 <script>
@@ -15,7 +17,10 @@
         name: 'cmdb-form-int',
         props: {
             value: {
-                default: null
+                default: null,
+                validator (val) {
+                    return ['string', 'number'].includes(typeof val) || val === null
+                }
             },
             disabled: {
                 type: Boolean,
@@ -24,6 +29,18 @@
             maxlength: {
                 type: Number,
                 default: 11
+            },
+            placeholder: {
+                type: String,
+                default: ''
+            },
+            unit: {
+                type: String,
+                default: ''
+            },
+            autoCheck: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -45,32 +62,36 @@
             this.localValue = this.value === '' ? null : this.value
         },
         methods: {
-            handleInput (event) {
-                let value = parseInt(event.target.value.trim())
-                if (isNaN(value)) {
-                    value = null
+            handleInput (value, event) {
+                const originalValue = String(event.target.value).trim()
+                const intValue = originalValue.length ? Number(event.target.value.trim()) : null
+                if (isNaN(intValue)) {
+                    value = this.autoCheck ? null : value
+                } else {
+                    value = intValue
                 }
-                event.target.value = value
+                this.$refs.input.curValue = value
                 this.localValue = value
             },
             handleChange () {
                 this.$emit('on-change', this.localValue)
+            },
+            focus () {
+                this.$el.querySelector('input').focus()
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .form-int-input {
-        height: 36px;
-        width: 100%;
+    .unit {
+        max-width: 120px;
+        font-size: 12px;
+        @include ellipsis;
         padding: 0 10px;
-        background-color: #fff;
-        border: 1px solid $cmdbBorderColor;
-        font-size: 14px;
-        outline: none;
-        &:focus{
-            border-color: $cmdbBorderFocusColor;
-        }
+        height: 30px;
+        line-height: 30px;
+        background: #f2f4f8;
+        color: #63656e;
     }
 </style>

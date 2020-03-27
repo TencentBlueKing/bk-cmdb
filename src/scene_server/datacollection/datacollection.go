@@ -45,7 +45,7 @@ func main() {
 	util.InitFlags()
 
 	if mock {
-		if err := sigmock(collector); err != nil {
+		if err := sigMock(collector); err != nil {
 			fmt.Printf("sigmock failed %v\n", err)
 			os.Exit(1)
 		}
@@ -59,26 +59,27 @@ func main() {
 		blog.Error("fail to save pid. err: %s", err.Error())
 	}
 
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.Errorf("process stoped by %v", err)
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := app.Run(ctx, cancel, op); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		blog.Errorf("process stopped by %v", err)
 		blog.CloseLogs()
 		os.Exit(1)
 	}
 }
 
-func sigmock(collector string) error {
+func sigMock(collector string) error {
 	body := bytes.NewBufferString(`{"name":"` + collector + `"}`)
-	resp, err := http.Post("127.0.0.1:12140", "application/json", body)
+	resp, err := http.Post("http://127.0.0.1:12140", "application/json", body)
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode >= 400 {
-		respbody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("%s", respbody)
+		return fmt.Errorf("%s", respBody)
 	}
 	return nil
 }

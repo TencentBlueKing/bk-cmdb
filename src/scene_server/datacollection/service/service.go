@@ -20,18 +20,20 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-    "configcenter/src/scene_server/datacollection/logics"
-    "configcenter/src/storage/dal"
+	"configcenter/src/scene_server/datacollection/logics"
+	"configcenter/src/storage/dal"
 
-    "github.com/emicklei/go-restful"
-    redis "gopkg.in/redis.v5"
-
+	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*backbone.Engine
-	db    dal.RDB
-	cache *redis.Client
+	db      dal.RDB
+	cache   *redis.Client
+	snapcli *redis.Client
+	disCli  *redis.Client
+	netCli  *redis.Client
 	*logics.Logics
 }
 
@@ -43,39 +45,57 @@ func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+func (s *Service) SetSnapcli(db *redis.Client) {
+	s.snapcli = db
+}
+
+func (s *Service) SetDisCli(db *redis.Client) {
+	s.disCli = db
+}
+
+func (s *Service) SetNetCli(db *redis.Client) {
+	s.netCli = db
+}
+
+func (s *Service) WebService() *restful.Container {
+
+	container := restful.NewContainer()
+
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
 
-	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/collector/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/netcollect/device/action/create").To(s.CreateDevice))
-	ws.Route(ws.POST("/netcollect/device/{device_id}/action/update").To(s.UpdateDevice))
-	ws.Route(ws.POST("/netcollect/device/action/batch").To(s.BatchCreateDevice))
-	ws.Route(ws.POST("/netcollect/device/action/search").To(s.SearchDevice))
-	ws.Route(ws.DELETE("/netcollect/device/action/delete").To(s.DeleteDevice))
+	api.Route(api.POST("/netcollect/device/action/create").To(s.CreateDevice))
+	api.Route(api.POST("/netcollect/device/{device_id}/action/update").To(s.UpdateDevice))
+	api.Route(api.POST("/netcollect/device/action/batch").To(s.BatchCreateDevice))
+	api.Route(api.POST("/netcollect/device/action/search").To(s.SearchDevice))
+	api.Route(api.DELETE("/netcollect/device/action/delete").To(s.DeleteDevice))
 
-	ws.Route(ws.POST("/netcollect/property/action/create").To(s.CreateProperty))
-	ws.Route(ws.POST("/netcollect/property/{netcollect_property_id}/action/update").To(s.UpdateProperty))
-	ws.Route(ws.POST("/netcollect/property/action/batch").To(s.BatchCreateProperty))
-	ws.Route(ws.POST("/netcollect/property/action/search").To(s.SearchProperty))
-	ws.Route(ws.DELETE("/netcollect/property/action/delete").To(s.DeleteProperty))
+	api.Route(api.POST("/netcollect/property/action/create").To(s.CreateProperty))
+	api.Route(api.POST("/netcollect/property/{netcollect_property_id}/action/update").To(s.UpdateProperty))
+	api.Route(api.POST("/netcollect/property/action/batch").To(s.BatchCreateProperty))
+	api.Route(api.POST("/netcollect/property/action/search").To(s.SearchProperty))
+	api.Route(api.DELETE("/netcollect/property/action/delete").To(s.DeleteProperty))
 
-	ws.Route(ws.POST("/netcollect/summary/action/search").To(s.SearchReportSummary))
-	ws.Route(ws.POST("/netcollect/report/action/search").To(s.SearchReport))
-	ws.Route(ws.POST("/netcollect/report/action/confirm").To(s.ConfirmReport))
-	ws.Route(ws.POST("/netcollect/history/action/search").To(s.SearchHistory))
+	api.Route(api.POST("/netcollect/summary/action/search").To(s.SearchReportSummary))
+	api.Route(api.POST("/netcollect/report/action/search").To(s.SearchReport))
+	api.Route(api.POST("/netcollect/report/action/confirm").To(s.ConfirmReport))
+	api.Route(api.POST("/netcollect/history/action/search").To(s.SearchHistory))
 
-	ws.Route(ws.POST("/netcollect/collector/action/search").To(s.SearchCollector))
-	ws.Route(ws.POST("/netcollect/collector/action/update").To(s.UpdateCollector))
-	ws.Route(ws.POST("/netcollect/collector/action/discover").To(s.DiscoverNetDevice))
+	api.Route(api.POST("/netcollect/collector/action/search").To(s.SearchCollector))
+	api.Route(api.POST("/netcollect/collector/action/update").To(s.UpdateCollector))
+	api.Route(api.POST("/netcollect/collector/action/discover").To(s.DiscoverNetDevice))
 
-	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	container.Add(api)
 
-	return ws
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
@@ -96,6 +116,21 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		objCtr.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, objCtr)
+
+	// mongodb
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
+
+	// redis
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err()))
+	if s.snapcli != nil {
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis+" - snapcli", s.snapcli.Ping().Err()))
+	}
+	if s.disCli != nil {
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis+" - disCli", s.disCli.Ping().Err()))
+	}
+	if s.netCli != nil {
+		meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis+" - netCli", s.netCli.Ping().Err()))
+	}
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
@@ -119,5 +154,5 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		Message: meta.Message,
 	}
 	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteEntity(answer)
+	_ = resp.WriteEntity(answer)
 }

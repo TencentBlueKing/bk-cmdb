@@ -16,22 +16,22 @@ import (
 	"context"
 	"net/http"
 
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/tmserver/core"
-	"configcenter/src/storage/tmserver/core/transaction"
+	"configcenter/src/storage/tmserver/core/session"
 	"configcenter/src/storage/types"
-
-	restful "github.com/emicklei/go-restful"
 )
 
 // Service service methods
 type Service interface {
 	WebService() *restful.WebService
-	SetConfig(engin *backbone.Engine, db mongodb.Client, txnCfg options.TransactionConfig)
+	SetConfig(engin *backbone.Engine, db mongodb.Client, txnCfg options.TransactionConfig) error
 }
 
 // New create a new service instance
@@ -52,7 +52,7 @@ type coreService struct {
 	listenPort uint
 }
 
-func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client, txnCfg options.TransactionConfig) {
+func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client, txnCfg options.TransactionConfig) error {
 
 	// set config
 	s.engine = engin
@@ -64,14 +64,23 @@ func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client, txnCf
 	s.rpc.HandleStream(types.CommandWatchTransactionOperation, s.WatchTransaction)
 
 	// create a new core instance
-	txn := transaction.New(
+	sess, err := session.New(
 		core.ContextParams{
 			Context:  context.Background(),
 			ListenIP: s.listenIP,
 		}, txnCfg, db, s.listenIP)
-
-	s.core = core.New(txn, db)
-
+	if err != nil {
+		return err
+	}
+	go func() {
+		if err := sess.Run(); err != nil {
+			blog.Errorf("tmserver stoped with error: %v", err)
+		} else {
+			blog.Errorf("tmserver stoped")
+		}
+	}()
+	s.core = core.New(sess, db)
+	return nil
 }
 
 func (s *coreService) WebService() *restful.WebService {
@@ -82,9 +91,13 @@ func (s *coreService) WebService() *restful.WebService {
 	restful.TraceLogger(&blog.GlogWriter{})
 
 	ws := &restful.WebService{}
-	ws.Path("/txn/v3")
+	ws.Path("/txn/v3").Filter(s.engine.Metric().RestfulMiddleWare)
 
 	ws.Route(ws.Method(http.MethodConnect).Path("rpc").To(func(req *restful.Request, resp *restful.Response) {
+		if sub, ok := resp.ResponseWriter.(*restful.Response); ok {
+			s.rpc.ServeHTTP(sub.ResponseWriter, req.Request)
+			return
+		}
 		s.rpc.ServeHTTP(resp.ResponseWriter, req.Request)
 	}))
 

@@ -13,18 +13,20 @@
 package options
 
 import (
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 
 	"github.com/spf13/pflag"
 )
 
-//ServerOption define option of server in flags
+// ServerOption define option of server in flags
 type ServerOption struct {
 	ServConf *config.CCAPIConfig
 }
 
-//NewServerOption create a ServerOption object
+// NewServerOption create a ServerOption object
 func NewServerOption() *ServerOption {
 	s := ServerOption{
 		ServConf: config.NewCCAPIConfig(),
@@ -33,10 +35,11 @@ func NewServerOption() *ServerOption {
 	return &s
 }
 
-//AddFlags add flags
+// AddFlags add flags
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60005", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
+	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }
 
 type Config struct {
@@ -46,6 +49,7 @@ type Config struct {
 	Configures    ConfConfig
 	Register      RegisterConfig
 	ProcSrvConfig ProcSrvConfig
+	AuthCenter    authcenter.AuthConfig
 }
 
 type LanguageConfig struct {

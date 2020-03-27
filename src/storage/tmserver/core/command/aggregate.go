@@ -38,6 +38,7 @@ func (d *aggregate) Execute(ctx core.ContextParams, decoder rpc.Request) (*types
 
 	msg := types.OPAggregateOperation{}
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
 		return reply, err
@@ -47,10 +48,18 @@ func (d *aggregate) Execute(ctx core.ContextParams, decoder rpc.Request) (*types
 	opt := aggregateopt.One{}
 	//opt.Sort = msg.Sort
 
-	err := d.dbProxy.Collection(msg.Collection).AggregateOne(ctx, msg.Pipiline, &opt, &reply.Docs)
+	var targetCol mongodb.CollectionInterface
+	if nil != ctx.Session {
+		targetCol = ctx.Session.Collection(msg.Collection)
+	} else {
+		targetCol = d.dbProxy.Collection(msg.Collection)
+	}
+
+	err := targetCol.Aggregate(ctx, msg.Pipiline, &opt, &reply.Docs)
 	if nil == err {
 		reply.Success = true
 	} else {
+		blog.ErrorJSON("aggregate execute error.  errr: %s, raw data: %s, rid:%s", err.Error(), msg, msg.RequestID)
 		reply.Message = err.Error()
 	}
 

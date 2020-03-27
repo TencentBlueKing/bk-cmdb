@@ -1,29 +1,48 @@
 <template>
     <div class="history-layout">
-        <div class="history-options clearfix">
-            <label class="fl">{{$t('Common["已删除历史"]')}}</label>
-            <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
-            <bk-date-range class="history-date-range fr"
-                :ranges="ranges"
-                :range-separator="'-'"
-                :quick-select="true"
+        <div class="history-options">
+            <bk-date-picker class="history-date-range"
+                placement="bottom-end"
+                type="daterange"
+                :shortcuts="ranges"
+                :clearable="false"
                 :start-date="startDate"
-                :end-date="endDate"
-                position="bottom-left"
+                v-model="defaultDate"
                 @change="setFilterTime">
-            </bk-date-range>
+            </bk-date-picker>
+            <bk-input class="history-host-filter ml10"
+                v-if="objId === 'host'"
+                right-icon="icon-search"
+                clearable
+                v-model="ip"
+                :placeholder="$t('请输入xx', { name: 'IP' })"
+                @enter="handlePageChange(1)"
+                @clear="handlePageChange(1)">
+            </bk-input>
         </div>
-        <cmdb-table class="history-table"
-            rowCursor="default"
-            :sortable="false"
-            :loading="$loading()"
-            :pagination.sync="pagination"
-            :list="list"
-            :header="header"
-            :wrapperMinusHeight="157"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange">
-        </cmdb-table>
+        <bk-table class="history-table"
+            v-bkloading="{ isLoading: $loading() }"
+            :pagination="pagination"
+            :data="list"
+            :max-height="$APP.height - 190"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange">
+            <bk-table-column :prop="idMap[objId] || 'bk_inst_id'" label="ID"></bk-table-column>
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name"
+                show-overflow-tooltip>
+                <template slot-scope="{ row }">{{ row[column.id] | formatter(column.property) }}</template>
+            </bk-table-column>
+            <bk-table-column prop="op_time" :label="$t('更新时间')" show-overflow-tooltip>
+                <template slot-scope="{ row }">{{$tools.formatTime(row.op_time)}}</template>
+            </bk-table-column>
+            <cmdb-table-empty
+                slot="empty"
+                :stuff="emptyStuff">
+            </cmdb-table-empty>
+        </bk-table>
     </div>
 </template>
 
@@ -32,21 +51,36 @@
     import moment from 'moment'
     export default {
         data () {
-            const startDate = this.$tools.formatTime(moment().subtract(1, 'month'), 'YYYY-MM-DD')
-            const endDate = this.$tools.formatTime(moment(), 'YYYY-MM-DD')
+            const startDate = moment().subtract(1, 'month').toDate()
+            const endDate = moment().toDate()
+            const opSatrtTime = this.$tools.formatTime(startDate, 'YYYY-MM-DD') + ' 00:00:00'
+            const opEndTime = this.$tools.formatTime(endDate, 'YYYY-MM-DD') + ' 23:59:59'
             return {
                 properties: [],
                 header: [],
                 list: [],
                 pagination: {
                     current: 1,
-                    size: 10,
-                    count: 0
+                    count: 0,
+                    ...this.$tools.getDefaultPaginationConfig()
                 },
-                opTime: [],
+                opTime: [opSatrtTime, opEndTime],
                 startDate,
                 endDate,
-                opTimeResolver: null
+                opTimeResolver: null,
+                defaultDate: [startDate, endDate],
+                ip: '',
+                idMap: {
+                    'host': 'bk_host_id',
+                    'set': 'bk_set_id',
+                    'module': 'bk_module_id',
+                    'biz': 'bk_biz_id',
+                    'plat': 'bk_plat_id'
+                },
+                emptyStuff: {
+                    type: 'search',
+                    payload: {}
+                }
             }
         },
         computed: {
@@ -61,24 +95,60 @@
                 return this.usercustom[customKeyMap[this.objId]] || []
             },
             objId () {
+                if (this.$route.name === 'hostHistory') {
+                    return 'host'
+                }
                 return this.$route.params.objId
+            },
+            model () {
+                return this.$store.getters['objectModelClassify/getModelById'](this.objId)
             },
             ranges () {
                 const language = this.$i18n.locale
                 if (language === 'en') {
-                    return {
-                        'Yesterday': [moment().subtract(1, 'days'), moment()],
-                        'Last Week': [moment().subtract(7, 'days'), moment()],
-                        'Last Month': [moment().subtract(1, 'month'), moment()],
-                        'Last Three Month': [moment().subtract(3, 'month'), moment()]
+                    return [{
+                        text: 'Yesterday',
+                        value () {
+                            return [moment().subtract(1, 'days').toDate(), moment().toDate()]
+                        }
+                    }, {
+                        text: 'Last Week',
+                        value () {
+                            return [moment().subtract(7, 'days').toDate(), moment().toDate()]
+                        }
+                    }, {
+                        text: 'Last Month',
+                        value () {
+                            return [moment().subtract(1, 'month').toDate(), moment().toDate()]
+                        }
+                    }, {
+                        text: 'Last Three Month',
+                        value () {
+                            return [moment().subtract(3, 'month').toDate(), moment().toDate()]
+                        }
+                    }]
+                }
+                return [{
+                    text: '昨天',
+                    value () {
+                        return [moment().subtract(1, 'days').toDate(), moment().toDate()]
                     }
-                }
-                return {
-                    昨天: [moment().subtract(1, 'days'), moment()],
-                    最近一周: [moment().subtract(7, 'days'), moment()],
-                    最近一个月: [moment().subtract(1, 'month'), moment()],
-                    最近三个月: [moment().subtract(3, 'month'), moment()]
-                }
+                }, {
+                    text: '最近一周',
+                    value () {
+                        return [moment().subtract(7, 'days').toDate(), moment().toDate()]
+                    }
+                }, {
+                    text: '最近一个月',
+                    value () {
+                        return [moment().subtract(1, 'month').toDate(), moment().toDate()]
+                    }
+                }, {
+                    text: '最近三个月',
+                    value () {
+                        return [moment().subtract(3, 'month').toDate(), moment().toDate()]
+                    }
+                }]
             }
         },
         watch: {
@@ -92,15 +162,14 @@
         },
         async created () {
             try {
-                await this.setTimeResolver()
+                this.setBreadcrumbs()
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: this.objId,
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
-                        requestId: `post_searchObjectAttribute_${this.objId}`,
-                        fromCache: false
+                        requestId: `post_searchObjectAttribute_${this.objId}`
                     }
                 })
                 await this.setTableHeader()
@@ -112,6 +181,9 @@
         methods: {
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('operationAudit', ['getOperationLog']),
+            setBreadcrumbs () {
+                this.$store.commit('setTitle', this.$t('删除历史'))
+            },
             back () {
                 this.$router.go(-1)
             },
@@ -124,13 +196,6 @@
                 })
             },
             setTableHeader () {
-                const idMap = {
-                    'host': 'bk_host_id',
-                    'set': 'bk_set_id',
-                    'module': 'bk_module_id',
-                    'biz': 'bk_biz_id',
-                    'plat': 'bk_plat_id'
-                }
                 const fixedPropertyMap = {
                     'host': ['bk_host_innerip', 'bk_cloud_id'],
                     'set': ['bk_set_name'],
@@ -139,23 +204,17 @@
                     'plat': ['bk_plat_name']
                 }
                 const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customColumns, fixedPropertyMap[this.objId] || ['bk_inst_name'])
-                this.header = [{
-                    id: idMap[this.objId] || 'bk_inst_id',
-                    name: 'ID'
-                }].concat(headerProperties.map(property => {
+                this.header = headerProperties.map(property => {
                     return {
                         id: property['bk_property_id'],
-                        name: property['bk_property_name']
+                        name: this.$tools.getHeaderPropertyName(property),
+                        property
                     }
-                })).concat([{
-                    id: 'op_time',
-                    width: 180,
-                    name: this.$t('Common["更新时间"]')
-                }])
+                })
                 return Promise.resolve(this.header)
             },
-            setFilterTime (oldVal, newVal) {
-                this.opTime = newVal.split(' - ').map((date, index) => {
+            setFilterTime (daterange) {
+                this.opTime = daterange.map((date, index) => {
                     return index === 0 ? (date + ' 00:00:00') : (date + ' 23:59:59')
                 })
             },
@@ -172,10 +231,10 @@
                         const list = log.info.map(data => {
                             return {
                                 ...(data.content['cur_data'] ? data.content['cur_data'] : data.content['pre_data']),
-                                'op_time': this.$tools.formatTime(data['op_time'])
+                                'op_time': data.op_time
                             }
                         })
-                        this.list = this.$tools.flatternList(this.properties, list)
+                        this.list = list
                     } catch (e) {
                         this.list = []
                         this.$error(e.message)
@@ -183,19 +242,23 @@
                 })
             },
             getSearchParams () {
-                return {
+                const params = {
                     condition: {
                         'op_type': 3,
                         'op_time': this.opTime,
                         'op_target': this.objId
                     },
-                    start: (this.pagination.current - 1) * this.pagination.size,
-                    limit: this.pagination.size,
+                    start: (this.pagination.current - 1) * this.pagination.limit,
+                    limit: this.pagination.limit,
                     sort: '-op_time'
                 }
+                if (this.objId === 'host' && this.ip) {
+                    params.condition.ext_key = { '$regex': this.ip }
+                }
+                return params
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.pagination.limit = size
                 this.handlePageChange(1)
             },
             handlePageChange (current) {
@@ -208,22 +271,18 @@
 
 <style lang="scss" scoped>
     .history-layout{
-        padding: 20px;
+        padding: 15px 20px 0;
     }
     .history-options{
-        height: 36px;
-        line-height: 36px;
-        font-size: 14px;
-    }
-    .history-table{
-        margin-top: 20px;
-    }
-</style>
-
-<style lang="scss">
-    .history-date-range{
-        .range-action{
-            display: none;
+        font-size: 0px;
+        .history-host-filter {
+            width: 260px;
+            display: inline-block;
+            vertical-align: top;
         }
     }
+    .history-table{
+        margin-top: 15px;
+    }
+
 </style>

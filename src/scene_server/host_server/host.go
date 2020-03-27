@@ -18,14 +18,14 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app"
 	"configcenter/src/scene_server/host_server/app/options"
-
-	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -44,9 +44,10 @@ func main() {
 		blog.Errorf("fail to save pid: err:%s", err.Error())
 	}
 
-	if err := app.Run(context.Background(), op); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := app.Run(ctx, cancel, op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.Errorf("process stoped by %v", err)
+		blog.Errorf("process stopped by %v", err)
 		blog.CloseLogs()
 		os.Exit(1)
 	}

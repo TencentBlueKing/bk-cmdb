@@ -1,26 +1,27 @@
 <template>
     <div class="search-layout">
         <div class="search-box" v-click-outside="handleClickOutside">
-            <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('Index[\'开始查询\']')"
+            <input id="indexSearch" autocomplete="off" class="search-keyword" type="text" maxlength="40" :placeholder="$t('开始查询')"
                 v-model.trim="keyword"
                 @focus="focus = true">
             <label class="bk-icon icon-search" for="indexSearch"></label>
             <div class="search-result" v-show="focus && keyword.length > 2">
-                <div class="search-loading" v-bkloading="{isLoading: loading}" v-if="loading"></div>
-                <div :class="['result-layout', {'result-layout-empty': !resultTabpanels.length}]" v-show="!loading">
+                <div class="search-loading" v-bkloading="{ isLoading: loading }" v-if="loading"></div>
+                <div :class="['result-layout', { 'result-layout-empty': !resultTabpanels.length }]" v-show="!loading">
                     <bk-tab class="result-tab" v-if="resultTabpanels.length"
-                        :active-name.sync="resultTab.active"
+                        type="unborder-card"
+                        :active.sync="resultTab.active"
                         :size="'small'"
-                        :headStyle="resultTab.headStyle">
-                        <bk-tabpanel v-for="(panel, index) in resultTabpanels"
+                        :head-style="resultTab.headStyle">
+                        <bk-tab-panel v-for="(panel, index) in resultTabpanels"
                             :key="index"
                             :name="panel"
-                            :title="getPanelTitle(panel)">
+                            :label="getPanelTitle(panel)">
                             <v-search-item :list="resultTab.list[panel]" :model="panel"></v-search-item>
-                        </bk-tabpanel>
+                        </bk-tab-panel>
                     </bk-tab>
-                    <div class="result-empty" v-else>{{$t('Common["暂时没有数据"]')}}</div>
-                    <div class="result-more" v-if="hasMore()" @click="showMore">{{$t('Index["查看更多结果"]')}}</div>
+                    <div class="result-empty" v-else>{{$t('暂时没有数据')}}</div>
+                    <div class="result-more" v-if="hasMore()" @click="showMore">{{$t('查看更多结果')}}</div>
                 </div>
             </div>
         </div>
@@ -81,9 +82,10 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView']),
             ...mapGetters('objectModelClassify', ['classifications']),
             allModels () {
-                let allModels = []
+                const allModels = []
                 this.classifications.forEach(classify => {
                     classify['bk_objects'].forEach(model => {
                         allModels.push(model)
@@ -96,6 +98,9 @@
             },
             loading () {
                 return this.$loading(this.requestId)
+            },
+            business () {
+                return this.$store.getters['objectBiz/bizId']
             }
         },
         watch: {
@@ -113,8 +118,14 @@
         methods: {
             // 函数节流，500ms发起一次主机查询
             handleSearch () {
+                let params = {}
+                if (this.isAdminView) {
+                    params = this.searchParams
+                } else {
+                    params = Object.assign({}, this.searchParams, { bk_biz_id: this.business })
+                }
                 this.$store.dispatch('hostSearch/searchHost', {
-                    params: this.searchParams,
+                    params,
                     config: {
                         requestId: this.requestId,
                         cancelPrevious: true
@@ -143,10 +154,10 @@
                 return panelModel ? `${panelModel['bk_obj_name']}(${this.resultTab.count[panel]})` : null
             },
             initSearchList (data) {
-                let list = []
+                const list = []
                 data.forEach(item => {
                     item.biz.forEach(biz => {
-                        let uniqueItem = {...item}
+                        const uniqueItem = { ...item }
                         uniqueItem['biz'] = [biz]
                         list.push(uniqueItem)
                     })
@@ -167,14 +178,14 @@
                 this.handleClickOutside()
             },
             showMoreHost () {
+                const name = this.isAdminView ? 'resource' : 'hosts'
                 this.$router.push({
-                    name: 'resource',
-                    query: {
-                        ip: this.keyword,
-                        exact: 0,
+                    name,
+                    params: {
+                        text: this.keyword,
                         inner: true,
                         outer: true,
-                        assigned: true
+                        exact: false
                     }
                 })
             },
@@ -185,6 +196,11 @@
     }
 </script>
 <style lang="scss" scoped>
+    .search-layout {
+        width: 50%;
+        max-width: 700px;
+        margin: 0 auto;
+    }
     .search-box{
         position: relative;
         height: 42px;

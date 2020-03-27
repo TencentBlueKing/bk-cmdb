@@ -1,53 +1,56 @@
 <template>
-    <div class="transfer-layout clearfix" v-bkloading="{isLoading: loading}">
+    <div class="transfer-layout clearfix" v-bkloading="{ isLoading: loading }">
         <div class="columns-layout fl">
             <div class="business-layout">
-                <label class="business-label">{{$t('Common[\'业务\']')}}</label>
-                <cmdb-business-selector class="business-selector" v-model="businessId" :disabled="true">
+                <label class="business-label">{{$t('业务')}}</label>
+                <cmdb-business-selector class="business-selector" v-model="businessId" disabled>
                 </cmdb-business-selector>
             </div>
+            <cmdb-auth style="display: none;"
+                :auth="transferResourceAuthData"
+                @update-auth="handleReceiveAuth">
+            </cmdb-auth>
             <div class="tree-layout">
-                <cmdb-tree ref="topoTree" class="topo-tree"
-                    children-key="child"
+                <bk-big-tree ref="topoTree" class="topo-tree"
+                    v-cursor="{
+                        active: !hasTransferResourceAuth,
+                        auth: [transferResourceAuth],
+                        selector: '.is-root.is-first-child'
+                    }"
+                    expand-icon="bk-icon icon-down-shape"
+                    collapse-icon="bk-icon icon-right-shape"
+                    :options="{
+                        idKey: getTopoNodeId,
+                        nameKey: 'bk_inst_name',
+                        childrenKey: 'child'
+                    }"
                     :selectable="false"
-                    :id-generator="getTopoNodeId"
-                    :tree="tree.data"
-                    :before-click="beforeNodeSelect"
-                    @on-click="handleNodeClick">
-                    <div class="tree-node clearfix" slot-scope="{node, state}"
-                        :class="{
-                            'tree-node-selected': state.selected,
-                            'tree-node-leaf-module': node['bk_obj_id'] === 'module'
-                        }">
-                        <cmdb-form-bool class="topo-node-checkbox"
-                            v-if="node['bk_obj_id'] === 'module'"
-                            :checked="selectedModuleStates.includes(state)"
-                            :true-value="true"
-                            :false-value="false">
-                        </cmdb-form-bool>
-                        <template v-if="[1, 2].includes(node.default)">
-                            <i class='topo-node-icon topo-node-icon-internal icon-cc-host-free-pool' v-if="node.default === 1"></i>
-                            <i class='topo-node-icon topo-node-icon-internal icon-cc-host-breakdown' v-else></i>
-                        </template>
-                        <i class="topo-node-icon topo-node-icon-text" v-else>{{node['bk_obj_name'][0]}}</i>
-                        <span class="topo-node-text">{{node['bk_inst_name']}}</span>
+                    :expand-on-click="false"
+                    :show-checkbox="shouldShowCheckbox"
+                    :before-check="beforeNodeCheck"
+                    :check-strictly="false"
+                    @node-click="handleNodeClick"
+                    @check-change="handleNodeCheck">
+                    <div class="node-info clearfix" slot-scope="{ node, data }">
+                        <i :class="['node-model-icon fl', { 'is-checked': node.checked }]">{{modelIconMap[data.bk_obj_id]}}</i>
+                        <span class="node-name">{{data.bk_inst_name}}</span>
                     </div>
-                </cmdb-tree>
+                </bk-big-tree>
             </div>
         </div>
         <div class="columns-layout fl">
             <div class="selected-layout">
-                <label class="selected-label">{{$t('Hosts["已选中模块"]')}}</label>
+                <label class="selected-label">{{$t('已选中模块')}}</label>
             </div>
             <div class="modules-layout">
                 <ul class="module-list">
                     <li class="module-item clearfix"
-                        v-for="(state, index) in selectedModuleStates" :key="index">
+                        v-for="(node, index) in selectedModules" :key="index">
                         <div class="module-info fl">
-                            <span class="module-info-name">{{state.node['bk_inst_name']}}</span>
-                            <span class="module-info-path">{{getModulePath(state)}}</span>
+                            <span class="module-info-name">{{node.data.bk_inst_name}}</span>
+                            <span class="module-info-path">{{getModulePath(node)}}</span>
                         </div>
-                        <i class="bk-icon icon-close fr" @click="removeSelectedModule(state, index)"></i>
+                        <i class="bk-icon icon-close fr" @click="removeSelectedModule(node)"></i>
                     </li>
                 </ul>
             </div>
@@ -55,29 +58,29 @@
         <div v-pre class="clearfix"></div>
         <div class="options-layout clearfix">
             <div class="increment-layout content-middle fl" v-if="showIncrementOption">
-                <label class="cmdb-form-radio cmdb-radio-small" for="increment" :title="$t('Hosts[\'增量更新\']')">
+                <label class="cmdb-form-radio cmdb-radio-small" for="increment" :title="$t('增量更新')">
                     <input id="increment" type="radio" v-model="increment" :value="true">
-                    <span class="cmdb-radio-text">{{$t('Hosts["增量更新"]')}}</span>
+                    <span class="cmdb-radio-text">{{$t('增量更新')}}</span>
                 </label>
-                <label class="cmdb-form-radio cmdb-radio-small" for="replacement" :title="$t('Hosts[\'完全替换\']')">
+                <label class="cmdb-form-radio cmdb-radio-small" for="replacement" :title="$t('完全替换')">
                     <input id="replacement" type="radio" v-model="increment" :value="false">
-                    <span class="cmdb-radio-text">{{$t('Hosts["完全替换"]')}}</span>
+                    <span class="cmdb-radio-text">{{$t('完全替换')}}</span>
                 </label>
             </div>
             <div class="button-layout content-middle fr">
-                <bk-button class= "transfer-button" type="primary"
-                    :disabled="!selectedModuleStates.length"
+                <bk-button class="transfer-button" theme="primary"
+                    :disabled="!selectedModules.length"
                     @click="handleTransfer">
-                    {{$t('Common[\'确认转移\']')}}
+                    {{$t('确认转移')}}
                 </bk-button>
-                <bk-button class= "transfer-button" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
+                <bk-button class="transfer-button" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapActions } from 'vuex'
     export default {
         props: {
             selectedHosts: {
@@ -86,6 +89,10 @@
                 default () {
                     return []
                 }
+            },
+            transferResourceAuth: {
+                type: [String, Array],
+                default: ''
             }
         },
         data () {
@@ -95,21 +102,35 @@
                 tree: {
                     data: []
                 },
-                selectedModuleStates: [],
-                increment: true
+                selectedModules: [],
+                increment: true,
+                hasTransferResourceAuth: false
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['business']),
-            currentBusiness () {
-                return this.business.find(item => item['bk_biz_id'] === this.businessId)
+            transferResourceAuthData () {
+                const auth = this.transferResourceAuth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
             },
             hostIds () {
                 return this.selectedHosts.map(host => host['host']['bk_host_id'])
             },
+            hostModules () {
+                const modules = []
+                this.selectedHosts.forEach(host => {
+                    host.module.forEach(module => {
+                        modules.push(module)
+                    })
+                })
+                return modules
+            },
             showIncrementOption () {
-                const hasSpecialModule = this.selectedModuleStates.some(({node}) => node['bk_inst_id'] === 'source' || [1, 2].includes(node.default))
-                return !!this.selectedModuleStates.length && !hasSpecialModule
+                const hasSpecialModule = this.selectedModules.some(node => {
+                    return node.data.bk_inst_id === 'resource' || [1, 2].includes(node.data.default)
+                })
+                return this.selectedModules.length && this.selectedHosts.length > 1 && !hasSpecialModule
             },
             loading () {
                 const requestIds = [
@@ -119,6 +140,17 @@
                     'post_transferHost'
                 ]
                 return this.$loading(requestIds)
+            },
+            mainLineModels () {
+                const models = this.$store.getters['objectModelClassify/models']
+                return this.topoModel.map(data => models.find(model => model.bk_obj_id === data.bk_obj_id))
+            },
+            modelIconMap () {
+                const map = {}
+                this.mainLineModels.forEach(model => {
+                    map[model.bk_obj_id] = model.bk_obj_name[0]
+                })
+                return map
             }
         },
         watch: {
@@ -127,9 +159,12 @@
                     await this.getMainlineModel()
                     await this.getBusinessTopo()
                     if (this.selectedHosts.length === 1) {
-                        this.setSelectedModuleStates()
+                        this.setSelectedModules()
                     }
                 }
+            },
+            showIncrementOption (show) {
+                this.increment = show
             }
         },
         methods: {
@@ -169,121 +204,124 @@
                         }
                     })
                 ]).then(([instTopo, internalTopo]) => {
-                    const moduleModel = this.getModelByObjId('module')
-                    const internalModule = internalTopo.module.map(module => {
+                    const internalModule = (internalTopo.module || []).map(module => {
                         return {
-                            'default': ['空闲机', 'idle machine'].includes(module['bk_module_name']) ? 1 : 2,
+                            'default': ['空闲机', 'idle machine'].includes(module.bk_module_name) ? 1 : 2,
                             'bk_obj_id': 'module',
-                            'bk_obj_name': moduleModel['bk_obj_name'],
-                            'bk_inst_id': module['bk_module_id'],
-                            'bk_inst_name': module['bk_module_name']
+                            'bk_inst_id': module.bk_module_id,
+                            'bk_inst_name': module.bk_module_name
                         }
                     })
-                    this.tree.data = [{
+                    const treeData = [{
                         'default': 0,
                         'bk_obj_id': 'module',
-                        'bk_obj_name': this.$t('HostResourcePool["资源池"]'),
-                        'bk_inst_id': 'source',
-                        'bk_inst_name': this.$t('HostResourcePool["资源池"]'),
-                        'child': []
+                        'bk_inst_id': 'resource',
+                        'bk_inst_name': this.$t('资源池')
                     }, {
-                        expanded: true,
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
+                    this.$refs.topoTree.setData(treeData)
+                    if (!this.hasTransferResourceAuth) {
+                        this.$nextTick(() => {
+                            this.$refs.topoTree.setDisabled('module-resource')
+                        })
+                    }
                 })
             },
-            setSelectedModuleStates () {
+            setSelectedModules () {
                 this.$nextTick(() => {
                     const modules = this.selectedHosts[0]['module']
-                    const selectedStates = []
-                    modules.forEach(module => {
-                        const nodeId = this.getTopoNodeId({
+                    const moduleIds = modules.map(module => {
+                        return this.getTopoNodeId({
                             'bk_obj_id': 'module',
-                            'bk_inst_id': module['bk_module_id']
+                            'bk_inst_id': module.bk_module_id
                         })
-                        const state = this.$refs.topoTree.getStateById(nodeId)
-                        if (state) {
-                            selectedStates.push(state)
-                        }
                     })
-                    this.selectedModuleStates = selectedStates
+                    this.$refs.topoTree.setChecked(moduleIds, {
+                        checked: true,
+                        emitEvent: true,
+                        beforeCheck: false
+                    })
                 })
-            },
-            getModelByObjId (id) {
-                return this.topoModel.find(model => model['bk_obj_id'] === id)
             },
             getTopoNodeId (node) {
                 return `${node['bk_obj_id']}-${node['bk_inst_id']}`
             },
-            beforeNodeSelect (node, state) {
+            shouldShowCheckbox (data) {
+                return data.bk_obj_id === 'module'
+            },
+            handleNodeCheck (checked) {
+                this.selectedModules = checked.map(id => this.$refs.topoTree.getNodeById(id))
+            },
+            beforeNodeCheck (node) {
                 let confirmResolver
-                let confirmRejecter
-                const asyncConfirm = new Promise((resolve, reject) => {
+                const asyncConfirm = new Promise(resolve => {
                     confirmResolver = resolve
-                    confirmRejecter = reject
                 })
-                if (node['bk_obj_id'] !== 'module') {
-                    confirmResolver(true)
+                const data = node.data
+                const isSpecialNode = !!data.default || data.bk_inst_id === 'resource'
+                const hasNormalNode = this.selectedModules.some(selectedNode => {
+                    const selectedNodeData = selectedNode.data
+                    return !selectedNodeData.default && selectedNodeData.bk_inst_id !== 'resource'
+                })
+                if (isSpecialNode && hasNormalNode) {
+                    this.$bkInfo({
+                        title: this.$t('转移确认', { target: data.bk_inst_name }),
+                        confirmFn: () => {
+                            this.$refs.topoTree.removeChecked({ emitEvent: true })
+                            confirmResolver(true)
+                        },
+                        cancelFn: () => {
+                            confirmResolver(false)
+                        },
+                        zIndex: 2000
+                    })
                 } else {
-                    const isSpecialNode = !!node.default || node['bk_inst_id'] === 'source'
-                    const hasNormalNode = this.selectedModuleStates.some(({node}) => {
-                        return !node.default && node['bk_inst_id'] !== 'source'
+                    const specialNodes = this.selectedModules.filter(selectedNode => {
+                        const selectedNodeData = selectedNode.data
+                        return selectedNodeData.default || selectedNodeData.bk_inst_id === 'resource'
                     })
-                    const hasSpecialNode = this.selectedModuleStates.some(({node}) => {
-                        return node.default || node['bk_inst_id'] === 'source'
-                    })
-                    if (isSpecialNode && hasNormalNode) {
-                        this.$bkInfo({
-                            title: this.$t('Common[\'转移确认\']', {target: node['bk_inst_name']}),
-                            confirmFn: () => {
-                                this.selectedModuleStates = []
-                                confirmResolver(true)
-                            },
-                            cancelFn: () => {
-                                confirmResolver(false)
-                            }
-                        })
-                    } else {
-                        if (hasSpecialNode && !this.selectedModuleStates.includes(state)) {
-                            this.selectedModuleStates = []
-                        }
-                        confirmResolver(true)
+                    if (specialNodes.length && !specialNodes.includes(node)) {
+                        this.$refs.topoTree.removeChecked({ emitEvent: true })
                     }
+                    confirmResolver(true)
                 }
                 return asyncConfirm
             },
-            handleNodeClick (node, state) {
-                const isModule = node['bk_obj_id'] === 'module'
-                const isExist = this.selectedModuleStates.some(selectedState => selectedState === state)
+            handleNodeClick (node) {
+                const isModule = node.data.bk_obj_id === 'module'
                 if (isModule) {
-                    if (isExist) {
-                        this.selectedModuleStates = this.selectedModuleStates.filter(selectedState => selectedState !== state)
-                    } else {
-                        this.selectedModuleStates.push(state)
-                    }
+                    this.$refs.topoTree.setChecked(node.id, {
+                        checked: !node.checked,
+                        emitEvent: true,
+                        beforeCheck: true
+                    })
+                } else {
+                    this.$refs.topoTree.setExpanded(node.id, {
+                        expanded: !node.expanded,
+                        emitEvent: false
+                    })
                 }
             },
-            removeSelectedModule (state, index) {
-                this.selectedModuleStates.splice(index, 1)
-                if (state.selected) {
-                    state.selected = false
-                }
+            removeSelectedModule (node) {
+                this.$refs.topoTree.setChecked(node.id, {
+                    checked: false,
+                    emitEvent: true,
+                    beforeCheck: false
+                })
             },
-            getModulePath (state) {
-                if (state.node['bk_inst_id'] === 'source') {
-                    return this.$t('Common["主机资源池"]')
+            getModulePath (node) {
+                const data = node.data
+                if (data.bk_inst_id === 'resource') {
+                    return this.$t('主机资源池')
                 }
-                const currentBusiness = this.currentBusiness
-                if ([1, 2].includes(state.node.default)) {
-                    return `${currentBusiness['bk_biz_name']}-${state.node['bk_inst_name']}`
-                }
-                return `${currentBusiness['bk_biz_name']}-${state.parent.node['bk_inst_name']}`
+                return node.parents.map(parent => parent.data.bk_inst_name).join('-')
             },
             handleTransfer () {
-                const toSource = this.selectedModuleStates.some(({node}) => node['bk_inst_id'] === 'source')
-                const toIdle = this.selectedModuleStates.some(({node}) => node.default === 1)
-                const toFault = this.selectedModuleStates.some(({node}) => node.default === 2)
+                const toSource = this.selectedModules.some(node => node.data.bk_inst_id === 'resource')
+                const toIdle = this.selectedModules.some(node => node.data.default === 1)
+                const toFault = this.selectedModules.some(node => node.data.default === 2)
                 const transferConfig = {
                     requestId: 'transferHost'
                 }
@@ -298,7 +336,7 @@
                     transferPromise = this.transerToModules(transferConfig)
                 }
                 transferPromise.then(() => {
-                    this.$success(this.$t('Common[\'转移成功\']'))
+                    this.$success(this.$t('转移成功'))
                     this.$emit('on-success')
                 })
             },
@@ -330,20 +368,19 @@
                 })
             },
             getTransferParams () {
-                let hasSpecialNode = this.selectedModuleStates.some(({node}) => [1, 2].includes(node.default))
-                let increment = this.increment
-                if (this.hasSpecialNode || this.hostIds.length === 1) {
-                    increment = false
-                }
+                const increment = this.hostIds.length === 1 ? false : this.increment
                 return {
                     'bk_biz_id': this.businessId,
                     'bk_host_id': this.hostIds,
-                    'bk_module_id': this.selectedModuleStates.map(({node}) => node['bk_inst_id']),
+                    'bk_module_id': this.selectedModules.map(node => node.data.bk_inst_id),
                     'is_increment': increment
                 }
             },
             handleCancel () {
                 this.$emit('on-cancel')
+            },
+            handleReceiveAuth (auth) {
+                this.hasTransferResourceAuth = auth
             }
         }
     }
@@ -390,60 +427,22 @@
         padding: 0 0 0 20px;
         height: 100%;
         @include scrollbar-y;
-        .tree-node {
-            font-size: 0;
-            &:hover{
-                .topo-node-icon.topo-node-icon-text{
-                    background-color: #50abff;
-                }
-                .topo-node-icon.topo-node-icon-internal{
-                    color: #50abff;
-                }
-            }
-            &.tree-node-selected{
-                .topo-node-icon.topo-node-icon-text{
-                    background-color: #498fe0;
-                }
-                .topo-node-icon.topo-node-icon-internal{
-                    color: #ffb400;
-                }
-            }
-            &.tree-node-leaf-module {
-                margin: 0 0 0 -2px !important;
-                padding-left: 0;
-            }
-        }
-        .topo-node-checkbox {
-            position: relative;
-            margin: 0 10px 0 0;
-            transform: scale(0.888);
-            background-color: #fff;
-            z-index: 2;
-            pointer-events: none;
-        }
-        .topo-node-icon{
-            display: inline-block;
-            vertical-align: middle;
-            width: 18px;
-            height: 18px;
-            line-height: 16px;
-            font-size: 12px;
+    }
+    .node-info {
+        .node-model-icon {
+            width: 22px;
+            height: 22px;
+            line-height: 21px;
             text-align: center;
-            color: #fff;
             font-style: normal;
-            background-color: #c3cdd7;
+            font-size: 12px;
+            margin: 9px 4px 0 6px;
             border-radius: 50%;
-            &.topo-node-icon-internal{
-                font-size: 16px;
-                color: $cmdbTextColor;
-                background-color: transparent;
+            background-color: #c4c6cc;
+            color: #fff;
+            &.is-checked {
+                background-color: #3a84ff;
             }
-        }
-        .topo-node-text{
-            display: inline-block;
-            vertical-align: middle;
-            padding: 0 0 0 8px;
-            font-size: 14px;
         }
     }
     .selected-layout {

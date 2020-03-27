@@ -21,7 +21,7 @@ import (
 )
 
 // LogicFunc the core logic function definition
-type LogicFunc func(params types.ContextParams, parthParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error)
+type LogicFunc func(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error)
 
 // ParamsGetter get param by key
 type ParamsGetter func(name string) string
@@ -35,6 +35,7 @@ type action struct {
 	Path                       string
 	HandlerFunc                LogicFunc
 	HandlerParseOriginDataFunc ParseOriginDataFunc
+	PublicOnly                 bool
 }
 
 // API the API interface
@@ -43,7 +44,7 @@ type API interface {
 	Actions() []*httpserver.Action
 }
 
-type compatiblev2Condition struct {
+type compatibleV2Condition struct {
 	Condition mapstr.MapStr     `json:"condition"`
 	Page      metadata.BasePage `json:"page"`
 	Fields    []string          `json:"fields"`

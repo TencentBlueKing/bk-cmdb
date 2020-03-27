@@ -1,18 +1,20 @@
 <template>
+    <!-- eslint-disable vue/space-infix-ops -->
     <div class="cmdb-form form-objuser"
         v-click-outside="handleClickOutside"
         @mousedown="shouldUpdate = false"
         @click="handleClick">
+        <!--eslint-enable-->
         <div class="objuser-layout"
-            v-bkloading="{isLoading: $loading('get_user_list')}"
             @contextmenu="handleContextmenu($event)">
+            <i class="objuser-loading" v-if="loading"></i>
             <div class="objuser-container"
                 ref="container"
                 :class="{
-                    focus,
+                    focus: isFocus,
                     ellipsis,
                     disabled: localDisabled,
-                    placeholder: !localValue.length && !focus
+                    placeholder: !localValue.length && !isFocus
                 }"
                 :data-placeholder="localPlaceholder">
                 <span class="objuser-selected"
@@ -27,7 +29,7 @@
                 <span ref="input" class="objuser-input"
                     spellcheck="false"
                     contenteditable
-                    v-show="focus"
+                    v-show="isFocus"
                     @click.stop
                     @input="handleInput"
                     @blur="handleBlur"
@@ -36,13 +38,14 @@
                 </span>
             </div>
             <ul class="suggestion-list" ref="suggestionList"
-                v-show="focus && matchedUsers.length"
+                v-show="isFocus && matchedUsers.length"
                 :class="suggestionListPostion">
                 <li class="suggestion-item"
                     v-for="(user, index) in matchedUsers"
+                    :key="index"
                     ref="suggestionItem"
                     :title="getLable(user)"
-                    :class="{highlight: index === highlightIndex}"
+                    :class="{ highlight: index === highlightIndex }"
                     @click.stop
                     @mousedown.left.stop="handleUserMousedown(user, index)"
                     @mouseup.left.stop="handleUserMouseup(user, index)">
@@ -52,7 +55,7 @@
             <a href="javascript:void(0)" class="objuser-menu"
                 ref="contextmenu"
                 v-show="contextmenu"
-                @click.stop="handleCopy">{{$t('Common["复制"]')}}</a>
+                @click.stop="handleCopy">{{$t('复制')}}</a>
         </div>
     </div>
 </template>
@@ -62,6 +65,7 @@
         name: 'cmdb-form-objuser',
         props: {
             value: {
+                type: String,
                 default: ''
             },
             placeholder: {
@@ -89,7 +93,7 @@
                 inputIndex: 0,
                 highlightIndex: -1,
                 shouldUpdate: true,
-                focus: false,
+                isFocus: false,
                 ellipsis: false,
                 contextmenu: false,
                 exception: false,
@@ -99,7 +103,7 @@
         },
         computed: {
             selectedUsers () {
-                return this.localValue.map(enName => this.users.find(user => user['english_name'] === enName) || {'english_name': enName})
+                return this.localValue.map(enName => this.users.find(user => user['english_name'] === enName) || { 'english_name': enName })
             },
             matchedUsers () {
                 const inputValue = this.inputValue.toLowerCase()
@@ -115,21 +119,24 @@
                 }
                 return []
             },
+            loading () {
+                return this.$loading('get_user_list')
+            },
             localDisabled () {
-                return this.disabled || this.exception
+                return this.disabled || this.exception || this.loading
             },
             localPlaceholder () {
                 if (this.exception) {
-                    return this.$t('Common["获取人员列表失败"]')
+                    return this.$t('获取人员列表失败')
                 } else if (this.placeholder) {
                     return this.placeholder
                 }
-                return this.$t('Form["请输入用户"]')
+                return this.$t('请输入用户')
             }
         },
         watch: {
-            focus (focus) {
-                if (this.focus) {
+            isFocus (isFocus) {
+                if (this.isFocus) {
                     this.ellipsis = false
                 } else {
                     this.reset()
@@ -229,10 +236,10 @@
                     return false
                 }
                 if (this.multiple) {
-                    let $refrenceTarget = event.target
+                    const $refrenceTarget = event.target
                     const offsetWidth = $refrenceTarget.offsetWidth
                     const eventX = event.offsetX
-                    const $input = this.$refs.input
+                    // const $input = this.$refs.input
                     this.inputIndex = eventX > (offsetWidth / 2) ? index + 1 : index
                 } else {
                     this.localValue = []
@@ -254,7 +261,7 @@
                     this.localValue.splice(this.inputIndex, 0, user['english_name'])
                     this.$nextTick(() => {
                         this.moveInput(1)
-                        this.setSelection({reset: true})
+                        this.setSelection({ reset: true })
                     })
                 } else {
                     this.localValue = [user['english_name']]
@@ -266,17 +273,17 @@
                 if (option.reset) {
                     this.reset()
                 }
-                this.focus = true
+                this.isFocus = true
                 this.shouldUpdate = true
                 this.$nextTick(() => {
                     const $input = this.$refs.input
                     $input.focus()
                     if (window.getSelection) {
-                        let range = window.getSelection()
+                        const range = window.getSelection()
                         range.selectAllChildren($input)
                         range.collapseToEnd()
                     } else if (document.selection) {
-                        let range = document.selection.createRange()
+                        const range = document.selection.createRange()
                         range.moveToElementText($input)
                         range.collapse(false)
                         range.select()
@@ -304,7 +311,7 @@
                 if (this.highlightIndex !== -1) {
                     if (this.multiple) {
                         this.localValue.splice(this.inputIndex, 0, this.matchedUsers[this.highlightIndex]['english_name'])
-                        this.moveInput(1, {reset: true})
+                        this.moveInput(1, { reset: true })
                     } else {
                         this.localValue = [this.matchedUsers[this.highlightIndex]['english_name']]
                         this.reset()
@@ -314,7 +321,7 @@
                     if (!this.exclude && !this.localValue.includes(this.inputValue)) {
                         if (this.multiple) {
                             this.localValue.splice(this.inputIndex, 0, this.inputValue)
-                            this.moveInput(1, {reset: true})
+                            this.moveInput(1, { reset: true })
                         } else {
                             this.localValue = [this.inputValue]
                             this.reset()
@@ -361,7 +368,7 @@
                 if (!this.shouldUpdate) {
                     return true
                 }
-                this.focus = false
+                this.isFocus = false
                 if (this.inputValue) {
                     if (!this.exclude) {
                         if (!this.localValue.includes(this.inputValue)) {
@@ -386,19 +393,19 @@
                         }
                     })
                     this.localValue.splice(this.inputIndex, 0, ...pasteValue)
-                    this.moveInput(pasteValue.length, {reset: true})
+                    this.moveInput(pasteValue.length, { reset: true })
                 })
             },
             handleCopy () {
                 this.contextmenu = false
                 this.$copyText(this.localValue.join(',')).then(() => {
-                    this.$success(this.$t('Common["复制成功"]'))
+                    this.$success(this.$t('复制成功'))
                 }, () => {
-                    this.$error(this.$t('Common["复制失败"]'))
+                    this.$error(this.$t('复制失败'))
                 })
             },
             handleContextmenu (event) {
-                this.focus = false
+                this.isFocus = false
                 if (!this.localValue.length) {
                     return false
                 }
@@ -458,7 +465,7 @@
                         const $suggestionItem = this.$refs.suggestionItem[highlightIndex]
                         const listClientHeight = $suggestionList.clientHeight
                         const listScrollTop = $suggestionList.scrollTop
-                        const listScrollHeight = $suggestionList.scrollHeight
+                        // const listScrollHeight = $suggestionList.scrollHeight
                         const itemOffsetTop = $suggestionItem.offsetTop
                         const itemOffsetHeight = $suggestionItem.offsetHeight
                         if (itemOffsetTop >= listScrollTop && (itemOffsetTop + itemOffsetHeight) <= (listScrollTop + listClientHeight)) {
@@ -498,6 +505,9 @@
                 this.highlightIndex = -1
                 this.inputValue = ''
                 this.$refs.input.innerHTML = ''
+            },
+            focus () {
+                this.handleClick()
             }
         }
     }
@@ -505,26 +515,36 @@
 
 <style lang="scss" scoped>
     .form-objuser {
-        height: 36px;
+        height: 32px;
         font-size: 14px;
         cursor: text;
         .objuser-layout {
             position: relative;
             min-height: 100%;
+            .objuser-loading {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                width: 16px;
+                height: 16px;
+                background-image: url("../../../assets/images/icon/loading.svg");
+                z-index: 1;
+            }
             .objuser-container {
                 position: relative;
                 min-width: 100%;
-                min-height: 36px;
+                min-height: 32px;
                 padding: 3px 0;
                 line-height: 1;
-                border: 1px solid $cmdbBorderColor;
+                border: 1px solid #c4c6cc;
                 border-radius: 2px;
                 background-color: #fff;
                 white-space: nowrap;
                 overflow: hidden;
                 &.disabled {
                     cursor: not-allowed;
-                    background-color: #fafafa;
+                    background-color: #fafbfd !important;
+                    border-color: #dcdee5 !important
                 }
                 &.focus {
                     white-space: normal;
@@ -532,14 +552,14 @@
                     z-index: 1;
                 }
                 &.ellipsis:after{
-                    position: absolute; 
-                    bottom: 1px; 
-                    right: -1px; 
+                    position: absolute;
+                    bottom: 1px;
+                    right: -1px;
                     height: 34px;
                     padding: 0 0 0 15px;
                     line-height: 34px;
                     font-size: 12px;
-                    content: ""; 
+                    content: "";
                     border-right: 1px solid $cmdbBorderColor;
                     background: -webkit-linear-gradient(left, transparent, #fff 55%);
                     background: -o-linear-gradient(left, transparent, #fff 55%);
@@ -551,7 +571,7 @@
                     top: 0;
                     height: 100%;
                     padding: 0 0 0 10px;
-                    line-height: 34px;
+                    line-height: 30px;
                     content: attr(data-placeholder);
                     font-size: 12px;
                     color: #c3cdd7;
@@ -561,11 +581,11 @@
     }
     .objuser-selected {
         display: inline-block;
-        height: 22px;
-        margin: 3px;
+        height: 20px;
+        margin: 2px 3px;
         max-width: calc(100% - 4px);
         padding: 0 4px;
-        line-height: 20px;
+        line-height: 18px;
         vertical-align: top;
         border: 1px solid #d9d9d9;
         border-radius: 2px;
@@ -575,11 +595,11 @@
     .objuser-input {
         display: inline-block;
         max-width: 100%;
-        height: 22px;
-        margin: 3px 0 0;
+        height: 20px;
+        margin: 1px 0 0;
         padding: 0 4px;
         white-space: nowrap;
-        line-height: 22px;
+        line-height: 20px;
         vertical-align: top;
         outline: none;
         overflow: hidden;
@@ -605,7 +625,7 @@
             bottom: 100%;
             margin: 0 0 1px 0;
         }
-        .suggestion-item{
+        .suggestion-item {
             padding: 0 10px;
             height: 32px;
             line-height: 32px;
@@ -625,6 +645,7 @@
         background-color: #fff;
         box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.1);
         font-size: 14px;
+        white-space: nowrap;
         z-index: 9999;
     }
 </style>

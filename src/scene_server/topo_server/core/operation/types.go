@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"configcenter/src/common/mapstr"
-
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 )
@@ -43,8 +42,8 @@ type OpCondition struct {
 type InstBatchInfo struct {
 	// BatchInfo batch info
 	// map[rownumber]map[property_id][date]
-	BatchInfo *map[int64]map[string]interface{} `json:"BatchInfo"`
-	InputType string                            `json:"input_type"`
+	BatchInfo map[int64]map[string]interface{} `json:"BatchInfo"`
+	InputType string                           `json:"input_type"`
 }
 
 // ConditionItem subcondition

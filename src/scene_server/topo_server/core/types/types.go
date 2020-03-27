@@ -13,6 +13,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 
 	"configcenter/src/common/backbone"
@@ -21,8 +22,9 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// ContextParams the logic function params
+// ContextParams the logics function params
 type ContextParams struct {
+	context.Context
 	Engin           *backbone.Engine
 	Header          http.Header
 	MaxTopoLevel    int
@@ -31,4 +33,5 @@ type ContextParams struct {
 	Err             errors.DefaultCCErrorIf
 	Lang            language.DefaultCCLanguageIf
 	MetaData        *metadata.Metadata
+	ReqID           string
 }

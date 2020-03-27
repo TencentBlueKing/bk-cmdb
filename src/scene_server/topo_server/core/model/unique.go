@@ -84,12 +84,12 @@ func (g *unique) Create() error {
 
 	rsp, err := g.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), g.params.Header, g.data.ObjID, metadata.CreateModelAttrUnique{Data: data})
 	if nil != err {
-		blog.Errorf("[model-unique] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[model-unique] failed to request object controller, err: %s, rid: %s", err.Error(), g.params.ReqID)
 		return g.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[model-unique] failed to create the unique(%#v), error info is is %s", g.data, rsp.ErrMsg)
+		blog.Errorf("[model-unique] failed to create the unique(%#v), error info is is %s, rid: %s", g.data, rsp.ErrMsg, g.params.ReqID)
 		return g.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -105,12 +105,12 @@ func (g *unique) Update(data mapstr.MapStr) error {
 
 	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), g.params.Header, g.data.ObjID, g.data.ID, metadata.UpdateModelAttrUnique{Data: updateReq})
 	if nil != err {
-		blog.Errorf("[model-unique]failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.params.ReqID)
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[model-unique]failed to update the object %s(%d) to  %v, error info is %s", g.data.ObjID, g.data.ID, updateReq, err.Error())
+		blog.Errorf("[model-unique]failed to update the object %s(%d) to  %v, error info is %s, rid: %s", g.data.ObjID, g.data.ID, updateReq, err.Error(), g.params.ReqID)
 		return g.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	return nil
@@ -120,12 +120,12 @@ func (g *unique) Save(data mapstr.MapStr) error {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
 	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-unique]failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.params.ReqID)
 		return err
 	}
 
 	if !searchResp.Result {
-		blog.Errorf("[model-unique]failed to search the object unique by %s, error info is %s", g.data.ObjID, err.Error())
+		blog.Errorf("[model-unique]failed to search the object unique by %s, err: %s, rid: %s", g.data.ObjID, searchResp.ErrMsg, g.params.ReqID)
 		return g.params.Err.New(searchResp.Code, searchResp.ErrMsg)
 	}
 
@@ -149,12 +149,12 @@ func (g *unique) IsExists() (bool, error) {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
 	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-unique]failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[model-unique]failed to request object controller, err: %s, rid: %s", err.Error(), g.params.ReqID)
 		return false, err
 	}
 
 	if !searchResp.Result {
-		blog.Errorf("[model-unique]failed to search the object unique by %s, error info is %s", g.data.ObjID, err.Error())
+		blog.Errorf("[model-unique]failed to search the object unique by %s, err: %s, rid: %s", g.data.ObjID, searchResp.ErrMsg, g.params.ReqID)
 		return false, g.params.Err.New(searchResp.Code, searchResp.ErrMsg)
 	}
 

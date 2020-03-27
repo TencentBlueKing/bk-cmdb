@@ -15,6 +15,7 @@ package local
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"configcenter/src/storage/dal"
@@ -254,6 +255,17 @@ func (c *MockCollection) Update(ctx context.Context, filter dal.Filter, doc inte
 	return nil
 }
 
+// Update or insert data
+func (c *MockCollection) Upsert(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	panic("unimplemented operation")
+}
+
+// UpdateMultiModel Update data based on operators.
+func (c *MockCollection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
+
+	return errors.New("not support UpdateOp")
+}
+
 // Delete 删除数据
 func (c *MockCollection) Delete(ctx context.Context, filter dal.Filter) error {
 	bsonout, err := bson.Marshal(filter)
@@ -442,6 +454,11 @@ func (c *MockCollection) DropColumn(ctx context.Context, field string) error {
 	c.retval = nil
 
 	return nil
+}
+
+// DropColumns 移除字段
+func (c *MockCollection) DropColumns(ctx context.Context, filter dal.Filter, fields []string) error {
+	return errors.New("unsupported")
 }
 
 func (c *MockCollection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {

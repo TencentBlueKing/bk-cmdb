@@ -28,7 +28,7 @@ type GseClientInterface interface {
 	UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
 }
 
-func NewGsecClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigServ) GseClientInterface {
+func NewGsecClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) GseClientInterface {
 	return &gse{
 		client: client,
 		config: config,
@@ -36,6 +36,6 @@ func NewGsecClientInterface(client rest.ClientInterface, config *esbutil.EsbConf
 }
 
 type gse struct {
-	config *esbutil.EsbConfigServ
+	config *esbutil.EsbConfigSrv
 	client rest.ClientInterface
 }

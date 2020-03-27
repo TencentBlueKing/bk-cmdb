@@ -13,6 +13,7 @@
 package discovery
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -21,8 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"context"
-
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
@@ -41,22 +41,22 @@ type RegDiscover struct {
 	rd         *registerdiscover.RegDiscover
 	rootCtx    context.Context
 	cancel     context.CancelFunc
-	topoServs  []*types.TopoServInfo
 	topoLock   sync.RWMutex
-	procServs  []*types.ProcServInfo
-	procLock   sync.RWMutex
+	apiServers []*types.ProcServInfo
+	lock       sync.RWMutex
 }
 
 // NewRegDiscover create a RegDiscover object
-func NewRegDiscover(moduleName string, zkserv string, ip string, port uint, isSSL bool) *RegDiscover {
+func NewRegDiscover(moduleName string, client *zk.ZkClient, ip string, port uint, isSSL bool) *RegDiscover {
+	rtx, cancel := client.WithCancel()
 	return &RegDiscover{
 		moduleName: moduleName,
 		ip:         ip,
 		port:       port,
 		isSSL:      isSSL,
-		rd:         registerdiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
-		topoServs:  []*types.TopoServInfo{},
-		procServs:  []*types.ProcServInfo{},
+		rd:         registerdiscover.NewRegDiscoverEx(client),
+		rootCtx:    rtx,
+		cancel:     cancel,
 	}
 }
 
@@ -68,22 +68,14 @@ func (cc *RegDiscover) Ping() error {
 // Start the register and discover
 func (r *RegDiscover) Start() error {
 
-	//create root context
-	r.rootCtx, r.cancel = context.WithCancel(context.Background())
-	//start regdiscover
-	if err := r.rd.Start(); err != nil {
-		blog.Errorf("fail to start register and discover serv. err:%s", err.Error())
-		return err
-	}
-
 	// register migrate server
 	if err := r.registerItself(); err != nil {
-		blog.Errorf("fail to register migrate(%s), err:%s", r.ip, err.Error())
+		blog.Error("fail to register migrate(%s), err:%s", r.ip, err.Error())
 		return err
 	}
 
 	// here: discover other services
-	/// cc api server
+	// cc api server
 	apiPath := types.CC_SERV_BASEPATH + "/" + types.CC_MODULE_APISERVER
 	apiEvent, err := r.rd.DiscoverService(apiPath)
 	if err != nil {
@@ -102,15 +94,6 @@ func (r *RegDiscover) Start() error {
 	}
 }
 
-// Stop the register and discover
-func (r *RegDiscover) Stop() error {
-	r.cancel()
-
-	r.rd.Stop()
-
-	return nil
-}
-
 func (r *RegDiscover) GetServer(servType string) (string, error) {
 	switch servType {
 	case types.CC_MODULE_APISERVER:
@@ -124,10 +107,10 @@ func (r *RegDiscover) GetServer(servType string) (string, error) {
 // GetApiServ fetch proc server info
 func (r *RegDiscover) GetApiServ() (string, error) {
 
-	r.procLock.RLock()
-	defer r.procLock.RUnlock()
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 
-	lServ := len(r.procServs)
+	lServ := len(r.apiServers)
 	if lServ <= 0 {
 		err := fmt.Errorf("there is no api servers")
 		blog.Errorf("%s", err.Error())
@@ -136,7 +119,7 @@ func (r *RegDiscover) GetApiServ() (string, error) {
 
 	//rand
 	rand.Seed(int64(time.Now().Nanosecond()))
-	servInfo := r.procServs[rand.Intn(lServ)]
+	servInfo := r.apiServers[rand.Intn(lServ)]
 
 	host := servInfo.Scheme + "://" + servInfo.IP + ":" + strconv.Itoa(int(servInfo.Port))
 
@@ -158,7 +141,7 @@ func (r *RegDiscover) registerItself() error {
 
 	data, err := json.Marshal(migrateServInfo)
 	if err != nil {
-		blog.Errorf("fail to marshal Migrate server info to json. err:%s", err.Error())
+		blog.Error("fail to marshal Migrate server info to json. err:%s", err.Error())
 		return err
 	}
 
@@ -181,9 +164,9 @@ func (r *RegDiscover) discoverApiServ(servInfos []string) error {
 		procServs = append(procServs, proc)
 	}
 
-	r.procLock.Lock()
-	defer r.procLock.Unlock()
-	r.procServs = procServs
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.apiServers = procServs
 
 	return nil
 }

@@ -23,7 +23,7 @@ import (
 
 func (lgc *Logics) LockHost(ctx context.Context, input *metadata.HostLockRequest) errors.CCError {
 
-	hostLockResult, err := lgc.CoreAPI.HostController().Host().LockHost(ctx, lgc.header, input)
+	hostLockResult, err := lgc.CoreAPI.CoreService().Host().LockHost(ctx, lgc.header, input)
 	if nil != err {
 		blog.Errorf("lock host, http request error, error:%s,input:%+v,logID:%s", err.Error(), input, lgc.rid)
 		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -37,7 +37,7 @@ func (lgc *Logics) LockHost(ctx context.Context, input *metadata.HostLockRequest
 
 func (lgc *Logics) UnlockHost(ctx context.Context, input *metadata.HostLockRequest) errors.CCError {
 
-	hostUnlockResult, err := lgc.CoreAPI.HostController().Host().UnlockHost(ctx, lgc.header, input)
+	hostUnlockResult, err := lgc.CoreAPI.CoreService().Host().UnlockHost(ctx, lgc.header, input)
 	if nil != err {
 		blog.Errorf("unlock host, http request error, error:%s,input:%+v,logID:%s", err.Error(), input, lgc.rid)
 		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -51,7 +51,7 @@ func (lgc *Logics) UnlockHost(ctx context.Context, input *metadata.HostLockReque
 
 func (lgc *Logics) QueryHostLock(ctx context.Context, input *metadata.QueryHostLockRequest) (map[string]bool, errors.CCError) {
 
-	hostLockResult, err := lgc.CoreAPI.HostController().Host().QueryHostLock(ctx, lgc.header, input)
+	hostLockResult, err := lgc.CoreAPI.CoreService().Host().QueryHostLock(ctx, lgc.header, input)
 	if nil != err {
 		blog.Errorf("query lock host, http request error, error:%s,input:%+v,logID:%s", err.Error(), input, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -69,22 +69,4 @@ func (lgc *Logics) QueryHostLock(ctx context.Context, input *metadata.QueryHostL
 	}
 
 	return hostLockMap, nil
-}
-
-func diffHostLockIP(ips []string, hostInfos []map[string]interface{}) []string {
-	mapInnerIP := make(map[string]bool, 0)
-	for _, hostInfo := range hostInfos {
-		innerIP, ok := hostInfo[common.BKHostInnerIPField].(string)
-		if ok {
-			mapInnerIP[innerIP] = true
-		}
-	}
-	var diffIPS []string
-	for _, ip := range ips {
-		_, ok := mapInnerIP[ip]
-		if !ok {
-			diffIPS = append(diffIPS, ip)
-		}
-	}
-	return diffIPS
 }

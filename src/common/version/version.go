@@ -16,9 +16,9 @@ import (
 	"fmt"
 )
 
-//CCVersion discribes version
-//CCTag show the git tag for this version
-//CCBuildTime show the compile time
+// CCVersion describes version
+// CCTag show the git tag for this version
+// CCBuildTime show the compile time
 var (
 	CCVersion       = "17.03.28"
 	CCTag           = "2017-03-28 Release"
@@ -37,7 +37,7 @@ var (
 	CCRunModeDev     = "dev"
 )
 
-//ShowVersion is the default handler which match the --version flag
+// ShowVersion is the default handler which match the --version flag
 func ShowVersion() {
 	fmt.Printf("%s", GetVersion())
 }
@@ -46,10 +46,9 @@ func ShowVersion() {
 func GetVersion() string {
 	version := fmt.Sprintf(`Version  : %s
 Tag      : %s
-Branch   : %s
 BuildTime: %s
 GitHash  : %s
 RunMode  : %s
-`, CCVersion, CCTag, CCBRANCH, CCBuildTime, CCGitHash, CCRunMode)
+`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode)
 	return version
 }

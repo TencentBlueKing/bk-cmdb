@@ -59,12 +59,13 @@ func (m *associationModel) isExistsAssociationID(ctx core.ContextParams, associa
 	return 0 != cnt, err
 }
 
-func (m *associationModel) isExistsAssociationObjectWithAnotherObject(ctx core.ContextParams, targetObjectID, anotherObjectID string) (bool, error) {
+func (m *associationModel) isExistsAssociationObjectWithAnotherObject(ctx core.ContextParams, targetObjectID, anotherObjectID string, AssociationKind string) (bool, error) {
 
 	existsCheckCond := mongo.NewCondition()
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldObjectID, Val: targetObjectID})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationObjectID, Val: anotherObjectID})
+	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationKind, Val: AssociationKind})
 
 	cnt, err := m.count(ctx, existsCheckCond)
 	if nil != err {

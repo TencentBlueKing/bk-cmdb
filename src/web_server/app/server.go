@@ -14,87 +14,48 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"plugin"
 	"strings"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/storage/dal/redis"
-	confCenter "configcenter/src/web_server/app/config"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
-	"configcenter/src/web_server/middleware"
 	websvc "configcenter/src/web_server/service"
+
+	"github.com/holmeswang/contrib/sessions"
 )
 
 type WebServer struct {
 	Config options.Config
 }
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	service := new(websvc.Service)
-	service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("new proxy discovery instance failed, err: %v", err)
-	}
 
 	webSvr := new(WebServer)
-	webSvr.getConfig(op.ServConf.RegDiscover)
-	service.Config = webSvr.Config
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    service.WebService(),
-		TLS:        backbone.TLSConfig{},
+	service.Config = &webSvr.Config
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: webSvr.onServerConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
 	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_WEBSERVER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_WEBSERVER,
-		op.ServConf.ExConfig,
-		webSvr.onServerConfigUpdate,
-		discover,
-		bonC)
-
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -109,7 +70,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return errors.New("configuration item not found")
 	}
 
 	redisAddress := webSvr.Config.Session.Host
@@ -119,6 +80,21 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		redisAddress = webSvr.Config.Session.Host + ":" + webSvr.Config.Session.Port
 	}
 
+	var redisErr error
+	if 0 == len(webSvr.Config.Session.Address) {
+		// address 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
+		service.Session, redisErr = sessions.NewRedisStore(10, "tcp", redisAddress, webSvr.Config.Session.Secret, []byte("secret"))
+		if redisErr != nil {
+			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
+		}
+	} else {
+		// address 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
+		address := strings.Split(webSvr.Config.Session.Address, ";")
+		service.Session, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Session.MasterName, "tcp", webSvr.Config.Session.Secret, []byte("secret"))
+		if redisErr != nil {
+			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
+		}
+	}
 	cacheCli, err := redis.NewFromConfig(redis.Config{
 		Address:    redisAddress,
 		Password:   redisSecret,
@@ -131,8 +107,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	service.Engine = engine
+	service.CacheCli = cacheCli
 	service.Logics = &logics.Logics{Engine: engine}
-	service.Config = webSvr.Config
+	service.Config = &webSvr.Config
 
 	if webSvr.Config.LoginVersion != common.BKDefaultLoginUserPluginVersion && webSvr.Config.LoginVersion != "" {
 		service.VersionPlg, err = plugin.Open("login.so")
@@ -141,62 +118,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("load login so err: %v", err)
 		}
 	}
-	middleware.Engine = engine
-	middleware.CacheCli = cacheCli
-	middleware.LoginPlg = service.VersionPlg
 
-	select {}
-	return nil
-
-}
-
-func (w *WebServer) getConfig(regDiscover string) error {
-	cfCenter := confCenter.NewConfCenter(regDiscover)
-	cfCenter.GetConfigOnce()
-
-	/// fetch config of itselft
-	var confData []byte
-	_ = confData
-	for {
-		confData = cfCenter.GetConfigureCtx()
-		if confData == nil {
-			blog.Warnf("fail to get configure, will get again")
-			time.Sleep(time.Second * 2)
-			continue
-		} else {
-			blog.Infof("get configure. ctx(%s)", string(confData))
-			cfCenter.Stop()
-			break
-		}
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
+	if err != nil {
+		return err
 	}
-	config := cfCenter.ParseConf(confData)
-	w.Config.Site.DomainUrl = config["site.domain_url"] + "/"
-	w.Config.Site.HtmlRoot = config["site.html_root"]
-	w.Config.Site.ResourcesPath = config["site.resources_path"]
-	w.Config.Site.BkLoginUrl = config["site.bk_login_url"]
-	w.Config.Site.AppCode = config["site.app_code"]
-	w.Config.Site.CheckUrl = config["site.check_url"]
-	w.Config.Site.AccountUrl = config["site.bk_account_url"]
-	w.Config.Site.BkHttpsLoginUrl = config["site.bk_https_login_url"]
-	w.Config.Site.HttpsDomainUrl = config["site.https_domain_url"]
 
-	w.Config.Session.Name = config["session.name"]
-	w.Config.Session.Skip = config["session.skip"]
-	w.Config.Session.Host = config["session.host"]
-	w.Config.Session.Port = config["session.port"]
-	w.Config.Session.Address = config["session.address"]
-	w.Config.Session.Secret = strings.TrimSpace(config["session.secret"])
-	w.Config.Session.MultipleOwner = config["session.multiple_owner"]
-	w.Config.Session.DefaultLanguage = config["session.defaultlanguage"]
-	w.Config.Session.MasterName = config["session.mastername"]
-	w.Config.LoginVersion = config["login.version"]
-	if "" == w.Config.Session.DefaultLanguage {
-		w.Config.Session.DefaultLanguage = "zh-cn"
+	select {
+	case <-ctx.Done():
 	}
-	w.Config.Version = config["api.version"]
-	w.Config.AgentAppUrl = config["app.agent_app_url"]
-	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
-	w.Config.ConfigMap = config
+
 	return nil
 }
 
@@ -207,6 +138,14 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.BkLoginUrl = current.ConfigMap["site.bk_login_url"]
 	w.Config.Site.AppCode = current.ConfigMap["site.app_code"]
 	w.Config.Site.CheckUrl = current.ConfigMap["site.check_url"]
+	w.Config.Site.AuthScheme = current.ConfigMap["site.authscheme"]
+	if w.Config.Site.AuthScheme == "" {
+		w.Config.Site.AuthScheme = "internal"
+	}
+	w.Config.Site.FullTextSearch = current.ConfigMap["site.full_text_search"]
+	if w.Config.Site.FullTextSearch == "" {
+		w.Config.Site.FullTextSearch = "off"
+	}
 	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
 	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
 	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
@@ -227,6 +166,8 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 
 	w.Config.Version = current.ConfigMap["api.version"]
 	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
+	w.Config.AuthCenter.AppCode = current.ConfigMap["app.auth_app_code"]
+	w.Config.AuthCenter.URL = current.ConfigMap["app.auth_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
 	w.Config.ConfigMap = current.ConfigMap
 

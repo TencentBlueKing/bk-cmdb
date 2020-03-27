@@ -1,10 +1,16 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-
 import global from './modules/global.js'
 import request from './modules/request.js'
-
+import index from './modules/view/index.js'
+import hostDetails from './modules/view/host-details.js'
+import serviceProcess from './modules/view/service-process.js'
+import businessSync from './modules/view/business-sync.js'
+import hosts from './modules/view/hosts.js'
+import setFeatures from './modules/view/set-features.js'
+import auth from './modules/api/auth.js'
 import eventSub from './modules/api/event-sub.js'
+import hostBatch from './modules/api/host-batch.js'
 import hostCustomApi from './modules/api/host-custom-api.js'
 import hostDelete from './modules/api/host-delete.js'
 import hostFavorites from './modules/api/host-favorites.js'
@@ -35,14 +41,37 @@ import netCollectDevice from './modules/api/net-collect-device.js'
 import netCollectProperty from './modules/api/net-collect-property.js'
 import netDataCollection from './modules/api/net-data-collection.js'
 import netDiscovery from './modules/api/net-discovery.js'
+import serviceTemplate from './modules/api/service-template.js'
+import serviceClassification from './modules/api/service-classification.js'
+import processTemplate from './modules/api/process-template.js'
+import businessSynchronous from './modules/api/business-synchronous.js'
+import serviceInstance from './modules/api/service-instance.js'
+import processInstance from './modules/api/process-instance.js'
+import operationChart from './modules/api/operation-chart'
+import instanceLabel from './modules/api/instance-label.js'
+import fullTextSearch from './modules/api/full-text-search.js'
+import setSync from './modules/api/set-sync.js'
+import setTemplate from './modules/api/set-template.js'
+import cloudarea from './modules/api/cloudarea.js'
+import hostApply from './modules/api/host-apply'
+
+import businessHost from './modules/view/business-host.js'
 
 Vue.use(Vuex)
 
 export default new Vuex.Store({
     ...global,
     modules: {
+        index,
+        hostDetails,
+        serviceProcess,
+        businessSync,
+        hosts,
+        setFeatures,
+        auth,
         request,
         eventSub,
+        hostBatch,
         hostCustomApi,
         hostDelete,
         hostFavorites,
@@ -72,6 +101,20 @@ export default new Vuex.Store({
         netCollectDevice,
         netCollectProperty,
         netDataCollection,
-        netDiscovery
+        netDiscovery,
+        serviceTemplate,
+        serviceClassification,
+        processTemplate,
+        businessSynchronous,
+        serviceInstance,
+        processInstance,
+        operationChart,
+        instanceLabel,
+        fullTextSearch,
+        setSync,
+        setTemplate,
+        businessHost,
+        cloudarea,
+        hostApply
     }
 })

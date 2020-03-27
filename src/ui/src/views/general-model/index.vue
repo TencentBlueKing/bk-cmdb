@@ -2,170 +2,226 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <div class="fl" v-tooltip="$t('ModelManagement[\'导入\']')">
-                    <bk-button class="models-button"
-                        :disabled="!authority.includes('update')"
-                        @click="importSlider.show = true">
-                        <i class="icon-cc-import"></i>
-                    </bk-button>
-                </div>
-                <div class="fl" v-tooltip="$t('ModelManagement[\'导出\']')">
-                    <bk-button class="models-button" type="default submit" form="exportForm"
-                        :disabled="!table.checked.length">
-                        <i class="icon-cc-derivation"></i>
-                    </bk-button>
-                </div>
-                <form id="exportForm" :action="url.export" method="POST" hidden>
-                    <input type="hidden" name="bk_inst_id" :value="table.checked.join(',')">
-                    <input type="hidden" name="metadata"
-                        v-if="!isPublicModel"
-                        :value="JSON.stringify($injectMetadata().metadata)">
-                </form>
-                <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')">
-                    <bk-button class="models-button"
-                        :disabled="!table.checked.length || !authority.includes('update')"
-                        @click="handleMultipleEdit">
-                        <i class="icon-cc-edit"></i>
-                    </bk-button>
-                </div>
-                <div class="fl" v-tooltip="$t('Common[\'删除\']')">
-                    <bk-button class="models-button button-delete"
-                        :disabled="!table.checked.length || !authority.includes('delete')"
-                        @click="handleMultipleDelete">
-                        <i class="icon-cc-del"></i>
-                    </bk-button>
-                </div>
-                <div class="fl">
-                    <bk-button style="margin-left: 20px;" type="primary"
-                        :disabled="!authority.includes('update')"
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.C_INST, parent_layers: parentLayers })">
+                    <bk-button slot-scope="{ disabled }"
+                        theme="primary"
+                        :disabled="disabled"
                         @click="handleCreate">
-                        {{$t("Inst['立即创建']")}}
+                        {{$t('新建')}}
+                    </bk-button>
+                </cmdb-auth>
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: [$OPERATION.C_INST, $OPERATION.U_INST], parent_layers: parentLayers })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="models-button"
+                        :disabled="disabled"
+                        @click="importSlider.show = true">
+                        {{$t('导入')}}
+                    </bk-button>
+                </cmdb-auth>
+                <div class="fl mr10">
+                    <bk-button class="models-button" theme="default"
+                        :disabled="!table.checked.length"
+                        @click="handleExport">
+                        {{$t('导出')}}
                     </bk-button>
                 </div>
+                <div class="fl mr10">
+                    <bk-button class="models-button"
+                        :disabled="!table.checked.length"
+                        @click="handleMultipleEdit">
+                        {{$t('批量更新')}}
+                    </bk-button>
+                </div>
+                <cmdb-auth class="fl mr10" :auth="$authResources({ type: $OPERATION.D_INST, parent_layers: parentLayers })">
+                    <bk-button slot-scope="{ disabled }"
+                        hover-theme="danger"
+                        class="models-button button-delete"
+                        :disabled="!table.checked.length || disabled"
+                        @click="handleMultipleDelete">
+                        {{$t('删除')}}
+                    </bk-button>
+                </cmdb-auth>
             </div>
             <div class="options-button fr">
-                <bk-button v-tooltip="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
-                    <i class="icon-cc-history"></i>
-                </bk-button>
-                <bk-button class="button-setting" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
-                    <i class="icon-cc-setting"></i>
-                </bk-button>
+                <icon-button class="ml5"
+                    v-bk-tooltips="$t('查看删除历史')"
+                    icon="icon-cc-history"
+                    @click="routeToHistory">
+                </icon-button>
+                <icon-button class="ml5"
+                    v-bk-tooltips="$t('列表显示属性配置')"
+                    icon="icon-cc-setting"
+                    @click="columnsConfig.show = true">
+                </icon-button>
             </div>
             <div class="options-filter clearfix fr">
-                <bk-selector class="filter-selector fl"
-                    :searchable="true"
-                    :list="filter.options"
-                    :selected.sync="filter.id">
-                </bk-selector>
-                <cmdb-form-enum class="filter-value fl"
-                    v-if="filter.type === 'enum'"
+                <bk-select class="filter-selector fl"
+                    v-model="filter.id"
+                    searchable
+                    font-size="medium"
+                    :clearable="false">
+                    <bk-option v-for="(option, index) in filter.options"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
+                <component class="filter-value fl"
+                    v-if="['enum', 'list'].includes(filter.type)"
+                    :is="`cmdb-form-${filter.type}`"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
+                    :auto-select="false"
                     v-model="filter.value"
-                    @on-selected="getTableData">
-                </cmdb-form-enum>
-                <input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
+                    font-size="medium"
+                    @on-selected="handlePageChange(1, true)">
+                </component>
+                <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
-                <input class="filter-value cmdb-form-input fl" type="text"
+                    clearable
+                    right-icon="icon-search"
+                    font-size="medium"
+                    :placeholder="$t('快速查询')"
+                    @enter="handlePageChange(1, true)"
+                    @clear="handlePageChange(1)">
+                </bk-input>
+                <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
-                <input class="filter-value cmdb-form-input fl" type="text"
+                    clearable
+                    right-icon="icon-search"
+                    font-size="medium"
+                    :placeholder="$t('快速查询')"
+                    @enter="handlePageChange(1, true)"
+                    @clear="handlePageChange(1)">
+                </bk-input>
+                <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
-                    :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
-                <i class="filter-search bk-icon icon-search"
-                    v-show="filter.type !== 'enum'"
-                    @click="getTableData"></i>
+                    clearable
+                    right-icon="icon-search"
+                    font-size="medium"
+                    :placeholder="$t('快速查询')"
+                    @enter="handlePageChange(1, true)"
+                    @clear="handlePageChange(1)">
+                </bk-input>
             </div>
         </div>
-        <cmdb-table class="models-table" ref="table"
-            :loading="$loading()"
-            :checked.sync="table.checked"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
-            :wrapperMinusHeight="157"
-            @handleRowClick="handleRowClick"
-            @handleSortChange="handleSortChange"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange"
-            @handleCheckAll="handleCheckAll">
-        </cmdb-table>
-        <cmdb-slider :isShow.sync="slider.show" :title="slider.title" :beforeClose="handleSliderBeforeClose">
-            <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+        <bk-table class="models-table" ref="table"
+            v-bkloading="{ isLoading: $loading() }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 190"
+            :row-style="{ cursor: 'pointer' }"
+            @row-click="handleRowClick"
+            @sort-change="handleSortChange"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange"
+            @selection-change="handleSelectChange">
+            <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
+            <bk-table-column v-for="column in table.header"
+                sortable="custom"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name"
+                :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
+                :fixed="column.id === 'bk_inst_name'"
+                show-overflow-tooltip>
+                <template slot-scope="{ row }">
+                    <span>{{row[column.id] | formatter(column.property)}}</span>
+                </template>
+            </bk-table-column>
+            <cmdb-table-empty
+                slot="empty"
+                :auth="$authResources({
+                    type: $OPERATION.C_INST,
+                    parent_layers: parentLayers
+                })"
+                :stuff="table.stuff"
+                @create="handleCreate">
+            </cmdb-table-empty>
+        </bk-table>
+        <bk-sideslider
+            v-transfer-dom
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800"
+            :before-close="handleSliderBeforeClose">
+            <bk-tab type="unborder-card" slot="content"
+                v-if="slider.contentShow"
+                :active.sync="tab.active" :show-header="attribute.type !== 'create'">
+                <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
-                        :authority="authority"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
+                        :edit-auth="$OPERATION.U_INST"
+                        :delete-auth="$OPERATION.D_INST"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
                         ref="form"
-                        :authority="authority"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
+                        :save-auth="attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
                         ref="multipleForm"
-                        :authority="authority"
+                        :uneditable-properties="['bk_inst_name']"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
+                        :object-unique="objectUnique"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
-                </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="['update', 'details'].includes(attribute.type)">
+                </bk-tab-panel>
+                <bk-tab-panel name="relevance" :label="$t('关联Relation')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
-                        :authority="authority"
+                        :auth="$OPERATION.U_INST"
                         :obj-id="objId"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
-                </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="['update', 'details'].includes(attribute.type)">
+                </bk-tab-panel>
+                <bk-tab-panel name="history" :label="$t('变更记录')" :visible="['update', 'details'].includes(attribute.type)">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         :target="objId"
-                        :instId="attribute.inst.details['bk_inst_id']">
+                        :inst-id="attribute.inst.details['bk_inst_id']">
                     </cmdb-audit-history>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
-        <cmdb-slider :isShow.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
+        </bk-sideslider>
+        <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
-                :properties="properties"
+                v-if="columnsConfig.show"
+                :properties="columnProperties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
                 @on-apply="handleApplyColumnsConfig"
                 @on-cancel="columnsConfig.show = false"
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
-        </cmdb-slider>
-        <cmdb-slider
+        </bk-sideslider>
+        <bk-sideslider
+            v-transfer-dom
             :is-show.sync="importSlider.show"
-            :title="$t('HostResourcePool[\'批量导入\']')">
-            <cmdb-import v-if="importSlider.show" slot="content" 
-                :template-url="url.template" 
+            :width="800"
+            :title="$t('批量导入')">
+            <cmdb-import v-if="importSlider.show" slot="content"
+                :template-url="url.template"
                 :import-url="url.import"
                 :download-payload="url.downloadPayload"
                 :import-payload="url.importPayload"
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -184,20 +240,24 @@
         },
         data () {
             return {
+                objectUnique: [],
                 properties: [],
                 propertyGroups: [],
                 table: {
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         count: 0,
-                        size: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
-                    sort: 'bk_inst_id'
+                    sort: 'bk_inst_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 filter: {
                     id: '',
@@ -207,6 +267,7 @@
                 },
                 slider: {
                     show: false,
+                    contentShow: false,
                     title: ''
                 },
                 tab: {
@@ -233,8 +294,12 @@
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             objId () {
                 return this.$route.params.objId
+            },
+            model () {
+                return this.getModelById(this.objId) || {}
             },
             customConfigKey () {
                 return `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
@@ -248,16 +313,28 @@
                     import: prefix + 'import',
                     export: prefix + 'export',
                     template: `${window.API_HOST}importtemplate/${this.objId}`,
-                    downloadPayload: this.$injectMetadata({}, {inject: !this.isPublicModel}),
-                    importPayload: this.$injectMetadata({}, {inject: !this.isPublicModel})
+                    downloadPayload: this.$injectMetadata({}, { inject: !this.isPublicModel }),
+                    importPayload: this.$injectMetadata({}, { inject: !this.isPublicModel })
                 }
             },
-            authority () {
-                return this.$store.getters['userPrivilege/modelAuthority'](this.objId)
-            },
             isPublicModel () {
-                const model = this.$allModels.find(model => model['bk_obj_id'] === this.objId) || {}
+                const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
                 return !this.$tools.getMetadataBiz(model)
+            },
+            parentLayers () {
+                return [{
+                    resource_id: this.model.id,
+                    resource_type: 'model'
+                }]
+            },
+            columnProperties () {
+                const instId = {
+                    bk_property_id: 'bk_inst_id',
+                    bk_property_name: 'ID'
+                }
+                const properties = this.properties
+                properties.push(instId)
+                return properties
             }
         },
         watch: {
@@ -265,21 +342,27 @@
                 this.filter.value = ''
                 this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
             },
+            'filter.value' () {
+                this.$route.query.instId = null
+            },
             'slider.show' (show) {
                 if (!show) {
                     this.tab.active = 'attribute'
                 }
+                this.$nextTick(() => {
+                    this.slider.contentShow = show
+                })
             },
             customColumns () {
                 this.setTableHeader()
             },
             objId () {
-                this.$store.commit('setHeaderTitle', this.$model['bk_obj_name'])
+                this.setDynamicBreadcrumbs()
                 this.reload()
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$model['bk_obj_name'])
+            this.setDynamicBreadcrumbs()
             this.reload()
         },
         methods: {
@@ -294,14 +377,18 @@
                 'batchDeleteInst',
                 'searchInstById'
             ]),
+            setDynamicBreadcrumbs () {
+                this.$store.commit('setTitle', this.model.bk_obj_name)
+            },
             async reload () {
                 try {
+                    this.setRencentlyData()
                     this.resetData()
                     this.properties = await this.searchObjectAttribute({
                         params: this.$injectMetadata({
                             bk_obj_id: this.objId,
                             bk_supplier_account: this.supplierAccount
-                        }, {inject: !this.isPublicModel}),
+                        }, { inject: !this.isPublicModel }),
                         config: {
                             requestId: `post_searchObjectAttribute_${this.objId}`,
                             fromCache: false
@@ -322,20 +409,25 @@
                     checked: [],
                     header: [],
                     list: [],
-                    allList: [],
                     pagination: {
                         count: 0,
-                        size: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: 'bk_inst_id',
-                    sort: 'bk_inst_id'
+                    sort: 'bk_inst_id',
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            resource: this.model['bk_obj_name']
+                        }
+                    }
                 }
             },
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
-                    params: this.$injectMetadata({}, {inject: !this.isPublicModel}),
+                    params: this.$injectMetadata({}, { inject: !this.isPublicModel }),
                     config: {
                         fromCache: false,
                         requestId: `post_searchGroup_${this.objId}`
@@ -347,7 +439,7 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customColumns, this.columnsConfig.disabledColumns)
+                    const headerProperties = this.$tools.getHeaderProperties(this.columnProperties, this.customColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.updateTableHeader(properties)
@@ -364,24 +456,13 @@
                 this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
             },
             updateTableHeader (properties) {
-                this.table.header = [{
-                    id: 'bk_inst_id',
-                    type: 'checkbox',
-                    width: 50
-                }].concat(properties.map(property => {
+                this.table.header = properties.map(property => {
                     return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name']
+                        id: property.bk_property_id,
+                        name: this.$tools.getHeaderPropertyName(property),
+                        property
                     }
-                }))
-            },
-            async handleCheckAll (type) {
-                if (type === 'current') {
-                    this.table.checked = this.table.list.map(inst => inst['bk_inst_id'])
-                } else {
-                    const allData = await this.getAllInstList()
-                    this.table.checked = allData.info.map(inst => inst['bk_inst_id'])
-                }
+                })
             },
             handleRowClick (item) {
                 this.slider.show = true
@@ -390,58 +471,46 @@
                 this.attribute.type = 'details'
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
-            handlePageChange (page) {
+            handlePageChange (page, withFilter = false) {
                 this.table.pagination.current = page
-                this.getTableData()
+                this.getTableData(withFilter)
             },
-            getInstList (config = {cancelPrevious: true}) {
+            handleSelectChange (selection) {
+                this.table.checked = selection.map(row => row.bk_inst_id)
+            },
+            getInstList (config = { cancelPrevious: true }) {
                 return this.searchInst({
                     objId: this.objId,
-                    params: this.$injectMetadata(this.getSearchParams(), {inject: !this.isPublicModel}),
-                    config: Object.assign({requestId: `post_searchInst_${this.objId}`}, config)
+                    params: this.$injectMetadata(this.getSearchParams(), { inject: !this.isPublicModel }),
+                    config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
                 })
             },
-            getAllInstList () {
-                return this.searchInst({
-                    objId: this.objId,
-                    params: this.$injectMetadata({
-                        ...this.getSearchParams(),
-                        page: {}
-                    }, {inject: !this.isPublicModel}),
-                    config: {
-                        requestId: `${this.objId}AllList`,
-                        cancelPrevious: true
+            getTableData (withFilter) {
+                this.getInstList({ cancelPrevious: true, globalPermission: false }).then(data => {
+                    if (data.count && !data.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
                     }
-                }).then(data => {
-                    this.table.allList = data.info
-                    return data
-                })
-            },
-            setAllHostList (list) {
-                const newList = []
-                list.forEach(item => {
-                    const existItem = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
-                    if (existItem) {
-                        Object.assign(existItem, item)
-                    } else {
-                        newList.push(item)
-                    }
-                })
-                this.table.allList = [...this.table.allList, ...newList]
-            },
-            getTableData () {
-                this.getInstList().then(data => {
-                    this.table.list = this.$tools.flatternList(this.properties, data.info)
+                    this.table.list = data.info
                     this.table.pagination.count = data.count
-                    this.setAllHostList(data.info)
+
+                    this.table.stuff.type = withFilter ? 'search' : 'default'
+
                     return data
+                }).catch(({ permission }) => {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 })
             },
             getSearchParams () {
@@ -451,8 +520,8 @@
                     },
                     fields: {},
                     page: {
-                        start: this.table.pagination.size * (this.table.pagination.current - 1),
-                        limit: this.table.pagination.size,
+                        start: this.table.pagination.limit * (this.table.pagination.current - 1),
+                        limit: this.table.pagination.limit,
                         sort: this.table.sort
                     }
                 }
@@ -496,35 +565,41 @@
                             value: filterValue
                         })
                     }
+                } else if (this.$route.params.instId) {
+                    // 配合全文检索过滤列表
+                    params.condition[this.objId].push({
+                        field: 'bk_inst_id',
+                        operator: '$in',
+                        value: [Number(this.$route.params.instId)]
+                    })
+                    this.$route.params.instId = null
                 }
                 return params
             },
-            async handleEdit (flatternItem) {
-                const list = await this.getInstList({fromCache: true})
-                const inst = list.info.find(item => item['bk_inst_id'] === flatternItem['bk_inst_id'])
-                this.attribute.inst.edit = inst
+            async handleEdit (item) {
+                this.attribute.inst.edit = item
                 this.attribute.type = 'update'
             },
             handleCreate () {
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['创建']")} ${this.$model['bk_obj_name']}`
+                this.slider.title = `${this.$t('创建')} ${this.model['bk_obj_name']}`
             },
             handleDelete (inst) {
                 this.$bkInfo({
-                    title: this.$t("Common['确认要删除']", {name: inst['bk_inst_name']}),
+                    title: this.$t('确认要删除', { name: inst['bk_inst_name'] }),
                     confirmFn: () => {
                         this.deleteInst({
                             objId: this.objId,
                             instId: inst['bk_inst_id'],
                             config: {
-                                data: this.$injectMetadata({}, {inject: !this.isPublicModel})
+                                data: this.$injectMetadata({}, { inject: !this.isPublicModel })
                             }
                         }).then(() => {
                             this.slider.show = false
-                            this.$success(this.$t('Common["删除成功"]'))
-                            this.handlePageChange(1)
+                            this.$success(this.$t('删除成功'))
+                            this.getTableData()
                         })
                     }
                 })
@@ -534,27 +609,21 @@
                     this.updateInst({
                         objId: this.objId,
                         instId: originalValues['bk_inst_id'],
-                        params: this.$injectMetadata(values, {inject: !this.isPublicModel})
+                        params: this.$injectMetadata(values, { inject: !this.isPublicModel })
                     }).then(() => {
                         this.getTableData()
-                        this.searchInstById({
-                            objId: this.objId,
-                            instId: originalValues['bk_inst_id'],
-                            params: this.$injectMetadata({}, {inject: !this.isPublicModel})
-                        }).then(item => {
-                            this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
-                        })
+                        this.attribute.inst.details = Object.assign({}, originalValues, values)
                         this.handleCancel()
-                        this.$success(this.$t("Common['修改成功']"))
+                        this.$success(this.$t('修改成功'))
                     })
                 } else {
                     this.createInst({
-                        params: this.$injectMetadata(values, {inject: !this.isPublicModel}),
+                        params: this.$injectMetadata(values, { inject: !this.isPublicModel }),
                         objId: this.objId
                     }).then(() => {
                         this.handlePageChange(1)
                         this.handleCancel()
-                        this.$success(this.$t("Inst['创建成功']"))
+                        this.$success(this.$t('创建成功'))
                     })
                 }
             },
@@ -565,9 +634,15 @@
                     this.attribute.type = 'details'
                 }
             },
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: this.objId,
+                    params: this.$injectMetadata({}, {
+                        inject: !this.isPublicModel
+                    })
+                })
                 this.attribute.type = 'multiple'
-                this.slider.title = this.$t('Inst[\'批量更新\']')
+                this.slider.title = this.$t('批量更新')
                 this.slider.show = true
             },
             handleMultipleSave (values) {
@@ -580,12 +655,13 @@
                                 'inst_id': instId
                             }
                         })
-                    }, {inject: !this.isPublicModel}),
+                    }, { inject: !this.isPublicModel }),
                     config: {
                         requestId: `${this.objId}BatchUpdate`
                     }
                 }).then(() => {
-                    this.$success(this.$t('Common["修改成功"]'))
+                    this.$success(this.$t('修改成功'))
+                    this.slider.show = false
                     this.handlePageChange(1)
                 })
             },
@@ -594,7 +670,7 @@
             },
             handleMultipleDelete () {
                 this.$bkInfo({
-                    title: this.$t("Common['确定删除选中的实例']"),
+                    title: this.$t('确定删除选中的实例'),
                     confirmFn: () => {
                         this.doBatchDeleteInst()
                     }
@@ -608,12 +684,12 @@
                             'delete': {
                                 'inst_ids': this.table.checked
                             }
-                        }, {inject: !this.isPublicModel})
+                        }, { inject: !this.isPublicModel })
                     }
                 }).then(() => {
-                    this.$success(this.$t('Common["删除成功"]'))
+                    this.$success(this.$t('删除成功'))
                     this.table.checked = []
-                    this.handlePageChange(1)
+                    this.getTableData()
                 })
             },
             handleApplyColumnsConfig (properties) {
@@ -629,23 +705,21 @@
             },
             routeToHistory () {
                 this.$router.push({
-                    name: 'modelHistory',
+                    name: 'instanceHistory',
                     params: {
                         objId: this.objId
-                    },
-                    query: {
-                        relative: `/general-model/${this.objId}`
                     }
                 })
             },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {
                     const $form = this.attribute.type === 'multiple' ? this.$refs.multipleForm : this.$refs.form
-                    const changedValues = $form.changedValues
-                    if (Object.keys(changedValues).length) {
+                    if ($form.hasChange) {
                         return new Promise((resolve, reject) => {
                             this.$bkInfo({
-                                title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                                title: this.$t('确认退出'),
+                                subTitle: this.$t('退出会导致未保存信息丢失'),
+                                extCls: 'bk-dialog-sub-header-center',
                                 confirmFn: () => {
                                     resolve(true)
                                 },
@@ -658,56 +732,65 @@
                     return true
                 }
                 return true
+            },
+            handleExport () {
+                const data = new FormData()
+                data.append('bk_inst_id', this.table.checked.join(','))
+                const customFields = this.usercustom[this.customConfigKey]
+                if (customFields) {
+                    data.append('export_custom_fields', customFields)
+                }
+                if (!this.isPublicModel) {
+                    data.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
+                }
+                this.$http.download({
+                    url: this.url.export,
+                    method: 'post',
+                    data
+                })
+            },
+            setRencentlyData () {
+                const modelId = this.model.id
+                this.$store.dispatch('userCustom/setRencentlyData', { id: modelId })
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-.options-filter{
-    position: relative;
-    margin-right: 10px;
-    .filter-selector{
-        width: 115px;
-        border-radius: 2px 0 0 2px;
-        margin-right: -1px;
+    .models-layout {
+        padding: 15px 20px 0;
     }
-    .filter-value{
-        width: 320px;
-        border-radius: 0 2px 2px 0;
-    }
-    .filter-search{
-        position: absolute;
-        right: 10px;
-        top: 11px;
-        cursor: pointer;
-    }
-}
-.models-button{
-    display: inline-block;
-    border-radius: 0;
-    margin-left: -1px;
-    position: relative;
-    &:hover{
-        z-index: 1;
-        &.button-delete {
-            color: $cmdbDangerColor;
-            border-color: $cmdbDangerColor; 
+    .options-filter{
+        position: relative;
+        margin-right: 5px;
+        .filter-selector{
+            width: 120px;
+            border-radius: 2px 0 0 2px;
+            margin-right: -1px;
+        }
+        .filter-value{
+            width: 320px;
+            border-radius: 0 2px 2px 0;
+            /deep/ .bk-form-input {
+                line-height: 32px;
+            }
+        }
+        .filter-search{
+            position: absolute;
+            right: 10px;
+            top: 8px;
+            cursor: pointer;
         }
     }
-}
-.options-button{
-    font-size: 0;
-    white-space: nowrap;
-    .button-history{
-        border-radius: 2px 0 0 2px;
+    .models-button{
+        display: inline-block;
+        position: relative;
+        &:hover{
+            z-index: 1;
+        }
     }
-    .button-setting{
-        border-radius: 0 2px 2px 0;
-        margin-left: -1px;
+    .models-table{
+        margin-top: 14px;
     }
-}
-.models-table{
-    margin-top: 20px;
-}
 </style>

@@ -1,65 +1,73 @@
 <template>
     <div class="form-layout">
-        <div class="form-groups" v-if="hasAvaliableGroups">
+        <div class="form-groups" v-if="hasAvaliableGroups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
                     :key="groupIndex"
                     v-if="groupedProperties[groupIndex].length">
-                    <h3 class="group-name">{{group['bk_group_name']}}</h3>
-                    <ul class="property-list clearfix">
-                        <li class="property-item fl"
-                            v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                            :key="propertyIndex">
-                            <div class="property-name">
-                                <cmdb-form-bool class="property-name-checkbox"
-                                    :id="`property-name-${property['bk_property_id']}`"
-                                    v-model="editable[property['bk_property_id']]">
-                                </cmdb-form-bool>
-                                <label class="property-name-text"
-                                    :for="`property-name-${property['bk_property_id']}`"
-                                    :class="{required: property['isrequired']}">
-                                    {{property['bk_property_name']}}
-                                </label>
-                                <i class="property-name-tooltips bk-icon icon-info-circle-shape" v-if="property['placeholder']" v-tooltip="htmlEncode(property['placeholder'])"></i>
-                            </div>
-                            <div class="property-value">
-                                <component class="form-component"
-                                    v-if="property['bk_property_type'] === 'enum'"
-                                    :is="`cmdb-form-${property['bk_property_type']}`"
-                                    :class="{error: errors.has(property['bk_property_id'])}"
-                                    :disabled="!editable[property['bk_property_id']]"
-                                    :options="property.option || []"
-                                    :data-vv-name="property['bk_property_name']"
-                                    v-validate="getValidateRules(property)"
-                                    v-model.trim="values[property['bk_property_id']]">
-                                </component>
-                                 <component class="form-component"
-                                    v-else
-                                    :is="`cmdb-form-${property['bk_property_type']}`"
-                                    :class="{error: errors.has(property['bk_property_id'])}"
-                                    :disabled="!editable[property['bk_property_id']]"
-                                    :data-vv-name="property['bk_property_name']"
-                                    v-validate="getValidateRules(property)"
-                                    v-model.trim="values[property['bk_property_id']]">
-                                </component>
-                                <span class="form-error">{{errors.first(property['bk_property_name'])}}</span>
-                            </div>
-                        </li>
-                    </ul>
+                    <cmdb-collapse
+                        :label="group['bk_group_name']"
+                        :collapse.sync="groupState[group['bk_group_id']]">
+                        <ul class="property-list">
+                            <li class="property-item"
+                                v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
+                                v-if="!uneditableProperties.includes(property.bk_property_id)"
+                                :key="propertyIndex">
+                                <div class="property-name">
+                                    <bk-checkbox class="property-name-checkbox"
+                                        :id="`property-name-${property['bk_property_id']}`"
+                                        v-model="editable[property['bk_property_id']]">
+                                    </bk-checkbox>
+                                    <label class="property-name-text"
+                                        :for="`property-name-${property['bk_property_id']}`"
+                                        :class="{ required: property['isrequired'] && editable[property['bk_property_id']] }">
+                                        {{property['bk_property_name']}}
+                                    </label>
+                                    <i class="property-name-tooltips icon icon-cc-tips"
+                                        v-if="property['placeholder']"
+                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
+                                    </i>
+                                </div>
+                                <div class="property-value">
+                                    <component class="form-component"
+                                        :is="`cmdb-form-${property['bk_property_type']}`"
+                                        :class="{ error: errors.has(property['bk_property_id']) }"
+                                        :unit="property['unit']"
+                                        :row="2"
+                                        :disabled="!editable[property['bk_property_id']]"
+                                        :options="property.option || []"
+                                        :data-vv-name="property['bk_property_id']"
+                                        :auto-select="false"
+                                        :placeholder="getPlaceholder(property)"
+                                        v-validate="getValidateRules(property)"
+                                        v-model.trim="values[property['bk_property_id']]">
+                                    </component>
+                                    <span class="form-error"
+                                        :title="errors.first(property['bk_property_id'])">
+                                        {{errors.first(property['bk_property_id'])}}
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </cmdb-collapse>
                 </div>
             </template>
         </div>
         <div class="form-empty" v-else>
-            {{$t("Inst['暂无可批量更新的属性']")}}
+            {{$t('暂无可批量更新的属性')}}
         </div>
-        <div class="form-options" :class="{sticky: scrollbar}">
+        <div class="form-options" :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <bk-button class="button-save" type="primary"
-                    :disabled="!authority.includes('update') || !hasChange || $loading()"
-                    @click="handleSave">
-                    {{$t("Common['保存']")}}
-                </bk-button>
-                <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
+                <cmdb-auth class="inline-block-middle" :auth="authResources">
+                    <bk-button slot-scope="{ disabled }"
+                        class="button-save"
+                        theme="primary"
+                        :disabled="disabled || !hasChange || $loading()"
+                        @click="handleSave">
+                        {{$t('保存')}}
+                    </bk-button>
+                </cmdb-auth>
+                <bk-button class="button-cancel" @click="handleCancel">{{$t('取消')}}</bk-button>
             </slot>
         </div>
     </div>
@@ -72,11 +80,9 @@
         name: 'cmdb-form-multiple',
         mixins: [formMixins],
         props: {
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
+            saveAuth: {
+                type: [String, Array],
+                default: ''
             }
         },
         data () {
@@ -84,17 +90,20 @@
                 values: {},
                 refrenceValues: {},
                 editable: {},
-                scrollbar: false
+                scrollbar: false,
+                groupState: {
+                    'none': true
+                }
             }
         },
         computed: {
             changedValues () {
                 const changedValues = {}
-                for (let propertyId in this.values) {
+                for (const propertyId in this.values) {
                     const property = this.getProperty(propertyId)
                     if (
-                        ['bool'].includes(property['bk_property_type']) ||
-                        this.values[propertyId] !== this.refrenceValues[propertyId]
+                        ['bool'].includes(property['bk_property_type'])
+                        || this.values[propertyId] !== this.refrenceValues[propertyId]
                     ) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
@@ -103,8 +112,8 @@
             },
             hasChange () {
                 let hasChange = false
-                for (let propertyId in this.editable) {
-                    if (this.editable[propertyId] && this.changedValues.hasOwnProperty(propertyId)) {
+                for (const propertyId in this.editable) {
+                    if (this.editable[propertyId]) {
                         hasChange = true
                         break
                     }
@@ -124,6 +133,12 @@
             },
             hasAvaliableGroups () {
                 return this.groupedProperties.some(properties => !!properties.length)
+            },
+            authResources () {
+                const auth = this.saveAuth
+                if (!auth) return {}
+                if (Array.isArray(auth) && !auth.length) return {}
+                return this.$authResources({ type: auth })
             }
         },
         watch: {
@@ -137,10 +152,12 @@
             this.initEditableStatus()
         },
         mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$el, this.checkScrollbar)
+            if (this.$refs.formGroups) {
+                RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
+            }
         },
         beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$el, this.checkScrollbar)
+            RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
         },
         methods: {
             checkScrollbar () {
@@ -148,7 +165,7 @@
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
             },
             initValues () {
-                this.values = this.$tools.getInstFormValues(this.properties, {})
+                this.values = this.$tools.getInstFormValues(this.properties, {}, false)
                 this.refrenceValues = this.$tools.clone(this.values)
             },
             initEditableStatus () {
@@ -163,57 +180,46 @@
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')
                 temp.innerHTML = placeholder
-                let output = temp.innerText
+                const output = temp.innerText
                 temp = null
                 return output
             },
             getProperty (id) {
                 return this.properties.find(property => property['bk_property_id'] === id)
             },
+            getPlaceholder (property) {
+                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                return this.$t(placeholderTxt, { name: property.bk_property_name })
+            },
             getValidateRules (property) {
-                const rules = {}
-                const {
-                    bk_property_type: propertyType,
-                    option,
-                    isrequired
-                } = property
-                if (isrequired) {
-                    rules.required = true
+                if (!this.editable[property['bk_property_id']]) {
+                    return {}
                 }
-                if (option) {
-                    if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                            rules['min_value'] = option.min
-                        }
-                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                            rules['max_value'] = option.max
-                        }
-                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
-                    }
-                }
-                if (['singlechar', 'longchar'].includes(propertyType)) {
-                    rules[propertyType] = true
-                }
-                if (propertyType === 'int') {
-                    rules['numeric'] = true
-                }
-                return rules
+                return this.$tools.getValidateRules(property)
             },
             getMultipleValues () {
                 const multipleValues = {}
-                for (let propertyId in this.editable) {
+                for (const propertyId in this.editable) {
                     if (this.editable[propertyId]) {
                         multipleValues[propertyId] = this.values[propertyId]
                     }
                 }
-                return multipleValues
+                return this.$tools.formatValues(multipleValues, this.properties)
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (result) {
                         this.$emit('on-submit', this.getMultipleValues())
+                    } else {
+                        this.uncollapseGroup()
                     }
+                })
+            },
+            uncollapseGroup () {
+                this.errors.items.forEach(item => {
+                    const property = this.properties.find(property => property['bk_property_id'] === item.field)
+                    const group = property['bk_property_group']
+                    this.groupState[group] = false
                 })
             },
             handleCancel () {
@@ -245,21 +251,21 @@
     }
     .property-list{
         padding: 4px 0;
+        display: flex;
+        flex-wrap: wrap;
         .property-item{
-            width: 50%;
             margin: 12px 0 0;
             padding: 0 54px 0 0;
             font-size: 12px;
+            flex: 0 0 50%;
             .property-name{
                 display: block;
-                margin: 6px 0 9px;
+                margin: 6px 0 10px;
                 color: $cmdbTextColor;
                 font-size: 0;
                 line-height: 18px;
             }
             .property-name-checkbox{
-                transform: scale(0.667);
-                vertical-align: top;
                 margin: 0 6px 0 0;
             }
             .property-name-text{
@@ -268,7 +274,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: top;
-                font-size: 12px;
+                font-size: 14px;
                 @include ellipsis;
                 &.required:after{
                     position: absolute;
@@ -285,13 +291,16 @@
                 width: 16px;
                 height: 16px;
                 font-size: 16px;
-                color: #ffb400;
+                color: #c3cdd7;
             }
             .property-value{
-                height: 36px;
-                line-height: 36px;
-                font-size: 12px;
+                font-size: 0;
                 position: relative;
+                /deep/ .control-append-group {
+                    .bk-input-text {
+                        flex: 1;
+                    }
+                }
             }
         }
     }
@@ -322,6 +331,8 @@
         line-height: 14px;
         font-size: 12px;
         color: #ff5656;
+        max-width: 100%;
+        @include ellipsis;
     }
     .form-empty{
         height: 100%;

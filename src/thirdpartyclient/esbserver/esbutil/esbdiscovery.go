@@ -13,23 +13,32 @@ package esbutil
 
 import (
 	"sync"
+
+	"configcenter/src/common/blog"
 )
 
-type EsbConfigServ struct {
+type EsbConfigSrv struct {
 	addrs     string
 	appCode   string
 	appSecret string
 	sync.RWMutex
 }
 
-type EsbServDiscoveryInterace interface {
+type EsbSrvDiscoveryInterface interface {
 	GetServers() ([]string, error)
 }
 
-func NewEsbConfigServ(srvChan chan EsbConfig) *EsbConfigServ {
-	esb := &EsbConfigServ{}
+func NewEsbConfigSrv(srvChan chan EsbConfig, defaultCfg *EsbConfig) *EsbConfigSrv {
+	esb := &EsbConfigSrv{}
+
+	if defaultCfg != nil {
+		esb.addrs = defaultCfg.Addrs
+		esb.appCode = defaultCfg.AppCode
+		esb.appSecret = defaultCfg.AppSecret
+	}
+
 	go func() {
-		if nil == srvChan {
+		if srvChan == nil {
 			return
 		}
 		for {
@@ -38,6 +47,7 @@ func NewEsbConfigServ(srvChan chan EsbConfig) *EsbConfigServ {
 			esb.addrs = config.Addrs
 			esb.appCode = config.AppCode
 			esb.appSecret = config.AppSecret
+			blog.Infof("cmdb config changed, config: %+v", config)
 			esb.Unlock()
 		}
 	}()
@@ -45,19 +55,19 @@ func NewEsbConfigServ(srvChan chan EsbConfig) *EsbConfigServ {
 	return esb
 }
 
-func (esb *EsbConfigServ) GetEsbServDiscoveryInterace() EsbServDiscoveryInterace {
-	// mabye will deal some logic about server
+func (esb *EsbConfigSrv) GetEsbSrvDiscoveryInterface() EsbSrvDiscoveryInterface {
+	// maybe will deal some logic about server
 	return esb
 }
 
-func (esb *EsbConfigServ) GetServers() ([]string, error) {
-	// mabye will deal some logic about server
+func (esb *EsbConfigSrv) GetServers() ([]string, error) {
+	// maybe will deal some logic about server
 	esb.RLock()
 	defer esb.RUnlock()
 	return []string{esb.addrs}, nil
 }
 
-func (esb *EsbConfigServ) GetConfig() EsbConfig {
+func (esb *EsbConfigSrv) GetConfig() EsbConfig {
 	esb.RLock()
 	defer esb.RUnlock()
 	return EsbConfig{

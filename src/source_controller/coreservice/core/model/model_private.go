@@ -18,15 +18,16 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condition) (oneModel *metadata.ObjectDes, exists bool, err error) {
+func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condition) (oneModel *metadata.Object, exists bool, err error) {
 
-	oneModel = &metadata.ObjectDes{}
+	oneModel = &metadata.Object{}
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(ctx, oneModel)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
-		blog.Errorf("request(%s): it is failed to execute database findone operation on the table (%#v) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute database findOne operation on the table (%#v) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
 		return oneModel, exists, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 	exists = !m.dbProxy.IsNotFoundError(err)
@@ -34,19 +35,17 @@ func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condit
 }
 
 func (m *modelManager) isValid(ctx core.ContextParams, objID string) error {
-
-	checkCond := mongo.NewCondition()
-	//	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
+	checkCondMap := util.SetQueryOwner(make(map[string]interface{}), ctx.SupplierAccount)
+	checkCond, _ := mongo.NewConditionFromMapStr(checkCondMap)
 	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
 
 	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(ctx)
-	isValid := (0 != cnt)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database cout operation on the table (%s) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, checkCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute database count operation on the table (%s) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, checkCond.ToMapStr(), err.Error())
 		return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
-	if !isValid {
+	if cnt == 0 {
 		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, objID)
 	}
 
@@ -65,8 +64,8 @@ func (m *modelManager) deleteModelAndAttributes(ctx core.ContextParams, targetOb
 	}
 
 	// delete the model self
-	deleteModelCond := mongo.NewCondition()
-	deleteModelCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
+	deleteModelCondMap := util.SetModOwner(make(map[string]interface{}), ctx.SupplierAccount)
+	deleteModelCond, _ := mongo.NewConditionFromMapStr(deleteModelCondMap)
 	deleteModelCond.Element(&mongo.In{Key: metadata.ModelFieldObjectID, Val: targetObjIDS})
 
 	cnt, err = m.delete(ctx, deleteModelCond)

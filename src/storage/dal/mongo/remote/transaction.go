@@ -21,14 +21,9 @@ import (
 	"configcenter/src/storage/types"
 )
 
-// StartTransaction create a new transaction
-func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
-	if !c.enableTransaction {
-		return c, nil
-	}
-	if c.TxnID != "" {
-		return nil, dal.ErrTransactionStated
-	}
+// Start create a new transaction
+func (c *Mongo) Start(ctx context.Context) (dal.Transcation, error) {
+
 	// build msg
 	msg := types.OPStartTransactionOperation{}
 	msg.OPCode = types.OPStartTransactionCode
@@ -41,7 +36,7 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 
 	// call
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	addr, err := c.rpc.CallInfo(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -52,24 +47,24 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 	clone := c.Clone().(*Mongo)
 	clone.TxnID = reply.TxnID
 	clone.RequestID = reply.RequestID
+	clone.tmAddr = addr
 	return clone, nil
 }
 
 // Commit 提交事务
 func (c *Mongo) Commit(ctx context.Context) error {
-	if !c.enableTransaction {
-		return nil
-	}
-	if c.TxnID == "" {
-		return dal.ErrTransactionNotFound
-	}
 	msg := types.OPCommitOperation{}
 	msg.OPCode = types.OPCommitCode
 	msg.RequestID = c.RequestID
-	msg.TxnID = c.TxnID
+
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.TxnID = opt.TxnID
+		msg.RequestID = opt.RequestID
+	}
 
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	c.TxnID = "" // clear TxnID
 	if err != nil {
 		return err
@@ -82,19 +77,18 @@ func (c *Mongo) Commit(ctx context.Context) error {
 
 // Abort 取消事务
 func (c *Mongo) Abort(ctx context.Context) error {
-	if !c.enableTransaction {
-		return nil
-	}
-	if c.TxnID == "" {
-		return dal.ErrTransactionNotFound
-	}
 	msg := types.OPAbortOperation{}
 	msg.OPCode = types.OPAbortCode
 	msg.RequestID = c.RequestID
-	msg.TxnID = c.TxnID
+
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.TxnID = opt.TxnID
+		msg.RequestID = opt.RequestID
+	}
 
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	c.TxnID = "" // clear TxnID
 	if err != nil {
 		return err
@@ -110,5 +104,10 @@ func (c *Mongo) TxnInfo() *types.Transaction {
 	return &types.Transaction{
 		RequestID: c.RequestID,
 		TxnID:     c.TxnID,
+		TMAddr:    c.tmAddr,
 	}
+}
+
+func (c *Mongo) DB() dal.RDB {
+	return c
 }

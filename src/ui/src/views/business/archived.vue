@@ -1,22 +1,47 @@
 <template>
     <div class="archived-layout">
-        <div class="archived-options clearfix">
-            <label class="fl">{{$t('Common["归档历史"]')}}</label>
-            <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
+        <div class="archived-filter">
+            <div class="filter-item">
+                <bk-input v-model="filter.name"
+                    clearable
+                    :placeholder="$t('请输入xx', { name: $t('业务') })"
+                    right-icon="bk-icon icon-search"
+                    @enter="handlePageChange(1, $event)">
+                </bk-input>
+            </div>
         </div>
-        <cmdb-table class="archived-table"
-            rowCursor="default"
-            :sortable="false"
-            :pagination.sync="pagination"
-            :list="list"
-            :header="header"
-            :wrapperMinusHeight="157"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange">
-            <template slot="options" slot-scope="{ item }">
-                <bk-button type="primary" size="mini" @click="handleRecovery(item)" :disabled="isInfoShow">{{$t('Inst["恢复业务"]')}}</bk-button>
-            </template>
-        </cmdb-table>
+        <bk-table class="archived-table"
+            :pagination="pagination"
+            :data="list"
+            :max-height="$APP.height - 200"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange">
+            <bk-table-column prop="bk_biz_id" label="ID"></bk-table-column>
+            <bk-table-column v-for="column in header"
+                :key="column.id"
+                :prop="column.id"
+                :label="column.name"
+                show-overflow-tooltip>
+                <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+            </bk-table-column>
+            <bk-table-column prop="last_time" :label="$t('更新时间')" show-overflow-tooltip>
+                <template slot-scope="{ row }">{{$tools.formatTime(row.last_time)}}</template>
+            </bk-table-column>
+            <bk-table-column :label="$t('操作')" fixed="right">
+                <template slot-scope="{ row }">
+                    <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            size="small"
+                            :disabled="disabled"
+                            @click="handleRecovery(row)">
+                            {{$t('恢复业务')}}
+                        </bk-button>
+                    </cmdb-auth>
+                </template>
+            </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
+        </bk-table>
     </div>
 </template>
 
@@ -28,12 +53,23 @@
                 properties: [],
                 header: [],
                 list: [],
+                filter: {
+                    range: [],
+                    name: ''
+                },
                 pagination: {
                     current: 1,
-                    size: 10,
-                    count: 0
+                    count: 0,
+                    ...this.$tools.getDefaultPaginationConfig()
                 },
-                isInfoShow: false
+                table: {
+                    stuff: {
+                        type: 'default',
+                        payload: {
+                            emptyText: this.$t('bk.table.emptyText')
+                        }
+                    }
+                }
             }
         },
         computed: {
@@ -45,7 +81,6 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
@@ -57,6 +92,8 @@
                         fromCache: true
                     }
                 })
+                // 配合全文检索过滤列表
+                this.filter.name = this.$route.params.bizName
                 this.setTableHeader()
                 this.getTableData()
             } catch (e) {
@@ -71,61 +108,71 @@
             },
             setTableHeader () {
                 const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, ['bk_biz_name'])
-                this.header = [{
-                    id: 'bk_biz_id',
-                    name: 'ID'
-                }].concat(headerProperties.map(property => {
+                this.header = headerProperties.map(property => {
                     return {
                         id: property['bk_property_id'],
-                        name: property['bk_property_name']
+                        name: this.$tools.getHeaderPropertyName(property),
+                        property
                     }
-                })).concat([{
-                    id: 'last_time',
-                    name: this.$t('Common["更新时间"]')
-                }, {
-                    id: 'options',
-                    name: this.$t('Common["操作"]')
-                }])
+                })
             },
-            getTableData () {
+            getTableData (event) {
                 this.searchBusiness({
                     params: this.getSearchParams(),
                     config: {
+                        globalPermission: false,
                         cancelPrevious: true,
                         requestId: 'searchArchivedBusiness'
                     }
                 }).then(business => {
+                    if (business.count && !business.info.length) {
+                        this.pagination.current -= 1
+                        this.getTableData()
+                    }
                     this.pagination.count = business.count
-                    this.list = this.$tools.flatternList(this.properties, business.info.map(biz => {
-                        biz['last_time'] = this.$tools.formatTime(biz['last_time'], 'YYYY-MM-DD HH:mm:ss')
-                        return biz
-                    }))
+                    this.list = business.info
+
+                    if (event) {
+                        this.table.stuff.type = 'search'
+                    }
+                }).catch(({ permission }) => {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
                 })
             },
             getSearchParams () {
-                return {
+                const params = {
                     condition: {
                         'bk_data_status': 'disabled'
                     },
                     fields: [],
                     page: {
-                        start: (this.pagination.current - 1) * this.pagination.size,
-                        limit: this.pagination.size,
+                        start: (this.pagination.current - 1) * this.pagination.limit,
+                        limit: this.pagination.limit,
                         sort: '-bk_biz_id'
                     }
                 }
+                if (this.filter.range.length) {
+                    params.condition.last_time = {
+                        '$gte': this.filter.range[0],
+                        '$lte': this.filter.range[1]
+                    }
+                }
+                if (this.filter.name) {
+                    params.condition.bk_biz_name = { '$regex': this.filter.name }
+                }
+                return params
             },
             handleRecovery (biz) {
-                this.isInfoShow = true
                 this.$bkInfo({
-                    title: this.$t('Inst["是否确认恢复业务？"]'),
-                    content: this.$t('Inst["恢复业务提示"]', {bizName: biz['bk_biz_name']}),
+                    title: this.$t('是否确认恢复业务？'),
+                    subTitle: this.$t('恢复业务提示', { bizName: biz['bk_biz_name'] }),
                     confirmFn: () => {
-                        this.isInfoShow = false
                         this.recoveryBiz(biz)
-                    },
-                    cancelFn: () => {
-                        this.isInfoShow = false
                     }
                 })
             },
@@ -139,17 +186,17 @@
                     }
                 }).then(() => {
                     this.$http.cancel('post_searchBusiness_$ne_disabled')
-                    this.$success(this.$t('Inst["恢复业务成功"]'))
-                    this.handlePageChange(1)
+                    this.$success(this.$t('恢复业务成功'))
+                    this.getTableData()
                 })
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.pagination.limit = size
                 this.handlePageChange(1)
             },
-            handlePageChange (current) {
+            handlePageChange (current, event) {
                 this.pagination.current = current
-                this.getTableData()
+                this.getTableData(event)
             }
         }
     }
@@ -157,14 +204,14 @@
 
 <style lang="scss" scoped>
     .archived-layout{
-        padding: 20px;
+        padding: 15px 20px 0;
     }
-    .archived-options{
-        height: 36px;
-        line-height: 36px;
-        font-size: 14px;
-    }
-    .archived-table{
-        margin-top: 20px;
+    .archived-filter {
+        padding: 0 0 15px 0;
+        .filter-item {
+            width: 220px;
+            margin-right: 5px;
+            @include inlineBlock;
+        }
     }
 </style>

@@ -22,29 +22,29 @@ import (
 
 func (s *coreService) DBOperation(input rpc.Request) (interface{}, error) {
 
-	ctx := core.ContextParams{Context: context.Background(), ListenIP: s.listenIP}
+	var ctx core.ContextParams
 
 	reply := types.OPReply{}
-	err := input.Decode(&ctx.Header)
+	err := input.Decode(&ctx)
 	if nil != err {
 		reply.Message = err.Error()
 		return &reply, nil
 	}
+	ctx.Context = context.Background()
+	ctx.ListenIP = s.listenIP
 
 	return s.core.ExecuteCommand(ctx, input)
 
 }
 
 func (s *coreService) WatchTransaction(input rpc.Request, stream rpc.ServerStream) (err error) {
-	/*
-		ch := make(chan *types.Transaction, 100)
-		t.man.Subscribe(ch)
-		defer t.man.UnSubscribe(ch)
-		for txn := range ch {
-			if err = stream.Send(txn); err != nil {
-				return err
-			}
+	ch := make(chan *types.Transaction, 100)
+	s.core.Subscribe(ch)
+	defer s.core.UnSubscribe(ch)
+	for txn := range ch {
+		if err = stream.Send(txn); err != nil {
+			return err
 		}
-	*/
+	}
 	return nil
 }

@@ -35,7 +35,7 @@ func TestCreateManyModelClassification(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().CreateManyModelClassification(nil, nil, &metadata.CreateManyModelClassifiaction{})
 	rtn, err := mockAPI.CoreService().Model().CreateManyModelClassification(nil, nil, &metadata.CreateManyModelClassifiaction{})
 	if err != nil {
-		t.Errorf("get  core service create many model classification result failed, err: %v", err)
+		t.Errorf("get  logics service create many model classification result failed, err: %v", err)
 		return
 	}
 
@@ -62,7 +62,7 @@ func TestCreateModelClassification(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().CreateModelClassification(nil, nil, &metadata.CreateOneModelClassification{})
 	rtn, err := mockAPI.CoreService().Model().CreateModelClassification(nil, nil, &metadata.CreateOneModelClassification{})
 	if err != nil {
-		t.Errorf("get  core service create  model classification result failed, err: %v", err)
+		t.Errorf("get  logics service create  model classification result failed, err: %v", err)
 		return
 	}
 
@@ -89,7 +89,7 @@ func TestSetManyModelClassification(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().SetManyModelClassification(nil, nil, &metadata.SetManyModelClassification{})
 	rtn, err := mockAPI.CoreService().Model().SetManyModelClassification(nil, nil, &metadata.SetManyModelClassification{})
 	if err != nil {
-		t.Errorf("get  core service set many model classification result failed, err: %v", err)
+		t.Errorf("get  logics service set many model classification result failed, err: %v", err)
 		return
 	}
 
@@ -116,7 +116,7 @@ func TestSetModelClassification(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().SetModelClassification(nil, nil, &metadata.SetOneModelClassification{})
 	rtn, err := mockAPI.CoreService().Model().SetModelClassification(nil, nil, &metadata.SetOneModelClassification{})
 	if err != nil {
-		t.Errorf("get  core service set model classification result failed, err: %v", err)
+		t.Errorf("get  logics service set model classification result failed, err: %v", err)
 		return
 	}
 
@@ -143,7 +143,7 @@ func TestUpdateModelClassification(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().UpdateModelClassification(nil, nil, &metadata.UpdateOption{})
 	rtn, err := mockAPI.CoreService().Model().UpdateModelClassification(nil, nil, &metadata.UpdateOption{})
 	if err != nil {
-		t.Errorf("get  core service update model classification result failed, err: %v", err)
+		t.Errorf("get  logics service update model classification result failed, err: %v", err)
 		return
 	}
 
@@ -170,7 +170,7 @@ func TestDeleteModelClassification(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().DeleteModelClassification(nil, nil, &metadata.DeleteOption{})
 	rtn, err := mockAPI.CoreService().Model().DeleteModelClassification(nil, nil, &metadata.DeleteOption{})
 	if err != nil {
-		t.Errorf("get  core service delete model classification result failed, err: %v", err)
+		t.Errorf("get  logics service delete model classification result failed, err: %v", err)
 		return
 	}
 
@@ -197,7 +197,7 @@ func TestDeleteModelClassificationCascade(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().DeleteModelClassificationCascade(nil, nil, &metadata.DeleteOption{})
 	rtn, err := mockAPI.CoreService().Model().DeleteModelClassificationCascade(nil, nil, &metadata.DeleteOption{})
 	if err != nil {
-		t.Errorf("get  core service delete model classification cascade result failed, err: %v", err)
+		t.Errorf("get  logics service delete model classification cascade result failed, err: %v", err)
 		return
 	}
 
@@ -224,7 +224,7 @@ func TestReadModelClassification(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().ReadModelClassification(nil, nil, &metadata.QueryCondition{})
 	rtn, err := mockAPI.CoreService().Model().ReadModelClassification(nil, nil, &metadata.QueryCondition{})
 	if err != nil {
-		t.Errorf("get  core service read model classification result failed, err: %v", err)
+		t.Errorf("get  logics service read model classification result failed, err: %v", err)
 		return
 	}
 
@@ -251,7 +251,7 @@ func TestCreateModel(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().CreateModel(nil, nil, &metadata.CreateModel{})
 	rtn, err := mockAPI.CoreService().Model().CreateModel(nil, nil, &metadata.CreateModel{})
 	if err != nil {
-		t.Errorf("get  core service create  model  result failed, err: %v", err)
+		t.Errorf("get  logics service create  model  result failed, err: %v", err)
 		return
 	}
 
@@ -278,7 +278,7 @@ func TestSetModel(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().SetModel(nil, nil, &metadata.SetModel{})
 	rtn, err := mockAPI.CoreService().Model().SetModel(nil, nil, &metadata.SetModel{})
 	if err != nil {
-		t.Errorf("get  core service set model result failed, err: %v", err)
+		t.Errorf("get  logics service set model result failed, err: %v", err)
 		return
 	}
 
@@ -305,7 +305,7 @@ func TestUpdateModel(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().UpdateModel(nil, nil, &metadata.UpdateOption{})
 	rtn, err := mockAPI.CoreService().Model().UpdateModel(nil, nil, &metadata.UpdateOption{})
 	if err != nil {
-		t.Errorf("get  core service update model result failed, err: %v", err)
+		t.Errorf("get  logics service update model result failed, err: %v", err)
 		return
 	}
 
@@ -332,7 +332,7 @@ func TestDeleteModel(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().DeleteModel(nil, nil, &metadata.DeleteOption{})
 	rtn, err := mockAPI.CoreService().Model().DeleteModel(nil, nil, &metadata.DeleteOption{})
 	if err != nil {
-		t.Errorf("get  core service delete model result failed, err: %v", err)
+		t.Errorf("get  logics service delete model result failed, err: %v", err)
 		return
 	}
 
@@ -356,10 +356,10 @@ func TestDeleteModelCascade(t *testing.T) {
 		return
 	}
 
-	mockAPI.MockDo(resp).CoreService().Model().DeleteModelCascade(nil, nil, &metadata.DeleteOption{})
-	rtn, err := mockAPI.CoreService().Model().DeleteModelCascade(nil, nil, &metadata.DeleteOption{})
+	mockAPI.MockDo(resp).CoreService().Model().DeleteModelCascade(nil, nil, 0)
+	rtn, err := mockAPI.CoreService().Model().DeleteModelCascade(nil, nil, 0)
 	if err != nil {
-		t.Errorf("get  core service delete model cascade result failed, err: %v", err)
+		t.Errorf("get  logics service delete model cascade result failed, err: %v", err)
 		return
 	}
 
@@ -386,7 +386,7 @@ func TestReadModel(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().ReadModel(nil, nil, &metadata.QueryCondition{})
 	rtn, err := mockAPI.CoreService().Model().ReadModel(nil, nil, &metadata.QueryCondition{})
 	if err != nil {
-		t.Errorf("get  core service read model result failed, err: %v", err)
+		t.Errorf("get  logics service read model result failed, err: %v", err)
 		return
 	}
 
@@ -413,7 +413,7 @@ func TestCreateModelAttrs(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().CreateModelAttrs(nil, nil, "", &metadata.CreateModelAttributes{})
 	rtn, err := mockAPI.CoreService().Model().CreateModelAttrs(nil, nil, "", &metadata.CreateModelAttributes{})
 	if err != nil {
-		t.Errorf("get  core service create  model attribute result failed, err: %v", err)
+		t.Errorf("get  logics service create  model attribute result failed, err: %v", err)
 		return
 	}
 
@@ -440,7 +440,7 @@ func TestUpdateModelAttrs(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().UpdateModelAttrs(nil, nil, "", &metadata.UpdateOption{})
 	rtn, err := mockAPI.CoreService().Model().UpdateModelAttrs(nil, nil, "", &metadata.UpdateOption{})
 	if err != nil {
-		t.Errorf("get  core service update model attribute result failed, err: %v", err)
+		t.Errorf("get  logics service update model attribute result failed, err: %v", err)
 		return
 	}
 
@@ -467,7 +467,7 @@ func TestSetModelAttrs(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().SetModelAttrs(nil, nil, "", &metadata.SetModelAttributes{})
 	rtn, err := mockAPI.CoreService().Model().SetModelAttrs(nil, nil, "", &metadata.SetModelAttributes{})
 	if err != nil {
-		t.Errorf("get  core service set model attribute result failed, err: %v", err)
+		t.Errorf("get  logics service set model attribute result failed, err: %v", err)
 		return
 	}
 
@@ -494,7 +494,7 @@ func TestDeleteModelAttr(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().DeleteModelAttr(nil, nil, "", &metadata.DeleteOption{})
 	rtn, err := mockAPI.CoreService().Model().DeleteModelAttr(nil, nil, "", &metadata.DeleteOption{})
 	if err != nil {
-		t.Errorf("get  core service delete model attribute result failed, err: %v", err)
+		t.Errorf("get  logics service delete model attribute result failed, err: %v", err)
 		return
 	}
 
@@ -521,7 +521,7 @@ func TestReadModelAttr(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Model().ReadModelAttr(nil, nil, "", &metadata.QueryCondition{})
 	rtn, err := mockAPI.CoreService().Model().ReadModelAttr(nil, nil, "", &metadata.QueryCondition{})
 	if err != nil {
-		t.Errorf("get  core service read model attribute result failed, err: %v", err)
+		t.Errorf("get  logics service read model attribute result failed, err: %v", err)
 		return
 	}
 
@@ -558,7 +558,7 @@ func getReadModelAttrResult() string {
 				"isreadonly" : false,
 				"isonly" : true,
 				"bk_issystem" : false,
-				"creaet_time" : "2018-11-19T08:10:20.554Z"
+				"create_time" : "2018-11-19T08:10:20.554Z"
 			}]
 		}
 	}`
@@ -610,7 +610,7 @@ func getReadModelResult() string {
 						"isreadonly" : false,
 						"isonly" : true,
 						"bk_issystem" : false,
-						"creaet_time" : "2018-11-19T08:10:20.554Z"
+						"create_time" : "2018-11-19T08:10:20.554Z"
 					}]
 				}
 			 ]

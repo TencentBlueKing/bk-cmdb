@@ -238,6 +238,36 @@ type EsbResponse struct {
 	Data            mapstr.MapStr `json:"data"`
 }
 
+type UserInfo struct {
+	Qq          string `json:"qq"`
+	Status      string `json:"status"`
+	WxUserid    string `json:"wx_userid"`
+	DisplayName string `json:"display_name"`
+	Language    string `json:"language"`
+	StaffStatus string `json:"staff_status"`
+	BkUsername  string `json:"bk_username"`
+	Telephone   string `json:"telephone"`
+	BkRole      int    `json:"bk_role"`
+	TimeZone    string `json:"time_zone"`
+	Email       string `json:"email"`
+}
+
+type EsbUserListResponse struct {
+	EsbBaseResponse `json:",inline"`
+	Data            []UserInfo `json:"data"`
+}
+
+type EsbListUserResponse struct {
+	EsbBaseResponse `json:",inline"`
+	Data            []ListUserItem `json:"data"`
+}
+
+type ListUserItem struct {
+	ID          int64  `json:"id"`
+	Username    string `json:"username"`
+	DisplayName string `json:"display_name"`
+}
+
 type EsbBaseResponse struct {
 	Result       bool   `json:"result"`
 	Code         int    `json:"code"`

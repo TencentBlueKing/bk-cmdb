@@ -20,26 +20,24 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateObjectBatch batch to create some objects
-func (s *topoService) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	data.Remove(metadata.BKMetadata)
-	return s.core.ObjectOperation().CreateObjectBatch(params, data)
+	return s.Core.ObjectOperation().CreateObjectBatch(params, data)
 }
 
 // SearchObjectBatch batch to search some objects
-func (s *topoService) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *Service) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	data.Remove(metadata.BKMetadata)
-	return s.core.ObjectOperation().FindObjectBatch(params, data)
+	return s.Core.ObjectOperation().FindObjectBatch(params, data)
 }
 
 // CreateObject create a new object
-func (s *topoService) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	rsp, err := s.core.ObjectOperation().CreateObject(params, false, data)
+func (s *Service) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	rsp, err := s.Core.ObjectOperation().CreateObject(params, false, data)
 	if nil != err {
 		return nil, err
 	}
@@ -48,63 +46,57 @@ func (s *topoService) CreateObject(params types.ContextParams, pathParams, query
 }
 
 // SearchObject search some objects by condition
-func (s *topoService) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	cond := condition.CreateCondition()
 	if err := cond.Parse(data); nil != err {
 		return nil, err
 	}
 
-	return s.core.ObjectOperation().FindObject(params, cond)
+	return s.Core.ObjectOperation().FindObject(params, cond)
 }
 
 // SearchObjectTopo search the object topo
-func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	cond := condition.CreateCondition()
 	err := cond.Parse(data)
-
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, err.Error())
 	}
 
-	return s.core.ObjectOperation().FindObjectTopo(params, cond)
+	return s.Core.ObjectOperation().FindObjectTopo(params, cond)
 }
 
 // UpdateObject update the object
-func (s *topoService) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	cond := condition.CreateCondition()
-	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
-
+func (s *Service) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	idStr := pathParams(common.BKFieldID)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "object id")
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), params.ReqID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKFieldID)
 	}
-
-	err = s.core.ObjectOperation().UpdateObject(params, data, id, cond)
+	err = s.Core.ObjectOperation().UpdateObject(params, data, id)
 	return nil, err
 }
 
 // DeleteObject delete the object
-func (s *topoService) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	cond := condition.CreateCondition()
-
-	paramPath := mapstr.MapStr{}
-	paramPath.Set("id", pathParams("id"))
-	id, err := paramPath.Int64("id")
+func (s *Service) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	idStr := pathParams(common.BKFieldID)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
-		return nil, err
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), params.ReqID)
+		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
 	}
 
-	err = s.core.ObjectOperation().DeleteObject(params, id, cond, true)
+	err = s.Core.ObjectOperation().DeleteObject(params, id, true)
 	return nil, err
 }
 
-func (s *topoService) CreateOneObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	rsp, err := s.core.ObjectOperation().CreateOneObject(params, data)
-	if nil != err {
+// GetModelStatistics 用于统计各个模型的实例数(Web页面展示需要)
+func (s *Service) GetModelStatistics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	result, err := s.Engine.CoreAPI.CoreService().Model().GetModelStatistics(params.Context, params.Header)
+	if err != nil {
+		blog.Errorf("GetModelStatistics failed, err: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
-
-	return rsp.ToMapStr()
+	return result.Data, err
 }

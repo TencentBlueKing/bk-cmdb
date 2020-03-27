@@ -3,35 +3,41 @@
         <div class="sync-history-options clearfix">
             <cmdb-form-date-range class="sync-options-filter" v-model="dateRange"></cmdb-form-date-range>
         </div>
-        <cmdb-table ref="table"
-            :loading="$loading('getSyncHistory')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange">
-                <template slot="bk_status" slot-scope="{ item }">
-                    <span class="sync-success" v-if="item.bk_status === 'success'">
-                        {{$t('Inst["成功"]')}}
+        <bk-table
+            v-bkloading="{ isLoading: $loading('getSyncHistory') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 220"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange"
+            @sort-change="handleSortChange">
+            <bk-table-column prop="bk_obj_id" :label="$t('模型')" width="80"></bk-table-column>
+            <bk-table-column prop="bk_status" :label="$t('状态')" width="80">
+                <template slot-scope="{ row }">
+                    <span class="sync-success" v-if="row.bk_status === 'success'">
+                        {{$t('成功')}}
                     </span>
-                    <span class="sync-fail" v-else-if="item.bk_status === 'fail'">
-                        {{$t('EventPush["失败"]')}}
+                    <span class="sync-fail" v-else-if="row.bk_status === 'fail'">
+                        {{$t('失败')}}
                     </span>
                 </template>
-                <template slot="details" slot-scope="{ item }">
-                    <span v-if="item.fail_reason === 'AuthFailure'">
-                        {{ $t('Cloud["ID和Key认证失败"]') }}
+            </bk-table-column>
+            <bk-table-column prop="bk_time_consume" :label="$t('处理耗时')" width="115"></bk-table-column>
+            <bk-table-column prop="details" :label="$t('详情')">
+                <template slot-scope="{ row }">
+                    <span v-if="row.fail_reason === 'AuthFailure'">
+                        {{ $t('ID和Key认证失败') }}
                     </span>
-                    <span v-else-if="item.fail_reason === 'else'">
-                        {{ $t('Cloud["服务器错误"]') }}
+                    <span v-else-if="row.fail_reason === 'else'">
+                        {{ $t('服务器错误') }}
                     </span>
                     <span v-else>
-                        {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
+                        {{$t('新增')}} ({{row.new_add}}) / {{$t('变更update')}} ({{row.attr_changed}})
                     </span>
                 </template>
-        </cmdb-table>
+            </bk-table-column>
+            <bk-table-column prop="bk_start_time" :label="$t('启动时间')"></bk-table-column>
+        </bk-table>
     </div>
 </template>
 
@@ -53,34 +59,12 @@
                 dateRange: [],
                 operator: '',
                 table: {
-                    header: [ {
-                        id: 'bk_obj_id',
-                        sortable: false,
-                        width: 80,
-                        name: this.$t('Nav["模型"]')
-                    }, {
-                        id: 'bk_status',
-                        width: 80,
-                        sortable: false,
-                        name: this.$t('ProcessManagement["状态"]')
-                    }, {
-                        id: 'bk_time_consume',
-                        width: 115,
-                        name: this.$t('Cloud["处理耗时"]')
-                    }, {
-                        id: 'details',
-                        sortable: false,
-                        name: this.$t('Cloud["详情"]')
-                    }, {
-                        id: 'bk_start_time',
-                        name: this.$t('HostResourcePool["启动时间"]')
-                    }],
                     list: [],
                     allList: [],
                     pagination: {
                         current: 1,
                         count: 0,
-                        size: 10
+                        limit: 10
                     },
                     checked: [],
                     defaultSort: '-bk_start_time',
@@ -113,12 +97,12 @@
                 this.dateRange = [start, end]
             },
             async getTableData () {
-                let params = {}
-                let innerParams = {}
-                let pagination = this.table.pagination
-                let page = {
-                    start: (pagination.current - 1) * pagination.size,
-                    limit: pagination.size,
+                const params = {}
+                const innerParams = {}
+                const pagination = this.table.pagination
+                const page = {
+                    start: (pagination.current - 1) * pagination.limit,
+                    limit: pagination.limit,
                     sort: this.table.sort
                 }
                 innerParams['$gte'] = this.filterRange[0]
@@ -126,10 +110,10 @@
                 params['bk_start_time'] = innerParams
                 params['bk_task_id'] = this.curPush.bk_task_id
                 params['page'] = page
-                let res = await this.searchCloudHistory({params, config: {requestID: 'getSyncHistory'}})
+                const res = await this.searchCloudHistory({ params, config: { requestID: 'getSyncHistory' } })
                 this.table.list = res.info.map(data => {
                     data['start_time'] = this.$tools.formatTime(data['start_time'], 'YYYY-MM-DD HH:mm:ss')
-                    data['bk_obj_id'] = this.$t('Hosts["主机"]')
+                    data['bk_obj_id'] = this.$t('主机')
                     return data
                 })
                 pagination.count = res.count
@@ -139,11 +123,11 @@
                 this.getTableData()
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.getTableData()
             }
         }

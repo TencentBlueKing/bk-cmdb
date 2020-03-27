@@ -1,10 +1,7 @@
-import Vue from 'vue'
 import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
-import table from './table/table.vue'
-import tableSelector from './table/table-selector.vue'
-import slider from './slider/slider.vue'
+import cloudSelector from './selector/cloud.vue'
 import details from './details/details.vue'
 import form from './form/form.vue'
 import formMultiple from './form/form-multiple.vue'
@@ -19,19 +16,27 @@ import longchar from './form/longchar.vue'
 import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
 import enumeration from './form/enum.vue'
-import objuser from './form/objuser.vue'
-import associateInput from './form/associate-input.vue'
-import tree from './tree/tree.vue'
+import objuser from './form/async-objuser.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
+import collapse from './collapse/collapse'
+import dotMenu from './dot-menu/dot-menu.vue'
+import input from './form/input.vue'
+import searchInput from './form/search-input.vue'
+import inputSelect from './selector/input-select.vue'
+import iconButton from './button/icon-button.vue'
+import tips from './other/tips.vue'
+import dialog from './dialog/dialog.vue'
+import auth from './auth/auth.vue'
+import tableEmpty from './table-empty/table-empty.vue'
+import list from './form/list.vue'
+import leaveConfirm from './dialog/leave-confirm.vue'
+import user from './user/user.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
         clipboardSelector,
         selector,
-        table,
-        tableSelector,
-        slider,
         details,
         form,
         formMultiple,
@@ -47,10 +52,22 @@ const install = (Vue, opts = {}) => {
         timezone,
         enumeration,
         objuser,
-        associateInput,
-        tree,
         resize,
-        collapseTransition
+        collapseTransition,
+        collapse,
+        dotMenu,
+        input,
+        searchInput,
+        inputSelect,
+        iconButton,
+        tips,
+        dialog,
+        cloudSelector,
+        auth,
+        tableEmpty,
+        list,
+        leaveConfirm,
+        user
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -62,9 +79,6 @@ export default {
     businessSelector,
     clipboardSelector,
     selector,
-    table,
-    tableSelector,
-    slider,
     details,
     form,
     formMultiple,
@@ -80,8 +94,18 @@ export default {
     timezone,
     enumeration,
     objuser,
-    associateInput,
-    tree,
     resize,
-    collapseTransition
+    collapseTransition,
+    dotMenu,
+    input,
+    searchInput,
+    inputSelect,
+    iconButton,
+    tips,
+    dialog,
+    cloudSelector,
+    auth,
+    tableEmpty,
+    list,
+    leaveConfirm
 }

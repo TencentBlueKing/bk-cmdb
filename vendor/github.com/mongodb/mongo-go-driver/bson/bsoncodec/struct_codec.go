@@ -14,6 +14,7 @@ import (
 
 	"github.com/mongodb/mongo-go-driver/bson/bsonrw"
 	"github.com/mongodb/mongo-go-driver/bson/bsontype"
+	"github.com/mongodb/mongo-go-driver/bson/util"
 )
 
 var defaultStructCodec = &StructCodec{
@@ -114,6 +115,8 @@ func (sc *StructCodec) EncodeValue(r EncodeContext, vw bsonrw.ValueWriter, val r
 }
 
 // DecodeValue implements the Codec interface.
+// By default, map types in val will not be cleared. If a map has existing key/value pairs, it will be extended with the new ones from vr.
+// For slices, the decoder will set the length of the slice to zero and append all elements. The underlying array will not be cleared.
 func (sc *StructCodec) DecodeValue(r DecodeContext, vr bsonrw.ValueReader, val reflect.Value) error {
 	if !val.CanSet() || val.Kind() != reflect.Struct {
 		return ValueDecoderError{Name: "StructCodec.DecodeValue", Kinds: []reflect.Kind{reflect.Struct}, Received: val}
@@ -174,6 +177,7 @@ func (sc *StructCodec) DecodeValue(r DecodeContext, vr bsonrw.ValueReader, val r
 			if err != nil {
 				return err
 			}
+
 			inlineMap.SetMapIndex(reflect.ValueOf(name), elem)
 			continue
 		}
@@ -183,6 +187,20 @@ func (sc *StructCodec) DecodeValue(r DecodeContext, vr bsonrw.ValueReader, val r
 			field = val.Field(fd.idx)
 		} else {
 			field = val.FieldByIndex(fd.inline)
+		}
+		if util.ExtendEmbeddedDocumentDecoder(vr.Type(), field) {
+			decoder, err := r.LookupDecoder(util.MapType)
+			if err == nil {
+				fd.decoder = decoder
+			}
+		}
+
+		// compatible with null value
+		if vr.Type() == bsontype.Null {
+			if err := vr.ReadNull(); err != nil {
+				return err
+			}
+			continue
 		}
 
 		if !field.CanSet() { // Being settable is a super set of being addressable.

@@ -15,8 +15,11 @@ package remote
 import (
 	"context"
 	"errors"
+	"strings"
+	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
 )
@@ -29,11 +32,13 @@ type Find struct {
 
 // Fields 查询字段
 func (f *Find) Fields(fields ...string) dal.Find {
-	projection := types.Document{}
+	var newFields []string
 	for _, field := range fields {
-		projection[field] = true
+		if strings.TrimSpace(field) != "" {
+			newFields = append(newFields, field)
+		}
 	}
-	f.msg.Projection = projection
+	f.msg.Fields = newFields
 	return f
 }
 
@@ -57,6 +62,7 @@ func (f *Find) Limit(limit uint64) dal.Find {
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
+	start := time.Now()
 	// set txn
 	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
@@ -69,18 +75,22 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 	// call
 	reply := types.OPReply{}
-	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	err := f.rpc.Option(&opt).Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
 	if !reply.Success {
 		return errors.New(reply.Message)
 	}
-	return reply.Docs.Decode(result)
+	err = reply.Docs.Decode(result)
+	rid := ctx.Value(common.ContextRequestIDField)
+	blog.V(5).InfoDepthf(1, "Find all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	return err
 }
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
+	start := time.Now()
 	// set txn
 	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
@@ -90,13 +100,17 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	if f.TxnID != "" {
 		f.msg.TxnID = f.TxnID
 	}
+	// find one. need return one row
+	f.msg.Start = 0
+	f.msg.Limit = 1
 
 	// call
 	reply := types.OPReply{}
-	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	err := f.rpc.Option(&opt).Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
+
 	if !reply.Success {
 		return errors.New(reply.Message)
 	}
@@ -104,7 +118,10 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	if len(reply.Docs) <= 0 {
 		return dal.ErrDocumentNotFound
 	}
-	return reply.Docs[0].Decode(result)
+	err = reply.Docs[0].Decode(result)
+	rid := ctx.Value(common.ContextRequestIDField)
+	blog.V(5).InfoDepthf(1, "Find one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
+	return err
 }
 
 // Count 统计数量(非事务)
@@ -116,11 +133,15 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		f.msg.RequestID = opt.RequestID
+		f.msg.TxnID = opt.TxnID
+	}
+	if f.TxnID != "" {
+		f.msg.TxnID = f.TxnID
 	}
 
 	// call
 	reply := types.OPReply{}
-	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	err := f.rpc.Option(&opt).Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return 0, err
 	}

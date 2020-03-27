@@ -10,14 +10,28 @@
         "authorized": true,
         "order": 1
     },
-    "bk_collection": {
-        "i18n": "Nav['我的收藏']",
-        "icon": "icon-cc-nav-collection",
-        "id": "bk_collection",
-        "name": "我的收藏",
-        "classificationId": "bk_collection",
+    "bk_basic_resources": {
+        "i18n": "Nav['基础资源']",
+        "icon": "icon-cc-basic-resource",
+        "id": "bk_basic_resources",
+        "name": "基础资源",
+        "classificationId": "bk_basic_resources",
         "order": 2,
-        "children": []
+        "children": [{
+            "i18n": "Nav['业务']",
+            "path": "/business",
+            "id": "biz",
+            "name": "业务",
+            "authorized": true,
+            "classificationId": "bk_basic_resources"
+        }, {
+            "i18n": "Nav['主机']",
+            "path": "/resource",
+            "id": "resource",
+            "name": "主机",
+            "authorized": true,
+            "classificationId": "bk_basic_resources"
+        }]
     },
     "bk_business_resource": {
         "i18n": "Nav['业务资源']",
@@ -27,7 +41,7 @@
         "classificationId": "bk_business_resource",
         "order": 3,
         "children": [{
-            "i18n": "Nav['主机查询']",
+            "i18n": "Nav['业务主机']",
             "path": "/hosts",
             "id": "host",
             "icon": "icon-cc-host",
@@ -69,7 +83,7 @@
         },{
             "i18n": "Cloud['云资源发现']",
             "path": "/cloud-discover",
-            "id": "cloud",
+            "id": "cloud_discover",
             "icon": "icon-cc-host-free-pool",
             "name": "云资源发现",
             "authorized": true,
@@ -88,6 +102,13 @@
             "path": "/auditing",
             "id": "audit",
             "name": "操作审计",
+            "authorized": true,
+            "classificationId": "bk_audit_analysis"
+        }, {
+            "i18n": "Nav['统计报表']",
+            "path": "/statistics",
+            "id": "statistics",
+            "name": "统计报表",
             "authorized": true,
             "classificationId": "bk_audit_analysis"
         }]
@@ -165,5 +186,14 @@
             "classificationId": "bk_ci_model",
             "authorized": true
         }]
+    },
+    "bk_collection": {
+        "i18n": "Nav['我的收藏']",
+        "icon": "icon-cc-nav-collection",
+        "id": "bk_collection",
+        "name": "我的收藏",
+        "classificationId": "bk_collection",
+        "order": 7,
+        "children": []
     }
 }

@@ -4,7 +4,9 @@
 
 * ZooKeeper >= 3.4.11
 * Redis   >= 3.2.11
-* MongoDB >= 2.8.0
+* MongoDB >= 3.6.0
+* Elasticsearch >= 5.0.0 & < 7 (用于全文检索功能，推荐使用5.x的版本)
+* Mongo-connector >= 2.5.0 (用于全文检索功能，推荐3.1.1)
 
 ## CMDB 微服务进程清单
 
@@ -49,13 +51,11 @@
 
 请参考官方资料 [MongoDB](https://docs.mongodb.com/manual/installation/)
 
-推荐版本下载：[MongoDB 2.8.0](http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel70-2.8.0-rc5.tgz?_ga=2.109966917.1194957577.1522583108-162706957.1522583108)
+推荐版本下载：[MongoDB 3.6.0](http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel70-3.6.0-rc5.tgz?_ga=2.109966917.1194957577.1522583108-162706957.1522583108)
 
+### 4. Release包下载
 
-### 4. 源码下载 && 编译
-
-* [源码下载 & 编译](source_compile.md)
-* [可执行文件（linux）](http://bkopen-1252002024.file.myqcloud.com/cmdb/cmdb.tar.gz)，md5[22dca56edcbbea1538e9c3be0845f882]
+官方发布的 **Linux Release** 包下载地址见[这里](https://github.com/Tencent/bk-cmdb/releases)。如果你想自已编译，具体的编译方法见[这里](source_compile.md)。
 
 ### 5. 配置数据库
 
@@ -76,7 +76,102 @@
 
 详细手册请参考官方资料 [MongoDB](https://docs.mongodb.com/manual/reference/method/db.createUser/)
 
-### 6. 部署CMDB
+### 6. 部署Elasticsearch (用于全文检索, 可选, 控制开关见第9步的full_text_search)
+
+官方下载 [ElasticSearch](https://www.elastic.co/cn/downloads/past-releases)
+搜索5.x的版本下载，推荐下载5.0.2, 5.6.16
+下载后解压即可，解压后找到配置文件config/elasticsearch.yml，可以配置指定network.host为
+具体的host的地址
+然后到目录的bin目录下运行(注意，不能使用root权限运行，要普通用户)：
+```
+./elasticsearch
+```
+
+如果想部署高可能可扩展的ES，可参考官方文档[ES-Guide](https://www.elastic.co/guide/index.html)
+
+### 7. 部署mongo-connector (用于全文检索, 可选, 控制开关见第9步的full_text_search)
+
+官方仓库 [Mongo-connector](https://github.com/yougov/mongo-connector)
+推荐使用pip安装：
+
+```
+pip install elastic2-doc-manager elasticsearch
+pip install 'mongo-connector[elastic5]'
+```
+
+下载后请检查python包版本，尤其python elasticsearch大版本要和下载的elasticsearch一致
+
+配置配置文件config.json(配置说明参见[config](https://github.com/yougov/mongo-connector/wiki/Configuration%20Options)):
+
+主要配置
+key前面添加__代表忽略此配置
+mainAddress指定mongo，如果是mongo集群，可以指向slave节点
+authentication暂时先别配置，认证有问题
+namespaces里面配置要同步的mongo里的table，false代表不同步，true代表同步,
+可以自行配置需要同步哪些table用于全文检索
+
+```
+{
+    "__comment__": "Configuration options starting with '__' are disabled",
+    "__comment__": "To enable them, remove the preceding '__'",
+
+    "mainAddress": "127.0.0.1:27017",
+    "oplogFile": "/var/log/mongo-connector/oplog.timestamp",
+    "noDump": false,
+    "batchSize": -1,
+    "verbosity": 3,
+    "continueOnError": true,
+
+    "logging": {
+        "type": "file",
+        "filename": "/var/log/mongo-connector/mongo-connector.log",
+        "format": "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d - %(message)s",
+        "rotationWhen": "D",
+        "rotationInterval": 1,
+        "rotationBackups": 10,
+
+        "__type": "syslog",
+        "__host": "localhost:514"
+    },
+
+    "__authentication": {
+        "adminUsername": "cc",
+        "password": "cc",
+        "__passwordFile": "mongo-connector.pwd"
+    },
+
+    "__fields": ["field1", "field2", "field3"],
+    
+    "exclude_fields": ["create_time", "last_time"],
+
+    "namespaces": {
+        "cmdb.cc_HostBase": true,
+        "cmdb.cc_ObjectBase": true,
+        "cmdb.cc_ObjDes": true,
+        "cmdb.cc_ApplicationBase": true,
+        "cmdb.cc_OperationLog": false
+    },
+
+    "docManagers": [
+        {
+            "docManager": "elastic2_doc_manager",
+            "targetURL": "127.0.0.1:9200",
+            "__bulkSize": 1000,
+            "uniqueKey": "_id",
+            "autoCommitInterval": 0
+        }
+    ]
+}
+```
+
+然后运行命令启动：
+```
+mongo-connector -c config.json
+```
+
+也可以自己写成system服务来运行
+
+### 8. 部署CMDB
 
 编译后下载 **cmdb.tar.gz**
 
@@ -130,7 +225,7 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 |cmdb_auditcontroller|controller|审计数据维护服务|
 |cmdb_hostcontroller|controller|主机数据维护服务|
 
-### 7. 初始化
+### 9. 初始化
 
 假定安装目录是 **/data/cmdb/**
 
@@ -152,6 +247,8 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 	--blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
 	--blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
 	--listen_port        <listen_port>          the cmdb_webserver listen port, should be the port as same as -c <cc_url> specified, default:8083
+	--full_text_search   <full_text_search>     full text search function, off or on, default off
+	--es_url             <es_url>               the elasticsearch listen url
 
 ```
 
@@ -171,17 +268,46 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 |--blueking_cmdb_url|该值表示部署完成后,输入到浏览器中访问的cmdb 网址, 格式: http://xx.xxx.com:80, 用户自定义填写;在没有配置 DNS 解析的情况下, 填写服务器的 IP:PORT。端口为当前cmdb_webserver监听的端口。|是|无|
 |--blueking_paas_url|蓝鲸PAAS 平台的地址，对于独立部署的CC版本可以不配置|否|无|
 |--listen_port|cmdb_webserver服务监听的端口，默认是8083|是|8083|
+|--full_text_search|全文检索功能开关(取值：off/on)，默认是off，开启是on|否|off|
+|--es_url|elasticsearch服务监听url，默认是http://127.0.0.1:9200|否|http://127.0.0.1:9200|
+|--auth_scheme | 权限模式，web页面使用，可选值: internal, iam | 否 | internal |
+|--auth_enabled | 是否采用蓝鲸权限中心鉴权 |      否 | false |
+|--auth_address       | 蓝鲸权限中心地址 | auth_enabled 为真时必填 | https://iam.domain.com/ |
+|--auth_app_code      | cmdb项目在蓝鲸权限中心的应用编码 | auth_enabled 为真时必填 | bk_cmdb |
+|--auth_app_secret    | cmdb项目在蓝鲸权限中心的应用密钥 | auth_enabled 为真时必填 | xxxxxxx |
+|--log_level          | 日志级别0-9, 9日志最详细 | 否 | 3  |
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 
 **示例(示例中的参数需要用真实的值替换)：**
 
+如果部署了用于全文检索的第6和第7步，如要开启全文检索功能把full_text_search的值置为on
 ``` shell
-python init.py --discovery 127.0.0.1:2181 --database cmdb --redis_ip 127.0.0.1 --redis_port 6379 --redis_pass cc --mongo_ip 127.0.0.1 --mongo_port 27017 --mongo_user cc --mongo_pass cc --blueking_cmdb_url http://127.0.0.1:8083 --listen_port 8083
+python init.py  \
+  --discovery          127.0.0.1:2181 \
+  --database           cmdb \
+  --redis_ip           127.0.0.1 \
+  --redis_port         6379 \
+  --redis_pass         1111 \
+  --mongo_ip           127.0.0.1 \
+  --mongo_port         27017 \
+  --mongo_user         cc \
+  --mongo_pass         cc \
+  --blueking_cmdb_url  http://127.0.0.1:8080/ \
+  --blueking_paas_url  http://paas.domain.com \
+  --listen_port        8080 \
+  --auth_scheme        internal \
+  --auth_enabled       false \
+  --auth_address       https://iam.domain.com/ \
+  --auth_app_code      bk_cmdb \
+  --auth_app_secret    xxxxxxx \
+  --full_text_search   off \
+  --es_url             http://127.0.0.1:9200 \
+  --log_level          3
 ```
 
 
-### 8. init.py 生成的配置如下
+### 10. init.py 生成的配置如下
 
 配置文件的存储路径：{安装目录}/cmdb_adminserver/configures/
 

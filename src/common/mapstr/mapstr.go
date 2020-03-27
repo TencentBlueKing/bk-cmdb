@@ -13,11 +13,13 @@
 package mapstr
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mohae/deepcopy"
@@ -35,8 +37,23 @@ func (cli MapStr) Clone() MapStr {
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
+		if strings.Contains(key, ".") {
+			root := key[:strings.Index(key, ".")]
+			if _, ok := cli[root]; ok && IsNil(cli[root]) {
+				delete(cli, root)
+			}
+		}
 		cli[key] = val
 	}
+}
+
+// IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
+func IsNil(value interface{}) bool {
+	rflValue := reflect.ValueOf(value)
+	if rflValue.IsValid() {
+		return rflValue.IsNil()
+	}
+	return true
 }
 
 // ToMapInterface convert to map[string]interface{}
@@ -62,10 +79,17 @@ func (cli MapStr) MarshalJSONInto(target interface{}) error {
 
 	data, err := cli.ToJSON()
 	if nil != err {
-		return err
+		return fmt.Errorf("marshal %#v failed: %v", target, err)
 	}
 
-	return json.Unmarshal(data, target)
+	d := json.NewDecoder(bytes.NewReader(data))
+	d.UseNumber()
+
+	err = d.Decode(target)
+	if err != nil {
+		return fmt.Errorf("unmarshal %s failed: %v", data, err)
+	}
+	return nil
 }
 
 // ToJSON convert to json string
@@ -172,8 +196,10 @@ func (cli MapStr) String(key string) (string, error) {
 	switch t := cli[key].(type) {
 	case nil:
 		return "", nil
-	default:
-		return fmt.Sprintf("%v", t), nil
+	case float32:
+		return strconv.FormatFloat(float64(t), 'f', -1, 32), nil
+	case float64:
+		return strconv.FormatFloat(float64(t), 'f', -1, 64), nil
 	case map[string]interface{}, []interface{}:
 		rest, err := json.Marshal(t)
 		if nil != err {
@@ -184,6 +210,8 @@ func (cli MapStr) String(key string) (string, error) {
 		return t.String(), nil
 	case string:
 		return t, nil
+	default:
+		return fmt.Sprintf("%v", t), nil
 	}
 }
 
@@ -284,6 +312,12 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 			switch childType := item.(type) {
 			case map[string]interface{}:
 				items = append(items, childType)
+			case MapStr:
+				items = append(items, childType)
+			case nil:
+				continue
+			default:
+				return nil, fmt.Errorf("the value of the key(%s) is not a valid type, type: %v,value:%+v", key, childType, t)
 			}
 		}
 		return items, nil

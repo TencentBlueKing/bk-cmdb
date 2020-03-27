@@ -9,30 +9,14 @@
  */
 
 import $http from '@/api'
-import STATIC_NAVIGATION from '@/assets/json/static-navigation.json'
-
-const _getNavigationById = id => {
-    let navigation
-    for (let classificationId in STATIC_NAVIGATION) {
-        navigation = STATIC_NAVIGATION[classificationId].children.find(navigation => navigation.id === id)
-        if (navigation) break
-    }
-    return navigation
-}
 
 const state = {
     classifications: [],
-    invisibleClassifications: ['bk_host_manage', 'bk_biz_topo'],
-    interceptStaticModel: {
-        'bk_host_manage': ['resource'],
-        'bk_back_config': ['event', 'model', 'audit']
-    },
-    staticClassifyId: Object.keys(STATIC_NAVIGATION)
+    invisibleClassifications: ['bk_host_manage', 'bk_biz_topo']
 }
 
 const getters = {
     classifications: state => state.classifications,
-    staticClassifyId: state => state.staticClassifyId,
     models: state => {
         const models = []
         state.classifications.forEach(classification => {
@@ -46,111 +30,22 @@ const getters = {
         return getters.models.find(model => model['bk_obj_id'] === id)
     },
     activeClassifications: state => {
-        let classifications = state.classifications
+        const classifications = state.classifications
         // 1.去掉停用模型
         let activeClassifications = classifications.map(classification => {
-            let activeClassification = {...classification}
+            const activeClassification = { ...classification }
             activeClassification['bk_objects'] = activeClassification['bk_objects'].filter(model => !model['bk_ispaused'])
             return activeClassification
         })
         // 2.去掉无启用模型的分类和不显示的分类
         activeClassifications = activeClassifications.filter(classification => {
-            let {
+            const {
                 'bk_classification_id': bkClassificationId,
                 'bk_objects': bkObjects
             } = classification
             return !state.invisibleClassifications.includes(bkClassificationId) && Array.isArray(bkObjects) && bkObjects.length
         })
         return activeClassifications
-    },
-    // 可用分类中被授权的分类
-    authorizedClassifications: (state, getters, rootState, rootGetters) => {
-        let modelAuthority = rootGetters['userPrivilege/privilege']['model_config'] || {}
-        let authorizedClassifications = JSON.parse(JSON.stringify(getters.activeClassifications))
-        // if (!rootGetters.admin) {
-        //     // 1.去除无权限分类
-        //     authorizedClassifications = authorizedClassifications.filter(classification => {
-        //         return modelAuthority.hasOwnProperty(classification['bk_classification_id'])
-        //     })
-        //     // 2.去除分类下无权限的模型
-        //     authorizedClassifications.forEach(classification => {
-        //         classification['bk_objects'] = classification['bk_objects'].filter(model => {
-        //             return modelAuthority[classification['bk_classification_id']].hasOwnProperty(model['bk_obj_id'])
-        //         })
-        //     })
-        // }
-        return authorizedClassifications.filter(({bk_objects: bkObjects}) => bkObjects.length)
-    },
-    authorizedModels: (state, getters) => {
-        const models = []
-        getters.authorizedClassifications.forEach(classification => {
-            classification['bk_objects'].forEach(model => {
-                models.push(model)
-            })
-        })
-        return models
-    },
-    authorizedNavigation: (state, getters, rootState, rootGetters) => {
-        const authority = rootGetters['userPrivilege/privilege']
-        const collectionKey = 'bk_collection'
-        const collection = []
-        const specialCollecton = [{
-            id: 'biz',
-            path: '/business',
-            icon: 'icon-cc-business',
-            i18n: 'Nav["业务"]',
-            authorized: true,
-            classificationId: collectionKey
-        }]
-        const hasResourcePrivilege = rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
-        if (hasResourcePrivilege) {
-            specialCollecton.push({
-                id: '$resource',
-                path: '/resource',
-                icon: 'icon-cc-host-free-pool',
-                i18n: 'Nav["主机"]',
-                authorized: hasResourcePrivilege,
-                classificationId: collectionKey
-            })
-        }
-        const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']
-        const collectedModelIds = rootGetters['userCustom/usercustom'][collectedModelKey] || []
-        collectedModelIds.forEach(modelId => {
-            const specialModel = specialCollecton.find(({id}) => id === modelId)
-            if (specialModel) {
-                collection.push(specialModel)
-            } else {
-                const model = getters.getModelById(modelId)
-                if (model) {
-                    collection.push({
-                        id: modelId,
-                        name: model['bk_obj_name'],
-                        icon: model['bk_obj_icon'],
-                        path: `/general-model/${modelId}`,
-                        authorized: true,
-                        classificationId: collectionKey
-                    })
-                }
-            }
-        })
-        STATIC_NAVIGATION[collectionKey].children = collection
-
-        if (!rootGetters.admin) {
-            STATIC_NAVIGATION['bk_authority'].children.forEach(navigation => {
-                navigation.authorized = false
-            })
-
-            const systemConfig = authority['sys_config']
-            const backConfig = systemConfig['back_config'] || []
-            const globalConfig = systemConfig['global_busi'] || []
-            const needsCheck = ['audit', 'event']
-            needsCheck.forEach(id => {
-                const navigation = _getNavigationById(id)
-                navigation.authorized = backConfig.includes(id)
-            })
-        }
-        const navigation = Object.keys(STATIC_NAVIGATION).map(classificationId => STATIC_NAVIGATION[classificationId])
-        return navigation.sort((A, B) => A.order - B.order)
     }
 }
 
@@ -175,8 +70,8 @@ const actions = {
      * @param {Number} id 分类数据记录id
      * @return {promises} promises 对象
      */
-    deleteClassification ({ commit, state, dispatch }, { id }) {
-        return $http.delete(`delete/objectclassification/${id}`)
+    deleteClassification ({ commit, state, dispatch }, { id, config }) {
+        return $http.delete(`delete/objectclassification/${id}`, config)
     },
 
     /**
@@ -200,7 +95,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchClassifications ({ commit, state, dispatch }, {params, config}) {
+    searchClassifications ({ commit, state, dispatch }, { params, config }) {
         return $http.post('find/objectclassification', params || {}, config)
     },
 
@@ -217,6 +112,10 @@ const actions = {
             commit('setClassificationsObjects', data)
             return data
         })
+    },
+
+    getClassificationsObjectStatistics ({ state }, { config }) {
+        return $http.get('object/statistics', config)
     }
 }
 
@@ -225,7 +124,7 @@ const mutations = {
         state.classifications = classifications
     },
     updateClassify (state, classification) {
-        let activeClassification = state.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === classification['bk_classification_id'])
+        const activeClassification = state.classifications.find(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classification['bk_classification_id'])
         if (activeClassification) {
             activeClassification['bk_classification_icon'] = classification['bk_classification_icon']
             activeClassification['bk_classification_name'] = classification['bk_classification_name']
@@ -245,20 +144,21 @@ const mutations = {
             })
         }
     },
-    updateModel (state, updateModel) {
-        let {
-            bk_classification_id: bkClassificationId,
-            bk_obj_id: bkObjId
-        } = updateModel
-        let currentClassify = state.classifications.find(classify => classify['bk_classification_id'] === bkClassificationId)
-        let curModel = currentClassify['bk_objects'].find(model => model['bk_obj_id'] === bkObjId)
-        if (updateModel.hasOwnProperty('position')) {
-            curModel['position'] = updateModel['position']
-        }
-    },
     deleteClassify (state, classificationId) {
-        let index = state.classifications.findIndex(({bk_classification_id: bkClassificationId}) => bkClassificationId === classificationId)
+        const index = state.classifications.findIndex(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classificationId)
         state.classifications.splice(index, 1)
+    },
+    updateModel (state, data) {
+        const models = []
+        state.classifications.forEach(classification => {
+            (classification['bk_objects'] || []).forEach(model => {
+                models.push(model)
+            })
+        })
+        const model = models.find(model => model.bk_obj_id === data.bk_obj_id)
+        if (model) {
+            Object.assign(model, data)
+        }
     }
 }
 

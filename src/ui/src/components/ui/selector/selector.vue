@@ -1,17 +1,35 @@
 <template>
-    <bk-selector class="form-selector"
+    <bk-select v-if="hasChildren"
+        v-model="selected"
         :placeholder="placeholder"
         :searchable="searchable"
-        :list="list"
+        :clearable="allowClear"
         :disabled="disabled"
-        :allow-clear="allowClear"
-        :selected.sync="selected"
-        :has-children="hasChildren"
-        :setting-key="settingKey"
-        :search-key="displayKey"
-        :display-key="displayKey"
-        :empty-text="emptyText">
-    </bk-selector>
+        :font-size="fontSize">
+        <bk-option-group v-for="(group, index) in list"
+            :key="index"
+            :name="group[displayKey]">
+            <bk-option v-for="option in group.children || []"
+                :key="option[settingKey]"
+                :id="option[settingKey]"
+                :name="option[displayKey]">
+            </bk-option>
+        </bk-option-group>
+    </bk-select>
+    <bk-select v-else
+        v-model="selected"
+        :placeholder="placeholder"
+        :searchable="searchable"
+        :clearable="allowClear"
+        :disabled="disabled"
+        :font-size="fontSize">
+        <bk-option
+            v-for="option in list"
+            :key="option[settingKey]"
+            :id="option[settingKey]"
+            :name="option[displayKey]">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>
@@ -19,6 +37,7 @@
         name: 'cmdb-selector',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {
@@ -58,6 +77,14 @@
             emptyText: {
                 type: String,
                 default: ''
+            },
+            fontSize: {
+                type: String,
+                default: 'medium'
+            },
+            searchable: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -66,17 +93,6 @@
             }
         },
         computed: {
-            searchable () {
-                if (this.hasChildren) {
-                    let list = []
-                    this.list.forEach(group => {
-                        list = [...list, ...group.children]
-                    })
-                    return list.length > 7
-                } else {
-                    return this.list.length > 7
-                }
-            },
             selectedOption () {
                 return this.list.find(option => option[this.settingKey] === this.selected)
             }

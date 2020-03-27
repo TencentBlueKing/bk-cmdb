@@ -21,89 +21,93 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var _ dal.DB = (*Mongo)(nil)
+var requestDuration *prometheus.HistogramVec
+var maxRetry int = 3
 
 // Mongo implement dal.DB interface
 type Mongo struct {
 	RequestID string // 请求ID,可选项
 	TxnID     string // 事务ID,uuid
-	rpc       *rpc.Client
+	rpc       *pool
 	getServer types.GetServerFunc
 	parent    *Mongo
 
-	enableTransaction bool
+	tmAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
+
+	reg prometheus.Registerer
 }
 
 // NewWithDiscover returns new DB
-func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal.DB, err error) {
-	var enableTransaction bool
-	if config.Transaction == "enable" {
-		enableTransaction = true
-	}
-
-	if !enableTransaction {
-		return &Mongo{
-			enableTransaction: enableTransaction,
-		}, nil
-	}
-
-	servers := []string{}
-	for i := 3; i > 0; i-- {
-		servers, err = getServer()
-		if err != nil {
-			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
-			time.Sleep(time.Second * 2)
-			continue
+func NewWithDiscover(engine *backbone.Engine) (db *Mongo, err error) {
+	var pool *rpc.Pool
+	for retry := 1; retry <= maxRetry; retry++ {
+		tmServer := engine.ServiceManageInterface.TMServer()
+		p, err := rpc.NewClientPool("tcp", tmServer.GetServers, "/txn/v3/rpc")
+		if err == nil {
+			pool = p
+			break
 		}
-		break
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	address, err := util.GetDailAddress(servers[0])
-	if err != nil {
-		return nil, fmt.Errorf("GetDailAddress %s, failed: %v", servers[0], err)
+		if maxRetry == retry {
+			return nil, err
+		}
+		blog.Infof("waiting for tsn server ready, retry: %d", retry)
+		time.Sleep(time.Millisecond * 100)
 	}
 
-	rpccli, err := rpc.DialHTTPPath("tcp", address, "/txn/v3/rpc")
-	if err != nil {
-		return nil, err
+	reg := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "cmdb_txc_requests_duration_millisecond",
+		Help: "txc handle request duration millisecond.",
+	}, []string{"info"})
+
+	if err := engine.Metric().Registry().Register(reg); err != nil {
+		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			reg = are.ExistingCollector.(*prometheus.HistogramVec)
+		} else {
+			return nil, err
+		}
 	}
+	requestDuration = reg
 	return &Mongo{
-		rpc:       rpccli,
-		getServer: getServer,
-
-		enableTransaction: enableTransaction,
+		rpc: NewPool(pool),
 	}, nil
 }
 
+/* 不支持事务透传的版本无法使用域名配置。
 // New returns new DB
-func New(uri string) (dal.DB, error) {
+ func New(uri string, enableTransaction bool) (dal.DB, error) {
 	rpccli, err := rpc.DialHTTPPath("tcp", uri, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}
 	return &Mongo{
-		rpc: rpccli,
+		rpc:               rpccli,
+		enableTransaction: enableTransaction,
 	}, nil
-}
+}*/
 
 // Close replica client
 func (c *Mongo) Close() error {
+	if c.rpc == nil {
+		return nil
+	}
 	return c.rpc.Close()
 }
 
 // Ping replica client
 func (c *Mongo) Ping() error {
+	if c.rpc == nil {
+		return nil
+	}
 	return c.rpc.Ping()
 }
 
@@ -128,6 +132,9 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 			return true
 		}
 		if strings.Contains(err.Error(), "There's already an index with name") {
+			return true
+		}
+		if strings.Contains(err.Error(), "E11000 duplicate key error collection") {
 			return true
 		}
 	}
@@ -159,7 +166,9 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 	msg.OPCode = types.OPFindAndModifyCode
 	msg.Collection = common.BKTableNameIDgenerator
 	if err := msg.DOC.Encode(types.Document{
-		"$inc": types.Document{"SequenceID": 1},
+		"$inc":         types.Document{"SequenceID": 1},
+		"$setOnInsert": types.Document{"create_time": time.Now()},
+		"$set":         types.Document{"last_time": time.Now()},
 	}); err != nil {
 		return 0, err
 	}
@@ -180,7 +189,7 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 
 	// call
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return 0, err
 	}
@@ -196,16 +205,67 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 }
 
 // HasTable 判断是否存在集合
-func (c *Mongo) HasTable(tablename string) (bool, error) {
-	return false, dal.ErrNotImplemented
+func (c *Mongo) HasTable(tableName string) (bool, error) {
+
+	msg := types.OPDDLOperation{
+		Command:    types.OPDDLHasCollectCommand,
+		Collection: tableName,
+		MsgHeader:  types.MsgHeader{OPCode: types.OPDDLCode},
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(nil).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return false, err
+	}
+	if !reply.Success {
+		return false, errors.New(reply.Message)
+	}
+	if reply.Count > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 // DropTable 移除集合
-func (c *Mongo) DropTable(tablename string) error {
-	return dal.ErrNotImplemented
+func (c *Mongo) DropTable(tableName string) error {
+	msg := types.OPDDLOperation{
+		Command:    types.OPDDLDropCollectCommand,
+		Collection: tableName,
+		MsgHeader:  types.MsgHeader{OPCode: types.OPDDLCode},
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(nil).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+
+	return nil
 }
 
 // CreateTable 创建集合
-func (c *Mongo) CreateTable(tablename string) error {
-	return dal.ErrNotImplemented
+func (c *Mongo) CreateTable(tableName string) error {
+	msg := types.OPDDLOperation{
+		Command:    types.OPDDLCreateCollectCommand,
+		Collection: tableName,
+		MsgHeader:  types.MsgHeader{OPCode: types.OPDDLCode},
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(nil).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+
+	return nil
 }

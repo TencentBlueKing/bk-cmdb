@@ -1,47 +1,93 @@
 <template>
     <div class="push-wrapper">
+        <cmdb-tips
+            class="mb10"
+            tips-key="eventPushTips"
+            :more-link="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'">
+            {{$t('事件推送顶部提示')}}
+        </cmdb-tips>
         <div class="btn-wrapper clearfix">
-            <bk-button type="primary" @click="createPush">{{$t('EventPush["新增推送"]')}}</bk-button>
+            <cmdb-auth class="inline-block-middle" :auth="$authResources({ type: $OPERATION.C_EVENT })">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    :disabled="disabled"
+                    @click="createPush">
+                    {{$t('新建')}}
+                </bk-button>
+            </cmdb-auth>
         </div>
-        <cmdb-table
-            rowCursor="default"
-            :loading="$loading('searchSubscription')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
-            :wrapperMinusHeight="150"
-            @handleSortChange="handleSortChange"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
-                <template slot="statistics" slot-scope="{ item }">
-                    <i class="circle" :class="[{'danger':item.statistics.failure},{'success':!item.statistics.failure}]"></i>
-                    {{$t('EventPush[\'失败\']')}} {{item.statistics.failure}} / {{$t('EventPush[\'总量\']')}} {{item.statistics.total}}
+        <bk-table
+            v-bkloading="{ isLoading: $loading('searchSubscription') }"
+            :data="table.list"
+            :pagination="table.pagination"
+            :max-height="$APP.height - 229"
+            @sort-change="handleSortChange"
+            @page-limit-change="handleSizeChange"
+            @page-change="handlePageChange">
+            <bk-table-column prop="subscription_name" :label="$t('订阅名称')" sortable="custom" show-overflow-tooltip>
+            </bk-table-column>
+            <bk-table-column prop="system_name" :label="$t('系统名称')" sortable="custom" show-overflow-tooltip>
+            </bk-table-column>
+            <bk-table-column prop="operator" :label="$t('操作人')" sortable="custom" show-overflow-tooltip>
+            </bk-table-column>
+            <bk-table-column prop="last_time" :label="$t('更新时间')" sortable="custom" show-overflow-tooltip>
+            </bk-table-column>
+            <bk-table-column prop="operation" :label="$t('推送情况（近一周）')">
+                <template slot-scope="{ row }">
+                    <i class="circle"
+                        :class="{
+                            'danger': row.operation.failure,
+                            'success': !row.operation.failure
+                        }">
+                    </i>
+                    {{$t('失败')}} {{row.operation.failure}} / {{$t('总量')}} {{row.operation.total}}
                 </template>
-                <template slot="setting" slot-scope="{ item }">
-                    <span class="text-primary mr20" @click.stop="editPush(item)">{{$t('Common["编辑"]')}}</span>
-                    <span class="text-danger" @click.stop="deleteConfirm(item)">{{$t('Common["删除"]')}}</span>
+            </bk-table-column>
+            <bk-table-column prop="setting" :label="$t('配置')">
+                <template slot-scope="{ row }">
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_EVENT })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            text
+                            :disabled="disabled"
+                            @click.stop="editPush(row)">
+                            {{$t('编辑')}}
+                        </bk-button>
+                    </cmdb-auth>
+                    <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.D_EVENT })">
+                        <bk-button slot-scope="{ disabled }"
+                            theme="primary"
+                            text
+                            :disabled="disabled"
+                            @click.stop="deleteConfirm(row)">
+                            {{$t('删除')}}
+                        </bk-button>
+                    </cmdb-auth>
                 </template>
-                <div class="empty-info" slot="data-empty">
-                    <p>{{$t("Common['暂时没有数据']")}}</p>
-                    <p>{{$t("EventPush['当前并无推送，可点击下方按钮新增']")}}</p>
-                    <bk-button class="process-btn" type="primary" @click="createPush">{{$t("EventPush['新增推送']")}}</bk-button>
-                </div>
-        </cmdb-table>
-        <cmdb-slider
-            :isShow.sync="slider.isShow"
+            </bk-table-column>
+            <cmdb-table-empty slot="empty" :stuff="table.stuff">
+                <template>
+                    <p>{{$t('暂时没有数据')}}</p>
+                    <p>{{$t('事件推送功能提示')}}</p>
+                </template>
+            </cmdb-table-empty>
+        </bk-table>
+        <bk-sideslider
+            v-transfer-dom
+            :is-show.sync="slider.isShow"
             :title="slider.title"
             :width="564"
-            :beforeClose="handleBeforeSliderClose">
+            :before-close="handleBeforeSliderClose">
             <v-push-detail
                 ref="detail"
                 slot="content"
+                v-if="slider.isShow"
                 :type="slider.type"
-                :curPush="curPush"
+                :cur-push="curPush"
                 @saveSuccess="saveSuccess"
                 @cancel="closeSlider">
             </v-push-detail>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 
@@ -50,39 +96,25 @@
     import vPushDetail from './push-detail'
     import { mapActions } from 'vuex'
     export default {
+        components: {
+            vPushDetail
+        },
         data () {
             return {
                 curPush: {},
                 table: {
-                    header: [{
-                        id: 'subscription_name',
-                        name: this.$t('EventPush["推送名称"]')
-                    }, {
-                        id: 'system_name',
-                        name: this.$t('EventPush["系统名称"]')
-                    }, {
-                        id: 'operator',
-                        name: this.$t('EventPush["操作人"]')
-                    }, {
-                        id: 'last_time',
-                        name: this.$t('EventPush["更新时间"]')
-                    }, {
-                        id: 'statistics',
-                        name: this.$t('EventPush["推送情况（近一周）"]'),
-                        sortable: false
-                    }, {
-                        id: 'setting',
-                        name: this.$t('EventPush["配置"]'),
-                        sortable: false
-                    }],
                     list: [],
                     pagination: {
                         count: 0,
-                        size: 10,
-                        current: 1
+                        current: 1,
+                        ...this.$tools.getDefaultPaginationConfig()
                     },
                     defaultSort: '-last_time',
-                    sort: '-last_time'
+                    sort: '-last_time',
+                    stuff: {
+                        type: 'default',
+                        payload: {}
+                    }
                 },
                 slider: {
                     isShow: false,
@@ -93,7 +125,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
             this.getTableData()
         },
         methods: {
@@ -105,7 +136,9 @@
                 if (this.$refs.detail.isCloseConfirmShow()) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
                                 resolve(true)
                             },
@@ -120,25 +153,25 @@
             createPush () {
                 this.slider.isShow = true
                 this.slider.type = 'create'
-                this.slider.title = this.$t('EventPush["新增推送"]')
+                this.slider.title = this.$t('新增订阅')
             },
             editPush (item) {
-                this.curPush = {...item}
+                this.curPush = { ...item }
                 this.slider.isShow = true
                 this.slider.type = 'edit'
-                this.slider.title = this.$t('EventPush["编辑推送"]')
+                this.slider.title = this.$t('编辑订阅')
             },
             deleteConfirm (item) {
                 this.$bkInfo({
-                    title: this.$tc('EventPush["删除推送确认"]', item['subscription_name'], {name: item['subscription_name']}),
+                    title: this.$tc('删除推送确认', item['subscription_name'], { name: item['subscription_name'] }),
                     confirmFn: () => {
                         this.deletePush(item['subscription_id'])
                     }
                 })
             },
             async deletePush (subscriptionId) {
-                await this.unsubcribeEvent({bkBizId: 0, subscriptionId})
-                this.$success(this.$t('EventPush["删除推送成功"]'))
+                await this.unsubcribeEvent({ bkBizId: 0, subscriptionId })
+                this.$success(this.$t('删除推送成功'))
                 this.getTableData()
             },
             saveSuccess () {
@@ -153,44 +186,64 @@
                 this.slider.isShow = false
             },
             async getTableData () {
-                let pagination = this.table.pagination
-                let params = {
+                const pagination = this.table.pagination
+                const params = {
                     page: {
-                        start: (pagination.current - 1) * pagination.size,
-                        limit: pagination.size,
+                        start: (pagination.current - 1) * pagination.limit,
+                        limit: pagination.limit,
                         sort: this.table.sort
                     }
                 }
-                let res = await this.searchSubscription({bkBizId: 0, params, config: {requestId: 'searchSubscription'}})
-                res.info.map(item => {
-                    item['subscription_form'] = item['subscription_form'].split(',')
-                    item['last_time'] = formatTime(item['last_time'])
-                })
-                this.table.list = res.info
-                pagination.count = res.count
+                try {
+                    const res = await this.searchSubscription({
+                        bkBizId: 0,
+                        params,
+                        config: {
+                            requestId: 'searchSubscription',
+                            globalPermission: false
+                        }
+                    })
+                    if (res.count && !res.info.length) {
+                        this.table.pagination.current -= 1
+                        this.getTableData()
+                    }
+                    res.info.map(item => {
+                        item['subscription_form'] = item['subscription_form'].split(',')
+                        item['last_time'] = formatTime(item['last_time'])
+                    })
+                    this.table.list = res.info
+                    pagination.count = res.count
+                } catch ({ permission }) {
+                    if (permission) {
+                        this.table.stuff = {
+                            type: 'permission',
+                            payload: { permission }
+                        }
+                    }
+                }
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleSizeChange (size) {
-                this.table.pagination.size = size
+                this.table.pagination.limit = size
                 this.handlePageChange(1)
             },
             handlePageChange (page) {
                 this.table.pagination.current = page
                 this.getTableData()
             }
-        },
-        components: {
-            vPushDetail
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .push-wrapper {
+        padding: 15px 20px 0;
+    }
     .btn-wrapper {
-        margin-bottom: 20px;
+        margin-bottom: 14px;
     }
     .circle{
         display: inline-block;

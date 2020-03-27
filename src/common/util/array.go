@@ -12,6 +12,7 @@
 package util
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -34,6 +35,7 @@ func InArray(obj interface{}, target interface{}) bool {
 }
 
 func ArrayUnique(a interface{}) (ret []interface{}) {
+	ret = make([]interface{}, 0)
 	va := reflect.ValueOf(a)
 	for i := 0; i < va.Len(); i++ {
 		v := va.Index(i).Interface()
@@ -44,8 +46,9 @@ func ArrayUnique(a interface{}) (ret []interface{}) {
 	return ret
 }
 
-//StrArrayUnique get unique string array
+// StrArrayUnique get unique string array
 func StrArrayUnique(a []string) (ret []string) {
+	ret = make([]string, 0)
 	length := len(a)
 	for i := 0; i < length; i++ {
 		if !Contains(ret, a[i]) {
@@ -55,8 +58,9 @@ func StrArrayUnique(a []string) (ret []string) {
 	return ret
 }
 
-//IntArrayUnique get unique int array
+// IntArrayUnique get unique int array
 func IntArrayUnique(a []int64) (ret []int64) {
+	ret = make([]int64, 0)
 	length := len(a)
 	for i := 0; i < length; i++ {
 		if !ContainsInt(ret, a[i]) {
@@ -66,7 +70,29 @@ func IntArrayUnique(a []int64) (ret []int64) {
 	return ret
 }
 
+func BoolArrayUnique(a []bool) (ret []bool) {
+	ret = make([]bool, 0)
+	trueExist := false
+	falseExist := false
+	for _, item := range a {
+		if item == true {
+			trueExist = true
+		}
+		if item == false {
+			falseExist = true
+		}
+	}
+	if trueExist {
+		ret = append(ret, true)
+	}
+	if falseExist {
+		ret = append(ret, false)
+	}
+	return ret
+}
+
 func RemoveDuplicatesAndEmpty(slice []string) (ret []string) {
+	ret = make([]string, 0)
 	for _, a := range slice {
 		if strings.TrimSpace(a) != "" && !Contains(ret, a) {
 			ret = append(ret, a)
@@ -76,7 +102,7 @@ func RemoveDuplicatesAndEmpty(slice []string) (ret []string) {
 }
 
 func StrArrDiff(slice1 []string, slice2 []string) []string {
-	var diffStr []string
+	diffStr := make([]string, 0)
 	for _, i := range slice1 {
 		isIn := false
 		for _, j := range slice2 {
@@ -93,11 +119,22 @@ func StrArrDiff(slice1 []string, slice2 []string) []string {
 }
 
 func IntArrIntersection(slice1 []int64, slice2 []int64) []int64 {
-	var intersectInt []int64
+	intersectInt := make([]int64, 0)
+	intMap := make(map[int64]bool)
 	for _, i := range slice1 {
-		if InArray(i, slice2) {
-			intersectInt = append(intersectInt, i)
+		intMap[i] = true
+	}
+	for _, j := range slice2 {
+		if _, ok := intMap[j]; ok == true {
+			intersectInt = append(intersectInt, j)
 		}
 	}
 	return intersectInt
+}
+
+func PrettyIPStr(ips []string) string {
+	if len(ips) > 2 {
+		return fmt.Sprintf("%s ...", strings.Join(ips[:2], ","))
+	}
+	return strings.Join(ips, ",")
 }

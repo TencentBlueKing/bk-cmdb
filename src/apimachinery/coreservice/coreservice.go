@@ -16,8 +16,20 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/coreservice/association"
+	"configcenter/src/apimachinery/coreservice/auditlog"
+	"configcenter/src/apimachinery/coreservice/cloudsync"
+	"configcenter/src/apimachinery/coreservice/host"
+	"configcenter/src/apimachinery/coreservice/hostapplyrule"
 	"configcenter/src/apimachinery/coreservice/instance"
+	"configcenter/src/apimachinery/coreservice/label"
+	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
+	"configcenter/src/apimachinery/coreservice/operation"
+	"configcenter/src/apimachinery/coreservice/process"
+	"configcenter/src/apimachinery/coreservice/settemplate"
+	"configcenter/src/apimachinery/coreservice/synchronize"
+	ccSystem "configcenter/src/apimachinery/coreservice/system"
+	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
@@ -26,6 +38,18 @@ type CoreServiceClientInterface interface {
 	Instance() instance.InstanceClientInterface
 	Model() model.ModelClientInterface
 	Association() association.AssociationClientInterface
+	Synchronize() synchronize.SynchronizeClientInterface
+	Mainline() mainline.MainlineClientInterface
+	Host() host.HostClientInterface
+	Audit() auditlog.AuditClientInterface
+	Process() process.ProcessInterface
+	Operation() operation.OperationClientInterface
+	Cloud() cloudsync.CloudSyncClientInterface
+	Label() label.LabelInterface
+	TopoGraphics() topographics.TopoGraphicsInterface
+	SetTemplate() settemplate.SetTemplateInterface
+	HostApplyRule() hostapplyrule.HostApplyRuleInterface
+	System() ccSystem.SystemClientInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -49,4 +73,53 @@ func (c *coreService) Model() model.ModelClientInterface {
 
 func (c *coreService) Association() association.AssociationClientInterface {
 	return association.NewAssociationClientInterface(c.restCli)
+}
+
+func (c *coreService) Mainline() mainline.MainlineClientInterface {
+	return mainline.NewMainlineClientInterface(c.restCli)
+}
+
+func (c *coreService) Synchronize() synchronize.SynchronizeClientInterface {
+	return synchronize.NewSynchronizeClientInterface(c.restCli)
+}
+
+func (c *coreService) Host() host.HostClientInterface {
+	return host.NewHostClientInterface(c.restCli)
+}
+
+func (c *coreService) Audit() auditlog.AuditClientInterface {
+	return auditlog.NewAuditClientInterface(c.restCli)
+}
+
+func (c *coreService) Process() process.ProcessInterface {
+	return process.NewProcessInterfaceClient(c.restCli)
+
+}
+
+func (c *coreService) Operation() operation.OperationClientInterface {
+	return operation.NewOperationClientInterface(c.restCli)
+}
+
+func (c *coreService) Cloud() cloudsync.CloudSyncClientInterface {
+	return cloudsync.NewCloudSyncClientInterface(c.restCli)
+}
+
+func (c *coreService) Label() label.LabelInterface {
+	return label.NewLabelInterfaceClient(c.restCli)
+}
+
+func (c *coreService) TopoGraphics() topographics.TopoGraphicsInterface {
+	return topographics.NewTopoGraphicsInterface(c.restCli)
+}
+
+func (c *coreService) System() ccSystem.SystemClientInterface {
+	return ccSystem.NewSystemClientInterface(c.restCli)
+}
+
+func (c *coreService) SetTemplate() settemplate.SetTemplateInterface {
+	return settemplate.NewSetTemplateInterfaceClient(c.restCli)
+}
+
+func (c *coreService) HostApplyRule() hostapplyrule.HostApplyRuleInterface {
+	return hostapplyrule.NewHostApplyRuleClient(c.restCli)
 }

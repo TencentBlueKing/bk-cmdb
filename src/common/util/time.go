@@ -18,14 +18,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/coccyx/timeparser"
-
 	"configcenter/src/common"
+
+	"github.com/coccyx/timeparser"
 )
 
 var (
-	//需要转换的时间的标志
-	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField, common.ConfirmTimeField}
+	// 需要转换的时间的标志
+	convTimeFields = []string{common.CreateTimeField, common.LastTimeField, common.ConfirmTimeField}
 )
 
 func GetCurrentTimeStr() string {
@@ -62,7 +62,8 @@ func convTimeItem(item interface{}) (interface{}, error) {
 						break
 					}
 				}
-				if !timeTypeOk { //如果当前不需要转换，递归转
+				// 如果当前不需要转换，递归转
+				if !timeTypeOk {
 					arrItem[key], _ = convTimeItem(value)
 					continue
 				}
@@ -99,7 +100,7 @@ func convTimeItem(item interface{}) (interface{}, error) {
 			item = arrItem
 		}
 	case []interface{}:
-		//如果是数据，递归转换所有子项
+		// 如果是数据，递归转换所有子项
 		arrItem, ok := item.([]interface{})
 		if true == ok {
 			for index, value := range arrItem {
@@ -199,7 +200,10 @@ func (t *Ticker) Stop() {
 }
 
 func (t *Ticker) Tick() {
-	t.C <- time.Now()
+	select {
+	case t.C <- time.Now():
+	default:
+	}
 }
 
 func NewTicker(d time.Duration) *Ticker {
@@ -214,4 +218,17 @@ func NewTicker(d time.Duration) *Ticker {
 		close(t.C)
 	}()
 	return t
+}
+
+// CountDuration count the duration of function f cost
+func CountDuration(f func()) time.Duration {
+	before := time.Now()
+	f()
+	return time.Since(before)
+}
+
+func ToMillisecond(d time.Duration) float64 {
+	sec := d / time.Millisecond
+	nsec := d % time.Millisecond
+	return float64(sec) + float64(nsec)/1e6
 }

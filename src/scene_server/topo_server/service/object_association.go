@@ -24,14 +24,14 @@ import (
 )
 
 // CreateObjectAssociation create a new object association
-func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	asso := &metadata.Association{}
-	if err := data.MarshalJSONInto(asso); err != nil {
+	assoc := &metadata.Association{}
+	if err := data.MarshalJSONInto(assoc); err != nil {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
-	params.MetaData = &asso.Metadata
-	association, err := s.core.AssociationOperation().CreateCommonAssociation(params, asso)
+	params.MetaData = &assoc.Metadata
+	association, err := s.Core.AssociationOperation().CreateCommonAssociation(params, assoc)
 	if nil != err {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathPa
 }
 
 // SearchObjectAssociation search  object association by object id
-func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	if data.Exists("condition") {
 		// ATTENTION:
@@ -51,7 +51,7 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 
 		cond, err := data.MapStr("condition")
 		if nil != err {
-			blog.Errorf("search object association, failed to get the condition, error info is %s", err.Error())
+			blog.Errorf("search object association, failed to get the condition, error info is %s, rid: %s", err.Error(), params.ReqID)
 			return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 
@@ -66,14 +66,14 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 			cond.Merge(metadata.BizLabelNotExist)
 		}
 
-		resp, err := s.core.AssociationOperation().SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond})
+		resp, err := s.Core.AssociationOperation().SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond})
 		if err != nil {
-			blog.Errorf("search object association with cond[%v] failed, err: %v", cond, err)
+			blog.Errorf("search object association with cond[%v] failed, err: %v, rid: %s", cond, err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !resp.Result {
-			blog.Errorf("search object association with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+			blog.Errorf("search object association with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(resp.Code, resp.ErrMsg)
 		}
 
@@ -82,7 +82,7 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 
 	objID, err := data.String(metadata.AssociationFieldObjectID)
 	if err != nil {
-		blog.Errorf("search object association, but get object id failed from: %v, err: %v", data, err)
+		blog.Errorf("search object association, but get object id failed from: %v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
@@ -90,49 +90,50 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	return s.core.AssociationOperation().SearchObjectAssociation(params, objID)
+	return s.Core.AssociationOperation().SearchObjectAssociation(params, objID)
 }
 
 // DeleteObjectAssociation delete object association
-func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
-		blog.Errorf("delete object association failed, got a invalid object association id[%v], err: %v", pathParams("id"), err)
+		blog.Errorf("delete object association failed, got a invalid object association id[%v], err: %v, rid: %s", pathParams("id"), err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociationID)
 	}
 
 	if id <= 0 {
-		blog.Errorf("delete object association failed, got a invalid objasst id[%d]", id)
+		blog.Errorf("delete object association failed, got a invalid objAsst id[%d], rid: %s", id, params.ReqID)
 		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociationID)
 	}
 
 	data.Remove(metadata.BKMetadata)
-	return nil, s.core.AssociationOperation().DeleteAssociationWithPreCheck(params, id)
+	return nil, s.Core.AssociationOperation().DeleteAssociationWithPreCheck(params, id)
 }
 
 // UpdateObjectAssociation update object association
-func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
-		blog.Errorf("update object association, but got invalid id[%v], err: %v", pathParams("id"), err)
+		blog.Errorf("update object association, but got invalid id[%v], err: %v, rid: %s", pathParams("id"), err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	err = s.core.AssociationOperation().UpdateAssociation(params, data, id)
+	err = s.Core.AssociationOperation().UpdateAssociation(params, data, id)
 	return nil, err
 
 }
 
 // ImportInstanceAssociation import instance  association
-func (s *topoService) ImportInstanceAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) ImportInstanceAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("bk_obj_id")
 	request := new(metadata.RequestImportAssociation)
 	if err := data.MarshalJSONInto(request); err != nil {
+		blog.Errorf("ImportInstanceAssociation, json unmarshal error, objID:%S, err: %v, rid:%s", objID, err, params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	resp, err := s.core.AssociationOperation().ImportInstAssociation(context.Background(), params, objID, request.AssociationInfoMap)
+	resp, err := s.Core.AssociationOperation().ImportInstAssociation(context.Background(), params, objID, request.AssociationInfoMap)
 	return resp, err
 
 }

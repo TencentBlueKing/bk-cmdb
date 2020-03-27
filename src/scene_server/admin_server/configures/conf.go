@@ -13,15 +13,15 @@
 package configures
 
 import (
-	"encoding/json"
-	"path/filepath"
-	"time"
-
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
@@ -36,10 +36,10 @@ type ConfCenter struct {
 }
 
 // NewConfCenter create a ConfCenter object
-func NewConfCenter(ctx context.Context, serv string) *ConfCenter {
+func NewConfCenter(ctx context.Context, client *zk.ZkClient) *ConfCenter {
 	return &ConfCenter{
 		ctx:          ctx,
-		confRegDiscv: confregdiscover.NewZkRegDiscover(serv, time.Second*60),
+		confRegDiscv: confregdiscover.NewZkRegDiscover(client),
 	}
 }
 
@@ -49,48 +49,36 @@ func (cc *ConfCenter) Ping() error {
 }
 
 // Start the configure center module service
-func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
-	// start configure register and discover service
-	if err := cc.confRegDiscv.Start(); err != nil {
-		blog.Errorf("fail to start config register and discover service. err:%s", err.Error())
-		return err
-	}
+func (cc *ConfCenter) Start(confDir, errRes, languageRes string) error {
 
 	// save configures
 	if err := cc.writeConfs2Center(confDir); err != nil {
 		blog.Errorf("fail to write configures to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("writed all configures resource to center %v", types.CC_SERVCONF_BASEPATH)
+		blog.Infof("write all configures resource to center %v success", types.CC_SERVCONF_BASEPATH)
 	}
 
-	if err := cc.writeErrorRes2Center(errres); err != nil {
+	if err := cc.writeErrorRes2Center(errRes); err != nil {
 		blog.Errorf("fail to write error resource to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("writed error resource to center %v", types.CC_SERVERROR_BASEPATH)
+		blog.Infof("write error resource to center %v success", types.CC_SERVERROR_BASEPATH)
 	}
 
-	if err := cc.writeLanguageRes2Center(languageres); err != nil {
-		blog.Errorf("fail to write languate packages to center, err:%s", err.Error())
+	if err := cc.writeLanguageRes2Center(languageRes); err != nil {
+		blog.Errorf("fail to write language packages to center, err:%s", err.Error())
 		return err
 	} else {
-		blog.Infof("writed languate packages to center %v", types.CC_SERVLANG_BASEPATH)
+		blog.Infof("write language packages to center %v success", types.CC_SERVLANG_BASEPATH)
 	}
 
 	// TODO discover config file change
 	go func() {
 		select {
 		case <-cc.ctx.Done():
-			cc.Stop()
 		}
 	}()
-	return nil
-}
-
-// Stop the configure center
-func (cc *ConfCenter) Stop() error {
-	cc.confRegDiscv.Stop()
 	return nil
 }
 
@@ -100,7 +88,7 @@ func (cc *ConfCenter) writeErrorRes2Center(errorres string) error {
 		return fmt.Errorf("directory %s not exists", errorres)
 	}
 	if err != nil {
-		return fmt.Errorf("Stat directory %s faile, %s", errorres, err.Error())
+		return fmt.Errorf("stat directory %s faile, %s", errorres, err.Error())
 	}
 	if !info.IsDir() {
 		return fmt.Errorf("%s is not directory", errorres)
@@ -112,6 +100,9 @@ func (cc *ConfCenter) writeErrorRes2Center(errorres string) error {
 	}
 
 	data, err := json.Marshal(errcode)
+	if err != nil {
+		return fmt.Errorf("unmarshal resource failed, err: %s", err)
+	}
 	key := types.CC_SERVERROR_BASEPATH
 	return cc.confRegDiscv.Write(key, data)
 }
@@ -134,39 +125,58 @@ func (cc *ConfCenter) writeLanguageRes2Center(languageres string) error {
 	}
 
 	data, err := json.Marshal(languagepack)
+	if err != nil {
+		return err
+	}
 	key := types.CC_SERVLANG_BASEPATH
 	return cc.confRegDiscv.Write(key, data)
 }
 
-//WriteConfs2Center save configurs into center.
+// WriteConfs2Center save configurs into center.
 // parameter[confRootPath] define the configurs root path, the specification name of the configure \
 // file is [modulename].conf \
 func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	modules := make([]string, 0)
+	confFileSuffix := ".conf"
 
 	modules = append(modules, types.CC_MODULE_APISERVER)
-	modules = append(modules, types.CC_MODULE_AUDITCONTROLLER)
 	modules = append(modules, types.CC_MODULE_DATACOLLECTION)
 	modules = append(modules, types.CC_MODULE_HOST)
-	modules = append(modules, types.CC_MODULE_HOSTCONTROLLER)
 	// modules = append(modules, types.CC_MODULE_MIGRATE)
-	modules = append(modules, types.CC_MODULE_OBJECTCONTROLLER)
 	modules = append(modules, types.CC_MODULE_PROC)
-	modules = append(modules, types.CC_MODULE_PROCCONTROLLER)
 	modules = append(modules, types.CC_MODULE_TOPO)
 	modules = append(modules, types.CC_MODULE_WEBSERVER)
 	modules = append(modules, types.CC_MODULE_EVENTSERVER)
 	modules = append(modules, types.CC_MODULE_TXC)
 	modules = append(modules, types.CC_MODULE_CORESERVICE)
+	modules = append(modules, types.CC_MODULE_SYNCHRONZESERVER)
+	modules = append(modules, types.CC_MODULE_OPERATION)
+	modules = append(modules, types.CC_MODULE_TASK)
+
+	dirSubList, err := ioutil.ReadDir(confRootPath)
+	if err != nil {
+		blog.Errorf("get configure directory file error. err:%s", confRootPath)
+		return err
+	}
+	for _, item := range dirSubList {
+		if item.IsDir() {
+			continue
+		}
+
+		if strings.HasPrefix(item.Name(), types.CC_DISCOVERY_PREFIX) && strings.HasSuffix(item.Name(), confFileSuffix) {
+			modules = append(modules, strings.Replace(item.Name(), ".conf", "", 1))
+		}
+	}
 
 	for _, moduleName := range modules {
-		filePath := filepath.Join(confRootPath, moduleName+".conf")
+
+		filePath := filepath.Join(confRootPath, moduleName+confFileSuffix)
 		key := types.CC_SERVCONF_BASEPATH + "/" + moduleName
 		if err := cc.writeConfigure(filePath, key); err != nil {
 			blog.Warnf("fail to write configure of module(%s) into center", moduleName)
 			continue
 		} else {
-			blog.Infof("writed configure to center %s", key)
+			blog.Infof("write configure to center %s success", key)
 		}
 	}
 

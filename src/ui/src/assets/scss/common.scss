@@ -5,24 +5,21 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    outline: none;
 }
 
 html,
 body {
     height: 100%;
     overflow: hidden;
-    font-family: "pingFang-SC-Regular,Microsoft Yahei,Arial";
+    font-family: -apple-system,BlinkMacSystemFont,PingFang SC,Microsoft Yahei,Arial;
     color: $cmdbTextColor;
-    background: #fff;
+    background-color: #FAFBFD;
 }
 
 ul,
 dl {
     list-style: none;
-}
-
-th {
-    font-weight: normal;
 }
 
 a,
@@ -62,9 +59,35 @@ a:focus {
     display: none;
 }
 
-input::-webkit-input-placeholder {
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
     color: #c3cdd7;
-    font-size: 12px;
+    font-size: 14px;
+}
+
+[class^="icon-cc"], [class*=" icon-cc"] {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: 'bk-cmdb' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.inline-block-middle {
+    display: inline-block;
+    vertical-align: middle;
+    outline: 0;
+}
+
+.bgc-white {
+    background-color: #fff;
 }
 
 div.cmdb-form-item {
@@ -84,6 +107,8 @@ div.cmdb-form-item {
             font-size: 12px;
             line-height: 14px;
             color: $cmdbDangerColor;
+            max-width: 100%;
+            @include ellipsis;
         }
     }
 
@@ -265,19 +290,20 @@ input.cmdb-form-input {
 }
 
 .text-primary {
+    color: #3c96ff !important;
+
     -webkit-appearance: none;
     border: none;
     outline: 0;
     background-color: transparent;
-    color: #3c96ff;
     cursor: pointer;
     &:hover {
-        color: #0082ff;
+        color: #0082ff !important;
     }
 
     &.disabled,
     &:disabled {
-        opacity: .385;
+        color: #c4c6cc !important;
         cursor: not-allowed !important;
     }
 }
@@ -287,6 +313,12 @@ input.cmdb-form-input {
 
     &:hover {
         color: #f72239;
+    }
+
+    &.disabled,
+    &:disabled {
+        opacity: .385;
+        cursor: not-allowed !important;
     }
 }
 
@@ -312,62 +344,6 @@ input.cmdb-form-input {
     transition: .2s height ease-in-out, .2s padding-top ease-in-out, .2s padding-bottom ease-in-out
 }
 
-/* rewrite magicbox style -----start----- */
-
-.bk-tab2 {
-    border: none !important;
-    height: 100% !important;
-    padding: 0 20px;
-
-    .bk-tab2-content {
-        height: calc(100% - 58px) !important;
-
-        section {
-            height: 100% !important;
-        }
-    }
-}
-
-.bk-tab2 .bk-tab2-head .bk-tab2-nav .tab2-nav-item {
-    padding: 0 32px !important;
-}
-
-.bk-button.bk-default:hover {
-    color: #0082ff;
-    border-color: #0082ff;
-    background: #fff;
-}
-
-button.bk-button.bk-danger {
-    background: #fff;
-    color: $cmdbDangerColor;
-
-    &:hover {
-        border-color: $cmdbDangerHoverColor;
-        color: $cmdbDangerHoverColor;
-        background: #fff;
-    }
-}
-
-.bk-selector .bk-selector-list-item .text {
-    @include ellipsis;
-}
-
-.bk-selector.bk-selector-small {
-    .bk-selector-input {
-        height: 30px;
-        line-height: 30px;
-    }
-
-    .bk-selector-icon {
-        top: 9px;
-    }
-}
-
-
-/* rewrite magicbox style ------end------ */
-
-
 /* form-error -----------start----------- */
 
 .form-component.error {
@@ -387,141 +363,13 @@ button.bk-button.bk-danger {
 /* form-error -----------end----------- */
 
 
-/* v-tooltip ------start------ */
-
-.tooltip {
-    display: block !important;
-    z-index: 10000;
-
-    .tooltip-inner {
-        background: #333;
-        color: white;
-        border-radius: 2px;
-        padding: 5px 10px 4px;
-        max-width: 200px;
-        font-size: 14px;
-        line-height: 16px;
-        word-break: break-all;
-    }
-
-    .tooltip-arrow {
-        width: 0;
-        height: 0;
-        border-style: solid;
-        position: absolute;
-        margin: 5px;
-        border-color: #333;
-        z-index: 1;
-    }
-
-    &[x-placement^="top"] {
-        margin-bottom: 5px;
-
-        .tooltip-arrow {
-            border-width: 5px 5px 0 5px;
-            border-left-color: transparent !important;
-            border-right-color: transparent !important;
-            border-bottom-color: transparent !important;
-            bottom: -5px;
-            left: calc(50% - 5px);
-            margin-top: 0;
-            margin-bottom: 0;
-        }
-    }
-
-    &[x-placement^="bottom"] {
-        margin-top: 5px;
-
-        .tooltip-arrow {
-            border-width: 0 5px 5px 5px;
-            border-left-color: transparent !important;
-            border-right-color: transparent !important;
-            border-top-color: transparent !important;
-            top: -5px;
-            left: calc(50% - 5px);
-            margin-top: 0;
-            margin-bottom: 0;
-        }
-    }
-
-    &[x-placement^="right"] {
-        margin-left: 5px;
-
-        .tooltip-arrow {
-            border-width: 5px 5px 5px 0;
-            border-left-color: transparent !important;
-            border-top-color: transparent !important;
-            border-bottom-color: transparent !important;
-            left: -5px;
-            top: calc(50% - 5px);
-            margin-left: 0;
-            margin-right: 0;
-        }
-    }
-
-    &[x-placement^="left"] {
-        margin-right: 5px;
-
-        .tooltip-arrow {
-            border-width: 5px 0 5px 5px;
-            border-top-color: transparent !important;
-            border-right-color: transparent !important;
-            border-bottom-color: transparent !important;
-            right: -5px;
-            top: calc(50% - 5px);
-            margin-left: 0;
-            margin-right: 0;
-        }
-    }
-
-    &.popover {
-        .popover-inner {
-            max-width: none;
-            background: #fff;
-            color: $cmdbTextColor;
-            border-radius: 2px;
-            box-shadow: 0 5px 30px rgba(black, .4);
-        }
-
-        .popover-arrow {
-            border-color: #fff;
-        }
-    }
-
-    &[aria-hidden='true'] {
-        visibility: hidden;
-        opacity: 0;
-        transition: opacity .15s, visibility .15s;
-    }
-
-    &[aria-hidden='false'] {
-        visibility: visible;
-        opacity: 1;
-        transition: opacity .15s;
-    }
+.v-cursor {
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 12px 16px;
+    background-image: url("../images/lock.svg");
 }
 
-.v-popover {
-    .trigger {
-        outline: none;
-    }
+.v-overflow-tips-theme {
+    word-break: break-all;
 }
-
-/* v-tooltip -------end------- */
-
-
-/* table -------start------- */
-
-.cc-table-body {
-    .empty-info {
-        p {
-            margin-bottom: 10px;
-        }
-
-        .bk-button {
-            margin-top: 10px;
-        }
-    }
-}
-
-/* table -------end------- */

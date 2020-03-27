@@ -33,13 +33,11 @@ const (
 	MaxDiscoverSize   = 1000
 )
 
+var masterProcLockLiveTime = time.Second * 10
+
 const (
 	DiscoverChan = "discover"
 	SnapShotChan = "snapshot"
-)
-
-var (
-	masterProcLockLiveTime = time.Second * 10
 )
 
 type Analyzer interface {

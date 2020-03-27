@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	crd "configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
@@ -29,8 +30,8 @@ import (
 
 var confC *CC
 
-func NewConfigCenter(ctx context.Context, zkAddr string, procName string, confPath string, handler *CCHandler) error {
-	disc := crd.NewZkRegDiscover(zkAddr, 10*time.Second)
+func NewConfigCenter(ctx context.Context, client *zk.ZkClient, procName string, confPath string, handler *CCHandler) error {
+	disc := crd.NewZkRegDiscover(client)
 	return New(ctx, procName, confPath, disc, handler)
 }
 
@@ -80,9 +81,6 @@ type CC struct {
 }
 
 func (c *CC) run() error {
-	if err := c.disc.Start(); err != nil {
-		return fmt.Errorf("start discover config center failed, err: %v", err)
-	}
 
 	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
 	procEvent, err := c.disc.Discover(procPath)
@@ -117,7 +115,6 @@ func (c *CC) run() error {
 }
 
 func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
-	blog.V(5).Infof("config center received event that *%s* config has changed. event: %s", c.procName, string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that %s config has changed, but got err: %v", c.procName, cur.Err)
@@ -137,11 +134,9 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 	if c.handler != nil {
 		go c.handler.OnProcessUpdate(*prev, *now)
 	}
-	blog.V(5).Infof("config center received event that *%s* config has changed. prev: %v, cur: %v", c.procName, *prev, *now)
 }
 
 func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
-	blog.V(5).Infof("config center received event that *ERROR CODE* config has changed. event: %s", string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that *ERROR CODE* config has changed, but got err: %v", cur.Err)
@@ -162,12 +157,9 @@ func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
 	if c.handler != nil {
 		go c.handler.OnErrorUpdate(prev, deepCopyError(now))
 	}
-	blog.V(5).Infof("config center received event that *ERROR CODE* config has changed. prev: %v, cur: %v", prev, now)
 }
 
 func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
-	blog.V(5).Infof("config center received event that *LANGUAGE* config has changed. event: %s", string(cur.Data))
-
 	if cur.Err != nil {
 		blog.Errorf("config center received event that *LANGUAGE* config has changed, but got err: %v", cur.Err)
 		return
@@ -187,7 +179,6 @@ func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
 	if c.handler != nil {
 		go c.handler.OnLanguageUpdate(prev, deepCopyLanguage(now))
 	}
-	blog.V(5).Infof("config center received event that *LANGUAGE* config has changed. prev: %v, cur: %v", prev, now)
 }
 
 func (c *CC) sync() {
@@ -234,8 +225,6 @@ func (c *CC) syncProc() {
 		c.Unlock()
 		return
 	}
-	blog.V(5).Infof("sync process[%s] config, before change is: %+#v", c.procName, *(c.previousProc))
-	blog.V(5).Infof("sync process[%s] config, after change is: %+#v", c.procName, *conf)
 
 	event := &crd.DiscoverEvent{
 		Err:  nil,
@@ -269,9 +258,6 @@ func (c *CC) syncLang() {
 		return
 	}
 
-	blog.V(5).Infof("sync language config, before change is: %v", c.previousLang)
-	blog.V(5).Infof("sync language config, after change is: %v", lang)
-
 	event := &crd.DiscoverEvent{
 		Err:  nil,
 		Data: []byte(data),
@@ -300,9 +286,6 @@ func (c *CC) syncErr() {
 		c.Unlock()
 		return
 	}
-
-	blog.V(5).Infof("sync language config, before change is: %v", c.previousError)
-	blog.V(5).Infof("sync language config, after change is: %v", errCode)
 
 	event := &crd.DiscoverEvent{
 		Err:  nil,

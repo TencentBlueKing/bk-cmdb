@@ -15,19 +15,23 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 // IsInstanceExist used to check if the  instances  asst exist
 func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
+	// to many call. can use $or. but universalsql parse or condtion error.
+
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
 	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
 	objInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
-		blog.Errorf("search instance association error %v", err)
+		blog.Errorf("search instance association error %v, rid: %s", err, ctx.ReqID)
 		return false, err
 	}
 	cond = mongo.NewCondition()
@@ -35,10 +39,10 @@ func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, inst
 	queryCond = metadata.QueryCondition{Condition: cond.ToMapStr()}
 	objAsstInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
-		blog.Errorf("search instance to association error %v", err)
+		blog.Errorf("search instance to association error %v, rid: %s", err, ctx.ReqID)
 		return false, err
 	}
-	if 0 < objInsts.Count && 0 < objAsstInsts.Count {
+	if 0 < objInsts.Count || 0 < objAsstInsts.Count {
 		return true, nil
 	}
 	return false, nil
@@ -52,7 +56,7 @@ func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instI
 	deleteCond := metadata.DeleteOption{Condition: cond.ToMapStr()}
 	_, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("delete instance association error %v", err)
+		blog.Errorf("delete instance association error %v, rid: %s", err, ctx.ReqID)
 		return err
 	}
 	cond = mongo.NewCondition()
@@ -60,33 +64,43 @@ func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instI
 	deleteCond = metadata.DeleteOption{Condition: cond.ToMapStr()}
 	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("delete instance to association error %v", err)
+		blog.Errorf("delete instance to association error %v, rid: %s", err, ctx.ReqID)
 		return err
 	}
 	return nil
 }
 
 // SelectObjectAttWithParams select object att with params
-func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attributeArr []metadata.Attribute, err error) {
+func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID string, bizID int64) (attributeArr []metadata.Attribute, err error) {
 	attributeArr = make([]metadata.Attribute, 0)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	queryCond := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 	}
+	var bizCond mapstr.MapStr
+	if bizID != 0 {
+		bizCond = metadata.NewPublicOrBizConditionByBizID(bizID)
+	} else {
+		bizCond = metadata.BizLabelNotExist
+	}
+	queryCond.Condition.Merge(bizCond)
 	result, err := s.core.ModelOperation().SearchModelAttributes(ctx, objID, queryCond)
 	return result.Info, err
 }
 
 // SearchUnique search unique attribute
 func (s *coreService) SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
-	cond := mongo.NewCondition()
-	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	cond.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
+	condMap := util.SetQueryOwner(make(map[string]interface{}), ctx.SupplierAccount)
+	cond, _ := mongo.NewConditionFromMapStr(condMap)
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	queryCond := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 	}
 	result, err := s.core.ModelOperation().SearchModelAttrUnique(ctx, queryCond)
 	return result.Info, err
+}
+
+func (s *coreService) UpdateModelInstance(ctx core.ContextParams, objID string, param metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+	return s.core.InstanceOperation().UpdateModelInstance(ctx, objID, param)
 }

@@ -20,9 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -30,15 +29,16 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/admin_server/app/options"
+	"configcenter/src/scene_server/admin_server/authsynchronizer"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-
-	"github.com/emicklei/go-restful"
+	"configcenter/src/storage/dal/mongo/remote"
 )
 
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -50,77 +50,81 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
 	process.onHostConfigUpdate(*pconfig, *pconfig)
-
-	discover, err := discovery.NewDiscoveryInterface(process.Config.Register.Address)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	service := svc.NewService(ctx)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_MIGRATE, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: process.onHostConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     process.Config.Register.Address,
+		SrvInfo:      svrInfo,
 	}
-
-	engine, err := backbone.NewBackbone(ctx, process.Config.Register.Address,
-		types.CC_MODULE_MIGRATE,
-		op.ServConf.ExConfig,
-		process.onHostConfigUpdate,
-		discover,
-		bonC)
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
 	service.Engine = engine
+	service.Config = *process.Config
 	process.Core = engine
 	process.Service = service
-	process.ConfigCenter = configures.NewConfCenter(ctx, process.Config.Register.Address)
+	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
+
+	// adminserver conf not depend discovery
+	err = process.ConfigCenter.Start(
+		pconfig.ConfigMap["confs.dir"],
+		pconfig.ConfigMap["errors.res"],
+		pconfig.ConfigMap["language.res"],
+	)
+	if err != nil {
+		return err
+	}
+
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), 0)
+		var db dal.RDB
+		if process.Config.MongoDB.Enable == "true" {
+			db, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
+		} else {
+			db, err = remote.NewWithDiscover(process.Core)
+		}
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 		process.Service.SetDB(db)
 		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
-		err = process.ConfigCenter.Start(
-			process.Config.Configures.Dir,
-			process.Config.Errors.Res,
-			process.Config.Language.Res,
-		)
-		if err != nil {
-			return err
+
+		if auth.IsAuthed() {
+			blog.Info("enable auth center access.")
+			authCli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter, engine.Metric().Registry())
+			if err != nil {
+				return fmt.Errorf("new authcenter client failed: %v", err)
+			}
+			process.Service.SetAuthCenter(authCli)
+
+			if process.Config.AuthCenter.EnableSync {
+				authSynchronizer := authsynchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry(), service.Engine)
+				authSynchronizer.Run()
+				blog.Info("enable auth center and enable auth sync function.")
+			}
+
+		} else {
+			blog.Infof("disable auth center access.")
 		}
 		break
 	}
-	<-ctx.Done()
-	blog.V(0).Info("process stoped")
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
+	if err != nil {
+		return err
+	}
+
+	select {
+	case <-ctx.Done():
+	}
+	blog.V(0).Info("process stopped")
 	return nil
 }
 
@@ -141,7 +145,7 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 			h.Config = new(options.Config)
 		}
 
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") // ignore err, because ConfigMap is map[string]string
 		blog.V(3).Infof("config updated: \n%s", out)
 
 		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
@@ -154,6 +158,12 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Register.Address = current.ConfigMap["register-server.addrs"]
 
 		h.Config.ProcSrvConfig.CCApiSrvAddr, _ = current.ConfigMap["procsrv.cc_api"]
+
+		var err error
+		h.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+		if err != nil && auth.IsAuthed() {
+			blog.Errorf("parse authcenter error: %v, config: %+v", err, current.ConfigMap)
+		}
 	}
 }
 

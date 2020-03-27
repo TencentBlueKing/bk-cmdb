@@ -23,7 +23,7 @@ The MongoDB supported driver for Go.
 ## Requirements
 
 - Go 1.10 or higher. We aim to support the latest supported versions of go.
-- MongoDB 3.2 and higher.
+- MongoDB 2.6 and higher.
 
 -------------------------
 ## Installation
@@ -85,7 +85,7 @@ Several query methods return a cursor, which can be used like this:
 
 ```go
 ctx, _ = context.WithTimeout(context.Background(), 30*time.Second)
-cur, err := collection.Find(ctx, nil)
+cur, err := collection.Find(ctx, bson.D{})
 if err != nil { log.Fatal(err) }
 defer cur.Close(ctx)
 for cur.Next(ctx) {
@@ -134,6 +134,11 @@ for tickets that need completing. See our [contribution guidelines](CONTRIBUTING
 ## Continuous Integration
 
 Commits to master are run automatically on [evergreen](https://evergreen.mongodb.com/waterfall/mongo-go-driver).
+
+-------------------------
+## Thanks and Acknowledgement 
+
+<a href="https://github.com/ashleymcnamara">@ashleymcnamara</a> - Mongo Gopher Artwork
 
 -------------------------
 ## License

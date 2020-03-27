@@ -19,9 +19,9 @@ import (
 	"errors"
 	"sync"
 
-	"configcenter/src/common/util"
+	"github.com/rentiansheng/bk_bson/bson"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"configcenter/src/common/util"
 )
 
 // Errors define
@@ -143,6 +143,27 @@ const (
 	TypeStreamClose
 )
 
+func (t MessageType) String() string {
+	switch t {
+	case TypeRequest:
+		return "TypeRequest"
+	case TypeResponse:
+		return "TypeResponse"
+	case TypeStream:
+		return "TypeStream"
+	case TypeError:
+		return "TypeError"
+	case TypeClose:
+		return "TypeClose"
+	case TypePing:
+		return "TypePing"
+	case TypeStreamClose:
+		return "TypeStreamClose"
+	default:
+		return "UNKNOW"
+	}
+}
+
 const (
 	readBufferSize  = 8096
 	writeBufferSize = 8096
@@ -177,11 +198,14 @@ func (bsonCodec) Decode(data []byte, v interface{}) error {
 	return bson.Unmarshal(data, v)
 }
 func (bsonCodec) Encode(v interface{}) ([]byte, error) {
+	if v == nil {
+		return nil, nil
+	}
 	return bson.Marshal(v)
 }
 
 const (
-	// MagicVersion is the cc rpc protocal version
+	// MagicVersion is the cc rpc protocol version
 	MagicVersion = uint16(0x1b01) // cmdb01
 )
 

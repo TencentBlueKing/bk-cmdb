@@ -2,20 +2,20 @@
     <div>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源模型"]')}}
+                {{$t('源模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
+                <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])"></bk-input>
             </div>
         </label>
         <label class="form-label exchange-icon-wrapper">
             <span class="label-text">
-                {{$t('ModelManagement["目标模型"]')}}
+                {{$t('目标模型')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
+                <bk-input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])"></bk-input>
             </div>
             <span class="exchange-icon" @click="exchangeObjAsst">
                 <i class="bk-icon icon-sort"></i>
@@ -23,11 +23,11 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关联类型"]')}}
+                {{$t('关联类型')}}
                 <span class="color-danger">*</span>
             </span>
-            <ul class="relation-label cmdb-form-item clearfix" :class="{'is-error': errors.has('asstId')}">
-                <li :class="{'active': relationInfo['bk_asst_id'] === relation.id}"
+            <ul class="relation-label cmdb-form-item clearfix" :class="{ 'is-error': errors.has('asstId') }">
+                <li :class="{ 'active': relationInfo['bk_asst_id'] === relation.id }"
                     v-for="(relation, relationIndex) in relationList"
                     :key="relationIndex"
                     @click="relationInfo['bk_asst_id'] = relation.id">
@@ -35,27 +35,13 @@
                 </li>
             </ul>
         </label>
-        <label class="form-label">
-            <span class="label-text">
-                {{$t('ModelManagement["关联描述"]')}}
-                <span class="color-danger">*</span>
-            </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
-                <input type="text" class="cmdb-form-input"
-                name="asstName"
-                v-validate="'required|singlechar'"
-                v-model.trim="relationInfo['bk_obj_asst_name']"
-                :placeholder="$t('ModelManagement[\'请输入关联描述\']')">
-                <p class="form-error">{{errors.first('asstName')}}</p>
-            </div>
-        </label>
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["源-目标约束"]')}}
+                {{$t('源-目标约束')}}
                 <span class="color-danger">*</span>
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
-                <cmdb-selector
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('mapping') }">
+                <cmdb-selector style="width: 100%;"
                     :list="mappingList"
                     v-validate="'required'"
                     name="mapping"
@@ -65,19 +51,33 @@
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('关联描述')}}
+            </span>
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
+                <bk-input type="text" class="cmdb-form-input"
+                    name="asstName"
+                    v-validate="'singlechar|length:256'"
+                    v-model.trim="relationInfo['bk_obj_asst_name']"
+                    :placeholder="$t('请输入关联描述')">
+                </bk-input>
+                <p class="form-error">{{errors.first('asstName')}}</p>
+            </div>
+        </label>
         <div class="btn-group">
-            <bk-button type="primary" :loading="$loading('createObjectAssociation')" @click="saveRelation">
-                {{$t('Common["确定"]')}}
+            <bk-button theme="primary" :loading="$loading('createObjectAssociation')" @click="saveRelation">
+                {{$t('提交')}}
             </bk-button>
-            <bk-button type="default" @click="cancel">
-                {{$t('Common["取消"]')}}
+            <bk-button theme="default" @click="cancel">
+                {{$t('取消')}}
             </bk-button>
         </div>
     </div>
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     export default {
         props: {
             toObjId: {
@@ -95,14 +95,14 @@
                 relationList: [],
                 modelRelationList: [],
                 mappingList: [{
-                    id: '1:1',
-                    name: '1-1'
+                    id: 'n:n',
+                    name: 'N-N'
                 }, {
                     id: '1:n',
                     name: '1-N'
                 }, {
-                    id: 'n:n',
-                    name: 'N-N'
+                    id: '1:1',
+                    name: '1-1'
                 }],
                 relationInfo: {
                     bk_obj_id: this.fromObjId,
@@ -114,8 +114,9 @@
             }
         },
         computed: {
+            ...mapGetters('objectModelClassify', ['models']),
             objAsstId () {
-                let {
+                const {
                     relationInfo
                 } = this
                 if (relationInfo['bk_obj_id'].length && relationInfo['bk_asst_id'].length && relationInfo['bk_asst_obj_id'].length) {
@@ -135,14 +136,14 @@
                 'searchObjectAssociation'
             ]),
             getModelName (objId) {
-                let model = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                const model = this.models.find(model => model['bk_obj_id'] === objId)
                 if (model) {
                     return model['bk_obj_name']
                 }
                 return ''
             },
             exchangeObjAsst () {
-                let {
+                const {
                     relationInfo
                 } = this;
                 [relationInfo['bk_obj_id'], relationInfo['bk_asst_obj_id']] = [relationInfo['bk_asst_obj_id'], relationInfo['bk_obj_id']]
@@ -155,7 +156,7 @@
                         fromCache: true
                     }
                 })
-                this.relationList = data.info.map(({bk_asst_id: asstId, bk_asst_name: asstName}) => {
+                this.relationList = data.info.map(({ bk_asst_id: asstId, bk_asst_name: asstName }) => {
                     if (asstName.length) {
                         return {
                             id: asstId,
@@ -166,6 +167,8 @@
                         id: asstId,
                         name: asstId
                     }
+                }).filter(relation => {
+                    return relation.id !== 'bk_mainline'
                 })
                 this.relationInfo['bk_asst_id'] = this.relationList[0].id
             },
@@ -195,7 +198,7 @@
                 if (!await this.$validator.validateAll()) {
                     return
                 }
-                let params = {
+                const params = {
                     ...this.relationInfo,
                     ...{
                         bk_obj_asst_id: this.objAsstId

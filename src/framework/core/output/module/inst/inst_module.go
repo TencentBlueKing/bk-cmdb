@@ -114,8 +114,7 @@ func (cli *module) search() ([]model.Attribute, []types.MapStr, error) {
 			cond.Field(attrItem.GetID()).Eq(attrVal)
 		}
 	}
-
-	//log.Infof("the module search condition:%#v", cond.ToMapStr())
+	
 	// search by condition
 	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().SearchModules(cond)
 

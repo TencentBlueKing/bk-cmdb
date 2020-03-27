@@ -18,22 +18,26 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
-	"configcenter/src/storage/tmserver/core/transaction"
+	"configcenter/src/storage/tmserver/core/session"
 	"configcenter/src/storage/types"
 )
 
-// Core core operation methods
+// Core logics operation methods
 type Core interface {
 	ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPReply, error)
+	Subscribe(chan *types.Transaction)
+	UnSubscribe(chan<- *types.Transaction)
 }
 
 type core struct {
-	txn *transaction.Manager
+	txn     *session.Manager
+	session *session.Session
+	enable  bool
 }
 
 // SetTransaction set txc method interface
 type SetTransaction interface {
-	SetTxn(txn *transaction.Manager)
+	SetTxn(txn *session.Manager)
 }
 
 // SetDBProxy set db proxy
@@ -42,8 +46,7 @@ type SetDBProxy interface {
 }
 
 // New create a core instance
-func New(txnMgr *transaction.Manager, db mongodb.Client) Core {
-
+func New(txnMgr *session.Manager, db mongodb.Client) Core {
 	for _, cmd := range GCommands.cmds {
 		switch tmp := cmd.(type) {
 		case SetTransaction:
@@ -58,22 +61,23 @@ func New(txnMgr *transaction.Manager, db mongodb.Client) Core {
 
 func (c *core) ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPReply, error) {
 
+	blog.V(5).Infof("RDB operate. info:%#v", ctx.Header)
+
 	cmd, ok := GCommands.cmds[ctx.Header.OPCode]
 	if !ok {
+		blog.ErrorJSON("RDB operate unkonwn operation")
 		reply := types.OPReply{}
-		reply.Message = fmt.Sprintf("unknow operation, invalid code: %d", ctx.Header.OPCode)
+		reply.Message = fmt.Sprintf("unknown operation, invalid code: %d", ctx.Header.OPCode)
 		return &reply, nil
 	}
 
-	if 0 != len(ctx.Header.TxnID) {
-		session := c.txn.GetSession(ctx.Header.TxnID)
-		if nil == session {
-			reply := &types.OPReply{}
-			reply.Message = "session not found"
-			return reply, nil
-		}
-		ctx.Session = session.Session
+	session := c.txn.GetSession(ctx.Header.TxnID)
+	if nil == session {
+		reply := &types.OPReply{}
+		reply.Message = "session not found"
+		return reply, nil
 	}
+	ctx.Session = session.Session
 
 	reply, err := cmd.Execute(ctx, input)
 	if err != nil {
@@ -81,4 +85,12 @@ func (c *core) ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPRe
 	}
 	return reply, err
 
+}
+
+func (c *core) Subscribe(ch chan *types.Transaction) {
+	c.txn.Subscribe(ch)
+}
+
+func (c *core) UnSubscribe(ch chan<- *types.Transaction) {
+	c.txn.UnSubscribe(ch)
 }

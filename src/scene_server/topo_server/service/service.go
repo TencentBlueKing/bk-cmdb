@@ -13,12 +13,15 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/auth"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -26,102 +29,74 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
-	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
-	mongo "configcenter/src/storage/dal/mongo/remote"
+	"configcenter/src/thirdpartyclient/elasticsearch"
 
 	"github.com/emicklei/go-restful"
 )
 
-// TopoServiceInterface the topo service methods used to init
-type TopoServiceInterface interface {
-	SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf)
-	WebService() *restful.WebService
-	SetConfig(cfg options.Config, engin *backbone.Engine)
-}
-
-// New ceate topo servcie instance
-func New() TopoServiceInterface {
-	return &topoService{}
-}
-
-// topoService topo service
-type topoService struct {
-	engin    *backbone.Engine
-	tx       dal.DB
-	language language.CCLanguageIf
-	err      errors.CCErrorIf
-	actions  []action
-	core     core.Core
-	cfg      options.Config
-}
-
-func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
-	s.cfg = cfg
-	s.engin = engin
-
-	var dbErr error
-	s.tx, dbErr = mongo.NewWithDiscover(engin.
-		Discover.
-		TMServer().
-		GetServers, cfg.Mongo)
-	if dbErr != nil {
-		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
-		return
-	}
-}
-
-// SetOperation set the operation
-func (s *topoService) SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf) {
-
-	s.core = operation
-	s.err = err
-	s.language = language
-
+type Service struct {
+	Engine      *backbone.Engine
+	Txn         dal.Transcation
+	Core        core.Core
+	Config      options.Config
+	AuthManager *extensions.AuthManager
+	Es          *elasticsearch.EsSrv
+	Error       errors.CCErrorIf
+	Language    language.CCLanguageIf
+	actions     []action
 }
 
 // WebService the web service
-func (s *topoService) WebService() *restful.WebService {
+func (s *Service) WebService() *restful.Container {
 
 	// init service actions
 	s.initService()
 
-	ws := new(restful.WebService)
-
 	getErrFunc := func() errors.CCErrorIf {
-		return s.err
+		return s.Error
 	}
-	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
+
+	api := new(restful.WebService)
+	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+
+	healthz := new(restful.WebService).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
-
 	for _, actionItem := range innerActions {
+		action := api
+		if actionItem.Path == "/healthz" {
+			action = healthz
+		}
 		switch actionItem.Verb {
 		case http.MethodPost:
-			ws.Route(ws.POST(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.POST(actionItem.Path).To(actionItem.Handler))
 		case http.MethodDelete:
-			ws.Route(ws.DELETE(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.DELETE(actionItem.Path).To(actionItem.Handler))
 		case http.MethodPut:
-			ws.Route(ws.PUT(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.PUT(actionItem.Path).To(actionItem.Handler))
 		case http.MethodGet:
-			ws.Route(ws.GET(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.GET(actionItem.Path).To(actionItem.Handler))
 		default:
 			blog.Errorf(" the url (%s), the http method (%s) is not supported", actionItem.Path, actionItem.Verb)
 		}
 	}
+	container := restful.NewContainer().Add(api)
+	container.Add(healthz)
 
-	return ws
+	return container
 }
 
-func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, error) {
+func (s *Service) createAPIRspStr(errcode int, info interface{}) (string, error) {
 
-	rsp := meta.Response{
-		BaseResp: meta.SuccessBaseResp,
+	rsp := metadata.Response{
+		BaseResp: metadata.SuccessBaseResp,
 		Data:     nil,
 	}
 
@@ -138,10 +113,10 @@ func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, er
 	return string(data), err
 }
 
-func (s *topoService) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
+func (s *Service) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
 
-	rsp := meta.Response{
-		BaseResp: meta.SuccessBaseResp,
+	rsp := metadata.Response{
+		BaseResp: metadata.SuccessBaseResp,
 		Data:     nil,
 	}
 
@@ -157,101 +132,169 @@ func (s *topoService) createCompleteAPIRspStr(errcode int, errmsg string, info i
 	return string(data), err
 }
 
-func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
+func (s *Service) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
-		io.WriteString(resp, rsp)
+		if _, err := io.WriteString(resp, rsp); nil != err {
+			blog.Errorf("failed to write string, error info is %s", err.Error())
+		}
 	} else {
 		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
 	}
 }
 
-func (s *topoService) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
+func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info)
 	if nil == rspErr {
-		io.WriteString(resp, rsp)
+		if _, err := io.WriteString(resp, rsp); nil != err {
+			blog.Errorf("it is failed to write some data, err:%s", err.Error())
+		}
 		return
 	}
 	blog.Errorf("failed to send response , error info is %s", rspErr.Error())
 
 }
 
-// Actions return the all actions
-func (s *topoService) Actions() []*httpserver.Action {
+func (s *Service) sendNoAuthResp(resp *restful.Response, dataMsg interface{}) {
+	js, err := json.Marshal(dataMsg)
+	if err != nil {
+		if _, err := io.WriteString(resp, "unknown error"); nil != err {
+			blog.Errorf("failed to write no auth resp, err:%s", err.Error())
+		}
+		return
+	}
+	if _, err := io.WriteString(resp, string(js)); nil != err {
+		blog.Errorf("failed to write resp, err:%s", err.Error())
+	}
+	return
+}
 
-	var httpactions []*httpserver.Action
+func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
+	s.addActionEx(method, path, handlerFunc, handlerParseOriginDataFunc, false)
+}
+
+func (s *Service) addPublicAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
+	s.addActionEx(method, path, handlerFunc, handlerParseOriginDataFunc, true)
+}
+
+func (s *Service) addActionEx(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc, publicOnly bool) {
+	actionObject := action{
+		Method:                     method,
+		Path:                       path,
+		HandlerFunc:                handlerFunc,
+		HandlerParseOriginDataFunc: handlerParseOriginDataFunc,
+		PublicOnly:                 publicOnly,
+	}
+	s.actions = append(s.actions, actionObject)
+}
+
+// Actions return the all actions
+func (s *Service) Actions() []*httpserver.Action {
+
+	var httpActions []*httpserver.Action
 	for _, a := range s.actions {
 
 		func(act action) {
 
-			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-				ownerID := util.GetActionOnwerID(req)
-				user := util.GetActionUser(req)
+			httpActions = append(httpActions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+				ownerID := util.GetOwnerID(req.Request.Header)
+				user := util.GetUser(req.Request.Header)
+				rid := util.GetHTTPCCRequestID(req.Request.Header)
 
 				// get the language
-				language := util.GetActionLanguage(req)
+				language := util.GetLanguage(req.Request.Header)
 
-				defLang := s.language.CreateDefaultCCLanguageIf(language)
+				defLang := s.Language.CreateDefaultCCLanguageIf(language)
 
 				// get the error info by the language
-				defErr := s.err.CreateDefaultCCErrorIf(language)
+				errors.SetGlobalCCError(s.Error)
+				defErr := s.Error.CreateDefaultCCErrorIf(language)
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {
-					blog.Errorf("read http request body failed, error:%s", err.Error())
+					blog.Errorf("read http request body failed, error:%s, rid: %s", err.Error(), rid)
 					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
 				}
+				blog.V(9).Infof("request path: %s, body: %s, rid: %s", act.Path, value, rid)
 
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
-					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+					jsonData := make(map[string]interface{})
+					if err = json.Unmarshal(value, &jsonData); nil != err && len(value) != 0 {
+						blog.Errorf("failed to unmarshal the data, error %s, rid: %s", err.Error(), rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
 					}
+					mData = mapstr.MapStr(jsonData)
 				} else {
 					mData, err = act.HandlerParseOriginDataFunc(value)
 					if nil != err {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						blog.Errorf("failed to unmarshal the data, error %s, rid: %s", err.Error(), rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
 					}
 				}
-				metadata := meta.NewMetaDataFromMap(mData)
-				data, dataErr := act.HandlerFunc(types.ContextParams{
+
+				ctx, _ := s.Engine.CCCtx.WithCancel()
+				ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+				ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
+
+				handlerContext := types.ContextParams{
+					Context:         ctx,
 					Err:             defErr,
 					Lang:            defLang,
-					MaxTopoLevel:    s.cfg.BusinessTopoLevelMax,
+					MaxTopoLevel:    s.Config.BusinessTopoLevelMax,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
 					User:            user,
-					Engin:           s.engin,
-					MetaData:        metadata,
-				},
-					req.PathParameter,
-					req.QueryParameter,
-					mData)
+					Engin:           s.Engine,
+					ReqID:           rid,
+				}
 
-				if nil != dataErr {
-					switch e := dataErr.(type) {
-					default:
-						s.sendCompleteResponse(resp, common.CCSystemBusy, dataErr.Error(), data)
-					case errors.CCErrorCoder:
-						s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
+				// parse metadata for none public only handler
+				if act.PublicOnly == false {
+					md := new(MetaShell)
+					if len(value) != 0 {
+						if err := json.Unmarshal(value, md); err != nil {
+							blog.Errorf("parse metadata from request failed, err: %v, rid: %s", err, rid)
+							s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed))
+							return
+						}
 					}
+					handlerContext.MetaData = md.Metadata
+				}
+
+				data, dataErr := act.HandlerFunc(handlerContext, req.PathParameter, req.QueryParameter, mData)
+
+				if dataErr == nil {
+					s.sendResponse(resp, common.CCSuccess, data)
 					return
 				}
 
-				s.sendResponse(resp, common.CCSuccess, data)
+				if dataErr == auth.NoAuthorizeError {
+					s.sendNoAuthResp(resp, data)
+					return
+				}
 
+				switch e := dataErr.(type) {
+				case errors.CCErrorCoder:
+					s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
+				default:
+					s.sendCompleteResponse(resp, common.CCSystemBusy, dataErr.Error(), data)
+				}
+				return
 			}})
 		}(a)
 
 	}
-	return httpactions
+	return httpActions
+}
+
+type MetaShell struct {
+	Metadata *metadata.Metadata `json:"metadata"`
 }

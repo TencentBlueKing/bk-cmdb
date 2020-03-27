@@ -73,6 +73,7 @@ func (m *associationKind) save(ctx core.ContextParams, associationKind metadata.
 	}
 
 	associationKind.ID = int64(id)
+	associationKind.OwnerID = ctx.SupplierAccount
 
 	err = m.dbProxy.Table(common.BKTableNameAsstDes).Insert(ctx, associationKind)
 	return id, err

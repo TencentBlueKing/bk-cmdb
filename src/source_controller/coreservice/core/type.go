@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/language"
 )
 
-// ContextParams the logic function params
+// ContextParams the core function params
 type ContextParams struct {
 	context.Context
 	Header          http.Header

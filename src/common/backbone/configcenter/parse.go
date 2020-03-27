@@ -69,32 +69,32 @@ type ProcessConfig struct {
 
 func ParseConfigWithFile(filePath string) (*ProcessConfig, error) {
 	c := config{
-		configmap: map[string]string{},
+		configMap: map[string]string{},
 	}
 	if err := c.parseWithFile(filePath); err != nil {
 		return nil, err
 	}
 
-	return &ProcessConfig{ConfigMap: c.configmap}, nil
+	return &ProcessConfig{ConfigMap: c.configMap}, nil
 }
 
 func ParseConfigWithData(data []byte) (*ProcessConfig, error) {
 	c := config{
-		configmap: map[string]string{},
+		configMap: map[string]string{},
 	}
 	if err := c.parseWithData(data); err != nil {
 		return nil, err
 	}
 
-	return &ProcessConfig{ConfigMap: c.configmap}, nil
+	return &ProcessConfig{ConfigMap: c.configMap}, nil
 }
 
 type config struct {
-	configmap map[string]string
+	configMap map[string]string
 	strcet    string
 }
 
-func (p *config) parse(input io.Reader) error {
+func (c *config) parse(input io.Reader) error {
 	r := bufio.NewReader(input)
 	for {
 		b, _, err := r.ReadLine()
@@ -113,11 +113,11 @@ func (p *config) parse(input io.Reader) error {
 		n1 := strings.Index(s, "[")
 		n2 := strings.LastIndex(s, "]")
 		if n1 > -1 && n2 > -1 && n2 > n1+1 {
-			p.strcet = strings.TrimSpace(s[n1+1 : n2])
+			c.strcet = strings.TrimSpace(s[n1+1 : n2])
 			continue
 		}
 
-		if len(p.strcet) == 0 {
+		if len(c.strcet) == 0 {
 			continue
 		}
 		index := strings.Index(s, "=")
@@ -125,8 +125,8 @@ func (p *config) parse(input io.Reader) error {
 			continue
 		}
 
-		frist := strings.TrimSpace(s[:index])
-		if len(frist) == 0 {
+		first := strings.TrimSpace(s[:index])
+		if len(first) == 0 {
 			continue
 		}
 		second := strings.TrimSpace(s[index+1:])
@@ -155,8 +155,8 @@ func (p *config) parse(input io.Reader) error {
 			continue
 		}
 
-		key := p.strcet + middle + frist
-		p.configmap[key] = strings.TrimSpace(second)
+		key := c.strcet + middle + first
+		c.configMap[key] = strings.TrimSpace(second)
 	}
 	return nil
 }

@@ -48,7 +48,7 @@ func addBkStartParamRegex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		Option            interface{} `field:"option" json:"option" bson:"option"`
 		Description       string      `field:"description" json:"description" bson:"description"`
 		Creator           string      `field:"creator" json:"creator" bson:"creator"`
-		CreateTime        *time.Time  `json:"create_time" bson:"creaet_time"`
+		CreateTime        *time.Time  `json:"create_time" bson:"create_time"`
 		LastTime          *time.Time  `json:"last_time" bson:"last_time"`
 	}
 

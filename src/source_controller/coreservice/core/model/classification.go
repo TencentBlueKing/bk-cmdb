@@ -42,8 +42,8 @@ func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParam
 		return nil, err
 	}
 	if exists {
-		blog.Errorf("classification (%#v)is duplicated", inputParam.Data)
-		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
+		blog.Errorf("classification (%#v)is duplicated, rid: %s", inputParam.Data, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.ClassificationID)
 	}
 
 	inputParam.Data.OwnerID = ctx.SupplierAccount
@@ -98,7 +98,7 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 		item.OwnerID = ctx.SupplierAccount
 		id, err := m.save(ctx, item)
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to save the clasisfication(%#v), error info is %s", ctx.ReqID, item, err.Error())
+			blog.Errorf("request(%s): it is failed to save the classification(%#v), error info is %s", ctx.ReqID, item, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
@@ -249,7 +249,7 @@ func (m *modelClassification) UpdateModelClassification(ctx core.ContextParams, 
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (m *modelClassification) DeleteModelClassification(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
@@ -274,38 +274,6 @@ func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, 
 	}
 
 	return &metadata.DeletedCount{Count: cnt}, nil
-}
-
-func (m *modelClassification) CascadeDeleteModeClassification(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-
-	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.DeletedCount{}, err
-	}
-
-	classificationItems, err := m.search(ctx, deleteCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to search some classifications by the condition (%#v) , error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.DeletedCount{}, err
-	}
-
-	classificationIDS := []string{}
-	for _, item := range classificationItems {
-		classificationIDS = append(classificationIDS, item.ClassificationID)
-	}
-
-	if _, err := m.cascadeDeleteModel(ctx, classificationIDS); nil != err {
-		blog.Error("request(%s): it is failed to cascade delete some models by the classificationIDS (%#v), error info is %s", ctx.ReqID, classificationIDS, err.Error())
-		return &metadata.DeletedCount{}, err
-	}
-
-	if _, err := m.delete(ctx, deleteCond); nil != err {
-		blog.Errorf("request(%s): it is failed to delete some classifications by the condition (%#v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
-		return &metadata.DeletedCount{}, err
-	}
-
-	return &metadata.DeletedCount{Count: uint64(len(classificationItems))}, nil
 }
 
 func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error) {

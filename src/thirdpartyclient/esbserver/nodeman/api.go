@@ -29,7 +29,7 @@ type NodeManClientInterface interface {
 	SearchPluginHost(ctx context.Context, h http.Header, processname string) (resp *SearchPluginHostResult, err error)
 }
 
-func NewNodeManClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigServ) NodeManClientInterface {
+func NewNodeManClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) NodeManClientInterface {
 	return &nodeman{
 		client: client,
 		config: config,
@@ -37,7 +37,7 @@ func NewNodeManClientInterface(client rest.ClientInterface, config *esbutil.EsbC
 }
 
 type nodeman struct {
-	config *esbutil.EsbConfigServ
+	config *esbutil.EsbConfigSrv
 	client rest.ClientInterface
 }
 

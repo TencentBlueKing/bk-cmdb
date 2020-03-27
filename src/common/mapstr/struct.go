@@ -13,7 +13,7 @@
 package mapstr
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -80,7 +80,7 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 			innerValue := dealPointer(fieldValue, tags[0], tagName)
 			values.Set(tags[0], innerValue)
 		default:
-			blog.Infof("[mapstr] invalide kind: %v for field %v", structField.Type.Kind(), tags[0])
+			blog.Infof("[mapstr] invalid kind: %v for field %v", structField.Type.Kind(), tags[0])
 		}
 
 	}
@@ -117,7 +117,7 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 
 		fieldValue := targetValue.FieldByName(structField.Name)
 		if !fieldValue.CanSet() {
-			continue
+			return fmt.Errorf("%s can't be set", structField.Name)
 		}
 
 		switch structField.Type.Kind() {
@@ -125,7 +125,7 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 			return fmt.Errorf("unsupport the type %s %v", structField.Name, structField.Type.Kind())
 
 		case reflect.Map:
-			if _, err := setMapToReflectValue(fieldValue, reflect.ValueOf(tagVal)); nil != err {
+			if _, err := setMapToReflectValue(structField, fieldValue, reflect.ValueOf(tagVal)); nil != err {
 				return err
 			}
 
@@ -162,6 +162,12 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 					return err
 				}
 				fieldValue.Set(targetResult)
+			case bool:
+				if structField.Type.Elem().Kind() == reflect.Bool {
+					targetResult = getValueElem(targetResult)
+					targetResult.SetBool(t)
+					fieldValue.Set(targetResult.Addr())
+				}
 			case string:
 				targetResult = getValueElem(targetResult)
 				targetResult.SetString(t)
@@ -189,51 +195,57 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 	return nil
 }
 
-func setMapToReflectValue(returnVal, inputVal reflect.Value) (reflect.Value, error) {
+func setMapToReflectValue(structField reflect.StructField, returnVal, inputVal reflect.Value) (retVal reflect.Value, err error) {
+	if !returnVal.CanSet() {
+		return returnVal, fmt.Errorf("can not set to value %v", returnVal)
+	}
+	retVal = *(&returnVal)
+	t := retVal.Type()
+	if retVal.IsNil() {
+		retVal.Set(reflect.MakeMap(t))
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("not support data type. field name: ", structField.Name, ", err:", r)
+			switch x := r.(type) {
+			case string:
+				err = fmt.Errorf(x)
+			case error:
+				err = x
+			default:
+				err = fmt.Errorf("%#v", r)
+			}
+		}
+	}()
 
 	mapKeys := inputVal.MapKeys()
 	for _, key := range mapKeys {
-
-		value := inputVal.MapIndex(key)
-		if !returnVal.CanSet() || !value.IsValid() || !value.CanInterface() {
-			continue
+		if !inputVal.MapIndex(key).CanInterface() {
+			return retVal, fmt.Errorf("not support data type. field name: %v", structField.Name)
 		}
-
-		switch returnVal.Type().Elem().Kind() {
+		value := inputVal.MapIndex(key).Interface()
+		switch rawVal := value.(type) {
+		case float64:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case float32:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case int64:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case int32:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case int:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case string:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case []interface{}:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
 		default:
-			return returnVal, errors.New("not support:" + returnVal.Type().Elem().Kind().String() + fmt.Sprintf(" value: %v", value.Interface()))
-		case reflect.Interface:
-			returnVal.Set(reflect.ValueOf(map[string]interface{}{key.String(): value.Interface()}))
-		case reflect.String:
-			returnVal.Set(reflect.ValueOf(map[string]string{key.String(): fmt.Sprintf("%v", value.Interface())}))
-		case reflect.Int:
-			returnVal.Set(reflect.ValueOf(map[string]int{key.String(): toInt(value.Interface())}))
-		case reflect.Int8:
-			returnVal.Set(reflect.ValueOf(map[string]int8{key.String(): int8(toInt(value.Interface()))}))
-		case reflect.Int16:
-			returnVal.Set(reflect.ValueOf(map[string]int16{key.String(): int16(toInt(value.Interface()))}))
-		case reflect.Int32:
-			returnVal.Set(reflect.ValueOf(map[string]int32{key.String(): int32(toInt(value.Interface()))}))
-		case reflect.Int64:
-			returnVal.Set(reflect.ValueOf(map[string]int64{key.String(): int64(toInt(value.Interface()))}))
-		case reflect.Uint:
-			returnVal.Set(reflect.ValueOf(map[string]uint{key.String(): uint(toUint(value.Interface()))}))
-		case reflect.Uint16:
-			returnVal.Set(reflect.ValueOf(map[string]uint16{key.String(): uint16(toUint(value.Interface()))}))
-		case reflect.Uint32:
-			returnVal.Set(reflect.ValueOf(map[string]uint32{key.String(): uint32(toUint(value.Interface()))}))
-		case reflect.Uint64:
-			returnVal.Set(reflect.ValueOf(map[string]uint64{key.String(): uint64(toUint(value.Interface()))}))
-		case reflect.Uint8:
-			returnVal.Set(reflect.ValueOf(map[string]uint8{key.String(): uint8(toUint(value.Interface()))}))
-		case reflect.Float32:
-			returnVal.Set(reflect.ValueOf(map[string]float32{key.String(): float32(toFloat(value.Interface()))}))
-		case reflect.Float64:
-			returnVal.Set(reflect.ValueOf(map[string]float64{key.String(): toFloat(value.Interface())}))
+			return retVal, fmt.Errorf("not support data type. field name: %v, type: %#v", structField.Name, value)
 		}
 	}
 
-	return returnVal, nil
+	return returnVal, err
 }
 
 func isEmptyValue(v reflect.Value) bool {
@@ -252,4 +264,18 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.IsNil()
 	}
 	return false
+}
+
+// Struct2Map is a safer version of NewFromStruct
+// TODO: replace with mitchellh/mapstructure
+func Struct2Map(v interface{}) (map[string]interface{}, error) {
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	data := make(map[string]interface{})
+	if err := json.Unmarshal(bytes, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }

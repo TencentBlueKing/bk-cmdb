@@ -18,31 +18,33 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
 )
 
-// Netcollect collect the net information
-type Netcollect struct {
-	ctx context.Context
-	db  dal.RDB
+// NetCollect collect the net information
+type NetCollect struct {
+	ctx         context.Context
+	db          dal.RDB
+	authManager extensions.AuthManager
 }
 
-// NewNetcollect returns a new netcollector
-func NewNetcollect(ctx context.Context, db dal.RDB) *Netcollect {
-	h := &Netcollect{
-		ctx: ctx,
-		db:  db,
+// NewNetCollect returns a new netcollector
+func NewNetCollect(ctx context.Context, db dal.RDB, authManager extensions.AuthManager) *NetCollect {
+	h := &NetCollect{
+		ctx:         ctx,
+		db:          db,
+		authManager: authManager,
 	}
 	return h
 }
 
 // Analyze implements the Analyzer interface
-func (h *Netcollect) Analyze(raw string) error {
-	blog.V(4).Infof("[datacollect][netcollect] received message: %s", raw)
+func (h *NetCollect) Analyze(raw string) error {
+	blog.V(4).Infof("[data-collection][netcollect] received message: %s", raw)
 	msg := ReportMessage{}
 	err := json.Unmarshal([]byte(raw), &msg)
 	if err != nil {
@@ -51,29 +53,30 @@ func (h *Netcollect) Analyze(raw string) error {
 
 	for _, report := range msg.Data {
 		if err = h.handleReport(&report); err != nil {
-			blog.Errorf("[datacollect][netcollect] handleData failed: %v,raw: %s", err, raw)
+			blog.Errorf("[data-collection][netcollect] handleData failed: %v,raw: %s", err, raw)
 		}
 	}
 	return nil
 }
 
-func (h *Netcollect) handleReport(report *metadata.NetcollectReport) (err error) {
+func (h *NetCollect) handleReport(report *metadata.NetcollectReport) (err error) {
 	// TODO compare 若有变化才插入
 	if err = h.upsertReport(report); err != nil {
-		blog.Errorf("[datacollect][netcollect] upsert association error: %v", err)
+		blog.Errorf("[data-collection][netcollect] upsert association error: %v", err)
 		return err
 	}
 
 	return nil
 }
 
-func (h *Netcollect) upsertReport(report *metadata.NetcollectReport) error {
-	existCond := condition.CreateCondition()
-	existCond.Field(common.BKCloudIDField).Eq(report.CloudID)
-	existCond.Field(common.BKObjIDField).Eq(report.ObjectID)
-	existCond.Field(common.BKInstKeyField).Eq(report.InstKey)
+func (h *NetCollect) upsertReport(report *metadata.NetcollectReport) error {
+	existFilter := map[string]interface{}{
+		common.BKCloudIDField: report.CloudID,
+		common.BKObjIDField:   report.ObjectID,
+		common.BKInstKeyField: report.InstKey,
+	}
 
-	count, err := h.db.Table(common.BKTableNameNetcollectReport).Find(existCond.ToMapStr()).Count(h.ctx)
+	count, err := h.db.Table(common.BKTableNameNetcollectReport).Find(existFilter).Count(h.ctx)
 	if err != nil {
 		return err
 	}
@@ -82,7 +85,7 @@ func (h *Netcollect) upsertReport(report *metadata.NetcollectReport) error {
 		return err
 	}
 
-	return h.db.Table(common.BKTableNameNetcollectReport).Update(h.ctx, existCond.ToMapStr(), report)
+	return h.db.Table(common.BKTableNameNetcollectReport).Update(h.ctx, existFilter, report)
 }
 
 // ReportMessage define a netcollect message

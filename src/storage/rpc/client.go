@@ -36,38 +36,48 @@ var (
 
 const commanLimit = 40
 
+type Client interface {
+	Call(cmd string, input interface{}, result interface{}) error
+	CallInfo(cmd string, input interface{}, result interface{}) (addr string, err error)
+	CallStream(cmd string, input interface{}) (*StreamMessage, error)
+	Ping() error
+	TargetID() string
+	Close() error
+}
+
 //Client replica client
-type Client struct {
+type client struct {
 	send         chan *Message
 	seq          uint32
-	messageMutex sync.RWMutex
+	messageMutex sync.Mutex
 	messages     map[uint32]*Message
 	stream       *streamstore
 	wire         Wire
 	peerAddr     string
+	localAddr    string
 	err          error
 	codec        Codec
 
-	request  Message
 	response Message
 	done     *util.AtomicBool
 	wg       sync.WaitGroup
 }
 
 //NewClient replica client
-func NewClient(conn net.Conn, compress string) (*Client, error) {
+func NewClient(conn net.Conn, compress string) (*client, error) {
 	wire, err := NewBinaryWire(conn, compress)
 	if err != nil {
 		return nil, fmt.Errorf("[rpc] NewWire failed %v", err)
 	}
-	c := &Client{
-		wire:     wire,
-		peerAddr: conn.RemoteAddr().String(),
-		done:     util.NewBool(false),
-		send:     make(chan *Message, 1024),
-		messages: map[uint32]*Message{},
-		codec:    JSONCodec,
-		stream:   newStreamStore(),
+	c := &client{
+		wire:      wire,
+		peerAddr:  conn.RemoteAddr().String(),
+		localAddr: conn.LocalAddr().String(),
+		done:      util.NewBool(false),
+		send:      make(chan *Message, 1024),
+		messages:  map[uint32]*Message{},
+		codec:     BSONCodec,
+		stream:    newStreamStore(),
 	}
 	blog.V(3).Infof("connected to rpc server %s", c.TargetID())
 	go c.write()
@@ -75,7 +85,7 @@ func NewClient(conn net.Conn, compress string) (*Client, error) {
 	return c, nil
 }
 
-func Dial(connect string) (*Client, error) {
+func Dial(connect string) (*client, error) {
 	uri, err := url.Parse(connect)
 	if err != nil {
 		return nil, err
@@ -89,7 +99,7 @@ func Dial(connect string) (*Client, error) {
 
 // DialHTTPPath connects to an HTTP RPC server
 // at the specified network address and path.
-func DialHTTPPath(network, address, path string) (*Client, error) {
+func DialHTTPPath(network, address, path string) (*client, error) {
 	var err error
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
@@ -116,19 +126,22 @@ func DialHTTPPath(network, address, path string) (*Client, error) {
 }
 
 //Close replica client
-func (c *Client) Close() error {
-	c.wire.Close()
-	c.done.Set()
+func (c *client) Close() error {
+	if c.done.SetIfNotSet() {
+		blog.V(3).Infof("rpc connection %s -> %s close", c.localAddr, c.peerAddr)
+		close(c.send)
+		c.wire.Close()
+	}
 	return nil
 }
 
 // TargetID operation target ID
-func (c *Client) TargetID() string {
+func (c *client) TargetID() string {
 	return c.peerAddr
 }
 
 // Call replica client
-func (c *Client) Call(cmd string, input interface{}, result interface{}) error {
+func (c *client) Call(cmd string, input interface{}, result interface{}) error {
 	msg, err := c.operation(TypeRequest, cmd, input)
 	if err != nil {
 		return err
@@ -136,8 +149,17 @@ func (c *Client) Call(cmd string, input interface{}, result interface{}) error {
 	return msg.Decode(result)
 }
 
+// Call replica client and return rpc server address
+func (c *client) CallInfo(cmd string, input interface{}, result interface{}) (addr string, err error) {
+	msg, err := c.operation(TypeRequest, cmd, input)
+	if err != nil {
+		return "", err
+	}
+	return c.TargetID(), msg.Decode(result)
+}
+
 // CallStream replica client
-func (c *Client) CallStream(cmd string, input interface{}) (*StreamMessage, error) {
+func (c *client) CallStream(cmd string, input interface{}) (*StreamMessage, error) {
 	msg, err := c.operation(TypeRequest, cmd, input)
 	if err != nil {
 		return nil, err
@@ -164,12 +186,12 @@ func (c *Client) CallStream(cmd string, input interface{}) (*StreamMessage, erro
 }
 
 //Ping replica client
-func (c *Client) Ping() error {
+func (c *client) Ping() error {
 	_, err := c.operation(TypePing, "", nil)
 	return err
 }
 
-func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Message, error) {
+func (c *client) operation(op MessageType, cmd string, data interface{}) (*Message, error) {
 	retry := 0
 	for {
 		msg := &Message{
@@ -206,72 +228,58 @@ func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Messa
 			}
 			return msg, nil
 		case <-timeout:
-			switch msg.typz {
-			case TypeRequest:
-				blog.Errorf("request timeout on replcia %s, seq= %d", c.TargetID(), msg.seq)
-			case TypePing:
-				blog.Errorf("Ping timeout on replica %s, seq= %d", c.TargetID(), msg.seq)
-			}
+			blog.Errorf("%s timeout on replcia %s, seq= %d", msg.typz, c.TargetID(), msg.seq)
 			if retry < opRetries {
 				retry++
-				blog.Errorf("Retry %d on replica, seq= %d", retry, msg.seq)
+				blog.Errorf("retry %d on replica, seq= %d", retry, msg.seq)
 			} else {
 				err := ErrRWTimeout
 				if msg.typz == TypePing {
 					err = ErrPingTimeout
 				}
-				// not transportErr when timeout?
-				// c.responses <- &Message{
-				// 	transportErr: err,
-				// }
-				// TODO print journal
 				return nil, err
 			}
 		}
 	}
 }
 
-func (c *Client) nextSeq() uint32 {
+func (c *client) nextSeq() uint32 {
 	return atomic.AddUint32(&c.seq, 1)
 }
 
-func (c *Client) replyError(req *Message) {
-	c.messageMutex.Lock()
+// replyError reply the request as error, user should handle the messageMutex manually
+func (c *client) replyError(req *Message) {
 	delete(c.messages, req.seq)
-	c.messageMutex.Unlock()
-
 	req.typz = TypeError
 	req.Data = []byte(c.err.Error())
-	req.complete <- struct{}{}
+	close(req.complete)
 }
 
-func (c *Client) handleRequest(req *Message) {
-	// TODO req.ID = journal.InsertPendingOp(time.Now(), c.TargetID(), journal.OpPing, 0)
+func (c *client) handleRequest(req *Message) {
+	c.messageMutex.Lock()
 	if c.err != nil {
 		c.replyError(req)
+		c.messageMutex.Unlock()
 		return
 	}
-
-	c.messageMutex.Lock()
 	c.messages[req.seq] = req
 	c.messageMutex.Unlock()
 
 	c.send <- req
-	blog.V(5).Infof("[rpc client]sent message data: %s", req.Data)
+	blog.V(7).Infof("[rpc client]sent message data: %s", req.Data)
 }
 
-func (c *Client) handleResponse(resp *Message) {
-	blog.V(5).Infof("[rpc client]receive message data: %s", resp.Data)
+func (c *client) handleResponse(resp *Message) {
+	blog.V(7).Infof("[rpc client]receive message data: %s", resp.Data)
 	resp.codec = c.codec
 	if resp.transportErr != nil {
-		c.err = resp.transportErr
 		// Terminate all in flight
-		c.messageMutex.RLock()
+		c.messageMutex.Lock()
+		c.err = resp.transportErr
 		for _, msg := range c.messages {
 			c.replyError(msg)
 		}
-		c.messageMutex.RUnlock()
-		// TODO reconnect when transportErr?
+		c.messageMutex.Unlock()
 		return
 	}
 	if resp.typz == TypeStream || resp.typz == TypeStreamClose {
@@ -288,8 +296,8 @@ func (c *Client) handleResponse(resp *Message) {
 	c.messageMutex.Lock()
 	if req, ok := c.messages[resp.seq]; ok {
 		if c.err != nil {
-			c.messageMutex.Unlock()
 			c.replyError(req)
+			c.messageMutex.Unlock()
 			return
 		}
 
@@ -304,19 +312,22 @@ func (c *Client) handleResponse(resp *Message) {
 	}
 }
 
-func (c *Client) write() {
+func (c *client) write() {
 	for msg := range c.send {
 		if err := c.wire.Write(msg); err != nil {
+			blog.V(3).Infof("Error write to wire: %v", err)
+			msg.transportErr = err
 			c.handleResponse(msg)
 		}
 	}
 }
 
-func (c *Client) read() {
+func (c *client) read() {
 	for {
 		err := c.wire.Read(&c.response)
 		if err != nil {
-			blog.Errorf("Error reading from wire: %v", err)
+			blog.V(3).Infof("Error reading from wire: %v", err)
+			c.response.transportErr = err
 			c.handleResponse(&c.response)
 			break
 		}

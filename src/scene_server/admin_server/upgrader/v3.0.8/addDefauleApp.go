@@ -19,10 +19,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
 )
+
+var admin = "admin"
 
 func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
@@ -35,8 +37,8 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	// add default biz
 	defaultBiz := map[string]interface{}{}
 	defaultBiz[common.BKAppNameField] = common.DefaultAppName
-	defaultBiz[common.BKMaintainersField] = "admin"
-	defaultBiz[common.BKProductPMField] = "admin"
+	defaultBiz[common.BKMaintainersField] = admin
+	defaultBiz[common.BKProductPMField] = admin
 	defaultBiz[common.BKTimeZoneField] = "Asia/Shanghai"
 	defaultBiz[common.BKLanguageField] = "1" //中文
 	defaultBiz[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
@@ -120,10 +122,11 @@ func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 		case common.FieldTypeInt:
 			data[fieldName] = nil
 		case common.FieldTypeEnum:
-			enumOptions := validator.ParseEnumOption(option)
+			// parse enum option failure. not set default value
+			enumOptions, _ := metadata.ParseEnumOption(context.Background(), option)
 			v := ""
 			if len(enumOptions) > 0 {
-				var defaultOption *validator.EnumVal
+				var defaultOption *metadata.EnumVal
 				for _, k := range enumOptions {
 					if k.IsDefault {
 						defaultOption = &k
@@ -141,7 +144,7 @@ func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 			data[fieldName] = ""
 		case common.FieldTypeUser:
 			data[fieldName] = ""
-		case common.FieldTypeMultiAsst:
+		case "multiasst":
 			data[fieldName] = nil
 		case common.FieldTypeTimeZone:
 			data[fieldName] = nil

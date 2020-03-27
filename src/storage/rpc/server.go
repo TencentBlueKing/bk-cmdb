@@ -34,7 +34,7 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		ctx:            context.Background(),
-		codec:          JSONCodec,
+		codec:          BSONCodec,
 		handlers:       map[string]HandlerFunc{},
 		streamHandlers: map[string]HandlerStreamFunc{},
 	}
@@ -53,7 +53,19 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		blog.Errorf("method not match %s", req.RemoteAddr)
 		return
 	}
-	conn, _, err := resp.(http.Hijacker).Hijack()
+
+	hijacked, ok := resp.(http.Hijacker)
+	if !ok {
+		resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		resp.WriteHeader(http.StatusInternalServerError)
+		blog.Errorf("can not Hijack this connection %#v, remote: %s", resp, req.RemoteAddr)
+		if _, err := io.WriteString(resp, "HTTP/1.0 "+connectfaile+"\n\n"); err != nil {
+			blog.Errorf("write string failed %s: %v", req.RemoteAddr, err)
+		}
+		return
+	}
+
+	conn, _, err := hijacked.Hijack()
 	if err != nil {
 		blog.Errorf("rpc hijack failed %s: %s", req.RemoteAddr, err.Error())
 		return
@@ -73,9 +85,10 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 	blog.V(3).Infof("connected from rpc client %s", req.RemoteAddr)
 	if err = session.Run(); err != nil {
-		blog.Errorf("dissconnect from rpc client %s: %s ", req.RemoteAddr, err.Error())
+		blog.Errorf("disconnect from rpc client %s with error: %s ", req.RemoteAddr, err.Error())
 		return
 	}
+	blog.V(3).Infof("disconnect from rpc client %s", req.RemoteAddr)
 }
 
 // Handle regist new handler

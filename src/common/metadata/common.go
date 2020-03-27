@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -22,7 +23,6 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/coccyx/timeparser"
-	"github.com/gin-gonic/gin/json"
 )
 
 const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
@@ -39,11 +39,12 @@ type RespError struct {
 func (r *RespError) Error() string {
 	br := new(Response)
 	br.Code = r.ErrCode
-	br.ErrMsg = r.Msg.Error()
 	if nil != r.Msg {
 		if ccErr, ok := (r.Msg).(errors.CCErrorCoder); ok {
 			br.Code = ccErr.GetCode()
 			br.ErrMsg = ccErr.Error()
+		} else {
+			br.ErrMsg = r.Msg.Error()
 		}
 	}
 	br.Data = r.Data
@@ -59,14 +60,29 @@ func (r *RespError) Error() string {
 // data is the data you want to return to client.
 func NewSuccessResp(data interface{}) *Response {
 	return &Response{
-		BaseResp: BaseResp{true, common.CCSuccess, common.CCSuccessStr},
+		BaseResp: BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr},
 		Data:     data,
 	}
 }
 
 type Response struct {
 	BaseResp `json:",inline"`
-	Data     interface{} `json:"data"`
+	Data     interface{} `json:"data" mapstructure:"data"`
+}
+
+type BoolResponse struct {
+	BaseResp `json:",inline"`
+	Data     bool `json:"data"`
+}
+
+type Uint64Response struct {
+	BaseResp `json:",inline"`
+	Count    uint64 `json:"count"`
+}
+
+type CoreUint64Response struct {
+	BaseResp `json:",inline"`
+	Data     uint64 `json:"data"`
 }
 
 type MapArrayResponse struct {
@@ -77,10 +93,13 @@ type MapArrayResponse struct {
 // ResponseInstData
 type ResponseInstData struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int             `json:"count"`
-		Info  []mapstr.MapStr `json:"info"`
-	} `json:"data"`
+	Data     InstDataInfo `json:"data"`
+}
+
+// InstDataInfo response instance data result Data field
+type InstDataInfo struct {
+	Count int             `json:"count"`
+	Info  []mapstr.MapStr `json:"info"`
 }
 
 type ResponseDataMapStr struct {
@@ -96,7 +115,7 @@ type QueryInput struct {
 	Sort      string      `json:"sort,omitempty"`
 }
 
-//ConvTime cc_type key
+// ConvTime cc_type key
 func (o *QueryInput) ConvTime() error {
 	conds, ok := o.Condition.(map[string]interface{})
 	if true != ok && nil != conds {
@@ -113,7 +132,7 @@ func (o *QueryInput) ConvTime() error {
 	return nil
 }
 
-//convTimeItem cc_time_type
+// convTimeItem cc_time_type
 func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 
 	switch item.(type) {
@@ -162,7 +181,6 @@ func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 			item = arrItem
 		}
 	case []interface{}:
-		//??????????????
 		arrItem, ok := item.([]interface{})
 		if true == ok {
 			for index, value := range arrItem {
@@ -185,17 +203,17 @@ func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 func (o *QueryInput) convInterfaceToTime(val interface{}) (interface{}, error) {
 	switch val.(type) {
 	case string:
-		ts, err := timeparser.TimeParser(val.(string))
+		ts, err := timeparser.TimeParserInLocation(val.(string), time.Local)
 		if nil != err {
 			return nil, err
 		}
-		return ts.UTC(), nil
+		return ts.Local(), nil
 	default:
 		ts, err := util.GetInt64ByInterface(val)
 		if nil != err {
 			return 0, err
 		}
-		t := time.Unix(ts, 0).UTC()
+		t := time.Unix(ts, 0).Local()
 		return t, nil
 	}
 
@@ -214,16 +232,15 @@ type BkHostInfo struct {
 
 type DefaultModuleHostConfigParams struct {
 	ApplicationID int64    `json:"bk_biz_id"`
-	HostID        []int64  `json:"bk_host_id"`
+	HostIDs       []int64  `json:"bk_host_id"`
 	Metadata      Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
-//common search struct
+// common search struct
 type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Page      map[string]interface{} `json:"page,omitempty"`
 	Fields    []string               `json:"fields,omitempty"`
-	Native    int                    `json:"native,omitempty"`
 }
 
 // PropertyGroupCondition used to reflect the property group json
@@ -235,4 +252,8 @@ type PropertyGroupCondition struct {
 type UpdateParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Data      map[string]interface{} `json:"data"`
+}
+type ListHostWithoutAppResponse struct {
+	BaseResp `json:",inline"`
+	Data     ListHostResult `json:"data"`
 }

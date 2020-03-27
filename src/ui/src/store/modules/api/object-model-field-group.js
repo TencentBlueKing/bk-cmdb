@@ -40,7 +40,7 @@ const actions = {
      * @param {String} bkObjId 模型id
      * @return {promises} promises 对象
      */
-    searchGroup ({ commit, state, dispatch, rootGetters }, {objId, params, config}) {
+    searchGroup ({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
         return $http.post(`find/objectattgroup/object/${objId}`, params, config)
     },
 
@@ -93,6 +93,10 @@ const actions = {
      */
     deleteObjectPropertyGroup ({ commit, state, dispatch }, { objId, propertyId, groupId }) {
         return $http.delete(`delete/objectattgroupasst/object/${objId}/property/${propertyId}/group/${groupId}`)
+    },
+
+    updatePropertySort ({ commit }, { objId, propertyId, params, config }) {
+        return $http.post(`update/objectattr/index/${objId}/${propertyId}`, params, config)
     }
 }
 

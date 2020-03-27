@@ -112,8 +112,11 @@ const actions = {
      * @param {Object} config 参数
      * @return {promises} promises 对象
      */
-    batchDeleteInst ({ commit, state, dispatch, rootGetters }, {objId, config}) {
+    batchDeleteInst ({ commit, state, dispatch, rootGetters }, { objId, config }) {
         return $http.delete(`deletemany/instance/object/${objId}`, config)
+    },
+    getInstanceCount (context) {
+        return $http.get('object/statistics')
     }
 }
 

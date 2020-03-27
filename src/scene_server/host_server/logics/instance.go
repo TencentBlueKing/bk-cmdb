@@ -55,7 +55,7 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 		tmpID, err := strconv.Atoi(ID)
 		if nil != err {
 			blog.Errorf("getRawInstAsst get objID(%s) inst id not integer, inst id:(%+v), rid:%s", objID, IDs, lgc.rid)
-			return nil, 0, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, objID, "association id", "int", err.Error())
+			return nil, 0, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, objID, "association id", "int", err.Error())
 		}
 		tmpIDs = append(tmpIDs, tmpID)
 	}
@@ -67,7 +67,7 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 		newCondtion, err := mapstr.NewFromInterface(query.Condition)
 		if err != nil {
 			blog.Errorf("getRawInstAsst get objID(%s) inst id not integer, inst id:(%+v), rid:%s", objID, IDs, lgc.rid)
-			return nil, 0, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, objID, "query condition", "map[string]interface{}", err.Error())
+			return nil, 0, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, objID, "query condition", "map[string]interface{}", err.Error())
 		}
 		condition = newCondtion
 	}
@@ -153,8 +153,8 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 
 				itemInstID, err := util.GetInt64ByInterface(dataVal)
 				if nil != err {
-					blog.Errorf("not found assocte object ID %d from %v", instID, info)
-					return nil, 0, fmt.Errorf("not found assocte object ID %d from %v", instID, info)
+					blog.Errorf("not found assocte object ID %s from %v, rid: %s", instID, info, lgc.rid)
+					return nil, 0, fmt.Errorf("not found assocte object ID %s from %v", instID, info)
 				}
 				if 0 != len(IDs) {
 					for idx, key := range IDs {

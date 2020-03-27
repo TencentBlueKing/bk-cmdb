@@ -20,7 +20,7 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 )
 
 type HostServerClientInterface interface {
@@ -29,10 +29,11 @@ type HostServerClientInterface interface {
 	HostSnapInfo(ctx context.Context, hostID string, h http.Header, dat interface{}) (resp *metadata.HostSnapResult, err error)
 	AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	SyncHost(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 
 	GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.GetHostFavoriteResult, err error)
 	AddHostFavourite(ctx context.Context, h http.Header, dat *metadata.FavouriteParms) (resp *metadata.Response, err error)
-	UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error)
+	UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header, data *metadata.FavouriteParms) (resp *metadata.Response, err error)
 	DeleteHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error)
 	IncrHostFavouritesCount(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error)
 
@@ -51,28 +52,12 @@ type HostServerClientInterface interface {
 	SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetUserCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
-	GetAgentStatus(ctx context.Context, appID string, h http.Header) (resp *metadata.Response, err error)
-	UpdateHost(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	UpdateHostByAppID(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	GetHostListByAppidAndField(ctx context.Context, appID string, field string, h http.Header) (resp *metadata.Response, err error)
-	HostSearchByIP(ctx context.Context, h http.Header, dat *metadata.HostSearchByIPParams) (resp *metadata.Response, err error)
-	HostSearchByModuleID(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	HostSearchBySetID(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	HostSearchByAppID(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	HostSearchByProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
-	GetIPAndProxyByCompany(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
-	UpdateCustomProperty(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.CloneHostPropertyParams) (resp *metadata.Response, err error)
 	MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error)
-	GetHostAppByCompanyId(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
-	DelHostInApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	GetGitServerIp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	GetPlat(ctx context.Context, h http.Header) (resp *metadata.QueryInstResult, err error)
-	CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
-	DelPlat(ctx context.Context, cloudID string, h http.Header) (resp *metadata.Response, err error)
 	SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	AddUserCustomQuery(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.Response, err error)
@@ -80,6 +65,7 @@ type HostServerClientInterface interface {
 	GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.UserCustomQueryDetailResult, err error)
 	GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *metadata.Response, err error)
 	HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error)
+	ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64, params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error)
 }
 
 func NewHostServerClientInterface(c *util.Capability, version string) HostServerClientInterface {

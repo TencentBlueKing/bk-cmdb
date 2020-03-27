@@ -63,14 +63,26 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 	switch a.(type) {
 	case int:
 		id = int64(a.(int))
+	case int8:
+		return int64(a.(int8)), nil
+	case int16:
+		return int64(a.(int16)), nil
 	case int32:
 		id = int64(a.(int32))
 	case int64:
 		id = int64(a.(int64))
+	case uint:
+		id = int64(a.(uint))
+	case uint8:
+		return int64(a.(uint8)), nil
+	case uint16:
+		return int64(a.(uint16)), nil
+	case uint32:
+		id = int64(a.(uint32))
+	case uint64:
+		id = int64(a.(uint64))
 	case json.Number:
-		var tmpID int64
-		tmpID, err = a.(json.Number).Int64()
-		id = int64(tmpID)
+		id, err = a.(json.Number).Int64()
 	case float64:
 		tmpID := a.(float64)
 		id = int64(tmpID)
@@ -121,39 +133,8 @@ func GetFloat64ByInterface(a interface{}) (float64, error) {
 	}
 }
 
-func GetTypeSensitiveUInt64(v interface{}) (uint64, bool) {
-	switch tv := v.(type) {
-	case int8:
-		return uint64(tv), true
-	case int16:
-		return uint64(tv), true
-	case int32:
-		return uint64(tv), true
-	case int64:
-		return uint64(tv), true
-	case int:
-		return uint64(tv), true
-	case uint8:
-		return uint64(tv), true
-	case uint16:
-		return uint64(tv), true
-	case uint32:
-		return uint64(tv), true
-	case uint64:
-		return uint64(tv), true
-	case uint:
-		return uint64(tv), true
-	case float32:
-		return uint64(tv), true
-	case float64:
-		return uint64(tv), true
-	default:
-		return 0, false
-	}
-}
-
 func GetMapInterfaceByInerface(data interface{}) ([]interface{}, error) {
-	var values []interface{}
+	values := make([]interface{}, 0)
 	switch data.(type) {
 	case []int:
 		vs, _ := data.([]int)
@@ -222,7 +203,7 @@ func SliceStrToInt64(sliceStr []string) ([]int64, error) {
 
 // GetStrValsFromArrMapInterfaceByKey get []string from []map[string]interface{}, Do not consider errors
 func GetStrValsFromArrMapInterfaceByKey(arrI []interface{}, key string) []string {
-	var ret []string
+	ret := make([]string, 0)
 	for _, row := range arrI {
 		mapRow, ok := row.(map[string]interface{})
 		if ok {
@@ -234,22 +215,21 @@ func GetStrValsFromArrMapInterfaceByKey(arrI []interface{}, key string) []string
 	}
 
 	return ret
-
 }
 
 func ConverToInterfaceSlice(value interface{}) []interface{} {
-	rflval := reflect.ValueOf(value)
-	for rflval.CanAddr() {
-		rflval = rflval.Elem()
+	rflVal := reflect.ValueOf(value)
+	for rflVal.CanAddr() {
+		rflVal = rflVal.Elem()
 	}
-	if rflval.Kind() != reflect.Slice {
+	if rflVal.Kind() != reflect.Slice {
 		return []interface{}{value}
 	}
 
-	result := []interface{}{}
-	for i := 0; i < rflval.Len(); i++ {
-		if rflval.Index(i).CanInterface() {
-			result = append(result, rflval.Index(i).Interface())
+	result := make([]interface{}, 0)
+	for i := 0; i < rflVal.Len(); i++ {
+		if rflVal.Index(i).CanInterface() {
+			result = append(result, rflVal.Index(i).Interface())
 		}
 	}
 

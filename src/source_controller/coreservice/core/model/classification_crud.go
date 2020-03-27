@@ -88,14 +88,14 @@ func (m *modelClassification) delete(ctx core.ContextParams, cond universalsql.C
 
 func (m *modelClassification) search(ctx core.ContextParams, cond universalsql.Condition) ([]metadata.Classification, error) {
 
-	results := []metadata.Classification{}
+	results := make([]metadata.Classification, 0)
 	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).All(ctx, &results)
 	return results, err
 }
 
 func (m *modelClassification) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 
-	results := []mapstr.MapStr{}
+	results := make([]mapstr.MapStr, 0)
 	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).All(ctx, &results)
 	return results, err
 }

@@ -1,13 +1,22 @@
 <template>
-    <div class="form-enum">
-        <bk-selector class="form-enum-selector"
-            :searchable="searchable"
-            :list="options"
-            :disabled="disabled"
-            :allow-clear="allowClear"
-            :selected.sync="selected">
-        </bk-selector>
-    </div>
+    <bk-select class="form-enum-selector"
+        v-model="selected"
+        :clearable="allowClear"
+        :searchable="searchable"
+        :disabled="disabled"
+        :placeholder="placeholder"
+        :font-size="fontSize"
+        :popover-options="{
+            boundary: 'window'
+        }"
+        ref="selector">
+        <bk-option
+            v-for="(option, index) in options"
+            :key="index"
+            :id="option.id"
+            :name="option.name">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>
@@ -15,6 +24,7 @@
         name: 'cmdb-form-enum',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {
@@ -25,11 +35,23 @@
                 type: Boolean,
                 default: false
             },
+            autoSelect: {
+                type: Boolean,
+                default: true
+            },
             options: {
                 type: Array,
                 default () {
                     return []
                 }
+            },
+            placeholder: {
+                type: String,
+                default: ''
+            },
+            fontSize: {
+                type: [String, Number],
+                default: 'medium'
             }
         },
         data () {
@@ -51,6 +73,9 @@
             selected (selected) {
                 this.$emit('input', selected)
                 this.$emit('on-selected', selected)
+            },
+            disabled (disabled) {
+                this.setInitData()
             }
         },
         created () {
@@ -58,25 +83,30 @@
         },
         methods: {
             setInitData () {
-                if (this.value === '') {
-                    const defaultOption = this.options.find(option => option['is_default'])
-                    if (defaultOption) {
-                        this.selected = defaultOption.id
+                if (this.autoSelect) {
+                    if (this.value === '') {
+                        const defaultOption = this.options.find(option => option['is_default'])
+                        if (defaultOption) {
+                            this.selected = defaultOption.id
+                        } else {
+                            this.$emit('input', null)
+                        }
                     } else {
-                        this.$emit('input', null)
+                        this.selected = this.value
                     }
                 } else {
                     this.selected = this.value
                 }
+            },
+            focus () {
+                this.$refs.selector.show()
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .form-enum {
-        .form-enum-selector{
-            width: 100%;
-        }
+    .form-enum-selector{
+        width: 100%;
     }
 </style>

@@ -73,7 +73,7 @@ func (client *HttpClient) SetTlsVerity(caFile, certFile, keyFile, passwd string)
 	client.keyFile = keyFile
 
 	// load cert
-	tlsConf, err := ssl.ClientTslConfVerity(caFile, certFile, keyFile, passwd)
+	tlsConf, err := ssl.ClientTLSConfVerity(caFile, certFile, keyFile, passwd)
 	if err != nil {
 		return err
 	}
@@ -221,8 +221,7 @@ func (client *HttpClient) RequestEx(url, method string, header http.Header, data
 }
 
 func (client *HttpClient) DoWithTimeout(timeout time.Duration, req *http.Request) (*http.Response, error) {
-	ctx, cancel := context.WithTimeout(req.Context(), timeout)
-	defer cancel()
+	ctx, _ := context.WithTimeout(req.Context(), timeout)
 	req = req.WithContext(ctx)
 	return client.httpCli.Do(req)
 }

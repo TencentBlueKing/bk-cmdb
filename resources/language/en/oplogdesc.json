@@ -6,6 +6,7 @@
      "auditlog_assign host to app": "Assign host to service",
      "auditlog_host to idle module": "Transfer host to idle machine",
      "auditlog_host to fault module": "Transfer Host to fault machine",
+     "auditlog_host to recycle module": "Transfer Host to recycle machine",
      "auditlog_delete host": "Turn over the host",
      "auditlog_update host": "Modify host",
      "auditlog_import host": "Import host",
@@ -34,5 +35,11 @@
      "auditlog_update set": "Modify the cluster",
      "auditlog_create module": "Create module",
      "auditlog_delete module": "Delete module",
-     "auditlog_update module": "Update module information"
+     "auditlog_update module": "Update module information",
+     "autitlog_host to other bussiness module":"Transfer host across business",
+     "auditlog_delete host from business":"Delete the host under the business",
+     "auditlog_create instance association": "create instance association",
+     "auditlog_delete instance association": "delete instance association",
+     
+     "":""
 }

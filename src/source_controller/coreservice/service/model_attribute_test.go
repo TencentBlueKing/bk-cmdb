@@ -42,7 +42,7 @@ func createModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID,
 	require.NotNil(t, inputParams)
 	t.Logf("create one model attribute:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model/"+modelID+"/attributes", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://host:port/api/v3/create/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -85,7 +85,7 @@ func setModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, mo
 	require.NotNil(t, inputParams)
 	t.Logf("set one model attributes:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/set/model/"+modelID+"/attributes", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://host:port/api/v3/set/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -128,7 +128,7 @@ func queryModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, 
 	require.NotNil(t, inputParams)
 	t.Logf("read some model attributes:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/read/model/"+modelID+"/attributes", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://host:port/api/v3/read/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -171,7 +171,7 @@ func updateModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID,
 	require.NotNil(t, inputParams)
 	t.Logf("update some model attributes:%s", inputParams)
 
-	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model/"+modelID+"/attributes", defaultHeader, inputParams)
+	dataResult, err := client.PUT("http://host:port/api/v3/update/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -200,7 +200,7 @@ func deleteModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID,
 	require.NotNil(t, inputParams)
 	t.Logf("delete some model attributes:%s", inputParams)
 
-	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model/"+modelID+"/attributes", defaultHeader, inputParams)
+	dataResult, err := client.DELETE("http://host:port/api/v3/delete/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -223,7 +223,7 @@ func deleteCascadeModelAttributes(t *testing.T, client *httpclient.HttpClient, m
 func TestModelAttributeCRUD(t *testing.T) {
 
 	// base
-	startCoreService(t, "127.0.0.1", 3308)
+	startCoreService(t, "host", 3308)
 	client := httpclient.NewHttpClient()
 
 	classID := xid.New().String()

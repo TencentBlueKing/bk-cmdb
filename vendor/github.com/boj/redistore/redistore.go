@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -143,7 +142,6 @@ func dial(network, address, password string) (redis.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("redisSecret:::%s", password)
 	if password != "" {
 		if _, err := c.Do("AUTH", password); err != nil {
 			c.Close()

@@ -25,7 +25,7 @@ func TestCondition(t *testing.T) {
 	cond.Field("test_field").Eq(1024).Field("test_field2").In([]int{0, 1, 2, 3}).Field("test").Lt(3)
 
 	conditionItem := ConditionItem{Field: "test_field3", Operator: "$lt", Value: 123}
-	if err := cond.AddContionItem(conditionItem); nil != err {
+	if err := cond.AddConditionItem(conditionItem); nil != err {
 		t.Errorf("AddContionItem error")
 		t.Fail()
 	}

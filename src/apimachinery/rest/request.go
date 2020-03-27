@@ -25,6 +25,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -57,6 +58,8 @@ const (
 )
 
 type Request struct {
+	parent *RESTClient
+
 	capability *util.Capability
 
 	verb    VerbType
@@ -69,6 +72,8 @@ type Request struct {
 	baseURL string
 	// sub path of the url, will be append to baseURL
 	subPath string
+	// sub path format args
+	subPathArgs []interface{}
 
 	// request timeout value
 	timeout time.Duration
@@ -124,7 +129,12 @@ func (r *Request) WithTimeout(d time.Duration) *Request {
 	return r
 }
 
-func (r *Request) SubResource(subPath string) *Request {
+func (r *Request) SubResourcef(subPath string, args ...interface{}) *Request {
+	r.subPathArgs = args
+	return r.subResource(subPath)
+}
+
+func (r *Request) subResource(subPath string) *Request {
 	subPath = strings.TrimLeft(subPath, "/")
 	r.subPath = subPath
 	return r
@@ -182,7 +192,11 @@ func (r *Request) WrapURL() *url.URL {
 		*finalUrl = *u
 	}
 
-	finalUrl.Path = finalUrl.Path + r.subPath
+	if len(r.subPathArgs) > 0 {
+		finalUrl.Path = finalUrl.Path + fmt.Sprintf(r.subPath, r.subPathArgs...)
+	} else {
+		finalUrl.Path = finalUrl.Path + r.subPath
+	}
 
 	query := url.Values{}
 	for key, values := range r.params {
@@ -201,6 +215,23 @@ func (r *Request) WrapURL() *url.URL {
 
 func (r *Request) Do() *Result {
 	result := new(Result)
+
+	if r.parent.requestInflight != nil {
+		r.parent.requestInflight.Inc()
+		defer r.parent.requestInflight.Dec()
+	}
+	if r.parent.requestDuration != nil {
+		before := time.Now()
+		defer func() {
+			r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(commonUtil.ToMillisecond(time.Since(before)))
+		}()
+	}
+
+	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
+	if rid == "" {
+		rid = commonUtil.GetHTTPCCRequestID(r.headers)
+	}
+
 	if r.err != nil {
 		result.Err = r.err
 		return result
@@ -215,18 +246,14 @@ func (r *Request) Do() *Result {
 		client = http.DefaultClient
 	}
 
-	maxRetryCycle := 3
-	retries := 0
-
-	hosts, err := r.
-		capability.
-		Discover.
-		GetServers()
+	hosts, err := r.capability.Discover.GetServers()
 	if err != nil {
 		result.Err = err
 		return result
 	}
 
+	maxRetryCycle := 3
+	var retries int
 	for try := 0; try < maxRetryCycle; try++ {
 		for index, host := range hosts {
 			retries = try + index
@@ -241,10 +268,12 @@ func (r *Request) Do() *Result {
 				req.WithContext(r.ctx)
 			}
 
-			req.Header = r.headers
+			req.Header = commonUtil.CloneHeader(r.headers)
 			if len(req.Header) == 0 {
 				req.Header = make(http.Header)
 			}
+			// 删除 Accept-Encoding 避免返回值被压缩
+			req.Header.Del("Accept-Encoding")
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
 
@@ -252,17 +281,16 @@ func (r *Request) Do() *Result {
 				r.tryThrottle(url)
 			}
 
+			start := time.Now()
 			resp, err := client.Do(req)
 			if err != nil {
 				// "Connection reset by peer" is a special err which in most scenario is a a transient error.
 				// Which means that we can retry it. And so does the GET operation.
 				// While the other "write" operation can not simply retry it again, because they are not idempotent.
 
+				blog.Errorf("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
-					if r.peek {
-						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
-					}
 					return result
 				}
 
@@ -282,19 +310,16 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
-					if r.peek {
-						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
-					}
+					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 					return result
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s, response %s, rid: %s", string(r.verb), url, r.body, body, commonUtil.GetHTTPCCRequestID(r.headers))
+			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s, response status: %s, response body: %s, rid: %s",
+				time.Since(start).Nanoseconds()/int64(time.Millisecond), string(r.verb), url, r.body, resp.Status, body, rid)
 			result.Body = body
 			result.StatusCode = resp.StatusCode
-			if r.peek {
-				blog.Infof("[apimachinary][peek] %s %s with body %s, response %s", string(r.verb), url, r.body, body)
-			}
+			result.Status = resp.Status
 
 			return result
 		}
@@ -314,7 +339,7 @@ func (r *Request) tryThrottle(url string) {
 	}
 
 	if latency := time.Since(now); latency > maxLatency {
-		blog.V(3).Infof("Throttling request took %d ms, request: %s %s", latency, r.verb, url)
+		blog.V(3).Infof("Throttling request took %d ms, verb: %s, request: %s", latency, r.verb, url)
 	}
 }
 
@@ -322,6 +347,7 @@ type Result struct {
 	Body       []byte
 	Err        error
 	StatusCode int
+	Status     string
 }
 
 func (r *Result) Into(obj interface{}) error {
@@ -330,14 +356,18 @@ func (r *Result) Into(obj interface{}) error {
 	}
 
 	if 0 != len(r.Body) {
-		err := json.Unmarshal(r.Body, obj)
+		d := json.NewDecoder(bytes.NewReader(r.Body))
+		d.UseNumber()
+		err := d.Decode(obj)
 		if nil != err {
-			if http.StatusOK != r.StatusCode {
+			if r.StatusCode >= 300 {
 				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
-			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
+			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", r.Body, err.Error())
 			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
+	} else if r.StatusCode >= 300 {
+		return fmt.Errorf("http request failed: %s", r.Status)
 	}
 	return nil
 }

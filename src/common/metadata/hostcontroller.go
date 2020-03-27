@@ -123,7 +123,13 @@ type ModuleHost struct {
 
 type HostConfig struct {
 	BaseResp `json:",inline"`
-	Data     []ModuleHost `json:"data"`
+	Data     HostConfigData `json:"data"`
+}
+
+type HostConfigData struct {
+	Count int64        `json:"count"`
+	Info  []ModuleHost `json:"data"`
+	Page  BasePage     `json:"page"`
 }
 
 type ModuleHostConfigParams struct {
@@ -166,15 +172,16 @@ type FavouriteParms struct {
 	Name        string `json:"name,omitempty"`
 	IsDefault   int    `json:"is_default,omitempty"`
 	Count       int    `json:"count,omitempty"`
+	BizID       int64  `json:"bk_biz_id"`
 }
 
 type FavouriteMeta struct {
+	BizID       int64     `json:"bk_biz_id" bson:"bk_biz_id"`
 	ID          string    `json:"id,omitempty" bson:"id,omitempty"`
 	Info        string    `json:"info,omitempty" bson:"info,omitempty"`
 	Name        string    `json:"name,omitempty" bson:"name,omitempty"`
 	Count       int       `json:"count,omitempty" bson:"count,omitempty"`
 	User        string    `json:"user,omitempty" bson:"user,omitempty"`
-	IsDefault   int       `json:"is_default,omitempty" bson:"is_default,omitempty"`
 	OwnerID     string    `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"`
 	QueryParams string    `json:"query_params,omitempty" bson:"query_params,omitempty"`
 	CreateTime  time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
@@ -229,4 +236,11 @@ type CloudTaskInfo struct {
 	NewAdd          int64  `json:"new_add" bson:"new_add"`
 	AttrChanged     int64  `json:"attr_changed" bson:"attr_changed"`
 	OwnerID         string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+// TransferHostToInnerModule transfer host to inner module eg:idle module ,fault module
+type TransferHostToInnerModule struct {
+	ApplicationID int64   `json:"bk_biz_id"`
+	ModuleID      int64   `json:"bk_module_id"`
+	HostID        []int64 `json:"bk_host_id"`
 }

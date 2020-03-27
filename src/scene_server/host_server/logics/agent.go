@@ -13,183 +13,248 @@
 package logics
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/bitly/go-simplejson"
-
-	"configcenter/src/common"
-	"configcenter/src/common/util"
+	"configcenter/src/common/blog"
 )
 
+type HostSnap struct {
+	Data *SnapData `json:"data"`
+}
+
+type SnapData struct {
+	Load     *Load   `json:"load"`
+	CPU      *CPU    `json:"cpu"`
+	Env      *Env    `json:"env"`
+	Disk     *Disk   `json:"disk"`
+	Mem      *Mem    `json:"mem"`
+	Net      *Net    `json:"net"`
+	System   *System `json:"system"`
+	DateTime string  `json:"datetime"`
+	TimeZone int     `json:"timezone"`
+	Country  string  `json:"country"`
+	City     string  `json:"city"`
+}
+
+// Load
+type Load struct {
+	LoadAvg *LoadAvg `json:"load_avg"`
+}
+
+type LoadAvg struct {
+	Load1  float64 `json:"load1"`
+	Load5  float64 `json:"load5"`
+	Load15 float64 `json:"load15"`
+}
+
+// CPU
+type CPU struct {
+	PerUsage   []float64 `json:"per_usage"`
+	TotalUsage float64   `json:"total_usage"`
+}
+
+// Env
+type Env struct {
+	IPTables string    `json:"iptables"`
+	Host     string    `json:"host"`
+	Crontab  []Crontab `json:"crontab"`
+	Route    string    `json:"route"`
+}
+
+type Crontab struct {
+	User    string `json:"user"`
+	Content string `json:"content"`
+}
+
+// Disk
+type Disk struct {
+	Usage []DiskInfo `json:"usage"`
+}
+
+type DiskInfo struct {
+	Total uint64 `json:"total"`
+	Used  uint64 `json:"used"`
+}
+
+// Mem
+type Mem struct {
+	Meminfo *Meminfo `json:"meminfo"`
+}
+
+type Meminfo struct {
+	Total       uint64  `json:"total"`
+	Used        uint64  `json:"used"`
+	UsedPercent float64 `json:"usedPercent"`
+}
+
+// Net
+type Net struct {
+	Dev []DevInfo `json:"dev"`
+}
+
+type DevInfo struct {
+	Name      string `json:"name"`
+	SpeedSent uint64 `json:"speedSent"`
+	SpeedRecv uint64 `json:"speedRecv"`
+}
+
+// System
+type System struct {
+	Info SystemInfo `json:"info"`
+}
+
+type SystemInfo struct {
+	*SystemStat
+}
+
+type SystemStat struct {
+	HostName string `json:"hostname"`
+	OS       string `json:"os"`
+	BootTime uint64 `json:"bootTime"`
+}
+
+// ParseHostSnap parse hostsnap from jsonstring to map[string]interface{}
 func ParseHostSnap(data string) (map[string]interface{}, error) {
 	if "" == data {
 		return nil, nil
 	}
-	js, err := simplejson.NewJson([]byte(data))
-	if nil != err {
+
+	hostSnap := HostSnap{}
+	err := json.Unmarshal([]byte(data), &hostSnap)
+	if err != nil {
+		blog.Errorf("ParseHostSnap json Unmarshal err:%v", err)
 		return nil, err
 	}
-	js = js.Get("data")
-	if nil == js {
+
+	snap := hostSnap.Data
+	if snap == nil {
+		blog.Infof("ParseHostSnap snap is nil")
 		return nil, nil
 	}
+
 	ret := make(map[string]interface{})
 
-	//cpu
-	cpuUsageArr, _ := js.Get("cpu").Get("per_usage").Array()
-	cpuNum := len(cpuUsageArr)
-	cpuUsageFload, _ := js.Get("cpu").Get("total_usage").Float64()
-	cpuUsage := int((cpuUsageFload)*100 + 0.5)
+	// cpu
+	if cpu := snap.CPU; cpu != nil {
+		ret["Cpu"] = len(cpu.PerUsage)
+		ret["cpuUsage"] = int(cpu.TotalUsage*100 + 0.5)
+	}
 
-	//disk
-	diskInfos, _ := js.Get("disk").Get("usage").Array() //!empty($data['disk']['usage']) ? $data['disk']['usage'] : array();
-	var diskTotal int64 = 0
-	var diskUsage int64 = 0
-	var diskUsed int64 = 0
+	var unitGB uint64 = 1024 * 1024 * 1024
+	var unitMB uint64 = 1024 * 1024
 
-	for _, diskInfoI := range diskInfos {
-		disk, ok := diskInfoI.(map[string]interface{})
-		if ok {
-			total, _ := util.GetInt64ByInterface(disk["total"])
-			used, _ := util.GetInt64ByInterface(disk["used"])
-			diskTotal += total
-			diskUsed += used
+	// disk
+	if disk := snap.Disk; disk != nil {
+		var diskTotal, diskUsed, diskUsage uint64
+		for _, d := range disk.Usage {
+			diskTotal += d.Total
+			diskUsed += d.Used
 		}
 
+		diskTotal = diskTotal / unitGB
+		diskUsed = diskUsed / unitGB
+		if 0 != diskTotal {
+			// 获取使用百分比 保留两位小数
+			diskUsage = 10000 * diskUsed / diskTotal
+		} else {
+			diskUsage = 0
+		}
+		ret["Disk"] = diskTotal
+		ret["diskUsage"] = diskUsage
 	}
-	var unitGB int64 = 1024 * 1024 * 1024
-	var unitMB int64 = 1024 * 1024
-	diskTotal = diskTotal / unitGB
-	diskUsed = diskUsed / unitGB
-	if 0 != diskTotal {
-		diskUsage = (10000 * diskUsed / diskTotal) //获取使用百分比 保留两位小数
-	} else {
-		diskUsage = 0
-	}
 
-	//iptable info
-	iptables, _ := js.Get("env").Get("iptables").String()
+	// env
+	if env := snap.Env; env != nil {
+		// hosts info
+		if env.Host != "" {
+			ret["hosts"] = strings.Split(env.Host, "\n")
+		}
 
-	//hosts info
-	hosts, _ := js.Get("env").Get("host").String()
+		// iptables info
+		if env.IPTables != "" {
+			ret["iptables"] = strings.Split(env.IPTables, "\n")
+		}
 
-	//crontab info
-	cronInfos, err := js.Get("env").Get("crontab").Array()
-
-	var crontabs common.KvMap = make(common.KvMap)
-	if nil != err {
-		for _, cronI := range cronInfos {
-			cron, ok := cronI.(map[string]string)
-			if ok {
-				user, ok := cron["user"]
-				if "" == user || !ok {
-					user = "root"
-				}
-				content, _ := cron["content"]
-				crontabs[user] = content
+		// crontab info
+		crontabs := make(map[string]string)
+		for _, cron := range env.Crontab {
+			user := cron.User
+			if user == "" {
+				user = "root"
 			}
+			crontabs[user] = cron.Content
+		}
+		if len(crontabs) > 0 {
+			ret["crontab"] = crontabs
+		}
 
+		// route info
+		if env.Route != "" {
+			ret["route"] = strings.Split(env.Route, "\n")
 		}
 	}
 
-	//route info
-	route, _ := js.Get("env").Get("route").String()
-
-	//mem info
-	memInfo := js.Get("mem").Get("meminfo")
-	var memTotal, memUsed, memUsage int64
-	if nil != memInfo {
-		memTotal, _ = util.GetInt64ByInterface(memInfo.Get("total").Interface())
-		memUsed, _ = util.GetInt64ByInterface(memInfo.Get("used").Interface())
-		memUsageF, _ := memInfo.Get("usedPercent").Float64()
-		memUsage = int64(100*memUsageF + 0.5)
-		memTotal = (memTotal + unitMB - 1) / unitMB
-		memUsed = (memUsed + unitMB - 1) / unitMB
-
-	}
-	//系统负载信息
-	load := js.Get("load").Get("load_avg")
-	strLoadavg := ""
-	if nil != load {
-		load1 := load.Get("load1").Interface()
-		load5 := load.Get("load5").Interface()
-		load15 := load.Get("load15").Interface()
-		strLoadavg = fmt.Sprintf("%v %v %v", load1, load5, load15)
-		strLoadavg = strings.Replace(strLoadavg, "nil", "", -1)
+	// mem info
+	if mem := snap.Mem; mem != nil {
+		if info := mem.Meminfo; info != nil {
+			ret["memUsage"] = uint64(100*info.UsedPercent + 0.5)
+			ret["Mem"] = (info.Total + unitMB - 1) / unitMB
+			ret["memUsed"] = (info.Used + unitMB - 1) / unitMB
+		}
 	}
 
-	ret["Cpu"] = cpuNum
-	ret["cpuUsage"] = cpuUsage
-	ret["Mem"] = memTotal
-	ret["memUsage"] = memUsage
-	ret["memUsed"] = memUsed
-
-	ret["Disk"] = diskTotal
-	ret["diskUsage"] = diskUsage
-	if "" != hosts {
-		ret["hosts"] = strings.Split(hosts, "\n")
-	}
-	if "" != iptables {
-		ret["iptables"] = strings.Split(iptables, "\n")
-	}
-	if 0 < len(crontabs) {
-		ret["crontab"] = crontabs
-
-	}
-	//not empty
-	if "" != route {
-		ret["route"] = strings.Split(route, "\n")
+	// load info
+	if load := snap.Load; load != nil {
+		if loadAvg := load.LoadAvg; loadAvg != nil {
+			ret["loadavg"] = fmt.Sprintf("%.2f %.2f %.2f", loadAvg.Load1, loadAvg.Load5, loadAvg.Load15)
+		}
 	}
 
-	if "" != strLoadavg {
-		ret["loadavg"] = strLoadavg
+	// system info
+	if system := snap.System; system != nil {
+		if stat := system.Info.SystemStat; stat != nil {
+			ret["HostName"] = stat.HostName
+			ret["OsName"] = stat.OS
+			ret["bootTime"] = stat.BootTime
+		}
 	}
 
-	//os info
-	ret["HostName"], _ = js.Get("system").Get("info").Get("hostname").String()
-	ret["OsName"], _ = js.Get("system").Get("info").Get("os").String()
-	ret["bootTime"], _ = util.GetIntByInterface(js.Get("system").Get("info").Get("bootTime").Interface())
-	ret["upTime"], _ = js.Get("datetime").String()
-	ret["timezone_number"], _ = util.GetIntByInterface(js.Get("timezone").Interface())
+	ret["upTime"] = snap.DateTime
+	ret["timezone_number"] = snap.TimeZone
 
-	//time zone info
-	city, _ := js.Get("city").String()
-	country, _ := js.Get("country").String()
+	// time zone info
+	if snap.Country != "" && snap.City != "" {
+		ret["timezone"] = snap.Country + "/" + snap.City
+	} else if snap.Country != "" {
+		ret["timezone"] = snap.Country
+	} else if snap.City != "" {
+		ret["timezone"] = snap.City
+	}
 
-	ret["timezone"] = country + "/" + city
-	ret["rcvRate"], ret["sendRate"], err = getSnapNetInfo(js.Get("net").Get("dev"), unitMB)
-	// $dataNetDev = !empty($data['net']['dev']) ? $data['net']['dev'] : array();*/
+	// net info
+	if net := snap.Net; net != nil {
+		ret["rcvRate"], ret["sendRate"], _ = calculateNetSpeed(net.Dev, unitMB)
+	}
+
 	return ret, nil
-
 }
 
-func getSnapNetInfo(netinfosI *simplejson.Json, unitMB int64) (int64, int64, error) {
-	netinfos, err := netinfosI.Array()
-	var rcvRate int64 = 0
-	var sendRate int64 = 0
+// getSnapNetInfo calculates net rcvRate and sendRate
+func calculateNetSpeed(netInfo []DevInfo, unitMB uint64) (uint64, uint64, error) {
+	var rcvRate uint64 = 0
+	var sendRate uint64 = 0
 
-	if nil == err {
-
-		for _, netinfoI := range netinfos {
-
-			netinfo, ok := netinfoI.(map[string]interface{})
-			if ok {
-				name, ok := netinfo["name"].(string)
-				if !ok {
-					continue
-				}
-				if 0 <= strings.Index(name, "lo") {
-					continue
-				}
-				rcvRateVal, _ := util.GetInt64ByInterface(netinfo["speedRecv"])
-				sendRateVal, _ := util.GetInt64ByInterface(netinfo["speedSent"])
-				rcvRate += rcvRateVal
-				sendRate += sendRateVal
-			}
+	for _, info := range netInfo {
+		if 0 <= strings.Index(info.Name, "lo") {
+			continue
 		}
+		rcvRate += info.SpeedRecv
+		sendRate += info.SpeedSent
 	}
+
 	rcvRate = 100 * rcvRate / unitMB
 	sendRate = 100 * sendRate / unitMB
-	return rcvRate, sendRate, err
+	return rcvRate, sendRate, nil
 }

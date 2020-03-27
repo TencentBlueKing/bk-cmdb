@@ -12,11 +12,15 @@
 
 package types
 
+import (
+	"configcenter/src/storage/mongodb"
+)
+
 // MsgHeader message header
 type MsgHeader struct {
+	OPCode    OPCode
 	TxnID     string
 	RequestID string
-	OPCode    OPCode
 }
 
 // OPCode operation code type
@@ -37,6 +41,12 @@ const (
 	OPCountCode
 	// OPAggregateCode aggregate operation code
 	OPAggregateCode
+	// OPDDLCode db collection and index operation code
+	OPDDLCode
+	// OPUpdateUnsetCode update $unset operation code
+	OPUpdateUnsetCode
+	// OPUpdateByOperatorCode update can use user operator
+	OPUpdateByOperatorCode
 	// OPStartTransactionCode start a transaction code
 	OPStartTransactionCode OPCode = 666
 	// OPCommitCode transaction commit operation code
@@ -62,11 +72,13 @@ func (c OPCode) String() string {
 	case OPStartTransactionCode:
 		return "OPStartTransaction"
 	case OPCommitCode:
-		return "OPCommit"
+		return "OPCommitTransaction"
 	case OPAbortCode:
-		return "OPAbort"
+		return "OPAbortTransaction"
 	case OPAggregateCode:
 		return "OPAggregate"
+	case OPDDLCode:
+		return "OPDDL"
 	default:
 		return "UNKNOW"
 	}
@@ -105,7 +117,7 @@ type OPDeleteOperation struct {
 type OPFindOperation struct {
 	MsgHeader           // 标准报文头
 	Collection string   // "dbname.collectionname"
-	Projection Document // ""
+	Fields     []string // return field. default return all
 	Selector   Document // 文档查询条件
 	Start      uint64   // start index
 	Limit      uint64   // limit index
@@ -143,6 +155,56 @@ type OPCommitOperation struct {
 // OPAbortOperation abort operation request structure
 type OPAbortOperation struct {
 	MsgHeader
+}
+
+// OPDDLCommand operation migrate comand  code
+type OPDDLCommand uint32
+
+const (
+	// OPDDLHasCollectCommand Determine if a collection exists
+	OPDDLHasCollectCommand OPDDLCommand = iota + 1
+
+	// OPDDLDropCollectCommand drop collection
+	OPDDLDropCollectCommand
+
+	// OPDDLCreateCollectCommand create collection
+	OPDDLCreateCollectCommand
+
+	// OPDDLCreateIndexCommand create index
+	OPDDLCreateIndexCommand
+
+	// OPDDLIndexCommand get all  index from collection
+	OPDDLIndexCommand
+
+	// OPDDLDropIndexCommand drop index
+	OPDDLDropIndexCommand
+)
+
+func (m OPDDLCommand) String() string {
+	switch m {
+	case OPDDLHasCollectCommand:
+		return "has_collection"
+	case OPDDLDropCollectCommand:
+		return "drop_collection"
+	case OPDDLCreateCollectCommand:
+		return "create_collection"
+	case OPDDLCreateIndexCommand:
+		return "create_index"
+	case OPDDLIndexCommand:
+		return "find_index"
+	case OPDDLDropIndexCommand:
+		return "drop_index"
+	default:
+		return "UNKNOW DDL"
+	}
+}
+
+// OPDDLOperation   database collection and index operation request structure
+type OPDDLOperation struct {
+	MsgHeader         // 标准报文头
+	Collection string // "dbname.collectionname"
+	Command    OPDDLCommand
+	Index      mongodb.Index
 }
 
 // ReplyHeader the rpc message header structure

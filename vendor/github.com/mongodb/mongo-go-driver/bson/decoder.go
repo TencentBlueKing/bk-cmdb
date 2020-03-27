@@ -14,6 +14,7 @@ import (
 
 	"github.com/mongodb/mongo-go-driver/bson/bsoncodec"
 	"github.com/mongodb/mongo-go-driver/bson/bsonrw"
+	"github.com/mongodb/mongo-go-driver/bson/util"
 )
 
 // This pool is used to keep the allocations of Decoders down. This is only used for the Marshal*
@@ -79,11 +80,22 @@ func (d *Decoder) Decode(val interface{}) error {
 		return fmt.Errorf("argument to Decode must be a pointer to a type, but got %v", rval)
 	}
 	rval = rval.Elem()
+	oldRval := rval
+
+	// bson Unmarshal can only support document, in time, the number of rows in mongo. The format of this data should be map[string]interface
+	if util.ExtendInterfaceDecode(rval) {
+		rval = reflect.New(util.MapType).Elem()
+	}
 	decoder, err := d.dc.LookupDecoder(rval.Type())
 	if err != nil {
 		return err
 	}
-	return decoder.DecodeValue(d.dc, d.vr, rval)
+	if err := decoder.DecodeValue(d.dc, d.vr, rval); err != nil {
+		return err
+	}
+
+	oldRval.Set(rval)
+	return nil
 }
 
 // Reset will reset the state of the decoder, using the same *DecodeContext used in

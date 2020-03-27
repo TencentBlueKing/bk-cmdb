@@ -1,120 +1,120 @@
 <template>
     <div class="resource-layout clearfix">
-        <cmdb-hosts-filter class="resource-filter fr"
-            :active-tab="['filter']"
-            :active-setting="['reset', 'filter-config']"
-            :filter-config-key="filter.filterConfigKey"
-            @on-refresh="handleRefresh">
-            <div class="filter-group" slot="scope">
-                <label class="filter-label">{{$t("Hosts['搜索范围']")}}</label>
-                <cmdb-form-bool class="filter-field" :disabled="true" :checked="true">
-                    <span class="filter-field-label">{{$t("Hosts['未分配主机']")}}</span>
-                </cmdb-form-bool>
-                <cmdb-form-bool class="filter-field" v-model="filter.assigned">
-                    <span class="filter-field-label">{{$t("Hosts['已分配主机']")}}</span>
-                </cmdb-form-bool>
-            </div>
-        </cmdb-hosts-filter>
         <cmdb-hosts-table class="resource-main" ref="resourceTable"
-            :authority="resourceAuthority"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
             :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
+            :edit-auth="$OPERATION.U_RESOURCE_HOST"
+            :delete-auth="$OPERATION.D_RESOURCE_HOST"
+            :save-auth="$OPERATION.U_RESOURCE_HOST"
+            :show-scope="true"
+            :show-history="true"
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
-            <div class="resource-options clearfix" slot="options">
-                <div class="fl">
-                    <bk-button class="options-button" type="primary" style="margin-left: 0"
-                        :disabled="!resourceAuthority.includes('update')"
+            <template slot="options-left">
+                <cmdb-auth v-if="isAdminView" :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
+                    <bk-button slot-scope="{ disabled }"
+                        class="options-button"
+                        theme="primary"
+                        style="margin-left: 0"
+                        :disabled="disabled"
                         @click="importInst.show = true">
-                        {{$t('HostResourcePool[\'导入主机\']')}}
+                        {{$t('导入主机')}}
                     </bk-button>
-                    <cmdb-selector class="options-business-selector"
-                        :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
-                        :disabled="!table.checked.length || !resourceAuthority.includes('update')"
-                        :list="business"
-                        :auto-select="false"
-                        setting-key="bk_biz_id"
-                        display-key="bk_biz_name"
+                </cmdb-auth>
+                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_RESOURCE_HOST })">
+                    <bk-select class="options-business-selector" slot-scope="{ disabled }"
+                        v-if="isAdminView"
+                        font-size="medium"
+                        :popover-width="180"
+                        :searchable="true"
+                        :disabled="!table.checked.length || disabled"
+                        :clearable="false"
+                        :placeholder="$t('分配到')"
                         v-model="assignBusiness"
-                        @on-selected="handleAssignHosts">
-                    </cmdb-selector>
-                    <bk-button class="options-button" type="default"
-                        :disabled="!table.checked.length || !resourceAuthority.includes('update')"
-                        @click="handleMultipleEdit">
-                        {{$t('BusinessTopology[\'修改\']')}}
-                    </bk-button>
-                    <bk-button class="options-button options-button-delete" type="default"
-                        :disabled="!table.checked.length || !resourceAuthority.includes('delete')"
-                        @click="handleMultipleDelete">
-                        {{$t('Common[\'删除\']')}}
-                    </bk-button>
-                    <bk-button class="options-button" type="submit default"
-                        form="exportForm"
-                        :disabled="!table.checked.length">
-                        {{$t('HostResourcePool[\'导出选中\']')}}
-                    </bk-button>
-                    <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
-                        <input type="hidden" name="bk_host_id" :value="table.checked">
-                        <input type="hidden" name="bk_biz_id" value="-1">
-                    </form>
-                    <cmdb-clipboard-selector class="options-clipboard"
-                        :list="clipboardList"
-                        :disabled="!table.checked.length"
-                        @on-copy="handleCopy">
-                    </cmdb-clipboard-selector>
-                </div>
-                <div class="fr">
-                    <bk-button class="options-button options-icon" type="default"
-                        v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')"
-                        @click="handleColumnsConfig">
-                        <i class="icon-cc-setting"></i>
-                    </bk-button>
-                    <bk-button class="options-button options-icon" type="default"
-                        v-tooltip="$t('Common[\'查看删除历史\']')"
-                        @click="routeToHistory">
-                        <i class="icon-cc-history"></i>
-                    </bk-button>
-                </div>
-            </div>
+                        @selected="handleAssignHosts">
+                        <bk-option id="empty" :name="$t('分配到')" hidden></bk-option>
+                        <bk-option v-for="option in businessList"
+                            :key="option.bk_biz_id"
+                            :id="option.bk_biz_id"
+                            :name="option.bk_biz_name">
+                        </bk-option>
+                    </bk-select>
+                </cmdb-auth>
+                <cmdb-clipboard-selector class="options-clipboard"
+                    :list="clipboardList"
+                    :disabled="!table.checked.length"
+                    @on-copy="handleCopy">
+                </cmdb-clipboard-selector>
+                <cmdb-button-group
+                    :buttons="buttons"
+                    :expand="!isAdminView">
+                </cmdb-button-group>
+            </template>
         </cmdb-hosts-table>
-        <cmdb-slider :is-show.sync="importInst.show" :title="$t('HostResourcePool[\'批量导入\']')">
-           <bk-tab :active-name.sync="importInst.active" slot="content">
-                <bk-tabpanel name="import" :title="$t('HostResourcePool[\'批量导入\']')">
+        <bk-sideslider
+            v-transfer-dom
+            :is-show.sync="importInst.show"
+            :width="800"
+            :title="$t('批量导入')">
+            <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content" v-if="importInst.show">
+                <bk-tab-panel name="import" :label="$t('批量导入')">
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
-                        :templateUrl="importInst.templateUrl"
-                        :importUrl="importInst.importUrl"
+                        :template-url="importInst.templateUrl"
+                        :import-url="importInst.importUrl"
                         @success="getHostList(true)"
                         @partialSuccess="getHostList(true)">
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
-                            {{$t('HostResourcePool["说明：内网IP为必填列"]')}}
+                            {{$t('说明：内网IP为必填列')}}
                         </span>
                     </cmdb-import>
-                </bk-tabpanel>
-                <bk-tabpanel name="agent" :title="$t('HostResourcePool[\'自动导入\']')">
+                </bk-tab-panel>
+                <bk-tab-panel name="agent" :label="$t('自动导入')">
                     <div class="automatic-import">
-                        <p>{{$t("HostResourcePool['agent安装说明']")}}</p>
+                        <p>{{$t("agent安装说明")}}</p>
                         <div class="back-contain">
                             <i class="icon-cc-skip"></i>
-                            <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入节点管理']")}}</a>
+                            <a href="javascript:void(0)" @click="openAgentApp">{{$t('点此进入节点管理')}}</a>
                         </div>
                     </div>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
+        </bk-sideslider>
+        <bk-dialog
+            class="assign-dialog"
+            v-model="assignDialog.show"
+            :title="$t('确认分配到业务')"
+            :show-footer="false"
+            :esc-close="false"
+            @cancel="cancelAssignHosts">
+            <i18n class="assign-info" path="确认转移主机信息" tag="div">
+                <span place="num">{{table.checked.length}}</span>
+                <span place="name">{{assignDialog.business['bk_biz_name']}}</span>
+            </i18n>
+            <div class="assign-footer">
+                <bk-button
+                    class="mr10"
+                    theme="primary"
+                    :loading="$loading('transferResourcehostToIdleModule')"
+                    @click="assignHosts">
+                    {{$t('确定')}}
+                </bk-button>
+                <bk-button @click="cancelAssignHosts">{{$t('取消')}}</bk-button>
+            </div>
+        </bk-dialog>
     </div>
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
-    import cmdbHostsFilter from '@/components/hosts/filter'
+    import { mapGetters, mapActions, mapState } from 'vuex'
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
+    import cmdbButtonGroup from '@/components/ui/other/button-group'
     export default {
         components: {
-            cmdbHostsFilter,
             cmdbHostsTable,
-            cmdbImport
+            cmdbImport,
+            cmdbButtonGroup
         },
         data () {
             return {
@@ -130,27 +130,53 @@
                     columnsConfigKey: 'resource_table_columns',
                     exportUrl: `${window.API_HOST}hosts/export`
                 },
-                filter: {
-                    filterConfigKey: 'resource_filter_fields',
-                    business: -1,
-                    assigned: false,
-                    params: null,
-                    paramsResolver: null
-                },
-                assignBusiness: '',
+                assignBusiness: 'empty',
                 importInst: {
                     show: false,
                     active: 'import',
                     templateUrl: `${window.API_HOST}importtemplate/host`,
                     importUrl: `${window.API_HOST}hosts/import`
+                },
+                isDropdownShow: false,
+                ready: false,
+                businessList: [],
+                assignDialog: {
+                    show: false,
+                    business: {}
                 }
             }
         },
         computed: {
             ...mapGetters(['userName', 'isAdminView']),
-            ...mapGetters('objectBiz', ['business', 'bizId']),
+            ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
+            ...mapState('hosts', ['filterParams']),
+            buttons () {
+                return [{
+                    id: 'edit',
+                    text: this.$t('修改'),
+                    handler: this.handleMultipleEdit,
+                    disabled: !this.table.checked.length,
+                    auth: this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
+                }, {
+                    id: 'delete',
+                    text: this.$t('删除'),
+                    handler: this.handleMultipleDelete,
+                    disabled: !this.table.checked.length,
+                    auth: this.$authResources({ type: this.$OPERATION.D_RESOURCE_HOST }),
+                    available: this.isAdminView
+                }, {
+                    id: 'export',
+                    text: this.$t('导出'),
+                    handler: this.exportField,
+                    disabled: !this.table.checked.length
+                }]
+            },
             columnsConfigKey () {
                 return `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+            },
+            customColumns () {
+                return this.usercustom[this.columnsConfigKey]
             },
             clipboardList () {
                 return this.table.header.filter(header => header.type !== 'checkbox')
@@ -161,9 +187,6 @@
                 const businessProperties = this.properties.biz.filter(property => ['bk_biz_name'].includes(property['bk_property_id']))
                 const hostProperties = this.properties.host
                 return [...setProperties, ...moduleProperties, ...businessProperties, ...hostProperties]
-            },
-            resourceAuthority () {
-                return this.$store.getters['userPrivilege/globalBusiAuthority']('resource')
             }
         },
         watch: {
@@ -171,46 +194,47 @@
                 if (!show) {
                     this.importInst.active = 'import'
                 }
+            },
+            filterParams () {
+                if (this.ready) {
+                    this.getHostList(false, true)
+                }
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["主机"]'))
             try {
-                this.setQueryParams()
-                await Promise.all([
-                    this.getParams(),
-                    this.getProperties()
-                ])
+                await this.getFullAmountBusiness()
+                await this.getProperties()
                 this.getHostList()
+                this.ready = true
             } catch (e) {
-                console.log(e)
+                console.error(e)
             }
         },
+        beforeDestroy () {
+            this.ready = false
+        },
         methods: {
+            ...mapActions('hostBatch', ['exportHost']),
             ...mapActions('hostSearch', ['searchHost']),
             ...mapActions('hostDelete', ['deleteHost']),
             ...mapActions('hostRelation', ['transferResourcehostToIdleModule']),
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
-            setQueryParams () {
-                const query = this.$route.query
-                if (query.hasOwnProperty('assigned')) {
-                    this.filter.assigned = ['true', 'false'].includes(query.assigned) ? query.assigned === 'true' : !!query.assigned
+            async getFullAmountBusiness () {
+                try {
+                    const data = await this.$http.get('biz/simplify?sort=bk_biz_name')
+                    this.businessList = data.info || []
+                } catch (e) {
+                    console.error(e)
+                    this.businessList = []
                 }
-            },
-            getParams () {
-                return new Promise((resolve, reject) => {
-                    this.filter.paramsResolver = () => {
-                        this.filter.paramsResolver = null
-                        resolve()
-                    }
-                })
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
-                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
-                    }, {inject: false}),
+                    }, { inject: false }),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
@@ -222,105 +246,68 @@
                     return result
                 })
             },
-            handleRefresh (params) {
-                this.filter.params = params
-                if (this.filter.paramsResolver) {
-                    this.filter.paramsResolver()
-                } else {
-                    this.getHostList(true)
-                }
+            getHostList (resetPage = false, event = false) {
+                const params = this.getParams()
+                this.$refs.resourceTable.search(-1, params, resetPage, event)
             },
-            getHostList (resetPage = false) {
-                this.$refs.resourceTable.search(this.filter.business, this.getScopedParams(), resetPage)
-            },
-            getScopedParams () {
-                const params = this.$tools.clone(this.filter.params)
-                if (!this.filter.assigned) {
-                    const businessParams = params.condition.find(condition => condition['bk_obj_id'] === 'biz')
-                    businessParams.condition.push({
-                        field: 'default',
-                        operator: '$eq',
-                        value: 1
+            getParams () {
+                const defaultModel = ['biz', 'set', 'module', 'host']
+                const params = {
+                    bk_biz_id: -1,
+                    ip: this.filterParams.ip,
+                    condition: defaultModel.map(model => {
+                        return {
+                            bk_obj_id: model,
+                            condition: this.filterParams[model] || [],
+                            fields: []
+                        }
                     })
                 }
                 return params
             },
-            routeToHistory () {
-                this.$router.push({
-                    name: 'modelHistory',
-                    params: {
-                        objId: 'host'
-                    },
-                    query: {
-                        relative: '/resource'
-                    }
-                })
-            },
-            handleAssignHosts (businessId, business) {
+            handleAssignHosts (businessId, option) {
+                const business = {
+                    bk_biz_id: businessId,
+                    bk_biz_name: option.name
+                }
                 if (!businessId) return
                 if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('Hosts["请勿选择已分配主机"]'))
-                    this.assignBusiness = ''
-                } else {
-                    this.$bkInfo({
-                        title: this.$t("HostResourcePool['请确认是否转移']"),
-                        content: this.getConfirmContent(business),
-                        confirmFn: () => {
-                            this.assignHosts(business)
-                        },
-                        cancelFn: () => {
-                            this.assignBusiness = ''
-                        }
+                    this.$error(this.$t('请勿选择已分配主机'))
+                    this.$nextTick(() => {
+                        this.assignBusiness = 'empty'
                     })
+                } else {
+                    this.assignDialog.business = business
+                    this.assignDialog.show = true
                 }
             },
             hasSelectAssignedHost () {
-                const allList = this.$refs.resourceTable.table.allList
+                const allList = this.$refs.resourceTable.table.list
                 const list = allList.filter(item => this.table.checked.includes(item['host']['bk_host_id']))
                 const existAssigned = list.some(item => item['biz'].some(biz => biz.default !== 1))
                 return existAssigned
             },
-            assignHosts (business) {
+            cancelAssignHosts () {
+                this.assignBusiness = 'empty'
+                this.assignDialog.show = false
+            },
+            assignHosts () {
                 this.transferResourcehostToIdleModule({
                     params: {
-                        'bk_biz_id': business['bk_biz_id'],
+                        'bk_biz_id': this.assignDialog.business['bk_biz_id'],
                         'bk_host_id': this.table.checked
+                    },
+                    config: {
+                        requestId: 'transferResourcehostToIdleModule'
                     }
                 }).then(() => {
-                    this.$success(this.$t("HostResourcePool['分配成功']"))
-                    this.assignBusiness = ''
+                    this.$success(this.$t('分配成功'))
                     this.$refs.resourceTable.table.checked = []
                     this.$refs.resourceTable.handlePageChange(1)
+                }).finally(() => {
+                    this.assignBusiness = 'empty'
+                    this.assignDialog.show = false
                 })
-            },
-            getConfirmContent (business) {
-                const render = this.$createElement
-                let content
-                if (this.$i18n.locale === 'en') {
-                    content = render('p', [
-                        render('span', 'Selected '),
-                        render('span', {
-                            style: {color: '#3c96ff'}
-                        }, this.table.checked.length),
-                        render('span', ' Hosts Transfer to Idle machine under '),
-                        render('span', {
-                            style: {color: '#3c96ff'}
-                        }, business['bk_biz_name'])
-                    ])
-                } else {
-                    content = render('p', [
-                        render('span', '选中的 '),
-                        render('span', {
-                            style: {color: '#3c96ff'}
-                        }, this.table.checked.length),
-                        render('span', ' 个主机转移到 '),
-                        render('span', {
-                            style: {color: '#3c96ff'}
-                        }, business['bk_biz_name']),
-                        render('span', ' 下的空闲机模块')
-                    ])
-                }
-                return content
             },
             handleChecked (checked) {
                 this.table.checked = checked
@@ -328,22 +315,23 @@
             handleSetHeader (header) {
                 this.table.header = header
             },
-            handleColumnsConfig () {
-                this.$refs.resourceTable.columnsConfig.show = true
-            },
             handleCopy (target) {
                 this.$refs.resourceTable.handleCopy(target)
             },
             handleMultipleEdit () {
+                if (this.hasSelectAssignedHost()) {
+                    this.$error(this.$t('请勿选择已分配主机'))
+                    return false
+                }
                 this.$refs.resourceTable.handleMultipleEdit()
             },
             handleMultipleDelete () {
                 if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('Hosts["请勿选择已分配主机"]'))
+                    this.$error(this.$t('请勿选择已分配主机'))
                     return false
                 }
                 this.$bkInfo({
-                    title: `${this.$t("HostResourcePool['确定删除选中的主机']")}？`,
+                    title: `${this.$t('确定删除选中的主机')}？`,
                     confirmFn: () => {
                         this.deleteHost({
                             params: {
@@ -353,7 +341,7 @@
                                 }
                             }
                         }).then(() => {
-                            this.$success(this.$t("HostResourcePool['成功删除选中的主机']"))
+                            this.$success(this.$t('成功删除选中的主机'))
                             this.$refs.resourceTable.table.checked = []
                             this.$refs.resourceTable.handlePageChange(1)
                         })
@@ -361,16 +349,50 @@
                 })
             },
             openAgentApp () {
-                let agentAppUrl = window.Site.agent
-                if (agentAppUrl) {
-                    if (agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
-                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_nodeman'}), '*')
+                const agent = window.Site.agent
+                if (agent) {
+                    const topWindow = window.top
+                    const isPaasConsole = topWindow !== window
+                    if (isPaasConsole) {
+                        topWindow.postMessage(JSON.stringify({
+                            action: 'open_other_app',
+                            app_code: 'bk_nodeman'
+                        }), '*')
                     } else {
-                        window.open(agentAppUrl)
+                        window.open(agent)
                     }
                 } else {
-                    this.$warn(this.$t("HostResourcePool['未配置Agent安装APP地址']"))
+                    this.$warn(this.$t('未配置Agent安装APP地址'))
                 }
+            },
+            exportExcel (response) {
+                const contentDisposition = response.headers['content-disposition']
+                const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
+                const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+                const link = document.createElement('a')
+                link.style.display = 'none'
+                link.href = url
+                link.setAttribute('download', fileName)
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            },
+            async exportField () {
+                const formData = new FormData()
+                formData.append('bk_host_id', this.table.checked)
+                if (this.customColumns) {
+                    formData.append('export_custom_fields', this.customColumns)
+                }
+                formData.append('bk_biz_id', '-1')
+                const res = await this.exportHost({
+                    params: formData,
+                    config: {
+                        globalError: false,
+                        originalResponse: true,
+                        responseType: 'blob'
+                    }
+                })
+                this.exportExcel(res)
             }
         }
     }
@@ -378,12 +400,11 @@
 
 <style lang="scss" scoped>
     .resource-layout{
-        height: 100%;
-        padding: 0;
+        padding: 15px 0 0 0;
         overflow: hidden;
         .resource-main{
             height: 100%;
-            padding: 20px;
+            padding: 0 20px;
             overflow: hidden;
         }
         .resource-filter{
@@ -399,46 +420,38 @@
             }
         }
     }
-    .resource-options{
-        font-size: 0;
-        .options-button{
-            position: relative;
-            display: inline-block;
-            vertical-align: middle;
-            font-size: 14px;
-            margin: 0 5px;
-            padding: 0 10px;
-            &:hover{
-                z-index: 1;
-            }
-            &-delete:hover{
-                border-color: #ef4c4c;
-                color: #ef4c4c;
-            }
-            &-history{
-                width: 36px;
-                padding: 0;
-                margin: 0 0 0 10px;
-                border-radius: 2px;
-            }
-            &.options-icon {
-                border-radius: 0;
-                margin: 0 -1px 0 0;
-            }
+    .options-button{
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 14px;
+        margin: 0 10px 0 0;
+        padding: 0 10px;
+        &:hover{
+            z-index: 1;
         }
-        .options-clipboard {
-            margin: 0 5px;
+        &-delete:hover{
+            border-color: #ef4c4c;
+            color: #ef4c4c;
         }
-        .options-table-selector,
-        .options-business-selector{
-            margin: 0 5px 0 0;
+        &-history{
+            width: 36px;
+            padding: 0;
+            margin: 0 0 0 10px;
+            border-radius: 2px;
         }
-        .options-business-selector{
-            width: 180px;
+        &.options-icon {
+            border-radius: 0;
+            margin: 0 -1px 0 0;
         }
     }
-    .resource-table{
-        margin-top: 20px;
+    .options-clipboard {
+        margin: 0 10px 0 0px;
+    }
+    .options-business-selector{
+        display: inline-block;
+        vertical-align: middle;
+        margin: 0 10px 0 0;
     }
     .automatic-import{
         padding:40px 30px 0 30px;
@@ -450,6 +463,22 @@
             }
             a{
                 color:#3c96ff;
+            }
+        }
+    }
+    .assign-dialog {
+        /deep/ .bk-dialog-body {
+            padding: 0 50px 40px;
+        }
+        .assign-info span {
+            color: #3c96ff;
+        }
+        .assign-footer {
+            padding-top: 20px;
+            font-size: 0;
+            text-align: center;
+            .bk-button-normal {
+                width: 96px;
             }
         }
     }

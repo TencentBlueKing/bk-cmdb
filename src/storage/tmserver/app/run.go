@@ -17,66 +17,31 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
 	mgo "configcenter/src/storage/mongodb/driver"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/tmserver/service"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
 
 // Run main goroute
-func Run(ctx context.Context, op *options.ServerOption) error {
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	coreService := service.New(svrInfo.IP, svrInfo.Port)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TXC, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
 	tmServer := &Server{}
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_TXC,
-		op.ServConf.ExConfig,
-		tmServer.onConfigUpdate,
-		discover,
-		bonC)
-
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: tmServer.onConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -98,6 +63,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		tmServer.configLock.Unlock()
 
 		// connect db
+		blog.Infof("connecting to mongo %v", tmServer.config.MongoDB.BuildURI())
 		db := mgo.NewClient(tmServer.config.MongoDB.BuildURI())
 		err = db.Open()
 		if nil != err {
@@ -106,11 +72,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		blog.Infof("connected to mongo %v", tmServer.config.MongoDB.BuildURI())
 
-		// set core service
+		// set logics service
 		coreService.SetConfig(engine, db, tmServer.config.Transaction)
 		break
 	}
-
+	tmServer.engin = engine
+	handler := restful.NewContainer().Add(coreService.WebService())
+	err = backbone.StartServer(ctx, cancel, engine, handler, true)
+	if err != nil {
+		return err
+	}
 	// waiting to exit
 	select {
 	case <-ctx.Done():

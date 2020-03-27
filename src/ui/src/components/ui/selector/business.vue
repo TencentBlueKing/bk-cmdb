@@ -1,97 +1,148 @@
 <template>
-    <bk-selector
-        :list="privilegeBusiness"
-        :selected.sync="localSelected"
-        :searchable="privilegeBusiness.length > 5"
+    <bk-select style="text-align: left;"
+        v-model="localSelected"
+        :searchable="true"
+        :clearable="false"
+        :placeholder="$t('请选择业务')"
         :disabled="disabled"
-        setting-key="bk_biz_id"
-        display-key="bk_biz_name"
-        search-key="bk_biz_name">
-    </bk-selector>
+        :popover-options="popoverOptions">
+        <bk-option
+            v-for="(option, index) in authorizedBusiness"
+            :key="index"
+            :id="option.bk_biz_id"
+            :name="option.bk_biz_name">
+        </bk-option>
+        <div class="business-extension" slot="extension" v-if="showApplyPermission || showApplyCreate">
+            <a href="javascript:void(0)" class="extension-link"
+                v-if="showApplyPermission"
+                @click="handleApplyPermission">
+                <i class="bk-icon icon-plus-circle"></i>
+                {{$t('申请业务权限')}}
+            </a>
+            <a href="javascript:void(0)" class="extension-link"
+                v-if="showApplyCreate"
+                @click="handleApplyCreate">
+                <i class="bk-icon icon-plus-circle"></i>
+                {{$t('申请创建业务')}}
+            </a>
+        </div>
+    </bk-select>
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
+    import { translateAuth } from '@/setup/permission'
     export default {
         name: 'cmdb-business-selector',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {
                 type: Boolean,
                 default: false
-            }
+            },
+            popoverOptions: {
+                type: Object,
+                default () {
+                    return {}
+                }
+            },
+            requestConfig: {
+                type: Object,
+                default () {
+                    return {}
+                }
+            },
+            showApplyPermission: Boolean,
+            showApplyCreate: Boolean
         },
         data () {
             return {
+                authorizedBusiness: [],
                 localSelected: ''
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['privilegeBusiness', 'bizId'])
+            requireBusiness () {
+                return this.$route.meta.requireBusiness
+            }
         },
         watch: {
-            localSelected (localSelected, prevSelected) {
+            localSelected (localSelected, old) {
                 window.localStorage.setItem('selectedBusiness', localSelected)
-                if (prevSelected !== '') {
-                    window.location.reload()
-                    return
+                this.setHeader()
+                this.$emit('input', localSelected)
+                this.$emit('on-select', localSelected, old)
+                this.$store.commit('objectBiz/setBizId', localSelected)
+            },
+            requireBusiness () {
+                this.setHeader()
+            }
+        },
+        async created () {
+            this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name', this.requestConfig)
+            if (this.authorizedBusiness.length) {
+                this.init()
+            } else {
+                this.$emit('business-empty')
+            }
+        },
+        methods: {
+            init () {
+                const selected = parseInt(window.localStorage.getItem('selectedBusiness'))
+                const exist = this.authorizedBusiness.some(business => business.bk_biz_id === selected)
+                if (exist) {
+                    this.localSelected = selected
+                } else if (this.authorizedBusiness.length) {
+                    this.localSelected = this.authorizedBusiness[0]['bk_biz_id']
                 }
-                if (this.$route.meta.requireBusiness) {
-                    this.$http.setHeader('bk_biz_id', localSelected)
+            },
+            setHeader () {
+                if (this.requireBusiness) {
+                    this.$http.setHeader('bk_biz_id', this.localSelected)
                 } else {
                     this.$http.deleteHeader('bk_biz_id')
                 }
-                this.$emit('input', localSelected)
-                this.$emit('on-select', localSelected)
-                this.setLocalSelected()
             },
-            value (value) {
-                if (value !== this.localSelected) {
-                    this.setLocalSelected()
-                }
-            },
-            bizId (value) {
-                this.localSelected = value
-            }
-        },
-        beforeCreate () {
-            this.$http.deleteHeader('bk_biz_id')
-        },
-        async created () {
-            await this.getPrivilegeBusiness()
-            if (this.privilegeBusiness.length) {
-                this.setLocalSelected()
-            } else {
-                this.$error(this.$t('Common["您没有业务权限"]'))
-            }
-        },
-        beforeDestroy () {
-            this.$http.deleteHeader('bk_biz_id')
-        },
-        methods: {
-            getPrivilegeBusiness () {
-                return this.$store.dispatch('objectBiz/searchBusiness', {
-                    config: {
-                        requestId: 'post_searchBusiness_$ne_disabled',
-                        fromCache: true
+            async handleApplyPermission () {
+                try {
+                    const permission = []
+                    const operation = this.$tools.getValue(this.$route.meta, 'auth.operation', {})
+                    if (Object.keys(operation).length) {
+                        const translated = await translateAuth(Object.values(operation))
+                        permission.push(...translated)
                     }
-                }).then(business => {
-                    this.$store.commit('objectBiz/setBusiness', business.info)
-                    return business
-                })
-            },
-            setLocalSelected () {
-                const selected = this.value || parseInt(window.localStorage.getItem('selectedBusiness'))
-                const exist = this.privilegeBusiness.some(business => business['bk_biz_id'] === selected)
-                if (exist) {
-                    this.localSelected = selected
-                } else if (this.privilegeBusiness.length) {
-                    this.localSelected = this.privilegeBusiness[0]['bk_biz_id']
+                    const url = await this.$store.dispatch('auth/getSkipUrl', { params: permission })
+                    window.open(url)
+                } catch (e) {
+                    console.error(e)
                 }
-                this.$store.commit('objectBiz/setBizId', this.localSelected)
-            }
+            },
+            handleApplyCreate () {}
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .business-extension {
+        width: calc(100% + 32px);
+        margin-left: -16px;
+    }
+    .extension-link {
+        display: block;
+        line-height: 38px;
+        background-color: #FAFBFD;
+        padding: 0 9px;
+        font-size: 13px;
+        color: #63656E;
+        &:hover {
+            opacity: .85;
+        }
+        .bk-icon {
+            font-size: 18px;
+            color: #979BA5;
+            vertical-align: text-top;
+        }
+    }
+</style>

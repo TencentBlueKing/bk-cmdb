@@ -16,6 +16,7 @@ package mongodb
 type Session interface {
 	OpenCloser
 	Transaction
+	Database
 }
 
 // SessionOptions define the SessionOptions maintaince methods

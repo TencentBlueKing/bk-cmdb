@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -32,21 +33,35 @@ var (
 	headerRow = common.HostAddMethodExcelIndexOffset
 )
 
-//getFilterFields 不需要展示字段
+// getFilterFields 不需要展示字段
 func getFilterFields(objID string) []string {
 	switch objID {
 	case common.BKInnerObjIDHost:
-		return []string{"create_time", "import_from", "bk_cloud_id", "bk_agent_status", "bk_agent_version"}
+		return []string{"create_time", "import_from", "bk_cloud_id", "bk_agent_status", "bk_agent_version", "bk_set_name", "bk_module_name", "bk_biz_name"}
 	default:
 		return []string{"create_time"}
 	}
-	return []string{"create_time"}
+	//return []string{"create_time"}
+}
+
+func getCustomFields(filterFields []string, customFieldsStr string) []string {
+	customFields := strings.Split(customFieldsStr, ",")
+	customFieldsList := make([]string, 0)
+
+	for _, fieldID := range customFields {
+		if util.InStrArr(filterFields, fieldID) || "" == fieldID {
+			continue
+		}
+		customFieldsList = append(customFieldsList, fieldID)
+	}
+	return customFieldsList
 }
 
 // checkExcelHealer check whether invalid fields exists in header and return headers
-func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
+func checkExcelHealer(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
-	//rowLen := len(sheet.Rows[headerRow-1].Cells)
+	// rowLen := len(sheet.Rows[headerRow-1].Cells)
 	var errCells []string
 	ret := make(map[int]string)
 	if headerRow > len(sheet.Rows) {
@@ -67,8 +82,8 @@ func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHead
 	// excel three row  values  exceeding 1/2 does not appear in the field array,
 	// indicating that the third line of the excel template was deleted
 	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 && true == isCheckHeader {
-		//web_import_field_not_found
-		blog.Errorf(defLang.Languagef("web_import_field_not_found", strings.Join(errCells, ",")))
+		// web_import_field_not_found
+		blog.Errorf(defLang.Languagef("web_import_field_not_found, rid: %s", strings.Join(errCells, ",")), rid)
 		return ret, errors.New(defLang.Languagef("web_import_field_not_found", errCells[0]+"..."))
 	}
 	return ret, nil
@@ -82,8 +97,9 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 
 	primaryKeyArr := make([]PropertyPrimaryVal, 0)
 
-	for id, val := range rowMap {
-		property, ok := fields[id]
+	// 非模型字段导出是没有field中没有ID 字段，因为导入的时候，第二行是作为Property
+	for id, property := range fields {
+		val, ok := rowMap[id]
 		if false == ok {
 			continue
 		}
@@ -161,9 +177,10 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 
 }
 
-func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (host map[string]interface{}, errMsg []string) {
+func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (host map[string]interface{}, errMsg []string) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	host = make(map[string]interface{})
-	//errMsg := make([]string, 0)
+	// errMsg := make([]string, 0)
 	for cellIndex, cell := range row.Cells {
 		fieldName, ok := nameIndexMap[cellIndex]
 		if false == ok {
@@ -178,14 +195,14 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 
 		switch cell.Type() {
 		case xlsx.CellTypeString:
-			host[fieldName] = cell.String()
+			host[fieldName] = strings.TrimSpace(cell.String())
 		case xlsx.CellTypeStringFormula:
-			host[fieldName] = cell.String()
+			host[fieldName] = strings.TrimSpace(cell.String())
 		case xlsx.CellTypeNumeric:
 			cellValue, err := cell.Float()
 			if nil != err {
 				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
-				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
+				blog.Errorf("%d row %s column get content error:%s, rid: %s", rowIndex+1, fieldName, err.Error(), rid)
 				continue
 			}
 			host[fieldName] = cellValue
@@ -196,19 +213,19 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 			cellValue, err := cell.GetTime(true)
 			if nil != err {
 				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
-				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
+				blog.Errorf("%d row %s column get content error:%s, rid: %s", rowIndex+1, fieldName, err.Error(), rid)
 				continue
 			}
 			host[fieldName] = cellValue
 		default:
 			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
-			blog.Errorf("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
+			blog.Errorf("unknown the type, %v,   %v, rid: %s", reflect.TypeOf(cell), cell.Type(), rid)
 			continue
 		}
 
 		field, ok := fields[fieldName]
 		if !ok {
-			blog.Errorf("%d row %s field not found ", rowIndex+1, fieldName)
+			blog.Errorf("%d row %s field not found , rid: %s", rowIndex+1, fieldName, rid)
 			continue
 		}
 		switch field.PropertyType {
@@ -229,22 +246,22 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 			}
 		case common.FieldTypeInt:
 			intVal, err := util.GetInt64ByInterface(host[fieldName])
-			//convertor int not err , set field value to correct type
+			// convertor int not err , set field value to correct type
 			if nil == err {
 				host[fieldName] = intVal
 			} else {
-				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
+				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], err.Error(), rid)
 			}
 		case common.FieldTypeFloat:
 			floatVal, err := util.GetFloat64ByInterface(host[fieldName])
 			if nil == err {
 				host[fieldName] = floatVal
 			} else {
-				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
+				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s, rid: %s", fieldName, host[fieldName], err.Error(), rid)
 			}
 		default:
 			if util.IsStrProperty(field.PropertyType) {
-				host[fieldName] = cell.Value
+				host[fieldName] = strings.TrimSpace(cell.Value)
 			}
 
 		}
@@ -264,15 +281,9 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 
 }
 
-// ProductExcelHealer Excel文件头部，
-func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
-
-	type excelHeader struct {
-		first  string
-		second string
-		third  string
-	}
-
+// ProductExcelHeader Excel文件头部，
+func productExcelHealer(ctx context.Context, fields map[string]Property, filter []string, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
 
 	for _, field := range fields {
@@ -280,13 +291,15 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		sheet.Col(index).Width = 18
 		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
 		if true == skip || field.NotExport {
-			//不需要用户输入的类型continue
+			// 不需要用户输入的类型continue
+			sheet.Col(index).Hidden = true
 			continue
 		}
 		isRequire := ""
 
 		if field.IsRequire {
-			isRequire = defLang.Language("web_excel_header_required") //"(必填)"
+			// "(必填)"
+			isRequire = defLang.Language("web_excel_header_required")
 		}
 		if util.Contains(filter, field.ID) {
 			continue
@@ -315,7 +328,9 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 			if ok {
 				enumVals := getEnumNames(optionArr)
 				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-				dd.SetDropList(enumVals)
+				if err := dd.SetDropList(enumVals); err != nil {
+					blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
+				}
 				sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 
 			}
@@ -323,7 +338,9 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 
 		case common.FieldTypeBool:
 			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-			dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse})
+			if err := dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse}); err != nil {
+				blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
+			}
 			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 		default:
@@ -334,8 +351,9 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 
 }
 
-// ProductExcelHealer Excel文件头部，
-func productExcelAssociationHealer(sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+// ProductExcelHeader Excel文件头部，
+func productExcelAssociationHealer(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	cellAsstID := sheet.Cell(0, assciationAsstObjIDIndex)
 	cellAsstID.SetString(defLang.Language("excel_association_object_id"))
@@ -345,7 +363,9 @@ func productExcelAssociationHealer(sheet *xlsx.Sheet, defLang lang.DefaultCCLang
 	cellOpID.SetString(defLang.Language("excel_association_op"))
 	cellOpID.SetStyle(getHeaderFirstRowCellStyle(false))
 	dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-	dd.SetDropList([]string{associationOPAdd, associationOPDelete})
+	if err := dd.SetDropList([]string{associationOPAdd, associationOPDelete}); err != nil {
+		blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, rid)
+	}
 	sheet.Col(associationOPColIndex).SetDataValidationWithStart(dd, 1)
 
 	cellSrcID := sheet.Cell(0, assciationSrcInstIndex)

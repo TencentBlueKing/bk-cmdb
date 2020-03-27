@@ -21,6 +21,14 @@
 			"revisionTime": "2018-05-18T05:39:59Z"
 		},
 		{
+			"checksumSHA1": "J+g0oZePWp2zSIISD2dZZKTxmgg=",
+			"path": "github.com/mitchellh/mapstructure",
+			"revision": "3536a929edddb9a5b34bd6861dc4a9647cb459fe",
+			"revisionTime": "2018-10-05T04:51:35Z",
+			"version": "v1.1.2",
+			"versionExact": "v1.1.2"
+		},
+		{
 			"checksumSHA1": "2jsbDTvwxafPp7FJjJ8IIFlTLjs=",
 			"path": "github.com/mohae/deepcopy",
 			"revision": "c48cc78d482608239f6c4c92a4abd87eb8761c90",
@@ -72,6 +80,18 @@
 		{
 			"path": "https://github.com/mohae/deepcopy.git",
 			"revision": ""
+		},
+		{
+			"checksumSHA1": "j3Th2B1Hpv6UFLMEmA0ZdbO4kGU=",
+			"path": "k8s.io/client-go/third_party/forked/golang/template",
+			"revision": "a32a6f7a3052374fff2c57c5b4b52e64dcd55eed",
+			"revisionTime": "2019-12-14T18:41:36Z"
+		},
+		{
+			"checksumSHA1": "NxJqSXjm8TqeyOcNsxl7OZmE+RA=",
+			"path": "k8s.io/client-go/util/jsonpath",
+			"revision": "a32a6f7a3052374fff2c57c5b4b52e64dcd55eed",
+			"revisionTime": "2019-12-14T18:41:36Z"
 		}
 	],
 	"rootPath": "configcenter"

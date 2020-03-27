@@ -3,13 +3,6 @@
         <img src="../../assets/images/404.png" alt="">
     </div>
 </template>
-<script>
-    export default {
-        created () {
-            this.$store.commit('setHeaderTitle', '')
-        }
-    }
-</script>
 <style lang="scss" scoped>
     .img-404{
         position: relative;

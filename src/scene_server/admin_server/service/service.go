@@ -15,8 +15,7 @@ package service
 import (
 	"context"
 
-	"github.com/emicklei/go-restful"
-
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -24,7 +23,10 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
@@ -32,6 +34,8 @@ type Service struct {
 	db           dal.RDB
 	ccApiSrvAddr string
 	ctx          context.Context
+	Config       options.Config
+	authCenter   *authcenter.AuthCenter
 }
 
 func NewService(ctx context.Context) *Service {
@@ -44,23 +48,39 @@ func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
+func (s *Service) SetAuthCenter(authCenter *authcenter.AuthCenter) {
+	s.authCenter = authCenter
+}
+
 func (s *Service) SetApiSrvAddr(ccApiSrvAddr string) {
 	s.ccApiSrvAddr = ccApiSrvAddr
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+func (s *Service) WebService() *restful.Container {
+	container := restful.NewContainer()
+
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/migrate/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/migrate/v3")
+	api.Filter(s.Engine.Metric().RestfulMiddleWare)
+	api.Filter(rdapi.AllGlobalFilter(getErrFunc))
+	api.Produces(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
-	ws.Route(ws.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.Set))
-	ws.Route(ws.POST("/clear").To(s.clear))
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	api.Route(api.POST("/authcenter/init").To(s.InitAuthCenter))
+	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
+	api.Route(api.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
+	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
+	api.Route(api.GET("/healthz").To(s.Healthz))
 
-	return ws
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
@@ -75,7 +95,8 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// mongodb
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.db.Ping()))
+	healthItem := metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping())
+	meta.Items = append(meta.Items, healthItem)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

@@ -13,130 +13,20 @@
 package instances
 
 import (
-	"encoding/json"
+	"context"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-
-	"github.com/tidwall/gjson"
-	"gopkg.in/mgo.v2/bson"
+	"configcenter/src/common/util"
 )
 
-// EnumOption enum option
-type EnumOption []EnumVal
-
-// IntOption integer option
-type IntOption struct {
-	Min string `bson:"min" json:"min"`
-	Max string `bson:"max" json:"max"`
-}
-
-func getString(val interface{}) string {
-	if val == nil {
-		return ""
-	}
-	if ret, ok := val.(string); ok {
-		return ret
-	}
-	return ""
-}
-
-func getBool(val interface{}) bool {
-	if val == nil {
-		return false
-	}
-	if ret, ok := val.(bool); ok {
-		return ret
-	}
-	return false
-}
-
-// GetDefault returns EnumOption's default value
-func (opt EnumOption) GetDefault() *EnumVal {
-	for index := range opt {
-		if opt[index].IsDefault {
-			return &opt[index]
-		}
-	}
-	return nil
-}
-
-// EnumVal enum option val
-type EnumVal struct {
-	ID        string `bson:"id"           json:"id"`
-	Name      string `bson:"name"         json:"name"`
-	Type      string `bson:"type"         json:"type"`
-	IsDefault bool   `bson:"is_default"   json:"is_default"`
-}
-
-// ParseEnumOption convert val to []EnumVal
-func ParseEnumOption(val interface{}) EnumOption {
-	enumOptions := []EnumVal{}
-	if nil == val || "" == val {
-		return enumOptions
-	}
-	switch options := val.(type) {
-	case []EnumVal:
-		return options
-	case string:
-		err := json.Unmarshal([]byte(options), &enumOptions)
-		if nil != err {
-			blog.Errorf("ParseEnumOption error : %s", err.Error())
-		}
-	case []interface{}:
-		for _, optionVal := range options {
-			if option, ok := optionVal.(map[string]interface{}); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(bson.M); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-				enumOptions = append(enumOptions, enumOption)
-			}
-		}
-	}
-	return enumOptions
-}
-
-//parseIntOption  parse int data in option
-func parseIntOption(val interface{}) IntOption {
-	intOption := IntOption{}
-	if nil == val || "" == val {
-		return intOption
-	}
-	switch option := val.(type) {
-	case string:
-
-		intOption.Min = gjson.Get(option, "min").Raw
-		intOption.Max = gjson.Get(option, "max").Raw
-
-	case map[string]interface{}:
-		intOption.Min = getString(option["min"])
-		intOption.Max = getString(option["max"])
-	}
-	return intOption
-}
-
 // FillLostedFieldValue fill the value in inst map data
-func FillLostedFieldValue(valData mapstr.MapStr, propertys []metadata.Attribute, ignorefields []string) {
-	ignores := map[string]bool{}
-	for _, field := range ignorefields {
-		ignores[field] = true
-	}
+func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	for _, field := range propertys {
 		if field.PropertyID == common.BKChildStr || field.PropertyID == common.BKParentStr {
-			continue
-		}
-		if ignores[field.PropertyID] {
 			continue
 		}
 		_, ok := valData[field.PropertyID]
@@ -149,9 +39,14 @@ func FillLostedFieldValue(valData mapstr.MapStr, propertys []metadata.Attribute,
 			case common.FieldTypeInt:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeEnum:
-				enumOptions := ParseEnumOption(field.Option)
+				enumOptions, err := metadata.ParseEnumOption(ctx, field.Option)
+				if err != nil {
+					blog.Warnf("ParseEnumOption failed: %v, rid: %s", err, rid)
+					valData[field.PropertyID] = nil
+					continue
+				}
 				if len(enumOptions) > 0 {
-					var defaultOption *EnumVal
+					var defaultOption *metadata.EnumVal
 					for _, k := range enumOptions {
 						if k.IsDefault {
 							defaultOption = &k
@@ -171,8 +66,6 @@ func FillLostedFieldValue(valData mapstr.MapStr, propertys []metadata.Attribute,
 			case common.FieldTypeTime:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeUser:
-				valData[field.PropertyID] = nil
-			case common.FieldTypeMultiAsst:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeTimeZone:
 				valData[field.PropertyID] = nil

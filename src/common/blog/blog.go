@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
+	"configcenter/src/common/blog/glog"
 )
 
 // This is temporary until we agree on log dirs and put those into each cmd.
@@ -48,6 +48,10 @@ func (writer GlogWriter) Print(v ...interface{}) {
 }
 func (writer GlogWriter) Printf(format string, v ...interface{}) {
 	glog.InfoDepthf(1, format, v...)
+}
+
+func (writer GlogWriter) Println(v ...interface{}) {
+	glog.InfoDepth(1, v...)
 }
 
 var once sync.Once
@@ -83,8 +87,9 @@ var (
 	Warn  = glog.Warningf
 	Warnf = glog.Warningf
 
-	Error  = glog.Errorf
-	Errorf = glog.Errorf
+	Error       = glog.Errorf
+	Errorf      = glog.Errorf
+	ErrorfDepth = glog.ErrorDepth
 
 	Fatal  = glog.Fatal
 	Fatalf = glog.Fatalf
@@ -145,4 +150,12 @@ type errorFunc interface {
 }
 type stringFunc interface {
 	String() string
+}
+
+func SetV(level int32) {
+	glog.SetV(glog.Level(level))
+}
+
+func GetV() int32 {
+	return int32(glog.GetV())
 }

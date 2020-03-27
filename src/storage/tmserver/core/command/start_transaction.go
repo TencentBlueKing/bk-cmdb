@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core"
-	"configcenter/src/storage/tmserver/core/transaction"
+	"configcenter/src/storage/tmserver/core/session"
 	"configcenter/src/storage/types"
 )
 
@@ -25,18 +25,19 @@ func init() {
 }
 
 type startTransaction struct {
-	txn *transaction.Manager
+	txn *session.Manager
 }
 
 var _ core.SetTransaction = (*startTransaction)(nil)
 
-func (d *startTransaction) SetTxn(txn *transaction.Manager) {
+func (d *startTransaction) SetTxn(txn *session.Manager) {
 	d.txn = txn
 }
 
 func (d *startTransaction) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
 	blog.V(4).Infof("[MONGO OPERATION] %+v", &ctx.Header)
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	sess, err := d.txn.CreateTransaction(ctx.Header.RequestID)
 	if nil != err {
 		reply.Message = err.Error()

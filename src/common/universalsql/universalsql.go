@@ -21,7 +21,7 @@ type Result interface {
 	ToMapStr() mapstr.MapStr
 }
 
-// ConditionElement some operators implment this interface, like $eq $neq $nin $in etc.
+// ConditionElement some operators implement this interface, like $eq $neq $nin $in etc.
 type ConditionElement interface {
 	ToMapStr() mapstr.MapStr
 }

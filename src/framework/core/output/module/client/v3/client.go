@@ -47,9 +47,9 @@ func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 	c.httpCli.SetHeader("Accept", "application/json")
 
 	c.disc = disc
-	c.supplierAccount = conf.Get("core.supplierAccount")
-	c.user = conf.Get("core.user")
-	c.SetAddress(conf.Get("core.ccaddress"))
+	c.supplierAccount = conf.Get("logics.supplierAccount")
+	c.user = conf.Get("logics.user")
+	c.SetAddress(conf.Get("logics.ccaddress"))
 	return c
 }
 
@@ -89,8 +89,6 @@ func (cli *Client) SetAddress(address string) {
 // SetSupplierAccount set a new supplieraccount
 func (cli *Client) SetSupplierAccount(supplierAccount string) {
 	if 0 != len(supplierAccount) {
-		//fmt.Println("client owner:", supplierAccount)
-		//panic(supplierAccount)
 		cli.httpCli.SetHeader(common.BKHTTPOwnerID, supplierAccount)
 	} else {
 		cli.httpCli.SetHeader(common.BKHTTPOwnerID, cli.supplierAccount)

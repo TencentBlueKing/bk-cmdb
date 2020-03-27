@@ -3,31 +3,31 @@
         <div class="tab-content" v-if="snapshot">
             <div class="attribute-list clearfix">
                 <div class="title clearfix">
-                    <h3 class="fl">{{$t('HostResourcePool[\'基本值\']')}}</h3>
+                    <h3 class="fl">{{$t('基本值')}}</h3>
                     <div class="content fr clearfix">
-                        <div class="info-title">{{$t('HostResourcePool[\'最近更新时间\']')}}：</div>
+                        <div class="info-title">{{$t('最近更新时间')}}：</div>
                         <div class="info-detail">{{snapshot.upTime}}</div>
                     </div>
                 </div>
                 <ul class="info-list">
                     <li class="attr-item clearfix">
-                        <div class="item-title">{{$t('HostResourcePool[\'总流入量\']')}}：</div>
+                        <div class="item-title">{{$t('总流入量')}}：</div>
                         <div class="item-detail">{{(snapshot.rcvRate / 100).toFixed(2)}}Mb/s</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">{{$t('HostResourcePool[\'启动时间\']')}}：</div>
+                        <div class="item-title">{{$t('启动时间')}}：</div>
                         <div class="item-detail">{{$tools.formatTime(snapshot.bootTime * 1000)}}</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">{{$t('HostResourcePool[\'总流出量\']')}}：</div>
+                        <div class="item-title">{{$t('总流出量')}}：</div>
                         <div class="item-detail">{{(snapshot.sendRate / 100).toFixed(2)}}Mb/s</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">{{$t('HostResourcePool[\'磁盘总量\']')}}：</div>
+                        <div class="item-title">{{$t('磁盘总量')}}：</div>
                         <div class="item-detail">{{snapshot.Disk}}GB</div>
                     </li>
                     <li class="attr-item clearfix">
-                        <div class="item-title">{{$t('HostResourcePool[\'内存总量\']')}}：</div>
+                        <div class="item-title">{{$t('内存总量')}}：</div>
                         <div class="item-detail">{{(snapshot.Mem / 1024).toFixed(2)}}GB</div>
                     </li>
                     <li class="attr-item clearfix" v-if="!isWindows">
@@ -59,7 +59,13 @@
                     </div>
                 </div>
             </div>
-            <p class="box-text">{{$t('HostResourcePool[\'当前主机没有安装 Agent 或者 Agent 已经离线\']')}}</p>
+            <p class="box-text">
+                {{$t('当前主机没有安装 Agent 或者 Agent 已经离线')}}
+                <a href="javascript:void(0)" @click="openAgentApp">
+                    <i class="icon-cc-skip"></i>
+                    {{$t('点此进入节点管理')}}
+                </a>
+            </p>
         </div>
     </div>
 </template>
@@ -102,12 +108,12 @@
                 初始化图表
             */
             initChart () {
-                let chart1 = this.Echarts.init(this.$refs['chart1'])
-                let chart2 = this.Echarts.init(this.$refs['chart2'])
-                let chart3 = this.Echarts.init(this.$refs['chart3'])
+                const chart1 = this.Echarts.init(this.$refs['chart1'])
+                const chart2 = this.Echarts.init(this.$refs['chart2'])
+                const chart3 = this.Echarts.init(this.$refs['chart3'])
                 chart1.setOption({
                     title: {
-                        text: this.$t('Hosts["总CPU使用率"]'),
+                        text: this.$t('总CPU使用率'),
                         textStyle: {
                             color: '#333948'
                         },
@@ -136,7 +142,7 @@
                 })
                 chart2.setOption({
                     title: {
-                        text: this.$t('Hosts["总内存使用率"]'),
+                        text: this.$t('总内存使用率'),
                         textStyle: {
                             color: '#333948'
                         },
@@ -165,7 +171,7 @@
                 })
                 chart3.setOption({
                     title: {
-                        text: this.$t('Hosts["磁盘使用情况"]'),
+                        text: this.$t('磁盘使用情况'),
                         textStyle: {
                             color: '#333948'
                         },
@@ -192,6 +198,18 @@
                         }]
                     }]
                 })
+            },
+            openAgentApp () {
+                const agentAppUrl = window.Site.agent
+                if (agentAppUrl) {
+                    if (agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
+                        window.top.postMessage(JSON.stringify({ action: 'open_other_app', app_code: 'bk_nodeman' }), '*')
+                    } else {
+                        window.open(agentAppUrl)
+                    }
+                } else {
+                    this.$warn(this.$t('未配置Agent安装APP地址'))
+                }
             }
         }
     }
@@ -318,6 +336,9 @@
         .box-text{
             width: 100%;
             text-align: center;
+            a {
+                color: #3c96ff;
+            }
         }
     }
     @-webkit-keyframes light {

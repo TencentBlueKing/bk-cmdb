@@ -373,3 +373,32 @@ func TestClone(t *testing.T) {
 	t.Logf("origin:%#v private:%s", (targetMapStr["struct"].(*targetTest)).TargetInline.Field1Inline, (targetMapStr["struct"].(*targetTest)).privateField)
 	t.Logf("clone:%#v private:%s", (cloneInst["struct"].(*targetTest)).TargetInline.Field1Inline, (cloneInst["struct"].(*targetTest)).privateField)
 }
+
+func TestLargeNumber(t *testing.T) {
+	testData := mapstr.MapStr{
+		"int": int(5000000000000000000),
+		"uint": uint(5000000000000000000),
+		"int64": int64(5000000000000000000),
+		"uint64": uint64(5000000000000000000),
+		"float64": float64(5000000000000000000),
+		"float32": float32(5000000000000000000),
+	}
+	str, err := testData.String("int")
+	require.NoError(t, err)
+	require.Equal(t, str, "5000000000000000000")
+	str, err = testData.String("uint")
+	require.NoError(t, err)
+	require.Equal(t, str, "5000000000000000000")
+	str, err = testData.String("int64")
+	require.NoError(t, err)
+	require.Equal(t, str, "5000000000000000000")
+	str, err = testData.String("uint64")
+	require.NoError(t, err)
+	require.Equal(t, str, "5000000000000000000")
+	str, err = testData.String("float64")
+	require.NoError(t, err)
+	require.Equal(t, str, "5000000000000000000")
+	str, err = testData.String("float32")
+	require.NoError(t, err)
+	require.Equal(t, str, "5000000000000000000")
+}

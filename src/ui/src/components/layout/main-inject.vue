@@ -1,5 +1,8 @@
 <template>
-    <div class="cmdb-main-inject">
+    <div class="cmdb-main-inject"
+        :style="{
+            width: scrollbar ? 'calc(100% - 17px)' : '100%'
+        }">
         <slot></slot>
     </div>
 </template>
@@ -14,6 +17,11 @@
                 validator (val) {
                     return ['append', 'prepend'].includes(val)
                 }
+            }
+        },
+        computed: {
+            scrollbar () {
+                return this.$store.state.scrollerState.scrollbar
             }
         },
         mounted () {

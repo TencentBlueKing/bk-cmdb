@@ -186,8 +186,18 @@ type AssociationKind struct {
 	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 	// whether this is a pre-defined kind.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
-	//	define the metadata of assocication kind
+	//	define the metadata of association kind
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+}
+
+func (cli *AssociationKind) Parse(data mapstr.MapStr) (*AssociationKind, error) {
+	// TODO support parse metadata params
+	err := mapstr.SetValueToStructByTags(cli, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return cli, err
 }
 
 type AssociationOnDeleteAction string
@@ -385,17 +395,32 @@ func (cli *MainlineObjectTopo) ToMapStr() mapstr.MapStr {
 
 // TopoInst 实例拓扑结构
 type TopoInst struct {
-	InstID   int64  `json:"bk_inst_id"`
-	InstName string `json:"bk_inst_name"`
-	ObjID    string `json:"bk_obj_id"`
-	ObjName  string `json:"bk_obj_name"`
-	Default  int    `json:"default"`
+	InstID               int64  `json:"bk_inst_id"`
+	InstName             string `json:"bk_inst_name"`
+	ObjID                string `json:"bk_obj_id"`
+	ObjName              string `json:"bk_obj_name"`
+	Default              int    `json:"default"`
+	HostCount            int64  `json:"host_count"`
+	ServiceInstanceCount int64  `json:"service_instance_count,omitempty"`
+	ServiceTemplateID    int64  `json:"service_template_id,omitempty"`
+	SetTemplateID        int64  `json:"set_template_id,omitempty"`
+	HostApplyEnabled     *bool  `json:"host_apply_enabled,omitempty"`
+	HostApplyRuleCount   *int64 `json:"host_apply_rule_count,omitempty"`
 }
 
 // TopoInstRst 拓扑实例
 type TopoInstRst struct {
 	TopoInst `json:",inline"`
 	Child    []*TopoInstRst `json:"child"`
+}
+
+type TopoInstRstVisitor func(tir *TopoInstRst)
+
+func (tir *TopoInstRst) DeepFirstTraverse(visitor TopoInstRstVisitor) {
+	for _, child := range tir.Child {
+		child.DeepFirstTraverse(visitor)
+	}
+	visitor(tir)
 }
 
 // ConditionItem subcondition
@@ -430,4 +455,43 @@ type ResponeImportAssociationData struct {
 // ResponeImportAssociation  import association result
 type RequestImportAssociation struct {
 	AssociationInfoMap map[int]ExcelAssocation `json:"association_info"`
+}
+
+// RequestInstAssociationObjectID 要求根据实例信息（实例的模型ID，实例ID）和模型ID（关联关系中的源，目的模型ID）, 返回关联关系的请求参数
+type RequestInstAssociationObjectID struct {
+	Condition RequestInstAssociationObjectIDCondition `json:"condition"`
+	Page      BasePage                                `json:"page"`
+}
+
+// RequestInstAssociationObjectIDCondition  query condition
+type RequestInstAssociationObjectIDCondition struct {
+	// 实例得模型ID
+	ObjectID string `json:"bk_obj_id"`
+	// 实例ID
+	InstID int64 `json:"bk_inst_id"`
+	// ObjectID是否为目标模型， 默认false， 关联关系中的源模型，否则是目标模型
+	IsTargetObject bool `json:"is_target_object"`
+
+	// 关联对象的模型ID
+	AssociationObjectID string `json:"association_obj_id"`
+}
+
+// InstBaseInfo instance base info
+type InstBaseInfo struct {
+	ID   int64  `json:"bk_inst_id"`
+	Name string `json:"bk_inst_name"`
+}
+
+type FindTopoPathRequest struct {
+	Nodes []TopoNode `json:"topo_nodes" mapstructure:"topo_nodes"`
+}
+
+type TopoPathResult struct {
+	Nodes []NodeTopoPath `json:"nodes" mapstructure:"nodes"`
+}
+
+type NodeTopoPath struct {
+	BizID int64                       `json:"bk_biz_id" mapstructure:"bk_biz_id"`
+	Node  TopoNode                    `json:"topo_node" mapstructure:"topo_node"`
+	Path  []*TopoInstanceNodeSimplify `json:"topo_path" mapstructure:"topo_path"`
 }
