@@ -117,7 +117,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 		}
 		bizName := ""
 		if bizID > 0 {
-			bizName, err = auditlog.NewAudit(a.client, a.kit.Ctx, a.kit.Header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
+			bizName, err = auditlog.NewAudit(a.client, a.kit.Header).GetInstNameByID(a.kit.Ctx, common.BKInnerObjIDApp, bizID)
 			if err != nil {
 				return
 			}
