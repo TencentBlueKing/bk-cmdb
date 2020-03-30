@@ -259,7 +259,6 @@ func (s *Service) createOrUpdateServiceInstance(srvData *srvComm, bizID int64, h
 
 func (s *Service) runTransferPlans(srvData *srvComm, bizID int64, transferPlan metadata.HostTransferPlan) errors.CCErrorCoder {
 	rid := srvData.rid
-	// step3 transfer host
 	var transferHostResult *metadata.OperaterException
 	var err error
 	var option interface{}
