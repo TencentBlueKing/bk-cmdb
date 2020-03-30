@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/ac/iam"
+	"configcenter/src/common"
 )
 
 const (
@@ -49,6 +50,9 @@ const (
 	OperatorGreaterThan        Operator = "gt"
 	OperatorGreaterThanOrEqual Operator = "gte"
 	OperatorAny                Operator = "any"
+
+	IDField   = "id"
+	NameField = "display_name"
 )
 
 type Method string
@@ -116,6 +120,16 @@ type Page struct {
 	Offset int64 `json:"offset"`
 }
 
+func (page *Page) IsIllegal() bool {
+	if page.Limit == 0 {
+		page.Limit = common.BKDefaultLimit
+	}
+	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit {
+		return true
+	}
+	return false
+}
+
 type ListAttrValueFilter struct {
 	Attr    string `json:"attr"`
 	Keyword string `json:"keyword,omitempty"`
@@ -124,9 +138,9 @@ type ListAttrValueFilter struct {
 }
 
 type ListInstanceFilter struct {
-	Parent            *ParentFilter             `json:"parent,omitempty"`
-	Search            map[string][]string       `json:"search,omitempty"`
-	ResourceTypeChain []ResourceTypeChainFilter `json:"resource_type_chain,omitempty"`
+	Parent            *ParentFilter                   `json:"parent,omitempty"`
+	Search            map[iam.ResourceTypeID][]string `json:"search,omitempty"`
+	ResourceTypeChain []ResourceTypeChainFilter       `json:"resource_type_chain,omitempty"`
 }
 
 type ParentFilter struct {
@@ -135,8 +149,8 @@ type ParentFilter struct {
 }
 
 type ResourceTypeChainFilter struct {
-	SystemID string `json:"system_id"`
-	ID       string `json:"id"`
+	SystemID string             `json:"system_id"`
+	ID       iam.ResourceTypeID `json:"id"`
 }
 
 type FetchInstanceInfoFilter struct {
@@ -159,6 +173,11 @@ type FilterExpression struct {
 type BaseResp struct {
 	Code    int64  `json:"code"`
 	Message string `json:"message"`
+}
+
+var SuccessBaseResp = BaseResp{
+	Code:    SuccessCode,
+	Message: "success",
 }
 
 type ListAttrResourceResp struct {

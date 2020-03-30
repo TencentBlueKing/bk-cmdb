@@ -45,19 +45,13 @@ func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
 	switch query.Method {
 	case types.ListAttrMethod:
 		ctx.RespHTTPBody(types.ListAttrResourceResp{
-			BaseResp: types.BaseResp{
-				Code:    types.SuccessCode,
-				Message: "success",
-			},
-			Data: []types.AttrResource{},
+			BaseResp: types.SuccessBaseResp,
+			Data:     []types.AttrResource{},
 		})
 		return
 	case types.ListAttrValueMethod:
 		ctx.RespHTTPBody(types.ListAttrValueResourceResp{
-			BaseResp: types.BaseResp{
-				Code:    types.SuccessCode,
-				Message: "success",
-			},
+			BaseResp: types.SuccessBaseResp,
 			Data: types.ListAttrValueResult{
 				Count:   0,
 				Results: []types.AttrValueResource{},
@@ -66,10 +60,7 @@ func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
 		return
 	case types.ListInstanceMethod, types.ListInstanceByPolicyMethod:
 		ctx.RespHTTPBody(types.ListInstanceResourceResp{
-			BaseResp: types.BaseResp{
-				Code:    types.SuccessCode,
-				Message: "success",
-			},
+			BaseResp: types.SuccessBaseResp,
 			Data: types.ListInstanceResult{
 				Count:   0,
 				Results: []types.InstanceResource{},
@@ -78,11 +69,8 @@ func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
 		return
 	case types.FetchInstanceInfoMethod:
 		ctx.RespHTTPBody(types.FetchInstanceInfoResp{
-			BaseResp: types.BaseResp{
-				Code:    types.SuccessCode,
-				Message: "success",
-			},
-			Data: []map[string]interface{}{},
+			BaseResp: types.SuccessBaseResp,
+			Data:     []map[string]interface{}{},
 		})
 		return
 	default:

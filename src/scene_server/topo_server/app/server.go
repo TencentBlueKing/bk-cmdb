@@ -101,7 +101,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	if err := server.CheckForReadiness(); err != nil {
 		return err
-	}	
+	}
 
 	enableTxn := false
 	if server.Config.Mongo.TxnEnabled == "true" {
@@ -110,8 +110,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	blog.Infof("enableTxn is %t", enableTxn)
 	txn, err := local.NewTransaction(enableTxn, server.Config.Mongo.GetMongoConf(), server.Config.Redis)
 	if err != nil {
-	    return fmt.Errorf("initial transaction failed, err: %v", err)
-    }
+		return fmt.Errorf("initial transaction failed, err: %v", err)
+	}
 
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
@@ -137,7 +137,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Es:          essrv,
 		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
-		Txn:          txn,
+		Txn:         txn,
 		EnableTxn:   enableTxn,
 		Config:      server.Config,
 	}

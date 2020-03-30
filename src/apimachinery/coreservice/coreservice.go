@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/apimachinery/coreservice/association"
 	"configcenter/src/apimachinery/coreservice/auditlog"
+	"configcenter/src/apimachinery/coreservice/auth"
 	"configcenter/src/apimachinery/coreservice/cloud"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/hostapplyrule"
@@ -50,6 +51,7 @@ type CoreServiceClientInterface interface {
 	HostApplyRule() hostapplyrule.HostApplyRuleInterface
 	System() ccSystem.SystemClientInterface
 	Cloud() cloud.CloudInterface
+	Auth() auth.AuthClientInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -122,4 +124,8 @@ func (c *coreService) HostApplyRule() hostapplyrule.HostApplyRuleInterface {
 
 func (c *coreService) Cloud() cloud.CloudInterface {
 	return cloud.NewCloudInterfaceClient(c.restCli)
+}
+
+func (c *coreService) Auth() auth.AuthClientInterface {
+	return auth.NewAuthClientInterface(c.restCli)
 }

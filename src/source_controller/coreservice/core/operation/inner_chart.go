@@ -35,7 +35,7 @@ func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
 		}
 	}(wg)
 
-    // 因为审计日志太多，造成执行时间过长，先关闭此项统计
+	// 因为审计日志太多，造成执行时间过长，先关闭此项统计
 	/*go func(wg *sync.WaitGroup) {
 		if err := m.ModelInstChange(kit, wg); err != nil {
 			blog.Errorf("TimerFreshData, model inst change count fail, err: %v", err)

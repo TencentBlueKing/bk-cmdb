@@ -30,6 +30,8 @@
     "1113030": "has instance under the model",
     "1113031": "the model is related to other models",
     "1113032": "only leaf node available",
-    
+    "1113033": "the resource pool directory does not exist",
+    "11130034": "the following hosts are not under any resource pool directory: %d",
+
     "":""
 }

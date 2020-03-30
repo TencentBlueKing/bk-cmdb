@@ -13,8 +13,6 @@
 package service
 
 import (
-	"encoding/json"
-
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -26,13 +24,14 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/storage/dal"
 	"configcenter/src/thirdpartyclient/elasticsearch"
+	"encoding/json"
 
 	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn          dal.Transaction
+	Txn         dal.Transaction
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
@@ -81,5 +80,6 @@ func (m *MapStrWithMetadata) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m.Data); err != nil {
 		return err
 	}
+
 	return nil
 }

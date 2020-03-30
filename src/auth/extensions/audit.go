@@ -158,6 +158,13 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 	blog.V(5).Infof("audit on business %+v to be check", businessIDs)
 
 	cond = make([]map[string]interface{}, 0)
+
+	asst, err := am.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), header, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
+	if err != nil || !asst.Result {
+		blog.Errorf("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, rid)
+		return
+	}
+
 	for _, businessID := range businessIDs {
 		auditList, err := am.Authorize.GetAuthorizedAuditList(ctx, commonInfo.User, businessID)
 		if err != nil {
@@ -176,8 +183,15 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 				}
 				modelID := resourceID[len(resourceID)-1].ResourceID
 				id := util.GetStrByInterface(modelID)
-				resourceTypes = append(resourceTypes, metadata.GetResourceTypeByObjID(id))
-				auditTypes = append(auditTypes, metadata.GetAuditTypeByObjID(id))
+				isMainline := false
+				for _, mainline := range asst.Data.Info {
+					if mainline.ObjectID == id || mainline.AsstObjID == id {
+						isMainline = true
+						break
+					}
+				}
+				resourceTypes = append(resourceTypes, metadata.GetResourceTypeByObjID(id, isMainline))
+				auditTypes = append(auditTypes, metadata.GetAuditTypeByObjID(id, isMainline))
 			}
 		}
 

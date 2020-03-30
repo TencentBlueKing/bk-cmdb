@@ -13,20 +13,20 @@
 package dal
 
 import (
-    "context"
-    "flag"
-    "fmt"
-    "sync"
-    "testing"
-    "time"
+	"context"
+	"flag"
+	"fmt"
+	"sync"
+	"testing"
+	"time"
 
-    "configcenter/src/storage/dal/mongo"
-    "configcenter/src/storage/dal/mongo/local"
-    redisdal "configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
+	redisdal "configcenter/src/storage/dal/redis"
 
-    "github.com/stretchr/testify/require"
-    "go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
-    "gopkg.in/redis.v5"
+	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
+	"gopkg.in/redis.v5"
 )
 
 var (
@@ -1392,13 +1392,13 @@ func TestDistributedUpdateMultiModelCommit(t *testing.T) {
 
 	filter := map[string]string{"ext": "ext"}
 	update1 := []ModeUpdate{
-        ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
-        ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
-        ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
+		ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
+		ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
+		ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
 	}
 	update2 := []ModeUpdate{
-        ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
-        ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
+		ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
+		ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
 	}
 
 	sess1, err := client1.StartSession()
@@ -1465,13 +1465,13 @@ func TestDistributedUpdateMultiModelAbort(t *testing.T) {
 
 	filter := map[string]string{"ext": "ext"}
 	update1 := []ModeUpdate{
-        ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
-        ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
-        ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
+		ModeUpdate{Op: "set", Doc: map[string]string{"a": "a_update_multi_model"}},
+		ModeUpdate{Op: "unset", Doc: map[string]string{"unset": ""}},
+		ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 1}},
 	}
 	update2 := []ModeUpdate{
-        ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
-        ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
+		ModeUpdate{Op: "set", Doc: map[string]string{"b": "b_update_multi_model"}},
+		ModeUpdate{Op: "inc", Doc: map[string]interface{}{"inc": 3}},
 	}
 
 	sess1, err := client1.StartSession()

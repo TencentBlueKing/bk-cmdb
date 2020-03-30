@@ -146,4 +146,3 @@ func (c *cloudserver) SearchSyncRegion(ctx context.Context, h http.Header, data 
 		Into(resp)
 	return
 }
-

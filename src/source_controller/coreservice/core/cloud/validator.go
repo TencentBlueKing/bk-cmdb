@@ -42,7 +42,7 @@ func (c *cloudOperation) validCreateAccount(kit *rest.Kit, account *metadata.Clo
 	}
 
 	// SecretID check, one SecretID can only have one account
-	option := &metadata.SearchCloudOption{Condition:mapstr.MapStr{common.BKSecretID: account.SecretID}}
+	option := &metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKSecretID: account.SecretID}}
 	multiAccount, err := c.SearchAccount(kit, option)
 	if nil != err {
 		blog.ErrorJSON("[validCreateAccount] SearchAccount error %s, option: %s, rid: %s", err, option, kit.Rid)
@@ -157,7 +157,7 @@ func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.Cloud
 	}
 
 	// account task count check, one account can only have one task
-	option := &metadata.SearchCloudOption{Condition:mapstr.MapStr{common.BKCloudAccountID: task.AccountID}}
+	option := &metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKCloudAccountID: task.AccountID}}
 	multiTask, err := c.SearchSyncTask(kit, option)
 	if nil != err {
 		blog.ErrorJSON("[validCreateSycTask] SearchSyncTask error %s, option: %s, rid: %s", err, option, kit.Rid)

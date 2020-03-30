@@ -233,7 +233,7 @@ func (c *tcClient) NewDescribeInstancesRequest(opt *ccom.RequestOpt) *cvm.Descri
 	}
 	if opt.Limit != nil {
 		limit := *opt.Limit
-		if  *opt.Limit < tcMinPageSize || *opt.Limit > tcMaxPageSize {
+		if *opt.Limit < tcMinPageSize || *opt.Limit > tcMaxPageSize {
 			limit = tcMaxPageSize
 		}
 		request.Limit = &limit

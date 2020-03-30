@@ -245,6 +245,20 @@
                     "name": "删除关联"
                 }
             ]
+        }, {
+            "id": "resource_directory",
+            "name": "资源池目录",
+            "operations": [{
+                "id": "resource_directory-create",
+                "name": "新增资源池目录"
+            }, {
+                "id": "resource_directory-update",
+                "name": "更新资源池目录"
+            }, {
+                "id": "resource_directory-delete",
+                "name": "删除资源池目录"
+            }
+            ]
         }
     ],
     "other": [

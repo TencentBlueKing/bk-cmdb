@@ -58,6 +58,12 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
+	err = removeResourceFaultRecycle(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202002131522] removeResourceFaultRecycle failed, error  %s", err.Error())
+		return err
+	}
+
 	err = addCloudHostAttr(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade y3.9.202002131522] addCloudHostAttr failed, error  %s", err.Error())

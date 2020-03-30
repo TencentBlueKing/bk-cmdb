@@ -26,6 +26,7 @@ func (s *coreService) CreateAuditLog(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	if err := s.core.AuditOperation().CreateAuditLog(ctx.Kit, inputData.Data...); nil != err {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrAuditSaveLogFailed))
 		return

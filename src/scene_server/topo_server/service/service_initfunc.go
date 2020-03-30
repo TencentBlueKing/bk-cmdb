@@ -266,6 +266,21 @@ func (s *Service) initFind(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+// 资源池目录
+func (s *Service) initResourceDirectory(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/resource/directory", Handler: s.CreateResourceDirectory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/resource/directory/{bk_module_id}", Handler: s.UpdateResourceDirectory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/resource/directory", Handler: s.SearchResourceDirectory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/resource/directory/{bk_module_id}", Handler: s.DeleteResourceDirectory})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *Service) initService(web *restful.WebService) {
 	s.initAssociation(web)
 	s.initAuditLog(web)
@@ -293,4 +308,6 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initFind(web)
 	s.initSetTemplate(web)
 	s.initInternalTask(web)
+
+	s.initResourceDirectory(web)
 }

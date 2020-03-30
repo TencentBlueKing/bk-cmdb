@@ -20,14 +20,14 @@ var testData1 = map[string]interface{}{
 		{
 			"bk_vpc_id":     "vpc-001",
 			"bk_vpc_name":   "vpc-default",
-			"bk_region": "广东一区",
+			"bk_region":     "广东一区",
 			"bk_host_count": 56,
 			"bk_sync_dir":   33,
 		},
 		{
 			"bk_vpc_id":     "vpc-002",
 			"bk_vpc_name":   "vpc-default2",
-			"bk_region": "广东二区",
+			"bk_region":     "广东二区",
 			"bk_host_count": 26,
 			"bk_sync_dir":   55,
 		},
@@ -42,7 +42,7 @@ var testData3 = map[string]interface{}{
 	"bk_sync_vpcs": []map[string]interface{}{
 		{
 			"bk_vpc_name":   "vpc-default",
-			"bk_region": "广东一区",
+			"bk_region":     "广东一区",
 			"bk_host_count": 56,
 			"bk_sync_dir":   33,
 		},

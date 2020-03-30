@@ -350,10 +350,16 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	if objectID == common.BKInnerObjIDApp {
 		businessID = instanceID
 	}
+	isMainline, err := s.Core.AssociationOperation().IsMainlineObject(ctx.Kit, objectID)
+	if err != nil {
+		blog.Errorf("InstanceAuditQuery failed, check if object(%s) is mainline object failed, err: %s, rid: %s", err.Error(), objectID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommHTTPDoRequestFailed, err.Error()))
+		return
+	}
 	orCond := []map[string]interface{}{
 		{
 			common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceIDField: instanceID,
-			common.BKResourceTypeField: metadata.GetResourceTypeByObjID(objectID),
+			common.BKResourceTypeField: metadata.GetResourceTypeByObjID(objectID, isMainline),
 		},
 		{
 			common.BKOperationDetailField + ".src_instance_id": instanceID,

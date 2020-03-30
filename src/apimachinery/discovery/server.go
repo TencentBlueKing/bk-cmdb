@@ -34,7 +34,7 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*
 		name:         name,
 		servers:      make([]*types.ServerInfo, 0),
 		discoverChan: discoverChan,
-		serversChan: make(chan []string, 1),
+		serversChan:  make(chan []string, 1),
 	}
 
 	svr.run()
@@ -50,7 +50,7 @@ type server struct {
 	servers      []*types.ServerInfo
 	uuids        []string
 	discoverChan <-chan *registerdiscover.DiscoverEvent
-	serversChan chan []string
+	serversChan  chan []string
 }
 
 func (s *server) GetServers() ([]string, error) {
@@ -123,8 +123,8 @@ func (s *server) resetServer() {
 // 当监听到服务节点变化时，将最新的服务节点信息放入该channel里
 func (s *server) setServersChan() {
 	// 即使没有其他服务消费该channel，也能保证该channel不会阻塞
-	for len(s.serversChan) >=1 {
-		<- s.serversChan
+	for len(s.serversChan) >= 1 {
+		<-s.serversChan
 	}
 	s.serversChan <- s.getInstances()
 }
