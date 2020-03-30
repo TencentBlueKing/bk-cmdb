@@ -868,7 +868,6 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	//BKSessionLanugageKey = "language"
-
 	BKHTTPSupplierID     = "bk_supplier_id"
 	BKHTTPRequestAppCode = "Bk-App-Code"
 
@@ -997,6 +996,8 @@ const (
 const (
 	BKProcInstanceOpUser             = "proc instance user"
 	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
+
+	BKCloudSyncUser = "cloud_sync_user"
 )
 
 const (

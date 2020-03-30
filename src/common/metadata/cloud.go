@@ -59,6 +59,14 @@ var VendorNameIDs = map[string]string{
 	"tencent_cloud": "2",
 }
 
+var CloudHostStatusIDs = map[string]string{
+	"starting": "1",
+	"running":  "2",
+	"stopping": "3",
+	"stopped":  "4",
+	"unknow":   "5",
+}
+
 // 云厂商账户配置
 type CloudAccountConf struct {
 	AccountID  int64  `json:"bk_account_id" bson:"bk_account_id"`
@@ -201,7 +209,8 @@ type Instance struct {
 // 云主机资源
 type CloudHostResource struct {
 	HostResource []*VpcInstances
-	TaskID       int64 `json:"bk_task_id" bson:"bk_task_id"`
+	TaskID       int64             `json:"bk_task_id" bson:"bk_task_id"`
+	AccountConf  *CloudAccountConf `json:"account_conf" bson:"account_conf"`
 }
 
 type VpcInstances struct {
@@ -211,10 +220,11 @@ type VpcInstances struct {
 }
 
 type CloudHost struct {
-	Instance `json:",inline"`
-	CloudID  int64 `json:"bk_cloud_id" bson:"bk_cloud_id"`
-	SyncDir  int64 `json:"bk_sync_dir,omitempty" bson:"bk_sync_dir,omitempty"`
-	HostID   int64 `json:"bk_host_id" bson:"bk_host_id"`
+	Instance   `json:",inline"`
+	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	SyncDir    int64  `json:"bk_sync_dir,omitempty" bson:"bk_sync_dir,omitempty"`
+	HostID     int64  `json:"bk_host_id" bson:"bk_host_id"`
+	VendorName string `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
 }
 
 type HostSyncInfo struct {

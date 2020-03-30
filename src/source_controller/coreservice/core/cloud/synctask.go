@@ -45,7 +45,8 @@ func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncT
 	task.TaskID = int64(id)
 	ts := time.Now()
 	task.OwnerID = kit.SupplierAccount
-	task.LastEditor = task.Creator
+	task.Creator = kit.User
+	task.LastEditor = kit.User
 	task.CreateTime = ts
 	task.LastTime = ts
 	task.LastSyncTime = ts
@@ -87,6 +88,7 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 
 	filter := map[string]interface{}{common.BKCloudSyncTaskID: taskID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
+	option.Set(common.BKLastEditor, kit.User)
 	option.Set(common.LastTimeField, time.Now())
 	// 将最近同步时间存为时间类型，而不是字符串
 	if option.Exists(common.BKCloudLastSyncTime) {

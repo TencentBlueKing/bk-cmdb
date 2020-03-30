@@ -101,7 +101,7 @@ func (t *taskScheduler) watchServerNode() error {
 
 // 任务表事件结构
 type taskEvent struct {
-	metadata.CloudSyncTask `json:",inline"`
+	metadata.CloudSyncTask `json:",inline" bson:",inline"`
 	Oid                    primitive.ObjectID `json:"_id" bson:"_id"`
 }
 
