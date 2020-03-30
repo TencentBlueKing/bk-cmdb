@@ -222,6 +222,19 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 		return err
 	}
 
+	asst, err := d.CoreAPI.CoreService().Association().ReadModelAssociation(d.ctx, d.httpHeader, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
+	if err != nil || !asst.Result {
+		blog.Errorf("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, rid)
+		return err
+	}
+	isMainline := false
+	for _, mainline := range asst.Data.Info {
+		if mainline.ObjectID == objID || mainline.AsstObjID == objID {
+			isMainline = true
+			break
+		}
+	}
+
 	if len(inst) <= 0 {
 		resp, err := d.CoreAPI.CoreService().Instance().CreateInstance(d.ctx, d.httpHeader, objID, &metadata.CreateModelInstance{Data: bodyData})
 		if err != nil {
@@ -256,8 +269,8 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 				instName = ""
 			}
 			auditLog := metadata.AuditLog{
-				AuditType:    metadata.GetAuditTypeByObjID(objID),
-				ResourceType: metadata.GetResourceTypeByObjID(objID),
+				AuditType:    metadata.GetAuditTypeByObjID(objID, isMainline),
+				ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
 				Action:       metadata.AuditCreate,
 				OperateFrom:  metadata.FromDataCollection,
 				OperationDetail: &metadata.InstanceOpDetail{
@@ -274,6 +287,11 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 					},
 					ModelID: objID,
 				},
+			}
+			if isMainline && objID != common.BKInnerObjIDApp {
+				auditLog.Label = map[string]string{
+					metadata.LabelBizTopology: "",
+				}
 			}
 
 			result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
@@ -404,8 +422,8 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 			instName = ""
 		}
 		auditLog := metadata.AuditLog{
-			AuditType:    metadata.GetAuditTypeByObjID(objID),
-			ResourceType: metadata.GetResourceTypeByObjID(objID),
+			AuditType:    metadata.GetAuditTypeByObjID(objID, isMainline),
+			ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
 			Action:       metadata.AuditUpdate,
 			OperateFrom:  metadata.FromDataCollection,
 			OperationDetail: &metadata.InstanceOpDetail{
@@ -422,6 +440,11 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 				},
 				ModelID: objID,
 			},
+		}
+		if isMainline && objID != common.BKInnerObjIDApp {
+			auditLog.Label = map[string]string{
+				metadata.LabelBizTopology: "",
+			}
 		}
 		result, err := d.CoreAPI.CoreService().Audit().SaveAuditLog(d.ctx, d.httpHeader, auditLog)
 		if err != nil {
