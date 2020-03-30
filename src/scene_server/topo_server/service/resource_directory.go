@@ -376,27 +376,24 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 		ctx.RespAutoError(e)
 		return
 	}
-	moduleHostIDs := make(map[int64][]int64, 0)
-	for _, relation := range hostModuleRelations.Data.Info {
-		if _, ok := moduleHostIDs[relation.ModuleID]; ok == false {
-			moduleHostIDs[relation.ModuleID] = make([]int64, 0)
+	moduleHostsCount := make(map[int64]int64)
+	for _, item := range hostModuleRelations.Data.Info {
+		if _, exist := moduleHostsCount[item.ModuleID]; exist == false {
+			moduleHostsCount[item.ModuleID] = 0
 		}
-		moduleHostIDs[relation.ModuleID] = append(moduleHostIDs[relation.ModuleID], relation.HostID)
+		moduleHostsCount[item.ModuleID] += 1
 	}
 	retInfo := make([]mapstr.MapStr, 0)
 	for moduleID, moduleInfo := range mapModuleIdInfo {
-		for id, hostIDs := range moduleHostIDs {
-			moduleInfo["host_count"] = 0
-			if moduleID == id {
-				moduleInfo["host_count"] = len(hostIDs)
-				break
-			}
+		moduleInfo["host_count"] = 0
+		if count, exist := moduleHostsCount[moduleID]; exist == true {
+			moduleInfo["host_count"] = count
 		}
 		retInfo = append(retInfo, moduleInfo)
 	}
 
 	ret := make(map[string]interface{}, 0)
-	ret["count"] = len(retInfo)
+	ret["count"] = rsp.Data.Count
 	ret["info"] = retInfo
 	ctx.RespEntity(ret)
 }
