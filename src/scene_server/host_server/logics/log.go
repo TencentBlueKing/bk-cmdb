@@ -509,8 +509,8 @@ func (c *CloudAreaAuditLog) SaveAuditLog(ctx context.Context, action metadata.Ac
 func (c *CloudAreaAuditLog) buildAuditLogData(ctx context.Context, platID int64) (map[string]interface{}, errors.CCError) {
 	var err error
 	if len(c.Content.Properties) == 0 {
-		audit := auditlog.NewAudit(c.logic.CoreAPI, ctx, c.header)
-		properties, err := audit.GetAuditLogProperty(common.BKInnerObjIDPlat)
+		audit := auditlog.NewAudit(c.logic.CoreAPI, c.header)
+		properties, err := audit.GetAuditLogProperty(ctx, common.BKInnerObjIDPlat)
 		if err != nil {
 			return nil, err
 		}
