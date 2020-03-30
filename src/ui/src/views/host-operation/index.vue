@@ -300,7 +300,8 @@
                         `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}/preview`,
                         this.confirmParams,
                         {
-                            requestId: this.request.preview
+                            requestId: this.request.preview,
+                            globalPermission: false
                         }
                     )
                     this.setConfirmState(data)
@@ -315,6 +316,9 @@
                 } catch (e) {
                     console.error(e)
                     this.loading = false
+                    if (e.code === 9900403) {
+                        this.$route.meta.view = 'permission'
+                    }
                 }
             },
             setConfirmState (data) {

@@ -61,6 +61,7 @@
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
     import Formatter from '@/filters/formatter.js'
+    import Throttle from 'lodash.throttle'
     export default {
         name: 'cmdb-details',
         mixins: [formMixins],
@@ -100,7 +101,8 @@
         },
         data () {
             return {
-                scrollbar: false
+                scrollbar: false,
+                resizeEvent: null
             }
         },
         computed: {
@@ -112,10 +114,11 @@
             }
         },
         mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$refs.detailsWrapper, this.checkScrollbar)
+            this.resizeEvent = Throttle(this.checkScrollbar, 100, { leading: false, trailing: true })
+            RESIZE_EVENTS.addResizeListener(this.$refs.detailsWrapper, this.resizeEvent)
         },
         beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$el.detailsWrapper, this.checkScrollbar)
+            RESIZE_EVENTS.removeResizeListener(this.$el.detailsWrapper, this.resizeEvent)
         },
         methods: {
             authResources (auth) {
