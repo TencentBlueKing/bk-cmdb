@@ -92,7 +92,7 @@ func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, actio
 	bizName := ""
 	var err error
 	if bizID > 0 {
-		bizName, err = auditlog.NewAudit(h.logic.CoreAPI, ctx, h.header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
+		bizName, err = auditlog.NewAudit(h.logic.CoreAPI, h.header).GetInstNameByID(ctx, common.BKInnerObjIDApp, bizID)
 		if err != nil {
 			return metadata.AuditLog{}, err
 		}
@@ -117,38 +117,35 @@ func (h *HostLog) AuditLog(ctx context.Context, hostID int64, bizID int64, actio
 type HostModuleLog struct {
 	logic     *Logics
 	header    http.Header
-	instIDArr []int64
+	hostIDArr []int64
 	pre       []metadata.ModuleHost
 	cur       []metadata.ModuleHost
-	hostInfos []mapstr.MapStr
 }
 
-func (lgc *Logics) NewHostModuleLog(instID []int64) *HostModuleLog {
+func (lgc *Logics) NewHostModuleLog(hostID []int64) *HostModuleLog {
 	return &HostModuleLog{
 		logic:     lgc,
-		instIDArr: instID,
-		pre:       make([]metadata.ModuleHost, 0),
-		cur:       make([]metadata.ModuleHost, 0),
+		hostIDArr: hostID,
 		header:    lgc.header,
 	}
 }
 
 func (h *HostModuleLog) WithPrevious(ctx context.Context) errors.CCError {
+	if h.pre != nil {
+		return nil
+	}
 	var err error
 	h.pre, err = h.getHostModuleConfig(ctx)
 	if err != nil {
 		return err
 	}
-
-	h.hostInfos, err = h.getInnerIP(ctx)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (h *HostModuleLog) WithCurrent(ctx context.Context) errors.CCError {
+	if h.cur != nil {
+		return nil
+	}
 	var err error
 	h.cur, err = h.getHostModuleConfig(ctx)
 	if err != nil {
@@ -158,6 +155,11 @@ func (h *HostModuleLog) WithCurrent(ctx context.Context) errors.CCError {
 }
 
 func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
+	hostInfos, err := h.getInnerIP(ctx)
+	if err != nil {
+		return err
+	}
+
 	if err := h.WithCurrent(ctx); err != nil {
 		return err
 	}
@@ -239,7 +241,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 	}
 	appIDNameMap := make(map[int64]string, 0)
 	for _, appInfo := range appInfoArr {
-		instID, err := appInfo.Int64(common.BKAppIDField)
+		bizID, err := appInfo.Int64(common.BKAppIDField)
 		if err != nil {
 			blog.ErrorJSON("appInfo get biz id err:%s, appInfo: %s, rid:%s", err.Error(), appInfo, h.logic.rid)
 			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
@@ -250,11 +252,11 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 			return h.logic.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 
-		appIDNameMap[instID] = name
+		appIDNameMap[bizID] = name
 	}
 
 	logs := make([]metadata.AuditLog, 0)
-	for _, host := range h.hostInfos {
+	for _, host := range hostInfos {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			return err
@@ -338,7 +340,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 
 func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.ModuleHost, errors.CCError) {
 	conds := &metadata.HostModuleRelationRequest{
-		HostIDArr: h.instIDArr,
+		HostIDArr: h.hostIDArr,
 	}
 	result, err := h.logic.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, h.header, conds)
 	if err != nil {
@@ -355,9 +357,9 @@ func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.Mod
 func (h *HostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors.CCError) {
 	query := &metadata.QueryInput{
 		Start:     0,
-		Limit:     len(h.instIDArr),
+		Limit:     len(h.hostIDArr),
 		Sort:      common.BKAppIDField,
-		Condition: common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: h.instIDArr}},
+		Condition: common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: h.hostIDArr}},
 		Fields:    fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
 	}
 

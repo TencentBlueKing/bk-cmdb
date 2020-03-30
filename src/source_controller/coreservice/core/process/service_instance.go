@@ -216,6 +216,7 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit, option metadata.Li
 		common.BKAppIDField:      option.BusinessID,
 		common.BkSupplierAccount: kit.SupplierAccount,
 	}
+	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 
 	if option.ServiceTemplateID != 0 {
 		filter[common.BKServiceTemplateIDField] = option.ServiceTemplateID
