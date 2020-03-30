@@ -123,6 +123,17 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 		return nil, err
 	}
 
+	needCheckName := false
+	if len(input.Name) != 0 && template.Name != input.Name {
+		template.Name = input.Name
+		needCheckName = true
+	}
+	if field, err := template.Validate(); err != nil {
+		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		err := ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, field)
+		return nil, err
+	}
+
 	// update fields to local object
 	if input.ServiceCategoryID != 0 {
 		// 允许模块的服务分类信息与模板的服务分类信息不一致，模块同步按钮会调整模块的分类信息, 详情见 issue #2927
@@ -149,9 +160,7 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 	}
 
 	needUpdateModuleName := false
-	if len(input.Name) != 0 && template.Name != input.Name {
-		template.Name = input.Name
-
+	if needCheckName {
 		wg := sync.WaitGroup{}
 		wg.Add(2)
 		var checkErr errors.CCErrorCoder
@@ -189,6 +198,7 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 			if err != nil {
 				blog.ErrorJSON("UpdateServiceTemplate failed, count modules using this service template failed, filter: %s, err: %s, rid: %s", moduleFilter, err, ctx.ReqID)
 				checkErr = ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+				return
 			}
 			if len(modules) > 0 {
 				parentIDs := make([]int64, len(modules))
@@ -210,10 +220,12 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 				if err != nil {
 					blog.ErrorJSON("UpdateServiceTemplate failed, count modules with same name failed, filter: %s, err: %s, rid: %s", moduleFilter, err, ctx.ReqID)
 					checkErr = ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+					return
 				}
 				if count > 0 {
 					blog.Errorf("UpdateServiceTemplate failed, service template has modules with same name, count: %d, rid: %s", count, ctx.ReqID)
 					checkErr = ctx.Error.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
+					return
 				}
 				needUpdateModuleName = true
 			}
@@ -223,12 +235,6 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 		if checkErr != nil {
 			return nil, checkErr
 		}
-	}
-
-	if field, err := input.Validate(); err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, field)
-		return nil, err
 	}
 
 	// do update
