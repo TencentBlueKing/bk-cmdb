@@ -13,6 +13,8 @@
 package cloud
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -41,11 +43,12 @@ func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncT
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	task.TaskID = int64(id)
-	ts := metadata.Now()
+	ts := time.Now()
 	task.OwnerID = kit.SupplierAccount
 	task.LastEditor = task.Creator
 	task.CreateTime = ts
 	task.LastTime = ts
+	task.LastSyncTime = ts
 
 	err = c.dbProxy.Table(common.BKTableNameCloudSyncTask).Insert(kit.Ctx, task)
 	if err != nil {
@@ -84,10 +87,10 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 
 	filter := map[string]interface{}{common.BKCloudSyncTaskID: taskID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
-	option.Set(common.LastTimeField, metadata.Now())
+	option.Set(common.LastTimeField, time.Now())
 	// 将最近同步时间存为时间类型，而不是字符串
 	if option.Exists(common.BKCloudLastSyncTime) {
-		option.Set(common.BKCloudLastSyncTime, metadata.Now())
+		option.Set(common.BKCloudLastSyncTime, time.Now())
 	}
 	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)
@@ -128,7 +131,7 @@ func (c *cloudOperation) CreateSyncHistory(kit *rest.Kit, history *metadata.Sync
 	}
 	history.HistoryID = int64(id)
 	history.OwnerID = kit.SupplierAccount
-	history.CreateTime = metadata.Now()
+	history.CreateTime = time.Now()
 
 	err = c.dbProxy.Table(common.BKTableNameCloudSyncHistory).Insert(kit.Ctx, history)
 	if err != nil {

@@ -27,6 +27,7 @@ import (
 	"configcenter/src/storage/reflector"
 	stypes "configcenter/src/storage/stream/types"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"stathat.com/c/consistent"
 )
 
@@ -55,6 +56,7 @@ type SchedulerConf struct {
 	MongoConf local.MongoConf
 }
 
+// 调度器实例创建
 func NewTaskScheduler(conf *SchedulerConf) (*taskScheduler, error) {
 	reflector, err := reflector.NewReflector(conf.MongoConf)
 	if err != nil {
@@ -97,12 +99,18 @@ func (t *taskScheduler) watchServerNode() error {
 	return nil
 }
 
+// 任务表事件结构
+type taskEvent struct {
+	metadata.CloudSyncTask `json:",inline"`
+	Oid                    primitive.ObjectID `json:"_id" bson:"_id"`
+}
+
 // 监听云资源同步任务表事件，有变更时进行相应的处理
 func (t *taskScheduler) watchTaskTable(ctx context.Context) error {
 	opts := &stypes.ListWatchOptions{
 		Options: stypes.Options{
 			MaxAwaitTime: &maxAwaitTime,
-			EventStruct:  new(metadata.CloudSyncTask),
+			EventStruct:  new(taskEvent),
 			Collection:   common.BKTableNameCloudSyncTask,
 		},
 	}
@@ -121,14 +129,14 @@ func (t *taskScheduler) watchTaskTable(ctx context.Context) error {
 
 // 表记录新增处理逻辑
 func (t *taskScheduler) changeOnAdd(event *stypes.Event) {
-	blog.V(4).Infof("OnAdd event, taskid:%d", event.Document.(*metadata.CloudSyncTask).TaskID)
-	t.addTask(event.Oid, event.Document.(*metadata.CloudSyncTask))
+	blog.V(4).Infof("OnAdd event, taskid:%d", event.Document.(*taskEvent).TaskID)
+	t.addTask(event.Oid, &event.Document.(*taskEvent).CloudSyncTask)
 }
 
 // 表记录更新处理逻辑
 func (t *taskScheduler) changeOnUpdate(event *stypes.Event) {
-	blog.V(4).Infof("OnUpdate event, taskid:%d", event.Document.(*metadata.CloudSyncTask).TaskID)
-	t.addTask(event.Oid, event.Document.(*metadata.CloudSyncTask))
+	blog.V(4).Infof("OnUpdate event, taskid:%d", event.Document.(*taskEvent).TaskID)
+	t.addTask(event.Oid, &event.Document.(*taskEvent).CloudSyncTask)
 }
 
 // 表记录删除处理逻辑
@@ -139,8 +147,8 @@ func (t *taskScheduler) changeOnDelete(event *stypes.Event) {
 
 // 冷启动时已有表记录的处理逻辑
 func (t *taskScheduler) changeOnLister(event *stypes.Event) {
-	blog.V(4).Infof("changeOnLister event, taskid:%d", event.Document.(*metadata.CloudSyncTask).TaskID)
-	t.addTask(event.Oid, event.Document.(*metadata.CloudSyncTask))
+	blog.V(4).Infof("changeOnLister event, taskid:%d", event.Document.(*taskEvent).TaskID)
+	t.addTask(event.Oid, &event.Document.(*taskEvent).CloudSyncTask)
 }
 
 // 冷启动时已有表记录获取完成时的处理逻辑

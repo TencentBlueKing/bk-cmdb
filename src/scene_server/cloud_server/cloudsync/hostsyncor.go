@@ -462,7 +462,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			common.BKHostInnerIPField:     host.PrivateIp,
 			common.BKHostOuterIPField:     host.PublicIp,
 			common.BKCloudHostStatusField: host.InstanceState,
-			common.LastTimeField:          metadata.Now(),
+			common.LastTimeField:          time.Now(),
 		}
 		if err := h.updateHost(host.InstanceId, updateInfo); err != nil {
 			blog.Errorf("updateHosts err:%v", err.Error())
@@ -499,7 +499,7 @@ func (h *HostSyncor) updateHost(cloudInstID string, updateInfo map[string]interf
 func (h *HostSyncor) updateTaskState(taskid int64, status string, syncStatusDesc *metadata.SyncStatusDesc) error {
 	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
 	if status == metadata.CloudSyncSuccess || status == metadata.CloudSyncFail {
-		option.Set(common.BKCloudLastSyncTime, metadata.Now())
+		option.Set(common.BKCloudLastSyncTime, time.Now())
 		option.Set(common.BKCloudSyncStatusDescription, syncStatusDesc)
 	}
 
