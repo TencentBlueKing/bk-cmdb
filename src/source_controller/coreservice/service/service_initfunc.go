@@ -304,6 +304,17 @@ func (s *coreService) initCloudAccount(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *coreService) initAuth(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/auth/resource", Handler: s.SearchAuthResource})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *coreService) initService(web *restful.WebService) {
 	s.initModelClassification(web)
 	s.initModel(web)
@@ -324,4 +335,5 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initSetTemplate(web)
 	s.initHostApplyRule(web)
 	s.initCloudAccount(web)
+	s.initAuth(web)
 }

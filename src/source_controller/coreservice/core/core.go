@@ -198,6 +198,7 @@ type Core interface {
 	HostApplyRuleOperation() HostApplyRuleOperation
 	SystemOperation() SystemOperation
 	CloudOperation() CloudOperation
+	AuthOperation() AuthOperation
 }
 
 // ProcessOperation methods
@@ -299,6 +300,10 @@ type SystemOperation interface {
 	GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder)
 }
 
+type AuthOperation interface {
+	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64,[]map[string]interface{}, errors.CCErrorCoder)
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -314,6 +319,7 @@ type core struct {
 	setTemplate     SetTemplateOperation
 	hostApplyRule   HostApplyRuleOperation
 	cloud           CloudOperation
+	auth AuthOperation
 }
 
 // New create core
@@ -331,6 +337,7 @@ func New(
 	hostApplyRule HostApplyRuleOperation,
 	sys SystemOperation,
 	cloud CloudOperation,
+	auth AuthOperation,
 ) Core {
 	return &core{
 		model:           model,
@@ -347,6 +354,7 @@ func New(
 		setTemplate:     setTemplate,
 		hostApplyRule:   hostApplyRule,
 		cloud:           cloud,
+		auth:auth,
 	}
 }
 
@@ -404,4 +412,8 @@ func (m *core) HostApplyRuleOperation() HostApplyRuleOperation {
 
 func (m *core) CloudOperation() CloudOperation {
 	return m.cloud
+}
+
+func (m *core) AuthOperation() AuthOperation {
+	return m.auth
 }

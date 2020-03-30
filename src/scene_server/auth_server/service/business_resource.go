@@ -20,10 +20,10 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 )
 
-// pull resource whose actions don't need to be related to instance
-func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
-	query := new(types.PullResourceReq)
-	err := ctx.DecodeInto(query)
+// pull resource that belongs to the business scope
+func (s *AuthService) PullBusinessResource(ctx *rest.Contexts) {
+	query := types.PullResourceReq{}
+	err := ctx.DecodeInto(&query)
 	if err != nil {
 		ctx.RespHTTPBody(types.BaseResp{
 			Code:    types.InternalServerErrorCode,
@@ -33,7 +33,7 @@ func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
 	}
 
 	switch query.Type {
-	case iam.SysSystemBase, iam.SysOperationStatistic, iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply, iam.BizTopology:
+	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 	default:
 		ctx.RespHTTPBody(types.BaseResp{
 			Code:    types.NotFoundErrorCode,
@@ -58,19 +58,46 @@ func (s *AuthService) PullNoRelatedInstanceResource(ctx *rest.Contexts) {
 			},
 		})
 		return
-	case types.ListInstanceMethod, types.ListInstanceByPolicyMethod:
+	case types.ListInstanceMethod:
+		res, err := s.lgc.ListBusinessInstance(ctx.Kit, query)
+		if err != nil {
+			ctx.RespHTTPBody(types.BaseResp{
+				Code:    types.InternalServerErrorCode,
+				Message: err.Error(),
+			})
+			return
+		}
 		ctx.RespHTTPBody(types.ListInstanceResourceResp{
 			BaseResp: types.SuccessBaseResp,
-			Data: types.ListInstanceResult{
-				Count:   0,
-				Results: []types.InstanceResource{},
-			},
+			Data:     *res,
 		})
 		return
 	case types.FetchInstanceInfoMethod:
+		res, err := s.lgc.FetchInstanceInfo(ctx.Kit, query)
+		if err != nil {
+			ctx.RespHTTPBody(types.BaseResp{
+				Code:    types.InternalServerErrorCode,
+				Message: err.Error(),
+			})
+			return
+		}
 		ctx.RespHTTPBody(types.FetchInstanceInfoResp{
 			BaseResp: types.SuccessBaseResp,
-			Data:     []map[string]interface{}{},
+			Data:     res,
+		})
+		return
+	case types.ListInstanceByPolicyMethod:
+		res, err := s.lgc.ListInstanceByPolicy(ctx.Kit, query)
+		if err != nil {
+			ctx.RespHTTPBody(types.BaseResp{
+				Code:    types.InternalServerErrorCode,
+				Message: err.Error(),
+			})
+			return
+		}
+		ctx.RespHTTPBody(types.ListInstanceResourceResp{
+			BaseResp: types.SuccessBaseResp,
+			Data:     *res,
 		})
 		return
 	default:
