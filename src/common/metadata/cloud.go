@@ -190,12 +190,10 @@ type InstancesInfo struct {
 
 type Instance struct {
 	InstanceId    string `json:"bk_cloud_inst_id" bson:"bk_cloud_inst_id"`
-	InstanceName  string `json:"bk_host_name" bson:"bk_host_name"`
 	PrivateIp     string `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	PublicIp      string `json:"bk_host_outerip" bson:"bk_host_outerip"`
 	InstanceState string `json:"bk_cloud_host_status" bson:"bk_cloud_host_status"`
 	VpcId         string `json:"bk_vpc_id" bson:"bk_vpc_id"`
-	OsName        string `json:"bk_os_name" bson:"bk_os_name"`
 }
 
 // 云主机资源
@@ -221,11 +219,9 @@ type HostSyncInfo struct {
 	HostID        int64  `json:"bk_host_id" bson:"bk_host_id"`
 	CloudID       int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	InstanceId    string `json:"bk_cloud_inst_id" bson:"bk_cloud_inst_id"`
-	InstanceName  string `json:"bk_host_name" bson:"bk_host_name"`
 	PrivateIp     string `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	PublicIp      string `json:"bk_host_outerip" bson:"bk_host_outerip"`
 	InstanceState string `json:"bk_cloud_host_status" bson:"bk_cloud_host_status"`
-	OsName        string `json:"bk_os_name" bson:"bk_os_name"`
 	OwnerID       string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	CreateTime    Time   `json:"create_time" bson:"create_time"`
 	LastTime      Time   `json:"last_time" bson:"last_time"`

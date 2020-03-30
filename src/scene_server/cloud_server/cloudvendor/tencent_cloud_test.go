@@ -24,9 +24,9 @@ var tcTestClient VendorClient
 
 func init() {
 	conf := metadata.CloudAccountConf{
-		metadata.TencentCloud,
-		os.Getenv("TENCENTCLOUD_SECRET_ID"),
-		os.Getenv("TENCENTCLOUD_SECRET_KEY"),
+		VendorName: metadata.TencentCloud,
+		SecretID:   os.Getenv("TENCENTCLOUD_SECRET_ID"),
+		SecretKey:  os.Getenv("TENCENTCLOUD_SECRET_KEY"),
 	}
 	var err error
 	tcTestClient, err = GetVendorClient(conf)
@@ -42,7 +42,7 @@ func TestTCGetRegions(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, region := range regionSet {
-		t.Logf("i:%d, vpc:%#v\n",i, *region)
+		t.Logf("i:%d, vpc:%#v\n", i, *region)
 	}
 }
 
@@ -55,7 +55,7 @@ func TestTCGetVpcs(t *testing.T) {
 	}
 	t.Logf("vpcs count:%#v\n", vpcsInfo.Count)
 	for i, vpc := range vpcsInfo.VpcSet {
-		t.Logf("i:%d, vpc:%#v\n",i, *vpc)
+		t.Logf("i:%d, vpc:%#v\n", i, *vpc)
 	}
 }
 
@@ -68,7 +68,7 @@ func TestTCGetInstances(t *testing.T) {
 	}
 	t.Logf("instances count:%#v\n", instancesInfo.Count)
 	for i, instance := range instancesInfo.InstanceSet {
-		t.Logf("i:%d, instance:%#v\n",i, *instance)
+		t.Logf("i:%d, instance:%#v\n", i, *instance)
 	}
 }
 
@@ -85,7 +85,7 @@ func TestTCGetInstancesTotalCnt(t *testing.T) {
 func TestTCRequestOpt(t *testing.T) {
 	//opt := &ccom.RequestOpt{Limit: ccom.Int64Ptr(int64(1))}
 	opt := &ccom.RequestOpt{
-		Limit: ccom.Int64Ptr(int64(10)),
+		Limit:   ccom.Int64Ptr(int64(10)),
 		Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-name"), ccom.StringPtrs([]string{"Default"})}},
 	}
 	region := "ap-guangzhou"
@@ -95,6 +95,6 @@ func TestTCRequestOpt(t *testing.T) {
 	}
 	t.Logf("vpcs count:%#v\n", vpcsInfo.Count)
 	for i, vpc := range vpcsInfo.VpcSet {
-		t.Logf("i:%d, vpc:%#v\n",i, *vpc)
+		t.Logf("i:%d, vpc:%#v\n", i, *vpc)
 	}
 }
