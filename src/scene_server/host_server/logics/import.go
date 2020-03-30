@@ -151,7 +151,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 
 		bizName := ""
 		if appID > 0 {
-			bizName, err = auditlog.NewAudit(lgc.CoreAPI, ctx, lgc.header).GetInstNameByID(common.BKInnerObjIDApp, appID)
+			bizName, err = auditlog.NewAudit(lgc.CoreAPI, lgc.header).GetInstNameByID(ctx, common.BKInnerObjIDApp, appID)
 			if err != nil {
 				return nil, nil, nil, nil, err
 			}
@@ -271,7 +271,7 @@ func (lgc *Logics) AddHostToResourcePool(ctx context.Context, hostList metadata.
 		}
 		bizName := ""
 		if bizID > 0 {
-			bizName, err = auditlog.NewAudit(lgc.CoreAPI, ctx, lgc.header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
+			bizName, err = auditlog.NewAudit(lgc.CoreAPI, lgc.header).GetInstNameByID(ctx, common.BKInnerObjIDApp, bizID)
 			if err != nil {
 				return hostIDs, res, err
 			}

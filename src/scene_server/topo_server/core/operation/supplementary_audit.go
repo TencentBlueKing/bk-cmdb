@@ -69,8 +69,15 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 			return
 		}
 	}
-	for _, targetItem := range targetData.datas {
 
+	// get mainline model association
+	asst, err := a.client.CoreService().Association().ReadModelAssociation(context.Background(), a.kit.Header, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
+	if err != nil || !asst.Result {
+		blog.Errorf("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, a.kit.Rid)
+		return
+	}
+
+	for _, targetItem := range targetData.datas {
 		id, err := targetItem.GetInstID()
 		if nil != err {
 			blog.Errorf("[audit]failed to get the inst id, error info is %s, rid: %s", err.Error(), a.kit.Rid)
@@ -109,17 +116,22 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 			if _, exist := targetItem.GetValues()[common.BKAppIDField]; exist {
 				if biz, err := targetItem.GetValues().Int64(common.BKAppIDField); nil != err {
 					blog.V(3).Infof("[audit] failed to get the biz id from the data(%#v), error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.kit.Rid)
-					return
+					continue
 				} else {
 					bizID = biz
+				}
+			} else if _, exist := targetItem.GetValues()[metadata.BKMetadata]; exist {
+				if bizID, err = metadata.ParseBizIDFromData(targetItem.GetValues()); err != nil {
+					blog.V(3).Infof("[audit] failed to get the biz id from the data(%#v)'s metadata, error info is %s, rid: %s", targetItem.GetValues(), err.Error(), a.kit.Rid)
+					continue
 				}
 			}
 		}
 		bizName := ""
 		if bizID > 0 {
-			bizName, err = auditlog.NewAudit(a.client, a.kit.Ctx, a.kit.Header).GetInstNameByID(common.BKInnerObjIDApp, bizID)
+			bizName, err = auditlog.NewAudit(a.client, a.kit.Header).GetInstNameByID(a.kit.Ctx, common.BKInnerObjIDApp, bizID)
 			if err != nil {
-				return
+				continue
 			}
 		}
 
@@ -139,9 +151,19 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 				}
 			}
 		}
+
+		// check if object is mainline object
+		isMainline := false
+		for _, mainline := range asst.Data.Info {
+			if mainline.ObjectID == objID || mainline.AsstObjID == objID {
+				isMainline = true
+				break
+			}
+		}
+
 		auditLog := metadata.AuditLog{
-			AuditType:    metadata.GetAuditTypeByObjID(objID),
-			ResourceType: metadata.GetResourceTypeByObjID(objID),
+			AuditType:    metadata.GetAuditTypeByObjID(objID, isMainline),
+			ResourceType: metadata.GetResourceTypeByObjID(objID, isMainline),
 			Action:       action,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
@@ -159,30 +181,19 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action metad
 			},
 		}
 
-		// add biz topology label for mainline instance
-		asst, err := a.client.CoreService().Association().ReadModelAssociation(context.Background(), a.kit.Header, &metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}})
-		if err != nil || !asst.Result {
-			blog.V(3).Infof("[audit] failed to find mainline association, err: %v, resp: %v, rid: %s", err, asst, a.kit.Rid)
-			return
-		}
-		if objID != common.BKInnerObjIDApp {
-			for _, mainline := range asst.Data.Info {
-				if mainline.ObjectID == objID || mainline.AsstObjID == objID {
-					auditLog.Label = map[string]string{
-						metadata.LabelBizTopology: "",
-					}
-					break
-				}
+		if isMainline && objID != common.BKInnerObjIDApp {
+			auditLog.Label = map[string]string{
+				metadata.LabelBizTopology: "",
 			}
 		}
 
 		auditResp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.kit.Header, auditLog)
 		if err != nil {
-			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, rid: %s", auditLog, err.Error(), a.kit.Rid)
+			blog.ErrorJSON("[audit] failed to save audit log(%s), err: %s, rid: %s", auditLog, err.Error(), a.kit.Rid)
 			return
 		}
 		if !auditResp.Result {
-			blog.V(3).Infof("[audit] failed to save audit log(%#v), err: %s, rid: %s", auditLog, auditResp.ErrMsg, a.kit.Rid)
+			blog.ErrorJSON("[audit] failed to save audit log(%s), err: %s, rid: %s", auditLog, auditResp.ErrMsg, a.kit.Rid)
 			return
 		}
 	}
@@ -207,7 +218,6 @@ func (a *auditLog) CreateSnapshot(instID int64, cond mapstr.MapStr) *WrapperResu
 	for _, inst := range insts {
 		result.datas = append(result.datas, inst)
 	}
-
 	return result
 }
 

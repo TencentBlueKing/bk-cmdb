@@ -338,7 +338,6 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit, input *
 
 	transfer := manager.NewHostModuleTransfer(kit, input.DstApplicationID, input.DstModuleIDArr, false)
 	transfer.SetCrossBusiness(kit, input.SrcApplicationID)
-
 	err = transfer.ValidParameter(kit)
 	if err != nil {
 		blog.ErrorJSON("TransferToAnotherBusiness failed, ValidParameter failed, err:%s, input:%s, rid:%s", err.Error(), input, kit.Rid)
