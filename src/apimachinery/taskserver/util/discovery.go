@@ -27,6 +27,7 @@ type TaskQueueConfigServ struct {
 
 type TaskQueueServDiscoveryInterace interface {
 	GetServers() ([]string, error)
+	GetServersChan() chan []string
 }
 
 var (
@@ -86,4 +87,8 @@ func (s *taskQueueConfig) GetServers() ([]string, error) {
 	taskQueue.RLock()
 	defer taskQueue.RUnlock()
 	return taskQueue.addrs[s.flag]()
+}
+
+func (s *taskQueueConfig) GetServersChan() chan []string {
+	return nil
 }

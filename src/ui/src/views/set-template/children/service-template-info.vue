@@ -10,7 +10,8 @@
             <bk-table-column v-for="head in header"
                 :key="head.id"
                 :prop="head.id"
-                :label="head.name">
+                :label="head.name"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row[head.id] | formatter(head.property)}}</template>
             </bk-table-column>
         </bk-table>

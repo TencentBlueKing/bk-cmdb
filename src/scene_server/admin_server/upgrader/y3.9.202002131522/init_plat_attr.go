@@ -33,10 +33,10 @@ func initPlatAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 	dataRows := []*Attribute{
 		{ObjectID: objID, PropertyID: "bk_status", PropertyName: "状态", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: statusEnum},
 		{ObjectID: objID, PropertyID: "bk_cloud_vendor", PropertyName: "云厂商", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: cloudVendorEnum},
-		{ObjectID: objID, PropertyID: "bk_vpc_id", PropertyName: "VPC唯一标识", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: ""},
+		{ObjectID: objID, PropertyID: "bk_vpc_id", PropertyName: "VPC唯一标识", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		{ObjectID: objID, PropertyID: "bk_vpc_name", PropertyName: "VPC名称", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		{ObjectID: objID, PropertyID: "bk_account_id", PropertyName: "云账户ID", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeInt, Option: ""},
-		{ObjectID: objID, PropertyID: "bk_region", PropertyName: "VPC所属区域", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
+		{ObjectID: objID, PropertyID: "bk_region", PropertyName: "VPC所属地域", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		{ObjectID: objID, PropertyID: "bk_creator", PropertyName: "创建者", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 		{ObjectID: objID, PropertyID: "bk_last_editor", PropertyName: "最后修改人", IsRequired: false, IsOnly: false, IsEditable: true, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
 	}
@@ -57,12 +57,12 @@ func initPlatAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 
 		id, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
 		if err != nil {
-			return fmt.Errorf("upgrade y3.9.202002181444, insert plat attrName: %s, but get NextSequence failed, err: %v", r.PropertyName, err)
+			return fmt.Errorf("upgrade y3.9.y3_9_202002131522, insert plat attrName: %s, but get NextSequence failed, err: %v", r.PropertyName, err)
 		}
 		r.ID = int64(id)
 
 		if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, r); err != nil {
-			return fmt.Errorf("upgrade y3.9.202002181444, but insert plat attrName: %s, failed, err: %v", r.PropertyName, err)
+			return fmt.Errorf("upgrade y3.9.y3_9_202002131522, but insert plat attrName: %s, failed, err: %v", r.PropertyName, err)
 		}
 	}
 
@@ -72,7 +72,6 @@ func initPlatAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 var statusEnum = []metadata.EnumVal{
 	{ID: "1", Name: "正常", Type: "text"},
 	{ID: "2", Name: "异常", Type: "text"},
-	{ID: "3", Name: "同步中", Type: "text"},
 }
 
 var cloudVendorEnum = []metadata.EnumVal{

@@ -174,8 +174,8 @@
                         }
                     })
                     const newDir = {
-                        bk_module_id: data.bk_module_id,
-                        bk_module_name: data.bk_module_name,
+                        bk_module_id: data.created.id,
+                        bk_module_name: this.createInfo.name,
                         host_count: 0
                     }
                     this.dirList.splice(1, 0, newDir)

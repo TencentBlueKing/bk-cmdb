@@ -99,3 +99,7 @@ func (*mockServer) GetServers() ([]string, error) {
 func (*mockServer) IsMaster(string) bool {
 	return true
 }
+
+func (s *mockServer) GetServersChan() chan []string {
+	return nil
+}

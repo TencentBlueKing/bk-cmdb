@@ -15,7 +15,6 @@
                     @toggle="toggleSelector">
                     <div class="text-content" slot="trigger" @click="toggleSelector(true)" :class="{ 'open': attribute.isShow }">
                         <span>{{selectedName}}</span>
-                        <!-- <i class="bk-icon icon-angle-down"></i> -->
                     </div>
                     <bk-option v-for="(option, index) in attribute.list"
                         :key="index"
@@ -25,20 +24,6 @@
                 </bk-select>
             </div>
         </div>
-        <!-- <div class="verification-selector-mask" v-if="attribute.isShow"></div> -->
-        <!-- <div class="radio-box">
-            <label class="label-text">
-                {{$t('属性为空值是否校验')}}
-            </label>
-            <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="required" :value="true" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
-                <span class="cmdb-radio-text">{{$t('是')}}</span>
-            </label>
-            <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="required" :value="false" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
-                <span class="cmdb-radio-text">{{$t('否')}}</span>
-            </label>
-        </div> -->
         <div class="btn-group">
             <bk-button theme="primary"
                 :disabled="isReadOnly || !verificationInfo.selected.length"
@@ -209,18 +194,7 @@
                         line-height: 24px;
                         overflow: visible;
                         border-color: $cmdbBorderFocusColor;
-                        .icon-angle-down {
-                            color: $cmdbBorderFocusColor;
-                            transform: rotate(180deg);
-                        }
                     }
-                }
-                .icon-angle-down {
-                    position: absolute;
-                    right: 10px;
-                    top: 12px;
-                    font-size: 12px;
-                    transition: transform .2s linear;
                 }
             }
         }

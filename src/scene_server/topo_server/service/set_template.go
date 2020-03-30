@@ -227,7 +227,7 @@ func (s *Service) ListSetTemplateWeb(ctx *rest.Contexts) {
 		return
 	}
 	if listOption.Page.Limit == 0 {
-		listOption.Page.Limit = common.BKDefaultLimit
+		listOption.Page.Limit = common.BKNoLimit
 	}
 
 	listResult, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID, listOption)

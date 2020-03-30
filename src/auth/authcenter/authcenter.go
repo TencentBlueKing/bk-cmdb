@@ -1027,6 +1027,10 @@ func (s *acDiscovery) GetServers() ([]string, error) {
 	}
 }
 
+func (s *acDiscovery) GetServersChan() chan []string {
+	return nil
+}
+
 func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo, rs ...meta.BackendResource) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 

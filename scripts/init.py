@@ -375,8 +375,6 @@ maxOpenConns = 3000
 maxIdleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
-maxIDleConns = 1000
-mechanism = SCRAM-SHA-1
 [redis]
 host = $redis_host
 port = $redis_port
@@ -399,7 +397,7 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 1000
+maxIDleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 

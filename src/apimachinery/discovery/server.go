@@ -34,6 +34,7 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*
 		name:         name,
 		servers:      make([]*types.ServerInfo, 0),
 		discoverChan: discoverChan,
+		serversChan: make(chan []string, 1),
 	}
 
 	svr.run()
@@ -49,6 +50,7 @@ type server struct {
 	servers      []*types.ServerInfo
 	uuids        []string
 	discoverChan <-chan *registerdiscover.DiscoverEvent
+	serversChan chan []string
 }
 
 func (s *server) GetServers() ([]string, error) {
@@ -102,10 +104,12 @@ func (s *server) run() {
 			if len(svr.Server) <= 0 {
 				blog.Warnf("get zk event with 0 instance with path[%s], reset its servers", s.path)
 				s.resetServer()
+				s.setServersChan()
 				continue
 			}
 
 			s.updateServer(svr.Server)
+			s.setServersChan()
 		}
 	}()
 }
@@ -114,6 +118,31 @@ func (s *server) resetServer() {
 	s.Lock()
 	defer s.Unlock()
 	s.servers = make([]*types.ServerInfo, 0)
+}
+
+// 当监听到服务节点变化时，将最新的服务节点信息放入该channel里
+func (s *server) setServersChan() {
+	// 即使没有其他服务消费该channel，也能保证该channel不会阻塞
+	for len(s.serversChan) >=1 {
+		<- s.serversChan
+	}
+	s.serversChan <- s.getInstances()
+}
+
+// 获取zk上最新的服务节点信息channel
+func (s *server) GetServersChan() chan []string {
+	return s.serversChan
+}
+
+// 获取所有注册服务节点的ip:port
+func (s *server) getInstances() []string {
+	addrArr := []string{}
+	s.RLock()
+	defer s.RUnlock()
+	for _, info := range s.servers {
+		addrArr = append(addrArr, info.Instance())
+	}
+	return addrArr
 }
 
 func (s *server) updateServer(svrs []string) {

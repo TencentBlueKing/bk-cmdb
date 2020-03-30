@@ -112,6 +112,7 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 		common.BKFieldName:  setTemplate.Name,
 		common.BKAppIDField: setTemplate.BizID,
 	}
+	nameFilter = util.SetModOwner(nameFilter, kit.SupplierAccount)
 	sameNameCount, err := p.dbProxy.Table(common.BKTableNameSetTemplate).Find(nameFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("create set template failed, filter same name records failed, filter: %+v, err: %+v, rid: %s", nameFilter, err, kit.Rid)
@@ -367,7 +368,7 @@ func (p *setTemplateOperation) ListSetTemplate(kit *rest.Kit, bizID int64, optio
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	}
-	if option.Page.Limit > 0 {
+	if option.Page.Limit > 0 && option.Page.Limit != common.BKNoLimit {
 		query = query.Limit(uint64(option.Page.Limit))
 	}
 	if option.Page.Start > 0 {

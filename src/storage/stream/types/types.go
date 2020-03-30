@@ -111,7 +111,7 @@ func (opts *Options) CheckSetDefault() error {
 type WatchOptions struct {
 	Options
 	// StartAfterToken describe where you want to watch the event.
-	// Note: the returned event does'nt contains the token represented,
+	// Note: the returned event doesn't contains the token represented,
 	// and will returns event just after this token.
 	StartAfterToken *EventToken
 }

@@ -665,6 +665,7 @@ const (
 	CCErrHostModuleNotBelongSetErr                            = 1110062
 	CCErrHostPlatCloudNameIsrequired                          = 1110063
 	CCErrHostPlatCloudNameAlreadyExist                        = 1110064
+	CCErrHostFindManyCloudAreaAddHostCountFieldFail           = 1110065
 
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
@@ -794,10 +795,16 @@ const (
 
 	// cloud_server 1118xxx
 	// CCErrCloudVendorNotSupport cloud vendor not support
-	CCErrCloudVendorNotSupport        = 1118001
-	CCErrCloudAccountNameAlreadyExist = 1118002
-	CCErrCloudValidAccountParamFail   = 1118003
-	CCErrCloudAccountIDNoExistFail    = 1118004
+	CCErrCloudVendorNotSupport            = 1118001
+	CCErrCloudAccountNameAlreadyExist     = 1118002
+	CCErrCloudValidAccountParamFail       = 1118003
+	CCErrCloudAccountIDNoExistFail        = 1118004
+	CCErrCloudSyncTaskNameAlreadyExist    = 1118005
+	CCErrCloudValidSyncTaskParamFail      = 1118006
+	CCErrCloudVpcIDIsRequired             = 1118007
+	CCErrCloudVendorInterfaceCalledFailed = 1118008
+	CCErrCloudAccountSecretIDAlreadyExist = 1118009
+	CCErrCloudTaskAlreadyExistInAccount   = 1118010
 
 	/** TODO: 以下错误码需要改造 **/
 

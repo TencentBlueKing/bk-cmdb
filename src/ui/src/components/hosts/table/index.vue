@@ -114,7 +114,8 @@
                 :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
                 :fixed="column.id === 'bk_host_innerip'"
-                :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
+                :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option'))}}
                 </template>
@@ -760,12 +761,6 @@
             display: inline-block;
             vertical-align: middle;
             font-size: 14px;
-            &.quick-search-button {
-                .icon-angle-down {
-                    font-size: 12px;
-                    top: 0;
-                }
-            }
             &:first-child {
                 margin-left: 0;
             }
