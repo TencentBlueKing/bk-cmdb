@@ -929,5 +929,6 @@
     "模型显示设置": "Model display settings",
     "关系显示设置": "Relationship display setting",
     "请编辑": "Please edit",
-    "无": "none"
+    "无": "none",
+    "国际化配置翻译，不可修改": "Translate by internationalization, uneditable"
 }
