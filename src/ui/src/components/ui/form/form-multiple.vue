@@ -19,7 +19,7 @@
                                     </bk-checkbox>
                                     <label class="property-name-text"
                                         :for="`property-name-${property['bk_property_id']}`"
-                                        :class="{ required: property['isrequired'] }">
+                                        :class="{ required: property['isrequired'] && editable[property.bk_property_id] }">
                                         {{property['bk_property_name']}}
                                     </label>
                                     <i class="property-name-tooltips icon icon-cc-tips"
@@ -184,35 +184,10 @@
                 return this.properties.find(property => property['bk_property_id'] === id)
             },
             getValidateRules (property) {
-                const rules = {}
-                const {
-                    bk_property_type: propertyType,
-                    option,
-                    isrequired
-                } = property
-                if (isrequired) {
-                    rules.required = true
+                if (!this.editable[property.bk_property_id]) {
+                    return {}
                 }
-                if (option) {
-                    if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
-                            rules['min_value'] = option.min
-                        }
-                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
-                            rules['max_value'] = option.max
-                        }
-                    } else if (['singlechar', 'longchar'].includes(propertyType)) {
-                        rules['regex'] = option
-                    }
-                }
-                if (['singlechar', 'longchar'].includes(propertyType)) {
-                    rules[propertyType] = true
-                    rules.length = propertyType === 'singlechar' ? 256 : 2000
-                }
-                if (propertyType === 'int') {
-                    rules['numeric'] = true
-                }
-                return rules
+                return this.$tools.getValidateRules(property)
             },
             getMultipleValues () {
                 const multipleValues = {}
