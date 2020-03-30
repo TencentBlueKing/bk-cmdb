@@ -356,6 +356,8 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 	}
 
 	// update plat
+	user := util.GetUser(req.Request.Header)
+	input[common.BKLastEditor] = user
 	updateOption := &meta.UpdateOption{
 		Data: input,
 		Condition: map[string]interface{}{

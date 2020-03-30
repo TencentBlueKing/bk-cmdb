@@ -814,6 +814,8 @@ const (
 	CCErrCloudVendorInterfaceCalledFailed = 1118008
 	CCErrCloudAccountSecretIDAlreadyExist = 1118009
 	CCErrCloudTaskAlreadyExistInAccount   = 1118010
+	CCErrCloudAccoutIDSecretWrong         = 1118011
+	CCErrCloudHttpRequestTimeout          = 1118012
 
 	/** TODO: 以下错误码需要改造 **/
 

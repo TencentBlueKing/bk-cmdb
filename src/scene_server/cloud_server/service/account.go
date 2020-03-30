@@ -15,6 +15,7 @@ package service
 import (
 	"reflect"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -32,24 +33,21 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 		return
 	}
 
-	var pass bool
-	var err error
 	conf := metadata.CloudAccountConf{VendorName: account.CloudVendor, SecretID: account.SecretID, SecretKey: account.SecretKey}
-	pass, err = s.Logics.AccountVerify(conf)
+	err := s.Logics.AccountVerify(conf)
 	if err != nil {
 		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err, ctx.Kit.Rid)
+		errStr := err.Error()
+		if strings.Contains(strings.ToLower(errStr), "authfailure") {
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudAccoutIDSecretWrong))
+		} else if strings.Contains(strings.ToLower(errStr), "timeout") {
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudHttpRequestTimeout))
+		} else {
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed))
+		}
 	}
 
-	rData := mapstr.MapStr{
-		"connected": true,
-		"error_msg": "",
-	}
-	if pass == false {
-		rData["connected"] = false
-		rData["error_msg"] = err.Error()
-	}
-
-	ctx.RespEntity(rData)
+	ctx.RespEntity(nil)
 }
 
 // 新建云账户

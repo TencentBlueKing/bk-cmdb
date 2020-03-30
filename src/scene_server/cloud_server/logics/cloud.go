@@ -25,20 +25,20 @@ import (
 	ccom "configcenter/src/scene_server/cloud_server/common"
 )
 
-func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) (bool, error) {
+func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) error {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
 		blog.Errorf("AccountVerify GetVendorClient err:%s", err.Error())
-		return false, err
+		return err
 	}
 
 	_, err = client.GetRegions(nil)
 	if err != nil {
 		blog.Errorf("AccountVerify GetRegions err:%s", err.Error())
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
 // 获取地域信息
