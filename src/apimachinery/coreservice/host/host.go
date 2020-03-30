@@ -64,6 +64,8 @@ type HostClientInterface interface {
 
 	// update host's cloud area field
 	UpdateHostCloudAreaField(ctx context.Context, header http.Header, option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
+
+	TransferHostResourceDirectory(ctx context.Context, header http.Header, option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
 }
 
 func NewHostClientInterface(client rest.ClientInterface) HostClientInterface {

@@ -10,32 +10,34 @@
  * limitations under the License.
  */
 
-package x19_09_03_05
+package y3_9_202002131522
 
 import (
+	"configcenter/src/common/metadata"
 	"context"
-	"fmt"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/types"
 )
 
-func CreateObjectIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	idx := types.Index{
-		Keys: map[string]int32{
-			common.BKObjIDField: 1,
-		},
-		Name:       common.BKObjIDField,
-		Unique:     false,
-		Background: false,
+// removeResourceFaultRecycle 资源池目录不需要"故障机"和"待回收"
+func removeResourceFaultRecycle(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	bizInfo := &metadata.BizInst{}
+	cond := mapstr.MapStr{common.BKDefaultField: 1}
+	if err := db.Table(common.BKTableNameBaseApp).Find(cond).One(ctx, bizInfo); err != nil {
+		return err
 	}
 
-	if err := db.Table(common.BKTableNameObjUnique).CreateIndex(ctx, idx); err != nil {
-		blog.Errorf("CreateObjectIDIndex failed, err: %+v", err)
-		return fmt.Errorf("CreateObjectIDIndex failed, err: %v", err)
+	shouldRemoveModules := []int64{2, 3}
+	filter := mapstr.MapStr{
+		common.BKAppIDField:   bizInfo.BizID,
+		common.BKDefaultField: mapstr.MapStr{common.BKDBIN: shouldRemoveModules},
 	}
+	if err := db.Table(common.BKTableNameBaseModule).Delete(ctx, filter); err != nil {
+		return err
+	}
+
 	return nil
 }

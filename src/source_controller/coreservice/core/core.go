@@ -156,6 +156,8 @@ type HostOperation interface {
 
 	// host search
 	ListHosts(kit *rest.Kit, input metadata.ListHosts) (*metadata.ListHostResult, error)
+
+	TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
 }
 
 // AssociationOperation association methods
@@ -293,7 +295,6 @@ type CloudOperation interface {
 	DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCErrorCoder
 	CreateSyncHistory(kit *rest.Kit, account *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder)
 	SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder)
-
 }
 
 type SystemOperation interface {
@@ -301,7 +302,7 @@ type SystemOperation interface {
 }
 
 type AuthOperation interface {
-	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64,[]map[string]interface{}, errors.CCErrorCoder)
+	SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder)
 }
 
 type core struct {
@@ -319,7 +320,7 @@ type core struct {
 	setTemplate     SetTemplateOperation
 	hostApplyRule   HostApplyRuleOperation
 	cloud           CloudOperation
-	auth AuthOperation
+	auth            AuthOperation
 }
 
 // New create core
@@ -354,7 +355,7 @@ func New(
 		setTemplate:     setTemplate,
 		hostApplyRule:   hostApplyRule,
 		cloud:           cloud,
-		auth:auth,
+		auth:            auth,
 	}
 }
 

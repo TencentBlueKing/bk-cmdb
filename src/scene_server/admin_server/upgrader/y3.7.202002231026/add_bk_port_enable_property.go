@@ -43,7 +43,7 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		blog.ErrorJSON("get proerty max index value error.cond:%s, err:%s", maxIdxCond, err.Error())
 		return fmt.Errorf("get proerty max index value error. err:%s", err.Error())
 	}
-	
+
 	addPortEnable := Attribute{
 		ID:            int64(id),
 		OwnerID:       common.BKDefaultOwnerID,

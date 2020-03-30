@@ -102,7 +102,7 @@ func (t *genericTransfer) Transfer(kit *rest.Kit, hostID int64) errors.CCErrorCo
 	if err := t.removeHostServiceInstance(kit, hostID); err != nil {
 		return err
 	}
-	
+
 	originDatas, err = t.delHostModuleRelation(kit, hostID)
 	if err != nil {
 		// It is not the time to merge and base the time. When it fails,

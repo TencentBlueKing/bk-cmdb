@@ -25,27 +25,27 @@ import (
 // CreateMainLineObject create a new model in the main line topo
 func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 
-	var txnErr error    
-    txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
-    if err != nil {
-        txnErr = err
-        blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
-        ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-        return
-    }
-    defer func() {
-        if txnErr == nil {
-            err = txn.CommitTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("CommitTransaction err: %+v", err)
-            }
-        } else {
-            err = txn.AbortTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("AbortTransaction err: %+v", err)
-            }
-        }
-    }()
+	var txnErr error
+	txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
+	if err != nil {
+		txnErr = err
+		blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
+		return
+	}
+	defer func() {
+		if txnErr == nil {
+			err = txn.CommitTransaction(ctx.Kit.Ctx)
+			if err != nil {
+				blog.Errorf("CommitTransaction err: %+v", err)
+			}
+		} else {
+			err = txn.AbortTransaction(ctx.Kit.Ctx)
+			if err != nil {
+				blog.Errorf("AbortTransaction err: %+v", err)
+			}
+		}
+	}()
 
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); err != nil {
@@ -82,28 +82,28 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 // DeleteMainLineObject delete a object int the main line topo
 func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 
-    var txnErr error
-    txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
-    if err != nil {
-        txnErr = err
-        blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
-        ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-        return
-    }
-    defer func() {
-        if txnErr == nil {
-            err = txn.CommitTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("CommitTransaction err: %+v", err)
-            }
-        } else {
-            blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
-            err = txn.AbortTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("AbortTransaction err: %+v", err)
-            }
-        }
-    }()
+	var txnErr error
+	txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
+	if err != nil {
+		txnErr = err
+		blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
+		return
+	}
+	defer func() {
+		if txnErr == nil {
+			err = txn.CommitTransaction(ctx.Kit.Ctx)
+			if err != nil {
+				blog.Errorf("CommitTransaction err: %+v", err)
+			}
+		} else {
+			blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
+			err = txn.AbortTransaction(ctx.Kit.Ctx)
+			if err != nil {
+				blog.Errorf("AbortTransaction err: %+v", err)
+			}
+		}
+	}()
 
 	objID := ctx.Request.PathParameter("bk_obj_id")
 

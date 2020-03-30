@@ -13,19 +13,19 @@
 package util
 
 import (
-    "context"
-    "fmt"
-    "net/http"
-    "reflect"
-    "strconv"
-    "strings"
-    "sync/atomic"
+	"context"
+	"fmt"
+	"net/http"
+	"reflect"
+	"strconv"
+	"strings"
+	"sync/atomic"
 
-    "configcenter/src/common"
-    "configcenter/src/common/errors"
-    "github.com/emicklei/go-restful"
-    "github.com/gin-gonic/gin"
-    "github.com/rs/xid"
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin"
+	"github.com/rs/xid"
 )
 
 func InStrArr(arr []string, key string) bool {

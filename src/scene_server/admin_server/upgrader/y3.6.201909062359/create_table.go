@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/dal/types"
 )
 
 func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {

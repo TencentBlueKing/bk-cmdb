@@ -481,3 +481,27 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 	}
 	return nil
 }
+
+func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.Header, option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+	rid := util.GetHTTPCCRequestID(header)
+
+	result := metadata.BaseResp{}
+	subPath := "/host/transfer/resource/directory"
+
+	err := h.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&result)
+	if err != nil {
+		blog.Errorf("TransferHostResourceDirectory failed, http request failed, err: %+v, rid: %s", err, rid)
+		return errors.CCHttpError
+	}
+	if result.Code > 0 || result.Result == false {
+		return errors.New(result.Code, result.ErrMsg)
+	}
+
+	return nil
+}

@@ -161,7 +161,7 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 			id, err := strconv.ParseInt(filter.Parent.ID, 10, 64)
 			if err != nil {
 				blog.Errorf("filter.parent.id %s parse int failed, error: %s, rid: %s", filter.Parent.ID, err.Error(), kit.Rid)
-				return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{},}, nil
+				return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 			}
 			cond[parentIDField] = id
 		}
@@ -191,7 +191,7 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 		ancestorNameField := types.GetResourceNameField(resourceType)
 		if objID == "" {
 			// ancestor type not exist
-			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{},}, nil
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 		// get ancestor from cache
 		keys, err := lgc.cache.Keys(common.BKCacheKeyV3Prefix + objID + "*").Result()
@@ -307,7 +307,7 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 	var parentObjID string
 	if filter.Parent != nil {
 		if filter.Parent.Type != iam.SysModel {
-			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{},}, nil
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 		parentObjID = filter.Parent.ID
 		cond[common.BKObjIDField] = filter.Parent.ID
@@ -330,7 +330,7 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 		}
 
 		if resourceType != iam.SysModel {
-			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{},}, nil
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 		regex := regexp.MustCompile(fmt.Sprintf(".*%s.*", strings.Join(keywords, "|")))
 		// check if parent object matches the search filter
@@ -348,13 +348,13 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 				return nil, err
 			}
 			if len(modelRes.Data.Info) == 0 {
-				return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{},}, nil
+				return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 			}
 			if regex.MatchString(modelRes.Data.Info[0].Spec.ObjectName) {
 				modelMap[parentObjID] = modelRes.Data.Info[0].Spec.ObjectName
 				continue
 			}
-			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{},}, nil
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 
 		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
@@ -375,7 +375,7 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 			objIDs = append(objIDs, model.Spec.ObjectID)
 		}
 		if len(objIDs) == 0 {
-			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{},}, nil
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 		cond[common.BKObjIDField] = map[string]interface{}{
 			common.BKDBIN: objIDs,
@@ -389,8 +389,8 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 	// get all model if no model is filtered
 	if len(modelMap) == 0 {
 		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
-			Fields: []string{common.BKObjIDField, common.BKObjNameField},
-			Page:   metadata.BasePage{Limit: 1},
+			Fields:    []string{common.BKObjIDField, common.BKObjNameField},
+			Page:      metadata.BasePage{Limit: 1},
 			Condition: map[string]interface{}{},
 		})
 		if err != nil {
@@ -504,7 +504,7 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, req types.PullResourceReq) (*
 		}
 		hostIDs = hostRelations[objID][filter.Parent.ID]
 		if len(hostIDs) == 0 {
-			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{},}, nil
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 	}
 
@@ -578,7 +578,7 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, req types.PullResourceReq) (*
 		}
 		hostIDs = util.IntArrIntersection(hostIDs, filterHostIDs)
 		if len(hostIDs) == 0 {
-			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{},}, nil
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 	}
 	cond[common.BKHostIDField] = map[string]interface{}{

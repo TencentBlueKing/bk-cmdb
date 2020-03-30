@@ -185,12 +185,12 @@ func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 		return
 	}
 
-    // auth: deregister resources
-    if err := s.AuthManager.DeregisterInstanceByRawID(ctx.Kit.Ctx, ctx.Kit.Header, obj.GetObjectID(), deleteCondition.Delete.InstID...); err != nil {
-        blog.Errorf("batch delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", deleteCondition.Delete.InstID, err, ctx.Kit.Rid)
-        ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-        return
-    }
+	// auth: deregister resources
+	if err := s.AuthManager.DeregisterInstanceByRawID(ctx.Kit.Ctx, ctx.Kit.Header, obj.GetObjectID(), deleteCondition.Delete.InstID...); err != nil {
+		blog.Errorf("batch delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", deleteCondition.Delete.InstID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
+		return
+	}
 	ctx.RespEntity(nil)
 }
 
@@ -240,11 +240,11 @@ func (s *Service) DeleteInst(ctx *rest.Contexts) {
 		// TODO add custom mainline instance param validation
 	}
 
-    err = s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, []int64{instID}, true)
-    if err != nil {
-        ctx.RespAutoError(err)
-        return
-    }
+	err = s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, []int64{instID}, true)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 
 	// auth: deregister resources
 	if err := s.AuthManager.DeregisterInstanceByRawID(ctx.Kit.Ctx, ctx.Kit.Header, obj.GetObjectID(), instID); err != nil {

@@ -89,10 +89,10 @@ func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount 
 	for i, _ := range regionSet {
 		region := regionSet[i]
 		result = append(result, metadata.SyncRegion{
-			RegionId:        region.RegionId,
-			RegionName:      region.RegionName,
-			RegionState:       region.RegionState,
-			HostCount: regionHostCnt[region.RegionId],
+			RegionId:    region.RegionId,
+			RegionName:  region.RegionName,
+			RegionState: region.RegionState,
+			HostCount:   regionHostCnt[region.RegionId],
 		})
 	}
 
@@ -222,8 +222,8 @@ func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountC
 		return nil, err
 	}
 	if len(result.Info) == 0 {
-			blog.Errorf("GetCloudAccountConf failed, accountID: %v is not exist", accountID)
-			return nil, fmt.Errorf("GetAccountConf failed, accountID: %v is not exist", accountID)
+		blog.Errorf("GetCloudAccountConf failed, accountID: %v is not exist", accountID)
+		return nil, fmt.Errorf("GetAccountConf failed, accountID: %v is not exist", accountID)
 	}
 
 	return &result.Info[0], nil

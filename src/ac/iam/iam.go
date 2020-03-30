@@ -178,6 +178,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 
 var token string
 var tokenRefreshTime time.Time
+
 func (i Iam) CheckRequestAuthorization(req *http.Request) (bool, error) {
 	name, pwd, ok := req.BasicAuth()
 	if !ok || name != SystemIDIAM {
