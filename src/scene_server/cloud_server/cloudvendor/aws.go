@@ -183,7 +183,6 @@ func (c *awsClient) getInstances(region string, opt *ccom.RequestOpt) ([]*metada
 			for _, inst := range reservation.Instances {
 				instances = append(instances, &metadata.Instance{
 					InstanceId:    *inst.InstanceId,
-					InstanceName:  *inst.InstanceId,
 					PrivateIp:     *inst.PrivateIpAddress,
 					PublicIp:      *inst.PublicIpAddress,
 					InstanceState: ccom.CovertInstState(*inst.State.Name),

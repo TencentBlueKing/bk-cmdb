@@ -670,6 +670,7 @@ const (
 	CCErrHostPlatCloudNameIsrequired                          = 1110063
 	CCErrHostPlatCloudNameAlreadyExist                        = 1110064
 	CCErrHostFindManyCloudAreaAddHostCountFieldFail           = 1110065
+	CCErrDeleteDefaultCloudAreaFail                           = 1110066
 
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001

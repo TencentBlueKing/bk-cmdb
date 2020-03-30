@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -10,22 +10,24 @@
  * limitations under the License.
  */
 
-package logics
+package service
 
 import (
-	"configcenter/src/apimachinery"
-
-	"gopkg.in/redis.v5"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
 )
 
-type Logics struct {
-	CoreAPI apimachinery.ClientSetInterface
-	cache   *redis.Client
-}
-
-func NewLogics(CoreAPI apimachinery.ClientSetInterface, cache *redis.Client) *Logics {
-	return &Logics{
-		CoreAPI: CoreAPI,
-		cache:   cache,
+func (s *coreService) SearchAuthResource(ctx *rest.Contexts) {
+	param := metadata.PullResourceParam{}
+	if err := ctx.DecodeInto(&param); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
+
+	count, info, err := s.core.AuthOperation().SearchAuthResource(ctx.Kit, param)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithCount(count, info)
 }

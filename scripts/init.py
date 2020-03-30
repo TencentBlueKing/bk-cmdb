@@ -426,6 +426,25 @@ appSecret = $auth_app_secret
 address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
+
+[redis]
+host = $redis_host
+port = $redis_port
+pwd = $redis_pass
+database = 0
+maxOpenConns = 3000
+maxIDleConns = 1000
+
+[mongodb]
+host = $mongo_host
+port = $mongo_port
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+maxOpenConns = 3000
+maxIDleConns = 100
+mechanism = SCRAM-SHA-1
+txnEnabled = $txn_enabled
 '''
 
     template = FileTemplate(auth_file_template_str)
@@ -461,7 +480,7 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                     filedata = filedata.replace('rd_server_placeholder', rd_server)
 
                 extend_flag = ''
-                if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver', 'cmdb_toposerver', 'cmdb_eventserver', 'cmdb_operationserver', 'cmdb_cloudserver']:
+                if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver', 'cmdb_toposerver', 'cmdb_eventserver', 'cmdb_operationserver', 'cmdb_cloudserver', 'cmdb_authserver']:
                     extend_flag += ' --enable-auth=%s ' % enable_auth
                 if register_ip != '':
                     extend_flag += ' --register-ip=%s ' % register_ip

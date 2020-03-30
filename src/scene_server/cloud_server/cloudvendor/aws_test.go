@@ -24,9 +24,9 @@ var awsTestClient VendorClient
 
 func init() {
 	conf := metadata.CloudAccountConf{
-		metadata.AWS,
-		os.Getenv("AWS_SECRET_ID"),
-		os.Getenv("AWS_SECRET_KEY"),
+		VendorName: metadata.AWS,
+		SecretID:   os.Getenv("AWS_SECRET_ID"),
+		SecretKey:  os.Getenv("AWS_SECRET_KEY"),
 	}
 	var err error
 	awsTestClient, err = GetVendorClient(conf)

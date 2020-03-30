@@ -24,9 +24,9 @@ var tcTestClient VendorClient
 
 func init() {
 	conf := metadata.CloudAccountConf{
-		metadata.TencentCloud,
-		os.Getenv("TENCENTCLOUD_SECRET_ID"),
-		os.Getenv("TENCENTCLOUD_SECRET_KEY"),
+		VendorName: metadata.TencentCloud,
+		SecretID:   os.Getenv("TENCENTCLOUD_SECRET_ID"),
+		SecretKey:  os.Getenv("TENCENTCLOUD_SECRET_KEY"),
 	}
 	var err error
 	tcTestClient, err = GetVendorClient(conf)

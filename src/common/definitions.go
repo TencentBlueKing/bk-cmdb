@@ -1017,6 +1017,7 @@ const (
 	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
 	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
 	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
+	RedisMongoCacheSyncKey                    = BKCacheKeyV3Prefix + "mongodb:cache"
 )
 
 // association fields
