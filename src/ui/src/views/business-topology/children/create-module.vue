@@ -73,7 +73,7 @@
                     v-validate.disabled="'required'"
                     data-vv-name="firstClass"
                     key="firstClass"
-                    auto-select
+                    :auto-select="false"
                     :list="firstClassList">
                 </cmdb-selector>
                 <cmdb-selector class="service-class fr"
@@ -156,6 +156,7 @@
                     this.firstClass = ''
                     this.secondClass = ''
                 } else {
+                    this.firstClass = 1
                     this.template = ''
                     this.getServiceCategories()
                 }
