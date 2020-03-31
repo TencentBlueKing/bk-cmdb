@@ -17,14 +17,11 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
-	"configcenter/src/thirdpartyclient/esbserver"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
 	"github.com/gin-gonic/gin"
@@ -117,34 +114,6 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		Language: userDetail.Language,
 	}
 	return user, true
-}
-
-func (m *user) getEsbClient(config map[string]string) (esbserver.EsbClientInterface, error) {
-	esbAddr, addrOk := config["esb.addr"]
-	esbAppCode, appCodeOk := config["esb.appCode"]
-	esbAppSecret, appSecretOk := config["esb.appSecret"]
-	if addrOk == false || appCodeOk == false || appSecretOk == false {
-		return nil, fmt.Errorf("esb config not found or incomplete, %+v", config)
-	}
-	tlsConfig, err := util.NewTLSClientConfigFromConfig("esb", config)
-	if err != nil {
-		return nil, fmt.Errorf("parse esb tls config failed, config: %+v, err: %+v", config, err)
-	}
-	apiMachineryConfig := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     1000,
-		TLSConfig: &tlsConfig,
-	}
-	defaultCfg := &esbutil.EsbConfig{
-		Addrs:     esbAddr,
-		AppCode:   esbAppCode,
-		AppSecret: esbAppSecret,
-	}
-	esbSrv, err := esbserver.NewEsb(apiMachineryConfig, nil, defaultCfg, nil)
-	if err != nil {
-		return nil, fmt.Errorf("create esb client failed. err: %v", err)
-	}
-	return esbSrv, nil
 }
 
 func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *metadata.LogoutRequestParams) string {

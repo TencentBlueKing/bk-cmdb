@@ -43,6 +43,7 @@ const maxRetry = 200
 type BackboneParameter struct {
 	// ConfigUpdate handle process config change
 	ConfigUpdate cc.ProcHandlerFunc
+	ExtraUpdate  cc.ProcHandlerFunc
 
 	// service component addr
 	Regdiscv string
@@ -101,7 +102,7 @@ func validateParameter(input *BackboneParameter) error {
 	if input.SrvInfo.Port <= 0 || input.SrvInfo.Port > 65535 {
 		return fmt.Errorf("addrport port must be 1-65535")
 	}
-	if input.ConfigUpdate == nil {
+	if input.ConfigUpdate == nil && input.ExtraUpdate == nil {
 		return fmt.Errorf("service config change funcation can not be emtpy")
 	}
 	// to prevent other components which doesn't set it from failing
@@ -154,11 +155,12 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 
 	handler := &cc.CCHandler{
 		OnProcessUpdate:  input.ConfigUpdate,
+		OnExtraUpdate:    input.ExtraUpdate,
 		OnLanguageUpdate: engine.onLanguageUpdate,
 		OnErrorUpdate:    engine.onErrorUpdate,
 	}
 
-	err = cc.NewConfigCenter(ctx, client, common.GetIdentification(), input.ConfigPath, handler)
+	err = cc.NewConfigCenter(ctx, client, input.ConfigPath, handler)
 	if err != nil {
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}

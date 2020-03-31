@@ -132,7 +132,7 @@ type EventServer struct {
 
 var configLock sync.Mutex
 
-func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig, confType string) {
+func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
