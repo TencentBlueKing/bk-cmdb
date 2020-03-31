@@ -43,24 +43,27 @@ type TopoServer struct {
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig, confType string) {
 	t.configReady = true
-	if current.ConfigMap["level.businessTopoMax"] != "" {
-		max, err := strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
-		if err != nil {
-			t.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
-			blog.Errorf("invalid business topo max value, err: %v", err)
-		} else {
-			t.Config.BusinessTopoLevelMax = max
+	switch confType {
+	case types.CCConfigureCommon:
+		if current.ConfigMap["level.businessTopoMax"] != "" {
+			max, err := strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
+			if err != nil {
+				t.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
+				blog.Errorf("invalid business topo max value, err: %v", err)
+			} else {
+				t.Config.BusinessTopoLevelMax = max
+			}
+			blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 		}
-		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
-	}
 
-	t.Config.ConfigMap = current.ConfigMap
-	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+		t.Config.ConfigMap = current.ConfigMap
+		blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
-	var err error
-	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", current.ConfigMap)
-	if err != nil {
-		blog.Warnf("parse es config failed: %v", err)
+		var err error
+		t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", current.ConfigMap)
+		if err != nil {
+			blog.Warnf("parse es config failed: %v", err)
+		}
 	}
 }
 

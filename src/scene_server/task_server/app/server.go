@@ -121,39 +121,42 @@ func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig, conf
 	if h.Config == nil {
 		h.Config = &options.Config{}
 	}
-	taskNameArr := strings.Split(current.ConfigMap["task.name"], ",")
+	switch confType {
+	case types.CCConfigureCommon:
+		taskNameArr := strings.Split(current.ConfigMap["task.name"], ",")
 
-	for _, name := range taskNameArr {
-		if name == "" {
-			continue
-		}
-		prefix := "task-" + name
-
-		strRetry := current.ConfigMap[prefix+".retry"]
-		var retry int64 = 0
-		var err error
-		if strRetry != "" {
-			retry, err = strconv.ParseInt(strRetry, 10, 64)
-			if err != nil {
-				retry = 0
-				blog.Errorf(" parse task name %s retry %s to int error. err:%s", name, strRetry, err.Error())
+		for _, name := range taskNameArr {
+			if name == "" {
+				continue
 			}
-		}
+			prefix := "task-" + name
 
-		f := func() ([]string, error) {
-			addrs := strings.Split(current.ConfigMap[prefix+".addrs"], ",")
-			return addrs, nil
+			strRetry := current.ConfigMap[prefix+".retry"]
+			var retry int64 = 0
+			var err error
+			if strRetry != "" {
+				retry, err = strconv.ParseInt(strRetry, 10, 64)
+				if err != nil {
+					retry = 0
+					blog.Errorf(" parse task name %s retry %s to int error. err:%s", name, strRetry, err.Error())
+				}
+			}
+
+			f := func() ([]string, error) {
+				addrs := strings.Split(current.ConfigMap[prefix+".addrs"], ",")
+				return addrs, nil
+			}
+			task := tasksvc.TaskInfo{
+				Name:  name,
+				Addr:  f,
+				Path:  current.ConfigMap[prefix+".path"],
+				Retry: retry,
+			}
+			if h.taskQueue == nil {
+				h.taskQueue = make(map[string]tasksvc.TaskInfo, 0)
+			}
+			h.taskQueue[name] = task
 		}
-		task := tasksvc.TaskInfo{
-			Name:  name,
-			Addr:  f,
-			Path:  current.ConfigMap[prefix+".path"],
-			Retry: retry,
-		}
-		if h.taskQueue == nil {
-			h.taskQueue = make(map[string]tasksvc.TaskInfo, 0)
-		}
-		h.taskQueue[name] = task
 	}
 
 }

@@ -163,11 +163,13 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 	var err error
 
 	o.Config = &options.Config{}
-	o.Config.ConfigMap = current.ConfigMap
-	o.Config.Timer, err = o.ParseTimerConfigFromKV("timer", current.ConfigMap)
-	if err != nil {
-		blog.Errorf("parse timer config failed, err: %v", err)
-		return
+	switch confType {
+	case types.CCConfigureCommon:
+		o.Config.Timer, err = o.ParseTimerConfigFromKV("timer", current.ConfigMap)
+		if err != nil {
+			blog.Errorf("parse timer config failed, err: %v", err)
+			return
+		}
 	}
 }
 

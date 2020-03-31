@@ -26,7 +26,6 @@ type ServerOption struct {
 }
 
 type Config struct {
-	ConfigMap map[string]string
 	Mongo     mongo.Config
 	Auth      authcenter.AuthConfig
 	Timer     string

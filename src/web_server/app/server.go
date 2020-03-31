@@ -125,48 +125,50 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 }
 
 func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig, confType string) {
-	w.Config.Site.DomainUrl = current.ConfigMap["site.domain_url"] + "/"
-	w.Config.Site.HtmlRoot = current.ConfigMap["site.html_root"]
-	w.Config.Site.ResourcesPath = current.ConfigMap["site.resources_path"]
-	w.Config.Site.BkLoginUrl = current.ConfigMap["site.bk_login_url"]
-	w.Config.Site.AppCode = current.ConfigMap["site.app_code"]
-	w.Config.Site.CheckUrl = current.ConfigMap["site.check_url"]
-	w.Config.Site.AuthScheme = current.ConfigMap["site.authscheme"]
-	if w.Config.Site.AuthScheme == "" {
-		w.Config.Site.AuthScheme = "internal"
-	}
-	w.Config.Site.FullTextSearch = current.ConfigMap["site.full_text_search"]
-	if w.Config.Site.FullTextSearch == "" {
-		w.Config.Site.FullTextSearch = "off"
-	}
-	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
-	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
-	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
+	switch confType {
+	case types.CCConfigureCommon:
+		w.Config.Site.DomainUrl = current.ConfigMap["site.domain_url"] + "/"
+		w.Config.Site.HtmlRoot = current.ConfigMap["site.html_root"]
+		w.Config.Site.ResourcesPath = current.ConfigMap["site.resources_path"]
+		w.Config.Site.BkLoginUrl = current.ConfigMap["site.bk_login_url"]
+		w.Config.Site.AppCode = current.ConfigMap["site.app_code"]
+		w.Config.Site.CheckUrl = current.ConfigMap["site.check_url"]
+		w.Config.Site.AuthScheme = current.ConfigMap["site.authscheme"]
+		if w.Config.Site.AuthScheme == "" {
+			w.Config.Site.AuthScheme = "internal"
+		}
+		w.Config.Site.FullTextSearch = current.ConfigMap["site.full_text_search"]
+		if w.Config.Site.FullTextSearch == "" {
+			w.Config.Site.FullTextSearch = "off"
+		}
+		w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
+		w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
+		w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
 
-	w.Config.Session.Name = current.ConfigMap["session.name"]
-	w.Config.Session.Host = current.ConfigMap["session.host"]
-	w.Config.Session.Port = current.ConfigMap["session.port"]
-	w.Config.Session.Address = current.ConfigMap["session.address"]
-	w.Config.Session.MasterName = current.ConfigMap["session.mastername"]
-	w.Config.Session.Secret = strings.TrimSpace(current.ConfigMap["session.secret"])
-	w.Config.Session.MultipleOwner = current.ConfigMap["session.multiple_owner"]
-	w.Config.Session.DefaultLanguage = current.ConfigMap["session.defaultlanguage"]
-	w.Config.LoginVersion = current.ConfigMap["login.version"]
-	if "" == w.Config.Session.DefaultLanguage {
-		w.Config.Session.DefaultLanguage = "zh-cn"
+		w.Config.Session.Name = current.ConfigMap["session.name"]
+		w.Config.Session.Host = current.ConfigMap["session.host"]
+		w.Config.Session.Port = current.ConfigMap["session.port"]
+		w.Config.Session.Address = current.ConfigMap["session.address"]
+		w.Config.Session.MasterName = current.ConfigMap["session.mastername"]
+		w.Config.Session.Secret = strings.TrimSpace(current.ConfigMap["session.secret"])
+		w.Config.Session.MultipleOwner = current.ConfigMap["session.multiple_owner"]
+		w.Config.Session.DefaultLanguage = current.ConfigMap["session.defaultlanguage"]
+		w.Config.LoginVersion = current.ConfigMap["login.version"]
+		if "" == w.Config.Session.DefaultLanguage {
+			w.Config.Session.DefaultLanguage = "zh-cn"
+		}
+
+		w.Config.Version = current.ConfigMap["api.version"]
+		w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
+		w.Config.AuthCenter.AppCode = current.ConfigMap["app.auth_app_code"]
+		w.Config.AuthCenter.URL = current.ConfigMap["app.auth_url"]
+		w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
+		w.Config.ConfigMap = current.ConfigMap
+
+		if esbConfig, err := esb.ParseEsbConfig(current.ConfigMap); err == nil {
+			esb.UpdateEsbConfig(*esbConfig)
+		}
 	}
-
-	w.Config.Version = current.ConfigMap["api.version"]
-	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
-	w.Config.AuthCenter.AppCode = current.ConfigMap["app.auth_app_code"]
-	w.Config.AuthCenter.URL = current.ConfigMap["app.auth_url"]
-	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
-	w.Config.ConfigMap = current.ConfigMap
-
-	if esbConfig, err := esb.ParseEsbConfig(current.ConfigMap); err == nil {
-		esb.UpdateEsbConfig(*esbConfig)
-	}
-
 }
 
 //Stop the ccapi server

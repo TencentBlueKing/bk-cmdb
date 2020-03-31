@@ -194,9 +194,12 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig, confTy
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.V(3).Infof("config updated: \n%s", out)
 
-		esbPrefix := "esb"
-		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
-		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
-		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
+		switch confType {
+		case types.CCConfigureCommon:
+			esbPrefix := "esb"
+			h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
+			h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
+			h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
+		}
 	}
 }

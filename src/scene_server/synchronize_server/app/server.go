@@ -92,66 +92,69 @@ type SynchronizeServer struct {
 }
 
 func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc.ProcessConfig, confType string) {
-	configInfo := &options.Config{}
-	names := current.ConfigMap["synchronize.name"]
-	configInfo.Names = SplitFilter(names, ",")
+	if s.Config == nil {
+		s.Config = &options.Config{}
+	}
+	switch confType {
+	case types.CCConfigureCommon:
+		names := current.ConfigMap["synchronize.name"]
+		s.Config.Names = SplitFilter(names, ",")
 
-	configInfo.Trigger.TriggerType = current.ConfigMap["trigger.type"]
-	// role  unit minute.
-	// type = timing, ervery day  role minute trigger
-	// type = interval, interval role  minute trigger
-	configInfo.Trigger.Role = current.ConfigMap["trigger.role"]
+		s.Config.Trigger.TriggerType = current.ConfigMap["trigger.type"]
+		// role  unit minute.
+		// type = timing, ervery day  role minute trigger
+		// type = interval, interval role  minute trigger
+		s.Config.Trigger.Role = current.ConfigMap["trigger.role"]
 
-	for _, name := range configInfo.Names {
-		if strings.TrimSpace(name) == "" {
-			continue
-		}
-		configItem := &options.ConfigItem{}
-		appNames := current.ConfigMap[name+".AppNames"]
-		syncResource := current.ConfigMap[name+".SynchronizeResource"]
-		targetHost := current.ConfigMap[name+".Host"]
-		fieldSign := current.ConfigMap[name+".FieldSign"]
-		dataSign := current.ConfigMap[name+".Flag"]
-		supplerAccount := current.ConfigMap[name+".SupplerAccount"]
-		whiteList := current.ConfigMap[name+".WhiteList"]
-		objectIDs := current.ConfigMap[name+".ObjectID"]
-		ignoreModelAttr := current.ConfigMap[name+".IgnoreModelAttribute"]
-		strEnableInstFilter := current.ConfigMap[name+".EnableInstFilter"]
+		for _, name := range s.Config.Names {
+			if strings.TrimSpace(name) == "" {
+				continue
+			}
+			configItem := &options.ConfigItem{}
+			appNames := current.ConfigMap[name+".AppNames"]
+			syncResource := current.ConfigMap[name+".SynchronizeResource"]
+			targetHost := current.ConfigMap[name+".Host"]
+			fieldSign := current.ConfigMap[name+".FieldSign"]
+			dataSign := current.ConfigMap[name+".Flag"]
+			supplerAccount := current.ConfigMap[name+".SupplerAccount"]
+			whiteList := current.ConfigMap[name+".WhiteList"]
+			objectIDs := current.ConfigMap[name+".ObjectID"]
+			ignoreModelAttr := current.ConfigMap[name+".IgnoreModelAttribute"]
+			strEnableInstFilter := current.ConfigMap[name+".EnableInstFilter"]
 
-		configItem.AppNames = SplitFilter(appNames, ",")
-		if syncResource == "1" {
-			configItem.SyncResource = true
-		}
-		if whiteList == "1" {
-			configItem.WhiteList = true
-		}
-		// 使用忽略模型属性变的模式。 模型属性，模型分组 将不做同步
-		// 但是数据源cmdb中满足条件的实例会同步到目标cmdb。
-		// 目标cmdb中新建相同的唯一标识模型或者模型的字段。内容会自动展示出来
-		if ignoreModelAttr == "1" {
-			configItem.IgnoreModelAttr = true
-		}
+			configItem.AppNames = SplitFilter(appNames, ",")
+			if syncResource == "1" {
+				configItem.SyncResource = true
+			}
+			if whiteList == "1" {
+				configItem.WhiteList = true
+			}
+			// 使用忽略模型属性变的模式。 模型属性，模型分组 将不做同步
+			// 但是数据源cmdb中满足条件的实例会同步到目标cmdb。
+			// 目标cmdb中新建相同的唯一标识模型或者模型的字段。内容会自动展示出来
+			if ignoreModelAttr == "1" {
+				configItem.IgnoreModelAttr = true
+			}
 
-		configItem.ObjectIDArr = SplitFilter(objectIDs, ",")
-		configItem.Name = name
-		configItem.TargetHost = targetHost
-		configItem.FieldSign = fieldSign
-		configItem.SynchronizeFlag = dataSign
-		configItem.SupplerAccount = SplitFilter(supplerAccount, ",")
-		if strEnableInstFilter == "1" {
-			configItem.EnableInstFilter = true
-		}
+			configItem.ObjectIDArr = SplitFilter(objectIDs, ",")
+			configItem.Name = name
+			configItem.TargetHost = targetHost
+			configItem.FieldSign = fieldSign
+			configItem.SynchronizeFlag = dataSign
+			configItem.SupplerAccount = SplitFilter(supplerAccount, ",")
+			if strEnableInstFilter == "1" {
+				configItem.EnableInstFilter = true
+			}
 
-		configInfo.ConifgItemArray = append(configInfo.ConifgItemArray, configItem)
-		if targetHost != "" {
-			s.synchronizeClientConfig <- synchronizeUtil.SychronizeConfig{
-				Name:  name,
-				Addrs: []string{targetHost},
+			s.Config.ConifgItemArray = append(s.Config.ConifgItemArray, configItem)
+			if targetHost != "" {
+				s.synchronizeClientConfig <- synchronizeUtil.SychronizeConfig{
+					Name:  name,
+					Addrs: []string{targetHost},
+				}
 			}
 		}
-
 	}
-	s.Config = configInfo
 
 }
 
