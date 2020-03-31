@@ -88,7 +88,7 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 		if accountTaskcntMap[accounts[i].AccountID] == 0 {
 			canDeleteAccount = true
 		}
-		results = append(results, metadata.CloudAccountWithExtraInfo{accounts[i], canDeleteAccount})
+		results = append(results, metadata.CloudAccountWithExtraInfo{CloudAccount: accounts[i], CanDeleteAccount: canDeleteAccount})
 	}
 
 	return &metadata.MultipleCloudAccount{Count: int64(count), Info: results}, nil

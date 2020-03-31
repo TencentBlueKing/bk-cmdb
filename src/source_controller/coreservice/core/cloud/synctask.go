@@ -49,7 +49,6 @@ func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncT
 	task.LastEditor = kit.User
 	task.CreateTime = ts
 	task.LastTime = ts
-	task.LastSyncTime = ts
 
 	err = c.dbProxy.Table(common.BKTableNameCloudSyncTask).Insert(kit.Ctx, task)
 	if err != nil {
@@ -92,7 +91,8 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 	option.Set(common.LastTimeField, time.Now())
 	// 将最近同步时间存为时间类型，而不是字符串
 	if option.Exists(common.BKCloudLastSyncTime) {
-		option.Set(common.BKCloudLastSyncTime, time.Now())
+		ts := time.Now()
+		option.Set(common.BKCloudLastSyncTime, &ts)
 	}
 	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)

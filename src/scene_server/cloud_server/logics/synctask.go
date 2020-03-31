@@ -32,7 +32,7 @@ func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64, vpcOpt *metadata.Se
 	result, err := lgc.GetVpcHostCnt(*accountConf, vpcOpt.Region)
 	if err != nil {
 		blog.Errorf("SearchVpc failed, rid:%s, accountConf:%+v, vpcOpt:%+v, err:%+v", kit.Rid, accountConf, vpcOpt, err)
-		return nil, kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed)
+		return nil, kit.CCError.CCError(common.CCErrCloudVpcGetFail)
 	}
 	return result, nil
 }
@@ -202,7 +202,7 @@ func (lgc *Logics) SearchSyncRegion(kit *rest.Kit, option *metadata.SearchSyncRe
 	result, err := lgc.GetRegionsInfo(*accountConf, option.WithHostCount)
 	if err != nil {
 		blog.Errorf("SearchSyncRegion failed, rid:%s, option:%+v, err:%+v", kit.Rid, option, err)
-		return nil, kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed)
+		return nil, kit.CCError.CCError(common.CCErrCloudRegionGetFail)
 	}
 
 	return result, nil

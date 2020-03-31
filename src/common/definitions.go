@@ -1157,4 +1157,5 @@ const (
 	BKVpcID                      = "bk_vpc_id"
 	BKVpcName                    = "bk_vpc_name"
 	BKReion                      = "bk_region"
+	BKCloudSyncVpcs              = "bk_sync_vpcs"
 )

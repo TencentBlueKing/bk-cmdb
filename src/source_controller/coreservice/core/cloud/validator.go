@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -37,7 +38,7 @@ func (c *cloudOperation) validCreateAccount(kit *rest.Kit, account *metadata.Clo
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
-		blog.ErrorJSON("[validCreateAccount] account name already exist, bk_account_name: %s", account.AccountName, kit.Rid)
+		blog.ErrorJSON("[validCreateAccount] account name already exist, bk_account_name: %s, rid: %s", account.AccountName, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCloudAccountNameAlreadyExist)
 	}
 
@@ -89,7 +90,7 @@ func (c *cloudOperation) validUpdateAccount(kit *rest.Kit, accountID int64, opti
 			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if count > 0 {
-			blog.ErrorJSON("[validUpdateAccount] account name already exist, bk_account_name: %s", cloudAccountName, kit.Rid)
+			blog.ErrorJSON("[validUpdateAccount] account name already exist, bk_account_name: %s, rid: %s", cloudAccountName, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCloudAccountNameAlreadyExist)
 		}
 	}
@@ -129,7 +130,7 @@ func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.Cloud
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count <= 0 {
-		blog.ErrorJSON("[validCreateSyncTask] accountID: %s does not exist, bk_task_name: %s", task.AccountID, task.TaskName, kit.Rid)
+		blog.ErrorJSON("[validCreateSyncTask] accountID: %s does not exist, bk_task_name: %s, rid: %s", task.AccountID, task.TaskName, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCloudValidSyncTaskParamFail, common.BKCloudAccountID)
 	}
 
@@ -142,17 +143,23 @@ func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.Cloud
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if taskCount > 0 {
-		blog.ErrorJSON("[validCreateSycTask] task name already exist, bk_task_name: %s", task.TaskName, kit.Rid)
+		blog.ErrorJSON("[validCreateSycTask] task name already exist, bk_task_name: %s, rid: %s", task.TaskName, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCloudSyncTaskNameAlreadyExist)
 	}
 
-	// vpcID is required
 	if len(task.SyncVpcs) > 0 {
+		// vpcID is required
 		for _, vpc := range task.SyncVpcs {
 			if vpc.VpcID == "" {
-				blog.ErrorJSON("[validCreateSycTask] vpcID filed is required, bk_task_name: %s", task.TaskName, kit.Rid)
+				blog.ErrorJSON("[validCreateSycTask] vpcID filed is required, bk_task_name: %s, rid: %s", task.TaskName, kit.Rid)
 				return kit.CCError.CCError(common.CCErrCloudVpcIDIsRequired)
 			}
+		}
+
+		// resource dir must be exist
+		if err := c.validResourceDirExist(kit, task.SyncVpcs); err != nil {
+			blog.ErrorJSON("validCreateSyncTask failed, err:%s, bk_task_name: %s, rid: %s", err, task.TaskName, kit.Rid)
+			return err
 		}
 	}
 
@@ -203,6 +210,68 @@ func (c *cloudOperation) validUpdateSyncTask(kit *rest.Kit, taskID int64, option
 		if count > 0 {
 			blog.ErrorJSON("[validUpdateSyncTask] task name already exist, bk_account_name: %s", taskName, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCloudSyncTaskNameAlreadyExist)
+		}
+	}
+
+	if vpcInfo, ok := option.Get(common.BKCloudSyncVpcs); ok {
+		bs, err := json.Marshal(vpcInfo)
+		if err != nil {
+			blog.ErrorJSON("validUpdateSyncTask failed, error %s, vpcInfo:%s, rid: %s", err, vpcInfo, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommJSONMarshalFailed)
+		}
+		syncVpcs := make([]metadata.VpcSyncInfo, 0)
+		err = json.Unmarshal(bs, &syncVpcs)
+		if err != nil {
+			blog.ErrorJSON("validUpdateSyncTask failed, error %s, vpcInfo:%s, rid: %s", err, vpcInfo, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+		}
+
+		// vpcID is required
+		for _, vpc := range syncVpcs {
+			if vpc.VpcID == "" {
+				blog.ErrorJSON("validUpdateSyncTask failed, rid: %s", kit.Rid)
+				return kit.CCError.CCError(common.CCErrCloudVpcIDIsRequired)
+			}
+		}
+
+		// resource dir must be exist
+		if err := c.validResourceDirExist(kit, syncVpcs); err != nil {
+			blog.ErrorJSON("validUpdateSyncTask failed, err:%s, rid: %s", err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Valid resource dir which must exist
+func (c *cloudOperation) validResourceDirExist(kit *rest.Kit, syncVpcs []metadata.VpcSyncInfo) errors.CCErrorCoder {
+	syncDirs := make(map[int64]bool)
+	for _, syncInfo := range syncVpcs {
+		syncDirs[syncInfo.SyncDir] = true
+	}
+	if len(syncDirs) == 0 {
+		blog.ErrorJSON("validResourceDirExist failed, no sync dir is chosen, rid: %s", kit.Rid)
+		return kit.CCError.CCError(common.CCErrCloudSyncDirNoChosen)
+	}
+	cond := mapstr.MapStr{}
+	cond[common.BKDBOR] = []mapstr.MapStr{{common.BKDefaultField: 1}, {common.BKDefaultField: 4}}
+	result := make([]struct {
+		DirID int64 `json:"bk_module_id" bson:"bk_module_id"`
+	}, 0)
+	err := c.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Fields(common.BKModuleIDField).All(kit.Ctx, &result)
+	if err != nil {
+		blog.ErrorJSON("validResourceDirExist failed, err: %s, cond:%s, rid: %s", err.Error(), cond, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	moduleIDs := make(map[int64]bool)
+	for _, dir := range result {
+		moduleIDs[dir.DirID] = true
+	}
+	for dir, _ := range syncDirs {
+		if _, ok := moduleIDs[dir]; !ok {
+			blog.ErrorJSON("validResourceDirExist failed, syncDir %d not in moduleIDs, cond:%s, rid: %s", dir, cond, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCloudSyncDirNoExist, dir)
 		}
 	}
 

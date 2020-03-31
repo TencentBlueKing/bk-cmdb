@@ -40,10 +40,13 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 		errStr := err.Error()
 		if strings.Contains(strings.ToLower(errStr), "authfailure") {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudAccoutIDSecretWrong))
+			return
 		} else if strings.Contains(strings.ToLower(errStr), "timeout") {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudHttpRequestTimeout))
+			return
 		} else {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudVendorInterfaceCalledFailed))
+			return
 		}
 	}
 

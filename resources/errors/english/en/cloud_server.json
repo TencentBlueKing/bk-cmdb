@@ -11,6 +11,10 @@
   "1118010": "This cloud account has had cloud sync task %s",
   "1118011": "Cloud account SecretID or Key is not matched",
   "1118012": "Cloud vendor http request timeout",
+  "1118013": "Get cloud vendor VPC info failed",
+  "1118014": "Get cloud vendor region info failed",
+  "1118015": "No cloud sync dir was chosen",
+  "1118016": "cloud sync dir ID %d is not exist",
 
   "": ""
 }

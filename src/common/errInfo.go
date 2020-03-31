@@ -461,6 +461,7 @@ const (
 	CCErrorTopoOnlyResourceDirNameCanBeUpdated     = 1101102
 	CCErrorTopoOperateReourceDirFailNotExist       = 1101103
 	CCErrorTopoResourceDirIdleModuleCanNotRemove   = 1101104
+	CCErrorTopoResourceDirUsedInCloudSync          = 1101105
 
 	// object controller 1102XXX
 
@@ -816,6 +817,10 @@ const (
 	CCErrCloudTaskAlreadyExistInAccount   = 1118010
 	CCErrCloudAccoutIDSecretWrong         = 1118011
 	CCErrCloudHttpRequestTimeout          = 1118012
+	CCErrCloudVpcGetFail                  = 1118013
+	CCErrCloudRegionGetFail               = 1118014
+	CCErrCloudSyncDirNoChosen             = 1118015
+	CCErrCloudSyncDirNoExist              = 1118016
 
 	/** TODO: 以下错误码需要改造 **/
 

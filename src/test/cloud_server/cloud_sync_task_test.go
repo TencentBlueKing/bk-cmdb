@@ -22,14 +22,14 @@ var testData1 = map[string]interface{}{
 			"bk_vpc_name":   "vpc-default",
 			"bk_region":     "广东一区",
 			"bk_host_count": 56,
-			"bk_sync_dir":   33,
+			"bk_sync_dir":   1,
 		},
 		{
 			"bk_vpc_id":     "vpc-002",
 			"bk_vpc_name":   "vpc-default2",
 			"bk_region":     "广东二区",
 			"bk_host_count": 26,
-			"bk_sync_dir":   55,
+			"bk_sync_dir":   1,
 		},
 	},
 }
@@ -44,7 +44,7 @@ var testData3 = map[string]interface{}{
 			"bk_vpc_name":   "vpc-default",
 			"bk_region":     "广东一区",
 			"bk_host_count": 56,
-			"bk_sync_dir":   33,
+			"bk_sync_dir":   1,
 		},
 	},
 }
@@ -54,7 +54,7 @@ var testData2 = map[string]interface{}{
 	"bk_account_id":    2,
 	"bk_resource_type": "host",
 	"bk_sync_all":      true,
-	"bk_sync_all_dir":  55,
+	"bk_sync_all_dir":  1,
 	"bk_sync_vpcs":     []string{},
 }
 
@@ -63,7 +63,7 @@ var tmpData = map[string]interface{}{
 	"bk_account_id":    2,
 	"bk_resource_type": "host",
 	"bk_sync_all":      true,
-	"bk_sync_all_dir":  55,
+	"bk_sync_all_dir":  1,
 	"bk_sync_vpcs":     []string{},
 }
 
@@ -90,14 +90,14 @@ func prepareSyncTaskData() {
 var _ = Describe("cloud sync task test", func() {
 
 	BeforeEach(func() {
+		// 准备需要云账户数据
+		clearData()
+		prepareData()
+
 		//清空数据
 		clearSyncTaskData()
 		//准备数据
 		prepareSyncTaskData()
-
-		// 准备需要云账户数据
-		clearData()
-		prepareData()
 	})
 
 	var _ = Describe("create cloud sync task test", func() {

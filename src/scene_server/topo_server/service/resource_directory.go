@@ -39,7 +39,7 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	// 给资源池目录加上资源池(业务id)和空闲机池（集群id）, service_category_id, service_template_id
 	bizName, bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
 	if err != nil {
-		blog.ErrorJSON("CreateResourceDirectory fail with getResourcePoolIDAndSetID failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("CreateResourceDirectory fail with getResourcePoolIDAndSetID failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -71,14 +71,14 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	// audit log
 	moduleName, err := data.String(common.BKModuleNameField)
 	if err != nil {
-		blog.ErrorJSON("CreateResourceDirectory success but fail to create audiLog, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("CreateResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	audit := auditlog.NewAudit(s.Engine.CoreAPI, ctx.Kit.Header)
 	properties, err := audit.GetAuditLogProperty(ctx.Kit.Ctx, common.BKInnerObjIDModule)
 	if err != nil {
-		blog.ErrorJSON("CreateResourceDirectory success but fail to create audiLog, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("CreateResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -241,13 +241,13 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 
 	bizName, bizID, _, err := s.getResourcePoolIDAndSetID(ctx)
 	if err != nil {
-		blog.ErrorJSON("UpdateResourceDirectory success, but create auditLog fail, getResourcePoolIDAndSetID failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("UpdateResourceDirectory success, but create auditLog fail, getResourcePoolIDAndSetID failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	moduleName, err := input.String(common.BKModuleNameField)
 	if err != nil {
-		blog.ErrorJSON("UpdateResourceDirectory success but fail to create audiLog, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("UpdateResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -267,7 +267,7 @@ func (s *Service) UpdateResourceDirectory(ctx *rest.Contexts) {
 	audit := auditlog.NewAudit(s.Engine.CoreAPI, ctx.Kit.Header)
 	properties, err := audit.GetAuditLogProperty(ctx.Kit.Ctx, common.BKInnerObjIDModule)
 	if err != nil {
-		blog.ErrorJSON("UpdateResourceDirectory success but fail to create audiLog, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("UpdateResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -326,7 +326,7 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 
 	_, bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
 	if err != nil {
-		blog.ErrorJSON("SearchResourceDirectory fail with getResourcePoolIDAndSetID failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("SearchResourceDirectory fail with getResourcePoolIDAndSetID failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -353,7 +353,7 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 	for _, item := range rsp.Data.Info {
 		moduleID, err := item.Int64(common.BKModuleIDField)
 		if err != nil {
-			blog.ErrorJSON("SearchResourceDirectory fail with moduleID convert from interface to int64 failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			blog.ErrorJSON("SearchResourceDirectory fail with moduleID convert from interface to int64 failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -408,11 +408,12 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 	}
 	bizName, bizID, setID, err := s.getResourcePoolIDAndSetID(ctx)
 	if err != nil {
-		blog.ErrorJSON("DeleteResourceDirectory fail with getResourcePoolIDAndSetID fail, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("DeleteResourceDirectory fail with getResourcePoolIDAndSetID fail, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
+	// 资源池目录下是否有主机，有主机的不能删除
 	hasHost, err := s.hasHost(ctx, bizID, []int64{setID}, []int64{intModuleID})
 	if err != nil {
 		blog.Errorf("DeleteResourceDirectory, check if resource directory has host failed, err: %v, rid: %s", err, ctx.Kit.Rid)
@@ -422,6 +423,19 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 	if hasHost {
 		blog.ErrorJSON("DeleteResourceDirectory fail, resource directory has host, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrTopoHasHostCheckFailed))
+		return
+	}
+
+	// 资源池目录是否在云同步任务中被使用，使用了的不能删除
+	syncDirs, err := s.GetResourceDirsInCloudSync(ctx)
+	if err != nil {
+		blog.Errorf("DeleteResourceDirectory failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if _, ok := syncDirs[intModuleID]; ok {
+		blog.Errorf("DeleteResourceDirectory failed, Resource dir is being used in cloud sync task, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoResourceDirUsedInCloudSync))
 		return
 	}
 
@@ -447,12 +461,12 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 	// 空闲机目录不能被删除
 	moduleDefault, err := curData.Data.Info[0].Int64(common.BKDefaultField)
 	if err != nil {
-		blog.ErrorJSON("DeleteResourceDirectory fail, idle module can not delete, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("DeleteResourceDirectory fail, idle module can not delete, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	if moduleDefault == 1 {
-		blog.ErrorJSON("DeleteResourceDirectory fail, idle module can not delete, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("DeleteResourceDirectory fail, idle module can not delete, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoResourceDirIdleModuleCanNotRemove))
 		return
 	}
@@ -472,14 +486,14 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 
 	moduleName, err := curData.Data.Info[0].String(common.BKModuleNameField)
 	if err != nil {
-		blog.ErrorJSON("DeleteResourceDirectory success but fail to create audiLog, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("DeleteResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	audit := auditlog.NewAudit(s.Engine.CoreAPI, ctx.Kit.Header)
 	properties, err := audit.GetAuditLogProperty(ctx.Kit.Ctx, common.BKInnerObjIDModule)
 	if err != nil {
-		blog.ErrorJSON("DeleteResourceDirectory success but fail to create audiLog, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("DeleteResourceDirectory success but fail to create audiLog, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -540,4 +554,28 @@ func (s *Service) hasHost(ctx *rest.Contexts, bizID int64, setIDs, moduleIDS []i
 	}
 
 	return 0 != len(rsp.Data.Info), nil
+}
+
+// 获取云同步任务有关联的所有资源池目录
+func (s *Service) GetResourceDirsInCloudSync(ctx *rest.Contexts) (map[int64]bool, error) {
+	option := &metadata.SearchCloudOption{
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	rsp, err := s.Engine.CoreAPI.CoreService().Cloud().SearchSyncTask(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if nil != err {
+		blog.Errorf("GetResourceDirsInCloudSync failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		return nil, err
+	}
+
+	result := make(map[int64]bool)
+	for _, task := range rsp.Info {
+		for _, syncInfo := range task.SyncVpcs {
+			result[syncInfo.SyncDir] = true
+		}
+	}
+
+	return result, nil
+
 }

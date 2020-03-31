@@ -149,7 +149,7 @@ type CloudSyncTask struct {
 	SyncStatus        string         `json:"bk_sync_status" bson:"bk_sync_status"`
 	OwnerID           string         `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	StatusDescription SyncStatusDesc `json:"bk_status_description" bson:"bk_status_description"`
-	LastSyncTime      time.Time      `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
+	LastSyncTime      *time.Time     `json:"bk_last_sync_time" bson:"bk_last_sync_time"`
 	SyncAll           bool           `json:"bk_sync_all" bson:"bk_sync_all"`
 	SyncAllDir        int64          `json:"bk_sync_all_dir" bson:"bk_sync_all_dir"`
 	SyncVpcs          []VpcSyncInfo  `json:"bk_sync_vpcs" bson:"bk_sync_vpcs"`
