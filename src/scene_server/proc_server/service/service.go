@@ -31,7 +31,6 @@ import (
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
@@ -207,7 +206,7 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(answer)
 }
 
-func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
+func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig, confType string) {
 	esbAddr, addrOk := current.ConfigMap["esb.addr"]
 	esbAppCode, appCodeOk := current.ConfigMap["esb.appCode"]
 	esbAppSecret, appSecretOk := current.ConfigMap["esb.appSecret"]
@@ -240,8 +239,4 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}
 	}
 	ps.ConfigMap = current.ConfigMap
-
-	dbPrefix := "mongodb"
-	mongoCfg := mongo.ParseConfigFromKV(dbPrefix, current.ConfigMap)
-	ps.Config.Mongo = &mongoCfg
 }

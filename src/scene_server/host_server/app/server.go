@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -57,7 +56,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" != hostSrv.Config.Redis.Address {
+		if nil != hostSrv.Config {
 			configReady = true
 			break
 		}
@@ -68,6 +67,16 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		blog.Infof("waiting config timeout.")
 		return errors.New("configuration item not found")
 	}
+
+	hostSrv.Config.Redis, err = engine.WithRedis()
+	if err != nil {
+		return err
+	}
+	hostSrv.Config.Auth, err = engine.WithAuth()
+	if err != nil {
+		return err
+	}
+
 	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %s", err.Error())
@@ -83,7 +92,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	authManager := extensions.NewAuthManager(engine.CoreAPI, authorizer)
 	service.AuthManager = authManager
 	service.Engine = engine
-	service.Config = &hostSrv.Config
+	service.Config = hostSrv.Config
 	service.CacheDB = cacheDB
 	hostSrv.Core = engine
 	hostSrv.Service = service
@@ -102,7 +111,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 type HostServer struct {
 	Core    *backbone.Engine
-	Config  options.Config
+	Config  *options.Config
 	Service *hostsvc.Service
 }
 
@@ -110,17 +119,8 @@ func (h *HostServer) WebService() *restful.Container {
 	return h.Service.WebService()
 }
 
-func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	var err error
-
-	h.Config.Redis.Address = current.ConfigMap["redis.host"]
-	h.Config.Redis.Database = current.ConfigMap["redis.database"]
-	h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
-	h.Config.Redis.Port = current.ConfigMap["redis.port"]
-	h.Config.Redis.MasterName = current.ConfigMap["redis.user"]
-
-	h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
+func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig, confType string) {
+	if h.Config == nil {
+		h.Config = new(options.Config)
 	}
 }

@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -60,7 +61,7 @@ func New(ctx context.Context, procName string, confPath string, disc crd.ConfReg
 	return nil
 }
 
-type ProcHandlerFunc func(previous, current ProcessConfig)
+type ProcHandlerFunc func(previous, current ProcessConfig, confType string)
 
 type CCHandler struct {
 	OnProcessUpdate  ProcHandlerFunc
@@ -81,9 +82,13 @@ type CC struct {
 }
 
 func (c *CC) run() error {
-
-	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
-	procEvent, err := c.disc.Discover(procPath)
+	commonConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureCommon)
+	commonConfEvent, err := c.disc.Discover(commonConfPath)
+	if err != nil {
+		return err
+	}
+	extraConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureExtra)
+	extraConfEvent, err := c.disc.Discover(extraConfPath)
 	if err != nil {
 		return err
 	}
@@ -100,7 +105,9 @@ func (c *CC) run() error {
 
 	go func() {
 		select {
-		case pEvent := <-procEvent:
+		case pEvent := <-commonConfEvent:
+			c.onProcChange(pEvent)
+		case pEvent := <-extraConfEvent:
 			c.onProcChange(pEvent)
 		case eEvent := <-errEvent:
 			c.onErrorChange(eEvent)
@@ -115,7 +122,7 @@ func (c *CC) run() error {
 }
 
 func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
-
+	confType := cur.Key[strings.LastIndex(cur.Key, "/") + 1:]
 	if cur.Err != nil {
 		blog.Errorf("config center received event that %s config has changed, but got err: %v", c.procName, cur.Err)
 		return
@@ -132,7 +139,7 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 	prev := c.previousProc
 	c.previousProc = now
 	if c.handler != nil {
-		go c.handler.OnProcessUpdate(*prev, *now)
+		go c.handler.OnProcessUpdate(*prev, *now, confType)
 	}
 }
 

@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -36,7 +35,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/operation_server/app/options"
 	"configcenter/src/scene_server/operation_server/logics"
-	"configcenter/src/storage/dal/mongo"
 	"github.com/emicklei/go-restful"
 )
 
@@ -161,7 +159,7 @@ func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) 
 	resp.WriteEntity(answer)
 }
 
-func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig) {
+func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig, confType string) {
 	var err error
 
 	o.Config = &options.Config{}
@@ -171,16 +169,6 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 		blog.Errorf("parse timer config failed, err: %v", err)
 		return
 	}
-
-	cfg := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-	o.Config.Mongo = cfg
-
-	o.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-	if err != nil {
-		blog.Errorf("parse auth center config failed: %v", err)
-		return
-	}
-
 }
 
 func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {

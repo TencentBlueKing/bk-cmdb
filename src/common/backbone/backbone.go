@@ -22,6 +22,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/backbone/service_mange/zk"
@@ -30,6 +31,8 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 )
 
 // connect svcManager retry connect time
@@ -258,4 +261,94 @@ func (e *Engine) onErrorUpdate(previous, current map[string]errors.ErrorCode) {
 
 func (e *Engine) Ping() error {
 	return e.SvcDisc.Ping()
+}
+
+var (
+	redisConf = make(map[string]redis.Config, 0)
+)
+
+func (e *Engine) WithRedis(prefixes ...string) (redis.Config, error) {
+	// use default prefix if no prefix is specified, or use the first prefix
+	var prefix string
+	if len(prefixes) == 0 {
+		prefix = "redis"
+	} else {
+		prefix = prefixes[0]
+	}
+	// only initialize once, not allow hot update
+	if conf, exist := redisConf[prefix]; exist {
+		return conf, nil
+	}
+	data, err := e.client.Client().Get(fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis))
+	if err != nil {
+		blog.Errorf("get redis config failed, err: %s", err.Error())
+		return redis.Config{}, err
+	}
+	conf, err := cc.ParseConfigWithData([]byte(data))
+	if err != nil {
+		blog.Errorf("parse redis config failed, err: %s, data: %s", err.Error(), data)
+		return redis.Config{}, err
+	}
+	redisConf[prefix] = redis.ParseConfigFromKV(prefix, conf.ConfigMap)
+	return redisConf[prefix], nil
+}
+
+var (
+	mongoConf = make(map[string]mongo.Config, 0)
+)
+
+func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
+	var prefix string
+	if len(prefixes) == 0 {
+		prefix = "mongodb"
+	} else {
+		prefix = prefixes[0]
+	}
+	if conf, exist := mongoConf[prefix]; exist {
+		return conf, nil
+	}
+	data, err := e.client.Client().Get(fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureMongo))
+	if err != nil {
+		blog.Errorf("get mongo config failed, err: %s", err.Error())
+		return mongo.Config{}, err
+	}
+	conf, err := cc.ParseConfigWithData([]byte(data))
+	if err != nil {
+		blog.Errorf("parse mongo config failed, err: %s, data: %s", err.Error(), data)
+		return mongo.Config{}, err
+	}
+	mongoConf[prefix] = mongo.ParseConfigFromKV(prefix, conf.ConfigMap)
+	return mongoConf[prefix], nil
+}
+
+var (
+	authConf = make(map[string]authcenter.AuthConfig, 0)
+)
+
+func (e *Engine) WithAuth(prefixes ...string) (authcenter.AuthConfig, error) {
+	var prefix string
+	if len(prefixes) == 0 {
+		prefix = "auth"
+	} else {
+		prefix = prefixes[0]
+	}
+	if conf, exist := authConf[prefix]; exist {
+		return conf, nil
+	}
+	data, err := e.client.Client().Get(fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureCommon))
+	if err != nil {
+		blog.Errorf("get common config failed, err: %s", err.Error())
+		return authcenter.AuthConfig{}, err
+	}
+	conf, err := cc.ParseConfigWithData([]byte(data))
+	if err != nil {
+		blog.Errorf("parse common config failed, err: %s, data: %s", err.Error(), data)
+		return authcenter.AuthConfig{}, err
+	}
+	authConf[prefix], err = authcenter.ParseConfigFromKV(prefix, conf.ConfigMap)
+	if err != nil {
+		blog.Errorf("parse auth center config failed: %s", err.Error())
+		return authcenter.AuthConfig{}, err
+	}
+	return authConf[prefix], nil
 }
