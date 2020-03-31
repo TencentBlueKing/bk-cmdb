@@ -21,16 +21,14 @@ import (
 )
 
 // User 登录系统抽象出来接口
-type User interface {
+type LoginInterface interface {
 	// 判断用户是否登录
 	LoginUser(c *gin.Context) (isLogin bool)
-	//  拉取用户列表
-	GetUserList(c *gin.Context) (int, interface{})
 	// 获取登录系统的URL
 	GetLoginUrl(c *gin.Context) string
 }
 
 // NewUser return user instance by type
-func NewUser(config options.Config, engine *backbone.Engine, cacheCli *redis.Client) User {
+func NewUser(config options.Config, engine *backbone.Engine, cacheCli *redis.Client) LoginInterface {
 	return &publicUser{config, engine, cacheCli}
 }

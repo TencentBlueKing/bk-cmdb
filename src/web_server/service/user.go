@@ -13,29 +13,21 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	webcom "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
 )
-
-const BkAccountUrl = "site.bk_account_url"
-
-type userResult struct {
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
-	Code    string      `json:"code"`
-	Result  bool        `json:"result"`
-}
 
 type userDataResult struct {
 	Message string      `json:"bk_error_msg"`
@@ -44,18 +36,29 @@ type userDataResult struct {
 	Result  bool        `json:"result"`
 }
 
-var getUserFailData = userDataResult{
-	Result:  false,
-	Message: "get user list false",
-	Code:    "",
-	Data:    nil,
-}
-
 // GetUserList get user list
 func (s *Service) GetUserList(c *gin.Context) {
-	user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
-	code, data := user.GetUserList(c)
-	c.JSON(code, data)
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rspBody := metadata.LonginSystemUserListResult{}
+	query := c.Request.URL.Query()
+	params := make(map[string]string)
+	for key, values := range query {
+		params[key] = strings.Join(values, ";")
+	}
+
+	userList, err := s.Logics.GetUserList(c.Request.Context(), c.Request.Header, params)
+	if nil != err {
+		blog.Error("GetUserList failed, err: %+v, rid: %s", err, rid)
+		rspBody.Code = err.GetCode()
+		rspBody.ErrMsg = err.Error()
+		rspBody.Result = false
+		c.JSON(http.StatusInternalServerError, rspBody)
+		return
+	}
+	rspBody.Result = true
+	rspBody.Data = userList
+
+	c.JSON(http.StatusOK, rspBody)
 	return
 }
 

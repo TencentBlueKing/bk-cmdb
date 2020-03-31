@@ -63,19 +63,6 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	return user, true
 }
 
-// GetUserList get user list from paas
-func (m *user) GetUserList(c *gin.Context, config map[string]string, params map[string]string) ([]*metadata.LoginSystemUserInfo, error) {
-
-	adminData := []*metadata.LoginSystemUserInfo{
-		{
-			CnName: "admin",
-			EnName: "admin",
-		},
-	}
-
-	return adminData, nil
-}
-
 func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *metadata.LogoutRequestParams) string {
 	var ok bool
 	var loginURL string
@@ -104,14 +91,4 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	}
 	loginURL = fmt.Sprintf(loginURL, appCode, fmt.Sprintf("%s%s", siteURL, c.Request.URL.String()))
 	return loginURL
-}
-
-// GetDepartment get department info from paas
-func (m *user) GetDepartment(c *gin.Context, config map[string]string) (*metadata.DepartmentData, error) {
-	return &metadata.DepartmentData{}, nil
-}
-
-// GetDepartmentProfile get department profile from paas
-func (m *user) GetDepartmentProfile(c *gin.Context, config map[string]string) (*metadata.DepartmentProfileData, error) {
-	return &metadata.DepartmentProfileData{}, nil
 }
