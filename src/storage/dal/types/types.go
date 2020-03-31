@@ -112,12 +112,6 @@ type TxnWrapperOption struct {
 
 // JoinOption defind join transaction options
 type JoinOption struct {
-	TxnID     string // 事务ID,uuid
-	RequestID string // 请求ID,可选项
-	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
-
-	TMAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
-
 	SessionID    string // 会话ID
 	SessionState string // 会话状态
 	TxnNumber    string // 事务Number

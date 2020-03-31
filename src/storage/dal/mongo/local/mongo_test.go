@@ -40,8 +40,6 @@ func BenchmarkLocalCUD(b *testing.B) {
 	header := http.Header{}
 	header.Set(common.BKHTTPCCRequestID, "xxxxx")
 	ctx := context.WithValue(context.Background(), common.CCContextKeyJoinOption, types.JoinOption{
-		RequestID: header.Get(common.BKHTTPCCRequestID),
-		TxnID:     header.Get(common.BKHTTPCCTransactionID),
 	})
 	tablename := "tmptest"
 	err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "m"})
