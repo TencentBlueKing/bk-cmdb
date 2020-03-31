@@ -96,7 +96,7 @@ type APIServer struct {
 	configReady bool
 }
 
-func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig, confType string) {
+func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) {
 	h.configReady = true
 	h.Config = current.ConfigMap
 }

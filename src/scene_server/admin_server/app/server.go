@@ -155,4 +155,4 @@ type MigrateServer struct {
 	ConfigCenter *configures.ConfCenter
 }
 
-func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig, confType string) {}
+func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {}

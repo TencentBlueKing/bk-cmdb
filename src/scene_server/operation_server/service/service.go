@@ -159,7 +159,7 @@ func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) 
 	resp.WriteEntity(answer)
 }
 
-func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig, confType string) {
+func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig) {
 	var err error
 
 	o.Config = &options.Config{}

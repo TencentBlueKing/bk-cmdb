@@ -33,7 +33,7 @@ type CoreServer struct {
 	Service coresvr.CoreServiceInterface
 }
 
-func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfig, confType string) {
+func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfig) {
 	if t.Config == nil {
 		t.Config = new(options.Config)
 	}

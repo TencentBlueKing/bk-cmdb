@@ -119,7 +119,7 @@ func (h *HostServer) WebService() *restful.Container {
 	return h.Service.WebService()
 }
 
-func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig, confType string) {
+func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	if h.Config == nil {
 		h.Config = new(options.Config)
 	}

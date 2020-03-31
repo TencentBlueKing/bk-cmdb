@@ -91,7 +91,7 @@ type SynchronizeServer struct {
 	synchronizeClientConfig chan synchronizeUtil.SychronizeConfig
 }
 
-func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc.ProcessConfig, confType string) {
+func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc.ProcessConfig) {
 	configInfo := &options.Config{}
 	names := current.ConfigMap["synchronize.name"]
 	configInfo.Names = SplitFilter(names, ",")
