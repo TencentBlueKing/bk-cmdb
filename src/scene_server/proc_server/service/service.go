@@ -206,7 +206,7 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(answer)
 }
 
-func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig, confType string) {
+func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
 	esbAddr, addrOk := current.ConfigMap["esb.addr"]
 	esbAppCode, appCodeOk := current.ConfigMap["esb.appCode"]
 	esbAppSecret, appSecretOk := current.ConfigMap["esb.appSecret"]

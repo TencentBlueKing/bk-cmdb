@@ -41,7 +41,7 @@ type TopoServer struct {
 	configReady bool
 }
 
-func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig, confType string) {
+func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.configReady = true
 	if current.ConfigMap["level.businessTopoMax"] != "" {
 		max, err := strconv.Atoi(current.ConfigMap["level.businessTopoMax"])

@@ -124,7 +124,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
-func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig, confType string) {
+func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.DomainUrl = current.ConfigMap["site.domain_url"] + "/"
 	w.Config.Site.HtmlRoot = current.ConfigMap["site.html_root"]
 	w.Config.Site.ResourcesPath = current.ConfigMap["site.resources_path"]
