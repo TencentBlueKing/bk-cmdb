@@ -47,14 +47,9 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 type Config struct {
 	MongoDB         mongo.Config
 	CCRedis         redis.Config
-	SnapRedis       SnapRedis
-	DiscoverRedis   SnapRedis
-	NetCollectRedis SnapRedis
+	SnapRedis       redis.Config
+	DiscoverRedis   redis.Config
+	NetCollectRedis redis.Config
 	Esb             esbutil.EsbConfig
 	AuthConfig      authcenter.AuthConfig
-}
-
-type SnapRedis struct {
-	redis.Config
-	Enable string
 }

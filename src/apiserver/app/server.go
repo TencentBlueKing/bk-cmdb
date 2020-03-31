@@ -22,7 +22,6 @@ import (
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
 	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -61,7 +60,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	authConf, err := authcenter.ParseConfigFromKV("auth", apiSvr.Config)
+	authConf, err := engine.WithAuth()
 	if err != nil {
 		return err
 	}
@@ -97,7 +96,7 @@ type APIServer struct {
 	configReady bool
 }
 
-func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) {
+func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig, confType string) {
 	h.configReady = true
 	h.Config = current.ConfigMap
 }

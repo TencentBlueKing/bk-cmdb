@@ -56,7 +56,7 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 		return fmt.Errorf("load config from file[%s], but can not found process config", confPath)
 	}
 
-	handler.OnProcessUpdate(ProcessConfig{}, ProcessConfig{ConfigMap: fileConf.ConfigMap})
+	handler.OnProcessUpdate(ProcessConfig{}, ProcessConfig{ConfigMap: fileConf.ConfigMap}, "")
 	handler.OnLanguageUpdate(nil, langC)
 	handler.OnErrorUpdate(nil, errC)
 
