@@ -42,7 +42,7 @@ func New(ctx context.Context, procName string, confPath string, disc crd.ConfReg
 		disc:          disc,
 		handler:       handler,
 		procName:      procName,
-		previousProc:  new(ProcessConfig),
+		previousProc:  make(map[string]*ProcessConfig),
 		previousLang:  make(map[string]language.LanguageMap),
 		previousError: make(map[string]errors.ErrorCode),
 	}
@@ -76,7 +76,7 @@ type CC struct {
 	disc          crd.ConfRegDiscvIf
 	handler       *CCHandler
 	procName      string
-	previousProc  *ProcessConfig
+	previousProc  map[string]*ProcessConfig
 	previousLang  map[string]language.LanguageMap
 	previousError map[string]errors.ErrorCode
 }
@@ -122,7 +122,7 @@ func (c *CC) run() error {
 }
 
 func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
-	confType := cur.Key[strings.LastIndex(cur.Key, "/") + 1:]
+	confType := cur.Key[strings.LastIndex(cur.Key, "/")+1:]
 	if cur.Err != nil {
 		blog.Errorf("config center received event that %s config has changed, but got err: %v", c.procName, cur.Err)
 		return
@@ -136,8 +136,11 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 
 	c.Lock()
 	defer c.Unlock()
-	prev := c.previousProc
-	c.previousProc = now
+	if c.previousProc[confType] == nil {
+		c.previousProc[confType] = new(ProcessConfig)
+	}
+	prev := c.previousProc[confType]
+	c.previousProc[confType] = now
 	if c.handler != nil {
 		go c.handler.OnProcessUpdate(*prev, *now, confType)
 	}
@@ -213,33 +216,39 @@ func (c *CC) sync() {
 
 func (c *CC) syncProc() {
 	blog.V(5).Infof("start sync proc config from config center.")
-	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
-	data, err := c.disc.Read(procPath)
-	if err != nil {
-		blog.Errorf("sync process config failed, node: %s, err: %v", procPath, err)
-		return
-	}
+	events := make([]*crd.DiscoverEvent, 0)
+	for _, needSyncType := range []string{types.CCConfigureCommon, types.CCConfigureExtra} {
+		procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, needSyncType)
+		data, err := c.disc.Read(procPath)
+		if err != nil {
+			blog.Errorf("sync process config failed, node: %s, err: %v", procPath, err)
+			return
+		}
 
-	conf, err := ParseConfigWithData([]byte(data))
-	if err != nil {
-		blog.Errorf("config center sync process[%s] config, but parse failed, err: %v", c.procName, err)
-		return
-	}
+		conf, err := ParseConfigWithData([]byte(data))
+		if err != nil {
+			blog.Errorf("config center sync process[%s] config, but parse failed, err: %v", c.procName, err)
+			return
+		}
 
-	c.Lock()
-	if reflect.DeepEqual(conf, c.previousProc) {
-		blog.V(5).Infof("sync process config, but nothing is changed.")
+		c.Lock()
+		if reflect.DeepEqual(conf, c.previousProc[needSyncType]) {
+			blog.V(5).Infof("sync process config, but nothing is changed.")
+			c.Unlock()
+			return
+		}
 		c.Unlock()
-		return
+
+		events = append(events, &crd.DiscoverEvent{
+			Err:  nil,
+			Data: []byte(data),
+			Key:  procPath,
+		})
 	}
 
-	event := &crd.DiscoverEvent{
-		Err:  nil,
-		Data: []byte(data),
+	for _, event := range events {
+		c.onProcChange(event)
 	}
-
-	c.Unlock()
-	c.onProcChange(event)
 
 }
 
