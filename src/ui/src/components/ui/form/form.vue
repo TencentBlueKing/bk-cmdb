@@ -1,5 +1,6 @@
 <template>
     <div class="form-layout">
+        <slot name="prepend"></slot>
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
