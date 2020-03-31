@@ -117,17 +117,15 @@
                     })
                 } else {
                     const content = this.details.content
-                    const preBizId = content['pre_data']['bk_biz_id']
-                    const curBizId = content['cur_data']['bk_biz_id']
                     const preModule = content['pre_data']['module'] || []
                     const curModule = content['cur_data']['module'] || []
                     const pre = []
                     const cur = []
                     preModule.forEach(module => {
-                        pre.push(this.getTopoPath(preBizId, module))
+                        pre.push(this.getTopoPath(module, content.pre_data))
                     })
                     curModule.forEach(module => {
-                        cur.push(this.getTopoPath(curBizId, module))
+                        cur.push(this.getTopoPath(module, content.cur_data))
                     })
                     const preData = pre.join('<br>')
                     const curData = cur.join('<br>')
@@ -178,8 +176,9 @@
                 }
                 return {}
             },
-            getTopoPath (bizId, module) {
-                const path = [this.options.biz[bizId] || `业务ID：${bizId}`]
+            getTopoPath (module, data) {
+                const bizName = data.bk_biz_name || this.options.biz[data.bk_biz_id] || `业务ID：${data.bk_biz_id}`
+                const path = [bizName]
                 const set = ((module.set || [])[0] || {}).ref_name
                 if (set) {
                     path.push(set)
