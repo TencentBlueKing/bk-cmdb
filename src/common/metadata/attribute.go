@@ -602,15 +602,21 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 		}
 	}
 
-	listOption, ok := attribute.Option.([]interface{})
-	if !ok {
-		blog.Errorf("option %v invalid, not string type list option", attribute.Option)
+	var listOpt []interface{}
+	switch listOption := attribute.Option.(type) {
+	case []interface{}:
+		listOpt = listOption
+	case bson.A:
+		listOpt = listOption
+	default:
+		blog.Errorf("option %v invalid, not string type list option, but type %T", attribute.Option, attribute.Option)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}
-	for _, inVal := range listOption {
+
+	for _, inVal := range listOpt {
 		inValStr, ok := inVal.(string)
 		if !ok {
 			blog.Errorf("inner list option convert to string  failed, params %s not valid , list field value: %#v", key, val)
@@ -623,7 +629,7 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 	}
-	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, attribute, val)
+	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOpt, attribute, val)
 	return errors.RawErrorInfo{
 		ErrCode: common.CCErrCommParamsInvalid,
 		Args:    []interface{}{key},
