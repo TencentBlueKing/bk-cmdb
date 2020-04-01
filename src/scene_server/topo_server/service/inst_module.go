@@ -207,8 +207,8 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 	// auth: deregister module to iam
 	if err := s.AuthManager.DeregisterModuleByID(ctx.Kit.Ctx, ctx.Kit.Header, moduleID); err != nil {
 		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-        ctx.RespAutoError(err)
-        return
+		ctx.RespAutoError(err)
+		return
 	}
 
 	ctx.RespEntity(nil)
@@ -299,12 +299,22 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 		return
 	}
 
-	start := 0
-	limit := common.BKDefaultLimit
-	if requestBody.Page != nil {
-		limit = requestBody.Page.Limit
-		start = requestBody.Page.Start
+	// check and set page's limit value
+	if requestBody.Page == nil {
+		requestBody.Page = &metadata.BasePage{
+			Limit: common.BKDefaultLimit,
+		}
+	} else {
+		if requestBody.Page.Limit == 0 {
+			requestBody.Page.Limit = common.BKDefaultLimit
+		}
+		if requestBody.Page.IsIllegal() {
+			blog.Errorf("ListModulesByServiceTemplateID failed, Page is IsIllegal, rid:%s, page:%+v", ctx.Kit.Rid, requestBody.Page)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+			return
+		}
 	}
+
 	filter := map[string]interface{}{
 		common.BKServiceTemplateIDField: serviceTemplateID,
 		common.BKAppIDField:             bizID,
@@ -315,11 +325,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 		}
 	}
 	qc := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Start: start,
-			Limit: limit,
-			Sort:  requestBody.Page.Sort,
-		},
+		Page:      *requestBody.Page,
 		Condition: filter,
 	}
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, qc)
