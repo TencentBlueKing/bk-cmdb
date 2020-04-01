@@ -83,6 +83,21 @@ type SearchCloudOption struct {
 	Exact bool `json:"exact" bson:"exact"`
 }
 
+type SearchSyncTaskOption struct {
+	SearchCloudOption `json:",inline"`
+	// 是否实时获取云厂商vpc下最新的主机数
+	LastestHostCount bool `json:"latest_hostcount" bson:"latest_host_count"`
+}
+
+type SearchVpcHostCntOption struct {
+	RegionVpcs []RegionVpc
+}
+
+type RegionVpc struct {
+	Region string `json:"bk_region"`
+	VpcID   string `json:"bk_vpc_id"`
+}
+
 type SearchVpcOption struct {
 	Region string `json:"bk_region"`
 }

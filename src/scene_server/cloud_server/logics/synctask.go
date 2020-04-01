@@ -29,7 +29,7 @@ func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64, vpcOpt *metadata.Se
 		blog.Errorf("SearchVpc failed, rid:%s, accountID:%d, vpcOpt:%+v, err:%+v", kit.Rid, accountID, vpcOpt, err)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	result, err := lgc.GetVpcHostCnt(*accountConf, vpcOpt.Region)
+	result, err := lgc.GetVpcHostCntInOneRegion(*accountConf, vpcOpt.Region)
 	if err != nil {
 		blog.Errorf("SearchVpc failed, rid:%s, accountConf:%+v, vpcOpt:%+v, err:%+v", kit.Rid, accountConf, vpcOpt, err)
 		return nil, kit.CCError.CCError(common.CCErrCloudVpcGetFail)
@@ -58,7 +58,7 @@ func (lgc *Logics) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (
 	return result, nil
 }
 
-func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, error) {
+func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTaskOption) (*metadata.MultipleCloudSyncTask, error) {
 	// set default limit
 	if option.Page.Limit == 0 {
 		option.Page.Limit = common.BKDefaultLimit
@@ -86,14 +86,71 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchCloudOpt
 		}
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Cloud().SearchSyncTask(kit.Ctx, kit.Header, option)
+	result, err := lgc.CoreAPI.CoreService().Cloud().SearchSyncTask(kit.Ctx, kit.Header, &option.SearchCloudOption)
 	if err != nil {
 		blog.Errorf("SearchSyncTask failed, rid:%s, option:%+v, err:%+v", kit.Rid, option, err)
 		return nil, err
 	}
 
+	// 是否实时获取云厂商vpc下最新的主机数
+	if option.LastestHostCount {
+		if err := lgc.updateVpcHostCount(kit, result); err != nil {
+			blog.Errorf("SearchSyncTask failed, rid:%s, option:%+v, err:%+v", kit.Rid, option, err)
+			return nil, err
+		}
+	}
+
 	return result, nil
 }
+
+// 更新vpc对应的主机数
+func (lgc *Logics) updateVpcHostCount(kit *rest.Kit, multiTask *metadata.MultipleCloudSyncTask) error {
+	// 待更新主机数的vpc对象，获取其地址
+	vpcToUpdate := make(map[string]*metadata.VpcSyncInfo)
+	accountOption := make(map[int64]*metadata.SearchVpcHostCntOption)
+
+	for i, _ := range multiTask.Info {
+		task := multiTask.Info[i]
+		for j, _ := range task.SyncVpcs {
+			syncVpc := &task.SyncVpcs[j]
+			vpcToUpdate[syncVpc.VpcID] = syncVpc
+			if accountOption[task.AccountID] == nil {
+				accountOption[task.AccountID] = new(metadata.SearchVpcHostCntOption)
+			}
+			accountOption[task.AccountID].RegionVpcs = append(accountOption[task.AccountID].RegionVpcs, metadata.RegionVpc{
+				Region: syncVpc.Region,
+				VpcID:  syncVpc.VpcID,
+			})
+		}
+	}
+
+	// 获取所有vpc对应的主机数
+	allVpcHostCnt := make(map[string]int64)
+	for accountID, option := range accountOption {
+		// 获取所有的vpc对应的主机数
+		accountConf, err := lgc.GetCloudAccountConf(accountID)
+		if err != nil {
+			blog.Errorf("updateVpcHostCount failed, rid:%s, accountID:%d, err:%+v", kit.Rid, accountID, err)
+			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+		vpcHostCnt, err := lgc.GetVpcHostCnt(*accountConf, *option)
+		if err != nil {
+			blog.Errorf("updateVpcHostCount failed, rid:%s, accountID:%d, err:%+v", kit.Rid, accountID, err)
+			return kit.CCError.CCError(common.CCErrCloudVpcGetFail)
+		}
+		for vpcID, hostCnt := range vpcHostCnt {
+			allVpcHostCnt[vpcID]  = hostCnt
+		}
+	}
+
+	// 更新返回结果里vpc对应的主机数
+	for vpcID, _ := range vpcToUpdate {
+		vpcToUpdate[vpcID].VpcHostCount = allVpcHostCnt[vpcID]
+	}
+
+	return nil
+}
+
 
 func (lgc *Logics) UpdateSyncTask(kit *rest.Kit, taskID int64, option map[string]interface{}) error {
 

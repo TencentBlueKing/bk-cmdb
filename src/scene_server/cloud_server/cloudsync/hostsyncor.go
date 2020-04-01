@@ -44,7 +44,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 		return err
 	}
 	if len(hostResource.HostResource) == 0 {
-		blog.Infof("hostSyncor%d HostResource is empty, taskid:%d", h.id, task.TaskID)
+		blog.V(4).Infof("hostSyncor%d HostResource is empty, taskid:%d", h.id, task.TaskID)
 		return nil
 	}
 	hostResource.AccountConf = accountConf
@@ -67,7 +67,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 
 	// 没差异则结束
 	if len(diffHosts) == 0 {
-		blog.V(3).Infof("hostSyncor%d no diff hosts for taskid:%d", h.id, task.TaskID)
+		blog.V(4).Infof("hostSyncor%d no diff hosts for taskid:%d", h.id, task.TaskID)
 		return nil
 	}
 
@@ -115,7 +115,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	}
 
 	costTime := time.Since(startTime) / time.Second
-	blog.V(3).Infof("hostSyncor%d finish SyncCloudHost, costTime:%ds, syncResult.Detail:%#v, syncResult.FailInfo:%#v",
+	blog.Infof("hostSyncor%d finish SyncCloudHost, costTime:%ds, syncResult.Detail:%#v, syncResult.FailInfo:%#v",
 		h.id, costTime, syncResult.Detail, syncResult.FailInfo)
 
 	return nil
