@@ -469,5 +469,19 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 		}
 	}
 
+	if metadata.IsAsDefaultValue(t.PortEnable.AsDefaultValue) {
+		if (t.PortEnable.Value == nil && i.PortEnable != nil) ||
+			(t.PortEnable.Value != nil && i.PortEnable == nil) ||
+			(t.PortEnable.Value != nil && i.PortEnable != nil && *t.PortEnable.Value != *i.PortEnable) {
+			changes = append(changes, metadata.ProcessChangedAttribute{
+				ID:                    attrMap[common.BKProcPortEnable].ID,
+				PropertyID:            common.BKProcPortEnable,
+				PropertyName:          attrMap[common.BKProcPortEnable].PropertyName,
+				PropertyValue:         i.PortEnable,
+				TemplatePropertyValue: t.PortEnable,
+			})
+		}
+	}
+
 	return changes
 }
