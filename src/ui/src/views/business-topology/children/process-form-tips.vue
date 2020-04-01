@@ -27,9 +27,20 @@
 
 <style lang="scss" scoped>
     .process-form-tips {
-        font-size: 16px;
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        line-height: 16px;
+        text-align: center;
         vertical-align: middle;
         color: #c3cdd7;
-        margin-left: 6px;
+        /deep/ {
+            .bk-tooltip-ref {
+                font-size: 0;
+            }
+        }
+        .icon {
+            font-size: 16px;
+        }
     }
 </style>

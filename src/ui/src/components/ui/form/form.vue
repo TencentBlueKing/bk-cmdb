@@ -287,6 +287,7 @@
                 width: 16px;
                 height: 16px;
                 font-size: 16px;
+                margin-right: 6px;
                 color: #c3cdd7;
             }
             .property-value{

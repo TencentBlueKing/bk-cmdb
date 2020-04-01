@@ -916,7 +916,6 @@
                 }
             },
             processFormTipsRender (h, { property, type }) {
-                console.log('shit')
                 if (this.processForm.disabledProperties.includes(property.bk_property_id)) {
                     return ProcessFormTipsRender(h, { serviceTemplateId: this.processForm.referenceService.instance.service_template_id })
                 }
