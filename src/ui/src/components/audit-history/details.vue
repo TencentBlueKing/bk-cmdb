@@ -25,16 +25,18 @@
                 <bk-table-column prop="bk_property_name"></bk-table-column>
                 <bk-table-column v-if="details.op_type !== 1"
                     prop="pre_data"
-                    :label="$t('变更前')">
+                    :label="$t('变更前')"
+                    :show-overflow-tooltip="{ allowHTML: true }">
                     <template slot-scope="{ row }">
-                        <span class="history-cell" v-html="row.pre_data"></span>
+                        <span v-html="row.pre_data"></span>
                     </template>
                 </bk-table-column>
                 <bk-table-column v-if="details.op_type !== 3"
                     prop="cur_data"
-                    :label="$t('变更后')">
-                    <template slot-scope="{ row }" v-html="row.cur_data">
-                        <span class="history-cell" v-html="row.cur_data"></span>
+                    :label="$t('变更后')"
+                    :show-overflow-tooltip="{ allowHTML: true }">
+                    <template slot-scope="{ row }">
+                        <span v-html="row.cur_data"></span>
                     </template>
                 </bk-table-column>
             </bk-table>
@@ -223,12 +225,6 @@
             color: #333948;
             width: 220px;
         }
-    }
-    .history-cell {
-        display: block;
-        padding: 5px 0;
-        white-space: normal;
-        word-break: break-all;
     }
     .field-btn{
         font-size: 14px;
