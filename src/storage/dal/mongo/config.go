@@ -93,12 +93,12 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) Config {
 	}
 	c.MaxOpenConns = maxOpenConns
 
-	maxIDleConns, err := strconv.ParseUint(configmap[prefix+".maxIDleConns"], 10, 64)
-	if err != nil || maxIDleConns < MinimumMaxIdleOpenConns {
-		blog.Errorf("parse mongo.maxIDleConns config encounters error %v or %d less than minimum value, use minimum value %d", err, maxIDleConns, MinimumMaxIdleOpenConns)
-		maxIDleConns = MinimumMaxIdleOpenConns
+	maxIdleConns, err := strconv.ParseUint(configmap[prefix+".maxIdleConns"], 10, 64)
+	if err != nil || maxIdleConns < MinimumMaxIdleOpenConns {
+		blog.Errorf("parse mongo.maxIdleConns config encounters error %v or %d less than minimum value, use minimum value %d", err, maxIdleConns, MinimumMaxIdleOpenConns)
+		maxIdleConns = MinimumMaxIdleOpenConns
 	}
-	c.MaxIdleConns = maxIDleConns
+	c.MaxIdleConns = maxIdleConns
 
 	return c
 }
