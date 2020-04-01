@@ -233,15 +233,15 @@ func (s *coreService) initOperation(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart", Handler: s.CreateOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart", Handler: s.SearchChartWithPosition})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/operation/chart", Handler: s.SearchChartWithPosition})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart", Handler: s.UpdateOperationChart})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart/{id}", Handler: s.DeleteOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart/common", Handler: s.SearchChartCommon})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/chart/common", Handler: s.SearchChartCommon})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/operation/inst/count", Handler: s.SearchInstCount})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/operation/chart/data/common", Handler: s.SearchChartData})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/inst/count", Handler: s.SearchInstCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/chart/data", Handler: s.SearchChartData})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position", Handler: s.UpdateChartPosition})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart/data", Handler: s.SearchTimerChartData})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/timer/chart/data", Handler: s.SearchTimerChartData})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/start/operation/chart/timer", Handler: s.TimerFreshData})
 
 	utility.AddToRestfulWebService(web)
