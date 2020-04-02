@@ -13,6 +13,8 @@
 package cloud
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -34,9 +36,10 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	account.AccountID = int64(id)
-	ts := metadata.Now()
+	ts := time.Now()
 	account.OwnerID = kit.SupplierAccount
-	account.LastEditor = account.Creator
+	account.Creator = kit.User
+	account.LastEditor = kit.User
 	account.CreateTime = ts
 	account.LastTime = ts
 
@@ -85,7 +88,7 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 		if accountTaskcntMap[accounts[i].AccountID] == 0 {
 			canDeleteAccount = true
 		}
-		results = append(results, metadata.CloudAccountWithExtraInfo{accounts[i], canDeleteAccount})
+		results = append(results, metadata.CloudAccountWithExtraInfo{CloudAccount: accounts[i], CanDeleteAccount: canDeleteAccount})
 	}
 
 	return &metadata.MultipleCloudAccount{Count: int64(count), Info: results}, nil
@@ -98,7 +101,8 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option ma
 	}
 	filter := map[string]interface{}{common.BKCloudAccountID: accountID}
 	filter = util.SetModOwner(filter, kit.SupplierAccount)
-	option.Set(common.LastTimeField, metadata.Now())
+	option.Set(common.BKLastEditor, kit.User)
+	option.Set(common.LastTimeField, time.Now())
 	// 确保不会更新云厂商类型、云账户id、开发商id
 	option.Remove(common.BKCloudVendor)
 	option.Remove(common.BKCloudIDField)

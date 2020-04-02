@@ -10,7 +10,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	ccom "configcenter/src/scene_server/cloud_server/common"
 	"configcenter/src/scene_server/cloud_server/logics"
 	"configcenter/src/storage/dal"
 )
@@ -45,9 +44,10 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 		return err
 	}
 	if len(hostResource.HostResource) == 0 {
-		blog.Infof("hostSyncor%d HostResource is empty, taskid:%d", h.id, task.TaskID)
+		blog.V(4).Infof("hostSyncor%d HostResource is empty, taskid:%d", h.id, task.TaskID)
 		return nil
 	}
+	hostResource.AccountConf = accountConf
 	hostResource.TaskID = task.TaskID
 	blog.V(4).Infof("hostSyncor%d, taskid:%d, vpc count:%d", h.id, task.TaskID, len(hostResource.HostResource))
 
@@ -67,7 +67,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 
 	// 没差异则结束
 	if len(diffHosts) == 0 {
-		blog.V(3).Infof("hostSyncor%d no diff hosts for taskid:%d", h.id, task.TaskID)
+		blog.V(4).Infof("hostSyncor%d no diff hosts for taskid:%d", h.id, task.TaskID)
 		return nil
 	}
 
@@ -115,7 +115,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	}
 
 	costTime := time.Since(startTime) / time.Second
-	blog.V(3).Infof("hostSyncor%d finish SyncCloudHost, costTime:%ds, syncResult.Detail:%#v, syncResult.FailInfo:%#v",
+	blog.Infof("hostSyncor%d finish SyncCloudHost, costTime:%ds, syncResult.Detail:%#v, syncResult.FailInfo:%#v",
 		h.id, costTime, syncResult.Detail, syncResult.FailInfo)
 
 	return nil
@@ -150,10 +150,12 @@ func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map
 	hosts := make([]*metadata.CloudHost, 0)
 	for _, hostRes := range hostResource.HostResource {
 		for _, host := range hostRes.Instances {
+			host.InstanceState = metadata.CloudHostStatusIDs[host.InstanceState]
 			hosts = append(hosts, &metadata.CloudHost{
-				Instance: *host,
-				CloudID:  hostRes.CloudID,
-				SyncDir:  hostRes.Vpc.SyncDir,
+				Instance:   *host,
+				CloudID:    hostRes.CloudID,
+				VendorName: metadata.VendorNameIDs[hostResource.AccountConf.VendorName],
+				SyncDir:    hostRes.Vpc.SyncDir,
 			})
 		}
 	}
@@ -178,7 +180,7 @@ func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map
 		if _, ok := localIdHostsMap[h.InstanceId]; ok {
 			lh := localIdHostsMap[h.InstanceId]
 			// 判断云主机和本地主机是否有差异，有则需要更新
-			if ccom.CovertInstState(h.InstanceState) != lh.InstanceState || h.PublicIp != lh.PublicIp ||
+			if h.InstanceState != lh.InstanceState || h.PublicIp != lh.PublicIp ||
 				h.PrivateIp != lh.PrivateIp || h.CloudID != lh.CloudID {
 				diffHosts["update"] = append(diffHosts["update"], h)
 			}
@@ -292,10 +294,10 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 		common.BKVpcName:         vpc.VpcName,
 		common.BKReion:           vpc.Region,
 		common.BKCloudAccountID:  accountConf.AccountID,
-		common.BKCreator:         common.CCSystemOperatorUserName,
+		common.BKCreator:         common.BKCloudSyncUser,
+		common.BKLastEditor:      common.BKCloudSyncUser,
 		common.BkSupplierAccount: fmt.Sprintf("%d", common.BKDefaultSupplierID),
 		common.BKStatus:          "1",
-		common.BKLastEditor:      common.CCSystemOperatorUserName,
 	}
 
 	instInfo := &metadata.CreateModelInstance{
@@ -384,6 +386,7 @@ func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 		common.BKHostInnerIPField:     cHost.PrivateIp,
 		common.BKHostOuterIPField:     cHost.PublicIp,
 		common.BKCloudHostStatusField: cHost.InstanceState,
+		common.BKCloudVendor:          cHost.VendorName,
 	}
 	input := &metadata.CreateModelInstance{
 		Data: host,
@@ -462,7 +465,6 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			common.BKHostInnerIPField:     host.PrivateIp,
 			common.BKHostOuterIPField:     host.PublicIp,
 			common.BKCloudHostStatusField: host.InstanceState,
-			common.LastTimeField:          metadata.Now(),
 		}
 		if err := h.updateHost(host.InstanceId, updateInfo); err != nil {
 			blog.Errorf("updateHosts err:%v", err.Error())
@@ -499,7 +501,8 @@ func (h *HostSyncor) updateHost(cloudInstID string, updateInfo map[string]interf
 func (h *HostSyncor) updateTaskState(taskid int64, status string, syncStatusDesc *metadata.SyncStatusDesc) error {
 	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
 	if status == metadata.CloudSyncSuccess || status == metadata.CloudSyncFail {
-		option.Set(common.BKCloudLastSyncTime, metadata.Now())
+		ts := time.Now()
+		option.Set(common.BKCloudLastSyncTime, &ts)
 		option.Set(common.BKCloudSyncStatusDescription, syncStatusDesc)
 	}
 

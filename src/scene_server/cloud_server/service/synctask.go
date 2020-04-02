@@ -60,7 +60,7 @@ func (s *Service) CreateSyncTask(ctx *rest.Contexts) {
 }
 
 func (s *Service) SearchSyncTask(ctx *rest.Contexts) {
-	option := metadata.SearchCloudOption{}
+	option := metadata.SearchSyncTaskOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return

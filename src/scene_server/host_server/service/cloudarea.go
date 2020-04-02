@@ -151,7 +151,9 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 
 	// set field default value
 	input[common.BKStatus] = "1"
-	input[common.BKLastEditor] = input[common.BKCreator]
+	user := util.GetUser(req.Request.Header)
+	input[common.BKCreator] = user
+	input[common.BKLastEditor] = user
 
 	// bk_cloud_name is required and unique
 	_, ok := input[common.BKCloudNameField]
@@ -354,6 +356,8 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 	}
 
 	// update plat
+	user := util.GetUser(req.Request.Header)
+	input[common.BKLastEditor] = user
 	updateOption := &meta.UpdateOption{
 		Data: input,
 		Condition: map[string]interface{}{

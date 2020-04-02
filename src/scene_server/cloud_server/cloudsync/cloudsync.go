@@ -104,12 +104,12 @@ func SyncCloudResource(taskChan chan *metadata.CloudSyncTask, conf *SyncConf) {
 	go func() {
 		for {
 			if task, ok := <-taskChan; ok {
-				blog.V(3).Infof("processing taskid:%d, resource type:%s", task.TaskID, task.ResourceType)
+				blog.V(4).Infof("processing taskid:%d, resource type:%s", task.TaskID, task.ResourceType)
 				switch task.ResourceType {
 				case "host":
 					hostChan <- task
 				default:
-					blog.V(3).Infof("unknown resource type:%s, ignore it!", task.ResourceType)
+					blog.Errorf("unknown resource type:%s, ignore it!", task.ResourceType)
 				}
 			}
 		}

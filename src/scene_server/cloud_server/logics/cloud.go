@@ -25,27 +25,27 @@ import (
 	ccom "configcenter/src/scene_server/cloud_server/common"
 )
 
-func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) (bool, error) {
+func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) error {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("AccountVerify GetVendorClient err:%s", err.Error())
-		return false, err
+		blog.Errorf("AccountVerify GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		return err
 	}
 
 	_, err = client.GetRegions(nil)
 	if err != nil {
-		blog.Errorf("AccountVerify GetRegions err:%s", err.Error())
-		return false, err
+		blog.Errorf("AccountVerify GetRegions failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
 // 获取地域信息
 func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount bool) ([]metadata.SyncRegion, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("GetRegionsInfo GetVendorClient err:%s", err.Error())
+		blog.Errorf("GetRegionsInfo GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
 		return nil, err
 	}
 
@@ -67,7 +67,7 @@ func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount 
 				defer wg.Done()
 				count, err := client.GetInstancesTotalCnt(region.RegionId, nil)
 				if err != nil {
-					blog.Errorf("GetVpcHostCnt GetInstances err:%s", err.Error())
+					blog.Errorf("GetVpcHostCnt GetInstances failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
 					return
 				}
 				hostCntChan <- []interface{}{region.RegionId, count}
@@ -99,51 +99,42 @@ func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount 
 	return result, nil
 }
 
-// 获取地域下的vpc详情和主机数
-func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, region string) (*metadata.VpcHostCntResult, error) {
+// 获取某地域下的vpc详情和主机数
+func (lgc *Logics) GetVpcHostCntInOneRegion(conf metadata.CloudAccountConf, region string) (*metadata.VpcHostCntResult, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("GetVpcHostCnt GetVendorClient err:%s", err.Error())
+		blog.Errorf("GetVpcHostCntInOneRegion GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
 		return nil, err
 	}
 
+	// 获取该地域下的vpc详情
 	vpcsInfo, err := client.GetVpcs(region, nil)
 	if err != nil {
-		blog.Errorf("GetVpcHostCnt GetVpcs err:%s", err.Error())
+		blog.Errorf("GetVpcHostCntInOneRegion GetVpcs err:%s", err.Error())
 		return nil, err
 	}
-
-	vpcHostCnt := make(map[string]int64)
-	hostCntChan := make(chan []interface{}, 10)
-	var wg, wg2 sync.WaitGroup
-	// 并发请求获取每个vpc的实例个数
-	for _, vpc := range vpcsInfo.VpcSet {
-		wg.Add(1)
-		go func(vpc *metadata.Vpc) {
-			defer wg.Done()
-			count, err := client.GetInstancesTotalCnt(region, &ccom.RequestOpt{
-				Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{vpc.VpcId})}},
-			})
-			if err != nil {
-				blog.Errorf("GetVpcHostCnt GetInstances err:%s", err.Error())
-				return
-			}
-			hostCntChan <- []interface{}{vpc.VpcId, count}
-		}(vpc)
-	}
-	wg2.Add(1)
-	go func() {
-		defer wg2.Done()
-		for hostCnt := range hostCntChan {
-			vpcHostCnt[hostCnt[0].(string)] = hostCnt[1].(int64)
-		}
-	}()
-	wg.Wait()
-	close(hostCntChan)
-	wg2.Wait()
 
 	result := new(metadata.VpcHostCntResult)
 	result.Count = vpcsInfo.Count
+
+	if len(vpcsInfo.VpcSet) == 0 {
+		return result, nil
+	}
+
+	// 获取vpc对应的主机数
+	option := metadata.SearchVpcHostCntOption{}
+	for _, vpc := range vpcsInfo.VpcSet {
+		option.RegionVpcs = append(option.RegionVpcs, metadata.RegionVpc{
+			Region: region,
+			VpcID:  vpc.VpcId,
+		})
+	}
+	vpcHostCnt, err := lgc.GetVpcHostCnt(conf, option)
+	if err != nil {
+		blog.Errorf("GetVpcHostCntInOneRegion GetVpcHostCnt failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		return nil, err
+	}
+
 	for i, _ := range vpcsInfo.VpcSet {
 		vpc := vpcsInfo.VpcSet[i]
 		result.Info = append(result.Info, metadata.VpcSyncInfo{
@@ -157,11 +148,51 @@ func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, region string) 
 	return result, nil
 }
 
+// 获取多个vpc对应的主机数
+func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, option metadata.SearchVpcHostCntOption) (map[string]int64, error) {
+	client, err := cloudvendor.GetVendorClient(conf)
+	if err != nil {
+		blog.Errorf("GetVpcHostCnt GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+		return nil, err
+	}
+
+	vpcHostCnt := make(map[string]int64)
+	hostCntChan := make(chan []interface{}, 10)
+	var wg, wg2 sync.WaitGroup
+	// 并发请求获取每个vpc的实例个数
+	for _, regionVpc := range option.RegionVpcs {
+		wg.Add(1)
+		go func(regionVpc metadata.RegionVpc) {
+			defer wg.Done()
+			count, err := client.GetInstancesTotalCnt(regionVpc.Region, &ccom.RequestOpt{
+				Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{regionVpc.VpcID})}},
+			})
+			if err != nil {
+				blog.Errorf("GetVpcHostCnt GetInstances failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+				return
+			}
+			hostCntChan <- []interface{}{regionVpc.VpcID, count}
+		}(regionVpc)
+	}
+	wg2.Add(1)
+	go func() {
+		defer wg2.Done()
+		for hostCnt := range hostCntChan {
+			vpcHostCnt[hostCnt[0].(string)] = hostCnt[1].(int64)
+		}
+	}()
+	wg.Wait()
+	close(hostCntChan)
+	wg2.Wait()
+
+	return vpcHostCnt, nil
+}
+
 // 获取地域下的vpc和主机详情
 func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs []metadata.VpcSyncInfo) (*metadata.CloudHostResource, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
-		blog.Errorf("GetCloudHostResource GetVendorClient err:%s", err.Error())
+		blog.Errorf("GetCloudHostResource GetVendorClient failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
 		return nil, err
 	}
 
@@ -179,7 +210,7 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 				Limit:   ccom.Int64Ptr(ccom.MaxLimit),
 			})
 			if err != nil {
-				blog.Errorf("GetCloudHostResource GetInstances err:%s", err.Error())
+				blog.Errorf("GetCloudHostResource GetInstances failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
 				return
 			}
 			blog.V(4).Infof("GetCloudHostResource vpc-id:%s, instances count %#v", vpc.VpcID, instancesInfo.Count)
@@ -212,6 +243,8 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 
 	return result, nil
 }
+
+// 获取vpc的主机数详情
 
 // 获取云厂商账户配置
 func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountConf, error) {
