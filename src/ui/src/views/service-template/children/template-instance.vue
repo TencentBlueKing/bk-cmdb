@@ -2,6 +2,13 @@
     <div class="template-instance-layout">
         <div class="instance-main">
             <div class="options clearfix">
+                <div class="fl">
+                    <bk-button theme="primary"
+                        :disabled="!table.selection.length"
+                        @click="handleBatchSync">
+                        {{$t('批量同步')}}
+                    </bk-button>
+                </div>
                 <div class="fr">
                     <bk-input class="filter-item" right-icon="bk-icon icon-search"
                         clearable
@@ -14,7 +21,9 @@
             <bk-table class="instance-table"
                 ref="instanceTable"
                 v-bkloading="{ isLoading: $loading(Object.values(request)) || table.filtering }"
-                :data="table.data">
+                :data="table.data"
+                @selection-change="handleSelectionChange">
+                <bk-table-column type="selection" :selectable="checkSelectable"></bk-table-column>
                 <bk-table-column :label="$t('模块名称')" prop="bk_module_name" show-overflow-tooltip></bk-table-column>
                 <bk-table-column :label="$t('拓扑路径')" sortable :sort-method="sortByPath" show-overflow-tooltip>
                     <template slot-scope="{ row }">{{row._path_}}</template>
@@ -58,6 +67,7 @@
                 table: {
                     filter: '',
                     filtering: false,
+                    selection: [],
                     data: [],
                     backup: [],
                     syncStatus: [],
@@ -158,13 +168,29 @@
                 this.$router.push({
                     name: 'syncServiceFromTemplate',
                     params: {
-                        moduleId: row.bk_module_id,
-                        setId: row.bk_set_id
+                        modules: row.bk_module_id,
+                        template: this.serviceTemplateId
                     },
                     query: {
-                        path: row._path_,
-                        form: 'operationalTemplate',
-                        templateId: this.serviceTemplateId
+                        form: 'operationalTemplate'
+                    }
+                })
+            },
+            checkSelectable (row) {
+                return !this.isSyncDisabled(row)
+            },
+            handleSelectionChange (selection) {
+                this.table.selection = selection
+            },
+            handleBatchSync () {
+                this.$router.push({
+                    name: 'batchSyncServiceTemplate',
+                    params: {
+                        template: this.serviceTemplateId,
+                        modules: this.table.selection.map(row => row.bk_module_id).join(',')
+                    },
+                    query: {
+                        from: 'operationalTemplate'
                     }
                 })
             },
