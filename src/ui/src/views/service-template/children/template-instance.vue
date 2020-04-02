@@ -22,6 +22,7 @@
                 ref="instanceTable"
                 v-bkloading="{ isLoading: $loading(Object.values(request)) || table.filtering }"
                 :data="table.data"
+                :max-height="$APP.height - 250"
                 @selection-change="handleSelectionChange">
                 <bk-table-column type="selection" :selectable="checkSelectable"></bk-table-column>
                 <bk-table-column :label="$t('模块名称')" prop="bk_module_name" show-overflow-tooltip></bk-table-column>
