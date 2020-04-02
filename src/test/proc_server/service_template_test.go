@@ -95,6 +95,18 @@ var _ = Describe("service template test", func() {
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
 
+		It("create service template with same name", func() {
+			input := map[string]interface{}{
+				"service_category_id": categoryId,
+				common.BKAppIDField:   bizId,
+				"name":                "st",
+			}
+			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+		})
+
 		It("create service template with invalid service category", func() {
 			input := map[string]interface{}{
 				"service_category_id": 12345,
@@ -708,7 +720,7 @@ var _ = Describe("service template test", func() {
 			j, err := json.Marshal(rsp.Data)
 			data := metadata.ServiceTemplate{}
 			json.Unmarshal(j, &data)
-			Expect(data.Name).To(Equal("st"))
+			Expect(data.Name).To(Equal("abcdefg"))
 			Expect(data.ServiceCategoryID).To(Equal(int64(2)))
 		})
 
@@ -723,9 +735,59 @@ var _ = Describe("service template test", func() {
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"count\":1"))
-			Expect(j).To(ContainSubstring("\"name\":\"st\""))
+			Expect(j).To(ContainSubstring("\"name\":\"abcdefg\""))
 			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
 			resMap["service_template"] = j
+		})
+
+		It("create service template with name 'service_template'", func() {
+			input := map[string]interface{}{
+				"service_category_id": categoryId,
+				common.BKAppIDField:   bizId,
+				"name":                "service_template",
+			}
+			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+		})
+
+		It("update service template with same name as another service template", func() {
+			input := map[string]interface{}{
+				common.BKAppIDField:   bizId,
+				"id":                  serviceTemplateId,
+				"service_category_id": categoryId,
+				"name":                "service_template",
+			}
+			rsp, err := serviceClient.UpdateServiceTemplate(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+		})
+
+		It("create module with name 'service_template_module' in the same set", func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "service_template_module",
+				"bk_parent_id":        setId,
+				"service_category_id": categoryId,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+		})
+
+		It("update service template with same name as another module in the same set with a module using this template", func() {
+			input := map[string]interface{}{
+				common.BKAppIDField:   bizId,
+				"id":                  serviceTemplateId,
+				"service_category_id": categoryId,
+				"name":                "service_template_module",
+			}
+			rsp, err := serviceClient.UpdateServiceTemplate(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
 
 		It("update service template with invalid service category", func() {
@@ -813,7 +875,7 @@ var _ = Describe("service template test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
-			Expect(j).To(ContainSubstring("\"bk_module_name\":\"st\""))
+			Expect(j).To(ContainSubstring("\"bk_module_name\":\"abcdefg\""))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_template_id\":%d", serviceTemplateId)))
 			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
 		})

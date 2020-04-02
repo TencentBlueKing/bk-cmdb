@@ -73,7 +73,7 @@
                     v-validate.disabled="'required'"
                     data-vv-name="firstClass"
                     key="firstClass"
-                    :auto-select="false"
+                    auto-select
                     :list="firstClassList">
                 </cmdb-selector>
                 <cmdb-selector class="service-class fr"

@@ -14,6 +14,7 @@ package y3_7_202002231026
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -64,8 +65,8 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		Option:        true,
 		Description:   "",
 		Creator:       common.CCSystemOperatorUserName,
-		LastTime:      &now,
-		CreateTime:    &now,
+		LastTime:      &metadata.Time{Time: time.Now()},
+		CreateTime:    &metadata.Time{Time: time.Now()},
 	}
 
 	err = db.Table(common.BKTableNameObjAttDes).Insert(ctx, addPortEnable)

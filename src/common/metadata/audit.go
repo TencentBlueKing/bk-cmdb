@@ -120,7 +120,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, ModelRes, ModelGroupRes, ModelAttributeRes, ModelClassificationRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ModelRes, ModelGroupRes, ModelAttributeRes, ModelClassificationRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -170,7 +170,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, ModelRes, ModelGroupRes, ModelAttributeRes, ModelClassificationRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes, ModelRes, ModelGroupRes, ModelAttributeRes, ModelClassificationRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -383,6 +383,7 @@ const (
 	// model related operation type
 	ModelRes               ResourceType = "model"
 	ModelInstanceRes       ResourceType = "model_instance"
+	MainlineInstanceRes    ResourceType = "mainline_instance"
 	ModelAssociationRes    ResourceType = "model_association"
 	ModelAttributeRes      ResourceType = "model_attribute"
 	ModelClassificationRes ResourceType = "model_classification"
@@ -442,7 +443,7 @@ const (
 	LabelServiceInstance = "service_instance"
 )
 
-func GetAuditTypeByObjID(objID string) AuditType {
+func GetAuditTypeByObjID(objID string, isMainline bool) AuditType {
 	switch objID {
 	case common.BKInnerObjIDApp:
 		return BusinessType
@@ -459,11 +460,14 @@ func GetAuditTypeByObjID(objID string) AuditType {
 	case common.BKInnerObjIDPlat:
 		return CloudResourceType
 	default:
+		if isMainline {
+			return BusinessResourceType
+		}
 		return ModelInstanceType
 	}
 }
 
-func GetResourceTypeByObjID(objID string) ResourceType {
+func GetResourceTypeByObjID(objID string, isMainline bool) ResourceType {
 	switch objID {
 	case common.BKInnerObjIDApp:
 		return BusinessRes
@@ -480,6 +484,9 @@ func GetResourceTypeByObjID(objID string) ResourceType {
 	case common.BKInnerObjIDPlat:
 		return CloudAreaRes
 	default:
+		if isMainline {
+			return MainlineInstanceRes
+		}
 		return ModelInstanceRes
 	}
 }

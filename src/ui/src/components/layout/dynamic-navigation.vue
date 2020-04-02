@@ -374,13 +374,13 @@ $color: #63656E;
     }
     .business-flag {
         position: absolute;
-        left: 14px;
-        top: 13px;
+        left: 10px;
+        top: 9px;
         width: 32px;
         height: 32px;
         line-height: 30px;
         text-align: center;
-        font-size: 12px;
+        font-size: 20px;
         border: 1px solid #C4C6CC;
         border-radius: 2px;
     }
@@ -475,8 +475,8 @@ $color: #63656E;
         .toggle-icon {
             display: inline-block;
             vertical-align: top;
-            margin: 18px;
-            font-size: 12px;
+            margin: 14px;
+            font-size: 20px;
             transition: all $duration $cubicBezier;
 
             &.open {

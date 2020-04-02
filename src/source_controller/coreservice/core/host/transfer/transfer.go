@@ -98,6 +98,11 @@ func (t *genericTransfer) Transfer(kit *rest.Kit, hostID int64) errors.CCErrorCo
 	// must be slice ptr address, Each assignment will change the address
 	defer t.generateEvent(kit, &originDatas, &curDatas, hostInfo)
 
+	// remove service instance if necessary
+	if err := t.removeHostServiceInstance(kit, hostID); err != nil {
+		return err
+	}
+	
 	originDatas, err = t.delHostModuleRelation(kit, hostID)
 	if err != nil {
 		// It is not the time to merge and base the time. When it fails,
@@ -450,6 +455,82 @@ func (t *genericTransfer) autoCreateServiceInstance(kit *rest.Kit, hostID int64)
 		if _, err := t.dependent.AutoCreateServiceInstanceModuleHost(kit, hostID, moduleID); err != nil {
 			blog.Warnf("autoCreateServiceInstance failed, hostID: %d, moduleID: %d, rid: %s", hostID, moduleID, kit.Rid)
 		}
+	}
+	return nil
+}
+
+// remove service instances bound to hosts with process instances in certain modules
+func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostID int64) errors.CCErrorCoder {
+	// increment transfer don't need to remove service instance
+	if t.isIncrement {
+		return nil
+	}
+	// get all service instance IDs that need to be removed
+	serviceInstanceFilter := map[string]interface{}{
+		common.BKHostIDField: hostID,
+	}
+	if len(t.moduleIDArr) > 0 {
+		serviceInstanceFilter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBNIN: t.moduleIDArr,
+		}
+	}
+	instances := make([]metadata.ServiceInstance, 0)
+	err := t.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(common.BKFieldID).All(kit.Ctx, &instances)
+	if err != nil {
+		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %s, rid: %s", err, serviceInstanceFilter, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if len(instances) == 0 {
+		return nil
+	}
+	serviceInstanceIDs := make([]int64, 0)
+	for _, instance := range instances {
+		serviceInstanceIDs = append(serviceInstanceIDs, instance.ID)
+	}
+
+	// get all process IDs of the service instances to be removed
+	processRelationFilter := map[string]interface{}{
+		common.BKServiceInstanceIDField: map[string]interface{}{
+			common.BKDBIN: serviceInstanceIDs,
+		},
+	}
+	relations := make([]metadata.ProcessInstanceRelation, 0)
+	if err := t.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).All(kit.Ctx, &relations); nil != err {
+		blog.Errorf("removeHostServiceInstance failed, get process instance relation failed, err: %s, filter: %s, rid: %s", err, processRelationFilter, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	processIDs := make([]int64, 0)
+	for _, relation := range relations {
+		processIDs = append(processIDs, relation.ProcessID)
+	}
+
+	// delete all process relations and instances
+	if len(processIDs) > 0 {
+		if err := t.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, processRelationFilter); nil != err {
+			blog.Errorf("removeHostServiceInstance failed, delete process instance relation failed, err: %s, filter: %s, rid: %s", err, processRelationFilter, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+		}
+
+		processFilter := map[string]interface{}{
+			common.BKProcessIDField: map[string]interface{}{
+				common.BKDBIN: processIDs,
+			},
+		}
+		if err := t.dbProxy.Table(common.BKTableNameBaseProcess).Delete(kit.Ctx, processFilter); nil != err {
+			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %s, rid: %s", err, processFilter, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+		}
+	}
+
+	// delete service instances
+	serviceInstanceIDFilter := map[string]interface{}{
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: serviceInstanceIDs,
+		},
+	}
+	if err := t.dbProxy.Table(common.BKTableNameServiceInstance).Delete(kit.Ctx, serviceInstanceIDFilter); nil != err {
+		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %s, rid: %s", err, serviceInstanceIDFilter, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 	return nil
 }

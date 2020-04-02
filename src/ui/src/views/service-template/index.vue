@@ -59,12 +59,12 @@
             @row-click="handleRowClick"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="name" :label="$t('模板名称')" class-name="is-highlight"></bk-table-column>
-            <bk-table-column prop="service_category" :label="$t('服务分类')"></bk-table-column>
+            <bk-table-column prop="name" :label="$t('模板名称')" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
+            <bk-table-column prop="service_category" :label="$t('服务分类')" show-overflow-tooltip></bk-table-column>
             <bk-table-column prop="process_template_count" :label="$t('进程数量')"></bk-table-column>
             <bk-table-column prop="module_count" :label="$t('已应用模块数')"></bk-table-column>
             <bk-table-column prop="modifier" :label="$t('修改人')"></bk-table-column>
-            <bk-table-column prop="last_time" :label="$t('修改时间')">
+            <bk-table-column prop="last_time" :label="$t('修改时间')" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     {{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm')}}
                 </template>

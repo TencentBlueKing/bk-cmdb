@@ -39,7 +39,7 @@ const (
 	AttributeFieldPropertyGroup   = "bk_property_group"
 	AttributeFieldPropertyIndex   = "bk_property_index"
 	AttributeFieldUnit            = "unit"
-	AttributeFieldPlaceHoler      = "placeholder"
+	AttributeFieldPlaceHolder     = "placeholder"
 	AttributeFieldIsEditable      = "editable"
 	AttributeFieldIsPre           = "ispre"
 	AttributeFieldIsRequired      = "isrequired"
@@ -602,15 +602,21 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 		}
 	}
 
-	listOption, ok := attribute.Option.([]interface{})
-	if !ok {
-		blog.Errorf("option %v invalid, not string type list option", attribute.Option)
+	var listOpt []interface{}
+	switch listOption := attribute.Option.(type) {
+	case []interface{}:
+		listOpt = listOption
+	case bson.A:
+		listOpt = listOption
+	default:
+		blog.Errorf("option %v invalid, not string type list option, but type %T", attribute.Option, attribute.Option)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}
-	for _, inVal := range listOption {
+
+	for _, inVal := range listOpt {
 		inValStr, ok := inVal.(string)
 		if !ok {
 			blog.Errorf("inner list option convert to string  failed, params %s not valid , list field value: %#v", key, val)
@@ -623,7 +629,7 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 	}
-	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, attribute, val)
+	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOpt, attribute, val)
 	return errors.RawErrorInfo{
 		ErrCode: common.CCErrCommParamsInvalid,
 		Args:    []interface{}{key},
@@ -781,62 +787,60 @@ func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
 			return nil, err
 		}
 	case []interface{}:
-		for _, optionVal := range options {
-			if option, ok := optionVal.(map[string]interface{}); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
-				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(bson.M); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
-				enumOptions = append(enumOptions, enumOption)
-			} else {
-				return nil, fmt.Errorf("unknow val type: %#v", val)
-			}
+		if err := parseEnumOption(options, &enumOptions); err != nil {
+			blog.Errorf("parseEnumOption error : %s, rid: %s", err.Error(), rid)
+			return nil, err
 		}
 	case bson.A:
-		for _, optionVal := range options {
-			if option, ok := optionVal.(map[string]interface{}); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
-				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(bson.D); ok {
-				opt := option.Map()
-				enumOption := EnumVal{}
-				enumOption.ID = getString(opt["id"])
-				enumOption.Name = getString(opt["name"])
-				enumOption.Type = getString(opt["type"])
-				enumOption.IsDefault = getBool(opt["is_default"])
-                if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
-                    return nil, fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
-                }
-				enumOptions = append(enumOptions, enumOption)
-			} else {
-				return nil, fmt.Errorf("unknow val type: %#v", val)
-			}
+		if err := parseEnumOption(options, &enumOptions); err != nil {
+			blog.Errorf("parseEnumOption error : %s, rid: %s", err.Error(), rid)
+			return nil, err
 		}
 	default:
 		return nil, fmt.Errorf("unknow val type: %#v", val)
 	}
 	return enumOptions, nil
+}
+
+// parseEnumOption set enumOptions values from options
+func parseEnumOption(options []interface{}, enumOptions *[]EnumVal) error {
+	for _, optionVal := range options {
+		if option, ok := optionVal.(map[string]interface{}); ok {
+			enumOption := EnumVal{}
+			enumOption.ID = getString(option["id"])
+			enumOption.Name = getString(option["name"])
+			enumOption.Type = getString(option["type"])
+			enumOption.IsDefault = getBool(option["is_default"])
+			if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+			}
+			*enumOptions = append(*enumOptions, enumOption)
+		} else if option, ok := optionVal.(bson.M); ok {
+			enumOption := EnumVal{}
+			enumOption.ID = getString(option["id"])
+			enumOption.Name = getString(option["name"])
+			enumOption.Type = getString(option["type"])
+			enumOption.IsDefault = getBool(option["is_default"])
+			if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+			}
+			*enumOptions = append(*enumOptions, enumOption)
+		} else if option, ok := optionVal.(bson.D); ok {
+			opt := option.Map()
+			enumOption := EnumVal{}
+			enumOption.ID = getString(opt["id"])
+			enumOption.Name = getString(opt["name"])
+			enumOption.Type = getString(opt["type"])
+			enumOption.IsDefault = getBool(opt["is_default"])
+			if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
+				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
+			}
+			*enumOptions = append(*enumOptions, enumOption)
+		} else {
+			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
+		}
+	}
+	return nil
 }
 
 // parseFloatOption  parse float data in option
