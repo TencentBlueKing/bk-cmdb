@@ -262,7 +262,7 @@ func (s *Service) ListModulesByServiceTemplateID(params types.ContextParams, pat
 	}
 
 	start := int64(0)
-	limit := int64(common.BKDefaultLimit)
+	limit := int64(common.BKNoLimit)
 	sortArr := make([]metadata.SearchSort, 0)
 	if requestBody.Page != nil {
 		limit = int64(requestBody.Page.Limit)
