@@ -60,7 +60,7 @@
                     @click="handleSelectGroup(group)"
                 >
                     <span class="toggle-arrow" @click.stop="handleSlideGroup(group)"><i class="bk-icon icon-angle-down"></i></span>
-                    <span class="group-name">{{group['bk_classification_name']}}</span>
+                    <span class="group-name" :title="group.bk_classification_name">{{group['bk_classification_name']}}</span>
                     <span class="model-count">{{group['bk_objects'].length}}</span>
                     <i
                         class="bk-cc-icon icon-cc-hide"
@@ -1287,6 +1287,8 @@
         background: #fff;
         @include scrollbar;
         .group-info {
+            display: flex;
+            align-items: center;
             line-height: 42px;
             padding: 0 16px 0 5px;
             font-size: 14px;
@@ -1332,6 +1334,10 @@
                     display: none;
                 }
             }
+            .group-name {
+                max-width: 110px;
+                @include ellipsis;
+            }
             .model-count {
                 position: absolute;
                 right: 16px;
@@ -1346,6 +1352,7 @@
                 text-align: center;
             }
             .toggle-arrow {
+                flex: 35px 0 0;
                 padding: 0 8px 0 15px;
                 margin-right: 2px;
             }
