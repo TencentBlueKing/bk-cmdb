@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"fmt"
 	"reflect"
 
 	"configcenter/src/common"
@@ -27,14 +28,78 @@ func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64, vpcOpt *metadata.Se
 	accountConf, err := lgc.GetCloudAccountConf(accountID)
 	if err != nil {
 		blog.Errorf("SearchVpc failed, rid:%s, accountID:%d, vpcOpt:%+v, err:%+v", kit.Rid, accountID, vpcOpt, err)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		return nil, kit.CCError.CCError(common.CCErrCloudVpcGetFail)
 	}
+
 	result, err := lgc.GetVpcHostCntInOneRegion(*accountConf, vpcOpt.Region)
 	if err != nil {
 		blog.Errorf("SearchVpc failed, rid:%s, accountConf:%+v, vpcOpt:%+v, err:%+v", kit.Rid, accountConf, vpcOpt, err)
 		return nil, kit.CCError.CCError(common.CCErrCloudVpcGetFail)
 	}
+
+	if len(result.Info) == 0 {
+		return result, nil
+	}
+
+	vpcIDs := make([]string, 0)
+	for _, info := range result.Info {
+		vpcIDs = append(vpcIDs, info.VpcID)
+	}
+
+	vpcCloud, err := lgc.GetVpcCloudArea(kit, vpcIDs)
+	if err != nil {
+		blog.Errorf("SearchVpc failed, rid:%s, accountConf:%+v, vpcOpt:%+v, err:%+v", kit.Rid, accountConf, vpcOpt, err)
+		return nil, kit.CCError.CCError(common.CCErrCloudVpcGetFail)
+	}
+
+	for i, info := range result.Info {
+		if cloudID, ok := vpcCloud[info.VpcID]; ok {
+			result.Info[i].CloudID = cloudID
+		} else {
+			result.Info[i].CloudID = -1
+		}
+	}
+
 	return result, nil
+}
+
+func (lgc *Logics) GetVpcCloudArea(kit *rest.Kit, vpcIDs []string) (map[string]int64, error) {
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKCloudIDField, common.BKVpcID},
+		Condition: mapstr.MapStr{common.BKVpcID: map[string]interface{}{
+			common.BKDBIN: vpcIDs,
+		}},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat, query)
+	if err != nil {
+		blog.Errorf("GetVpcCloudIDs fail, err:%s, query:%+v", err.Error(), *query)
+		return nil, err
+	}
+	if !result.Result {
+		blog.Errorf("GetVpcCloudIDs fail, err:%s, query:%+v", result.ErrMsg, *query)
+		return nil, fmt.Errorf("%s", result.ErrMsg)
+	}
+
+	ret := make(map[string]int64)
+	for _, info := range result.Data.Info {
+		cloudID, err := info.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.Errorf("GetVpcCloudIDs fail, err:%s, info:%+v", err.Error(), result.Data.Info)
+			return nil, err
+		}
+		vpcID, err := info.String(common.BKVpcID)
+		if err != nil {
+			blog.Errorf("GetVpcCloudIDs fail, err:%s, info:%+v", err.Error(), result.Data.Info)
+			return nil, err
+		}
+		ret[vpcID] = cloudID
+	}
+
+	return ret, nil
 }
 
 func (lgc *Logics) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (*metadata.CloudSyncTask, error) {
@@ -139,7 +204,7 @@ func (lgc *Logics) updateVpcHostCount(kit *rest.Kit, multiTask *metadata.Multipl
 			return kit.CCError.CCError(common.CCErrCloudVpcGetFail)
 		}
 		for vpcID, hostCnt := range vpcHostCnt {
-			allVpcHostCnt[vpcID]  = hostCnt
+			allVpcHostCnt[vpcID] = hostCnt
 		}
 	}
 
@@ -150,7 +215,6 @@ func (lgc *Logics) updateVpcHostCount(kit *rest.Kit, multiTask *metadata.Multipl
 
 	return nil
 }
-
 
 func (lgc *Logics) UpdateSyncTask(kit *rest.Kit, taskID int64, option map[string]interface{}) error {
 

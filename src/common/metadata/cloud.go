@@ -95,7 +95,7 @@ type SearchVpcHostCntOption struct {
 
 type RegionVpc struct {
 	Region string `json:"bk_region"`
-	VpcID   string `json:"bk_vpc_id"`
+	VpcID  string `json:"bk_vpc_id"`
 }
 
 type SearchVpcOption struct {
@@ -180,6 +180,7 @@ type VpcSyncInfo struct {
 	Region       string `json:"bk_region" bson:"bk_region"`
 	VpcHostCount int64  `json:"bk_host_count" bson:"bk_host_count"`
 	SyncDir      int64  `json:"bk_sync_dir,omitempty" bson:"bk_sync_dir,omitempty"`
+	CloudID      int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
 }
 
 type MultipleCloudSyncTask struct {

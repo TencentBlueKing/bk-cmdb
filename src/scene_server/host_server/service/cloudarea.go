@@ -99,7 +99,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 
 	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, query)
 	if nil != err {
-		blog.Errorf("FindManyCloudArea htt do error: %v query:%#v,rid:%s", err, query, rid)
+		blog.Errorf("FindManyCloudArea http do error: %v query:%#v,rid:%s", err, query, rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}

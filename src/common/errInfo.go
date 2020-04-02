@@ -821,6 +821,9 @@ const (
 	CCErrCloudRegionGetFail               = 1118014
 	CCErrCloudSyncDirNoChosen             = 1118015
 	CCErrCloudSyncDirNoExist              = 1118016
+	CCErrCloudIDNoProvided                = 1118017
+	CCErrCloudIDNoExist                   = 1118018
+	CCErrDefaultCloudIDProvided           = 1118019
 
 	/** TODO: 以下错误码需要改造 **/
 

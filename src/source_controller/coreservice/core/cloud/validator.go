@@ -147,20 +147,9 @@ func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.Cloud
 		return kit.CCError.CCError(common.CCErrCloudSyncTaskNameAlreadyExist)
 	}
 
-	if len(task.SyncVpcs) > 0 {
-		// vpcID is required
-		for _, vpc := range task.SyncVpcs {
-			if vpc.VpcID == "" {
-				blog.ErrorJSON("[validCreateSycTask] vpcID filed is required, bk_task_name: %s, rid: %s", task.TaskName, kit.Rid)
-				return kit.CCError.CCError(common.CCErrCloudVpcIDIsRequired)
-			}
-		}
-
-		// resource dir must be exist
-		if err := c.validResourceDirExist(kit, task.SyncVpcs); err != nil {
-			blog.ErrorJSON("validCreateSyncTask failed, err:%s, bk_task_name: %s, rid: %s", err, task.TaskName, kit.Rid)
-			return err
-		}
+	if err := c.validSyncVpcInfo(kit, task.SyncVpcs); err != nil {
+		blog.ErrorJSON("validUpdateSyncTask failed, error %s, syncVpcs:%s, rid: %s", err, task.SyncVpcs, kit.Rid)
+		return err
 	}
 
 	// account task count check, one account can only have one task
@@ -226,25 +215,48 @@ func (c *cloudOperation) validUpdateSyncTask(kit *rest.Kit, taskID int64, option
 			return kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 		}
 
-		// vpcID is required
-		for _, vpc := range syncVpcs {
-			if vpc.VpcID == "" {
-				blog.ErrorJSON("validUpdateSyncTask failed, rid: %s", kit.Rid)
-				return kit.CCError.CCError(common.CCErrCloudVpcIDIsRequired)
-			}
-		}
-
-		// resource dir must be exist
-		if err := c.validResourceDirExist(kit, syncVpcs); err != nil {
-			blog.ErrorJSON("validUpdateSyncTask failed, err:%s, rid: %s", err, kit.Rid)
+		if err := c.validSyncVpcInfo(kit, syncVpcs); err != nil {
+			blog.ErrorJSON("validUpdateSyncTask failed, error %s, vpcInfo:%s, rid: %s", err, vpcInfo, kit.Rid)
 			return err
 		}
+
 	}
 
 	return nil
 }
 
-// Valid resource dir which must exist
+
+// Valid sync vpc info
+func (c *cloudOperation) validSyncVpcInfo(kit *rest.Kit, syncVpcs []metadata.VpcSyncInfo) errors.CCErrorCoder {
+	if len(syncVpcs) == 0 {
+		return nil
+	}
+
+	// vpcID is required
+	for _, vpc := range syncVpcs {
+		if vpc.VpcID == "" {
+			blog.ErrorJSON("validUpdateSyncTask failed, rid: %s", kit.Rid)
+			return kit.CCError.CCError(common.CCErrCloudVpcIDIsRequired)
+		}
+	}
+
+	// resource dir must be exist
+	if err := c.validResourceDirExist(kit, syncVpcs); err != nil {
+		blog.ErrorJSON("validUpdateSyncTask failed, err:%s, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	// cloudID must be exist
+	if err := c.validCloudIDExist(kit, syncVpcs); err != nil {
+		blog.ErrorJSON("validCloudIDExist failed, err:%s, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+
+// Valid resource dir which must be exist
 func (c *cloudOperation) validResourceDirExist(kit *rest.Kit, syncVpcs []metadata.VpcSyncInfo) errors.CCErrorCoder {
 	syncDirs := make(map[int64]bool)
 	for _, syncInfo := range syncVpcs {
@@ -272,6 +284,50 @@ func (c *cloudOperation) validResourceDirExist(kit *rest.Kit, syncVpcs []metadat
 		if _, ok := moduleIDs[dir]; !ok {
 			blog.ErrorJSON("validResourceDirExist failed, syncDir %d not in moduleIDs, cond:%s, rid: %s", dir, cond, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCloudSyncDirNoExist, dir)
+		}
+	}
+
+	return nil
+}
+
+// Valid cloudID which must be exist
+func (c *cloudOperation) validCloudIDExist(kit *rest.Kit, syncVpcs []metadata.VpcSyncInfo) errors.CCErrorCoder {
+	cloudIDs := make(map[int64]bool)
+	for _, syncInfo := range syncVpcs {
+		if syncInfo.CloudID == 0 {
+			blog.ErrorJSON("validCloudIDExist failed, can't be default cloud area, rid: %s", kit.Rid)
+			return kit.CCError.CCError(common.CCErrDefaultCloudIDProvided)
+		}
+		cloudIDs[syncInfo.CloudID] = true
+	}
+	if len(cloudIDs) == 0 {
+		blog.ErrorJSON("validCloudIDExist failed, no cloudID is provided, rid: %s", kit.Rid)
+		return kit.CCError.CCError(common.CCErrCloudIDNoProvided)
+	}
+
+	cloudIDArr := make([]int64, 0)
+	for id, _ := range cloudIDs {
+		cloudIDArr = append(cloudIDArr, id)
+	}
+	cond := mapstr.MapStr{common.BKCloudIDField: map[string]interface{}{
+		common.BKDBIN: cloudIDArr,
+	}}
+	result := make([]struct {
+		CloudID int64 `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	}, 0)
+	err := c.dbProxy.Table(common.BKTableNameBasePlat).Find(cond).Fields(common.BKCloudIDField).All(kit.Ctx, &result)
+	if err != nil {
+		blog.ErrorJSON("validCloudIDExist failed, err: %s, cond:%s, rid: %s", err.Error(), cond, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	allIDs := make(map[int64]bool)
+	for _, r := range result {
+		allIDs[r.CloudID] = true
+	}
+	for id, _ := range cloudIDs {
+		if _, ok := allIDs[id]; !ok {
+			blog.ErrorJSON("validCloudIDExist failed, cloudID %d is not exist, cond:%s, rid: %s", id, cond, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCloudIDNoExist, id)
 		}
 	}
 
