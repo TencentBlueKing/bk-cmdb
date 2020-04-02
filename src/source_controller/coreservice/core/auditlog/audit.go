@@ -86,8 +86,8 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryInput) 
 }
 
 // instNotChange Determine whether the data is consistent before and after the change
+// notice: getIgnoreOptions用来设置不参与对比变化的字段，这些字段发生变化，在instNotChange不在返回数据发生变化
 func instNotChange(ctx context.Context, content metadata.DetailFactory) bool {
-
 	rid := util.ExtractRequestIDFromContext(ctx)
 	modelID := ""
 	var basicContent *metadata.BasicOpDetail
@@ -110,7 +110,7 @@ func instNotChange(ctx context.Context, content metadata.DetailFactory) bool {
 	if basicContent == nil || basicContent.Details == nil || basicContent.Details.PreData == nil || basicContent.Details.CurData == nil {
 		return false
 	}
-
+	
 	preData := basicContent.Details.PreData
 	curData := basicContent.Details.CurData
 	bl := cmp.Equal(preData, curData, getIgnoreOptions(modelID))

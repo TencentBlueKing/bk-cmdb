@@ -131,8 +131,7 @@ func (assoc *association) ResetMainlineInstAssociation(kit *rest.Kit, current mo
 	return nil
 }
 
-func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, current, child model.Object) error {
-
+func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, current, child model.Object) ([]int64, error) {
 	defaultCond := &metadata.QueryInput{}
 	cond := condition.CreateCondition()
 	if parent.IsCommon() {
@@ -143,17 +142,17 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 	_, parentInsts, err := assoc.inst.FindInst(kit, parent, defaultCond, false)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find parent object(%s) inst, err: %s, rid: %s", parent.Object().ObjectID, err.Error(), kit.Rid)
-		return err
+		return nil, err
 	}
 
+	createdInstIDs := make([]int64, len(parentInsts))
 	expectParent2Children := map[int64][]inst.Inst{}
 	// create current object instance for each parent instance and insert the current instance to
 	for _, parent := range parentInsts {
-
 		id, err := parent.GetInstID()
 		if nil != err {
 			blog.Errorf("[operation-asst] failed to find the inst id, err: %s, rid: %s", err.Error(), kit.Rid)
-			return err
+			return nil, err
 		}
 
 		// we create the current object's instance for each parent instance belongs to the parent object.
@@ -173,17 +172,18 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 		// create the instance now.
 		if err = currentInst.Create(); nil != err {
 			blog.Errorf("[operation-asst] failed to create object(%s) default inst, err: %s, rid: %s", current.Object().ObjectID, err.Error(), kit.Rid)
-			return err
+			return nil, err
 		}
 		instID, err := currentInst.GetInstID()
 		if err != nil {
 			blog.Errorf("create mainline instance for obj: %s, but got invalid instance id, err :%v, rid: %s", current.Object().ObjectID, err, kit.Rid)
-			return err
+			return nil, err
 		}
+		createdInstIDs = append(createdInstIDs, instID)
 		err = assoc.authManager.RegisterInstancesByID(kit.Ctx, kit.Header, current.Object().ObjectID, instID)
 		if err != nil {
 			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, instID: %d, err: %v, rid: %s", current.Object().ObjectID, instID, err, kit.Rid)
-			return err
+			return nil, err
 		}
 
 		// reset the child's parent instance's parent id to current instance's id.
@@ -193,16 +193,10 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 				continue
 			}
 			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, err: %s, rid: %s", parent.GetObject().Object().ObjectID, err.Error(), kit.Rid)
-			return err
+			return nil, err
 		}
 
-		curInstID, err := currentInst.GetInstID()
-		if err != nil {
-			blog.Errorf("[operation-asst] failed to get the instID(%#v), err: %s, rid: %s", currentInst.ToMapStr(), err.Error(), kit.Rid)
-			return err
-		}
-
-		expectParent2Children[curInstID] = children
+		expectParent2Children[instID] = children
 	}
 
 	for parentID, children := range expectParent2Children {
@@ -210,12 +204,11 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 			// set the child's parent
 			if err = child.SetMainlineParentInst(parentID); nil != err {
 				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, err: %s, rid: %s", child.GetObject().Object().ObjectID, err.Error(), kit.Rid)
-				return err
+				return nil, err
 			}
 		}
 	}
-
-	return nil
+	return createdInstIDs, nil
 }
 
 func (assoc *association) SearchMainlineAssociationInstTopo(kit *rest.Kit, obj model.Object, instID int64, withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, error) {
@@ -578,10 +571,10 @@ func (assoc *association) fillMainlineChildInst(kit *rest.Kit, childObj model.Ob
 		parentInst.Child = append(parentInst.Child, childInstMap[parentInst.InstID]...)
 	}
 
-    if childObj.Object().ObjectID == common.BKInnerObjIDModule {
-        return nil
-    }
-    
+	if childObj.Object().ObjectID == common.BKInnerObjIDModule {
+		return nil
+	}
+
 	// get next level object ID
 	nextLevelObj, err := childObj.GetMainlineChildObject()
 	if err == io.EOF {

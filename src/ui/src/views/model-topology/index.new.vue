@@ -59,7 +59,7 @@
                     }"
                     @click="handleSelectGroup(group)"
                 >
-                    <span class="toggle-arrow" @click.stop="handleSlideGroup(group)"><i class="bk-icon icon-angle-down"></i></span>
+                    <span class="toggle-arrow" @click.stop="handleSlideGroup(group)"><i class="bk-icon icon-angle-right"></i></span>
                     <span class="group-name">{{group['bk_classification_name']}}</span>
                     <span class="model-count">{{group['bk_objects'].length}}</span>
                     <i
@@ -1309,8 +1309,8 @@
                 }
             }
             &.active {
-                .icon-angle-down {
-                    transform: rotate(180deg);
+                .icon-angle-right {
+                    transform: rotate(90deg);
                 }
             }
             &.selected {
@@ -1349,11 +1349,11 @@
                 padding: 0 8px 0 15px;
                 margin-right: 2px;
             }
-            .icon-angle-down {
+            .icon-angle-right {
                 transition: all .2s;
-                font-size: 12px;
+                font-size: 20px;
                 color: #979ba5;
-                margin-top: -3px;
+                margin: 0 -4px;
             }
             .icon-cc-hide {
                 display: none;

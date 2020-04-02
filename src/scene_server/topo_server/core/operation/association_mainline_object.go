@@ -206,7 +206,8 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 
 	cObj := currentObj.Object()
 	// update the mainline topo inst association
-	if err = assoc.SetMainlineInstAssociation(kit, parentObj, currentObj, childObj); nil != err {
+	createdInstIDs, err := assoc.SetMainlineInstAssociation(kit, parentObj, currentObj, childObj)
+	if nil != err {
 		blog.Errorf("[operation-asst] failed set the mainline inst association, error info is %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
@@ -222,6 +223,15 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 			cObj.ObjectID, childObj.Object().ObjectID, err)
 		return nil, err
 	}
+
+	// create audit log for the created instances
+	audit := NewSupplementary().Audit(kit, assoc.clientSet, currentObj, assoc.inst)
+	currAuditLog := audit.CreateSnapshot(-1, map[string]interface{}{
+		currentObj.GetInstIDFieldName(): map[string]interface{}{
+			common.BKDBIN: createdInstIDs,
+		},
+	})
+	audit.CommitCreateLog(nil, currAuditLog, nil, nil)
 
 	return currentObj, nil
 }

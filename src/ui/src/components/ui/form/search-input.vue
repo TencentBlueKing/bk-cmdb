@@ -153,7 +153,7 @@
                 line-height: 28px;
                 text-align: center;
                 transform: translate3d(0, -50%, 0) scale(.5);
-                font-size: 12px;
+                font-size: 20px;
                 border-radius: 50%;
                 background-color: #C4C6CC;
                 color: #fff;

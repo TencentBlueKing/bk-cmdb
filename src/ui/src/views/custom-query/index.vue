@@ -21,7 +21,8 @@
                     v-model="filter.name"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="getUserAPIList">
+                    @enter="getUserAPIList"
+                    @clear="handlePageChange(1)">
                 </bk-input>
             </div>
         </div>
@@ -401,9 +402,7 @@
                     }
                     this.table.pagination.count = res.count
 
-                    if (event) {
-                        this.table.stuff.type = 'search'
-                    }
+                    this.table.stuff.type = event ? 'search' : 'default'
                 } catch ({ permission }) {
                     if (permission) {
                         this.table.stuff = {

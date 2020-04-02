@@ -391,17 +391,16 @@
             cursor: pointer;
             &.form-confirm {
                 color: #0082ff;
+                font-size: 20px;
                 &:before {
                     display: inline-block;
-                    transform: scale(0.83);
                 }
             }
             &.form-cancel {
                 color: #979ba5;
-                font-size: 14px;
+                font-size: 20px;
                 &:before {
                     display: inline-block;
-                    transform: scale(0.66);
                 }
             }
             &:hover {

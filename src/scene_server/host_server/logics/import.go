@@ -113,7 +113,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			existInDB = true
 		} else {
 			// try to get hostID from db
-			key := generateHostCloudKey(innerIP, iSubArea)
+			key := generateHostCloudKey(innerIP, iSubAreaVal)
 			intHostID, existInDB = hostIDMap[key]
 		}
 		var preData mapstr.MapStr
@@ -140,7 +140,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 				continue
 			}
 			host[common.BKHostIDField] = intHostID
-			hostIDMap[generateHostCloudKey(innerIP, iSubArea)] = intHostID
+			hostIDMap[generateHostCloudKey(innerIP, iSubAreaVal)] = intHostID
 			action = metadata.AuditCreate
 		}
 		// add current host operate result to  batch add result
@@ -154,7 +154,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 
 		bizName := ""
 		if appID > 0 {
-			bizName, err = auditlog.NewAudit(lgc.CoreAPI, ctx, lgc.header).GetInstNameByID(common.BKInnerObjIDApp, appID)
+			bizName, err = auditlog.NewAudit(lgc.CoreAPI, lgc.header).GetInstNameByID(ctx, common.BKInnerObjIDApp, appID)
 			if err != nil {
 				return nil, nil, nil, nil, err
 			}

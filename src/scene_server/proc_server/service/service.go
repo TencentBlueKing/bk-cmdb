@@ -31,7 +31,6 @@ import (
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
@@ -240,8 +239,4 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}
 	}
 	ps.ConfigMap = current.ConfigMap
-
-	dbPrefix := "mongodb"
-	mongoCfg := mongo.ParseConfigFromKV(dbPrefix, current.ConfigMap)
-	ps.Config.Mongo = &mongoCfg
 }

@@ -838,12 +838,12 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	curData := mapstr.NewFromStruct(input.Data, "json")
 	curData.Set("name", objectAsst.AssociationAliasName)
 
-	audit := auditlog.NewAudit(assoc.clientSet, kit.Ctx, kit.Header)
-	srcInstName, err := audit.GetInstNameByID(objID, request.InstID)
+	audit := auditlog.NewAudit(assoc.clientSet, kit.Header)
+	srcInstName, err := audit.GetInstNameByID(kit.Ctx, objID, request.InstID)
 	if err != nil {
 		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}
-	targetInstName, err := audit.GetInstNameByID(asstObjID, request.AsstInstID)
+	targetInstName, err := audit.GetInstNameByID(kit.Ctx, asstObjID, request.AsstInstID)
 	if err != nil {
 		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}
@@ -923,12 +923,12 @@ func (assoc *association) DeleteInst(kit *rest.Kit, assoID int64, metaData *meta
 		BaseResp: rsp.BaseResp,
 	}
 
-	audit := auditlog.NewAudit(assoc.clientSet, kit.Ctx, kit.Header)
-	srcInstName, err := audit.GetInstNameByID(instanceAssociation.ObjectID, instanceAssociation.InstID)
+	audit := auditlog.NewAudit(assoc.clientSet, kit.Header)
+	srcInstName, err := audit.GetInstNameByID(kit.Ctx, instanceAssociation.ObjectID, instanceAssociation.InstID)
 	if err != nil {
 		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}
-	targetInstName, err := audit.GetInstNameByID(instanceAssociation.AsstObjectID, instanceAssociation.AsstInstID)
+	targetInstName, err := audit.GetInstNameByID(kit.Ctx, instanceAssociation.AsstObjectID, instanceAssociation.AsstInstID)
 	if err != nil {
 		return nil, kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
 	}

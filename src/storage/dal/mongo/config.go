@@ -13,15 +13,14 @@
 package mongo
 
 import (
-    "fmt"
-    "strconv"
-    "strings"
-    "time"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
-    "configcenter/src/common/backbone"
-    "configcenter/src/common/blog"
-    "configcenter/src/storage/dal"
-    "configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/common/blog"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 const (
@@ -93,12 +92,12 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) Config {
 	}
 	c.MaxOpenConns = maxOpenConns
 
-	maxIDleConns, err := strconv.ParseUint(configmap[prefix+".maxIDleConns"], 10, 64)
-	if err != nil || maxIDleConns < MinimumMaxIdleOpenConns {
-		blog.Errorf("parse mongo.maxIDleConns config encounters error %v or %d less than minimum value, use minimum value %d", err, maxIDleConns, MinimumMaxIdleOpenConns)
-		maxIDleConns = MinimumMaxIdleOpenConns
+	maxIdleConns, err := strconv.ParseUint(configmap[prefix+".maxIdleConns"], 10, 64)
+	if err != nil || maxIdleConns < MinimumMaxIdleOpenConns {
+		blog.Errorf("parse mongo.maxIdleConns config encounters error %v or %d less than minimum value, use minimum value %d", err, maxIdleConns, MinimumMaxIdleOpenConns)
+		maxIdleConns = MinimumMaxIdleOpenConns
 	}
-	c.MaxIdleConns = maxIDleConns
+	c.MaxIdleConns = maxIdleConns
 
 	return c
 }
@@ -111,7 +110,7 @@ func (c Config) GetMongoConf() local.MongoConf {
 	}
 }
 
-func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) {
+func (c Config) GetMongoClient() (db dal.RDB, err error) {
 	mongoConf := local.MongoConf{
 		MaxOpenConns: c.MaxOpenConns,
 		MaxIdleConns: c.MaxIdleConns,
@@ -124,7 +123,7 @@ func (c Config) GetMongoClient(engine *backbone.Engine) (db dal.RDB, err error) 
 	return
 }
 
-func (c Config) GetTransactionClient(engine *backbone.Engine) (client dal.Transaction, err error) {
+func (c Config) GetTransactionClient() (client dal.Transaction, err error) {
 	mongoConf := local.MongoConf{
 		MaxOpenConns: c.MaxOpenConns,
 		MaxIdleConns: c.MaxIdleConns,

@@ -142,6 +142,7 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 func (z *ZkClient) Close() {
 	if nil != z.ZkConn {
 		z.ZkConn.Close()
+		z.ZkConn = nil
 	}
 }
 

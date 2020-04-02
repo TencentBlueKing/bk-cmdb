@@ -26,6 +26,8 @@ type Config struct {
 	Password   string
 	Database   string
 	MasterName string
+	// for datacollection, notify if the snapshot redis is in use
+	Enable string
 }
 
 // ParseConfigFromKV returns new config
@@ -36,6 +38,7 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 		Password:   conifgmap[prefix+".pwd"],
 		Database:   conifgmap[prefix+".database"],
 		MasterName: conifgmap[prefix+".mastername"],
+		Enable:     conifgmap[prefix+".enable"],
 	}
 }
 
