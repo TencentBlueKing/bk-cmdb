@@ -46,10 +46,6 @@
                                 <span v-if="process['operational_type'] === 'changed'">（{{properties[process['process_template_id']].length}}）</span>
                             </div>
                             <div class="change-content">
-                                <div class="process-name"
-                                    v-show="process['operational_type'] === 'changed'">
-                                    {{$t('进程名称')}}：<span style="color: #313238;">{{process['process_template_name']}}</span>
-                                </div>
                                 <div class="process-name mb50"
                                     v-show="process['operational_type'] === 'added'">
                                     {{$t('模板中新增进程')}}

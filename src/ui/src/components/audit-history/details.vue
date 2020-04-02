@@ -25,16 +25,18 @@
                 <bk-table-column prop="bk_property_name"></bk-table-column>
                 <bk-table-column v-if="details.op_type !== 1"
                     prop="pre_data"
-                    :label="$t('变更前')">
+                    :label="$t('变更前')"
+                    :show-overflow-tooltip="{ allowHTML: true }">
                     <template slot-scope="{ row }">
-                        <span class="history-cell" v-html="row.pre_data"></span>
+                        <span v-html="row.pre_data"></span>
                     </template>
                 </bk-table-column>
                 <bk-table-column v-if="details.op_type !== 3"
                     prop="cur_data"
-                    :label="$t('变更后')">
-                    <template slot-scope="{ row }" v-html="row.cur_data">
-                        <span class="history-cell" v-html="row.cur_data"></span>
+                    :label="$t('变更后')"
+                    :show-overflow-tooltip="{ allowHTML: true }">
+                    <template slot-scope="{ row }">
+                        <span v-html="row.cur_data"></span>
                     </template>
                 </bk-table-column>
             </bk-table>
@@ -117,17 +119,15 @@
                     })
                 } else {
                     const content = this.details.content
-                    const preBizId = content['pre_data']['bk_biz_id']
-                    const curBizId = content['cur_data']['bk_biz_id']
                     const preModule = content['pre_data']['module'] || []
                     const curModule = content['cur_data']['module'] || []
                     const pre = []
                     const cur = []
                     preModule.forEach(module => {
-                        pre.push(this.getTopoPath(preBizId, module))
+                        pre.push(this.getTopoPath(module, content.pre_data))
                     })
                     curModule.forEach(module => {
-                        cur.push(this.getTopoPath(curBizId, module))
+                        cur.push(this.getTopoPath(module, content.cur_data))
                     })
                     const preData = pre.join('<br>')
                     const curData = cur.join('<br>')
@@ -178,8 +178,9 @@
                 }
                 return {}
             },
-            getTopoPath (bizId, module) {
-                const path = [this.options.biz[bizId] || `业务ID：${bizId}`]
+            getTopoPath (module, data) {
+                const bizName = data.bk_biz_name || this.options.biz[data.bk_biz_id] || `业务ID：${data.bk_biz_id}`
+                const path = [bizName]
                 const set = ((module.set || [])[0] || {}).ref_name
                 if (set) {
                     path.push(set)
@@ -224,12 +225,6 @@
             color: #333948;
             width: 220px;
         }
-    }
-    .history-cell {
-        display: block;
-        padding: 5px 0;
-        white-space: normal;
-        word-break: break-all;
     }
     .field-btn{
         font-size: 14px;
