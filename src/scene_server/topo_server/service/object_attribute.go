@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/scene_server/topo_server/core/model"
 	"strconv"
 
 	"configcenter/src/common"
@@ -35,7 +36,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
+	blog.Debug(attr.ToMapStr())
 	// auth: register resource
 	attribute := attr.Attribute()
 	if err := s.AuthManager.RegisterModelAttribute(ctx.Kit.Ctx, ctx.Kit.Header, *attribute); err != nil {
@@ -56,6 +57,20 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh))
 		return
+	}
+
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelAttributeType, metadata.ModelAttributeRes)
+	//get CurData
+	err = objAuditLog.WithCurrent(ctx.Kit, attribute.ID)
+	if err != nil {
+		blog.Errorf("find Current modelAttribute failed, id: %+v, err: %s, rid: %s", attribute.ID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//package audit response
+	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
+	if err != nil {
+		ctx.RespAutoError(err)
 	}
 
 	ctx.RespEntity(attrInfo[0])
@@ -116,6 +131,15 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelAttributeType, metadata.ModelAttributeRes)
+	//get AuditLog PreData
+	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	if err != nil {
+		blog.Errorf("[api-att] find Previous objectAttribute failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
 	// TODO: why does remove this????
 	data.Remove(metadata.BKMetadata)
 
@@ -136,6 +160,20 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	//get AuditLog CurData
+	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	if err != nil {
+		blog.Errorf("[api-att] find Current objectAttribute failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//package audit response
+	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
+	if err != nil {
+		ctx.RespAutoError(err)
+	}
+
 	ctx.RespEntity(nil)
 }
 
@@ -149,6 +187,14 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		blog.Errorf("[api-att] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
+	}
+
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelAttributeType, metadata.ModelAttributeRes)
+	//get AuditLog PreData
+	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	if err != nil {
+		blog.Errorf("[api-att] find Previous object attribute failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 	}
 
 	cond := condition.CreateCondition()

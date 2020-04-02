@@ -30,21 +30,21 @@ type AuditQueryResult struct {
 }
 
 type AuditQueryCondition struct {
-	AuditType     AuditType       `json:"audit_type"`
-	User          string          `json:"user"`
-	ResourceType  []ResourceType  `json:"resource_type" `
-	Action        []ActionType    `json:"action"`
-	OperateFrom   OperateFromType `json:"operate_from"`
-	BizID         int64           `json:"bk_biz_id"`
-	ResourceID    int64           `json:"resource_id"`
+	AuditType    AuditType       `json:"audit_type"`
+	User         string          `json:"user"`
+	ResourceType []ResourceType  `json:"resource_type" `
+	Action       []ActionType    `json:"action"`
+	OperateFrom  OperateFromType `json:"operate_from"`
+	BizID        int64           `json:"bk_biz_id"`
+	ResourceID   int64           `json:"resource_id"`
 	// ResourceName filters audit logs by resource name, such as instance name, host ip etc., support fuzzy query
-	ResourceName  string          `json:"resource_name"`
+	ResourceName string `json:"resource_name"`
 	// OperationTime is an array of start time and end time, filters audit logs between them
-	OperationTime []string        `json:"operation_time"`
+	OperationTime []string `json:"operation_time"`
 	// Label filters audit logs with these labels
-	Label         []string        `json:"label"`
+	Label []string `json:"label"`
 	// Category is used by front end, filters audit logs as business(business resource and host operation related to business), resource(instance resource not related to business) or other category
-	Category      string          `json:"category"`
+	Category string `json:"category"`
 }
 
 type AuditLog struct {
@@ -120,7 +120,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, ModelRes, ModelGroupRes, ModelAttributeRes, ModelClassificationRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -170,7 +170,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, ModelRes, ModelGroupRes, ModelAttributeRes, ModelClassificationRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -339,6 +339,15 @@ const (
 	// ModelType represent all the operation audit related with model in the system
 	ModelType AuditType = "model"
 
+	// ModelGroupType represent all the operation audit related with modelAttrGroup in the system
+	ModelGroupType AuditType = "model_group"
+
+	// ModelClassificationType represent all the operation audit related with modelClassification in the system
+	ModelClassificationType AuditType = "model_classification"
+
+	// ModelAttribute represent all the operation audit related with modelAttribute in the system
+	ModelAttributeType AuditType = "model_attribute"
+
 	// ModelInstanceType represent all the operation audit related with model instance in the system,
 	// and the instance association is included.
 	ModelInstanceType AuditType = "model_instance"
@@ -375,6 +384,8 @@ const (
 	ModelRes               ResourceType = "model"
 	ModelInstanceRes       ResourceType = "model_instance"
 	ModelAssociationRes    ResourceType = "model_association"
+	ModelAttributeRes      ResourceType = "model_attribute"
+	ModelClassificationRes ResourceType = "model_classification"
 	InstanceAssociationRes ResourceType = "instance_association"
 	ModelGroupRes          ResourceType = "model_group"
 	ModelUniqueRes         ResourceType = "model_unique"
@@ -480,7 +491,7 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "resource":
 		return []AuditType{BusinessType, ModelInstanceType, CloudResourceType}
 	case "other":
-		return []AuditType{ModelType, AssociationKindType, EventPushType}
+		return []AuditType{ModelType, ModelGroupType, ModelAttributeType, ModelClassificationType, AssociationKindType, EventPushType}
 	}
 	return []AuditType{}
 }

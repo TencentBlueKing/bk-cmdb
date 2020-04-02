@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/scene_server/topo_server/core/model"
 	"strconv"
 
 	"configcenter/src/common"
@@ -42,7 +43,27 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
 		return
 	}
-	ctx.RespEntity(rsp.ToMapStr())
+
+	retData := rsp.ToMapStr()
+	id, err := retData.Int64("id")
+	if err != nil {
+		blog.Errorf("create object group success, but get response id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+	}
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelGroupType, metadata.ModelGroupRes)
+
+	//get CurData for auditLog
+	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	if err != nil {
+		blog.Errorf("[operation-obj] find Current object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//package audit response
+	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
+	if err != nil {
+		ctx.RespAutoError(err)
+	}
+	ctx.RespEntity(retData)
 }
 
 // UpdateObjectGroup update the object group information
@@ -52,6 +73,14 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
+	}
+
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelGroupType, metadata.ModelGroupRes)
+	//get AuditLog PreData
+	err = objAuditLog.WithPrevious(ctx.Kit, cond.Condition.ID)
+	if err != nil {
+		blog.Errorf("[operation-obj] find Previous objectGroup failed, id: %+v, err: %s, rid: %s", cond.Condition.ID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 	}
 
 	err = s.Core.GroupOperation().UpdateObjectGroup(ctx.Kit, cond)
@@ -82,6 +111,19 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
 		return
 	}
+
+	//get AuditLog CurData
+	err = objAuditLog.WithCurrent(ctx.Kit, cond.Condition.ID)
+	if err != nil {
+		blog.Errorf("[operation-obj] find Current object group failed, id: %+v, err: %s, rid: %s", cond.Condition.ID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//package audit response
+	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
+	if err != nil {
+		ctx.RespAutoError(err)
+	}
 	ctx.RespEntity(nil)
 }
 
@@ -91,6 +133,14 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
+	}
+
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelGroupType, metadata.ModelGroupRes)
+	//get AuditLog PreData
+	err = objAuditLog.WithPrevious(ctx.Kit, gid)
+	if err != nil {
+		blog.Errorf("[operation-obj] find Previous object group failed, id: %+v, err: %s, rid: %s", gid, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 	}
 
 	err = s.Core.GroupOperation().DeleteObjectGroup(ctx.Kit, gid)
@@ -103,6 +153,12 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 		blog.Errorf("delete object group failed, deregister attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
 		return
+	}
+
+	//package audit response
+	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete)
+	if err != nil {
+		ctx.RespAutoError(err)
 	}
 
 	ctx.RespEntity(nil)

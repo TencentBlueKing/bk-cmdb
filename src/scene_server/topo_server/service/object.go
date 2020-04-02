@@ -14,6 +14,7 @@ package service
 
 import (
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
 	"strconv"
 
 	"configcenter/src/common"
@@ -58,13 +59,28 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	rsp, err := s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
+	resp, err := s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(rsp.ToMapStr())
+	id := resp.Object().ID
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelRes)
+	//get CurData
+	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	if err != nil {
+		blog.Errorf("[operation-obj] find Current object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//package audit response
+	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
+	if err != nil {
+		ctx.RespAutoError(err)
+	}
+
+	ctx.RespEntity(resp.ToMapStr())
 }
 
 // SearchObject search some objects by condition
@@ -119,6 +135,16 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKFieldID))
 		return
 	}
+
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelRes)
+	//get PreData
+	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	if err != nil {
+		blog.Errorf("[operation-obj] find Previous object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//update model
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
@@ -129,6 +155,20 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	//get CurData
+	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	if err != nil {
+		blog.Errorf("[operation-obj] find Current object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//package audit response
+	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
+	if err != nil {
+		ctx.RespAutoError(err)
+	}
+
 	ctx.RespEntity(nil)
 }
 
@@ -142,6 +182,16 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		return
 	}
 
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelRes)
+
+	//get PreData
+	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	if err != nil {
+		blog.Errorf("[operation-obj] find Previous object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//delete model
 	md := new(MetaShell)
 	if err := ctx.DecodeInto(md); err != nil {
 		ctx.RespAutoError(err)
@@ -152,6 +202,13 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	//package audit response
+	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete)
+	if err != nil {
+		ctx.RespAutoError(err)
+	}
+
 	ctx.RespEntity(nil)
 }
 

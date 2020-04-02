@@ -458,6 +458,8 @@ const (
 
 	CCErrorTopoPathParamPaserFailed                = 1101100
 	CCErrorTopoSearchModelAttriFailedPleaseRefresh = 1101101
+
+	CCErrorModelNotFound = 1101102
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group

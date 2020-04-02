@@ -9,7 +9,7 @@
  */
 
 import $http from '@/api'
-import funcActions from '@/assets/json/operation_audit.json'
+import funcActions from '@/assets/json/operation_audit_all.json'
 
 const state = {
     funcActions: funcActions
