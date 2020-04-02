@@ -59,9 +59,11 @@ func (s *Service) initBusinessObjectAttribute(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectattr", Handler: s.CreateObjectAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectattr/biz/{bk_biz_id}", Handler: s.CreateObjectAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattr", Handler: s.SearchObjectAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattr/host", Handler: s.ListHostModelAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattr/{id}", Handler: s.UpdateObjectAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattr/biz/{bk_biz_id}/id/{id}", Handler: s.UpdateObjectAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectattr/{id}", Handler: s.DeleteObjectAttribute})
 
 	utility.AddToRestfulWebService(web)
