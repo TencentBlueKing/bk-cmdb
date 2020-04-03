@@ -295,15 +295,17 @@
                 })
             },
             setFilterOptions () {
-                this.filter.options = this.properties
-                    .filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
-                    .map(property => {
-                        return {
-                            id: property['bk_property_id'],
-                            name: property['bk_property_name']
-                        }
-                    })
-                this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
+                this.filter.options = this.properties.map(property => {
+                    return {
+                        id: property['bk_property_id'],
+                        name: property['bk_property_name']
+                    }
+                })
+                if (this.$route.params.bizName) {
+                    this.filter.id = 'bk_biz_name'
+                } else {
+                    this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
+                }
             },
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {

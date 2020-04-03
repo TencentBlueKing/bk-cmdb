@@ -1,14 +1,14 @@
 <template>
-    <div class="instance-details-wrapper">
+    <div class="instance-details-wrapper" v-bkloading="{ isLoading: $loading() }">
         <bk-table
-            :data="attributeList"
-            :max-height="$APP.height - 300">
+            :data="detailsData"
+            :max-height="$APP.height - 120">
             <bk-table-column prop="property_name" :label="$t('属性名称')" show-overflow-tooltip></bk-table-column>
-            <bk-table-column prop="before_value" :label="$t('变更前')" show-overflow-tooltip>
-                <template slot-scope="{ row }">{{row.before_value ? row.before_value : '--'}}</template>
+            <bk-table-column prop="property_value" :label="$t('变更前')" show-overflow-tooltip>
+                <template slot-scope="{ row }">{{row.property_value | formatter('singlechar')}}</template>
             </bk-table-column>
             <bk-table-column prop="show_value" :label="$t('变更后')" show-overflow-tooltip>
-                <template slot-scope="{ row }">{{row.show_value ? row.show_value : '--'}}</template>
+                <template slot-scope="{ row }">{{getAfterValue(row) | formatter('singlechar')}}</template>
             </bk-table-column>
         </bk-table>
     </div>
@@ -17,11 +17,97 @@
 <script>
     export default {
         props: {
-            attributeList: {
+            module: Object,
+            instance: Object,
+            type: String,
+            properties: {
                 type: Array,
-                default: () => {
-                    return []
+                default: () => ([])
+            }
+        },
+        data () {
+            return {
+                detailsData: []
+            }
+        },
+        created () {
+            switch (this.type) {
+                case 'added':
+                    this.initTemplateData()
+                    break
+                case 'changed':
+                    this.initChangedData()
+                    break
+                case 'removed':
+                    this.initRemovedData()
+                    break
+                case 'others':
+                    this.initOthersData()
+            }
+        },
+        methods: {
+            initChangedData () {
+                this.detailsData = this.instance.changed_attributes
+            },
+            async initTemplateData () {
+                try {
+                    const { info } = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
+                        params: this.$injectMetadata({
+                            service_template_id: this.instance.service_instance.service_template_id
+                        }, { injectBizId: true })
+                    })
+                    const process = info.find(process => process.id === this.module.process_template_id)
+                    const details = []
+                    Object.keys(process.property).forEach(key => {
+                        const property = this.properties.find(property => property.bk_property_id === key)
+                        if (property && !['', null].includes(process.property[key].value)) {
+                            details.push({
+                                property_id: key,
+                                property_name: property.bk_property_name,
+                                property_value: null,
+                                template_property_value: {
+                                    ...process.property[key]
+                                }
+                            })
+                        }
+                    })
+                    this.detailsData = details
+                } catch (e) {
+                    console.error(e)
                 }
+            },
+            initRemovedData () {
+                const details = []
+                Object.keys(this.instance.process).forEach(key => {
+                    const property = this.properties.find(property => property.bk_property_id === key)
+                    if (property && !['', null].includes(this.instance.process[key])) {
+                        details.push({
+                            property_id: key,
+                            property_name: property.bk_property_name,
+                            property_value: this.instance.process[key],
+                            template_property_value: {
+                                value: this.$t('该进程已删除')
+                            }
+                        })
+                    }
+                })
+                this.detailsData = details
+            },
+            initOthersData () {
+                this.detailsData = [...this.instance.changed_attributes]
+            },
+            getAfterValue (row) {
+                const propertyId = row.property_id
+                const value = typeof row.template_property_value === 'object' ? row.template_property_value.value : row.template_property_value
+                if (this.type !== 'others') {
+                    const property = this.properties.find(property => property.bk_property_id === propertyId)
+                    const type = property.bk_property_type
+                    if (type === 'enum') {
+                        const option = (property.option || []).find(option => option.id === value)
+                        return option ? option.name : ''
+                    }
+                }
+                return value
             }
         }
     }
