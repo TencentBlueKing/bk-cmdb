@@ -16,6 +16,7 @@
                     'min-width': `calc(100% + ${deepestExpandedLevel * 60}px)`
                 }"
                 :filter-method="filterMethod"
+                :before-check="beforeCheck"
                 @node-click="handleNodeClick"
                 @check-change="handleCheckedChange"
                 @expand-change="handleExpandChange">
@@ -126,7 +127,7 @@
             syncCheckedState (list, checked) {
                 const hosts = list.map(item => item.host.bk_host_id)
                 const nodes = this.$refs.tree.nodes.filter(node => hosts.includes(node.data.bk_host_id))
-                this.$refs.tree.setChecked(nodes.map(node => node.id), { checked })
+                this.$refs.tree.setChecked(nodes.map(node => node.id), { checked, beforeCheck: false })
             },
             async initTopology () {
                 try {
@@ -186,7 +187,13 @@
                 return `${data.bk_obj_id}-${data.bk_inst_id}`
             },
             shouldShowCheckbox (data) {
-                return data.bk_obj_id === 'host' || (data.bk_obj_id === 'module' && data.child && data.child.length > 0)
+                if (data.bk_obj_id === 'host') {
+                    return true
+                }
+                if (data.bk_obj_id === 'module' && data.host_count > 0) {
+                    return true
+                }
+                return false
             },
             async loadHost (node) {
                 try {
@@ -208,7 +215,7 @@
                         data.forEach(nodeData => {
                             const isSelected = this.$parent.selected.some(item => item.host.bk_host_id === nodeData.bk_host_id)
                             if (isSelected) {
-                                this.$refs.tree.setChecked(this.getNodeId(nodeData))
+                                this.$refs.tree.setChecked(this.getNodeId(nodeData), { beforeCheck: false })
                             }
                         })
                     }, 0)
@@ -252,7 +259,7 @@
             },
             handleNodeClick (node) {
                 if (node.data.bk_obj_id === 'host') {
-                    this.$refs.tree.setChecked(node.id, { checked: !node.checked, emitEvent: true })
+                    this.$refs.tree.setChecked(node.id, { checked: !node.checked, emitEvent: true, beforeCheck: false })
                 }
             },
             async handleCheckedChange (checked, selectedNode) {
@@ -290,6 +297,14 @@
                     return count > 999 ? '999+' : count
                 }
                 return 0
+            },
+            async beforeCheck (node) {
+                if (node.lazy) {
+                    const { data } = await this.loadHost(node)
+                    this.$refs.tree.addNode(data, node.id)
+                    return true
+                }
+                return true
             }
         }
     }

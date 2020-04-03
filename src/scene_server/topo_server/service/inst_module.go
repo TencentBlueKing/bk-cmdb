@@ -302,7 +302,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 	// check and set page's limit value
 	if requestBody.Page == nil {
 		requestBody.Page = &metadata.BasePage{
-			Limit: common.BKDefaultLimit,
+			Limit: common.BKNoLimit,
 		}
 	} else {
 		if requestBody.Page.Limit == 0 {
