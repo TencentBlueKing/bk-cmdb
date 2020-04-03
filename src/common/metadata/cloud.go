@@ -45,7 +45,7 @@ const (
 	TencentCloud string = "tencent_cloud"
 )
 
-// 同步状态
+// 云同步任务同步状态
 const (
 	CloudSyncSuccess    string = "cloud_sync_success"
 	CloudSyncFail       string = "cloud_sync_fail"
@@ -54,17 +54,25 @@ const (
 
 var SupportedCloudVendors = []string{"aws", "tencent_cloud"}
 
+// 云厂商枚举值
 var VendorNameIDs = map[string]string{
 	"aws":           "1",
 	"tencent_cloud": "2",
 }
 
+// 云主机状态枚举值
 var CloudHostStatusIDs = map[string]string{
 	"starting": "1",
 	"running":  "2",
 	"stopping": "3",
 	"stopped":  "4",
 	"unknow":   "5",
+}
+
+// 云区域状态枚举值
+var CloudAreaStatusIDs = map[string]string{
+	"normal":   "1",
+	"abnormal": "2",
 }
 
 // 云厂商账户配置
@@ -181,6 +189,8 @@ type VpcSyncInfo struct {
 	VpcHostCount int64  `json:"bk_host_count" bson:"bk_host_count"`
 	SyncDir      int64  `json:"bk_sync_dir,omitempty" bson:"bk_sync_dir,omitempty"`
 	CloudID      int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	// 该vpc在云端是否被销毁
+	Destroyed bool `json:"destroyed" bson:"destroyed"`
 }
 
 type MultipleCloudSyncTask struct {
@@ -222,11 +232,12 @@ type Instance struct {
 	VpcId         string `json:"bk_vpc_id" bson:"bk_vpc_id"`
 }
 
-// 云主机资源
+// 云主机同步时的资源数据
 type CloudHostResource struct {
-	HostResource []*VpcInstances
-	TaskID       int64             `json:"bk_task_id" bson:"bk_task_id"`
-	AccountConf  *CloudAccountConf `json:"account_conf" bson:"account_conf"`
+	HostResource  []*VpcInstances
+	DestroyedVpcs []*VpcSyncInfo
+	TaskID        int64             `json:"bk_task_id" bson:"bk_task_id"`
+	AccountConf   *CloudAccountConf `json:"account_conf" bson:"account_conf"`
 }
 
 type VpcInstances struct {

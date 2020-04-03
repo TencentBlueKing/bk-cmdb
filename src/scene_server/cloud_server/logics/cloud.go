@@ -188,7 +188,7 @@ func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, option metadata
 	return vpcHostCnt, nil
 }
 
-// 获取地域下的vpc和主机详情
+// 获取需要同步的云主机资源信息
 func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs []metadata.VpcSyncInfo) (*metadata.CloudHostResource, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
@@ -197,26 +197,53 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 	}
 
 	blog.V(4).Infof("GetCloudHostResource syncVpcs %#v", syncVpcs)
+
+	// 不再同步已经被销毁的vpc
+	for i, vpc := range syncVpcs {
+		if vpc.Destroyed {
+			syncVpcs = append(syncVpcs[:i], syncVpcs[i:]...)
+		}
+	}
+
 	vpcHostDetail := make(map[string][]*metadata.Instance)
 	hostDetailChan := make(chan []*metadata.Instance, 10)
-	var wg, wg2 sync.WaitGroup
-	// 并发请求获取每个vpc的实例详情
+	destroyedVpcs := make(map[string]bool)
+	destroyedVpcsChan := make(chan string, 10)
+	errs := make([]error, 0)
+	errChan := make(chan error, 10)
+	var wg, wg2, wg3, wg4 sync.WaitGroup
+	// 并发请求获取被销毁的vpc数据和没被销毁的vpc下主机实例详情
 	for _, vpc := range syncVpcs {
 		wg.Add(1)
 		go func(vpc metadata.VpcSyncInfo) {
 			defer wg.Done()
+			vpcInfo, err := client.GetVpcs(vpc.Region, &ccom.RequestOpt{
+				Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{vpc.VpcID})}},
+				Limit:   ccom.Int64Ptr(ccom.MaxLimit),
+			})
+			if err != nil {
+				blog.Errorf("GetCloudHostResource GetVpcs failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+				errChan <- err
+				return
+			}
+			if len(vpcInfo.VpcSet) == 0 {
+				destroyedVpcsChan <- vpc.VpcID
+				return
+			}
 			instancesInfo, err := client.GetInstances(vpc.Region, &ccom.RequestOpt{
 				Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{vpc.VpcID})}},
 				Limit:   ccom.Int64Ptr(ccom.MaxLimit),
 			})
 			if err != nil {
 				blog.Errorf("GetCloudHostResource GetInstances failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
+				errChan <- err
 				return
 			}
 			blog.V(4).Infof("GetCloudHostResource vpc-id:%s, instances count %#v", vpc.VpcID, instancesInfo.Count)
 			hostDetailChan <- instancesInfo.InstanceSet
 		}(vpc)
 	}
+	// 收集vpc实例详情
 	wg2.Add(1)
 	go func() {
 		defer wg2.Done()
@@ -227,14 +254,45 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 
 		}
 	}()
+	// 收集被销毁的vpc数据
+	wg3.Add(1)
+	go func() {
+		defer wg3.Done()
+		for vpc := range destroyedVpcsChan {
+			destroyedVpcs[vpc] = true
+		}
+	}()
+	// 收集错误
+	wg4.Add(1)
+	go func() {
+		defer wg4.Done()
+		for err := range errChan {
+			errs = append(errs, err)
+		}
+	}()
 	wg.Wait()
 	close(hostDetailChan)
+	close(destroyedVpcsChan)
+	close(errChan)
 	wg2.Wait()
+	wg3.Wait()
+	wg4.Wait()
+
+	// 调用云厂商接口出现过错误则直接返回
+	if len(errs) > 0 {
+		return nil , errs[0]
+	}
 
 	result := new(metadata.CloudHostResource)
 
 	for i, _ := range syncVpcs {
 		vpc := syncVpcs[i]
+		// 被销毁的vpc数据
+		if destroyedVpcs[vpc.VpcID] {
+			result.DestroyedVpcs = append(result.DestroyedVpcs, &vpc)
+			continue
+		}
+		// 没被销毁的vpc下的云主机资源数据
 		result.HostResource = append(result.HostResource, &metadata.VpcInstances{
 			Vpc:       &vpc,
 			Instances: vpcHostDetail[vpc.VpcID],
@@ -243,8 +301,6 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 
 	return result, nil
 }
-
-// 获取vpc的主机数详情
 
 // 获取云厂商账户配置
 func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountConf, error) {

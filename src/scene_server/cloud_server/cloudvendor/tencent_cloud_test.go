@@ -86,7 +86,7 @@ func TestTCRequestOpt(t *testing.T) {
 	//opt := &ccom.RequestOpt{Limit: ccom.Int64Ptr(int64(1))}
 	opt := &ccom.RequestOpt{
 		Limit:   ccom.Int64Ptr(int64(10)),
-		Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-name"), ccom.StringPtrs([]string{"Default"})}},
+		Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{"vpc-25c909f8"})}},
 	}
 	region := "ap-guangzhou"
 	vpcsInfo, err := tcTestClient.GetVpcs(region, opt)

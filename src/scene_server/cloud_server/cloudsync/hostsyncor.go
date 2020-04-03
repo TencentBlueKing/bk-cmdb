@@ -33,35 +33,43 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	// 根据账号id获取账号详情
 	accountConf, err := h.logics.GetCloudAccountConf(task.AccountID)
 	if err != nil {
-		blog.Errorf("hostSyncor%d GetCloudAccountConf err, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		blog.Errorf("hostSyncor%d GetCloudAccountConf fail, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
 		return err
 	}
 
 	// 根据任务详情和账号信息获取要同步的云主机资源
 	hostResource, err := h.getCloudHostResource(task, accountConf)
 	if err != nil {
-		blog.Errorf("hostSyncor%d getCloudHostResource err, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		blog.Errorf("hostSyncor%d getCloudHostResource fail, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
 		return err
 	}
-	if len(hostResource.HostResource) == 0 {
-		blog.V(4).Infof("hostSyncor%d HostResource is empty, taskid:%d", h.id, task.TaskID)
+	if len(hostResource.HostResource) == 0 && len(hostResource.DestroyedVpcs) == 0 {
+		blog.V(4).Infof("hostSyncor%d hostResource is empty, taskid:%d", h.id, task.TaskID)
 		return nil
 	}
-	hostResource.AccountConf = accountConf
-	hostResource.TaskID = task.TaskID
-	blog.V(4).Infof("hostSyncor%d, taskid:%d, vpc count:%d", h.id, task.TaskID, len(hostResource.HostResource))
+
+	blog.V(4).Infof("hostSyncor%d, taskid:%d, destroyed vpc count:%d, other vpc count:%d",
+		h.id, task.TaskID, len(hostResource.DestroyedVpcs), len(hostResource.HostResource))
+
+	// 同步被销毁的VPC相关资源
+	err = h.syncDestroyedVpcs(hostResource)
+	if err != nil {
+		blog.Errorf("hostSyncor%d syncDestroyedVpcs fail, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		return err
+	}
 
 	// 查询vpc对应的云区域，没有则创建,并更新云主机资源信息里的云区域id
 	h.addCLoudId(accountConf, hostResource)
 	if err != nil {
-		blog.Errorf("hostSyncor%d addCLoudId err, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		blog.Errorf("hostSyncor%d addCLoudId fail, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
 		return err
 	}
 
 	// 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
 	diffHosts, err := h.getDiffHosts(hostResource)
 	if err != nil {
-		blog.Errorf("hostSyncor%d getDicloud_server/logics/auditlog.goffHosts err, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		blog.Errorf("hostSyncor%d getDiffHosts fail, taskid:%d, err:%s",
+			h.id, task.TaskID, err.Error())
 		return err
 	}
 
@@ -74,7 +82,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	// 有差异的更新任务同步状态为同步中
 	err = h.updateTaskState(task.TaskID, metadata.CloudSyncInProgress, nil)
 	if err != nil {
-		blog.Errorf("hostSyncor%d updateTaskState err, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		blog.Errorf("hostSyncor%d updateTaskState fail, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
 		return err
 	}
 
@@ -89,28 +97,28 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	// 同步有差异的主机数据
 	syncResult, err := h.syncDiffHosts(diffHosts)
 	if err != nil {
-		blog.Errorf("hostSyncor%d syncDiffHosts err, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		blog.Errorf("hostSyncor%d syncDiffHosts fail, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
 		return err
 	}
 
 	// 设置SyncResult的状态信息
 	err = h.SetSyncResultStatus(syncResult, startTime)
 	if err != nil {
-		blog.Errorf("hostSyncor%d SetSyncResultStatus err, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		blog.Errorf("hostSyncor%d SetSyncResultStatus fail, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
 		return err
 	}
 
 	// 增加任务同步历史记录
 	_, err = h.addSyncHistory(syncResult, task.TaskID)
 	if err != nil {
-		blog.Errorf("hostSyncor%d addSyncHistory err, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		blog.Errorf("hostSyncor%d addSyncHistory fail, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
 		return err
 	}
 
 	// 完成后更新任务同步状态
 	err = h.updateTaskState(task.TaskID, syncResult.SyncStatus, &syncResult.StatusDescription)
 	if err != nil {
-		blog.Errorf("hostSyncor%d updateTaskState err, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
+		blog.Errorf("hostSyncor%d updateTaskState fail, taskid:%d, err:%s", h.id, task.TaskID, err.Error())
 		return err
 	}
 
@@ -123,7 +131,54 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 
 // 根据任务详情和账号信息获取要同步的云主机资源
 func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask, accountConf *metadata.CloudAccountConf) (*metadata.CloudHostResource, error) {
-	return h.logics.GetCloudHostResource(*accountConf, task.SyncVpcs)
+	hostResource, err := h.logics.GetCloudHostResource(*accountConf, task.SyncVpcs)
+	if err != nil {
+		return nil, err
+	}
+	hostResource.AccountConf = accountConf
+	hostResource.TaskID = task.TaskID
+	return hostResource, err
+}
+
+// 同步被销毁的VPC相关资源
+func (h *HostSyncor) syncDestroyedVpcs(hostResource *metadata.CloudHostResource) error {
+	if len(hostResource.DestroyedVpcs) == 0 {
+		return nil
+	}
+	cloudIDs := make([]int64, 0)
+	for _, vpcInfo := range hostResource.DestroyedVpcs {
+		cloudIDs = append(cloudIDs, vpcInfo.CloudID)
+	}
+	blog.V(4).Infof("Destroyed cloudIDs: %#v", cloudIDs)
+
+	// 更新属于被销毁vpc下的主机信息，将内外网ip置空，状态置为已销毁
+	conditon := mapstr.MapStr{common.BKCloudIDField: map[string]interface{}{
+		common.BKDBIN: cloudIDs,
+	}}
+
+
+	if err := h.updateDestroyedHosts(conditon); err != nil {
+		blog.Errorf("syncDestroyedVpcs fail, cloudIDs:%#v, err:%s", cloudIDs, err.Error())
+		return err
+	}
+
+	// 更新被销毁vpc对应的云区域状态为异常
+	if err := h.updateDestroyedCloudArea(cloudIDs); err != nil {
+		blog.Errorf("syncDestroyedVpcs fail, cloudIDs:%#v, err:%s", cloudIDs, err.Error())
+		return err
+	}
+
+	vpcs := make(map[string]bool)
+	for _, vpcInfo := range hostResource.DestroyedVpcs {
+		vpcs[vpcInfo.VpcID] = true
+	}
+	// 更新同步任务里的vpc状态为被销毁
+	if err := h.updateDestroyedTaskVpc(hostResource.TaskID, vpcs); err != nil {
+		blog.Errorf("syncDestroyedVpcs fail, cloudIDs:%#v, err:%s", cloudIDs, err.Error())
+		return err
+	}
+
+	return nil
 }
 
 // 查询vpc对应的云区域，没有则创建,并更新云主机资源信息里的云区域id
@@ -147,25 +202,28 @@ func (h *HostSyncor) addCLoudId(accountConf *metadata.CloudAccountConf, hostReso
 
 // 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
 func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map[string][]*metadata.CloudHost, error) {
-	hosts := make([]*metadata.CloudHost, 0)
+	// 云端的主机
+	remoteHostsMap := make(map[string]*metadata.CloudHost)
 	for _, hostRes := range hostResource.HostResource {
 		for _, host := range hostRes.Instances {
 			host.InstanceState = metadata.CloudHostStatusIDs[host.InstanceState]
-			hosts = append(hosts, &metadata.CloudHost{
+			remoteHostsMap[host.InstanceId] = &metadata.CloudHost{
 				Instance:   *host,
 				CloudID:    hostRes.CloudID,
 				VendorName: metadata.VendorNameIDs[hostResource.AccountConf.VendorName],
 				SyncDir:    hostRes.Vpc.SyncDir,
-			})
+			}
 		}
 	}
-	instanceIds := make([]string, 0)
-	for _, h := range hosts {
-		instanceIds = append(instanceIds, h.InstanceId)
-	}
-	blog.V(4).Infof("taskid:%d, host instanceIds:%#v", hostResource.TaskID, instanceIds)
 
-	localHosts, err := h.getLocalHosts(instanceIds)
+	cloudIDs := make([]int64, 0)
+	for _, vpcInfo := range hostResource.HostResource {
+		cloudIDs = append(cloudIDs, vpcInfo.Vpc.CloudID)
+	}
+	blog.V(4).Infof("taskid:%d, host cloudIDs:%#v", hostResource.TaskID, cloudIDs)
+
+	// 本地已有的云主机
+	localHosts, err := h.getLocalHosts(cloudIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -175,11 +233,17 @@ func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map
 		localIdHostsMap[h.InstanceId] = h
 	}
 
+	// 有差异的主机
 	diffHosts := make(map[string][]*metadata.CloudHost)
-	for _, h := range hosts {
+	// 本地需要同步新增和更新的主机
+	for _, h := range remoteHostsMap {
 		if _, ok := localIdHostsMap[h.InstanceId]; ok {
 			lh := localIdHostsMap[h.InstanceId]
 			// 判断云主机和本地主机是否有差异，有则需要更新
+			// 如果是已经同步过的已销毁主机，就不用再同步了，保持被销毁主机的内外网ip始终为空
+			if h.InstanceState == lh.InstanceState && lh.InstanceState == metadata.CloudHostStatusIDs["stopped"] {
+				continue
+			}
 			if h.InstanceState != lh.InstanceState || h.PublicIp != lh.PublicIp ||
 				h.PrivateIp != lh.PrivateIp || h.CloudID != lh.CloudID {
 				diffHosts["update"] = append(diffHosts["update"], h)
@@ -188,6 +252,14 @@ func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map
 			diffHosts["add"] = append(diffHosts["add"], h)
 		}
 	}
+
+	// 云端已销毁的主机,也就是本地需要删除的主机
+	for id, h := range localIdHostsMap {
+		if _, ok := remoteHostsMap[id]; !ok {
+			diffHosts["delete"] = append(diffHosts["delete"], h)
+		}
+	}
+
 	return diffHosts, nil
 }
 
@@ -202,17 +274,32 @@ func (h *HostSyncor) syncDiffHosts(diffhosts map[string][]*metadata.CloudHost) (
 		case "add":
 			result, err = h.addHosts(hosts)
 			if err != nil {
+				blog.Errorf("syncDiffHosts fail, err:%s", err.Error())
 				return nil, err
 			}
 			syncResult.Detail.NewAdd = result.SuccessInfo
 		case "update":
 			result, err = h.updateHosts(hosts)
 			if err != nil {
+				blog.Errorf("syncDiffHosts fail, err:%s", err.Error())
 				return nil, err
 			}
 			syncResult.Detail.Update = result.SuccessInfo
+		case "delete":
+			insts := make([]string, 0)
+			for _, h := range hosts {
+				insts = append(insts, h.InstanceId)
+			}
+			conditon := mapstr.MapStr{common.BKCloudInstIDField: map[string]interface{}{
+				common.BKDBIN: insts,
+			}}
+			err = h.updateDestroyedHosts(conditon)
+			if err != nil {
+				blog.Errorf("syncDiffHosts fail, err:%s", err.Error())
+				return nil, err
+			}
 		default:
-			blog.Errorf("syncDiffHosts op:%s is invalid", op)
+			blog.Errorf("syncDiffHosts fail, op:%s is invalid", op)
 			return nil, fmt.Errorf("syncDiffHosts op:%s is invalid", op)
 		}
 		syncResult.SuccessInfo.Count += result.SuccessInfo.Count
@@ -319,9 +406,13 @@ func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *met
 }
 
 // 获取本地数据库中的主机信息
-func (h *HostSyncor) getLocalHosts(instanceIds []string) ([]*metadata.CloudHost, error) {
+func (h *HostSyncor) getLocalHosts(cloudIDs []int64) ([]*metadata.CloudHost, error) {
 	result := make([]*metadata.CloudHost, 0)
-	cond := mapstr.MapStr{common.BKCloudInstIDField: mapstr.MapStr{common.BKDBIN: instanceIds}}
+	cond := mapstr.MapStr{
+		common.BKCloudIDField: mapstr.MapStr{common.BKDBIN: cloudIDs},
+		// 必须带有实例id，说明是云主机
+		common.BKCloudInstIDField: mapstr.MapStr{common.BKDBNIN: []interface{}{nil, ""}},
+	}
 	query := &metadata.QueryCondition{
 		Condition: cond,
 	}
@@ -477,7 +568,6 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 		}
 	}
 	return syncResult, nil
-	return nil, nil
 }
 
 // 更新云主机
@@ -494,6 +584,85 @@ func (h *HostSyncor) updateHost(cloudInstID string, updateInfo map[string]interf
 		blog.Errorf("updateHost fail,err:%s, input:%+v", uResult.ErrMsg, *input)
 		return uResult.CCError()
 	}
+	return nil
+}
+
+// 更新已销毁vpc下的云主机
+func (h *HostSyncor) updateDestroyedHosts(conditon mapstr.MapStr) error {
+	input := &metadata.UpdateOption{}
+	input.Condition = conditon
+	input.Data = mapstr.MapStr{
+		common.BKHostInnerIPField:     "",
+		common.BKHostOuterIPField:     "",
+		common.BKCloudHostStatusField: metadata.CloudHostStatusIDs["stopped"],
+	}
+
+	uResult, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+	// 没有主机数据要更新并不算错误
+	if err != nil  && err.Error() != kit.CCError.CCError(common.CCErrCommNotFound).Error() {
+		blog.Errorf("updateDestroyedHosts fail,err:%s, input:%+v", err.Error(), *input)
+		return err
+	}
+	if !uResult.Result && uResult.ErrMsg != kit.CCError.CCError(common.CCErrCommNotFound).Error() {
+		blog.Errorf("updateDestroyedHosts fail,err:%s, input:%+v", uResult.ErrMsg, *input)
+		return uResult.CCError()
+	}
+
+	return nil
+}
+
+// 更新被销毁vpc对应的云区域状态为异常
+func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
+	input := &metadata.UpdateOption{}
+	input.Condition = mapstr.MapStr{common.BKCloudIDField: map[string]interface{}{
+		common.BKDBIN: cloudIDs,
+	}}
+	input.Data = mapstr.MapStr{
+		common.BKStatus: metadata.CloudAreaStatusIDs["abnormal"],
+	}
+
+	uResult, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(context.Background(), header, common.BKInnerObjIDPlat, input)
+	if err != nil {
+		blog.Errorf("updateDestroyedCloudArea fail,err:%s, input:%+v", err.Error(), *input)
+		return err
+	}
+	if !uResult.Result {
+		blog.Errorf("updateDestroyedCloudArea fail,err:%s, input:%+v", uResult.ErrMsg, *input)
+		return uResult.CCError()
+	}
+
+	return nil
+}
+
+// 更新同步任务里的vpc状态为被销毁
+func (h *HostSyncor) updateDestroyedTaskVpc(taskID int64, vpcs map[string]bool) error {
+	opt := &metadata.SearchSyncTaskOption{
+		SearchCloudOption: metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKCloudSyncTaskID: taskID}},
+	}
+
+	ret, err := h.logics.SearchSyncTask(kit, opt)
+	if err != nil {
+		blog.Errorf("updateDestroyedTaskVpc failed, taskID: %v, opt: err: %s", taskID, opt, err.Error())
+		return err
+	}
+	if len(ret.Info) == 0 {
+		blog.Errorf("updateDestroyedTaskVpc failed, taskID: %v, opt: err: %s", taskID, opt, "no task is found")
+		return fmt.Errorf("no task is found")
+	}
+
+	syncInfo := ret.Info[0].SyncVpcs
+	for i, info := range syncInfo {
+		if vpcs[info.VpcID] {
+			syncInfo[i].Destroyed = true
+		}
+	}
+
+	option := map[string]interface{}{common.BKCloudSyncVpcs: syncInfo}
+	if err := h.logics.UpdateSyncTask(kit, taskID, option); err != nil {
+		blog.Errorf("updateDestroyedTaskVpc failed, taskID: %v, err: %s", taskID, err.Error())
+		return err
+	}
+
 	return nil
 }
 

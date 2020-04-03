@@ -85,7 +85,7 @@ func TestAWSGetInstancesTotalCnt(t *testing.T) {
 func TestAWSRequestOpt(t *testing.T) {
 	//opt := &ccom.RequestOpt{Limit: ccom.Int64Ptr(int64(1))}
 	opt := &ccom.RequestOpt{
-		Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game2"})}},
+		Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game23"})}},
 	}
 	region := "us-west-1"
 	vpcsInfo, err := awsTestClient.GetVpcs(region, opt)

@@ -23,6 +23,7 @@ var testData1 = map[string]interface{}{
 			"bk_region":     "广东一区",
 			"bk_host_count": 56,
 			"bk_sync_dir":   1,
+			"bk_cloud_id": 1,
 		},
 		{
 			"bk_vpc_id":     "vpc-002",
@@ -30,6 +31,7 @@ var testData1 = map[string]interface{}{
 			"bk_region":     "广东二区",
 			"bk_host_count": 26,
 			"bk_sync_dir":   1,
+			"bk_cloud_id": 1,
 		},
 	},
 }
@@ -87,12 +89,38 @@ func prepareSyncTaskData() {
 	}
 }
 
+var cloudID1 int64
+func prepareCloudData() {
+	//删除云区域表
+	err := test.GetDB().DropTable(context.Background(), common.BKTableNameBasePlat)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameBasePlat})
+	Expect(err).NotTo(HaveOccurred())
+
+	// 准备数据
+	resp, err := hostServerClient.CreateCloudArea(context.Background(), header, map[string]interface{}{
+		"bk_cloud_name":   "LPL17区",
+		"bk_status":       "1",
+		"bk_cloud_vendor": "1",
+		"bk_account_id":   2,
+		"creator":         "admin",
+	})
+	cloudID1 = int64(resp.Data.Created.ID)
+	util.RegisterResponse(resp)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.Result).To(Equal(true))
+}
+
 var _ = Describe("cloud sync task test", func() {
 
 	BeforeEach(func() {
 		// 准备需要云账户数据
 		clearData()
 		prepareData()
+
+		// 准备云区域数据
+		prepareCloudData()
 
 		//清空数据
 		clearSyncTaskData()
