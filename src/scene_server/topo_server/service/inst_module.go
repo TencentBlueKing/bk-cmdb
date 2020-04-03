@@ -293,6 +293,7 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 	requestBody := struct {
 		Page    *metadata.BasePage `field:"page" json:"page" mapstructure:"page"`
 		Keyword string             `field:"keyword" json:"keyword" mapstructure:"keyword"`
+		Modules []int64            `field:"bk_module_ids" json:"bk_module_ids" mapstructure:"bk_module_ids"`
 	}{}
 	if err := ctx.DecodeInto(&requestBody); err != nil {
 		ctx.RespAutoError(err)
@@ -319,6 +320,11 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 		common.BKServiceTemplateIDField: serviceTemplateID,
 		common.BKAppIDField:             bizID,
 	}
+
+	if requestBody.Modules != nil {
+		filter[common.BKModuleIDField] = mapstr.MapStr{common.BKDBIN: requestBody.Modules}
+	}
+
 	if len(requestBody.Keyword) != 0 {
 		filter[common.BKModuleNameField] = map[string]interface{}{
 			common.BKDBLIKE: requestBody.Keyword,
