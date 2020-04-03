@@ -782,11 +782,8 @@
                 this.$router.push({
                     name: 'syncServiceFromModule',
                     params: {
-                        moduleId: this.currentNode.data.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id
-                    },
-                    query: {
-                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
+                        modules: String(this.currentNode.data.bk_inst_id),
+                        template: this.currentNode.data.service_template_id
                     }
                 })
             },
