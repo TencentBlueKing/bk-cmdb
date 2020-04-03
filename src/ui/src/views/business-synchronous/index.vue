@@ -52,7 +52,7 @@
                         </div>
                         <div class="process-info"
                             v-else-if="current.type === 'others'">
-                            <div class="info-item">
+                            <div class="info-item" style="width: auto;">
                                 {{$t('服务分类')}}：
                                 <span class="info-item-value">{{current.service_category}}</span>
                             </div>
@@ -192,7 +192,7 @@
                     })
                     const topoPath = {}
                     nodes.forEach(node => {
-                        topoPath[node.topo_node.bk_inst_id] = node.topo_path.map(path => path.bk_inst_name).join(' / ')
+                        topoPath[node.topo_node.bk_inst_id] = node.topo_path.reverse().map(path => path.bk_inst_name).join(' / ')
                     })
                     this.topoPath = topoPath
                 } catch (e) {
@@ -232,6 +232,7 @@
                     const serviceCategoryDifference = differences.find(difference => (difference.changed_attributes || []).length)
                     if (serviceCategoryDifference) {
                         const categoryInfo = await this.getServiceCategoryDifference(serviceCategoryDifference)
+                        categoryInfo.confirmed = !processList.length
                         processList.push(categoryInfo)
                     }
                     this.processList = processList
@@ -284,7 +285,10 @@
             getServiceModules () {
                 return this.$store.dispatch('serviceTemplate/getServiceTemplateModules', {
                     bizId: this.bizId,
-                    serviceTemplateId: this.templateId
+                    serviceTemplateId: this.templateId,
+                    params: {
+                        bk_module_ids: this.modules
+                    }
                 })
             },
             getChangedProperties () {
