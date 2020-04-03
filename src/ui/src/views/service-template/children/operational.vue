@@ -33,7 +33,7 @@
                                 <i class="form-confirm edit-icon bk-icon icon-check-1 fl" @click="handleSaveName"></i>
                                 <i class="form-cancel edit-icon bk-icon icon-close fl" @click="handleCancelEditName"></i>
                             </template>
-                            <template v-else>
+                            <template v-else-if="!isCreateMode">
                                 <span class="template-name" :title="formData.templateName">{{formData.templateName}}</span>
                                 <i class="icon-cc-edit" v-if="!isCreateMode" @click="handleEditName"></i>
                             </template>
