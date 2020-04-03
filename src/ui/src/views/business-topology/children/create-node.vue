@@ -101,7 +101,7 @@
             handleSave () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
-                        this.$emit('submit', this.values)
+                        this.$emit('submit', this.$tools.formatValues(this.values, this.properties))
                     }
                 })
             },
