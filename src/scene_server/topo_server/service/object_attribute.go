@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/scene_server/topo_server/core/model"
 	"strconv"
 
 	"configcenter/src/common"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // CreateObjectAttribute create a new object attribute
@@ -59,7 +59,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelAttributeType, metadata.ModelAttributeRes)
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelAttributeRes)
 	//get CurData
 	err = objAuditLog.WithCurrent(ctx.Kit, attribute.ID)
 	if err != nil {
@@ -132,7 +132,7 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelAttributeType, metadata.ModelAttributeRes)
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelAttributeRes)
 	//get AuditLog PreData
 	err = objAuditLog.WithPrevious(ctx.Kit, id)
 	if err != nil {
@@ -189,7 +189,7 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelAttributeType, metadata.ModelAttributeRes)
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelAttributeRes)
 	//get AuditLog PreData
 	err = objAuditLog.WithPrevious(ctx.Kit, id)
 	if err != nil {

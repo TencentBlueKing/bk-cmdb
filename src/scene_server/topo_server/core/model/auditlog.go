@@ -51,16 +51,13 @@ func (log *ObjectAuditLog) SaveAuditLog(kit *rest.Kit, auditAction metadata.Acti
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
 		Action:       auditAction,
-		OperationDetail: &metadata.InstanceOpDetail{
-			ModelID: log.objectID,
-			BasicOpDetail: metadata.BasicOpDetail{
-				ResourceID:   log.resourceID,
-				ResourceName: log.resourceName,
-				Details: &metadata.BasicContent{
-					PreData:    log.preData,
-					CurData:    log.curData,
-					Properties: objectProperty,
-				},
+		OperationDetail: &metadata.BasicOpDetail{
+			ResourceID:   log.resourceID,
+			ResourceName: log.resourceName,
+			Details: &metadata.BasicContent{
+				PreData: log.preData,
+				CurData: log.curData,
+				//Properties: objectProperty,
 			},
 		},
 	}
@@ -79,8 +76,8 @@ func (log *ObjectAuditLog) SaveAuditLog(kit *rest.Kit, auditAction metadata.Acti
 
 func (log *ObjectAuditLog) buildLogData(kit *rest.Kit, ID int64) (map[string]interface{}, errors.CCError) {
 	query := mapstr.MapStr{"id": ID}
-	switch log.auditType {
-	case metadata.ModelType:
+	switch log.resourceType {
+	case metadata.ModelRes:
 		rsp, err := log.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 		if err != nil {
 			return nil, err
@@ -96,7 +93,7 @@ func (log *ObjectAuditLog) buildLogData(kit *rest.Kit, ID int64) (map[string]int
 		log.resourceName = rsp.Data.Info[0].Spec.ObjectName
 		rspData := rsp.Data.Info[0].Spec.ToMapStr()
 		return rspData, nil
-	case metadata.ModelClassificationType:
+	case metadata.ModelClassificationRes:
 		rsp, err := log.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 		if err != nil {
 			return nil, err
@@ -112,7 +109,7 @@ func (log *ObjectAuditLog) buildLogData(kit *rest.Kit, ID int64) (map[string]int
 		log.resourceName = rsp.Data.Info[0].ClassificationName
 		rspData := rsp.Data.Info[0].ToMapStr()
 		return rspData, nil
-	case metadata.ModelAttributeType:
+	case metadata.ModelAttributeRes:
 		rsp, err := log.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 		if err != nil {
 			return nil, err
@@ -128,7 +125,7 @@ func (log *ObjectAuditLog) buildLogData(kit *rest.Kit, ID int64) (map[string]int
 		log.resourceName = rsp.Data.Info[0].PropertyName
 		rspData := rsp.Data.Info[0].ToMapStr()
 		return rspData, nil
-	case metadata.ModelGroupType:
+	case metadata.ModelGroupRes:
 		rsp, err := log.clientSet.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, metadata.QueryCondition{Condition: query})
 		if err != nil {
 			return nil, err

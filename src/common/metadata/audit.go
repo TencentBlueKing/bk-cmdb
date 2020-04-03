@@ -376,6 +376,8 @@ const (
 	ModelInstanceRes       ResourceType = "model_instance"
 	MainlineInstanceRes    ResourceType = "mainline_instance"
 	ModelAssociationRes    ResourceType = "model_association"
+	ModelAttributeRes      ResourceType = "model_attribute"
+	ModelClassificationRes ResourceType = "model_classification"
 	InstanceAssociationRes ResourceType = "instance_association"
 	ModelGroupRes          ResourceType = "model_group"
 	ModelUniqueRes         ResourceType = "model_unique"

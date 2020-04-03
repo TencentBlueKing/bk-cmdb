@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/scene_server/topo_server/core/model"
 	"strconv"
 
 	"configcenter/src/common/blog"
@@ -21,6 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // CreateClassification create a new object classification
@@ -39,7 +39,7 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("create object classification success, but get response id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 	}
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelClassificationType, metadata.ModelClassificationRes)
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelClassificationRes)
 	//get CurData
 	err = objAuditLog.WithCurrent(ctx.Kit, id)
 	if err != nil {
@@ -157,7 +157,7 @@ func (s *Service) UpdateClassification(ctx *rest.Contexts) {
 	}
 	data.Remove(metadata.BKMetadata)
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelClassificationType, metadata.ModelClassificationRes)
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelClassificationRes)
 	//get AuditLog PreData
 	err = objAuditLog.WithPrevious(ctx.Kit, id)
 	if err != nil {
@@ -197,7 +197,7 @@ func (s *Service) DeleteClassification(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelClassificationType, metadata.ModelClassificationRes)
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelClassificationRes)
 	//get AuditLog PreData
 	err = objAuditLog.WithPrevious(ctx.Kit, id)
 	if err != nil {

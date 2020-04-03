@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/scene_server/topo_server/core/model"
 	"strconv"
 
 	"configcenter/src/common"
@@ -21,6 +20,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // CreateObjectGroup create a new object group
@@ -49,7 +49,7 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("create object group success, but get response id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 	}
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelGroupType, metadata.ModelGroupRes)
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelGroupRes)
 
 	//get CurData for auditLog
 	err = objAuditLog.WithCurrent(ctx.Kit, id)
@@ -75,7 +75,7 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelGroupType, metadata.ModelGroupRes)
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelGroupRes)
 	//get AuditLog PreData
 	err = objAuditLog.WithPrevious(ctx.Kit, cond.Condition.ID)
 	if err != nil {
@@ -135,7 +135,7 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelGroupType, metadata.ModelGroupRes)
+	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelGroupRes)
 	//get AuditLog PreData
 	err = objAuditLog.WithPrevious(ctx.Kit, gid)
 	if err != nil {
