@@ -101,7 +101,6 @@
         },
         created () {
             this.handleFilter = debounce(this.filterData, 300)
-            this.refresh()
         },
         methods: {
             async refresh () {
@@ -185,7 +184,7 @@
             },
             handleBatchSync () {
                 this.$router.push({
-                    name: 'batchSyncServiceTemplate',
+                    name: 'syncServiceFromTemplate',
                     params: {
                         template: this.serviceTemplateId,
                         modules: this.table.selection.map(row => row.bk_module_id).join(',')
