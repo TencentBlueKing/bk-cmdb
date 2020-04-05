@@ -67,7 +67,7 @@
                                                 class="menu-btn"
                                                 :text="true"
                                                 :disabled="btnDisabled"
-                                                @click="handleDelete(dir)">
+                                                @click="handleDelete(dir, index)">
                                                 {{$t('删除')}}
                                             </bk-button>
                                             <span class="menu-btn no-allow-btn" v-else v-bk-tooltips.right="$t('主机不为空，不能删除')">
@@ -88,6 +88,7 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import Bus from '@/utils/bus.js'
     export default {
         data () {
@@ -103,7 +104,6 @@
                     name: ''
                 },
                 acitveDirId: -1,
-                dirList: [],
                 defaultDir: {
                     bk_module_id: -1,
                     bk_module_name: '默认',
@@ -112,11 +112,14 @@
             }
         },
         computed: {
+            ...mapGetters('resourceHost', [
+                'directoryList'
+            ]),
             filterDirList () {
                 if (this.dirSearch) {
-                    return this.dirList.filter(module => module.bk_module_name.indexOf(this.dirSearch) > -1)
+                    return this.directoryList.filter(module => module.bk_module_name.indexOf(this.dirSearch) > -1)
                 }
-                return [...this.dirList]
+                return this.directoryList
             }
         },
         created () {
@@ -139,13 +142,13 @@
                             requestId: 'getDirectoryList'
                         }
                     })
-                    this.dirList = data.info || []
-                    const firstDir = this.dirList[0] || {}
+                    const directoryList = data.info || []
+                    const firstDir = directoryList[0] || {}
                     this.acitveDirId = firstDir.bk_module_id
                     this.$store.commit('resourceHost/setActiveDirectory', firstDir)
+                    this.$store.commit('resourceHost/setDirectoryList', directoryList)
                 } catch (e) {
                     console.error(e)
-                    this.dirList = []
                 }
             },
             async createdDir () {
@@ -160,7 +163,7 @@
                         bk_module_name: this.createInfo.name,
                         host_count: 0
                     }
-                    this.dirList.splice(1, 0, newDir)
+                    this.$store.commit('resourceHost/addDirectory', newDir)
                     this.$success(this.$t('新建成功'))
                     this.handleCancelCreate()
                 } catch (e) {
@@ -178,8 +181,8 @@
                             requestId: 'updateDir'
                         }
                     })
-                    const index = this.dirList.findIndex(dir => dir.bk_module_id === this.editDir.id)
-                    this.$set(this.dirList, index, Object.assign(this.dirList[index], {
+                    const target = this.directoryList.find(dir => dir.bk_module_id === this.editDir.id)
+                    this.$store.commit('resourceHost/updateDirectory', Object.assign({}, target, {
                         bk_module_id: this.editDir.id,
                         bk_module_name: this.editDir.name
                     }))
@@ -230,7 +233,7 @@
                 this.handleCancelCreate()
                 this.handleCancelEdit()
             },
-            async handleDelete (dir) {
+            async handleDelete (dir, index) {
                 if (dir.host_count) {
                     this.$error(this.$t('目标包含主机, 不允许删除'))
                     return
@@ -247,11 +250,10 @@
                                     requestId: 'deleteDirectory'
                                 }
                             })
-                            const index = this.dirList.findIndex(target => target.bk_module_id === dir.bk_module_id)
-                            this.dirList.splice(index, 1)
                             if (dir.bk_module_id === this.acitveDirId) {
-                                this.acitveDirId = this.defaultDir.bk_module_id
+                                this.acitveDirId = this.directoryList[index - 1].bk_module_id
                             }
+                            this.$store.commit('resourceHost/deleteDirectory', dir.bk_module_id)
                             this.$success(this.$t('删除成功'))
                         } catch (e) {
                             console.error(e)
@@ -260,7 +262,7 @@
                 })
             },
             refreshCount ({ reduceId, addId, count }) {
-                this.dirList = this.dirList.map((dir, index) => {
+                this.directoryList = this.directoryList.map((dir, index) => {
                     if (dir.bk_module_id === reduceId) {
                         dir.host_count -= count
                     } else if (dir.bk_module_id === addId) {

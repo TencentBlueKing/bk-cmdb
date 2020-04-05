@@ -246,12 +246,14 @@
                 }, {
                     id: 'toDirs',
                     name: this.$t('资源池其他目录')
-                }],
-                dirList: []
+                }]
             }
         },
         computed: {
-            ...mapGetters('resourceHost', ['activeDirectory']),
+            ...mapGetters('resourceHost', [
+                'activeDirectory',
+                'directoryList'
+            ]),
             table () {
                 return this.$parent.table
             },
@@ -309,7 +311,7 @@
                         name: item.bk_biz_name
                     }))
                 }
-                return this.dirList.filter(item => item.bk_module_id !== this.activeDirectory.bk_module_id).map(item => ({
+                return this.directoryList.filter(item => item.bk_module_id !== this.activeDirectory.bk_module_id).map(item => ({
                     id: item.bk_module_id,
                     name: item.bk_module_name
                 }))
@@ -325,7 +327,6 @@
         async created () {
             try {
                 await this.getFullAmountBusiness()
-                await this.getDirectoryList()
             } catch (e) {
                 console.error(e.message)
             }
@@ -338,17 +339,6 @@
                 } catch (e) {
                     console.error(e)
                     this.businessList = []
-                }
-            },
-            async getDirectoryList () {
-                try {
-                    const data = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
-                        params: {}
-                    })
-                    this.dirList = data.info || []
-                } catch (e) {
-                    console.error(e)
-                    this.dirList = []
                 }
             },
             openAgentApp () {
