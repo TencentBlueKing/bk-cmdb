@@ -1,6 +1,7 @@
 <template>
     <bk-select v-if="display === 'selector'"
         searchable
+        :clearable="false"
         :readonly="readonly"
         :disabled="disabled"
         :placeholder="$t('请选择xx', { name: $t('地域') })"
