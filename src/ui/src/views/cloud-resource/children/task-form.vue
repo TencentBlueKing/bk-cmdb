@@ -13,16 +13,16 @@
             </bk-form-item>
             <bk-form-item class="form-item" :label="$t('账户名称')" required>
                 <task-account-selector class="form-meta"
-                    :readonly="!isCreateMode"
+                    :disabled="!isCreateMode"
                     :data-vv-as="$t('账户名称')"
                     data-vv-name="bk_account_id"
                     v-model="form.bk_account_id"
                     v-validate="'required'">
                 </task-account-selector>
-                <link-button class="form-account-link" @click="handleLinkToCloudAccount">
-                    <i class="icon-cc-share"></i>
-                    {{$t('跳转账户管理')}}
-                </link-button>
+                <bk-link theme="primary" class="form-account-link" @click="handleLinkToCloudAccount">
+                    <i class="form-account-link-icon icon-cc-share"></i>
+                    <span>{{$t('跳转账户管理')}}</span>
+                </bk-link>
                 <p class="form-tips" v-if="form.bk_account_id">
                     <i class="icon-cc-exclamation-tips"></i>
                     {{$t('同步频率提示语')}}
@@ -31,7 +31,7 @@
             </bk-form-item>
             <bk-form-item class="form-item" :label="$t('资源类型')" required>
                 <task-resource-selector class="form-meta"
-                    :readonly="true"
+                    :disabled="true"
                     :data-vv-as="$t('资源类型')"
                     data-vv-name="bk_resource_type"
                     v-model="form.bk_resource_type"
@@ -265,7 +265,18 @@
             position: absolute;
             bottom: 100%;
             right: 0;
-            font-size: 12px;
+            /deep/ {
+                .bk-link-text {
+                    display: flex;
+                    align-items: center;
+                    font-size: 12px;
+                }
+            }
+            .form-account-link-icon {
+                height: 20px;
+                line-height: 20px;
+                margin-right: 4px;
+            }
         }
         .form-tips {
             position: absolute;

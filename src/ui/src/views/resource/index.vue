@@ -352,7 +352,8 @@
                 border-radius: 0px 12px 12px 0px;
                 transform: translateY(-50%);
                 text-align: center;
-                font-size: 12px;
+                text-indent: -2px;
+                font-size: 20px;
                 color: #fff;
                 cursor: pointer;
                 &:hover {

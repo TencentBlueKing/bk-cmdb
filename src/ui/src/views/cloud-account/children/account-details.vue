@@ -96,6 +96,7 @@
     .details-layout {
         padding: 18px 27px;
         .details-item {
+            margin-top: 10px;
             /deep/ {
                 .bk-label {
                     position: relative;

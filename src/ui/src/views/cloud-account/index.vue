@@ -21,20 +21,15 @@
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
                     <link-button class="mr10" @click="handleView(row)">{{$t('查看')}}</link-button>
-                    <bk-popconfirm
-                        trigger="click"
+                    <link-button
                         :disabled="!row.bk_can_delete_account"
-                        :title="$t('确定删除该云账户')"
-                        @confirm="handleDelete(row)">
-                        <link-button
-                            :disabled="!row.bk_can_delete_account"
-                            v-bk-tooltips="{
-                                disabled: row.bk_can_delete_account,
-                                content: '发现任务正在进行中，不能删除'
-                            }">
-                            {{$t('删除')}}
-                        </link-button>
-                    </bk-popconfirm>
+                        v-bk-tooltips="{
+                            disabled: row.bk_can_delete_account,
+                            content: $t('云账户禁止删除提示')
+                        }"
+                        @click="handleDelete(row)">
+                        {{$t('删除')}}
+                    </link-button>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -94,13 +89,24 @@
                 })
             },
             async handleDelete (row) {
-                try {
-                    await Promise.resolve()
-                    this.$success('删除成功')
-                    this.getData()
-                } catch (e) {
-                    console.error(e)
-                }
+                const infoInstance = this.$bkInfo({
+                    title: this.$t('确认删除xx', { instance: row.bk_account_name }),
+                    closeIcon: false,
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('cloud/account/delete', { id: row.bk_account_id })
+                            infoInstance.buttonLoading = true
+                            this.$success('删除成功')
+                            this.getData()
+                            return true
+                        } catch (e) {
+                            console.error(e)
+                            return false
+                        } finally {
+                            infoInstance.buttonLoading = false
+                        }
+                    }
+                })
             },
             async getData () {
                 try {

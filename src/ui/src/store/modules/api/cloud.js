@@ -42,6 +42,9 @@ const cloudAccount = {
         },
         update (context, { id, params, config }) {
             return $http.put(`update/cloud/account/${id}`, params, config)
+        },
+        delete (context, { id, config }) {
+            return $http.delete(`delete/cloud/account/${id}`, config)
         }
     }
 }

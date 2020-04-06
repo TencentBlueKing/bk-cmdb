@@ -2,6 +2,7 @@
     <div class="diractory-layout">
         <bk-input class="dir-search"
             v-model.trim="dirSearch"
+            clearable
             :placeholder="$t('分组目录')">
         </bk-input>
         <div class="dir-header">
@@ -280,7 +281,9 @@
         height: 100%;
         overflow: hidden;
         .dir-search {
-            padding: 18px 20px 14px;
+            display: block;
+            width: auto;
+            margin: 18px 20px 14px;
         }
         .dir-header {
             @include space-between;

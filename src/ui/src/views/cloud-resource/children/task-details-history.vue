@@ -53,7 +53,7 @@
         },
         data () {
             return {
-                timeRange: [new Date(Date.now() - 8.64e7), new Date()],
+                timeRange: [],
                 histories: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
                 requestId: Symbol('getHistory')
@@ -65,13 +65,16 @@
         methods: {
             async getHistory () {
                 try {
+                    const params = {
+                        bk_task_id: this.id,
+                        page: this.$tools.getPageParams(this.pagination)
+                    }
+                    if (this.timeRange.length) {
+                        params.start_time = this.$tools.formatTime(this.timeRange[0])
+                        params.end_time = this.$tools.formatTime(this.timeRange[1])
+                    }
                     const data = await this.$store.dispatch('cloud/resource/findHistory', {
-                        params: {
-                            bk_task_id: this.id,
-                            start_time: this.$tools.formatTime(this.timeRange[0]),
-                            end_time: this.$tools.formatTime(this.timeRange[1]),
-                            page: this.$tools.getPageParams(this.pagination)
-                        },
+                        params,
                         config: {
                             requestId: this.requestId
                         }

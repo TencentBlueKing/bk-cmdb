@@ -43,12 +43,7 @@
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
                     <link-button class="mr10" @click="handleEdit(row)">{{$t('编辑')}}</link-button>
-                    <bk-popconfirm
-                        trigger="click"
-                        :title="$t('确定删除该任务')"
-                        @confirm="handleDelete(row)">
-                        <link-button>{{$t('删除')}}</link-button>
-                    </bk-popconfirm>
+                    <link-button @click="handleDelete(row)">{{$t('删除')}}</link-button>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -131,15 +126,25 @@
                 })
             },
             async handleDelete (row) {
-                try {
-                    await this.$store.dispatch('cloud/resource/deleteTask', {
-                        id: row.bk_task_id
-                    })
-                    this.$success('删除成功')
-                    this.getData()
-                } catch (e) {
-                    console.error(e)
-                }
+                const infoInstance = this.$bkInfo({
+                    title: this.$t('确认删除xx', { instance: row.bk_task_name }),
+                    closeIcon: false,
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('cloud/resource/deleteTask', {
+                                id: row.bk_task_id
+                            })
+                            this.$success('删除成功')
+                            this.getData()
+                            return true
+                        } catch (e) {
+                            console.error(e)
+                            return false
+                        } finally {
+                            infoInstance.buttonLoading = false
+                        }
+                    }
+                })
             },
             async getData () {
                 try {

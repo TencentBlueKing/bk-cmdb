@@ -62,7 +62,7 @@
                     </p>
                     <p class="create-verify-fail" v-else>
                         <i class="bk-icon icon-close-circle-shape"></i>
-                        {{$t('账户连通成功')}}
+                        {{verifyResult.msg}}
                     </p>
                 </template>
                 <p class="create-form-error" v-else-if="errors.has('bk_secret_key')">
@@ -164,15 +164,17 @@
                 const params = { ...this.verifyParams }
                 try {
                     this.verifyResult = {}
-                    const result = await this.$store.dispatch('cloud/account/verify', {
+                    const response = await this.$store.dispatch('cloud/account/verify', {
                         params: params,
                         config: {
-                            requestId: this.request.verify
+                            requestId: this.request.verify,
+                            transformData: false
                         }
                     })
                     this.verifyResult = {
-                        ...result,
                         ...params,
+                        connected: response.result,
+                        msg: response.bk_error_msg,
                         done: true
                     }
                 } catch (e) {
@@ -180,7 +182,7 @@
                         ...params,
                         done: true,
                         connected: false,
-                        error_msg: e.message
+                        msg: e.message
                     }
                     console.error(e.message)
                 }

@@ -30,20 +30,15 @@
             </bk-table-column>
             <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
-                <bk-popconfirm slot-scope="{ row }"
-                    trigger="click"
+                <link-button slot-scope="{ row }"
                     :disabled="!!row.host_count"
-                    :title="$t('确定删除该云区域')"
-                    @confirm="handleDelete(row)">
-                    <link-button
-                        :disabled="!!row.host_count"
-                        v-bk-tooltips="{
-                            disabled: !row.host_count,
-                            content: $t('主机不为空，不能删除')
-                        }">
-                        {{$t('删除')}}
-                    </link-button>
-                </bk-popconfirm>
+                    v-bk-tooltips="{
+                        disabled: !row.host_count,
+                        content: $t('主机不为空，不能删除')
+                    }"
+                    @click="handleDelete(row)">
+                    {{$t('删除')}}
+                </link-button>
             </bk-table-column>
         </bk-table>
     </div>
@@ -70,14 +65,25 @@
                 this.pagination.current = 1
                 this.getData()
             },
-            async handleDelete (row) {
-                try {
-                    await this.$store.dispatch('cloud/area/delete', { id: row.bk_cloud_id })
-                    this.$success('删除成功')
-                    this.getData()
-                } catch (e) {
-                    console.error(e)
-                }
+            handleDelete (row) {
+                const infoInstance = this.$bkInfo({
+                    title: this.$t('确认删除xx', { instance: row.bk_cloud_name }),
+                    closeIcon: false,
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('cloud/area/delete', { id: row.bk_cloud_id })
+                            infoInstance.buttonLoading = true
+                            this.$success('删除成功')
+                            this.getData()
+                            return true
+                        } catch (e) {
+                            console.error(e)
+                            return false
+                        } finally {
+                            infoInstance.buttonLoading = false
+                        }
+                    }
+                })
             },
             async getData () {
                 try {
