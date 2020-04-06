@@ -25,6 +25,7 @@ import (
 	ccom "configcenter/src/scene_server/cloud_server/common"
 )
 
+// AccountVerify 验证云账户连通性
 func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) error {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
@@ -32,7 +33,7 @@ func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) error {
 		return err
 	}
 
-	_, err = client.GetRegions(nil)
+	_, err = client.GetRegions()
 	if err != nil {
 		blog.Errorf("AccountVerify GetRegions failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
 		return err
@@ -41,7 +42,7 @@ func (lgc *Logics) AccountVerify(conf metadata.CloudAccountConf) error {
 	return nil
 }
 
-// 获取地域信息
+// GetRegionsInfo 获取地域信息
 func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount bool) ([]metadata.SyncRegion, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
@@ -49,7 +50,7 @@ func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount 
 		return nil, err
 	}
 
-	regionSet, err := client.GetRegions(nil)
+	regionSet, err := client.GetRegions()
 	if err != nil {
 		blog.Errorf("GetRegionsInfo GetRegions err:%s", err.Error())
 		return nil, err
@@ -86,7 +87,7 @@ func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount 
 	}
 
 	result := make([]metadata.SyncRegion, 0)
-	for i, _ := range regionSet {
+	for i := range regionSet {
 		region := regionSet[i]
 		result = append(result, metadata.SyncRegion{
 			RegionId:    region.RegionId,
@@ -99,7 +100,7 @@ func (lgc *Logics) GetRegionsInfo(conf metadata.CloudAccountConf, withHostCount 
 	return result, nil
 }
 
-// 获取某地域下的vpc详情和主机数
+// GetVpcHostCntInOneRegion 获取某地域下的vpc详情和主机数
 func (lgc *Logics) GetVpcHostCntInOneRegion(conf metadata.CloudAccountConf, region string) (*metadata.VpcHostCntResult, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
@@ -135,7 +136,7 @@ func (lgc *Logics) GetVpcHostCntInOneRegion(conf metadata.CloudAccountConf, regi
 		return nil, err
 	}
 
-	for i, _ := range vpcsInfo.VpcSet {
+	for i := range vpcsInfo.VpcSet {
 		vpc := vpcsInfo.VpcSet[i]
 		result.Info = append(result.Info, metadata.VpcSyncInfo{
 			VpcID:        vpc.VpcId,
@@ -148,7 +149,7 @@ func (lgc *Logics) GetVpcHostCntInOneRegion(conf metadata.CloudAccountConf, regi
 	return result, nil
 }
 
-// 获取多个vpc对应的主机数
+// GetVpcHostCnt 获取多个vpc对应的主机数
 func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, option metadata.SearchVpcHostCntOption) (map[string]int64, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
@@ -164,8 +165,11 @@ func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, option metadata
 		wg.Add(1)
 		go func(regionVpc metadata.RegionVpc) {
 			defer wg.Done()
-			count, err := client.GetInstancesTotalCnt(regionVpc.Region, &ccom.RequestOpt{
-				Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{regionVpc.VpcID})}},
+			count, err := client.GetInstancesTotalCnt(regionVpc.Region, &ccom.InstanceOpt{
+				BaseOpt: ccom.BaseOpt{
+					Filters: []*ccom.Filter{{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{regionVpc.VpcID})}},
+					Limit:   ccom.MaxLimit,
+				},
 			})
 			if err != nil {
 				blog.Errorf("GetVpcHostCnt GetInstances failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
@@ -188,7 +192,7 @@ func (lgc *Logics) GetVpcHostCnt(conf metadata.CloudAccountConf, option metadata
 	return vpcHostCnt, nil
 }
 
-// 获取需要同步的云主机资源信息
+// GetCloudHostResource 获取需要同步的云主机资源信息
 func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs []metadata.VpcSyncInfo) (*metadata.CloudHostResource, error) {
 	client, err := cloudvendor.GetVendorClient(conf)
 	if err != nil {
@@ -217,9 +221,11 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 		wg.Add(1)
 		go func(vpc metadata.VpcSyncInfo) {
 			defer wg.Done()
-			vpcInfo, err := client.GetVpcs(vpc.Region, &ccom.RequestOpt{
-				Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{vpc.VpcID})}},
-				Limit:   ccom.Int64Ptr(ccom.MaxLimit),
+			vpcInfo, err := client.GetVpcs(vpc.Region, &ccom.VpcOpt{
+				BaseOpt: ccom.BaseOpt{
+					Filters: []*ccom.Filter{{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{vpc.VpcID})}},
+					Limit:   ccom.MaxLimit,
+				},
 			})
 			if err != nil {
 				blog.Errorf("GetCloudHostResource GetVpcs failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
@@ -230,9 +236,12 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 				destroyedVpcsChan <- vpc.VpcID
 				return
 			}
-			instancesInfo, err := client.GetInstances(vpc.Region, &ccom.RequestOpt{
-				Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{vpc.VpcID})}},
-				Limit:   ccom.Int64Ptr(ccom.MaxLimit),
+
+			instancesInfo, err := client.GetInstances(vpc.Region, &ccom.InstanceOpt{
+				BaseOpt: ccom.BaseOpt{
+					Filters: []*ccom.Filter{{ccom.StringPtr("vpc-id"), ccom.StringPtrs([]string{vpc.VpcID})}},
+					Limit:   ccom.MaxLimit,
+				},
 			})
 			if err != nil {
 				blog.Errorf("GetCloudHostResource GetInstances failed, AccountID:%d, err:%s", conf.AccountID, err.Error())
@@ -280,12 +289,12 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 
 	// 调用云厂商接口出现过错误则直接返回
 	if len(errs) > 0 {
-		return nil , errs[0]
+		return nil, errs[0]
 	}
 
 	result := new(metadata.CloudHostResource)
 
-	for i, _ := range syncVpcs {
+	for i := range syncVpcs {
 		vpc := syncVpcs[i]
 		// 被销毁的vpc数据
 		if destroyedVpcs[vpc.VpcID] {
@@ -302,7 +311,7 @@ func (lgc *Logics) GetCloudHostResource(conf metadata.CloudAccountConf, syncVpcs
 	return result, nil
 }
 
-// 获取云厂商账户配置
+// GetCloudAccountConf 获取云厂商账户配置
 func (lgc *Logics) GetCloudAccountConf(accountID int64) (*metadata.CloudAccountConf, error) {
 	option := &metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKCloudAccountID: accountID}}
 	result, err := lgc.CoreAPI.CoreService().Cloud().SearchAccountConf(context.Background(), ccom.GetHeader(), option)

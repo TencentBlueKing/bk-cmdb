@@ -36,8 +36,7 @@ func init() {
 }
 
 func TestAWSGetRegions(t *testing.T) {
-	opt := &ccom.RequestOpt{}
-	regionSet, err := awsTestClient.GetRegions(opt)
+	regionSet, err := awsTestClient.GetRegions()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +46,7 @@ func TestAWSGetRegions(t *testing.T) {
 }
 
 func TestAWSGetVpcs(t *testing.T) {
-	opt := &ccom.RequestOpt{}
+	opt := &ccom.VpcOpt{}
 	region := "us-west-1"
 	vpcsInfo, err := awsTestClient.GetVpcs(region, opt)
 	if err != nil {
@@ -60,7 +59,7 @@ func TestAWSGetVpcs(t *testing.T) {
 }
 
 func TestAWSGetInstances(t *testing.T) {
-	opt := &ccom.RequestOpt{}
+	opt := &ccom.InstanceOpt{}
 	region := "us-west-1"
 	instancesInfo, err := awsTestClient.GetInstances(region, opt)
 	if err != nil {
@@ -73,7 +72,7 @@ func TestAWSGetInstances(t *testing.T) {
 }
 
 func TestAWSGetInstancesTotalCnt(t *testing.T) {
-	opt := &ccom.RequestOpt{}
+	opt := &ccom.InstanceOpt{}
 	region := "us-west-1"
 	count, err := awsTestClient.GetInstancesTotalCnt(region, opt)
 	if err != nil {
@@ -83,9 +82,10 @@ func TestAWSGetInstancesTotalCnt(t *testing.T) {
 }
 
 func TestAWSRequestOpt(t *testing.T) {
-	//opt := &ccom.RequestOpt{Limit: ccom.Int64Ptr(int64(1))}
-	opt := &ccom.RequestOpt{
-		Filters: []*ccom.Filter{&ccom.Filter{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game23"})}},
+	opt := &ccom.VpcOpt{
+		BaseOpt: ccom.BaseOpt{
+			Filters: []*ccom.Filter{{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game2"})}},
+		},
 	}
 	region := "us-west-1"
 	vpcsInfo, err := awsTestClient.GetVpcs(region, opt)

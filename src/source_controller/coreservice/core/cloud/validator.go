@@ -225,7 +225,6 @@ func (c *cloudOperation) validUpdateSyncTask(kit *rest.Kit, taskID int64, option
 	return nil
 }
 
-
 // Valid sync vpc info
 func (c *cloudOperation) validSyncVpcInfo(kit *rest.Kit, syncVpcs []metadata.VpcSyncInfo) errors.CCErrorCoder {
 	if len(syncVpcs) == 0 {
@@ -255,7 +254,6 @@ func (c *cloudOperation) validSyncVpcInfo(kit *rest.Kit, syncVpcs []metadata.Vpc
 	return nil
 }
 
-
 // Valid resource dir which must be exist
 func (c *cloudOperation) validResourceDirExist(kit *rest.Kit, syncVpcs []metadata.VpcSyncInfo) errors.CCErrorCoder {
 	syncDirs := make(map[int64]bool)
@@ -280,7 +278,7 @@ func (c *cloudOperation) validResourceDirExist(kit *rest.Kit, syncVpcs []metadat
 	for _, dir := range result {
 		moduleIDs[dir.DirID] = true
 	}
-	for dir, _ := range syncDirs {
+	for dir := range syncDirs {
 		if _, ok := moduleIDs[dir]; !ok {
 			blog.ErrorJSON("validResourceDirExist failed, syncDir %d not in moduleIDs, cond:%s, rid: %s", dir, cond, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCloudSyncDirNoExist, dir)
@@ -306,7 +304,7 @@ func (c *cloudOperation) validCloudIDExist(kit *rest.Kit, syncVpcs []metadata.Vp
 	}
 
 	cloudIDArr := make([]int64, 0)
-	for id, _ := range cloudIDs {
+	for id := range cloudIDs {
 		cloudIDArr = append(cloudIDArr, id)
 	}
 	cond := mapstr.MapStr{common.BKCloudIDField: map[string]interface{}{
@@ -324,7 +322,7 @@ func (c *cloudOperation) validCloudIDExist(kit *rest.Kit, syncVpcs []metadata.Vp
 	for _, r := range result {
 		allIDs[r.CloudID] = true
 	}
-	for id, _ := range cloudIDs {
+	for id := range cloudIDs {
 		if _, ok := allIDs[id]; !ok {
 			blog.ErrorJSON("validCloudIDExist failed, cloudID %d is not exist, cond:%s, rid: %s", id, cond, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCloudIDNoExist, id)

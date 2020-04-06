@@ -41,22 +41,22 @@ const (
 	tcMaxPageSize int64 = 100
 )
 
-// 设置账号密码
+// SetCredential 设置账号密码
 func (c *tcClient) SetCredential(secretID, secretKey string) {
 	c.secretID = secretID
 	c.secretKey = secretKey
 }
 
-// 获取地域列表
+// GetRegions 获取地域列表
 // API文档：https://cloud.tencent.com/document/api/213/15708
-func (c *tcClient) GetRegions(opt *ccom.RequestOpt) ([]*metadata.Region, error) {
+func (c *tcClient) GetRegions() ([]*metadata.Region, error) {
 	credential := c.newCredential(c.secretID, c.secretKey)
 	client, err := cvm.NewClient(credential, regions.Guangzhou, profile.NewClientProfile())
 	if err != nil {
 		return nil, err
 	}
 
-	request := c.NewDescribeRegionsRequest(opt)
+	request := c.newDescribeRegionsRequest()
 	resp, err := client.DescribeRegions(request)
 	if err != nil {
 		return nil, err
@@ -74,19 +74,22 @@ func (c *tcClient) GetRegions(opt *ccom.RequestOpt) ([]*metadata.Region, error) 
 	return regionSet, nil
 }
 
-// 获取vpc列表
+// GetVpcs 获取vpc列表
 // API文档：https://cloud.tencent.com/document/api/215/15778
-func (c *tcClient) GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.VpcsInfo, error) {
+func (c *tcClient) GetVpcs(region string, opt *ccom.VpcOpt) (*metadata.VpcsInfo, error) {
 	credential := c.newCredential(c.secretID, c.secretKey)
 	client, err := tcVpc.NewClient(credential, region, profile.NewClientProfile())
 	if err != nil {
 		return nil, err
 	}
 
+	if opt == nil {
+		opt = ccom.GetDefaultVpcOpt()
+	}
 	vpcsInfo := new(metadata.VpcsInfo)
 	loopCnt := 0
 	var totalCnt int64 = 0
-	request := c.NewDescribeVpcsRequest(opt)
+	request := c.newDescribeVpcsRequest(opt)
 	// 在limit小于全部数据量的情况下，获取limit数量的数据，否则获取全部数据
 	for {
 		resp, err := client.DescribeVpcs(request)
@@ -101,7 +104,7 @@ func (c *tcClient) GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.VpcsI
 		}
 		totalCnt = int64(*resp.Response.TotalCount)
 		// 在获取到limit数量或者全部数据的情况下，退出循环
-		if opt == nil || opt.Limit == nil || *opt.Limit == int64(len(vpcsInfo.VpcSet)) || len(vpcsInfo.VpcSet) == int(totalCnt) {
+		if opt.Limit == int64(len(vpcsInfo.VpcSet)) || len(vpcsInfo.VpcSet) == int(totalCnt) {
 			break
 		}
 		// 设置分页请求参数
@@ -109,7 +112,8 @@ func (c *tcClient) GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.VpcsI
 		request.Offset = &offset
 		loopCnt++
 		if loopCnt > ccom.MaxLoopCnt {
-			blog.Errorf("DescribeVpcs loopCnt:%d, bigger than MaxLoopCnt, TotalCount:%d", loopCnt, resp.Response.TotalCount)
+			blog.Errorf("DescribeVpcs loopCnt:%d, bigger than MaxLoopCnt, TotalCount:%d",
+				loopCnt, resp.Response.TotalCount)
 			return nil, ccom.ErrorLoopCnt
 		}
 	}
@@ -118,19 +122,22 @@ func (c *tcClient) GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.VpcsI
 	return vpcsInfo, nil
 }
 
-// 获取实例列表
+// GetInstances 获取实例列表
 // API文档：https://cloud.tencent.com/document/api/213/15728
-func (c *tcClient) GetInstances(region string, opt *ccom.RequestOpt) (*metadata.InstancesInfo, error) {
+func (c *tcClient) GetInstances(region string, opt *ccom.InstanceOpt) (*metadata.InstancesInfo, error) {
 	credential := c.newCredential(c.secretID, c.secretKey)
 	client, err := cvm.NewClient(credential, region, profile.NewClientProfile())
 	if err != nil {
 		return nil, err
 	}
 
+	if opt == nil {
+		opt = ccom.GetDefaultInstanceOpt()
+	}
 	instancesInfo := new(metadata.InstancesInfo)
 	loopCnt := 0
 	var totalCnt int64 = 0
-	request := c.NewDescribeInstancesRequest(opt)
+	request := c.newDescribeInstancesRequest(opt)
 	// 在limit小于全部数据量的情况下，获取limit数量的数据，否则获取全部数据
 	for {
 		resp, err := client.DescribeInstances(request)
@@ -149,7 +156,7 @@ func (c *tcClient) GetInstances(region string, opt *ccom.RequestOpt) (*metadata.
 		}
 		totalCnt = int64(*resp.Response.TotalCount)
 		// 在获取到limit数量或者全部数据的情况下，退出循环
-		if opt == nil || opt.Limit == nil || *opt.Limit == int64(len(instancesInfo.InstanceSet)) || len(instancesInfo.InstanceSet) == int(totalCnt) {
+		if opt.Limit == int64(len(instancesInfo.InstanceSet)) || len(instancesInfo.InstanceSet) == int(totalCnt) {
 			break
 		}
 		// 设置分页请求参数
@@ -157,7 +164,8 @@ func (c *tcClient) GetInstances(region string, opt *ccom.RequestOpt) (*metadata.
 		request.Offset = &offset
 		loopCnt++
 		if loopCnt > ccom.MaxLoopCnt {
-			blog.Errorf("DescribeInstances loopCnt:%d, bigger than MaxLoopCnt, TotalCount:%d", loopCnt, resp.Response.TotalCount)
+			blog.Errorf("DescribeInstances loopCnt:%d, bigger than MaxLoopCnt, TotalCount:%d",
+				loopCnt, resp.Response.TotalCount)
 			return nil, ccom.ErrorLoopCnt
 		}
 	}
@@ -166,13 +174,13 @@ func (c *tcClient) GetInstances(region string, opt *ccom.RequestOpt) (*metadata.
 	return instancesInfo, nil
 }
 
-// 获取实例总个数
-func (c *tcClient) GetInstancesTotalCnt(region string, opt *ccom.RequestOpt) (int64, error) {
-	// 直接将limit设为最小值，能最快地获取到实例总个数
+// GetInstancesTotalCnt 获取实例总个数
+func (c *tcClient) GetInstancesTotalCnt(region string, opt *ccom.InstanceOpt) (int64, error) {
 	if opt == nil {
-		opt = new(ccom.RequestOpt)
+		opt = ccom.GetDefaultInstanceOpt()
 	}
-	opt.Limit = ccom.Int64Ptr(tcMinPageSize)
+	// 直接将limit设为最小值，能最快地获取到实例总个数
+	opt.Limit = tcMinPageSize
 	instsInfo, err := c.GetInstances(region, opt)
 	if err != nil {
 		return 0, err
@@ -180,64 +188,78 @@ func (c *tcClient) GetInstancesTotalCnt(region string, opt *ccom.RequestOpt) (in
 	return instsInfo.Count, nil
 }
 
+// newCredential 创建认证信息
 func (c *tcClient) newCredential(secretID, secretKey string) *tcCommon.Credential {
 	return tcCommon.NewCredential(secretID, secretKey)
 }
 
-// 获取地域请求条件
-func (c *tcClient) NewDescribeRegionsRequest(opt *ccom.RequestOpt) *cvm.DescribeRegionsRequest {
+// newDescribeRegionsRequest 获取地域请求条件
+func (c *tcClient) newDescribeRegionsRequest() *cvm.DescribeRegionsRequest {
 	request := cvm.NewDescribeRegionsRequest()
 	return request
 }
 
-// 获取vpc请求条件
-func (c *tcClient) NewDescribeVpcsRequest(opt *ccom.RequestOpt) *tcVpc.DescribeVpcsRequest {
+// newDescribeVpcsRequest 获取vpc请求条件
+func (c *tcClient) newDescribeVpcsRequest(opt *ccom.VpcOpt) *tcVpc.DescribeVpcsRequest {
 	request := tcVpc.NewDescribeVpcsRequest()
-	if opt == nil {
-		return request
-	}
-	if len(opt.Filters) > 0 {
-		request.Filters = make([]*tcVpc.Filter, 0)
-		for i, _ := range opt.Filters {
-			filter := &tcVpc.Filter{Name: opt.Filters[i].Name, Values: opt.Filters[i].Values}
-			request.Filters = append(request.Filters, filter)
-		}
-	}
-	if opt.Limit != nil {
-		limit := fmt.Sprintf("%d", *opt.Limit)
-		if *opt.Limit < tcMinPageSize || *opt.Limit > tcMaxPageSize {
-			limit = fmt.Sprintf("%d", tcMaxPageSize)
-		}
-		request.Limit = &limit
-	}
-	if opt.Offset != nil {
-		offset := fmt.Sprintf("%d", *opt.Offset)
-		request.Offset = &offset
-	}
-
+	c.setVpcFilters(&request.Filters, opt.Filters)
+	c.setVpcLimit(&request.Limit, opt.Limit)
 	return request
 }
 
-// 获取实例请求条件
-func (c *tcClient) NewDescribeInstancesRequest(opt *ccom.RequestOpt) *cvm.DescribeInstancesRequest {
+// newDescribeInstancesRequest 获取实例请求条件
+func (c *tcClient) newDescribeInstancesRequest(opt *ccom.InstanceOpt) *cvm.DescribeInstancesRequest {
 	request := cvm.NewDescribeInstancesRequest()
-	if opt == nil {
-		return request
-	}
-	if len(opt.Filters) > 0 {
-		request.Filters = make([]*cvm.Filter, 0)
-		for i, _ := range opt.Filters {
-			filter := &cvm.Filter{Name: opt.Filters[i].Name, Values: opt.Filters[i].Values}
-			request.Filters = append(request.Filters, filter)
-		}
-	}
-	if opt.Limit != nil {
-		limit := *opt.Limit
-		if *opt.Limit < tcMinPageSize || *opt.Limit > tcMaxPageSize {
-			limit = tcMaxPageSize
-		}
-		request.Limit = &limit
-	}
-	request.Offset = opt.Offset
+	c.setCvmFilters(&request.Filters, opt.Filters)
+	c.setCvmLimit(&request.Limit, opt.Limit)
 	return request
+}
+
+// setVpcFilters 设置过滤条件
+func (c *tcClient) setVpcFilters(dst *[]*tcVpc.Filter, src []*ccom.Filter) {
+	if src == nil || len(src) == 0 {
+		return
+	}
+	if dst == nil {
+		tmp := make([]*tcVpc.Filter, 0)
+		dst = &tmp
+	}
+	for i := range src {
+		filter := &tcVpc.Filter{Name: src[i].Name, Values: src[i].Values}
+		*dst = append(*dst, filter)
+	}
+}
+
+// setVpcLimit 设置单次请求返回结果条数
+func (c *tcClient) setVpcLimit(Dstlimit **string, limit int64) {
+	limitStr := fmt.Sprintf("%d", limit)
+	*Dstlimit = &limitStr
+	// 按API要求，设置的MaxResults的取值范围为0～100，不在该范围内的值会报错，不在该范围的设为最大值
+	if limit < tcMinPageSize || limit > tcMaxPageSize {
+		limitStr = fmt.Sprintf("%d", tcMaxPageSize)
+	}
+}
+
+// setCvmFilters 设置过滤条件
+func (c *tcClient) setCvmFilters(dst *[]*cvm.Filter, src []*ccom.Filter) {
+	if src == nil || len(src) == 0 {
+		return
+	}
+	if dst == nil {
+		tmp := make([]*cvm.Filter, 0)
+		dst = &tmp
+	}
+	for i := range src {
+		filter := &cvm.Filter{Name: src[i].Name, Values: src[i].Values}
+		*dst = append(*dst, filter)
+	}
+}
+
+// setCvmLimit 设置单次请求返回结果条数
+func (c *tcClient) setCvmLimit(Dstlimit **int64, limit int64) {
+	*Dstlimit = &limit
+	// 按API要求，设置的MaxResults的取值范围为1～100，不在该范围内的值会报错，不在该范围的设为最大值
+	if limit < tcMinPageSize || limit > tcMaxPageSize {
+		limit = tcMaxPageSize
+	}
 }

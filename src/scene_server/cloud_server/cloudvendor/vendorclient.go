@@ -22,16 +22,16 @@ import (
 var vendorClients = make(map[string]VendorClient, 0)
 
 type VendorClient interface {
-	// 设置账号密码
+	// SetCredential 设置账号密码
 	SetCredential(secretID, secretKey string)
-	// 获取地域列表
-	GetRegions(opt *ccom.RequestOpt) ([]*metadata.Region, error)
-	// 获取vpc列表
-	GetVpcs(region string, opt *ccom.RequestOpt) (*metadata.VpcsInfo, error)
-	// 获取实例列表
-	GetInstances(region string, opt *ccom.RequestOpt) (*metadata.InstancesInfo, error)
-	// 获取实例总个数
-	GetInstancesTotalCnt(region string, opt *ccom.RequestOpt) (int64, error)
+	// GetRegions 获取地域列表
+	GetRegions() ([]*metadata.Region, error)
+	// GetVpcs 获取vpc列表
+	GetVpcs(region string, opt *ccom.VpcOpt) (*metadata.VpcsInfo, error)
+	// GetInstances 获取实例列表
+	GetInstances(region string, opt *ccom.InstanceOpt) (*metadata.InstancesInfo, error)
+	// GetInstancesTotalCnt 获取实例总个数
+	GetInstancesTotalCnt(region string, opt *ccom.InstanceOpt) (int64, error)
 }
 
 // Register 注册云厂商客户端
