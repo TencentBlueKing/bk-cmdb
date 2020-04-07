@@ -258,7 +258,7 @@
                 return this.$parent.table
             },
             clipboardList () {
-                return this.table.header.filter(header => header.type !== 'checkbox')
+                return this.table.header
             },
             scope () {
                 return this.$parent.scope

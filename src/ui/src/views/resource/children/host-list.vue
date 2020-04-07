@@ -13,15 +13,15 @@
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
-            <bk-table-column v-for="column in table.header"
-                :key="column.id"
-                :label="column.name"
-                :sortable="column.sortable ? 'custom' : false"
-                :prop="column.id"
-                :fixed="column.id === 'bk_host_innerip'"
-                :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''">
+            <bk-table-column v-for="property in table.header"
+                :key="property.bk_property_id"
+                :label="$tools.getHeaderPropertyName(property)"
+                :sortable="isPropertySortable(property) ? 'custom' : false"
+                :prop="property.bk_property_id"
+                :fixed="property.bk_property_id === 'bk_host_innerip'"
+                :class-name="property.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option'))}}
+                    {{ row | hostValueFilter(property.bk_obj_id, property.bk_property_id) | formatter(property.bk_property_type, getPropertyValue(property.bk_obj_id, property.bk_property_id, 'option'))}}
                 </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
@@ -132,6 +132,9 @@
             },
             filterParams () {
                 this.ready && this.getHostList(true)
+            },
+            scope () {
+                this.setModuleNamePropertyState()
             }
         },
         async created () {
@@ -141,6 +144,7 @@
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
+                this.setModuleNamePropertyState()
                 this.getHostList()
                 this.ready = true
             } catch (e) {
@@ -188,19 +192,26 @@
                     return groups
                 })
             },
+            setModuleNamePropertyState () {
+                const property = this.properties.module.find(property => property.bk_property_id === 'bk_module_name')
+                if (property) {
+                    const normalName = this.$t('模块名')
+                    const directoryName = this.$t('目录名')
+                    const scopeModuleName = {
+                        0: normalName,
+                        1: directoryName,
+                        all: `${directoryName}/${normalName}`
+                    }
+                    property.bk_property_name = scopeModuleName[this.scope]
+                }
+            },
             setTableHeader () {
                 const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
-                const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, customColumns, this.columnsConfigDisabledColumns)
-                this.table.header = properties.map(property => {
-                    return {
-                        id: property.bk_property_id,
-                        name: this.$tools.getHeaderPropertyName(property),
-                        type: property.bk_property_type,
-                        objId: property.bk_obj_id,
-                        sortable: property.bk_obj_id === 'host' && !['foreignkey'].includes(property.bk_property_type)
-                    }
-                })
-                this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
+                this.table.header = this.$tools.getHeaderProperties(this.columnsConfigProperties, customColumns, this.columnsConfigDisabledColumns)
+                this.columnsConfig.selected = this.table.header.map(property => property['bk_property_id'])
+            },
+            isPropertySortable (property) {
+                return property.bk_obj_id === 'host' && !['foreignkey'].includes(property.bk_property_type)
             },
             getHostList (event) {
                 this.$store.dispatch('hostSearch/searchHost', {
