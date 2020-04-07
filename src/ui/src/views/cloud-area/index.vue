@@ -38,10 +38,10 @@
             <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <link-button slot-scope="{ row }"
-                    :disabled="!!row.host_count"
+                    :disabled="!!row.host_count || isLimited(row)"
                     v-bk-tooltips="{
-                        disabled: !row.host_count,
-                        content: $t('主机不为空，不能删除')
+                        disabled: isLimited(row) ? false : !row.host_count,
+                        content: isLimited(row) ? $t('系统限定，不能删除') : $t('主机不为空，不能删除')
                     }"
                     @click="handleDelete(row)">
                     {{$t('删除')}}
@@ -67,6 +67,9 @@
             this.getData()
         },
         methods: {
+            isLimited (row) {
+                return row.bk_cloud_id === 0
+            },
             handleSortChange (sort) {
                 this.sort = this.$tools.getSort(sort, { prop: 'bk_cloud_id' })
                 this.getData()
