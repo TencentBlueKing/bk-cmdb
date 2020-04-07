@@ -258,7 +258,13 @@
                 return this.$parent.table
             },
             clipboardList () {
-                return this.table.header
+                return this.table.header.map(property => {
+                    return {
+                        id: property.bk_property_id,
+                        name: property.bk_property_name,
+                        objId: property.bk_obj_id
+                    }
+                })
             },
             scope () {
                 return this.$parent.scope
