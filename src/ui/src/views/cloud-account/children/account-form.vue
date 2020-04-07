@@ -37,7 +37,11 @@
                     v-model.trim="form.bk_secret_id"
                     v-validate="'required|length:256'">
                 </bk-input>
-                <link-button class="create-form-link">如何获取ID和Key?</link-button>
+                <bk-link theme="primary" class="create-form-link"
+                    v-show="form.bk_cloud_vendor"
+                    @click="handleLinkToFAQ">
+                    {{$t('如何获取ID和Key')}}
+                </bk-link>
                 <p class="create-form-error" v-if="errors.has('bk_secret_id')">
                     {{errors.first('bk_secret_id')}}
                 </p>
@@ -246,6 +250,13 @@
             },
             handleHide (eventType) {
                 this.container.hide(eventType)
+            },
+            handleLinkToFAQ () {
+                const FAQLink = {
+                    tencent_cloud: 'https://cloud.tencent.com/document/product/598/37140',
+                    aws: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html'
+                }
+                window.open(FAQLink[this.form.bk_cloud_vendor])
             }
         }
     }
@@ -273,7 +284,11 @@
             position: absolute;
             bottom: 100%;
             right: 0;
-            font-size: 12px;
+            /deep/ {
+                .bk-link-text {
+                    font-size: 12px;
+                }
+            }
         }
         .create-form-error {
             font-size: 12px;
