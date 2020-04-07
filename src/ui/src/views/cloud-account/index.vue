@@ -7,15 +7,21 @@
         <bk-table class="cloud-account-table" v-bkloading="{ isLoading: $loading(request.search) }"
             :data="list"
             :pagination="pagination"
+            @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @cell-click="handleCellClick">
-            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" class-name="is-highlight" id="name" show-overflow-tooltip></bk-table-column>
-            <bk-table-column :label="$t('账号类型')" prop="bk_cloud_vendor"></bk-table-column>
+            <bk-table-column :label="$t('账户名称')"
+                prop="bk_account_name"
+                class-name="is-highlight"
+                sortable="custom"
+                show-overflow-tooltip>
+            </bk-table-column>
+            <bk-table-column :label="$t('账号类型')" prop="bk_cloud_vendor" sortable="custom"></bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="bk_last_editor" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row.bk_last_editor | formatter('singlechar')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('修改时间')" prop="last_time">
+            <bk-table-column :label="$t('修改时间')" prop="last_time" sortable="custom">
                 <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
@@ -47,6 +53,7 @@
             return {
                 list: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
+                sort: 'bk_account_id',
                 request: {
                     search: Symbol('search')
                 }
@@ -64,6 +71,10 @@
                         mode: 'create'
                     }
                 })
+            },
+            handleSortChange (sort) {
+                this.sort = this.$tools.getSort(sort, { prop: 'bk_account_id' })
+                this.getData()
             },
             handlePageChange (page) {
                 this.pagination.current = page
@@ -112,7 +123,10 @@
                 try {
                     const data = await this.$store.dispatch('cloud/account/findMany', {
                         params: {
-                            ...this.$tools.getPageParams(this.pagination)
+                            page: {
+                                ...this.$tools.getPageParams(this.pagination),
+                                sort: this.sort
+                            }
                         },
                         config: {
                             requestId: this.request.search

@@ -8,19 +8,26 @@
             v-bkloading="{ isLoading: $loading(Object.values(request)) }"
             :data="list"
             :pagination="pagination"
+            @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @cell-click="handleCellClick">
-            <bk-table-column :label="$t('任务名称')" prop="bk_task_name" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
+            <bk-table-column
+                :label="$t('任务名称')"
+                sortable="custom"
+                prop="bk_task_name"
+                class-name="is-highlight"
+                show-overflow-tooltip>
+            </bk-table-column>
             <bk-table-column :label="$t('资源')" prop="bk_resource_type" :formatter="resourceTypeFormatter"></bk-table-column>
-            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" show-overflow-tooltip>
+            <bk-table-column :label="$t('账户名称')" prop="bk_account_name" show-overflow-tooltip sortable="custom">
                 <task-account-selector slot-scope="{ row }"
                     display="info"
                     :value="row.bk_account_id">
                 </task-account-selector>
             </bk-table-column>
-            <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" :formatter="vendorFormatter"></bk-table-column>
-            <bk-table-column :label="$t('最近同步状态')" prop="bk_sync_status">
+            <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" :formatter="vendorFormatter" sortable="custom"></bk-table-column>
+            <bk-table-column :label="$t('最近同步状态')" prop="bk_sync_status" sortable="custom">
                 <div class="row-status"
                     slot-scope="{ row }"
                     v-bk-tooltips.right="{
@@ -34,7 +41,7 @@
                     <template v-else>--</template>
                 </div>
             </bk-table-column>
-            <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time" show-overflow-tooltip>
+            <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time" show-overflow-tooltip sortable="custom">
                 <template slot-scope="{ row }">{{row.bk_last_sync_time | formatter('time')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('最近编辑人')" prop="bk_last_editor">
@@ -69,6 +76,7 @@
             return {
                 list: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
+                sort: 'bk_task_id',
                 request: {
                     findTask: Symbol('findTask'),
                     findAccount: Symbol('findAccount')
@@ -91,6 +99,10 @@
                         type: 'create'
                     }
                 })
+            },
+            handleSortChange (sort) {
+                this.sort = this.$tools.getSort(sort, { prop: 'bk_task_id' })
+                this.getData()
             },
             handlePageChange (page) {
                 this.pagination.current = page
@@ -153,7 +165,10 @@
                             fields: [],
                             condition: {},
                             exact: false,
-                            page: this.$tools.getPageParams(this.pagination)
+                            page: {
+                                ...this.$tools.getPageParams(this.pagination),
+                                sort: this.sort
+                            }
                         },
                         config: {
                             requestId: this.request.findTask

@@ -2,18 +2,25 @@
     <div class="cloud-area-layout">
         <cmdb-tips class="cloud-area-tips">提示语</cmdb-tips>
         <bk-table class="cloud-area-table"
+            v-bkloading="{ isLoading: $loading(request.search) }"
             :data="list"
             :pagination="pagination"
+            @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleLimitChange">
-            <bk-table-column :label="$t('云区域名称')" prop="bk_cloud_name" class-name="is-highlight" show-overflow-tooltip></bk-table-column>
-            <bk-table-column :label="$t('状态')" prop="bk_status">
+            <bk-table-column class-name="is-highlight"
+                show-overflow-tooltip
+                sortable="custom"
+                prop="bk_cloud_name"
+                :label="$t('云区域名称')">
+            </bk-table-column>
+            <bk-table-column :label="$t('状态')" prop="bk_status" sortable="custom">
                 <div class="row-status" slot-scope="{ row }">
                     <i :class="['status', { 'is-error': row.bk_status !== '1' }]"></i>
                     {{row.bk_status === '1' ? $t('正常') : $t('异常')}}
                 </div>
             </bk-table-column>
-            <bk-table-column :label="$t('所属云厂商')" prop="bk_cloud_vendor">
+            <bk-table-column :label="$t('所属云厂商')" prop="bk_cloud_vendor" sortable="custom">
                 <template slot-scope="{ row }">{{row.bk_cloud_vendor | formatter('singlechar')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('区域')" prop="bk_region">
@@ -25,7 +32,7 @@
             <bk-table-column :label="$t('主机数量')" prop="host_count">
                 <template slot-scope="{ row }">{{row.host_count | formatter('int')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('最近编辑')" prop="last_time">
+            <bk-table-column :label="$t('最近编辑')" prop="last_time" sortable="custom" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('编辑人')" prop="bk_last_editor"></bk-table-column>
@@ -49,13 +56,21 @@
         data () {
             return {
                 list: [{}, {}],
-                pagination: this.$tools.getDefaultPaginationConfig()
+                pagination: this.$tools.getDefaultPaginationConfig(),
+                sort: 'bk_cloud_id',
+                request: {
+                    search: Symbol('search')
+                }
             }
         },
         created () {
             this.getData()
         },
         methods: {
+            handleSortChange (sort) {
+                this.sort = this.$tools.getSort(sort, { prop: 'bk_cloud_id' })
+                this.getData()
+            },
             handlePageChange (page) {
                 this.pagination.current = page
                 this.getData()
@@ -89,8 +104,14 @@
                 try {
                     const data = await this.$store.dispatch('cloud/area/findMany', {
                         params: {
-                            ...this.$tools.getPageParams(this.pagination),
+                            page: {
+                                ...this.$tools.getPageParams(this.pagination),
+                                sort: this.sort
+                            },
                             host_count: true
+                        },
+                        config: {
+                            requestId: this.request.search
                         }
                     })
                     if (data.count && !data.info.length) {

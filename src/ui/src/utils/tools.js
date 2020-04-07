@@ -293,13 +293,10 @@ export function getValidateRules (property) {
     return rules
 }
 
-export function getSort (sort, defaultSort) {
-    const order = sort.order
-    const prop = sort.prop
-    if (!prop) {
-        return defaultSort || ''
-    }
-    if (order === 'descending') {
+export function getSort (sort, defaultSort = {}) {
+    const order = sort.order || defaultSort.order || 'ascending'
+    const prop = sort.prop || defaultSort.prop || ''
+    if (prop && order === 'descending') {
         return `-${prop}`
     }
     return prop
