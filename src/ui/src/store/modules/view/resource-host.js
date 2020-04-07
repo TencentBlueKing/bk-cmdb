@@ -4,7 +4,7 @@ const state = {
 }
 
 const getters = {
-    activeDirectory: state => state.activeDirectory || {},
+    activeDirectory: state => state.activeDirectory,
     directoryList: state => state.directoryList
 }
 
@@ -29,6 +29,12 @@ const mutations = {
         if (index > -1) {
             state.directoryList.splice(index, 1)
         }
+    },
+    refreshDirectoryCount (state, newList = []) {
+        state.directoryList.forEach(directory => {
+            const newDirectory = newList.find(newDirectory => newDirectory.bk_module_id === directory.bk_module_id)
+            Object.assign(directory, newDirectory)
+        })
     }
 }
 

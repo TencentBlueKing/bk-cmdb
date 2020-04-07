@@ -5,7 +5,9 @@
             clearable
             :placeholder="$t('分组目录')">
         </bk-input>
-        <div class="dir-header">
+        <div class="dir-header"
+            :class="{ 'active': acitveDirId === null }"
+            @click="handleResourceClick">
             <span class="title">{{$t('资源池')}}</span>
             <i class="icon-cc-plus" v-bk-tooltips.top="$t('新建目录')" @click.stop="handleShowCreate"></i>
         </div>
@@ -123,34 +125,37 @@
                 return this.directoryList
             }
         },
-        created () {
+        async created () {
             Bus.$on('refresh-dir-count', this.refreshCount)
-            this.getDirectoryList()
+            try {
+                const data = await this.getDirectoryList()
+                this.setDefaultState(data)
+            } catch (e) {
+                console.error(e)
+            }
         },
         beforeDestroy () {
             Bus.$off('refresh-dir-count', this.refreshCount)
         },
         methods: {
             async getDirectoryList () {
-                try {
-                    const data = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
-                        params: {
-                            page: {
-                                sort: '-bk_module_id'
-                            }
-                        },
-                        config: {
-                            requestId: 'getDirectoryList'
+                return this.$store.dispatch('resourceDirectory/getDirectoryList', {
+                    params: {
+                        page: {
+                            sort: '-bk_module_id'
                         }
-                    })
-                    const directoryList = data.info || []
-                    const firstDir = directoryList[0] || {}
-                    this.acitveDirId = firstDir.bk_module_id
-                    this.$store.commit('resourceHost/setActiveDirectory', firstDir)
-                    this.$store.commit('resourceHost/setDirectoryList', directoryList)
-                } catch (e) {
-                    console.error(e)
-                }
+                    },
+                    config: {
+                        requestId: 'getDirectoryList'
+                    }
+                })
+            },
+            setDefaultState (data) {
+                const directoryList = data.info || []
+                const firstDir = directoryList[0] || {}
+                this.acitveDirId = firstDir.bk_module_id
+                this.$store.commit('resourceHost/setActiveDirectory', firstDir)
+                this.$store.commit('resourceHost/setDirectoryList', directoryList)
             },
             async createdDir () {
                 try {
@@ -195,8 +200,13 @@
             },
             handleSearchHost (active = {}) {
                 this.$store.commit('resourceHost/setActiveDirectory', active)
-                Bus.$emit('refresh-resource-list')
                 this.acitveDirId = active.bk_module_id
+                Bus.$emit('refresh-resource-list')
+            },
+            handleResourceClick () {
+                this.$store.commit('resourceHost/setActiveDirectory', null)
+                this.acitveDirId = null
+                Bus.$emit('refresh-resource-list')
             },
             handleCancelCreate () {
                 this.createInfo.active = false
@@ -262,15 +272,13 @@
                     }
                 })
             },
-            refreshCount ({ reduceId, addId, count }) {
-                this.directoryList = this.directoryList.map((dir, index) => {
-                    if (dir.bk_module_id === reduceId) {
-                        dir.host_count -= count
-                    } else if (dir.bk_module_id === addId) {
-                        dir.host_count += count
-                    }
-                    return dir
-                })
+            async refreshCount () {
+                try {
+                    const { info } = await this.getDirectoryList()
+                    this.$store.commit('resourceHost/refreshDirectoryCount', info || [])
+                } catch (e) {
+                    console.error(e)
+                }
             }
         }
     }
@@ -291,7 +299,9 @@
             height: 42px;
             line-height: 42px;
             background-color: #F0F1F5;
-            &:hover {
+            cursor: pointer;
+            &:hover,
+            &.active {
                 background-color: #E1ECFF;
                 .icon-cc-plus {
                     background-color: #3A84FF;

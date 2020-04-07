@@ -317,7 +317,7 @@
                         name: item.bk_biz_name
                     }))
                 }
-                return this.directoryList.filter(item => item.bk_module_id !== this.activeDirectory.bk_module_id).map(item => ({
+                return this.directoryList.filter(item => item.bk_module_id !== (this.activeDirectory || {}).bk_module_id).map(item => ({
                     id: item.bk_module_id,
                     name: item.bk_module_name
                 }))
@@ -402,10 +402,7 @@
                         requestId: this.assign.requestId
                     }
                 }).then(() => {
-                    Bus.$emit('refresh-dir-count', {
-                        reduceId: moduleId,
-                        count: this.table.checked.length
-                    })
+                    Bus.$emit('refresh-dir-count')
                     this.$success(this.$t('分配成功'))
                     this.$parent.table.checked = []
                     this.$parent.handlePageChange(1)
@@ -422,11 +419,7 @@
                             bk_host_id: this.table.checked
                         }
                     })
-                    Bus.$emit('refresh-dir-count', {
-                        reduceId: this.activeDirectory.bk_module_id,
-                        addId: this.assign.id,
-                        count: this.table.checked.length
-                    })
+                    Bus.$emit('refresh-dir-count')
                     this.$success(this.$t('转移成功'))
                     this.$parent.table.checked = []
                     this.$parent.handlePageChange(1)
