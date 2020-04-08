@@ -678,7 +678,6 @@ const DefaultInstName string = "实例名"
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 
-const BKMainLine = "mainline"
 
 // bk_classification_id value
 const BKNetwork = "bk_network"

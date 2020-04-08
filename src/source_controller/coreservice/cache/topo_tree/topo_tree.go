@@ -12,6 +12,8 @@
 
 package topo_tree
 
+import "configcenter/src/source_controller/coreservice/cache/business"
+
 type TopologyTree struct {
-	
+	bizCache *business.Client
 }

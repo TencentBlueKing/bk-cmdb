@@ -12,7 +12,83 @@
 
 package business
 
-type BaseInfo struct {
-	BusinessID int64
-	BusinessName string
+import (
+	"time"
+
+	"gopkg.in/redis.v5"
+)
+
+type cacheCollection struct {
+	business *business
+	set *moduleSet
+	module *moduleSet
+	customLevel *customLevel
+}
+
+type forUpsertCache struct {
+	instID int64
+	name   string
+	doc    []byte
+
+	rds *redis.Client
+
+	// keys to be used
+	listKey       string
+	listExpireKey string
+	detailKey     string
+	detailExpireKey  string
+	
+	// generate list value and parse list value
+	parseListKeyValue func(key string) (int64, string, error)
+	genListKeyValue func(instID int64, instName string) string
+
+	// get the instance name with instance id from mongodb
+	getInstName func(instID int64) (name string, err error)
+}
+
+type refreshInstance struct {
+	// the key to store data.
+	mainKey        string
+	lockKey        string
+	expireKey      string
+	expireDuration time.Duration
+	// detail is to get the data to be refresh.
+	getDetail func(instID int64) (string, error)
+}
+
+type refreshList struct {
+	// the key to store the list .
+	mainKey        string
+	lockKey        string
+	expireKey      string
+	expireDuration time.Duration
+	// detail is to get all the list keys to be refresh.
+	// for business list, the bizID should be ignored.
+	getList func(bizID int64) ([]string, error)
+}
+
+type BizBaseInfo struct {
+	BusinessID   int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	BusinessName string `json:"bk_biz_name" bson:"bk_biz_name"`
+}
+
+type ModuleBaseInfo struct {
+	ModuleID   int64  `json:"bk_module_id" bson:"bk_module_id"`
+	ModuleName string `json:"bk_module_name" bson:"bk_module_name"`
+}
+
+type SetBaseInfo struct {
+	SetID   int64  `json:"bk_set_id" bson:"bk_set_id"`
+	SetName string `json:"bk_set_name" bson:"bk_set_name"`
+}
+
+type MainlineTopoAssociation struct {
+	AssociateTo string `json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	ObjectID    string `json:"bk_obj_id" bson:"bk_obj_id"`
+}
+
+type CustomInstanceBase struct {
+	ObjectID string `json:"bk_obj_id" bson:"bk_obj_id"`
+	InstanceID int64 `json:"bk_inst_id" bson:"bk_inst_id"`
+	InstanceName string `json:"bk_inst_name" bson:"bk_inst_name"`
 }

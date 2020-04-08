@@ -1,0 +1,390 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package business
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strconv"
+	"sync"
+	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	meta "configcenter/src/common/metadata"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/reflector"
+	"configcenter/src/storage/stream/types"
+	"github.com/tidwall/gjson"
+	"gopkg.in/redis.v5"
+)
+
+type customLevel struct {
+	key   customKeyGen
+	rds   *redis.Client
+	event reflector.Interface
+	db    dal.DB
+	// topologyListDone to indicate the mainline topology has already been listed
+	// and it's time to watch the custom level instance.
+	topologyListDone bool
+	// stores topology object id rank from biz to host
+	topologyRank []string
+	lock             refreshingLock
+	
+	// key is object id
+	customWatch map[string]context.CancelFunc
+	customLock sync.Mutex
+}
+
+func (m *customLevel) Run() error {
+
+	if err := m.runMainlineTopology(); err != nil {
+		return fmt.Errorf("watch mainline topology association failed, err: %v", err)
+	}
+	
+	if err := m.runCustomLevelInstance(); err != nil {
+		return fmt.Errorf("run mainline instance watch failed, err: %v", err)
+	}
+	
+	return nil
+}
+
+// to watch mainline topology change for it's cache update.
+func (m *customLevel) runMainlineTopology() error {
+	page := 500
+	opts := &types.ListWatchOptions{
+		Options: types.Options{
+			EventStruct: new(map[string]interface{}),
+			Collection:  common.BKTableNameObjAsst,
+			Filter: mapstr.MapStr{
+				common.BKAssetIDField: common.AssociationKindMainline,
+			},
+		},
+		PageSize: &page,
+	}
+	cap := &reflector.Capable{
+		OnChange: reflector.OnChangeEvent{
+			OnLister:     m.onChange,
+			OnAdd:        m.onChange,
+			OnUpdate:     m.onChange,
+			OnListerDone: m.onMainlineTopologyListDone,
+			OnDelete:     m.onChange,
+		},
+	}
+	return m.event.ListWatcher(context.Background(), opts, cap)
+}
+
+// to watch each custom level object instance's change for cache update.
+func (m *customLevel) runCustomLevelInstance() error {
+
+	endAt := time.After(2 * time.Minute)
+	for {
+		select {
+		case <-endAt:
+			return errors.New("wait for custom level instance watch failed")
+		default:
+		}
+		m.customLock.Lock()
+		done := m.topologyListDone
+		m.customLock.Unlock()
+		if done {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	m.customLock.Lock()
+	rank := m.topologyRank
+	m.customLock.Unlock()
+	
+	for _, objID := range rank {
+		if objID == "biz" || objID == "module" || objID == "set" || objID == "host" {
+			// skip system embed object
+			continue
+		}
+		
+		if err := m.runCustomWatch(objID); err != nil {
+			blog.Errorf("run biz custom level %s watch failed. err: %v", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *customLevel) runCustomWatch(objID string) error {
+	page := 500
+	opts := &types.ListWatchOptions{
+		Options: types.Options{
+			EventStruct: new(map[string]interface{}),
+			Collection:  common.BKTableNameBaseInst,
+			Filter: mapstr.MapStr{
+				common.BKObjIDField: objID,
+			},
+		},
+		PageSize: &page,
+	}
+	cap := &reflector.Capable{
+		OnChange: reflector.OnChangeEvent{
+			OnLister:     m.onUpsertCustomInstance,
+			OnAdd:        m.onUpsertCustomInstance,
+			OnUpdate:     m.onUpsertCustomInstance,
+			OnListerDone: m.onCustomInstanceListDone,
+			OnDelete:     m.onDeleteCustomInstance,
+		},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	m.customLock.Lock()
+	m.customWatch[objID]=cancel
+	m.customLock.Unlock()
+
+	return m.event.ListWatcher(ctx, opts, cap)
+}
+
+// reconcileCustomWatch to check if the custom watch is coordinate with 
+// watch or not.
+func (m *customLevel) reconcileCustomWatch(rank []string) {
+	rankMap := make(map[string]bool)
+	for _, objID := range rank {
+		if objID == "biz" || objID == "module" || objID == "set" || objID == "host" {
+			// skip system embed object
+			continue
+		}
+		rankMap[objID] = true
+	}
+	
+	// check if new watch is need.
+	for objID := range rankMap {
+		m.customLock.Lock()
+		_, exist := m.customWatch[objID]
+		m.customLock.Unlock()
+		if exist {
+			continue
+		} 
+		// not exist, need to add a new watch immediately.
+		if err := m.runCustomWatch(objID); err != nil {
+			blog.Errorf("reconcile custom watch and need new watch with object %s, but run watch it failed, err: %v", objID, err)
+			continue
+		}
+	}
+	
+	// check if the watch need to be canceled.
+	m.customLock.Lock()
+	for obj, cancel := range m.customWatch {
+		if _, exist := rankMap[obj]; !exist {
+			blog.Warnf("reconcile custom watch, find a redundant one with object %s, cancel it now.", obj)
+			// cancel the watch immediately.
+			cancel()
+			// Obviously, we need to delete list keys, instance key and expire key belongs to this object.
+			// Normally, we do not need to do this, because of if this object has instances, then it can not be deleted.
+			// so if the object has already be delete, then the instances is no longer exist at the same time.
+			// if we do not delete instance failed unfortunately, the cache may stay, but we have the trigger to 
+			// refresh it, it will be deleted later.
+		}
+	}
+	m.customLock.Unlock()
+	blog.V(4).Infof("reconcile custom watch with rank: %v finished.", rank)
+}
+
+// onChange is to reform the topology with the info from mongodb
+// we do not use the event data, because it's complicated to change
+// a mainline topology and a change is always associated with add and
+// delete operation.
+func (m *customLevel) onChange(_ *types.Event) {
+	// read information from mongodb
+	relations, err := m.getMainlineTopology()
+	if err != nil {
+		blog.Errorf("received mainline topology change event, but get it from mongodb failed, err: %v", err)
+		return
+	}
+	// rank start from biz to host
+	rank := m.rankMainlineTopology(relations)
+	
+	// reconcile the custom watch
+	m.reconcileCustomWatch(rank)
+	
+	// update local rank
+	m.customLock.Lock()
+	m.topologyRank = rank
+	m.customLock.Unlock()
+	
+	// then set the rank to cache
+	m.rds.Set(m.key.topologyKey(), m.key.topologyValue(rank), 0)
+}
+
+func (m *customLevel) onMainlineTopologyListDone() {
+	m.topologyListDone = true
+}
+
+// onUpsertCustomInstance is to upsert the custom object instance cache.
+// do operation like:
+// 1. upsert the object instance list cache.
+// 2. upsert the object instance detail cache.
+// 3. upsert the object instance oid relation for delete it usage.
+func (m *customLevel) onUpsertCustomInstance(e *types.Event) {
+	blog.V(4).Infof("received biz custom level instance upsert event, detail: %s", e.String())
+	
+	// just help us to know that we used metadata here.
+	_ = meta.Metadata{}
+	
+	fields := gjson.GetManyBytes(e.DocBytes, "bk_obj_id", "bk_inst_id", "bk_inst_name", "metadata.label.bk_biz_id")
+	objID := fields[0].String()
+	if len(objID) == 0 {
+		blog.Errorf("received biz custom level instance upsert event, but parse object id failed, doc: %s", e.String())
+		return
+	}
+	
+	instID := fields[1].Int()
+	if instID == 0 {
+		blog.Errorf("received biz custom level instance upsert event, but parse object instance id failed, doc: %s", e.String())
+		return
+	}
+	
+	instName := fields[2].String()
+	if len(instName) == 0 {
+		blog.Errorf("received biz custom level instance upsert event, but parse object instance name failed, doc: %s", e.String())
+		return
+	}
+	
+	
+	biz := fields[3].String()
+	bizID, err := strconv.ParseInt(biz, 10, 64) 
+	if err != nil {
+		blog.Errorf("received biz custom level instance upsert event, but parse business id failed failed, doc: %s, err: %v", e.String(), err)
+		return
+	}
+	
+	forUpsert := &forUpsertCache{
+		instID:            instID,
+		name:              instName,
+		doc:               e.DocBytes,
+		rds:               m.rds,
+		listKey:           customKey.objListKeyWithBiz(objID, bizID),
+		listExpireKey:     customKey.objListKeyWithBiz(objID, bizID),
+		detailKey:         customKey.detailKey(objID, instID),
+		detailExpireKey:   customKey.detailExpireKey(objID, bizID),
+		parseListKeyValue: customKey.parseListKeyValue,
+		genListKeyValue:   customKey.genListKeyValue,
+		getInstName:       m.getCustomObjInstName,
+	}	
+	// update the cache
+	upsertListCache(forUpsert)
+	
+	// record the object id relation
+	m.upsertOid(objID, bizID, instID, e.Oid)
+}
+
+func (m *customLevel) onCustomInstanceListDone() {
+
+}
+
+func (m *customLevel) onDeleteCustomInstance(e *types.Event) {
+	blog.V(4).Infof("received biz custom level instance delete event, detail: %s", e.String())
+	// get the instance id and business id from oid key
+	v, err := m.getOidValue(e.Oid)
+	if err != nil {
+		blog.Errorf("received biz custom level instance delete event, but get oid relation failed, detail: %s, err: %v", e.String(), err)
+		return
+	}
+	
+	pipeline := m.rds.Pipeline()
+	pipeline.Del(customKey.detailKey(v.obj, v.instID))
+	pipeline.Del(customKey.detailExpireKey(v.obj, v.instID))
+	pipeline.HDel(customKey.objectIDKey(), e.Oid)
+	pipeline.SRem(customKey.objListKeyWithBiz(v.obj, v.biz))
+	_, err = pipeline.Exec()
+	if err != nil {
+		blog.Errorf("received biz custom level instance delete event, but remove related keys failed, detail: %s, err: %v", e.String(), err)
+		return
+	}
+	blog.V(4).Infof("received biz custom level instance delete event, detail: %s, delete related caches success", e.String())
+}
+
+func (m *customLevel) getMainlineTopology() ([]MainlineTopoAssociation, error) {
+	relations := make([]MainlineTopoAssociation, 0)
+	filter := mapstr.MapStr{
+		common.BKAssetIDField: common.AssociationKindMainline,
+	}
+	err := m.db.Table(common.BKTableNameObjAsst).Find(filter).All(context.Background(), &relations)
+	if err != nil {
+		blog.Errorf("get mainline topology association failed, err: %v", err)
+		return nil, err
+	}
+	return relations, nil
+}
+
+// rankTopology is to rank the biz topology to a array, start from biz to host
+func (m *customLevel) rankMainlineTopology(relations []MainlineTopoAssociation) []string {
+	rank := make([]string, 0)
+	next := "biz"
+	rank = append(rank, next)
+	for _, relation := range relations {
+		if relation.AssociateTo == next {
+			rank = append(rank, relation.ObjectID)
+			next = relation.ObjectID
+			continue
+		} else {
+			for _, rel := range relations {
+				if rel.AssociateTo == next {
+					rank = append(rank, rel.ObjectID)
+					next = rel.ObjectID
+					break
+				}
+			}
+		}
+	}
+	return rank
+}
+
+func (m *customLevel) getCustomObjInstName(instID int64) (name string, err error) {
+	instance := new(CustomInstanceBase)
+	filter := mapstr.MapStr{
+		common.BKInstIDField: instID,
+	}
+	err = m.db.Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), instance)
+	if err != nil {
+		blog.Errorf("find mainline custom level with instance: %d, failed, err: %v", instID, err)
+		return "", err
+	}
+	return instance.InstanceName, nil
+}
+
+
+func (m *customLevel) upsertOid(objID string, bizID int64, instID int64, oid string) {
+	value := customKey.genObjectIDKeyValue(bizID, instID, objID)
+	if err := m.rds.HSet(customKey.objectIDKey(), oid, value).Err(); err != nil {
+		blog.Errorf("upsert business custom level object instance oid: %s relation failed, key: %s, value: %s, err: %v",
+			oid, customKey.objectIDKey(), value, err)
+	}
+}
+
+func (m *customLevel) delOid(oid string) {
+	if err := m.rds.HDel(customKey.objectIDKey(), oid).Err(); err != nil {
+		blog.Errorf("delete business custom level object instance oid: %s relation failed, key: %s, err: %v",
+			oid, customKey.objectIDKey(), err)
+	}
+}
+
+func (m *customLevel) getOidValue(oid string) (*oidValue, error){
+	value, err := m.rds.HGet(customKey.objectIDKey(), oid).Result()
+	if err != nil {
+		blog.Errorf("get business custom level object instance oid: %s relation failed, key: %s, err: %v",
+			oid, customKey.objectIDKey(), err)
+		return nil, err
+	}
+	
+	return customKey.parseObjectIDKeyValue(value)
+}
+
