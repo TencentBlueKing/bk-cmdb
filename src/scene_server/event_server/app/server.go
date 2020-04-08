@@ -28,7 +28,6 @@ import (
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 )
@@ -64,8 +63,17 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
+		process.Config.MongoDB, err = engine.WithMongo()
 		if err != nil {
-			return fmt.Errorf("connect tmserver failed, err: %s", err.Error())
+			return err
+		}
+		process.Config.Redis, err = engine.WithRedis()
+		if err != nil {
+			return err
+		}
+		process.Config.Auth, err = engine.WithAuth()
+		if err != nil {
+			return err
 		}
 
 		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
@@ -125,7 +133,6 @@ type EventServer struct {
 var configLock sync.Mutex
 
 func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	var err error
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
@@ -135,15 +142,5 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		// ignore err, cause ConfigMap is map[string]string
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.Infof("config updated: \n%s", out)
-		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-		h.Config.MongoDB = mongoConf
-
-		redisConf := redis.ParseConfigFromKV("redis", current.ConfigMap)
-		h.Config.Redis = redisConf
-
-		h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-		if err != nil {
-			blog.Errorf("parse auth center config failed: %v", err)
-		}
 	}
 }

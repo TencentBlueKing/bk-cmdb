@@ -57,12 +57,16 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if false == configReady {
 		return fmt.Errorf("waiting for configuration timeout, maybe parse configuration failed")
 	}
-	authConf := operationSvr.Config.Auth
+	operationSvr.Config.Mongo, err = engine.WithMongo()
+	if err != nil {
+		return err
+	}
+	operationSvr.Config.Auth, err = engine.WithAuth()
 	if err != nil {
 		return err
 	}
 
-	authorize, err := auth.NewAuthorize(nil, authConf, engine.Metric().Registry())
+	authorize, err := auth.NewAuthorize(nil, operationSvr.Config.Auth, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}

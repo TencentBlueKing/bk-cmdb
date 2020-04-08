@@ -29,9 +29,7 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 )
 
@@ -55,19 +53,11 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 	}
-	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-
-	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
 
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
 	var err error
-	t.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
-	}
-
 	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", current.ConfigMap)
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
@@ -100,6 +90,19 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	server.Core = engine
 
 	if err := server.CheckForReadiness(); err != nil {
+		return err
+	}
+
+	server.Config.Mongo, err = engine.WithMongo()
+	if err != nil {
+		return err
+	}
+	server.Config.Redis, err = engine.WithRedis()
+	if err != nil {
+		return err
+	}
+	server.Config.Auth, err = engine.WithAuth()
+	if err != nil {
 		return err
 	}
 

@@ -50,31 +50,15 @@ def generate_config_file(
     if not os.path.exists(output):
         os.mkdir(output)
 
-    # apiserver.conf
-    apiserver_file_template_str = '''
-[auth]
-address = $auth_address
-appCode = $auth_app_code
-appSecret = $auth_app_secret
-    '''
-
-    template = FileTemplate(apiserver_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "apiserver.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # datacollection.conf
-    datacollection_file_template_str = '''
-[mongodb]
-host = $mongo_host
-port = $mongo_port
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
+    # redis.conf
+    redis_file_template_str = '''
+[redis]
+host = $redis_host
+port = $redis_port
+pwd = $redis_pass
+database = 0
 maxOpenConns = 3000
-maxIdleConns = 100
-mechanism = SCRAM-SHA-1
-txnEnabled = $txn_enabled
+maxIDleConns = 1000
 
 [snap-redis]
 host = $redis_host
@@ -93,26 +77,15 @@ host = $redis_host
 port = $redis_port
 pwd = $redis_pass
 database = 0
+    '''
 
-[redis]
-host = $redis_host
-port = $redis_port
-pwd = $redis_pass
-database = 0
-
-[auth]
-address = $auth_address
-appCode = $auth_app_code
-appSecret = $auth_app_secret
-'''
-
-    template = FileTemplate(datacollection_file_template_str)
+    template = FileTemplate(redis_file_template_str)
     result = template.substitute(**context)
-    with open(output + "datacollection.conf", 'w') as tmp_file:
+    with open(output + "redis.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # eventserver.conf
-    eventserver_file_template_str = '''
+    # mongodb.conf
+    mongodb_file_template_str = '''
 [mongodb]
 host = $mongo_host
 port = $mongo_port
@@ -120,45 +93,79 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 100
+maxIdleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
+    '''
 
-[redis]
-host = $redis_host
-port = $redis_port
-pwd = $redis_pass
-database = 0
-maxOpenConns = 3000
-maxIDleConns = 1000
-'''
-
-    template = FileTemplate(eventserver_file_template_str)
+    template = FileTemplate(mongodb_file_template_str)
     result = template.substitute(**context)
-    with open(output + "eventserver.conf", 'w') as tmp_file:
+    with open(output + "mongodb.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # host.conf
-    host_file_template_str = '''
-[gse]
-addr = $rd_server
-user = bkzk
-pwd = L%blKas
-[redis]
-host = $redis_host
-port = $redis_port
-pwd = $redis_pass
-database = 0
-maxOpenConns = 3000
-maxIDleConns = 1000
+    # common.conf
+    common_file_template_str = '''
 [auth]
 address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
-'''
-    template = FileTemplate(host_file_template_str)
+
+[gse]
+addr = $rd_server
+user = bkzk
+pwd = L%blKas
+
+[timer]
+spec = 00:30  # 00:00 - 23:59
+
+[level]
+businessTopoMax = 7
+
+[es]
+full_text_search = $full_text_search
+url=$es_url
+usr = $es_user
+pwd = $es_pass
+
+[api]
+version = v3
+[session]
+name = cc3
+defaultlanguage = zh-cn
+host = $redis_host
+port = $redis_port
+secret = $redis_pass
+multiple_owner = 0
+[site]
+domain_url = ${cc_url}
+bk_login_url = ${paas_url}/login/?app_id=%s&c_url=%s
+app_code = cc
+check_url = ${paas_url}/login/accounts/get_user/?bk_token=
+bk_account_url = ${paas_url}/login/accounts/get_all_user/?bk_token=%s
+resources_path = /tmp/
+html_root = $ui_root
+full_text_search = $full_text_search
+[app]
+agent_app_url = ${agent_url}/console/?app=bk_agent_setup
+authscheme = $auth_scheme
+[login]
+version=$loginVersion
+    '''
+
+    template = FileTemplate(common_file_template_str)
+    loginVersion = 'skip-login'
+    if auth_enabled == "true":
+        loginVersion = 'blueking'
+    result = template.substitute(loginVersion=loginVersion, **context)
+    with open(output + "common.conf", 'w') as tmp_file:
+        tmp_file.write(result)
+
+    # extra.conf
+    extra_file_template_str = ''
+
+    template = FileTemplate(extra_file_template_str)
     result = template.substitute(**context)
-    with open(output + "host.conf", 'w') as tmp_file:
+    with open(output + "extra.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
     # migrate.conf
@@ -188,7 +195,6 @@ pwd = $redis_pass
 database = 0
 maxOpenConns = 3000
 maxIDleConns = 1000
-
 [confs]
 dir = $configures_dir
 [errors]
@@ -207,185 +213,6 @@ syncIntervalMinutes = $auth_sync_interval_minutes
     template = FileTemplate(migrate_file_template_str)
     result = template.substitute(**context)
     with open(output + "migrate.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # coreservice.conf
-    coreservice_file_template_str = '''
-[mongodb]
-host = $mongo_host
-port = $mongo_port
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-maxOpenConns = 3000
-maxIDleConns = 100
-mechanism = SCRAM-SHA-1
-txnEnabled = $txn_enabled
-
-[redis]
-host = $redis_host
-port = $redis_port
-pwd = $redis_pass
-database = 0
-maxOpenConns = 3000
-maxIDleConns = 1000
-'''
-
-    template = FileTemplate(coreservice_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "coreservice.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # proc.conf
-    proc_file_template_str = '''
-[redis]
-host = $redis_host
-port = $redis_port
-pwd = $redis_pass
-database = 0
-
-[auth]
-address = $auth_address
-appCode = $auth_app_code
-appSecret = $auth_app_secret
-
-[mongodb]
-host = $mongo_host
-port = $mongo_port
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-maxOpenConns = 3000
-maxIDleConns = 100
-txnEnabled = $txn_enabled
-'''
-    template = FileTemplate(proc_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "proc.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # operation.conf
-    operation_file_template_str = '''
-[mongodb]
-host = $mongo_host
-port = $mongo_port
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-maxOpenConns = 3000
-maxIDleConns = 100
-txnEnabled = $txn_enabled
-
-[timer]
-spec = 00:30  # 00:00 - 23:59
-
-[auth]
-address = $auth_address
-appCode = $auth_app_code
-appSecret = $auth_app_secret
-'''
-    template = FileTemplate(operation_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "operation.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # topo.conf
-    topo_file_template_str = '''
-[mongodb]
-host = $mongo_host
-port = $mongo_port
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-maxOpenConns = 3000
-maxIDleConns = 100
-mechanism = SCRAM-SHA-1
-txnEnabled = $txn_enabled
-
-[redis]
-host = $redis_host
-port = $redis_port
-pwd = $redis_pass
-database = 0
-maxOpenConns = 3000
-maxIDleConns = 1000
-
-[level]
-businessTopoMax = 7
-[auth]
-address = $auth_address
-appCode = $auth_app_code
-appSecret = $auth_app_secret
-
-[es]
-full_text_search = $full_text_search
-url=$es_url
-usr = $es_user
-pwd = $es_pass
-'''
-
-    template = FileTemplate(topo_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "topo.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # webserver.conf
-    webserver_file_template_str = '''
-[api]
-version = v3
-[session]
-name = cc3
-defaultlanguage = zh-cn
-host = $redis_host
-port = $redis_port
-secret = $redis_pass
-multiple_owner = 0
-[site]
-domain_url = ${cc_url}
-bk_login_url = ${paas_url}/login/?app_id=%s&c_url=%s
-app_code = cc
-check_url = ${paas_url}/login/accounts/get_user/?bk_token=
-bk_account_url = ${paas_url}/login/accounts/get_all_user/?bk_token=%s
-resources_path = /tmp/
-html_root = $ui_root
-full_text_search = $full_text_search
-[app]
-agent_app_url = ${agent_url}/console/?app=bk_agent_setup
-authscheme = $auth_scheme
-[login]
-version=$loginVersion
-'''
-    template = FileTemplate(webserver_file_template_str)
-    loginVersion = 'skip-login'
-    if auth_enabled == "true":
-        loginVersion = 'blueking'
-    result = template.substitute(loginVersion=loginVersion, **context)
-    with open(output + "webserver.conf", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # task.conf
-    taskserver_file_template_str = '''
-[mongodb]
-host = $mongo_host
-port = $mongo_port
-usr = $mongo_user
-pwd = $mongo_pass
-database = $db
-maxOpenConns = 3000
-maxIdleConns = 100
-mechanism = SCRAM-SHA-1
-txnEnabled = $txn_enabled
-[redis]
-host = $redis_host
-port = $redis_port
-pwd = $redis_pass
-database = 0
-maxOpenConns = 3000
-maxIDleConns = 100
-'''
-    template = FileTemplate(taskserver_file_template_str)
-    result = template.substitute(**context)
-    with open(output + "task.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
     # cloud.conf

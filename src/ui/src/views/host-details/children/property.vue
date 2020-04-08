@@ -416,7 +416,8 @@
             color: $cmdbDangerColor;
         }
         .form-component {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             vertical-align: middle;
             height: 32px;
             width: 260px;
