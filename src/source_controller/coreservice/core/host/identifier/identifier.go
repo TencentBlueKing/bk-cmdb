@@ -208,7 +208,7 @@ func (i *Identifier) findHostCloud(ctx core.ContextParams) error {
 // findHostServiceInst handle host service instance
 func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64) error {
 	relations := make([]metadata.ProcessInstanceRelation, 0)
-
+	
 	// query process id with host id
 	relationFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
@@ -220,11 +220,11 @@ func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64
 		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameProcessInstanceRelation, relationFilter, ctx.ReqID)
 		return err
 	}
+	
+	blog.V(5).Infof("findHostServiceInst query host and process relation. hostID:%#v, relation:%#v, rid;%s", hostIDs, relations, kit.Rid)
+	
+	procIDs, serviceInstIDs := make([]int64, 0), make([]int64, 0)
 
-	blog.V(5).Infof("findHostServiceInst query host and process relation. hostID:%#v, relation:%#v, rid;%s", hostIDs, relations, ctx.ReqID)
-
-	var procIDs []int64
-	var serviceInstIDs []int64
 	// 进程与服务实例的关系
 	procServiceInstMap := make(map[int64][]int64, 0)
 	for _, relation := range relations {
