@@ -77,6 +77,7 @@ func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst
 		for _, data := range events[i].Data {
 			changed, err := hasInstanceChanged(data)
 			if err != nil {
+				c.queueLock.Unlock()
 				return fmt.Errorf("[event] compare failed: %v, source data is %#v", err, data)
 			}
 			if !changed {
