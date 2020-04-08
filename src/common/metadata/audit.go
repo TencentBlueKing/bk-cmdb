@@ -30,21 +30,21 @@ type AuditQueryResult struct {
 }
 
 type AuditQueryCondition struct {
-	AuditType     AuditType       `json:"audit_type"`
-	User          string          `json:"user"`
-	ResourceType  []ResourceType  `json:"resource_type" `
-	Action        []ActionType    `json:"action"`
-	OperateFrom   OperateFromType `json:"operate_from"`
-	BizID         int64           `json:"bk_biz_id"`
-	ResourceID    int64           `json:"resource_id"`
+	AuditType    AuditType       `json:"audit_type"`
+	User         string          `json:"user"`
+	ResourceType []ResourceType  `json:"resource_type" `
+	Action       []ActionType    `json:"action"`
+	OperateFrom  OperateFromType `json:"operate_from"`
+	BizID        int64           `json:"bk_biz_id"`
+	ResourceID   int64           `json:"resource_id"`
 	// ResourceName filters audit logs by resource name, such as instance name, host ip etc., support fuzzy query
-	ResourceName  string          `json:"resource_name"`
+	ResourceName string `json:"resource_name"`
 	// OperationTime is an array of start time and end time, filters audit logs between them
-	OperationTime []string        `json:"operation_time"`
+	OperationTime []string `json:"operation_time"`
 	// Label filters audit logs with these labels
-	Label         []string        `json:"label"`
+	Label []string `json:"label"`
 	// Category is used by front end, filters audit logs as business(business resource and host operation related to business), resource(instance resource not related to business) or other category
-	Category      string          `json:"category"`
+	Category string `json:"category"`
 }
 
 type AuditLog struct {
@@ -120,7 +120,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -170,7 +170,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		return nil
 	}
 	switch audit.ResourceType {
-	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes:
+	case BusinessRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes, MainlineInstanceRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -374,6 +374,7 @@ const (
 	// model related operation type
 	ModelRes               ResourceType = "model"
 	ModelInstanceRes       ResourceType = "model_instance"
+	MainlineInstanceRes    ResourceType = "mainline_instance"
 	ModelAssociationRes    ResourceType = "model_association"
 	InstanceAssociationRes ResourceType = "instance_association"
 	ModelGroupRes          ResourceType = "model_group"
@@ -431,7 +432,7 @@ const (
 	LabelServiceInstance = "service_instance"
 )
 
-func GetAuditTypeByObjID(objID string) AuditType {
+func GetAuditTypeByObjID(objID string, isMainline bool) AuditType {
 	switch objID {
 	case common.BKInnerObjIDApp:
 		return BusinessType
@@ -448,11 +449,14 @@ func GetAuditTypeByObjID(objID string) AuditType {
 	case common.BKInnerObjIDPlat:
 		return CloudResourceType
 	default:
+		if isMainline {
+			return BusinessResourceType
+		}
 		return ModelInstanceType
 	}
 }
 
-func GetResourceTypeByObjID(objID string) ResourceType {
+func GetResourceTypeByObjID(objID string, isMainline bool) ResourceType {
 	switch objID {
 	case common.BKInnerObjIDApp:
 		return BusinessRes
@@ -469,6 +473,9 @@ func GetResourceTypeByObjID(objID string) ResourceType {
 	case common.BKInnerObjIDPlat:
 		return CloudAreaRes
 	default:
+		if isMainline {
+			return MainlineInstanceRes
+		}
 		return ModelInstanceRes
 	}
 }

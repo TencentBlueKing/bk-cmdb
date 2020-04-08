@@ -354,19 +354,19 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 func (ia *importAssociation) getInstDataByConds() error {
 	for objID, valArr := range ia.queryInstConds {
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
-
 		if objID == common.BKInnerObjIDHost && len(valArr) > 0 {
-			if ok := valArr[0].Exists(common.BKCloudIDField); !ok {
-				continue
-			}
+			for idx, val := range valArr {
+				if ok := val.Exists(common.BKCloudIDField); !ok {
+					continue
+				}
 
-			intCloudID, err := valArr[0].Int64(common.BKCloudIDField)
-			if err != nil {
-				return err
+				intCloudID, err := val.Int64(common.BKCloudIDField)
+				if err != nil {
+					return err
+				}
+				valArr[idx][common.BKCloudIDField] = intCloudID
 			}
-			valArr[0][common.BKCloudIDField] = intCloudID
 		}
-
 		conds := condition.CreateCondition()
 		conds.NewOR().MapStrArr(valArr)
 		instArr, err := ia.getInstDataByObjIDConds(objID, instIDKey, conds)

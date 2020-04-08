@@ -71,7 +71,8 @@
                 :class-name="index === 0 ? 'is-highlight' : ''"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{(row.property || {})[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
         </bk-table>
@@ -213,7 +214,10 @@
                     'bk_start_param_regex',
                     'bind_ip',
                     'port',
-                    'work_path'
+                    'bk_port_enable',
+                    'protocol',
+                    'work_path',
+                    'user'
                 ]
                 const header = display.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}

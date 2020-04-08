@@ -18,7 +18,8 @@
                         :sortable="unSortableProperty.includes(column.id) ? false : 'custom'"
                         :key="column.id"
                         :prop="column.id"
-                        :label="column.name">
+                        :label="column.name"
+                        show-overflow-tooltip>
                         <template slot-scope="{ row }">{{getHostCellText(column.property, row)}}</template>
                     </bk-table-column>
                 </bk-table>

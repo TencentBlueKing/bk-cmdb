@@ -26,32 +26,30 @@ import (
 
 // AuditInterface audit log methods
 type AuditInterface interface {
-	GetInstNameByID(objID string, instID int64) (string, error)
-	GetAuditLogProperty(objID string) ([]metadata.Property, error)
+	GetInstNameByID(ctx context.Context, objID string, instID int64) (string, error)
+	GetAuditLogProperty(ctx context.Context, objID string) ([]metadata.Property, error)
 }
 
 type auditLog struct {
 	clientSet apimachinery.ClientSetInterface
-	ctx       context.Context
 	header    http.Header
 	rid       string
 	ccErr     errors.DefaultCCErrorIf
 }
 
-func NewAudit(clientSet apimachinery.ClientSetInterface, ctx context.Context, header http.Header) AuditInterface {
+func NewAudit(clientSet apimachinery.ClientSetInterface, header http.Header) AuditInterface {
 	return &auditLog{
 		clientSet: clientSet,
-		ctx:       ctx,
 		header:    header,
 		rid:       util.GetHTTPCCRequestID(header),
 		ccErr:     util.GetDefaultCCError(header),
 	}
 }
 
-func (a *auditLog) GetInstNameByID(objID string, instID int64) (string, error) {
+func (a *auditLog) GetInstNameByID(ctx context.Context, objID string, instID int64) (string, error) {
 	switch objID {
 	case common.BKInnerObjIDHost:
-		rsp, err := a.clientSet.CoreService().Host().GetHosts(a.ctx, a.header, &metadata.QueryInput{
+		rsp, err := a.clientSet.CoreService().Host().GetHosts(ctx, a.header, &metadata.QueryInput{
 			Fields: common.BKHostInnerIPField,
 			Condition: map[string]interface{}{
 				common.BKHostIDField: instID,
@@ -72,7 +70,7 @@ func (a *auditLog) GetInstNameByID(objID string, instID int64) (string, error) {
 		}
 		return ip, nil
 	default:
-		rsp, err := a.clientSet.CoreService().Instance().ReadInstance(a.ctx, a.header, objID, &metadata.QueryCondition{
+		rsp, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, a.header, objID, &metadata.QueryCondition{
 			Fields: []string{common.GetInstNameField(objID)},
 			Condition: map[string]interface{}{
 				common.GetInstIDField(objID): instID,
@@ -95,7 +93,7 @@ func (a *auditLog) GetInstNameByID(objID string, instID int64) (string, error) {
 	}
 }
 
-func (a *auditLog) GetAuditLogProperty(objID string) ([]metadata.Property, error) {
+func (a *auditLog) GetAuditLogProperty(ctx context.Context, objID string) ([]metadata.Property, error) {
 	supplierAccount := util.GetOwnerID(a.header)
 
 	cond := map[string]interface{}{
@@ -108,7 +106,7 @@ func (a *auditLog) GetAuditLogProperty(objID string) ([]metadata.Property, error
 			common.BKDBNE: true,
 		},
 	}
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(a.ctx, a.header, objID, &metadata.QueryCondition{Condition: cond})
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(ctx, a.header, objID, &metadata.QueryCondition{Condition: cond})
 	if nil != err || !rsp.Result {
 		blog.ErrorfDepth(1, "GetAuditLogProperty failed to get the object(%s)' attribute, error: %v, rsp: %+v, rid: %s", objID, err, rsp, a.rid)
 		return nil, a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)

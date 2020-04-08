@@ -300,7 +300,8 @@
                         `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}/preview`,
                         this.confirmParams,
                         {
-                            requestId: this.request.preview
+                            requestId: this.request.preview,
+                            globalPermission: false
                         }
                     )
                     this.setConfirmState(data)
@@ -315,6 +316,9 @@
                 } catch (e) {
                     console.error(e)
                     this.loading = false
+                    if (e.code === 9900403) {
+                        this.$route.meta.view = 'permission'
+                    }
                 }
             },
             setConfirmState (data) {
@@ -543,32 +547,10 @@
                     if (createComponent || hostAttrsComponent) {
                         params.options = {}
                         if (createComponent) {
-                            params.options.service_instance_options = createComponent.$refs.serviceInstance.map((component, index) => {
-                                const instance = createComponent.instances[index]
-                                return {
-                                    bk_module_id: instance.bk_module_id,
-                                    bk_host_id: instance.bk_host_id,
-                                    processes: component.processList.map((process, listIndex) => ({
-                                        process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
-                                        process_info: process
-                                    }))
-                                }
-                            })
+                            params.options.service_instance_options = createComponent.getServiceInstanceOptions()
                         }
                         if (hostAttrsComponent) {
-                            const conflictResolveResult = hostAttrsComponent.$refs.confirmTable.conflictResolveResult
-                            const conflictResolvers = []
-                            Object.keys(conflictResolveResult).forEach(key => {
-                                const propertyList = conflictResolveResult[key]
-                                propertyList.forEach(property => {
-                                    conflictResolvers.push({
-                                        bk_host_id: Number(key),
-                                        bk_attribute_id: property.id,
-                                        bk_property_value: property.__extra__.value
-                                    })
-                                })
-                            })
-                            params.options.host_apply_conflict_resolvers = conflictResolvers
+                            params.options.host_apply_conflict_resolvers = hostAttrsComponent.getHostApplyConflictResolvers()
                         }
                     }
                     await this.$http.post(

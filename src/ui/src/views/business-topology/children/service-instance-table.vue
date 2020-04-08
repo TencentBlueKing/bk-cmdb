@@ -81,10 +81,11 @@
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
-                <div slot-scope="{ row }" :title="(row.property || {})[column.id] | formatter(column.property)">
+                :label="column.name"
+                show-overflow-tooltip>
+                <template slot-scope="{ row }">
                     {{(row.property || {})[column.id] | formatter(column.property)}}
-                </div>
+                </template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
@@ -311,7 +312,10 @@
                     'bk_start_param_regex',
                     'bind_ip',
                     'port',
-                    'work_path'
+                    'bk_port_enable',
+                    'protocol',
+                    'work_path',
+                    'user'
                 ]
                 const header = display.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
@@ -541,6 +545,9 @@
         .bk-icon,
         span {
             @include inlineBlock;
+        }
+        .icon-plus {
+            font-size: 20px;
         }
     }
     .menu-list {

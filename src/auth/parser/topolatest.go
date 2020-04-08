@@ -1660,6 +1660,8 @@ var (
 	deleteObjectAttributeLatestRegexp      = regexp.MustCompile(`^/api/v3/delete/objectattr/[0-9]+/?$`)
 	updateObjectAttributeLatestRegexp      = regexp.MustCompile(`^/api/v3/update/objectattr/[0-9]+/?$`)
 	updateObjectAttributeIndexLatestRegexp = regexp.MustCompile(`^/api/v3/update/objectattr/index/[^\s/]+/[0-9]+/?$`)
+	createBizCustomFieldLatestRegexp       = regexp.MustCompile(`^/api/v3/create/objectattr/biz/[0-9]+/?$`)
+	updateBizCustomFieldLatestRegexp       = regexp.MustCompile(`^/api/v3/update/objectattr/biz/[0-9]+/id/[0-9]+/?$`)
 )
 
 func (ps *parseStream) objectAttributeLatest() *parseStream {
@@ -1891,6 +1893,93 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 					},
 					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 				})
+		}
+		return ps
+	}
+
+	// create business custom field operation
+	if ps.hitRegexp(createBizCustomFieldLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("create business custom field, but got invalid url")
+			return ps
+		}
+
+		// 创建业务自定义属性，业务ID不可为0
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			blog.Errorf("get business id failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+		if bizID == 0 {
+			blog.Error("biz custom field business id can't be 0")
+			ps.err = fmt.Errorf("create biz custom field failed, business id is 0")
+			return ps
+		}
+		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: modelEn})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelAttribute,
+					Action: meta.Create,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
+		}
+		return ps
+	}
+
+	// update business custom field operation
+	if ps.hitRegexp(updateBizCustomFieldLatestRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = errors.New("update business custom field, but got invalid url")
+			return ps
+		}
+
+		// 更新业务自定义属性，业务ID不可为0
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			blog.Errorf("get business id failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+		if bizID == 0 {
+			blog.Error("biz custom field business id can't be 0")
+			ps.err = fmt.Errorf("update biz custom field failed, business id is 0")
+			return ps
+		}
+
+		attrID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("update business custom field, but got invalid attribute id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
+		if err != nil {
+			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
+			return ps
+		}
+		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:       meta.ModelAttribute,
+					Action:     meta.Update,
+					InstanceID: attrID,
+				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
+			},
 		}
 		return ps
 	}

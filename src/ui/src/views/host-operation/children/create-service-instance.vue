@@ -107,6 +107,19 @@
                     })
                     return value
                 })
+            },
+            getServiceInstanceOptions () {
+                return this.instances.map((instance, index) => {
+                    const component = this.$refs.serviceInstance.find(component => component.index === index)
+                    return {
+                        bk_module_id: instance.bk_module_id,
+                        bk_host_id: instance.bk_host_id,
+                        processes: component.processList.map((process, listIndex) => ({
+                            process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
+                            process_info: process
+                        }))
+                    }
+                })
             }
         }
     }

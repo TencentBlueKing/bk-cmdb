@@ -1,5 +1,5 @@
 <template>
-    <div class="node-info" style="height: 100%;"
+    <div class="node-info"
         v-bkloading="{
             isLoading: $loading([
                 'getModelProperties',
@@ -63,6 +63,50 @@
             :property-groups="propertyGroups"
             :inst="instance"
             :show-options="modelId !== 'biz' && editable">
+            <div class="template-info mb10 clearfix"
+                v-if="( isSetNode || isModuleNode) && type === 'details'"
+                slot="prepend">
+                <template v-if="isModuleNode">
+                    <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
+                        <span class="name fl">{{$t('服务模板')}}</span>
+                        <div class="value fl">
+                            <div class="template-value" v-if="withTemplate" @click="goServiceTemplate">
+                                <span class="text link">{{templateInfo.serviceTemplateName}}</span>
+                                <i class="icon-cc-share"></i>
+                            </div>
+                            <span class="text" v-else>{{templateInfo.serviceTemplateName}}</span>
+                        </div>
+                    </div>
+                    <div class="info-item fl" :title="`${$t('服务分类')} : ${templateInfo.serviceCategory || '--'}`">
+                        <span class="name fl">{{$t('服务分类')}}</span>
+                        <div class="value fl">
+                            <span class="text">{{templateInfo.serviceCategory || '--'}}</span>
+                        </div>
+                    </div>
+                </template>
+                <template v-else-if="isSetNode">
+                    <div class="info-item fl" :title="`${$t('集群模板')} : ${templateInfo.setTemplateName}`">
+                        <span class="name fl">{{$t('集群模板')}}</span>
+                        <div class="value fl">
+                            <template v-if="withSetTemplate">
+                                <div class="template-value set-template fl" @click="goSetTemplate">
+                                    <span class="text link">{{templateInfo.setTemplateName}}</span>
+                                    <i class="icon-cc-share"></i>
+                                </div>
+                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
+                                    <bk-button slot-scope="{ disabled }"
+                                        :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
+                                        :disabled="!hasChange || disabled"
+                                        @click="handleSyncSetTemplate">
+                                        {{$t('同步集群')}}
+                                    </bk-button>
+                                </cmdb-auth>
+                            </template>
+                            <span class="text" v-else>{{templateInfo.setTemplateName}}</span>
+                        </div>
+                    </div>
+                </template>
+            </div>
             <template slot="details-options">
                 <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
                     <template slot-scope="{ disabled }">
@@ -801,10 +845,15 @@
         left: 50%;
         transform: translate(-50%, -50%);
     }
+    .node-info {
+        height: 100%;
+        margin: 0 -20px;
+    }
     .template-info {
         font-size: 14px;
         color: #63656e;
         padding: 20px 0 20px 36px;
+        margin: 0 20px;
         border-bottom: 1px solid #F0F1F5;
         .info-item {
             width: 50%;
@@ -846,14 +895,19 @@
             }
         }
     }
-    .topology-details {
-        padding-left: 0 !important;
+    .topology-details.details-layout {
+        padding: 0;
         /deep/ {
+            .property-group {
+                padding-left: 36px;
+            }
             .property-list {
-                margin-left: 36px;
+                padding-left: 20px;
             }
             .details-options {
-                padding: 28px 18px 0 36px;
+                width: 100%;
+                margin: 0;
+                padding-left: 56px;
             }
         }
     }
@@ -877,6 +931,7 @@
     .service-category {
         font-size: 12px;
         padding: 20px 0 24px 36px;
+        margin: 0 20px;
         border-bottom: 1px solid #dcdee5;
         .selector-item {
             position: relative;
@@ -905,7 +960,7 @@
     .topology-form {
         /deep/ {
             .form-groups {
-                padding: 0;
+                padding: 0 20px;
             }
             .property-list {
                 margin-left: 36px;

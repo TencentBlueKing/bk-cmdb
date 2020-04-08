@@ -14,19 +14,31 @@
                         <span class="color-danger" v-if="isCreateMode">*</span>
                         <span v-else>：</span>
                     </label>
-                    <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
-                        <template v-if="isCreateMode">
-                            <bk-input type="text" class="cmdb-form-input" id="templateName"
-                                name="templateName"
-                                :placeholder="$t('请输入模板名称')"
-                                :disabled="!isCreateMode"
-                                v-model.trim="formData.templateName"
-                                v-validate="'required|singlechar|length:256'">
-                            </bk-input>
-                            <p class="form-error">{{errors.first('templateName')}}</p>
-                        </template>
-                        <span v-else class="template-name" :title="formData.templateName">{{formData.templateName}}</span>
-                    </div>
+                    <template v-if="isEditNameLoading">
+                        <i class="form-loading fl"></i>
+                    </template>
+                    <template v-else>
+                        <div class="cmdb-form-item clearfix fl" :class="{ 'is-error': errors.has('templateName') }">
+                            <template v-if="isCreateMode || isEditName">
+                                <bk-input type="text" class="cmdb-form-input fl" id="templateName"
+                                    name="templateName"
+                                    :placeholder="$t('请输入模板名称')"
+                                    :class="{ 'is-edit-name': isEditName }"
+                                    v-model.trim="formData.templateName"
+                                    v-validate="'required|singlechar|length:256'">
+                                </bk-input>
+                                <p class="form-error">{{errors.first('templateName')}}</p>
+                            </template>
+                            <template v-if="isEditName">
+                                <i class="form-confirm edit-icon bk-icon icon-check-1 fl" @click="handleSaveName"></i>
+                                <i class="form-cancel edit-icon bk-icon icon-close fl" @click="handleCancelEditName"></i>
+                            </template>
+                            <template v-else-if="!isCreateMode">
+                                <span class="template-name" :title="formData.templateName">{{formData.templateName}}</span>
+                                <i class="icon-cc-edit" v-if="!isCreateMode" @click="handleEditName"></i>
+                            </template>
+                        </div>
+                    </template>
                 </div>
                 <div class="form-info clearfix">
                     <span class="label-text fl">
@@ -43,7 +55,6 @@
                                 <cmdb-selector
                                     class="fl"
                                     :placeholder="$t('请选择一级分类')"
-                                    :auto-select="false"
                                     :searchable="true"
                                     :list="mainList"
                                     v-validate="'required'"
@@ -225,6 +236,8 @@
                 insideMode: this.$route.params.templateId ? 'edit' : 'view',
                 isEditCategory: false,
                 isEditCategoryLoading: false,
+                isEditName: false,
+                isEditNameLoading: false,
                 deletable: false,
                 showUpdateInfo: false
             }
@@ -619,13 +632,39 @@
                 Bus.$emit('active-change', 'instance')
                 this.showUpdateInfo = false
             },
+            handleEditName () {
+                this.isEditName = true
+            },
+            handleCancelEditName () {
+                this.formData.templateName = this.originTemplateValues.name
+                this.isEditName = false
+            },
+            async handleSaveName () {
+                try {
+                    const isValid = await this.$validator.validate('templateName')
+                    if (!isValid) {
+                        return false
+                    }
+                    this.isEditNameLoading = true
+                    await this.updateServiceTemplate({
+                        params: this.$injectMetadata({
+                            id: this.formData.templateId,
+                            name: this.formData.templateName
+                        }, { injectBizId: true })
+                    })
+                    this.isEditName = false
+                    this.isEditNameLoading = false
+                } catch (e) {
+                    console.error(e)
+                    this.isEditNameLoading = false
+                }
+            },
             async handleSaveCategory () {
                 try {
                     this.isEditCategoryLoading = true
                     await this.updateServiceTemplate({
                         params: this.$injectMetadata({
                             id: this.formData.templateId,
-                            name: this.formData.templateName,
                             service_category_id: this.formData.secondaryClassification
                         }, { injectBizId: true })
                     })
@@ -687,17 +726,16 @@
                     cursor: pointer;
                     &.form-confirm {
                         color: #0082ff;
+                        font-size: 20px;
                         &:before {
                             display: inline-block;
-                            transform: scale(0.83);
                         }
                     }
                     &.form-cancel {
                         color: #979ba5;
-                        font-size: 14px;
+                        font-size: 20px;
                         &:before {
                             display: inline-block;
-                            transform: scale(0.66);
                         }
                     }
                     &:hover {
@@ -734,7 +772,7 @@
                 .template-name {
                     @include inlineBlock;
                     @include ellipsis;
-                    width: 100%;
+                    max-width: calc(100% - 20px);
                     line-height: 36px;
                 }
                 .bk-select {
@@ -756,9 +794,10 @@
                     }
                 }
                 .icon-plus {
-                    font-size: 12px;
+                    font-size: 20px;
                     line-height: normal;
                     font-weight: bold;
+                    margin: 0 -4px;
                 }
                 .create-tips {
                     color: #979Ba5;
@@ -783,7 +822,7 @@
             width: 60px;
             height: 60px;
             line-height: 60px;
-            font-size: 30px;
+            font-size: 50px;
             font-weight: bold;
             color: #ffffff;
             border-radius: 50%;
@@ -858,5 +897,8 @@
             font-size: 0;
             padding-bottom: 20px;
         }
+    }
+    .cmdb-form-input.is-edit-name {
+        width: 120px;
     }
 </style>

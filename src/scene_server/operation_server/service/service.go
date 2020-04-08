@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -36,7 +35,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/operation_server/app/options"
 	"configcenter/src/scene_server/operation_server/logics"
-	"configcenter/src/storage/dal/mongo"
 	"github.com/emicklei/go-restful"
 )
 
@@ -110,8 +108,8 @@ func (o *OperationServer) newOperationService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart", Handler: o.CreateOperationChart})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart/{id}", Handler: o.DeleteOperationChart})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart", Handler: o.UpdateOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/search/operation/chart", Handler: o.SearchOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart/data", Handler: o.SearchChartData})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/operation/chart", Handler: o.SearchOperationChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/chart/data", Handler: o.SearchChartData})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position", Handler: o.UpdateChartPosition})
 
 	utility.AddToRestfulWebService(web)
@@ -171,16 +169,6 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 		blog.Errorf("parse timer config failed, err: %v", err)
 		return
 	}
-
-	cfg := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-	o.Config.Mongo = cfg
-
-	o.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-	if err != nil {
-		blog.Errorf("parse auth center config failed: %v", err)
-		return
-	}
-
 }
 
 func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {

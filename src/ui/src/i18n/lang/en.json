@@ -1237,5 +1237,9 @@
     "新增实例": "Add instance",
     "修改实例": "Modify instance",
     "删除实例": "Delete instance",
-    "分配到业务": "Assign host"
+    "分配到业务": "Assign host",
+    "更新主机属性": "Update host attributes",
+    "导入excel更新": "Import excel to update",
+    "进程表单锁定提示": "Uneditable，defined in template, {link}",
+    "跳转服务模板": "view in template"
 }

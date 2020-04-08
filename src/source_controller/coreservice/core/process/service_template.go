@@ -14,6 +14,7 @@ package process
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
@@ -123,8 +124,18 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 		return nil, err
 	}
 
+	needCheckName := false
+	if len(input.Name) != 0 && template.Name != input.Name {
+		template.Name = input.Name
+		needCheckName = true
+	}
+	if field, err := template.Validate(); err != nil {
+		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
+		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
+		return nil, err
+	}
+
 	// update fields to local object
-	// template.Name = input.Name
 	if input.ServiceCategoryID != 0 {
 		// 允许模块的服务分类信息与模板的服务分类信息不一致，模块同步按钮会调整模块的分类信息, 详情见 issue #2927
 		template.ServiceCategoryID = input.ServiceCategoryID
@@ -149,10 +160,82 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 		}
 	}
 
-	if field, err := template.Validate(); err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
-		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
-		return nil, err
+	needUpdateModuleName := false
+	if needCheckName {
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+		var checkErr errors.CCErrorCoder
+		// check service template name unique
+		go func() {
+			defer wg.Done()
+			nameFilter := map[string]interface{}{
+				common.BKAppIDField: template.BizID,
+				common.BKFieldName:  template.Name,
+				common.BKFieldID: map[string]interface{}{
+					common.BKDBNE: template.ID,
+				},
+			}
+			count, err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(nameFilter).Count(kit.Ctx)
+			if err != nil {
+				blog.ErrorJSON("UpdateServiceTemplate failed, count service template with same name failed, filter: %s, err: %s, rid: %s", nameFilter, err, kit.Rid)
+				checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+				return
+			}
+			if count > 0 {
+				blog.Errorf("UpdateServiceTemplate failed, service template name duplicated, count: %d, rid: %s", count, kit.Rid)
+				checkErr = kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
+				return
+			}
+		}()
+
+		// get modules using this service template
+		go func() {
+			defer wg.Done()
+			moduleFilter := map[string]interface{}{
+				common.BKServiceTemplateIDField: template.ID,
+			}
+			modules := make([]metadata.ModuleInst, 0)
+			err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules)
+			if err != nil {
+				blog.ErrorJSON("UpdateServiceTemplate failed, count modules using this service template failed, filter: %s, err: %s, rid: %s", moduleFilter, err, kit.Rid)
+				checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+				return
+			}
+			if len(modules) > 0 {
+				parentIDs := make([]int64, len(modules))
+				for _, module := range modules {
+					parentIDs = append(parentIDs, module.ParentID)
+				}
+				// check if other modules has same name with the service template name to be changed
+				moduleNameFilter := map[string]interface{}{
+					common.BKAppIDField:      template.BizID,
+					common.BKModuleNameField: template.Name,
+					common.BKParentIDField: map[string]interface{}{
+						common.BKDBIN: parentIDs,
+					},
+					common.BKServiceTemplateIDField: map[string]interface{}{
+						common.BKDBNE: template.ID,
+					},
+				}
+				count, err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleNameFilter).Count(kit.Ctx)
+				if err != nil {
+					blog.ErrorJSON("UpdateServiceTemplate failed, count modules with same name failed, filter: %s, err: %s, rid: %s", moduleFilter, err, kit.Rid)
+					checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+					return
+				}
+				if count > 0 {
+					blog.Errorf("UpdateServiceTemplate failed, service template has modules with same name, count: %d, rid: %s", count, kit.Rid)
+					checkErr = kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
+					return
+				}
+				needUpdateModuleName = true
+			}
+		}()
+
+		wg.Wait()
+		if checkErr != nil {
+			return nil, checkErr
+		}
 	}
 
 	// do update
@@ -160,6 +243,16 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, filter, template); nil != err {
 		blog.Errorf("UpdateServiceTemplate failed, mongodb failed, table: %s, filter: %+v, template: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, template, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
+	}
+
+	// update name of the modules using this service template
+	if needUpdateModuleName {
+		moduleFilter := map[string]interface{}{common.BKServiceTemplateIDField: template.ID}
+		updateData := map[string]interface{}{common.BKModuleNameField: template.Name}
+		if err := p.dbProxy.Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter, updateData); err != nil {
+			blog.ErrorJSON("UpdateServiceTemplate failed, update modules using this service template failed, filter: %s, err: %s, rid: %s", moduleFilter, err, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
 	}
 	return template, nil
 }

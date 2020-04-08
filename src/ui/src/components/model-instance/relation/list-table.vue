@@ -1,5 +1,5 @@
 <template>
-    <div class="table" v-bkloading="{ isLoading: loading }">
+    <div class="table" v-show="instances.length" v-bkloading="{ isLoading: loading }">
         <div class="table-info clearfix">
             <div class="info-title fl" @click="expanded = !expanded">
                 <i class="icon bk-icon icon-right-shape"

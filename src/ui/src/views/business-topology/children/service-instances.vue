@@ -120,6 +120,7 @@
                 :disabled-properties="processForm.disabledProperties"
                 :properties="processForm.properties"
                 :property-groups="processForm.propertyGroups"
+                :render-tips="processForm.renderTips"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
                 <template slot="bind_ip">
@@ -167,6 +168,7 @@
     import serviceInstanceEmpty from './service-instance-empty.vue'
     import batchEditLabel from './batch-edit-label.vue'
     import cmdbEditLabel from './edit-label.vue'
+    import ProcessFormTipsRender from './process-form-tips-render.js'
     import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         components: {
@@ -221,7 +223,8 @@
                     disabledProperties: [],
                     properties: [],
                     propertyGroups: [],
-                    unwatch: null
+                    unwatch: null,
+                    renderTips: this.processFormTipsRender
                 },
                 editLabel: {
                     show: false,
@@ -779,11 +782,8 @@
                 this.$router.push({
                     name: 'syncServiceFromModule',
                     params: {
-                        moduleId: this.currentNode.data.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id
-                    },
-                    query: {
-                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
+                        modules: String(this.currentNode.data.bk_inst_id),
+                        template: this.currentNode.data.service_template_id
                     }
                 })
             },
@@ -911,6 +911,12 @@
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            processFormTipsRender (h, { property, type }) {
+                if (this.processForm.disabledProperties.includes(property.bk_property_id)) {
+                    return ProcessFormTipsRender(h, { serviceTemplateId: this.processForm.referenceService.instance.service_template_id })
+                }
+                return ''
             }
         }
     }
@@ -1000,7 +1006,6 @@
             cursor: pointer;
             &:before {
                 display: block;
-                transform: scale(.7);
             }
             &:hover {
                 background-color: #ccc;
@@ -1017,8 +1022,7 @@
     .clipboard-trigger{
         padding: 0 16px;
         .icon-angle-down {
-            font-size: 12px;
-            top: 0;
+            font-size: 20px;
         }
     }
     .clipboard-list{
@@ -1067,7 +1071,9 @@
             background-color: #dcdee5;
         }
         .icon-refresh {
-            top: -1px;
+            font-size: 12px;
+            vertical-align: middle;
+            line-height: 18px;
         }
     }
     .tables {

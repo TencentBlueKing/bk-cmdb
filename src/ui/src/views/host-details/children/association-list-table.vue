@@ -29,7 +29,8 @@
             <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
@@ -229,15 +230,24 @@
                     globalPermission: false
                 }
                 try {
-                    switch (this.id) {
-                        case 'host':
-                            promise = this.getHostInstances(config)
-                            break
-                        case 'biz':
-                            promise = this.getBusinessInstances(config)
-                            break
-                        default:
-                            promise = this.getModelInstances(config)
+                    if (!this.instanceIds.length) {
+                        // 业务查询会走权限中心进行数据拼接，导致为空时返回了有权限的数据
+                        // 此处为空后不走查询
+                        promise = Promise.resolve({
+                            info: [],
+                            count: 0
+                        })
+                    } else {
+                        switch (this.id) {
+                            case 'host':
+                                promise = this.getHostInstances(config)
+                                break
+                            case 'biz':
+                                promise = this.getBusinessInstances(config)
+                                break
+                            default:
+                                promise = this.getModelInstances(config)
+                        }
                     }
                     const data = await promise
                     this.list = data.info

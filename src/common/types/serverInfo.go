@@ -76,6 +76,13 @@ const (
 	CCFunctionalityRedis           = "redis"
 )
 
+const (
+	CCConfigureRedis  = "redis"
+	CCConfigureMongo  = "mongodb"
+	CCConfigureCommon = "common"
+	CCConfigureExtra  = "extra"
+)
+
 // ServerInfo define base server information
 type ServerInfo struct {
 	IP         string `json:"ip"`

@@ -24,21 +24,19 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/source_controller/coreservice/app/options"
 	coresvr "configcenter/src/source_controller/coreservice/service"
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 )
 
 // CoreServer the core server
 type CoreServer struct {
 	Core    *backbone.Engine
-	Config  options.Config
+	Config  *options.Config
 	Service coresvr.CoreServiceInterface
 }
 
 func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfig) {
-
-	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
+	if t.Config == nil {
+		t.Config = new(options.Config)
+	}
 
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
@@ -69,8 +67,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	var configReady bool
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		// redis not found
-		if "" == coreSvr.Config.Redis.Address {
+		if nil == coreSvr.Config {
 			time.Sleep(time.Second)
 			continue
 		}
@@ -84,8 +81,17 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("configuration item not found")
 	}
 
+	coreSvr.Config.Mongo, err = engine.WithMongo()
+	if err != nil {
+		return err
+	}
+	coreSvr.Config.Redis, err = engine.WithRedis()
+	if err != nil {
+		return err
+	}
+
 	coreSvr.Core = engine
-	err = coreService.SetConfig(coreSvr.Config, engine, engine.CCErr, engine.Language)
+	err = coreService.SetConfig(*coreSvr.Config, engine, engine.CCErr, engine.Language)
 	if err != nil {
 		return err
 	}

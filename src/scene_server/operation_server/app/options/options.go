@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 
 	"github.com/spf13/pflag"
 )
@@ -29,7 +28,6 @@ type ServerOption struct {
 type Config struct {
 	ConfigMap map[string]string
 	Mongo     mongo.Config
-	Redis     redis.Config
 	Auth      authcenter.AuthConfig
 	Timer     string
 }

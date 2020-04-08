@@ -45,6 +45,23 @@
             list () {
                 return this.conflictList.length ? this.conflictList : this.info
             }
+        },
+        methods: {
+            getHostApplyConflictResolvers () {
+                const conflictResolveResult = this.$refs.confirmTable.conflictResolveResult
+                const conflictResolvers = []
+                Object.keys(conflictResolveResult).forEach(key => {
+                    const propertyList = conflictResolveResult[key]
+                    propertyList.forEach(property => {
+                        conflictResolvers.push({
+                            bk_host_id: Number(key),
+                            bk_attribute_id: property.id,
+                            bk_property_value: property.__extra__.value
+                        })
+                    })
+                })
+                return conflictResolvers
+            }
         }
     }
 </script>

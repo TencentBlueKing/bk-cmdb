@@ -94,6 +94,8 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 	blog.V(4).Infof("request id: %s, cost: %dms, action: %s, status code: %d, url: %s",
 		req.Request.Header.Get(common.BKHTTPCCRequestID),
 		time.Since(start).Nanoseconds()/int64(time.Millisecond),
-		req.Request.Method, response.StatusCode, url)
+		req.Request.Method, response.StatusCode, url,
+		req.Request.Header.Get(common.BKHTTPHeaderUser),
+		req.Request.Header.Get(common.BKHTTPRequestAppCode))
 	return
 }

@@ -4,13 +4,14 @@
             v-bkloading="{ isLoading: loading }"
             :data="showList"
             :max-height="$APP.height - 300">
-            <bk-table-column v-for="column in table.header"
+            <bk-table-column v-for="column in header"
                 :key="column.id"
                 :prop="column.id"
-                :label="column.name">
+                :label="column.name"
+                show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <span v-if="column.id === 'bind_ip'">{{row[column.id] | ipText}}</span>
-                    <span v-else>{{row[column.id] | formatter('singlechar')}}</span>
+                    <span v-else>{{row[column.id] | formatter(column.property)}}</span>
                 </template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" prop="operation" v-if="$parent.isFormMode">
@@ -74,39 +75,31 @@
             }
         },
         data () {
-            return {
-                table: {
-                    header: [
-                        {
-                            id: 'bk_func_name',
-                            name: this.$t('进程名称'),
-                            sortable: false
-                        }, {
-                            id: 'bk_process_name',
-                            name: this.$t('进程别名'),
-                            sortable: false
-                        }, {
-                            id: 'bind_ip',
-                            name: this.$t('监听IP'),
-                            sortable: false
-                        }, {
-                            id: 'port',
-                            name: this.$t('端口'),
-                            sortable: false
-                        }, {
-                            id: 'work_path',
-                            name: this.$t('启动路径'),
-                            sortable: false
-                        }, {
-                            id: 'user',
-                            name: this.$t('启动用户'),
-                            sortable: false
-                        }
-                    ]
-                }
-            }
+            return {}
         },
         computed: {
+            header () {
+                const display = [
+                    'bk_func_name',
+                    'bk_process_name',
+                    'bk_start_param_regex',
+                    'bind_ip',
+                    'port',
+                    'bk_port_enable',
+                    'protocol',
+                    'work_path',
+                    'user'
+                ]
+                const header = display.map(id => {
+                    const property = this.properties.find(property => property.bk_property_id === id) || {}
+                    return {
+                        id: property.bk_property_id,
+                        name: this.$tools.getHeaderPropertyName(property),
+                        property
+                    }
+                })
+                return header
+            },
             showList () {
                 const list = this.list.map(template => {
                     const result = {}

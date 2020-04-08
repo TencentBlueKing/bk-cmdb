@@ -142,7 +142,10 @@
                     'bk_start_param_regex',
                     'bind_ip',
                     'port',
-                    'work_path'
+                    'bk_port_enable',
+                    'protocol',
+                    'work_path',
+                    'user'
                 ]
                 const header = []
                 display.forEach(id => {
@@ -343,6 +346,9 @@
             text-align: center;
             cursor: pointer;
             @include inlineBlock;
+            &.icon-close {
+                font-size: 20px;
+            }
         }
         .icon-exclamation {
             font-size: 14px;
@@ -375,6 +381,10 @@
         .bk-icon,
         span {
             @include inlineBlock;
+        }
+        .icon-plus {
+            font-size: 20px;
+            margin-right: -4px;
         }
     }
 </style>
