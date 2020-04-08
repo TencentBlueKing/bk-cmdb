@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/zkclient"
 	ccom "configcenter/src/scene_server/cloud_server/common"
 	"configcenter/src/scene_server/cloud_server/logics"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -39,7 +38,6 @@ var (
 
 type SyncConf struct {
 	ZKClient  *zkclient.ZkClient
-	DB        dal.DB
 	Logics    *logics.Logics
 	AddrPort  string
 	MongoConf local.MongoConf
@@ -91,7 +89,7 @@ func SyncCloudResource(taskChan chan *metadata.CloudSyncTask, conf *SyncConf) {
 
 	// 云主机同步器处理同步任务
 	for i := 1; i <= syncorNum; i++ {
-		syncor := NewHostSyncor(i, conf.Logics, conf.DB)
+		syncor := NewHostSyncor(i, conf.Logics)
 		go func(syncor *HostSyncor) {
 			for {
 				task := <-hostChan

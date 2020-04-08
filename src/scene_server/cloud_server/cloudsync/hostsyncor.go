@@ -11,19 +11,17 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/cloud_server/logics"
-	"configcenter/src/storage/dal"
 )
 
 // 云主机同步器
 type HostSyncor struct {
 	id     int
 	logics *logics.Logics
-	db     dal.DB
 }
 
 // 创建云主机同步器
-func NewHostSyncor(id int, logics *logics.Logics, db dal.DB) *HostSyncor {
-	return &HostSyncor{id, logics, db}
+func NewHostSyncor(id int, logics *logics.Logics) *HostSyncor {
+	return &HostSyncor{id, logics}
 }
 
 // 同步云主机
@@ -595,6 +593,8 @@ func (h *HostSyncor) updateDestroyedHosts(conditon mapstr.MapStr) error {
 		common.BKHostInnerIPField:     "",
 		common.BKHostOuterIPField:     "",
 		common.BKCloudHostStatusField: metadata.CloudHostStatusIDs["stopped"],
+		// 必须有该标识，用来跳过内网ip字段为空的校验
+		common.IsDestroyedCloudHost: true,
 	}
 
 	uResult, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(context.Background(), header, common.BKInnerObjIDHost, input)

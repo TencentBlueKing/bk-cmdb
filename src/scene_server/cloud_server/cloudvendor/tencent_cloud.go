@@ -41,10 +41,13 @@ const (
 	tcMaxPageSize int64 = 100
 )
 
-// SetCredential 设置账号密码
-func (c *tcClient) SetCredential(secretID, secretKey string) {
-	c.secretID = secretID
-	c.secretKey = secretKey
+// NewVendorClient 创建云厂商客户端
+func (c *tcClient) NewVendorClient(secretID, secretKey string) VendorClient {
+	return &tcClient{
+		vendorName: metadata.TencentCloud,
+		secretID:   secretID,
+		secretKey:  secretKey,
+	}
 }
 
 // GetRegions 获取地域列表

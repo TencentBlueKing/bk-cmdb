@@ -88,7 +88,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 		syncConf := cloudsync.SyncConf{
 			ZKClient:  service.Engine.ServiceManageClient().Client(),
-			DB:        db,
 			Logics:    process.Service.Logics,
 			AddrPort:  input.SrvInfo.Instance(),
 			MongoConf: mongoConf,

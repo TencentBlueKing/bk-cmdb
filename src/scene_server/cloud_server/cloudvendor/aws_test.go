@@ -14,6 +14,7 @@ package cloudvendor
 
 import (
 	"os"
+	"sync"
 	"testing"
 
 	"configcenter/src/common/metadata"
@@ -96,4 +97,30 @@ func TestAWSRequestOpt(t *testing.T) {
 	for i, vpc := range vpcsInfo.VpcSet {
 		t.Logf("i:%d, vpc:%#v\n", i, *vpc)
 	}
+}
+
+func TestAWSConcurrence(t *testing.T) {
+	var wg sync.WaitGroup
+	cnt := 10
+	wg.Add(cnt)
+	for i:=1;i<=cnt;i++{
+		go func(idx int) {
+			defer wg.Done()
+			opt := &ccom.VpcOpt{
+				BaseOpt: ccom.BaseOpt{
+					Filters: []*ccom.Filter{{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game2"})}},
+				},
+			}
+			region := "us-west-1"
+			vpcsInfo, err := awsTestClient.GetVpcs(region, opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("g%d vpcs count:%#v\n", idx, vpcsInfo.Count)
+			for i, vpc := range vpcsInfo.VpcSet {
+				t.Logf("g%d i:%d, vpc:%#v\n", idx, i, *vpc)
+			}
+		}(i)
+	}
+	wg.Wait()
 }

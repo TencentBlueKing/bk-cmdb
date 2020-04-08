@@ -22,8 +22,8 @@ import (
 var vendorClients = make(map[string]VendorClient, 0)
 
 type VendorClient interface {
-	// SetCredential 设置账号密码
-	SetCredential(secretID, secretKey string)
+	// NewVendorClient 创建云厂商客户端
+	NewVendorClient(secretID, secretKey string) VendorClient
 	// GetRegions 获取地域列表
 	GetRegions() ([]*metadata.Region, error)
 	// GetVpcs 获取vpc列表
@@ -46,6 +46,6 @@ func GetVendorClient(conf metadata.CloudAccountConf) (VendorClient, error) {
 	if client, ok = vendorClients[conf.VendorName]; !ok {
 		return nil, fmt.Errorf("vendor %s is not supported", conf.VendorName)
 	}
-	client.SetCredential(conf.SecretID, conf.SecretKey)
-	return client, nil
+	cli := client.NewVendorClient(conf.SecretID, conf.SecretKey)
+	return cli, nil
 }

@@ -1158,4 +1158,7 @@ const (
 	BKVpcName                    = "bk_vpc_name"
 	BKReion                      = "bk_region"
 	BKCloudSyncVpcs              = "bk_sync_vpcs"
+
+	// 是否为被销毁的云主机
+	IsDestroyedCloudHost = "is_destroyed_cloud_host"
 )
