@@ -52,10 +52,9 @@ type ClientViaRedis struct {
 	queueLock sync.Mutex
 }
 
+// we limit the queue size to 4k*2500=10M， assume that 4k per event
+const queueSize = 2500
 func NewClientViaRedis(cache *redis.Client, rdb dal.RDB) *ClientViaRedis {
-	// we limit the queue size to 4k*2500=10M， assume that 4k per event
-	const queueSize = 2500
-
 	ec := &ClientViaRedis{
 		rdb:   rdb,
 		cache: cache,
@@ -66,10 +65,8 @@ func NewClientViaRedis(cache *redis.Client, rdb dal.RDB) *ClientViaRedis {
 }
 
 func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst) error {
-	c.queueLock.Lock()
 	for i := range events {
 		if events[i] == nil {
-			c.queueLock.Unlock()
 			return fmt.Errorf("[event] event could not be nil")
 		}
 
@@ -91,20 +88,17 @@ func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst
 
 		eventID, err := c.rdb.NextSequence(ctx, common.EventCacheEventIDKey)
 		if err != nil {
-			c.queueLock.Unlock()
 			return fmt.Errorf("[event] generate eventID failed: %v", err)
 		}
 		events[i].ID = int64(eventID)
 
 		value, err := json.Marshal(events[i])
 		if err != nil {
-			c.queueLock.Unlock()
 			return fmt.Errorf("[event] marshal json error: %v, raw: %#v", err, events[i])
 		}
 		et := &eventtmp{EventInst: events[i], data: value}
-		select {
-		case c.queue <- et:
-		default:
+		c.queueLock.Lock()
+		if len(c.queue) == queueSize {
 			// channel fulled, so we drop 200 oldest events from queue
 			// TODO save to disk if possible
 			c.pending = nil
@@ -115,10 +109,10 @@ func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst
 					break
 				}
 			}
-			c.queue <- et
 		}
+		c.queue <- et
+		c.queueLock.Unlock()
 	}
-	c.queueLock.Unlock()
 	return nil
 }
 
