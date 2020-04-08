@@ -75,6 +75,7 @@ type CommonInstTopoV2 struct {
 
 type deletedInst struct {
 	instID int64
+	bizID  int64
 	obj    model.Object
 }
 
