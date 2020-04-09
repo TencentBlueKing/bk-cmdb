@@ -55,7 +55,7 @@
                 </div>
             </div>
         </div>
-        <div class="clearfix down-model-content">
+        <div class="clearfix down-model-content" v-if="templdateAvailable">
             <slot name="download-desc"></slot>
             <a href="javascript:void(0);" style="text-decoration: none;" v-if="templateUrl" @click="handleDownloadTemplate">
                 <img src="../../assets/images/icon/down_model_icon.png">
@@ -102,6 +102,10 @@
             uploadDone: {
                 type: Function,
                 default: null
+            },
+            templdateAvailable: {
+                type: Boolean,
+                default: true
             }
         },
         data () {

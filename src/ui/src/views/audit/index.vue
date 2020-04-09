@@ -193,7 +193,8 @@
                         label: this.$t('资源')
                     }, {
                         name: 'other',
-                        label: this.$t('其他')
+                        label: this.$t('其他'),
+                        visible: false
                     }
                 ],
                 filter: {

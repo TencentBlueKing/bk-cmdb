@@ -44,6 +44,7 @@ type Config struct {
 	MaxOpenConns uint64
 	MaxIdleConns uint64
 	TxnEnabled   string
+	RsName       string
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -75,11 +76,16 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) Config {
 		Database:   configmap[prefix+".database"],
 		Mechanism:  configmap[prefix+".mechanism"],
 		TxnEnabled: configmap[prefix+".txnEnabled"],
+		RsName:     configmap[prefix+".rsName"],
 	}
 
+	if c.RsName == "" {
+		blog.Errorf("rsName not set")
+	}
 	if c.Mechanism == "" {
 		c.Mechanism = "SCRAM-SHA-1"
 	}
+	blog.ErrorJSON("xxx c: %s, configmap: %s", c, configmap)
 
 	maxOpenConns, err := strconv.ParseUint(configmap[prefix+".maxOpenConns"], 10, 64)
 	if err != nil {
@@ -107,6 +113,7 @@ func (c Config) GetMongoConf() local.MongoConf {
 		MaxOpenConns: c.MaxOpenConns,
 		MaxIdleConns: c.MaxIdleConns,
 		URI:          c.BuildURI(),
+		RsName:       c.RsName,
 	}
 }
 
@@ -115,6 +122,7 @@ func (c Config) GetMongoClient() (db dal.RDB, err error) {
 		MaxOpenConns: c.MaxOpenConns,
 		MaxIdleConns: c.MaxIdleConns,
 		URI:          c.BuildURI(),
+		RsName:       c.RsName,
 	}
 	db, err = local.NewMgo(mongoConf, time.Minute)
 	if err != nil {
@@ -128,6 +136,7 @@ func (c Config) GetTransactionClient() (client dal.Transaction, err error) {
 		MaxOpenConns: c.MaxOpenConns,
 		MaxIdleConns: c.MaxIdleConns,
 		URI:          c.BuildURI(),
+		RsName:       c.RsName,
 	}
 	client, err = local.NewMgo(mongoConf, time.Minute)
 

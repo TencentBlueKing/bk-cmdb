@@ -860,7 +860,7 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
 			changed = true
 		} else if t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil {
-			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+			process["auto_time_gap"] = nil
 			changed = true
 		} else if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.AutoTimeGap {
 			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
