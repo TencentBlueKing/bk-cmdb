@@ -14,7 +14,7 @@
                     }"
                     @click="handleChangeActive(process, index)">
                     <span class="process-name" :title="process.process_template_name">{{process.process_template_name}}</span>
-                    <span class="process-service-count">{{getInstanceCount(process)}}</span>
+                    <span class="process-service-count" v-if="process.type !== 'others'">{{getInstanceCount(process)}}</span>
                 </li>
             </ul>
             <div class="change-details"
