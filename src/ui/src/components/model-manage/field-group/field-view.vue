@@ -67,7 +67,7 @@
                 <div class="property-name">
                     <span>{{$t('用户提示')}}</span>：
                 </div>
-                <span class="property-value">{{field.description || '--'}}</span>
+                <span class="property-value">{{field.placeholder || '--'}}</span>
             </div>
         </div>
         <div class="btns" :class="{ 'sticky-layout': scrollbar }" v-if="canEdit">
