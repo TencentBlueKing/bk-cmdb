@@ -498,11 +498,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// create instance association operation.
 	if ps.hitPattern(createObjectInstanceAssociationLatestPattern, http.MethodPost) {
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		associationObjAsstID := gjson.GetBytes(ps.RequestCtx.Body, common.AssociationObjAsstIDField).String()
 		filter := mapstr.MapStr{
 			common.AssociationObjAsstIDField: associationObjAsstID,
@@ -535,24 +530,41 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 				return ps
 			}
 
+			// get biz ID for host to separate biz host from resource pool host
+			instID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int()
+			asstInstID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int()
+			var instBizID, asstInstBizID int64
+			if models[0].ObjectID == common.BKInnerObjIDHost {
+				instBizID, err = ps.getBizIDByHostID(instID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
+				asstInstBizID, err = ps.getBizIDByHostID(asstInstID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
+			}
+
 			ps.Attribute.Resources = []meta.ResourceAttribute{
 				{
 					Basic: meta.Basic{
 						Type:       instanceType,
 						Action:     meta.Update,
-						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int(),
+						InstanceID: instID,
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
+					BusinessID: instBizID,
 				},
 				{
 					Basic: meta.Basic{
 						Type:       instanceType,
 						Action:     meta.Update,
-						InstanceID: gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int(),
+						InstanceID: asstInstID,
 					},
 					Layers:     []meta.Item{{Type: meta.Model, InstanceID: models[0].ID}},
-					BusinessID: bizID,
+					BusinessID: asstInstBizID,
 				},
 			}
 			return ps
@@ -569,6 +581,15 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			if err != nil {
 				ps.err = err
 				return ps
+			}
+			// get biz ID for host to separate biz host from resource pool host
+			var bizID int64
+			if model.ObjectID == common.BKInnerObjIDHost {
+				bizID, err = ps.getBizIDByHostID(instID)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
 			}
 
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
