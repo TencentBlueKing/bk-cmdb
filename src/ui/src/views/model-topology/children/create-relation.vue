@@ -67,6 +67,31 @@
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
         </label>
+        <div class="form-label topo-preview" v-show="sourceModel.id && targetModel.id">
+            <span class="label-text">
+                {{$t('效果示意')}}
+            </span>
+            <div class="topo-image">
+                <div class="model-item" :class="{ 'ispre': sourceModel.ispre }">
+                    <div class="model-icon">
+                        <i :class="['icon', sourceModel['bk_obj_icon']]"></i>
+                    </div>
+                    <span class="model-name">{{sourceModel['bk_obj_name']}}</span>
+                </div>
+                <div class="model-edge">
+                    <div class="connection">
+                        <span class="name">{{relationName}}</span>
+                    </div>
+                </div>
+                <div class="model-item" :class="{ 'ispre': targetModel.ispre }">
+                    <div class="model-icon">
+                        <i :class="['icon', targetModel['bk_obj_icon']]"></i>
+                    </div>
+                    <span class="model-name">{{targetModel['bk_obj_name']}}</span>
+                </div>
+            </div>
+            <div class="topo-text">{{sourceModel['bk_obj_name']}} {{relationName}} {{targetModel['bk_obj_name']}}</div>
+        </div>
         <div class="btn-group">
             <bk-button theme="primary" :loading="$loading('createObjectAssociation')" @click="saveRelation">
                 {{$t('提交')}}
@@ -116,7 +141,7 @@
             }
         },
         computed: {
-            ...mapGetters('objectModelClassify', ['models']),
+            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             objAsstId () {
                 const {
                     relationInfo
@@ -125,6 +150,16 @@
                     return `${relationInfo['bk_obj_id']}_${relationInfo['bk_asst_id']}_${relationInfo['bk_asst_obj_id']}`
                 }
                 return ''
+            },
+            sourceModel () {
+                return this.getModelById(this.relationInfo['bk_obj_id']) || {}
+            },
+            targetModel () {
+                return this.getModelById(this.relationInfo['bk_asst_obj_id']) || {}
+            },
+            relationName () {
+                const asstId = this.relationInfo['bk_asst_id']
+                return (this.relationList.find(relation => relation.id === asstId) || {}).name
             }
         },
         created () {
@@ -248,6 +283,102 @@
         i {
             transform: scale(.8);
             font-weight: bold;
+        }
+    }
+
+    .topo-preview {
+        .topo-image {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 88px;
+            background: #f3f8ff;
+
+            .model-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+
+                .model-icon {
+                    width: 46px;
+                    height: 46px;
+                    line-height: 46px;
+                    border-radius: 50%;
+                    text-align: center;
+                    background: #fff;
+                    box-shadow: 0px 2px 4px 0px rgba(147, 147, 147, 0.5);
+
+                    .icon {
+                        color: #3a84ff;
+                        font-size: 24px;
+                    }
+                }
+
+                .model-name {
+                    font-size: 12px;
+                    color: #868b97;
+                    margin-top: 2px;
+                }
+
+                &.ispre {
+                    .model-icon {
+                        .icon {
+                            color: #798aad;
+                        }
+                    }
+                }
+            }
+
+            .model-edge {
+                flex: 1;
+                margin: 0 2px;
+
+                .connection {
+                    height: 46px;
+                    position: relative;
+
+                    .name {
+                        position: absolute;
+                        font-size: 12px;
+                        color: #868b97;
+                        padding: 2px 8px;
+                        background: #fff;
+                        top: 50%;
+                        transform: translate(-50%, -50%);
+                        left: 50%;
+                        white-space: nowrap;
+                    }
+
+                    &::before {
+                        content: '';
+                        position: absolute;
+                        left: 0;
+                        top: 50%;
+                        width: 100%;
+                        height: 1px;
+                        background: #c4c6cc;
+                        margin-top: -0.5px;
+                    }
+
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        top: 50%;
+                        right: -5px;
+                        width: 0;
+                        height: 0;
+                        border: 4px solid transparent;
+                        border-left: 8px solid #c4c6cc;
+                        transform: translateY(-50%);
+                    }
+                }
+            }
+        }
+
+        .topo-text {
+            font-size: 12px;
+            color: #868b97;
+            text-align: center;
+            margin-top: 8px;
         }
     }
 </style>

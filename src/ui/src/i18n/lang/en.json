@@ -1245,5 +1245,6 @@
     "进程表单锁定提示": "Uneditable，defined in template, {link}",
     "跳转服务模板": "view in template",
     "导入字段": "Import Field",
-    "第N行字段错误信息": "Line {N}:Field {field}，{info}"
+    "第N行字段错误信息": "Line {N}:Field {field}，{info}",
+    "效果示意": "Renderings"
 }
