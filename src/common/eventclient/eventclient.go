@@ -54,6 +54,7 @@ type ClientViaRedis struct {
 
 // we limit the queue size to 4k*2500=10M， assume that 4k per event
 const queueSize = 2500
+
 func NewClientViaRedis(cache *redis.Client, rdb dal.RDB) *ClientViaRedis {
 	ec := &ClientViaRedis{
 		rdb:   rdb,
@@ -97,21 +98,31 @@ func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst
 			return fmt.Errorf("[event] marshal json error: %v, raw: %#v", err, events[i])
 		}
 		et := &eventtmp{EventInst: events[i], data: value}
-		c.queueLock.Lock()
-		if len(c.queue) == queueSize {
-			// channel fulled, so we drop 200 oldest events from queue
-			// TODO save to disk if possible
+		select {
+		case c.queue <- et:
+		default:
+			// queue is already full
+			c.queueLock.Lock()
 			c.pending = nil
 			var ok bool
+		loop:
 			for i := 0; i < 200; i++ {
-				_, ok = <-c.queue
-				if !ok {
-					break
+				select {
+				case _, ok = <-c.queue:
+					if !ok {
+						// c.queue has already been closed
+						blog.Errorf("queue closed")
+						c.queueLock.Unlock()
+						return fmt.Errorf("queue closed")
+					}
+				default:
+					// c.queue is already empty.
+					break loop
 				}
 			}
+			c.queue <- et
+			c.queueLock.Unlock()
 		}
-		c.queue <- et
-		c.queueLock.Unlock()
 	}
 	return nil
 }
