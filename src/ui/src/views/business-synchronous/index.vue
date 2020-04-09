@@ -108,6 +108,7 @@
 
 <script>
     import InstanceDetails from './children/details.vue'
+    import formatter from '@/filters/formatter'
     import { mapGetters } from 'vuex'
     export default {
         components: {
@@ -296,7 +297,7 @@
                 this.current.modules.forEach(module => {
                     module.service_instances.forEach(instance => {
                         (instance.changed_attributes || []).forEach(changedProperty => {
-                            const isExist = changed.some(exist => exist.bk_property_id === changedProperty.property_id)
+                            const isExist = changed.some(exist => exist.property.bk_property_id === changedProperty.property_id)
                             const property = this.properties.find(property => property.bk_property_id === changedProperty.property_id)
                             if (!isExist && property) {
                                 changed.push({
@@ -311,15 +312,9 @@
             },
             getChangedValue (changed) {
                 const property = changed.property
-                const type = property.bk_property_type
-                const template = changed.template_property_value
-                if (type === 'enum') {
-                    const option = (property.option || []).find(option => option.id === template.value)
-                    return option ? option.name : '--'
-                } else if (property.bk_property_id === 'bind_id') {
-                    return template || '--'
-                }
-                return template.value || '--'
+                let value = changed.template_property_value
+                value = typeof value === 'object' ? value.value : value
+                return formatter(value, property)
             },
             getModuleTopoPath (moduleId) {
                 return this.topoPath[moduleId]
@@ -428,17 +423,21 @@
         height: calc(100vh - 350px);
         overflow: hidden;
         .process-list {
+            position: relative;
             margin-right: -1px;
             width: 200px;
             height: 100%;
+            z-index: 2;
             @include scrollbar-y;
         }
         .change-details {
+            position: relative;
             height: 100%;
             padding: 20px;
             background-color: #FFF;
             border-left: 1px solid $borderColor;
             border-bottom: 1px solid $borderColor;
+            z-index: 1;
             @include scrollbar-y;
         }
     }
