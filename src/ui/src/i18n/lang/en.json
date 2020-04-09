@@ -748,6 +748,7 @@
     "新增关联": "New Association",
     "批量取消": "Batch Cancel",
     "暂无关联关系": "No Association",
+    "暂无关联数据": "No Association data",
     "服务列表": "Service List",
     "已选择主机": "{count}host selected",
     "暂无模板进程": "There are no process in template, {link}",

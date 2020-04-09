@@ -17,10 +17,18 @@
                     :id="item.id"
                     :source="sourceInstances"
                     :target="targetInstances"
-                    :association-type="item.associationType">
+                    :association-type="item.associationType"
+                    @relation-instance-change="handleInstanceListChange">
                 </cmdb-relation-list-table>
             </template>
         </template>
+        <div class="association-empty" v-if="hasRelation && !hasRelationInstance">
+            <div class="empty-content">
+                <i class="bk-icon icon-empty">
+                </i>
+                <span>{{$t('暂无关联数据')}}</span>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -46,7 +54,9 @@
         data () {
             return {
                 sourceInstances: [],
-                targetInstances: []
+                targetInstances: [],
+                instances: {},
+                hasRelationInstance: false
             }
         },
         computed: {
@@ -126,10 +136,16 @@
             expandFirstListTable () {
                 this.$nextTick(() => {
                     if (this.$refs.associationListTable) {
-                        const [firstAssociationListTable] = this.$refs.associationListTable
+                        const firstAssociationListTable = this.$refs.associationListTable.find(listTable => listTable.hasInstance)
                         firstAssociationListTable && (firstAssociationListTable.expanded = true)
                     }
                 })
+            },
+            handleInstanceListChange (list, id, type) {
+                this.instances[`${id}_${type}`] = list
+                const instanceList = Object.values(this.instances).reduce((acc, cur) => acc.concat(cur), [])
+                this.hasRelationInstance = instanceList.length > 0
+                this.expandFirstListTable()
             }
         }
     }
