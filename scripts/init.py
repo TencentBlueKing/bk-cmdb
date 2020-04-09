@@ -14,7 +14,7 @@ class FileTemplate(Template):
 
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v,
-        redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, txn_enabled_v,
+        redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, txn_enabled_v, rs_name,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip
 ):
@@ -45,7 +45,8 @@ def generate_config_file(
         auth_scheme=auth_scheme,
         auth_sync_workers=auth_sync_workers,
         auth_sync_interval_minutes=auth_sync_interval_minutes,
-        full_text_search=full_text_search
+        full_text_search=full_text_search,
+        rs_name=rs_name,
     )
     if not os.path.exists(output):
         os.mkdir(output)
@@ -96,6 +97,7 @@ maxOpenConns = 3000
 maxIdleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
+rsName = $rs_name
     '''
 
     template = FileTemplate(mongodb_file_template_str)
@@ -185,9 +187,10 @@ usr = $mongo_user
 pwd = $mongo_pass
 database = $db
 maxOpenConns = 3000
-maxIDleConns = 100
+maxIdleConns = 100
 mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
+rsName = $rs_name
 [redis]
 host = $redis_host
 port = $redis_port
@@ -349,6 +352,7 @@ def main(argv):
     es_pass = ''
     log_level = '3'
     register_ip = ''
+    rs_name = 'rs0'
 
     server_ports = {
         "cmdb_adminserver": 60004,
@@ -385,6 +389,7 @@ def main(argv):
       --mongo_port         <mongo_port>           the mongo port, eg:27017
       --mongo_user         <mongo_user>           the mongo user name, default:cc
       --mongo_pass         <mongo_pass>           the mongo password
+      --rs_name            <rs_name>              the mongo replica set name, default: rs0
       --txn_enabled        <txn_enabled>          txn_enabled, true or false
       --blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
@@ -413,6 +418,7 @@ def main(argv):
       --mongo_port         27017 \\
       --mongo_user         cc \\
       --mongo_pass         cc \\
+      --rs_name            rs0 \\
       --txn_enabled        false \\
       --blueking_cmdb_url  http://127.0.0.1:8080/ \\
       --blueking_paas_url  http://paas.domain.com \\
@@ -474,6 +480,9 @@ def main(argv):
         elif opt in ("-S", "--mongo_pass"):
             mongo_pass = arg
             print('mongo_pass:', mongo_pass)
+        elif opt in ("--rs_name",):
+            txn_enabled = arg
+            print('rs_name:', rs_name)
         elif opt in ("--txn_enabled",):
             txn_enabled = arg
             print('txn_enabled:', txn_enabled)
@@ -611,6 +620,7 @@ def main(argv):
         mongo_port_v=mongo_port,
         mongo_user_v=mongo_user,
         mongo_pass_v=mongo_pass,
+        rs_name=rs_name,
         txn_enabled_v=txn_enabled,
         cc_url_v=cc_url,
         paas_url_v=paas_url,

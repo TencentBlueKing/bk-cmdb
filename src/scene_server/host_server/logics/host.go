@@ -282,7 +282,7 @@ func (lgc *Logics) DeleteHostBusinessAttributes(ctx context.Context, hostIDArr [
 func (lgc *Logics) GetHostModuleRelation(ctx context.Context, cond metadata.HostModuleRelationRequest) (*metadata.HostConfigData, errors.CCErrorCoder) {
 
 	if cond.Empty() {
-		return nil, lgc.ccErr.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+		return nil, lgc.ccErr.CCError(common.CCErrCommHTTPBodyEmpty)
 	}
 
 	if cond.Page.IsIllegal() {
