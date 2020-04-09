@@ -50,7 +50,7 @@
                 </ul>
             </div>
         </div>
-        <div class="clearfix down-model-content">
+        <div class="clearfix down-model-content" v-if="templdateAvailable">
             <slot name="download-desc"></slot>
             <a href="javascript:void(0);" style="text-decoration: none;" @click="handleDownloadTemplate">
                 <img src="../../assets/images/icon/down_model_icon.png">
@@ -93,6 +93,10 @@
             maxSize: {
                 type: Number,
                 default: 500 // kb
+            },
+            templdateAvailable: {
+                type: Boolean,
+                default: true
             }
         },
         data () {

@@ -15,6 +15,7 @@ package local
 import (
     "context"
     "errors"
+    "fmt"
     "net/http"
     "time"
 
@@ -34,6 +35,9 @@ func NewTransaction(enableTxn bool, mConf MongoConf, rConf redis.Config) (dal.Tr
     if nil != err {
         return nil, err
     }
+    if mConf.RsName == "" {
+        return nil, fmt.Errorf("rsName not set")
+    }
 
     redisCli, err := redis.NewFromConfig(rConf)
     if err != nil {
@@ -46,6 +50,7 @@ func NewTransaction(enableTxn bool, mConf MongoConf, rConf redis.Config) (dal.Tr
         MaxPoolSize:    &mConf.MaxOpenConns,
         MinPoolSize:    &mConf.MaxIdleConns,
         ConnectTimeout: &timeout,
+        ReplicaSet:     &mConf.RsName,
     }
 
     client, err := mongo.NewClient(options.Client().ApplyURI(mConf.URI), &conOpt)
@@ -68,22 +73,22 @@ func NewTransaction(enableTxn bool, mConf MongoConf, rConf redis.Config) (dal.Tr
 }
 
 
-// StartTransaction 
+// StartTransaction
 // rewrite the ctx and header with transaction related info
 func (c *Mongo) StartTransaction(ctx *context.Context, h http.Header, opts ...types.TxnOption) (dal.Transaction, error) {
-    
+
     sess, err := c.dbc.StartSession()
     if err != nil {
         return nil, err
     }
-    
+
     nc := Mongo{
         dbc:    c.dbc,
         dbname: c.dbname,
         tm:     c.tm,
         sess: sess,
     }
-    
+
     if c.tm.enableTransaction {
         se := mongo.SessionExposer{}
         info, err := se.GetSessionInfo(sess)
@@ -115,7 +120,7 @@ func (c *Mongo) StartTransaction(ctx *context.Context, h http.Header, opts ...ty
             return nil, err
         }
     }
-    
+
     if err := sess.StartTransaction(); err != nil {
         return nil, err
     }
@@ -142,7 +147,7 @@ func (c *Mongo) CommitTransaction(ctx context.Context) error {
 
 // AbortTransaction 取消事务
 func (c *Mongo) AbortTransaction(ctx context.Context) error {
-    
+
     sess, err := c.chooseSession(ctx)
     if err != nil {
         return err

@@ -18,7 +18,7 @@
                         {{$t('新增关联')}}
                     </bk-button>
                 </span>
-                <bk-checkbox v-if="hasAssociation"
+                <bk-checkbox v-if="hasInstance"
                     :size="16" class="options-checkbox"
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('全部展开')}}</span>
@@ -59,6 +59,7 @@
     import cmdbHostAssociationGraphics from './association-graphics.new.vue'
     import cmdbHostAssociationCreate from './association-create.vue'
     import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'cmdb-host-association',
         components: {
@@ -77,6 +78,12 @@
             }
         },
         computed: {
+            ...mapGetters('hostDetails', [
+                'source',
+                'target',
+                'sourceInstances',
+                'targetInstances'
+            ]),
             updateAuthResources () {
                 const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
                 if (isResourceHost) {
@@ -85,8 +92,12 @@
                 return this.$authResources({ type: this.$OPERATION.U_HOST })
             },
             hasAssociation () {
-                const association = this.$store.state.hostDetails.association
-                return !!(association.source.length || association.target.length)
+                return !!(this.source.length || this.target.length)
+            },
+            hasInstance () {
+                return [...this.sourceInstances, ...this.targetInstances].some(instance => {
+                    return !!(instance.children || []).length
+                })
             }
         },
         beforeDestroy () {

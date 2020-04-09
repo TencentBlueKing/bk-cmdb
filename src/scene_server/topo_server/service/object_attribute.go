@@ -31,7 +31,28 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	attr, err := s.Core.AttributeOperation().CreateObjectAttribute(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata)
+	data := dataWithMetadata.Data
+	metaData := dataWithMetadata.Metadata
+	isBizCustomField := false
+	// adapt input path param with bk_biz_id. TODO remove metadata
+	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
+		bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+		if err != nil {
+			blog.Errorf("create biz custom field, but parse biz ID failed, error: %s, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+			return
+		}
+		if bizID == 0 {
+			blog.Errorf("create biz custom field, but biz ID is 0, rid: %s", ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+			return
+		}
+		metaData = &metadata.Metadata{Label: metadata.Label{common.BKAppIDField: strconv.FormatInt(bizID, 10)}}
+		data.Set(metadata.BKMetadata, map[string]interface{}{"label": map[string]string{common.BKAppIDField: strconv.FormatInt(bizID, 10)}})
+		isBizCustomField = true
+	}
+	attr, err := s.Core.AttributeOperation().CreateObjectAttribute(ctx.Kit, data, metaData)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -47,7 +68,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(attribute.ID)
-	attrInfo, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, dataWithMetadata.Metadata)
+	attrInfo, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, metaData)
 	if err != nil {
 		blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh))
@@ -80,6 +101,16 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 	}
 
+	// adapt output metadata and bk_biz_id. TODO remove this
+	if isBizCustomField {
+		attrInfo[0].BizID, err = attrInfo[0].Metadata.ParseBizID()
+		if err != nil {
+			blog.ErrorJSON("parse attribute(%s) business id failed, err: %s", attribute, err.Error())
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+			return
+		}
+	}
+
 	ctx.RespEntity(attrInfo[0])
 }
 
@@ -91,6 +122,21 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	data := dataWithMetadata.Data
+
+	metaData := dataWithMetadata.Metadata
+	// adapt input param with bk_biz_id. TODO remove metadata
+	if data.Exists(common.BKAppIDField) {
+		bizID, err := data.Int64(common.BKAppIDField)
+		if err != nil {
+			blog.ErrorJSON("parse business id failed, err: %s, data: %s", err.Error(), data)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+			return
+		}
+		if bizID != 0 {
+			metaData = &metadata.Metadata{Label: metadata.Label{common.BKAppIDField: strconv.FormatInt(bizID, 10)}}
+		}
+		data.Remove(common.BKAppIDField)
+	}
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
@@ -117,10 +163,16 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
 	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
 
-	resp, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, dataWithMetadata.Metadata)
+	resp, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, metaData)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
+	}
+	for _, attribute := range resp {
+		attribute.BizID, err = attribute.Metadata.ParseBizID()
+		if err != nil {
+			blog.ErrorJSON("parse attribute(%s) business id failed, err: %s", attribute, err.Error())
+		}
 	}
 	ctx.RespEntity(resp)
 }
@@ -153,14 +205,32 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 	}
 
+	// adapt input path param with bk_biz_id
+	var bizID int64
+	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
+		bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+		bizID, err = strconv.ParseInt(bizIDStr, 10, 64)
+		if err != nil {
+			blog.Errorf("create biz custom field, but parse biz ID failed, error: %s, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+			return
+		}
+		if bizID == 0 {
+			blog.Errorf("create biz custom field, but biz ID is 0, rid: %s", ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+			return
+		}
+	}
+
 	// TODO: why does remove this????
 	data.Remove(metadata.BKMetadata)
+	data.Remove(common.BKAppIDField)
 
 	// UpdateObjectAttribute should not update bk_property_index、bk_property_group
 	data.Remove(common.BKPropertyIndexField)
 	data.Remove(common.BKPropertyGroupField)
 
-	err = s.Core.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id)
+	err = s.Core.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
 
 	// auth: update registered resource
 	if err := s.AuthManager.UpdateRegisteredModelAttributeByID(ctx.Kit.Ctx, ctx.Kit.Header, id); err != nil {

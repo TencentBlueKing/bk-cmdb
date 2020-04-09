@@ -97,7 +97,7 @@ func ConvAttrOption(attrItems map[int]map[string]interface{}) {
 			continue
 		}
 		fieldType, _ := attr[common.BKPropertyTypeField].(string)
-		if common.FieldTypeEnum != fieldType && common.FieldTypeInt != fieldType {
+		if common.FieldTypeEnum != fieldType && common.FieldTypeInt != fieldType && common.FieldTypeList != fieldType {
 			continue
 		}
 

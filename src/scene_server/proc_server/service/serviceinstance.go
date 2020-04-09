@@ -872,6 +872,31 @@ func (ps *ProcServer) syncServiceInstanceByTemplate(ctx *rest.Contexts, syncOpti
 		return err
 	}
 
+	serviceTemplateResult, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, module.ServiceTemplateID)
+	if err != nil {
+		blog.Errorf("syncServiceInstanceByTemplate failed, GetServiceTemplate failed, service template ID: %d, err: %s, rid: %s", module.ServiceTemplateID, err.Error(), rid)
+		return err
+	}
+	if serviceTemplateResult.ServiceCategoryID != module.ServiceCategoryID {
+		moduleUpdateOption := &metadata.UpdateOption{
+			Condition: map[string]interface{}{
+				common.BKModuleIDField: module.ModuleID,
+			},
+			Data: map[string]interface{}{
+				common.BKServiceCategoryIDField: serviceTemplateResult.ServiceCategoryID,
+			},
+		}
+		updateModuleResult, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleUpdateOption)
+		if err != nil {
+			blog.Errorf("syncServiceInstanceByTemplate failed, UpdateInstance failed, service template ID: %d, err: %s, rid: %s", module.ServiceTemplateID, err.Error(), rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if ccErr := updateModuleResult.CCError(); ccErr != nil {
+			blog.Errorf("syncServiceInstanceByTemplate failed, UpdateInstance failed, service template ID: %d, err: %s, rid: %s", module.ServiceTemplateID, ccErr.Error(), rid)
+			return ccErr
+		}
+	}
+
 	// step 0:
 	// find service instances
 	serviceInstanceOption := &metadata.ListServiceInstanceOption{
