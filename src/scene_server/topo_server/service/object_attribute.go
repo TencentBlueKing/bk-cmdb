@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // CreateObjectAttribute create a new object attribute
@@ -59,16 +59,23 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelAttributeRes)
+	objAttrAudit := operation.NewObjectAttrAudit(s.Engine.CoreAPI, metadata.ModelAttributeRes)
 	//get CurData
-	err = objAuditLog.WithCurrent(ctx.Kit, attribute.ID)
+	err = objAttrAudit.MakeCurrent(attr.Attribute().ToMapStr())
 	if err != nil {
-		blog.Errorf("find Current modelAttribute failed, id: %+v, err: %s, rid: %s", attribute.ID, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("make Current objAttribute failed, id: %+v, err: %s, rid: %s", attribute.ID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//get AuditLog objectInfo
+	err = objAttrAudit.GetObjectInfo(ctx.Kit, attr.Attribute().ObjectID)
+	if err != nil {
+		blog.Errorf("[api-att] find objectInfo failed, id: %+v, err: %s, rid: %s", attribute.ID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
+	err = objAttrAudit.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
@@ -132,11 +139,17 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelAttributeRes)
+	objAttrAudit := operation.NewObjectAttrAudit(s.Engine.CoreAPI, metadata.ModelAttributeRes)
 	//get AuditLog PreData
-	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	err = objAttrAudit.WithPrevious(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[api-att] find Previous objectAttribute failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+	//get AuditLog objectName
+	err = objAttrAudit.GetObjectInfo(ctx.Kit, "")
+	if err != nil {
+		blog.Errorf("[api-att] find objectInfo failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
@@ -162,14 +175,14 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	}
 
 	//get AuditLog CurData
-	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	err = objAttrAudit.WithCurrent(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[api-att] find Current objectAttribute failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
+	err = objAttrAudit.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
@@ -189,11 +202,17 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelAttributeRes)
+	objAttrAudit := operation.NewObjectAttrAudit(s.Engine.CoreAPI, metadata.ModelAttributeRes)
 	//get AuditLog PreData
-	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	err = objAttrAudit.WithPrevious(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[api-att] find Previous object attribute failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+	//get AuditLog objectName
+	err = objAttrAudit.GetObjectInfo(ctx.Kit, "")
+	if err != nil {
+		blog.Errorf("[api-att] find objectInfo failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
@@ -245,6 +264,12 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
+	}
+
+	//package audit response
+	err = objAttrAudit.SaveAuditLog(ctx.Kit, metadata.AuditDelete)
+	if err != nil {
+		ctx.RespAutoError(err)
 	}
 
 	ctx.RespEntity(nil)

@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
@@ -65,17 +64,16 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		return
 	}
 
-	id := resp.Object().ID
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelRes)
+	objAudit := operation.NewObjectAudit(s.Engine.CoreAPI, metadata.ModelRes)
 	//get CurData
-	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	err = objAudit.MakeCurrent(resp.ToMapStr())
 	if err != nil {
-		blog.Errorf("[operation-obj] find Current object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("[operation-obj] make Current object failed, id: %+v, err: %s, rid: %s", err.Error())
 		ctx.RespAutoError(err)
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
+	err = objAudit.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
@@ -136,9 +134,9 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelRes)
+	objAudit := operation.NewObjectAudit(s.Engine.CoreAPI, metadata.ModelRes)
 	//get PreData
-	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	err = objAudit.WithPrevious(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[operation-obj] find Previous object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -157,14 +155,14 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 	}
 
 	//get CurData
-	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	err = objAudit.WithCurrent(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[operation-obj] find Current object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
+	err = objAudit.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
@@ -182,10 +180,10 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelRes)
+	objAudit := operation.NewObjectAudit(s.Engine.CoreAPI, metadata.ModelRes)
 
 	//get PreData
-	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	err = objAudit.WithPrevious(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[operation-obj] find Previous object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -204,7 +202,7 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete)
+	err = objAudit.SaveAuditLog(ctx.Kit, metadata.AuditDelete)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}

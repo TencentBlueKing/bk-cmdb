@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // CreateObjectGroup create a new object group
@@ -49,17 +49,24 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("create object group success, but get response id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 	}
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelGroupRes)
+	objAttrGroupAuditLog := operation.NewObjectAttrGroupAudit(s.Engine.CoreAPI)
 
 	//get CurData for auditLog
-	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	err = objAttrGroupAuditLog.MakeCurrent(rsp.ToMapStr())
 	if err != nil {
-		blog.Errorf("[operation-obj] find Current object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("[operation-obj] make Current object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//get AuditLog objectName
+	err = objAttrGroupAuditLog.GetObjectInfo(ctx.Kit, rsp.Group().ObjectID)
+	if err != nil {
+		blog.Errorf("[api-att] find objectInfo failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
+	err = objAttrGroupAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
@@ -75,11 +82,18 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelGroupRes)
+	objAttrGroupAuditLog := operation.NewObjectAttrGroupAudit(s.Engine.CoreAPI)
 	//get AuditLog PreData
-	err = objAuditLog.WithPrevious(ctx.Kit, cond.Condition.ID)
+	err = objAttrGroupAuditLog.WithPrevious(ctx.Kit, cond.Condition.ID)
 	if err != nil {
 		blog.Errorf("[operation-obj] find Previous objectGroup failed, id: %+v, err: %s, rid: %s", cond.Condition.ID, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	//get AuditLog objectName
+	err = objAttrGroupAuditLog.GetObjectInfo(ctx.Kit, "")
+	if err != nil {
+		blog.Errorf("[api-att] find objectInfo failed, id: %+v, err: %s, rid: %s", cond.Condition.ID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
@@ -113,14 +127,14 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 	}
 
 	//get AuditLog CurData
-	err = objAuditLog.WithCurrent(ctx.Kit, cond.Condition.ID)
+	err = objAttrGroupAuditLog.WithCurrent(ctx.Kit, cond.Condition.ID)
 	if err != nil {
 		blog.Errorf("[operation-obj] find Current object group failed, id: %+v, err: %s, rid: %s", cond.Condition.ID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
+	err = objAttrGroupAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
@@ -135,11 +149,17 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelGroupRes)
+	objAttrGroupAuditLog := operation.NewObjectAttrGroupAudit(s.Engine.CoreAPI)
 	//get AuditLog PreData
-	err = objAuditLog.WithPrevious(ctx.Kit, gid)
+	err = objAttrGroupAuditLog.WithPrevious(ctx.Kit, gid)
 	if err != nil {
 		blog.Errorf("[operation-obj] find Previous object group failed, id: %+v, err: %s, rid: %s", gid, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+	//get AuditLog objectName
+	err = objAttrGroupAuditLog.GetObjectInfo(ctx.Kit, "")
+	if err != nil {
+		blog.Errorf("[api-att] find objectInfo failed, id: %+v, err: %s, rid: %s", gid, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
@@ -156,7 +176,7 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete)
+	err = objAttrGroupAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}

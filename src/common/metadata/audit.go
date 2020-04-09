@@ -232,6 +232,19 @@ type BasicOpDetail struct {
 	Details *BasicContent `json:"details" bson:"details"`
 }
 
+type ModelOpDetail struct {
+	// ObjectID is the name of the object. which is unique.
+	ObjectID string `json:"object_id" bson:"object_id"`
+	// ObjectName is the show name of the object, such as a switch model has a name "交换机"
+	ObjectName string `json:"object_name" bson:"object_name"`
+	// Details contains all the details information about a user's operation
+	Details *BasicContent `json:"details" bson:"details"`
+}
+
+func (op *ModelOpDetail) WithName() string {
+	return "ModelDetail"
+}
+
 func (op *BasicOpDetail) WithName() string {
 	return "BasicDetail"
 }

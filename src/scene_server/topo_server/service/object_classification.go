@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // CreateClassification create a new object classification
@@ -39,16 +39,16 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("create object classification success, but get response id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 	}
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelClassificationRes)
+	objClsAuditLog := operation.NewObjectClsAudit(s.Engine.CoreAPI)
 	//get CurData
-	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	err = objClsAuditLog.MakeCurrent(cls.ToMapStr())
 	if err != nil {
-		blog.Errorf("[api-cls] find Current object classification failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("[api-cls] make Current object classification failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
+	err = objClsAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
@@ -157,9 +157,9 @@ func (s *Service) UpdateClassification(ctx *rest.Contexts) {
 	}
 	data.Remove(metadata.BKMetadata)
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelClassificationRes)
+	objClsAuditLog := operation.NewObjectClsAudit(s.Engine.CoreAPI)
 	//get AuditLog PreData
-	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	err = objClsAuditLog.WithPrevious(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[api-cls] find Previous objectClassification failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -172,14 +172,14 @@ func (s *Service) UpdateClassification(ctx *rest.Contexts) {
 	}
 
 	//get AuditLog CurData
-	err = objAuditLog.WithCurrent(ctx.Kit, id)
+	err = objClsAuditLog.WithCurrent(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[api-cls] find Current objectClassification failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
+	err = objClsAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditUpdate)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
@@ -197,9 +197,9 @@ func (s *Service) DeleteClassification(ctx *rest.Contexts) {
 		return
 	}
 
-	objAuditLog := model.NewObjectAuditLog(s.Engine.CoreAPI, metadata.ModelType, metadata.ModelClassificationRes)
+	objClsAuditLog := operation.NewObjectClsAudit(s.Engine.CoreAPI)
 	//get AuditLog PreData
-	err = objAuditLog.WithPrevious(ctx.Kit, id)
+	err = objClsAuditLog.WithPrevious(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[api-cls] find Previous object group failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -218,7 +218,7 @@ func (s *Service) DeleteClassification(ctx *rest.Contexts) {
 	}
 
 	//package audit response
-	err = objAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete)
+	err = objClsAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditDelete)
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
