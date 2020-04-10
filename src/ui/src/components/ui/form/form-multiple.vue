@@ -258,6 +258,7 @@
             padding: 0 54px 0 0;
             font-size: 12px;
             flex: 0 0 50%;
+            max-width: 50%;
             .property-name{
                 display: block;
                 margin: 6px 0 10px;

@@ -24,7 +24,7 @@
                     </bk-select>
                 </div>
             </div>
-            <div class="option">
+            <div class="option action">
                 <span class="name" :title="$t('功能板块动作')">{{$t('功能板块动作')}}</span>
                 <div class="content">
                     <bk-select
@@ -48,7 +48,7 @@
                     </bk-select>
                 </div>
             </div>
-            <div class="option">
+            <div class="option resource">
                 <span class="name" :title="$t('操作对象')">{{$t('操作对象')}}</span>
                 <div class="content">
                     <bk-input v-model="filter.resourceName" clearable></bk-input>
@@ -65,7 +65,7 @@
                     </cmdb-form-date-range>
                 </div>
             </div>
-            <div class="option">
+            <div class="option operator">
                 <span class="name" :title="$t('操作账号')">{{$t('操作账号')}}</span>
                 <div class="content">
                     <cmdb-form-objuser
@@ -95,6 +95,7 @@
             </div>
             <div class="option option-btn">
                 <bk-button theme="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1, $event)">{{$t('查询')}}</bk-button>
+                <bk-button @click="handleClearFilter">{{$t('清空')}}</bk-button>
             </div>
         </div>
         <bk-table
@@ -413,6 +414,10 @@
             handleRowClick (item) {
                 this.details.data = item
                 this.details.isShow = true
+            },
+            handleClearFilter () {
+                this.handleResetFilter()
+                this.handlePageChange(1)
             }
         }
     }
@@ -432,17 +437,17 @@
             align-items: center;
             justify-content: flex-start;
             flex-direction: row;
-            flex-wrap: nowrap;
-            padding: 10px 0;
+            flex-wrap: wrap;
+            padding: 22px 0 10px 0;
             .option {
-                flex: 1 1;
-                margin: 0 1% 0 0;
+                flex: none;
+                width: 27%;
+                margin: 0 1.5% 12px 0;
                 white-space: nowrap;
                 font-size: 0;
                 display: flex;
                 align-items: center;
                 &.instance {
-                    flex: 1.2 1.2;
                     .bk-select {
                         width: 40%;
                         margin-right: 5px;
@@ -451,28 +456,66 @@
                         width: calc(60% - 5px);
                     }
                 }
+
+                &.action,
+                &.operator {
+                    .name {
+                        width: 96px;
+                        text-align: right;
+                    }
+                }
+
+                &.resource,
+                &.instance {
+                    .name {
+                        width: 70px;
+                        text-align: right;
+                    }
+                }
             }
             .option-btn {
-                flex: 0 0 60px;
-                margin: 0;
+                width: auto;
+                .bk-button + .bk-button {
+                    margin-left: 8px;
+                }
             }
             .name {
                 font-size: 14px;
-                padding-right: 5px;
+                padding-right: 10px;
                 @include ellipsis;
             }
             .content {
                 flex: 1;
-                max-width: 180px;
                 .bk-select {
                     width: 100%;
                 }
             }
         }
-        @media screen and (max-width: 1920px) {
-            .filter {
-                .name {
-                    max-width: 48px;
+
+    }
+
+    [bk-language="en"] {
+        .filter {
+            .name {
+                min-width: 70px;
+                text-align: right;
+            }
+
+            .option {
+                &.action,
+                &.operator {
+                    .name {
+                        width: 146px;
+                        text-align: right;
+                    }
+                }
+
+                &.resource,
+                &.instance {
+                    .name {
+                        width: 130px;
+                        text-align: right;
+                    }
                 }
             }
         }

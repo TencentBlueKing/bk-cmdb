@@ -1,5 +1,5 @@
 <template>
-    <div class="table" v-show="instances.length" v-bkloading="{ isLoading: loading }">
+    <div class="table" v-show="hasInstance" v-bkloading="{ isLoading: loading }">
         <div class="table-info clearfix">
             <div class="info-title fl" @click="expanded = !expanded">
                 <i class="icon bk-icon icon-right-shape"
@@ -178,13 +178,20 @@
                 return this.$loading([
                     this.propertyRequest
                 ])
+            },
+            hasInstance () {
+                return this.instances.length > 0
             }
         },
         watch: {
-            instances () {
-                if (this.expanded) {
-                    this.getData()
-                }
+            instances: {
+                handler (value) {
+                    if (this.expanded) {
+                        this.getData()
+                    }
+                    this.$emit('relation-instance-change', value, this.id, this.type)
+                },
+                immediate: true
             },
             expanded (expanded) {
                 if (expanded) {

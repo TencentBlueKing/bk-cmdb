@@ -206,6 +206,18 @@ func (ps *parseStream) getInstanceTypeByObject(objID string) (meta.ResourceType,
 	return meta.ModelInstance, nil
 }
 
+func (ps *parseStream) getBizIDByHostID(hostID int64) (int64, error) {
+	result, err := ps.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(context.Background(), ps.RequestCtx.Header,
+		&metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}})
+	if err != nil {
+		return 0, err
+	}
+	for _, relation := range result.Data.Info {
+		return relation.AppID, nil
+	}
+	return 0, nil
+}
+
 func (ps *parseStream) getOneClassification(cond mapstr.MapStr) (metadata.Classification, error) {
 	classification := metadata.Classification{}
 	classifications, err := ps.getClassification(cond)

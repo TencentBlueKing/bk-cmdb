@@ -84,7 +84,7 @@
             </label>
             <div class="form-label">
                 <span class="label-text">{{$t('用户提示')}}</span>
-                <textarea style="width: 94%;" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
+                <textarea class="raw" style="width: 94%;" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
             </div>
         </div>
         <div class="btn-group" :class="{ 'sticky-layout': scrollbar }">

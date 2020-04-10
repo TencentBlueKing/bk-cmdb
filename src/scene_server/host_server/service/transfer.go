@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -133,8 +134,10 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 
 	var firstErr errors.CCErrorCoder
 	pipeline := make(chan bool, 300)
+	wg := sync.WaitGroup{}
 	for _, plan := range transferPlans {
 		pipeline <- true
+		wg.Add(1)
 		go func(plan metadata.HostTransferPlan) {
 			ccErr := s.runTransferPlans(srvData, bizID, plan)
 			hostTransferResult := HostTransferResult{
@@ -170,6 +173,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 			}
 			transferResult = append(transferResult, hostTransferResult)
 			<-pipeline
+			wg.Done()
 		}(plan)
 
 	}
@@ -187,6 +191,7 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 		return
 	}
 
+	wg.Wait()
 	if err := audit.SaveAudit(srvData.ctx); err != nil {
 		blog.Errorf("TransferHostWithAutoClearServiceInstance failed, save audit log failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})

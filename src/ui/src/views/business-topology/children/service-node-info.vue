@@ -63,8 +63,10 @@
             :property-groups="propertyGroups"
             :inst="instance"
             :show-options="modelId !== 'biz' && editable">
+            <!-- 改为v-show, 因为 v-if时，直接查看集群节点信息，第一次slot外层未打上scope标志，导致css不生效  -->
+            <!-- 可能是vue bug 原因未知  -->
             <div class="template-info mb10 clearfix"
-                v-if="( isSetNode || isModuleNode) && type === 'details'"
+                v-show="isSetNode || isModuleNode"
                 slot="prepend">
                 <template v-if="isModuleNode">
                     <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
