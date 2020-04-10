@@ -22,6 +22,15 @@
                 }, {
                     "id": "set-delete-biz_topology",
                     "name": "删除集群"
+                }, {
+                    "id": "mainline_instance-delete-biz_topology",
+                    "name": "删除拓扑节点"
+                }, {
+                    "id": "mainline_instance-create-biz_topology",
+                    "name": "新增拓扑节点"
+                }, {
+                    "id": "mainline_instance-update-biz_topology",
+                    "name": "修改拓扑节点"
                 }
             ]
         }, {
