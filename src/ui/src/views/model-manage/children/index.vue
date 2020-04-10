@@ -78,10 +78,10 @@
                     <template v-if="canBeImport">
                         <label class="label-btn"
                             v-if="tab.active === 'field'"
+                            @click="handleImportField"
                             :class="{ 'disabled': isReadOnly }">
                             <i class="icon-cc-import"></i>
                             <span>{{$t('导入')}}</span>
-                            <input v-if="!isReadOnly && updateAuth" ref="fileInput" type="file" @change.prevent="handleFile">
                         </label>
                         <label class="label-btn" @click="exportField">
                             <i class="icon-cc-derivation"></i>
@@ -127,6 +127,58 @@
                 <the-verification v-if="tab.active === 'verification'" :model-id="modelId"></the-verification>
             </bk-tab-panel>
         </bk-tab>
+
+        <!-- 导入字段 -->
+        <bk-sideslider
+            v-transfer-dom
+            :is-show.sync="importField.show"
+            :width="800"
+            :title="$t('导入字段')"
+            @hidden="handleSliderHide"
+        >
+            <cmdb-import
+                slot="content"
+                v-if="importField.show"
+                :template-url="importField.templateUrl"
+                :import-url="importUrl"
+                :import-payload="importPayload"
+                @upload-done="handleUploadDone"
+            >
+                <div slot="uploadResult">
+                    <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
+                        <i class="bk-icon icon-check-circle-shape"></i>
+                        <span>{{$t('成功导入N个字段', { N: uploadResult.success.length })}}</span>
+                    </div>
+                    <div class="upload-details-fail" v-if="uploadResult.insert_failed && uploadResult.insert_failed.length">
+                        <div class="upload-details-fail-title">
+                            <i class="bk-icon icon-close-circle-shape"></i>
+                            <span>{{$t('新增失败列表')}}({{uploadResult.insert_failed.length}})</span>
+                        </div>
+                        <ul ref="failList" class="upload-details-fail-list">
+                            <li
+                                v-for="(fail, index) in uploadResult.insert_failed"
+                                :title="$t('第N行字段错误信息', { N: fail.row, field: fail.bk_property_id, info: fail.info })"
+                                :key="index">{{$t('第N行字段错误信息', { N: fail.row, field: fail.bk_property_id, info: fail.info })}}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="upload-details-fail" v-if="uploadResult.update_failed && uploadResult.update_failed.length">
+                        <div class="upload-details-fail-title">
+                            <i class="bk-icon icon-close-circle-shape"></i>
+                            <span>{{$t('更新失败列表')}}({{uploadResult.update_failed.length}})</span>
+                        </div>
+                        <ul ref="failList" class="upload-details-fail-list">
+                            <li
+                                v-for="(fail, index) in uploadResult.update_failed"
+                                :title="$t('第N行字段错误信息', { N: fail.row, field: fail.bk_property_id, info: fail.info })"
+                                :key="index">{{$t('第N行字段错误信息', { N: fail.row, field: fail.bk_property_id, info: fail.info })}}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </cmdb-import>
+        </bk-sideslider>
+        <!-- /导入字段 -->
     </div>
 </template>
 
@@ -135,6 +187,7 @@
     import theVerification from './verification'
     import theFieldGroup from '@/components/model-manage/field-group'
     import theChooseIcon from '@/components/model-manage/choose-icon/_choose-icon'
+    import cmdbImport from '@/components/import/import'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     import {
         MENU_MODEL_MANAGEMENT,
@@ -148,7 +201,8 @@
             theFieldGroup,
             theRelation,
             theVerification,
-            theChooseIcon
+            theChooseIcon,
+            cmdbImport
         },
         data () {
             return {
@@ -163,7 +217,16 @@
                 isEditName: false,
                 specialModel: ['process', 'plat'],
                 modelStatisticsSet: {},
-                updateAuth: false
+                updateAuth: false,
+                importField: {
+                    show: false,
+                    templateUrl: ''
+                },
+                uploadResult: {
+                    success: null,
+                    insert_failed: null,
+                    update_failed: null
+                }
             }
         },
         computed: {
@@ -218,6 +281,12 @@
             },
             exportUrl () {
                 return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
+            },
+            importUrl () {
+                return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/import`
+            },
+            importPayload () {
+                return !this.isPublicModel ? { metadata: this.$injectMetadata().metadata } : {}
             },
             canBeImport () {
                 const cantImport = ['host', 'biz', 'process', 'plat']
@@ -470,8 +539,29 @@
                     })
                 }
             },
+            handleUploadDone (res) {
+                const data = res.data[this.activeModel['bk_obj_id']]
+                if (res.result) {
+                    this.uploadResult.success = data.success
+                    this.$success(this.$t('导入成功'))
+                    this.$refs.field.initFieldList()
+                } else {
+                    this.uploadResult.insert_failed = data['insert_failed']
+                    this.uploadResult.update_failed = data['update_failed']
+                }
+            },
+            handleSliderHide () {
+                this.uploadResult = {
+                    success: null,
+                    insert_failed: null,
+                    update_failed: null
+                }
+            },
             handleReceiveAuth (auth) {
                 this.updateAuth = auth
+            },
+            handleImportField () {
+                this.importField.show = true
             }
         }
     }
