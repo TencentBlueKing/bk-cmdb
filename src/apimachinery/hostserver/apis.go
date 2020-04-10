@@ -568,6 +568,21 @@ func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header, data m
 	return
 }
 
+func (hs *hostServer) CreateManyCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreateManyCloudAreaResult, err error) {
+
+	resp = new(metadata.CreateManyCloudAreaResult)
+	subPath := "/createmany/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (hs *hostServer) UpdateCloudArea(ctx context.Context, h http.Header, cloudID int64, data map[string]interface{}) (resp *metadata.Response, err error) {
 
 	resp = new(metadata.Response)

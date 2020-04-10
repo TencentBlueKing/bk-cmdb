@@ -76,9 +76,21 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
-	err = addHostOuterIPUnique(ctx, db, conf)
+	err = addCloudHostUnique(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3.9.202002131522] addHostOuterIPUnique failed, error  %s", err.Error())
+		blog.Errorf("[upgrade y3.9.202002131522] addCloudHostUnique failed, error  %s", err.Error())
+		return err
+	}
+
+	err = addPlatUnique(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202002131522] addPlatUnique failed, error  %s", err.Error())
+		return err
+	}
+
+	err = addPlatIndex(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.9.202002131522] addPlatIndex failed, error  %s", err.Error())
 		return err
 	}
 

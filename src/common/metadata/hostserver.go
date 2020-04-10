@@ -350,6 +350,16 @@ type CloudAreaSearchParam struct {
 	HostCount         bool `json:"host_count"`
 }
 
+type CreateManyCloudAreaResult struct {
+	BaseResp `json:",inline"`
+	Data     []CreateManyCloudAreaElem `json:"data"`
+}
+
+type CreateManyCloudAreaElem struct {
+	CloudID int64  `json:"bk_cloud_id"`
+	ErrMsg  string `json:"err_msg"`
+}
+
 type TopoNode struct {
 	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" mapstructure:"bk_obj_id"`
 	InstanceID int64  `field:"bk_inst_id" json:"bk_inst_id" mapstructure:"bk_inst_id"`

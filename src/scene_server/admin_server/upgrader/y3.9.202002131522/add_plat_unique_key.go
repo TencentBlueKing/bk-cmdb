@@ -22,11 +22,11 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func addCloudHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	// find bk_cloud_inst_id property's id
+func addPlatUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	// find bk_vpc_id property's id
 	attrCond := condition.CreateCondition()
-	attrCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
-	attrCond.Field(common.BKPropertyIDField).Eq(common.BKCloudInstIDField)
+	attrCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDPlat)
+	attrCond.Field(common.BKPropertyIDField).Eq(common.BKVpcID)
 	attrCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
 	attr := new(metadata.Attribute)
 	err := db.Table(common.BKTableNameObjAttDes).Find(attrCond.ToMapStr()).One(ctx, attr)
@@ -37,7 +37,7 @@ func addCloudHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 
 	// check if this unique exists
 	uniqueCond := condition.CreateCondition()
-	uniqueCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
+	uniqueCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDPlat)
 	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
 	existUniques := make([]metadata.ObjectUnique, 0)
 	err = db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
@@ -50,9 +50,9 @@ func addCloudHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		}
 	}
 
-	// insert bk_cloud_inst_id unique
+	// insert bk_vpc_id unique
 	unique := metadata.ObjectUnique{
-		ObjID:     common.BKInnerObjIDHost,
+		ObjID:     common.BKInnerObjIDPlat,
 		MustCheck: false,
 		Keys: []metadata.UniqueKey{
 			{

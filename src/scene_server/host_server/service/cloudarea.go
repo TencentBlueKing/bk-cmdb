@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -140,81 +141,127 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 // CreatePlat create a plat instance
 func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
-	input := make(map[string]interface{})
+	input := mapstr.New()
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); nil != err {
 		blog.Errorf("CreatePlat , but decode body failed, err: %s,rid:%s", err.Error(), srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	// read supplier account from header
-	input[common.BkSupplierAccount] = util.GetOwnerID(req.Request.Header)
 
-	// set field default value
-	input[common.BKStatus] = "1"
-	user := util.GetUser(req.Request.Header)
-	input[common.BKCreator] = user
-	input[common.BKLastEditor] = user
-
-	// bk_cloud_name is required and unique
-	_, ok := input[common.BKCloudNameField]
-	if !ok {
-		blog.Errorf("CreatePlat failed, bk_cloud_name field is required, rid: %s", srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostPlatCloudNameIsrequired)})
-		return
-	}
-
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Model); err != nil {
-		blog.Errorf("check create plat authorization failed, err: %v, rid: %s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
-	}
-
-	instInfo := &meta.CreateModelInstance{
-		Data: mapstr.NewFromMap(input),
-	}
-
-	createRes, err := s.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, instInfo)
-	if nil != err {
-		blog.Errorf("CreatePlat error: %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)})
-		return
-	}
-
-	if false == createRes.Result {
-		blog.Errorf("CreatePlat error.err code:%d,err msg:%s,input:%+v,rid:%s", createRes.Code, createRes.ErrMsg, input, srvData.rid)
-		_ = resp.WriteHeaderAndJson(http.StatusInternalServerError, createRes, "application/json")
-		return
-	}
-
-	// register plat to iam
-	platID := int64(createRes.Data.Created.ID)
-	if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platID); err != nil {
-		blog.Errorf("CreatePlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
-		ccErr := srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
-		return
-	}
-
-	// add auditLog
-	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
-	if err := auditLog.WithCurrent(srvData.ctx, platID); err != nil {
-		blog.ErrorJSON("CreatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
-		return
-	}
-
-	if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditCreate); err != nil {
-		blog.ErrorJSON("CreatePlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+	cloudID, err := s.createPlat(req.Request.Header, input)
+	if err != nil {
+		blog.Errorf("CreatePlat failed, err: %s,rid:%s", err.Error(), srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
-		Data:     createRes.Data,
+		Data: metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{
+			ID: uint64(cloudID),
+		}},
 	})
+}
 
+// createPlat create a plat instance
+func (s *Service) createPlat(header http.Header, input mapstr.MapStr) (int64, error) {
+	srvData := s.newSrvComm(header)
+	// read supplier account from header
+	input[common.BkSupplierAccount] = util.GetOwnerID(header)
+
+	// set field default value
+	input[common.BKStatus] = "1"
+	user := util.GetUser(header)
+	input[common.BKCreator] = user
+	input[common.BKLastEditor] = user
+
+	// bk_cloud_name is required and unique
+	_, ok := input[common.BKCloudNameField]
+	if !ok {
+		blog.Errorf("createPlat failed, bk_cloud_name field is required, rid: %s", srvData.rid)
+		return 0, srvData.ccErr.Error(common.CCErrHostPlatCloudNameIsrequired)
+	}
+
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeResourceCreate(srvData.ctx, srvData.header, 0, authmeta.Model); err != nil {
+		blog.Errorf("check create plat authorization failed, err: %v, rid: %s", err, srvData.rid)
+		return 0, srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)
+	}
+
+	instInfo := &meta.CreateModelInstance{
+		Data: input,
+	}
+
+	createRes, err := s.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, instInfo)
+	if nil != err {
+		blog.Errorf("createPlat error: %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+		return 0, srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)
+	}
+
+	if false == createRes.Result {
+		blog.Errorf("createPlat failed, err code:%d,err msg:%s,input:%+v,rid:%s", createRes.Code, createRes.ErrMsg, input, srvData.rid)
+		return 0, fmt.Errorf("%s", createRes.ErrMsg)
+	}
+
+	// register plat to iam
+	platID := int64(createRes.Data.Created.ID)
+	if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platID); err != nil {
+		blog.Errorf("createPlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
+		return 0, srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
+	}
+
+	// add auditLog
+	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
+	if err := auditLog.WithCurrent(srvData.ctx, platID); err != nil {
+		blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		return 0, err
+	}
+
+	if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditCreate); err != nil {
+		blog.ErrorJSON("createPlat success., but add auditLog fail, err: %v, rid: %s", err, srvData.rid)
+		return 0, err
+	}
+	return int64(createRes.Data.Created.ID), nil
+}
+
+// CreatePlatBatch create plat instance in batch
+func (s *Service) CreatePlatBatch(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	input := struct{
+		Data []mapstr.MapStr `json:"data"`
+	}{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); nil != err {
+		blog.Errorf("CreatePlat , but decode body failed, err: %s,rid:%s", err.Error(), srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if len(input.Data) == 0 {
+		blog.Errorf("CreatePlat , input is empty, rid:%s", srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPBodyEmpty)})
+		return
+	}
+
+	result := make([]metadata.CreateManyCloudAreaElem, len(input.Data))
+	for i, data := range input.Data {
+		cloudID, err := s.createPlat(req.Request.Header, data)
+		if err != nil {
+			blog.Errorf("CreatePlat failed, err: %s,rid:%s", err.Error(), srvData.rid)
+			result[i] = metadata.CreateManyCloudAreaElem{
+				CloudID: -1,
+				ErrMsg:  err.Error(),
+			}
+			continue
+		}
+		result[i] = metadata.CreateManyCloudAreaElem{
+			CloudID: cloudID,
+		}
+	}
+
+	_ = resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     result,
+	})
 }
 
 func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {

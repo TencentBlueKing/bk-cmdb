@@ -50,7 +50,7 @@ var tmpTestData = map[string]interface{}{
 	"bk_status":       "1",
 	"bk_cloud_vendor": "2",
 	"bk_region":       "1111",
-	"bk_vpc_id":       "1",
+	"bk_vpc_id":       "tmp_vpc",
 	"bk_vpc_name":     "Default-VPC",
 	"bk_account_id":   2,
 	"creator":         "admin",
@@ -84,13 +84,46 @@ var _ = Describe("cloud area test", func() {
 		It("create with cloud vendor which is not valid", func() {
 			tmpTestData["bk_cloud_name"] = "best mind"
 			tmpTestData["bk_cloud_vendor"] = "hello"
-			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, testData1)
+			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, tmpTestData)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
 	})
+
+	var _ = Describe("cloud area test batch create", func() {
+
+		It("batch create with normal data", func() {
+			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header, map[string]interface{}{"data":[]interface{}{tmpTestData}})
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		It("batch create with cloud area which is already exist", func() {
+			tmpTestData["bk_cloud_name"] = testData1["bk_cloud_name"]
+			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header, map[string]interface{}{"data":[]interface{}{tmpTestData}})
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data[0].CloudID).To(Equal(int64(-1)))
+			Expect(rsp.Data[0].ErrMsg).NotTo(Equal(""))
+		})
+
+		It("batch create with cloud vendor which is not valid", func() {
+			tmpTestData["bk_cloud_name"] = "best mind"
+			tmpTestData["bk_cloud_vendor"] = "hello"
+			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header, map[string]interface{}{"data":[]interface{}{tmpTestData}})
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data[0].CloudID).To(Equal(int64(-1)))
+			Expect(rsp.Data[0].ErrMsg).NotTo(Equal(""))
+		})
+
+	})
+
 
 	var _ = Describe("cloud area test update", func() {
 
