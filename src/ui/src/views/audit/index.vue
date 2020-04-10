@@ -126,7 +126,7 @@
                 sortable="custom"
                 prop="bk_biz_name"
                 :label="$t('所属业务')">
-                <template slot-scope="{ row }">{{row.bk_biz_name || (row.basic_detail && row.basic_detail.bk_biz_name)}}</template>
+                <template slot-scope="{ row }">{{row.bk_biz_name || ($tools.getValue(row, 'operation_detail.basic_detail.bk_biz_name'))}}</template>
             </bk-table-column>
             <bk-table-column
                 prop="resource_name"
@@ -331,7 +331,8 @@
                 if (row.label === null) {
                     const type = row.resource_type
                     if (type === 'model_instance') {
-                        const model = this.$store.getters['objectModelClassify/getModelById'](row.bk_obj_id) || {}
+                        const objId = row.operation_detail.bk_obj_id
+                        const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
                         return model.bk_obj_name || '--'
                     }
                     return this.funcModules[type] || '--'
@@ -346,7 +347,7 @@
                 if (['instance_association'].includes(row.resource_type)) {
                     return row.target_instance_name || '--'
                 }
-                return (row.basic_detail && row.basic_detail.resource_name) || '--'
+                return this.$tools.getValue(row, 'operation_detail.basic_detail.resource_name') || '--'
             },
             getResourceAction (row) {
                 if (row.label) {
@@ -365,7 +366,7 @@
                             requestId: 'getOperationLog'
                         }
                     })
-                    this.table.list = res.info.map(item => ({ ...item, ...item.operation_detail }))
+                    this.table.list = res.info
                     this.table.pagination.count = res.count
                     // 有传入event参数时认为来自用户搜索
                     if (event) {
