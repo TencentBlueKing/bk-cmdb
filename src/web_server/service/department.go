@@ -36,7 +36,7 @@ func (s *Service) GetDepartment(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, rspBody)
 	return
 }
 
@@ -55,5 +55,6 @@ func (s *Service) GetDepartmentProfile(c *gin.Context) {
 
 	}
 
+	c.JSON(http.StatusOK, rspBody)
 	return
 }
