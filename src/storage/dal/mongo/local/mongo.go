@@ -15,6 +15,7 @@ package local
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -24,8 +25,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
-    dtype "configcenter/src/storage/types"
-    "go.mongodb.org/mongo-driver/bson"
+	dtype "configcenter/src/storage/types"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
@@ -46,6 +47,7 @@ type MongoConf struct {
 	MaxOpenConns   uint64
 	MaxIdleConns   uint64
 	URI            string
+	RsName         string
 }
 
 // NewMgo returns new RDB
@@ -54,11 +56,15 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	if nil != err {
 		return nil, err
 	}
+	if config.RsName == "" {
+		return nil, fmt.Errorf("rsName not set")
+	}
 
 	conOpt := options.ClientOptions{
 		MaxPoolSize:    &config.MaxOpenConns,
 		MinPoolSize:    &config.MaxIdleConns,
 		ConnectTimeout: &timeout,
+		ReplicaSet:     &config.RsName,
 	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(config.URI), &conOpt)
@@ -621,7 +627,7 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 	defer func() {
 		blog.V(4).InfoDepthf(2, "mongo add-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
 	}()
-	
+
 	selector := dtype.Document{column: dtype.Document{"$exists": false}}
 	datac := dtype.Document{"$set": dtype.Document{column: value}}
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, selector, datac)

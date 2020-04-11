@@ -78,6 +78,7 @@ type Attribute struct {
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
+	BizID             int64       `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
 	Creator    string `field:"creator" json:"creator" bson:"creator"`
 	CreateTime *Time  `json:"create_time" bson:"create_time"`

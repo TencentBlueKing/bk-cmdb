@@ -395,6 +395,10 @@ var _ = Describe("service template test", func() {
 								"value":            "123",
 								"as_default_value": false,
 							},
+							common.BKProcPortEnable: map[string]interface{}{
+								"value":            false,
+								"as_default_value": false,
+							},
 						},
 					},
 				},

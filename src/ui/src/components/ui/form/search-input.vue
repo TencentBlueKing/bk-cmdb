@@ -17,7 +17,7 @@
                 :class="{
                     'is-show': isFocus
                 }"
-                v-if="localValue.length"
+                v-if="localValue.length && !disabled"
                 @click="handleClear">
             </i>
         </div>

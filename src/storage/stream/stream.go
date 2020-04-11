@@ -36,12 +36,16 @@ func NewStream(conf local.MongoConf) (Interface, error) {
 	if nil != err {
 		return nil, err
 	}
+	if conf.RsName == "" {
+		return nil, fmt.Errorf("rsName not set")
+	}
 
 	timeout := 15 * time.Second
 	conOpt := options.ClientOptions{
 		MaxPoolSize:    &conf.MaxOpenConns,
 		MinPoolSize:    &conf.MaxIdleConns,
 		ConnectTimeout: &timeout,
+		ReplicaSet:     &conf.RsName,
 	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(conf.URI), &conOpt)
