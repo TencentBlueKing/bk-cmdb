@@ -34,7 +34,7 @@ type ObjectAttrAudit struct {
 	//Properties   []metadata.Property
 }
 
-func NewObjectAttrAudit(clientSet apimachinery.ClientSetInterface, resourceType metadata.ResourceType) *ObjectAttrAudit {
+func NewObjectAttrAudit(clientSet apimachinery.ClientSetInterface) *ObjectAttrAudit {
 	return &ObjectAttrAudit{
 		auditType:    metadata.ModelType,
 		resourceType: metadata.ModelAttributeRes,
