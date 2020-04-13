@@ -13,7 +13,11 @@
 package logics
 
 import (
+	"configcenter/src/common/auditlog"
+	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -210,4 +214,180 @@ var syncTaskAuditLogProperty = []metadata.Property{
 	{"bk_account_id", "云账户ID"},
 	{"bk_resource_type", "同步资源类型"},
 	{"bk_last_sync_time", "上次同步时间"},
+}
+
+
+func (lgc *Logics) GetAddHostLog(kit *rest.Kit, curData map[string]interface{}, properties []metadata.Property) (*metadata.AuditLog, error) {
+	// 获取资源池业务ID和名称
+	bizID, bizName, err := lgc.GetDefaultBizIDAndName(kit)
+	if err != nil {
+		blog.Errorf("GetAddHostLog fail,err:%s, curData:%+v", err.Error(), curData)
+		return nil, err
+	}
+
+	// 获取主机ID和内网IP
+	hostID, innerIP, err := getHostIDAndIP(curData)
+	if err != nil {
+		blog.Errorf("GetAddHostLog fail,err:%s, curData:%+v", err.Error(), curData)
+		return nil, err
+	}
+
+	auditLog := metadata.AuditLog{
+		AuditType:    metadata.HostType,
+		ResourceType: metadata.HostRes,
+		Action:       metadata.AuditCreate,
+		OperateFrom:  metadata.FromCloudSync,
+		OperationDetail: &metadata.InstanceOpDetail{
+			BasicOpDetail: metadata.BasicOpDetail{
+				BusinessID:   bizID,
+				BusinessName: bizName,
+				ResourceID:   hostID,
+				ResourceName: innerIP,
+				Details: &metadata.BasicContent{
+					PreData:    nil,
+					CurData:    curData,
+					Properties: properties,
+				},
+			},
+			ModelID: common.BKInnerObjIDHost,
+		},
+	}
+
+	return &auditLog, nil
+}
+
+// 获取资源池业务ID和名称
+func (lgc *Logics) GetDefaultBizIDAndName(kit *rest.Kit) (int64, string, error) {
+	condition := mapstr.MapStr{
+		common.BKDefaultField: common.DefaultAppFlag,
+	}
+	cond := &metadata.QueryCondition{
+		Fields:    []string{common.BKAppIDField},
+		Condition: condition,
+	}
+	res, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), kit.Header, common.BKInnerObjIDApp, cond)
+	if err != nil {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", err.Error(), *cond)
+		return 0, "", err
+	}
+	if !res.Result {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", res.ErrMsg, *cond)
+		return 0, "", fmt.Errorf("%s", res.ErrMsg)
+	}
+
+	if len(res.Data.Info) == 0 {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", "no default biz is found", *cond)
+		return 0, "", fmt.Errorf("%s", "no default biz is found")
+	}
+
+	bizID, err := res.Data.Info[0].Int64(common.BKAppIDField)
+	if err != nil {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", err.Error(), *cond)
+		return 0, "", err
+	}
+
+	bizName, err := res.Data.Info[0].String(common.BKAppNameField)
+	if err != nil {
+		blog.Errorf("GetDefaultBizIDAndName fail,err:%s, cond:%+v", err.Error(), *cond)
+		return 0, "", err
+	}
+
+	return bizID, bizName, nil
+}
+
+// 获取主机ID和内网IP
+func getHostIDAndIP(hostInfo map[string]interface{}) (int64, string, error) {
+	var hostID int64
+	var innerIP string
+	if hostIDI, ok := hostInfo[common.BKHostIDField]; ok {
+		if hostIDVal, err := strconv.ParseInt(fmt.Sprintf("%v", hostIDI), 10, 64); err == nil {
+			hostID = hostIDVal
+		}
+	}
+
+	if innerIPI, ok := hostInfo[common.BKHostInnerIPField]; ok {
+		innerIP = fmt.Sprintf("%s", innerIPI)
+	}
+
+	if hostID == 0 {
+		blog.Errorf("getHostIDAndIP fail,hostID is 0, hostInfo:%+v", hostInfo)
+		return 0, "", fmt.Errorf("%s", "hostID is 0")
+	}
+
+	if innerIP == "" {
+		blog.Errorf("getHostIDAndIP fail,innerIP is empty, hostInfo:%+v", hostInfo)
+		return 0, "", fmt.Errorf("%s", "innerIP is empty")
+	}
+
+	return hostID, innerIP, nil
+}
+
+// 获取主机的业务ID和业务Name
+func (lgc *Logics) GetBizIDAndName(kit *rest.Kit, hostID int64) (int64, string, error) {
+	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}}
+	moduleHost, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, input)
+	if err != nil {
+		blog.Errorf("GetBizIDAndName fail, err:%s, input:%+v", err.Error(), input)
+		return 0, "", err
+	}
+	if !moduleHost.Result {
+		blog.Errorf("GetBizIDAndName fail, err code:%d, err msg:%s, input:%+v", moduleHost.Code, moduleHost.ErrMsg, input)
+		return 0, "", fmt.Errorf("%s", moduleHost.ErrMsg)
+	}
+
+	if len(moduleHost.Data.Info) == 0 {
+		blog.Errorf("GetBizIDAndName fail, host biz is not found, input:%+v", input)
+		return 0, "", fmt.Errorf("%s", "host biz is not found")
+	}
+
+	bizID := moduleHost.Data.Info[0].AppID
+
+	audit := auditlog.NewAudit(lgc.CoreAPI, kit.Header)
+
+	bizName, err := audit.GetInstNameByID(context.Background(), common.BKInnerObjIDApp, bizID)
+	if err != nil {
+		blog.Errorf("GetBizIDAndName fail, err:%s, bizID:%d", err.Error(), bizID)
+		return 0, "", err
+	}
+
+	return bizID, bizName, nil
+}
+
+func (lgc *Logics) GetUpdateHostLog(kit *rest.Kit, preData, curData map[string]interface{}, properties []metadata.Property) (*metadata.AuditLog, error) {
+	// 获取主机ID和内网IP
+	hostID, innerIP, err := getHostIDAndIP(preData)
+	if err != nil {
+		blog.Errorf("GetUpdateHostLog fail,err:%s, preData:%+v, curData:%+v", err.Error(), preData, curData)
+		return nil, err
+	}
+
+	// 获取主机的业务ID和业务Name
+	bizID, bizName, err := lgc.GetBizIDAndName(kit, hostID)
+	if err != nil {
+		blog.Errorf("GetUpdateHostLog fail,err:%s, preData:%+v, curData:%+v", err.Error(), preData, curData)
+		return nil, err
+	}
+
+	auditLog := metadata.AuditLog{
+		AuditType:    metadata.HostType,
+		ResourceType: metadata.HostRes,
+		Action:       metadata.AuditUpdate,
+		OperateFrom:  metadata.FromCloudSync,
+		OperationDetail: &metadata.InstanceOpDetail{
+			BasicOpDetail: metadata.BasicOpDetail{
+				BusinessID:   bizID,
+				BusinessName: bizName,
+				ResourceID:   hostID,
+				ResourceName: innerIP,
+				Details: &metadata.BasicContent{
+					PreData:    preData,
+					CurData:    curData,
+					Properties: properties,
+				},
+			},
+			ModelID: common.BKInnerObjIDHost,
+		},
+	}
+
+	return &auditLog, nil
 }

@@ -1,6 +1,8 @@
 package cloudsync
 
 import (
+	"configcenter/src/common/auditlog"
+	"configcenter/src/common/http/rest"
 	"context"
 	"fmt"
 	"strconv"
@@ -153,7 +155,6 @@ func (h *HostSyncor) syncDestroyedVpcs(hostResource *metadata.CloudHostResource)
 	conditon := mapstr.MapStr{common.BKCloudIDField: map[string]interface{}{
 		common.BKDBIN: cloudIDs,
 	}}
-
 
 	if err := h.updateDestroyedHosts(conditon); err != nil {
 		blog.Errorf("syncDestroyedVpcs fail, cloudIDs:%#v, err:%s", cloudIDs, err.Error())
@@ -452,6 +453,12 @@ func (h *HostSyncor) getLocalHosts(cloudIDs []int64) ([]*metadata.CloudHost, err
 func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult, error) {
 	syncResult := new(metadata.SyncResult)
 	syncResult.FailInfo.IPError = make(map[string]string)
+	auditLogs := make([]metadata.AuditLog, 0)
+	properties, err := auditlog.NewAudit(h.logics.CoreAPI, kit.Header).GetAuditLogProperty(context.Background(), common.BKInnerObjIDHost)
+	if err != nil {
+		blog.Errorf("addHosts GetAuditLogProperty err:%s", err.Error())
+	}
+
 	for _, host := range hosts {
 		_, err := h.addHost(host)
 		if err != nil {
@@ -461,6 +468,26 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 		} else {
 			syncResult.SuccessInfo.Count++
 			syncResult.SuccessInfo.IPs = append(syncResult.SuccessInfo.IPs, host.PrivateIp)
+		}
+
+		// 审计日志
+		hostInfo, err := h.getHostInstanceDetails(kit, host.InstanceId)
+		if err != nil {
+			blog.Errorf("addHosts getHostInstanceDetails err:%s, hostID:%d", err.Error(), host.HostID)
+			continue
+		}
+		auditLog, err := h.logics.GetAddHostLog(kit, hostInfo, properties)
+		if err != nil {
+			blog.Errorf("addHosts GetAddHostLog err:%s", err.Error())
+			continue
+		}
+		auditLogs = append(auditLogs, *auditLog)
+	}
+
+	if len(auditLogs) > 0 {
+		_, err := h.logics.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), header, auditLogs...)
+		if err != nil {
+			blog.Errorf("addHosts SaveAuditLog err:%s", err.Error())
 		}
 	}
 
@@ -506,9 +533,9 @@ func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 		blog.Errorf("addHost fail,err:%s, cond:%+v", err.Error(), *cond)
 		return "", err
 	}
-	if !result.Result {
-		blog.Errorf("addHost fail,err:%s, cond:%+v", result.ErrMsg, *cond)
-		return "", fmt.Errorf("%s", result.ErrMsg)
+	if !res.Result {
+		blog.Errorf("addHost fail,err:%s, cond:%+v", res.ErrMsg, *cond)
+		return "", fmt.Errorf("%s", res.ErrMsg)
 	}
 
 	if len(res.Data.Info) == 0 {
@@ -548,7 +575,18 @@ func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult, error) {
 	syncResult := new(metadata.SyncResult)
 	syncResult.FailInfo.IPError = make(map[string]string)
+	auditLogs := make([]metadata.AuditLog, 0)
+	properties, err := auditlog.NewAudit(h.logics.CoreAPI, kit.Header).GetAuditLogProperty(context.Background(), common.BKInnerObjIDHost)
+	if err != nil {
+		blog.Errorf("updateHosts GetAuditLogProperty err:%s", err.Error())
+	}
+
 	for _, host := range hosts {
+		preData, err := h.getHostInstanceDetails(kit, host.InstanceId)
+		if err != nil {
+			blog.Errorf("updateHosts getHostInstanceDetails err:%s, hostID:%d", err.Error(), host.HostID)
+		}
+
 		updateInfo := mapstr.MapStr{
 			common.BKCloudIDField:         host.CloudID,
 			common.BKHostInnerIPField:     host.PrivateIp,
@@ -564,7 +602,27 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 			syncResult.SuccessInfo.Count++
 			syncResult.SuccessInfo.IPs = append(syncResult.SuccessInfo.IPs, host.PrivateIp)
 		}
+
+		curData, err := h.getHostInstanceDetails(kit, host.InstanceId)
+		if err != nil {
+			blog.Errorf("updateHosts getHostInstanceDetails err:%s, hostID:%d", err.Error(), host.HostID)
+			continue
+		}
+		auditLog, err := h.logics.GetUpdateHostLog(kit, preData, curData, properties)
+		if err != nil {
+			blog.Errorf("updateHosts GetUpdateHostLog err:%s", err.Error())
+			continue
+		}
+		auditLogs = append(auditLogs, *auditLog)
 	}
+
+	if len(auditLogs) > 0 {
+		_, err := h.logics.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), header, auditLogs...)
+		if err != nil {
+			blog.Errorf("updateHosts SaveAuditLog err:%s", err.Error())
+		}
+	}
+
 	return syncResult, nil
 }
 
@@ -599,7 +657,7 @@ func (h *HostSyncor) updateDestroyedHosts(conditon mapstr.MapStr) error {
 
 	uResult, err := h.logics.CoreAPI.CoreService().Instance().UpdateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
 	// 没有主机数据要更新并不算错误
-	if err != nil  && err.Error() != kit.CCError.CCError(common.CCErrCommNotFound).Error() {
+	if err != nil && err.Error() != kit.CCError.CCError(common.CCErrCommNotFound).Error() {
 		blog.Errorf("updateDestroyedHosts fail,err:%s, input:%+v", err.Error(), *input)
 		return err
 	}
@@ -681,4 +739,29 @@ func (h *HostSyncor) updateTaskState(taskid int64, status string, syncStatusDesc
 	}
 
 	return nil
+}
+
+// 获取主机实例详情
+func (h *HostSyncor) getHostInstanceDetails(kit *rest.Kit, instID string) (map[string]interface{}, error) {
+	cond := mapstr.MapStr{
+		common.BKCloudInstIDField: instID,
+	}
+	query := &metadata.QueryCondition{
+		Condition: cond,
+	}
+	res, err := h.logics.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDHost, query)
+	if nil != err {
+		blog.Errorf("getHostInstanceDetails failed, error: %v query:%#v", err, query)
+		return nil, err
+	}
+	if false == res.Result {
+		blog.Errorf("getHostInstanceDetails failed, query:%#v, err msg:%s", query, res.ErrMsg)
+		return nil, fmt.Errorf("%s", res.ErrMsg)
+	}
+	if len(res.Data.Info) == 0 {
+		blog.Errorf("GetHostInstanceDetails fail, host is not found, query:%#v", query)
+		return nil, fmt.Errorf("host is not found")
+	}
+
+	return res.Data.Info[0], nil
 }
