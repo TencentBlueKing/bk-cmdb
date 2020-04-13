@@ -227,6 +227,11 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
 		return
 	}
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	//get CurData for auditLog
 	err = objAttrAuditLog.WithCurrent(ctx.Kit, id)
 	if err != nil {
@@ -244,10 +249,7 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	if err != nil {
 		ctx.RespAutoError(err)
 	}
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
+
 	ctx.RespEntity(nil)
 }
 
