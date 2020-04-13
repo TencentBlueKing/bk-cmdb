@@ -7,7 +7,8 @@ import stringLength from 'utf8-byte-length'
 const customRules = {
     singlechar: {
         validate: value => {
-            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s？!！～、：＃％%＊*—…＆&·＄$\^（）\[\]『』〔〕｛｝【】￥￡♀‖〖〗「」]){0,256}$/.test(value)
+            // return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s？!！`={}|?<>~～、：＃％%＊*—…＆&·＄$\^（）\[\]『』〔〕｛｝【】￥￡♀‖〖〗「」]){0,256}$/.test(value)
+            return /^\S*$/.test(value)
         }
     },
     length: {
@@ -17,7 +18,7 @@ const customRules = {
     },
     longchar: {
         validate: value => {
-            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s？!！～、：＃％%＊*—…＆&·＄$\^（）\[\]『』〔〕｛｝【】￥￡♀‖〖〗「」]){0,2000}$/.test(value)
+            return /^\S*$/.test(value)
         }
     },
     associationId: {
