@@ -14,7 +14,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -29,7 +28,6 @@ import (
 	"configcenter/src/scene_server/cloud_server/cloudsync"
 	"configcenter/src/scene_server/cloud_server/logics"
 	svc "configcenter/src/scene_server/cloud_server/service"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 )
@@ -62,6 +60,19 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			time.Sleep(time.Second * 2)
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
+		}
+
+		process.Config.MongoDB, err = engine.WithMongo()
+		if err != nil {
+			return err
+		}
+		process.Config.Redis, err = engine.WithRedis()
+		if err != nil {
+			return err
+		}
+		process.Config.Auth, err = engine.WithAuth()
+		if err != nil {
+			return err
 		}
 
 		mongoConf := process.Config.MongoDB.GetMongoConf()
@@ -121,25 +132,11 @@ type CloudServer struct {
 var configLock sync.Mutex
 
 func (c *CloudServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	var err error
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
 		if c.Config == nil {
 			c.Config = new(options.Config)
-		}
-		// ignore err, cause ConfigMap is map[string]string
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
-		blog.Infof("config updated: \n%s", out)
-		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-		c.Config.MongoDB = mongoConf
-
-		redisConf := redis.ParseConfigFromKV("redis", current.ConfigMap)
-		c.Config.Redis = redisConf
-
-		c.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-		if err != nil {
-			blog.Errorf("parse auth center config failed: %v", err)
 		}
 	}
 }
