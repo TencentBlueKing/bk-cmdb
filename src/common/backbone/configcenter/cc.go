@@ -30,17 +30,16 @@ import (
 
 var confC *CC
 
-func NewConfigCenter(ctx context.Context, client *zk.ZkClient, procName string, confPath string, handler *CCHandler) error {
+func NewConfigCenter(ctx context.Context, client *zk.ZkClient, confPath string, handler *CCHandler) error {
 	disc := crd.NewZkRegDiscover(client)
-	return New(ctx, procName, confPath, disc, handler)
+	return New(ctx, confPath, disc, handler)
 }
 
-func New(ctx context.Context, procName string, confPath string, disc crd.ConfRegDiscvIf, handler *CCHandler) error {
+func New(ctx context.Context, confPath string, disc crd.ConfRegDiscvIf, handler *CCHandler) error {
 	confC = &CC{
 		ctx:           ctx,
 		disc:          disc,
 		handler:       handler,
-		procName:      procName,
 		previousProc:  new(ProcessConfig),
 		previousLang:  make(map[string]language.LanguageMap),
 		previousError: make(map[string]errors.ErrorCode),
@@ -64,6 +63,7 @@ type ProcHandlerFunc func(previous, current ProcessConfig)
 
 type CCHandler struct {
 	OnProcessUpdate  ProcHandlerFunc
+	OnExtraUpdate    ProcHandlerFunc
 	OnLanguageUpdate func(previous, current map[string]language.LanguageMap)
 	OnErrorUpdate    func(previous, current map[string]errors.ErrorCode)
 }
@@ -81,9 +81,13 @@ type CC struct {
 }
 
 func (c *CC) run() error {
-
-	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
-	procEvent, err := c.disc.Discover(procPath)
+	commonConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureCommon)
+	commonConfEvent, err := c.disc.Discover(commonConfPath)
+	if err != nil {
+		return err
+	}
+	extraConfPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureExtra)
+	extraConfEvent, err := c.disc.Discover(extraConfPath)
 	if err != nil {
 		return err
 	}
@@ -100,8 +104,10 @@ func (c *CC) run() error {
 
 	go func() {
 		select {
-		case pEvent := <-procEvent:
+		case pEvent := <-commonConfEvent:
 			c.onProcChange(pEvent)
+		case pEvent := <-extraConfEvent:
+			c.onExtraChange(pEvent)
 		case eEvent := <-errEvent:
 			c.onErrorChange(eEvent)
 		case langEvent := <-langEvent:
@@ -115,15 +121,14 @@ func (c *CC) run() error {
 }
 
 func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
-
 	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", c.procName, cur.Err)
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon, cur.Err)
 		return
 	}
 
 	now, err := ParseConfigWithData(cur.Data)
 	if err != nil {
-		blog.Errorf("config center received event that *%s* config has changed, but parse failed, err: %v", c.procName, err)
+		blog.Errorf("config center received event that *%s* config has changed, but parse failed, err: %v", types.CCConfigureCommon, err)
 		return
 	}
 
@@ -132,7 +137,32 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 	prev := c.previousProc
 	c.previousProc = now
 	if c.handler != nil {
-		go c.handler.OnProcessUpdate(*prev, *now)
+		if c.handler.OnProcessUpdate != nil {
+			go c.handler.OnProcessUpdate(*prev, *now)
+		}
+	}
+}
+
+func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
+	if cur.Err != nil {
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureExtra, cur.Err)
+		return
+	}
+
+	now, err := ParseConfigWithData(cur.Data)
+	if err != nil {
+		blog.Errorf("config center received event that *%s* config has changed, but parse failed, err: %v", types.CCConfigureExtra, err)
+		return
+	}
+
+	c.Lock()
+	defer c.Unlock()
+	prev := c.previousProc
+	c.previousProc = now
+	if c.handler != nil {
+		if c.handler.OnExtraUpdate != nil {
+			go c.handler.OnExtraUpdate(*prev, *now)
+		}
 	}
 }
 
@@ -145,7 +175,7 @@ func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
 
 	now := make(map[string]errors.ErrorCode)
 	if err := json.Unmarshal(cur.Data, &now); err != nil {
-		blog.Errorf("config center received %s event that *ERROR CODE* config has changed, but unmarshal err: %v", c.procName, err)
+		blog.Errorf("config center received event that *ERROR CODE* config has changed, but unmarshal err: %v", err)
 		return
 	}
 
@@ -167,7 +197,7 @@ func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
 
 	now := make(map[string]language.LanguageMap)
 	if err := json.Unmarshal(cur.Data, &now); err != nil {
-		blog.Errorf("config (%s) center received event that *LANGUAGE* config has changed, but unmarshal err: %v", c.procName, err)
+		blog.Errorf("config center received event that *LANGUAGE* config has changed, but unmarshal err: %v", err)
 		return
 	}
 
@@ -184,29 +214,31 @@ func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
 func (c *CC) sync() {
 	blog.Infof("start sync config from config center.")
 	c.syncProc()
+	c.syncExtra()
 	c.syncLang()
 	c.syncErr()
-	ticker := time.NewTicker(15 * time.Second)
 	go func() {
 		for {
 			select {
 			case <-c.ctx.Done():
 				return
-			case <-ticker.C:
-			}
+			default:
 
+			}
 			// sync the data from zk, and compare if it has been changed.
 			// then call their handler.
 			c.syncProc()
+			c.syncExtra()
 			c.syncLang()
 			c.syncErr()
+			time.Sleep(15 * time.Second)
 		}
 	}()
 }
 
 func (c *CC) syncProc() {
 	blog.V(5).Infof("start sync proc config from config center.")
-	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
+	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureCommon)
 	data, err := c.disc.Read(procPath)
 	if err != nil {
 		blog.Errorf("sync process config failed, node: %s, err: %v", procPath, err)
@@ -215,7 +247,7 @@ func (c *CC) syncProc() {
 
 	conf, err := ParseConfigWithData([]byte(data))
 	if err != nil {
-		blog.Errorf("config center sync process[%s] config, but parse failed, err: %v", c.procName, err)
+		blog.Errorf("config center sync process config, but parse failed, err: %v", err)
 		return
 	}
 
@@ -236,6 +268,39 @@ func (c *CC) syncProc() {
 
 }
 
+func (c *CC) syncExtra() {
+	blog.V(5).Infof("start sync proc config from config center.")
+	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureExtra)
+	data, err := c.disc.Read(procPath)
+	if err != nil {
+		blog.Errorf("sync *extra* config failed, node: %s, err: %v", procPath, err)
+		return
+	}
+
+	conf, err := ParseConfigWithData([]byte(data))
+	if err != nil {
+		blog.Errorf("config center sync *extra* config, but parse failed, err: %v", err)
+		return
+	}
+
+	c.Lock()
+	if reflect.DeepEqual(conf, c.previousProc) {
+		blog.V(5).Infof("sync *extra* config, but nothing is changed.")
+		c.Unlock()
+		return
+	}
+
+	event := &crd.DiscoverEvent{
+		Err:  nil,
+		Data: []byte(data),
+	}
+
+	c.Unlock()
+
+	c.onExtraChange(event)
+
+}
+
 func (c *CC) syncLang() {
 	blog.V(5).Infof("start sync lang config from config center.")
 	data, err := c.disc.Read(types.CC_SERVLANG_BASEPATH)
@@ -246,7 +311,7 @@ func (c *CC) syncLang() {
 
 	lang := make(map[string]language.LanguageMap)
 	if err := json.Unmarshal([]byte(data), &lang); err != nil {
-		blog.Errorf("sync %s *LANGUAGE* config, but unmarshal failed, err: %v", c.procName, err)
+		blog.Errorf("sync *LANGUAGE* config, but unmarshal failed, err: %v", err)
 		return
 	}
 
@@ -276,7 +341,7 @@ func (c *CC) syncErr() {
 
 	errCode := make(map[string]errors.ErrorCode)
 	if err := json.Unmarshal([]byte(data), &errCode); err != nil {
-		blog.Errorf("sync %s error code config, but unmarshal failed, err: %v", c.procName, err)
+		blog.Errorf("sync error code config, but unmarshal failed, err: %v", err)
 		return
 	}
 

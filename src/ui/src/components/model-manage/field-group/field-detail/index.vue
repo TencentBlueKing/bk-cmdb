@@ -84,7 +84,7 @@
             </label>
             <div class="form-label">
                 <span class="label-text">{{$t('用户提示')}}</span>
-                <textarea style="width: 94%;" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
+                <textarea class="raw" style="width: 94%;" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
             </div>
         </div>
         <div class="btn-group" :class="{ 'sticky-layout': scrollbar }">
@@ -275,14 +275,17 @@
                 }
                 return true
             },
+            isNullOrUndefinedOrEmpty (value) {
+                return [null, '', undefined].includes(value)
+            },
             async saveField () {
                 if (!await this.validateValue()) {
                     return
                 }
                 let fieldId = null
                 if (this.fieldInfo.bk_property_type === 'int') {
-                    this.fieldInfo.option.min = Number(this.fieldInfo.option.min)
-                    this.fieldInfo.option.max = Number(this.fieldInfo.option.max)
+                    this.fieldInfo.option.min = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.min) ? '' : Number(this.fieldInfo.option.min)
+                    this.fieldInfo.option.max = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.max) ? '' : Number(this.fieldInfo.option.max)
                 }
                 if (this.isEditField) {
                     await this.updateObjectAttribute({

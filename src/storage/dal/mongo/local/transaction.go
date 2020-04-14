@@ -13,10 +13,11 @@
 package local
 
 import (
-	"context"
-	"errors"
-	"net/http"
-	"time"
+    "context"
+    "errors"
+    "fmt"
+    "net/http"
+    "time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -30,10 +31,13 @@ import (
 
 // NewMgo returns new RDB
 func NewTransaction(enableTxn bool, mConf MongoConf, rConf redis.Config) (dal.Transaction, error) {
-	connStr, err := connstring.Parse(mConf.URI)
-	if nil != err {
-		return nil, err
-	}
+    connStr, err := connstring.Parse(mConf.URI)
+    if nil != err {
+        return nil, err
+    }
+    if mConf.RsName == "" {
+        return nil, fmt.Errorf("rsName not set")
+    }
 
 	redisCli, err := redis.NewFromConfig(rConf)
 	if err != nil {
@@ -41,12 +45,13 @@ func NewTransaction(enableTxn bool, mConf MongoConf, rConf redis.Config) (dal.Tr
 		return nil, err
 	}
 
-	timeout := time.Duration(mConf.TimeoutSeconds) * time.Second
-	conOpt := options.ClientOptions{
-		MaxPoolSize:    &mConf.MaxOpenConns,
-		MinPoolSize:    &mConf.MaxIdleConns,
-		ConnectTimeout: &timeout,
-	}
+    timeout := time.Duration(mConf.TimeoutSeconds) * time.Second
+    conOpt := options.ClientOptions{
+        MaxPoolSize:    &mConf.MaxOpenConns,
+        MinPoolSize:    &mConf.MaxIdleConns,
+        ConnectTimeout: &timeout,
+        ReplicaSet:     &mConf.RsName,
+    }
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(mConf.URI), &conOpt)
 	if nil != err {
@@ -67,31 +72,32 @@ func NewTransaction(enableTxn bool, mConf MongoConf, rConf redis.Config) (dal.Tr
 	}, nil
 }
 
+
 // StartTransaction
 // rewrite the ctx and header with transaction related info
 func (c *Mongo) StartTransaction(ctx *context.Context, h http.Header, opts ...types.TxnOption) (dal.Transaction, error) {
 
-	sess, err := c.dbc.StartSession()
-	if err != nil {
-		return nil, err
-	}
+    sess, err := c.dbc.StartSession()
+    if err != nil {
+        return nil, err
+    }
 
-	nc := Mongo{
-		dbc:    c.dbc,
-		dbname: c.dbname,
-		tm:     c.tm,
-		sess:   sess,
-	}
+    nc := Mongo{
+        dbc:    c.dbc,
+        dbname: c.dbname,
+        tm:     c.tm,
+        sess: sess,
+    }
 
-	if c.tm.enableTransaction {
-		se := mongo.SessionExposer{}
-		info, err := se.GetSessionInfo(sess)
-		if err != nil {
-			return nil, err
-		}
-		h.Set(common.BKHTTPCCTransactionNumber, info.TxnNumber)
-		h.Set(common.BKHTTPCCTxnSessionID, info.SessionID)
-		h.Set(common.BKHTTPCCTxnSessionState, info.SessionState)
+    if c.tm.enableTransaction {
+        se := mongo.SessionExposer{}
+        info, err := se.GetSessionInfo(sess)
+        if err != nil {
+            return nil, err
+        }
+        h.Set(common.BKHTTPCCTransactionNumber, info.TxnNumber)
+        h.Set(common.BKHTTPCCTxnSessionID, info.SessionID)
+        h.Set(common.BKHTTPCCTxnSessionState, info.SessionState)
 
 		context.WithValue(*ctx, common.CCContextKeyJoinOption, types.JoinOption{
 			SessionID:    info.SessionID,
@@ -110,15 +116,15 @@ func (c *Mongo) StartTransaction(ctx *context.Context, h http.Header, opts ...ty
 			nc.tm.timeout = 5 * time.Minute
 		}
 
-		if err := c.tm.SaveSession(sess); err != nil {
-			return nil, err
-		}
-	}
+        if err := c.tm.SaveSession(sess); err != nil {
+            return nil, err
+        }
+    }
 
-	if err := sess.StartTransaction(); err != nil {
-		return nil, err
-	}
-	return &nc, nil
+    if err := sess.StartTransaction(); err != nil {
+        return nil, err
+    }
+    return &nc, nil
 }
 
 // CommitTransaction 提交事务
@@ -141,19 +147,19 @@ func (c *Mongo) CommitTransaction(ctx context.Context) error {
 // AbortTransaction 取消事务
 func (c *Mongo) AbortTransaction(ctx context.Context) error {
 
-	sess, err := c.chooseSession(ctx)
-	if err != nil {
-		return err
-	}
-	if c.hasSession(ctx) {
-		defer func() {
-			sess.EndSession(ctx)
-			if err := c.tm.DeleteSession(sess); err != nil {
-				blog.Errorf("delete txn session failed, err: %v", err)
-			}
-		}()
-	}
-	return sess.AbortTransaction(ctx)
+    sess, err := c.chooseSession(ctx)
+    if err != nil {
+        return err
+    }
+    if c.hasSession(ctx) {
+        defer func() {
+            sess.EndSession(ctx)
+            if err := c.tm.DeleteSession(sess); err != nil {
+                blog.Errorf("delete txn session failed, err: %v", err)
+            }
+        }()
+    }
+    return sess.AbortTransaction(ctx)
 }
 
 // HasSession 判断context里是否有session信息

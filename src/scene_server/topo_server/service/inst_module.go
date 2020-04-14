@@ -293,33 +293,45 @@ func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
 	requestBody := struct {
 		Page    *metadata.BasePage `field:"page" json:"page" mapstructure:"page"`
 		Keyword string             `field:"keyword" json:"keyword" mapstructure:"keyword"`
+		Modules []int64            `field:"bk_module_ids" json:"bk_module_ids" mapstructure:"bk_module_ids"`
 	}{}
 	if err := ctx.DecodeInto(&requestBody); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	start := 0
-	limit := common.BKDefaultLimit
-	if requestBody.Page != nil {
-		limit = requestBody.Page.Limit
-		start = requestBody.Page.Start
+	// check and set page's limit value
+	if requestBody.Page == nil {
+		requestBody.Page = &metadata.BasePage{
+			Limit: common.BKNoLimit,
+		}
+	} else {
+		if requestBody.Page.Limit == 0 {
+			requestBody.Page.Limit = common.BKDefaultLimit
+		}
+		if requestBody.Page.IsIllegal() {
+			blog.Errorf("ListModulesByServiceTemplateID failed, Page is IsIllegal, rid:%s, page:%+v", ctx.Kit.Rid, requestBody.Page)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+			return
+		}
 	}
+
 	filter := map[string]interface{}{
 		common.BKServiceTemplateIDField: serviceTemplateID,
 		common.BKAppIDField:             bizID,
 	}
+
+	if requestBody.Modules != nil {
+		filter[common.BKModuleIDField] = mapstr.MapStr{common.BKDBIN: requestBody.Modules}
+	}
+
 	if len(requestBody.Keyword) != 0 {
 		filter[common.BKModuleNameField] = map[string]interface{}{
 			common.BKDBLIKE: requestBody.Keyword,
 		}
 	}
 	qc := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Start: start,
-			Limit: limit,
-			Sort:  requestBody.Page.Sort,
-		},
+		Page:      *requestBody.Page,
 		Condition: filter,
 	}
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, qc)

@@ -33,6 +33,7 @@ func BenchmarkLocalCUD(b *testing.B) {
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 		URI:          "mongodb://cc:cc@localhost:27011,localhost:27012,localhost:27013,localhost:27014/cmdb",
+		RsName:       "rs0",
 	}
 	db, err := NewMgo(mongoConfig, time.Second*5)
 	require.NoError(b, err)
@@ -40,8 +41,6 @@ func BenchmarkLocalCUD(b *testing.B) {
 	header := http.Header{}
 	header.Set(common.BKHTTPCCRequestID, "xxxxx")
 	ctx := context.WithValue(context.Background(), common.CCContextKeyJoinOption, types.JoinOption{
-		RequestID: header.Get(common.BKHTTPCCRequestID),
-		TxnID:     header.Get(common.BKHTTPCCTransactionID),
 	})
 	tablename := "tmptest"
 	err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "m"})
@@ -68,6 +67,7 @@ func dbCleint(t *testing.T) *Mongo {
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 		URI:          uri,
+		RsName:       "rs0",
 	}
 	db, err := NewMgo(mongoConfig, time.Second*5)
 	require.NoError(t, err)

@@ -36,7 +36,7 @@ type AttributeOperationInterface interface {
 	DeleteObjectAttribute(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) error
 	FindObjectAttributeWithDetail(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]*metadata.ObjAttDes, error)
 	FindObjectAttribute(kit *rest.Kit, cond condition.Condition, metaData *metadata.Metadata) ([]model.AttributeInterface, error)
-	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64) error
+	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, bizID int64) error
 	UpdateObjectAttributeIndex(kit *rest.Kit, objID string, data mapstr.MapStr, attID int64) (*metadata.UpdateAttrIndexData, error)
 
 	FindBusinessAttribute(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Attribute, error)
@@ -281,10 +281,17 @@ func (a *attribute) FindObjectAttribute(kit *rest.Kit, cond condition.Condition,
 	return model.CreateAttribute(kit, a.clientSet, rsp.Data.Info), nil
 }
 
-func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64) error {
-
+func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, bizID int64) error {
+	// TODO replace this logic with cond := metadata.NewPublicOrBizConditionByBizID(bizID) when old interface can't operate biz custom field
+	var cond map[string]interface{}
+	if bizID == 0 {
+		cond = make(map[string]interface{}, 0)
+	} else {
+		cond = metadata.NewPublicOrBizConditionByBizID(bizID)
+	}
+	cond[common.BKFieldID] = attID
 	input := metadata.UpdateOption{
-		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),
+		Condition: cond,
 		Data:      data,
 	}
 

@@ -81,7 +81,7 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="bk_biz_id" label="ID" width="100" align="center" fixed></bk-table-column>
+            <bk-table-column prop="bk_biz_id" label="ID" width="120" align="center" fixed></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 :class-name="column.id === 'bk_biz_name' ? 'is-highlight' : ''"
                 sortable="custom"
@@ -91,6 +91,28 @@
                 :label="column.name"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+            </bk-table-column>
+            <bk-table-column :label="$t('操作')" fixed="right">
+                <template slot-scope="{ row }">
+                    <cmdb-auth :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                        <template slot-scope="{ disabled }">
+                            <span class="text-primary"
+                                style="color: #dcdee5 !important; cursor: not-allowed;"
+                                v-if="row['bk_biz_name'] === '蓝鲸' && !disabled"
+                                v-bk-tooltips.top="$t('内置业务不可归档')"
+                                @click.stop>
+                                {{$t('归档')}}
+                            </span>
+                            <bk-button v-else
+                                theme="primary"
+                                :disabled="disabled"
+                                :text="true"
+                                @click.stop="handleDelete(row)">
+                                {{$t('归档')}}
+                            </bk-button>
+                        </template>
+                    </cmdb-auth>
+                </template>
             </bk-table-column>
             <cmdb-table-empty
                 slot="empty"
@@ -295,15 +317,17 @@
                 })
             },
             setFilterOptions () {
-                this.filter.options = this.properties
-                    .filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
-                    .map(property => {
-                        return {
-                            id: property['bk_property_id'],
-                            name: property['bk_property_name']
-                        }
-                    })
-                this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
+                this.filter.options = this.properties.map(property => {
+                    return {
+                        id: property['bk_property_id'],
+                        name: property['bk_property_name']
+                    }
+                })
+                if (this.$route.params.bizName) {
+                    this.filter.id = 'bk_biz_name'
+                } else {
+                    this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
+                }
             },
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {

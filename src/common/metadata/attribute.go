@@ -78,6 +78,7 @@ type Attribute struct {
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
+	BizID             int64       `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
 	Creator    string `field:"creator" json:"creator" bson:"creator"`
 	CreateTime *Time  `json:"create_time" bson:"create_time"`
@@ -602,15 +603,21 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 		}
 	}
 
-	listOption, ok := attribute.Option.([]interface{})
-	if !ok {
-		blog.Errorf("option %v invalid, not string type list option", attribute.Option)
+	var listOpt []interface{}
+	switch listOption := attribute.Option.(type) {
+	case []interface{}:
+		listOpt = listOption
+	case bson.A:
+		listOpt = listOption
+	default:
+		blog.Errorf("option %v invalid, not string type list option, but type %T", attribute.Option, attribute.Option)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}
-	for _, inVal := range listOption {
+
+	for _, inVal := range listOpt {
 		inValStr, ok := inVal.(string)
 		if !ok {
 			blog.Errorf("inner list option convert to string  failed, params %s not valid , list field value: %#v", key, val)
@@ -623,7 +630,7 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 	}
-	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOption, attribute, val)
+	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOpt, attribute, val)
 	return errors.RawErrorInfo{
 		ErrCode: common.CCErrCommParamsInvalid,
 		Args:    []interface{}{key},

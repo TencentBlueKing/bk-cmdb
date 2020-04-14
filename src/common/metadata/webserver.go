@@ -43,9 +43,8 @@ type LoginUserInfo struct {
 }
 
 type LoginPluginInfo struct {
-	Name    string // plugin info
-	Version string // In what version is used
-	//CookieEnv string // Reserved word, not used now,  When the cookie has the current key, it is used preferentially.
+	Name       string // plugin info
+	Version    string // In what version is used
 	HandleFunc LoginUserPluginInerface
 }
 
@@ -58,9 +57,6 @@ type LoginUserPluginParams struct {
 
 type LoginUserPluginInerface interface {
 	LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *LoginUserInfo, loginSucc bool)
-	GetUserList(c *gin.Context, config map[string]string, params map[string]string) ([]*LoginSystemUserInfo, error)
-	GetDepartment(c *gin.Context, config map[string]string) (*DepartmentData, error)
-	GetDepartmentProfile(c *gin.Context, config map[string]string) (*DepartmentProfileData, error)
 	GetLoginUrl(c *gin.Context, config map[string]string, input *LogoutRequestParams) string
 }
 

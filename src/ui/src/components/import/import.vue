@@ -9,50 +9,55 @@
             </i18n>
         </div>
         <div :class="['upload-file-info', { 'uploading': isLoading }, { 'fail': failed }, { 'uploaded': !isLoading }]">
-            <div class="upload-file-name">{{fileInfo.name}}</div>
+            <div class="upload-file-name" :title="fileInfo.name">{{fileInfo.name}}</div>
             <div class="upload-file-size fr">{{fileInfo.size}}</div>
             <div class="upload-file-status" hidden>{{fileInfo.status}}</div>
             <div class="upload-file-status-icon" hidden>
                 <i :class="['bk-icon ',{ 'icon-check-circle-shape': uploaded,'icon-close-circle-shape': failed }]"></i>
             </div>
         </div>
-        <div class="upload-details" v-if="hasUploadError()">
-            <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
-                <i class="bk-icon icon-check-circle-shape"></i>
-                <span>{{$t('成功上传N条数据', { N: uploadResult.success.length })}}</span>
-            </div>
-            <!-- 上传失败列表  -->
-            <div class="upload-details-fail" v-if="uploadResult.error && uploadResult.error.length">
-                <div class="upload-details-fail-title">
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                    <span>{{$t('上传失败列表')}}({{uploadResult.error.length}})</span>
+        <div class="upload-details">
+            <template v-if="$slots.uploadResult">
+                <slot name="uploadResult"></slot>
+            </template>
+            <div v-else-if="hasUploadError()">
+                <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
+                    <i class="bk-icon icon-check-circle-shape"></i>
+                    <span>{{$t('成功上传N条数据', { N: uploadResult.success.length })}}</span>
                 </div>
-                <ul ref="failList" class="upload-details-fail-list">
-                    <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg" :key="index">{{errorMsg}}</li>
-                </ul>
-            </div>
-            <div class="upload-details-fail" v-if="uploadResult.update_error && uploadResult.update_error.length">
-                <div class="upload-details-fail-title">
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                    <span>{{$t('更新失败列表')}}({{uploadResult.update_error.length}})</span>
+                <!-- 上传失败列表  -->
+                <div class="upload-details-fail" v-if="uploadResult.error && uploadResult.error.length">
+                    <div class="upload-details-fail-title">
+                        <i class="bk-icon icon-close-circle-shape"></i>
+                        <span>{{$t('上传失败列表')}}({{uploadResult.error.length}})</span>
+                    </div>
+                    <ul ref="failList" class="upload-details-fail-list">
+                        <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg" :key="index">{{errorMsg}}</li>
+                    </ul>
                 </div>
-                <ul ref="failList" class="upload-details-fail-list">
-                    <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
-                </ul>
-            </div>
-            <div class="upload-details-fail" v-if="uploadResult.asst_error && uploadResult.asst_error.length">
-                <div class="upload-details-fail-title">
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                    <span>关联关系导入失败列表({{uploadResult.asst_error.length}})</span>
+                <div class="upload-details-fail" v-if="uploadResult.update_error && uploadResult.update_error.length">
+                    <div class="upload-details-fail-title">
+                        <i class="bk-icon icon-close-circle-shape"></i>
+                        <span>{{$t('更新失败列表')}}({{uploadResult.update_error.length}})</span>
+                    </div>
+                    <ul ref="failList" class="upload-details-fail-list">
+                        <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
+                    </ul>
                 </div>
-                <ul ref="failList" class="upload-details-fail-list">
-                    <li v-for="(errorMsg, index) in uploadResult.asst_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
-                </ul>
+                <div class="upload-details-fail" v-if="uploadResult.asst_error && uploadResult.asst_error.length">
+                    <div class="upload-details-fail-title">
+                        <i class="bk-icon icon-close-circle-shape"></i>
+                        <span>关联关系导入失败列表({{uploadResult.asst_error.length}})</span>
+                    </div>
+                    <ul ref="failList" class="upload-details-fail-list">
+                        <li v-for="(errorMsg, index) in uploadResult.asst_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
+                    </ul>
+                </div>
             </div>
         </div>
-        <div class="clearfix down-model-content">
+        <div class="clearfix down-model-content" v-if="templdateAvailable">
             <slot name="download-desc"></slot>
-            <a href="javascript:void(0);" style="text-decoration: none;" @click="handleDownloadTemplate">
+            <a href="javascript:void(0);" style="text-decoration: none;" v-if="templateUrl" @click="handleDownloadTemplate">
                 <img src="../../assets/images/icon/down_model_icon.png">
                 <span class="submit-btn">{{$t('下载模板')}}</span>
             </a>
@@ -93,6 +98,14 @@
             maxSize: {
                 type: Number,
                 default: 500 // kb
+            },
+            uploadDone: {
+                type: Function,
+                default: null
+            },
+            templdateAvailable: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -164,6 +177,8 @@
                         }
                         this.$refs.fileInput.value = ''
                         this.isLoading = false
+
+                        this.$emit('upload-done', res)
                     }).catch(error => {
                         this.reset()
                         this.isLoading = false

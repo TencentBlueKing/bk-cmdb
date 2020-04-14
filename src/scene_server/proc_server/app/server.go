@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -64,8 +63,12 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if !configReady {
 		return fmt.Errorf("configuration item not found")
 	}
-
-	authConf, err := authcenter.ParseConfigFromKV("auth", procSvr.ConfigMap)
+	mongo, err := engine.WithMongo()
+	if err != nil {
+		return err
+	}
+	procSvr.Config.Mongo = &mongo
+	authConf, err := engine.WithAuth()
 	if err != nil {
 		return err
 	}
