@@ -391,7 +391,7 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 				output[common.BKDBOR] = exactOr
 			} else {
 				attrVal := gparams.SpecialCharChange(targetStr)
-				output[i] = map[string]interface{}{"$regex": attrVal, "$options": "i"}
+				output[i] = map[string]interface{}{common.BKDBLIKE: attrVal, common.BKDBOPTIONS: "i"}
 			}
 		default:
 			output[i] = j

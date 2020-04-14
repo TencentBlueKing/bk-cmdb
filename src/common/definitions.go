@@ -144,6 +144,10 @@ const (
 	// BKDBLIKE the db operator
 	BKDBLIKE = "$regex"
 
+	// BKDBOPTIONS the db operator,used with $regex
+	// detail to see https://docs.mongodb.com/manual/reference/operator/query/regex/#op._S_options
+	BKDBOPTIONS = "$options"
+
 	// BKDBEQ the db operator
 	BKDBEQ = "$eq"
 
@@ -889,7 +893,7 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	//BKSessionLanugageKey = "language"
-	BKHTTPSupplierID = "bk_supplier_id"
+	BKHTTPSupplierID     = "bk_supplier_id"
 	BKHTTPRequestAppCode = "Bk-App-Code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
