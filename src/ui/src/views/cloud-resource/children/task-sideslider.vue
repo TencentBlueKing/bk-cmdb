@@ -2,7 +2,7 @@
     <bk-sideslider v-transfer-dom
         :is-show.sync="isShow"
         :title="title"
-        :width="695"
+        :width="800"
         @hidden="handleHidden">
         <component slot="content" ref="component"
             class="slider-content"

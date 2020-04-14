@@ -1267,5 +1267,6 @@
     "请输入IP，多个IP请使用换行分隔": "Please input IP, use newline to seperate multiple IP",
     "全部模型": "All Models",
     "确认删除xx": "Confirm to delete {model} {instance}?",
-    "云账户禁止删除提示": "Cloud account was bound with task, can not delete."
+    "云账户禁止删除提示": "Cloud account was bound with task, can not delete.",
+    "同步频率提示语": "Support real-time synchronization."
 }

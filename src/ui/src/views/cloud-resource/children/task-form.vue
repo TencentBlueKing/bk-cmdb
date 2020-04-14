@@ -232,14 +232,15 @@
     .form-layout {
         padding: 10px 25px;
         display: block;
+        font-size: 0;
         .form-item:nth-child(2n) {
-            margin-left: 32px;
+            padding-left: 32px;
         }
         .form-item:nth-child(n + 3) {
             margin-top: 10px;
         }
         .form-item {
-            width: 300px;
+            width: 50%;
             margin-left: 0;
             /deep/ {
                 .bk-label,
