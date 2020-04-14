@@ -112,7 +112,7 @@ type HostIdentProcess struct {
 	FuncName        string  `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
 	StartParamRegex string  `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
 	BindModules     []int64 `json:"bind_modules" bson:"bind_modules"`                 // 进程绑定的模块ID，数字数组
-	PortEnable      bool    `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
+	PortEnable      bool    `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
 }
 
 type HostIdentProcessSorter []HostIdentProcess
