@@ -87,6 +87,7 @@
         },
         data () {
             return {
+                isMultiple: true,
                 values: {},
                 refrenceValues: {},
                 editable: {},

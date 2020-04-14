@@ -323,7 +323,7 @@
             }
         },
         async created () {
-            this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name')
+            this.$store.dispatch('objectBiz/getAuthorizedBusiness')
             await this.getTableData()
         },
         methods: {
