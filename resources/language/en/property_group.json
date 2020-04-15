@@ -10,6 +10,7 @@
 	"process_property_group_gsekit_baseinfo": "GSEkit base info",
 	"process_property_group_gsekit_manage": "GSEkit manager info",
 	"process_property_group_proc_mgr": "process manager info",
+	"process_property_group_network_proxy": "network proxy info",
 	"plat_property_group_default": "default",
     "bk_switch_property_group_default": "default",
     "bk_router_property_group_default": "default",
