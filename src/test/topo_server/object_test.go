@@ -533,20 +533,20 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("create object invalid bk_obj_name", func() {
-			input := metadata.Object{
-				ObjCls:     "bk_network",
-				ObjIcon:    "icon-cc-business",
-				ObjectID:   "cc1234",
-				ObjectName: "~!@#$%^&*()",
-				OwnerID:    "0",
-				Creator:    "admin",
-			}
-			rsp, err := objectClient.CreateObject(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
+		//It("create object invalid bk_obj_name", func() {
+		//	input := metadata.Object{
+		//		ObjCls:     "bk_network",
+		//		ObjIcon:    "icon-cc-business",
+		//		ObjectID:   "cc1234",
+		//		ObjectName: "~!@#$%^&*()",
+		//		OwnerID:    "0",
+		//		Creator:    "admin",
+		//	}
+		//	rsp, err := objectClient.CreateObject(context.Background(), header, input)
+		//	util.RegisterResponse(rsp)
+		//	Expect(err).NotTo(HaveOccurred())
+		//	Expect(rsp.Result).To(Equal(false))
+		//})
 
 		It("create object bk_classification_id = 'cc_class' and bk_obj_id='test_obj'", func() {
 			input := metadata.Object{
@@ -613,15 +613,15 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("update object invalid bk_obj_name", func() {
-			input := map[string]interface{}{
-				"bk_obj_name": "~!@#$%^&*()",
-			}
-			rsp, err := objectClient.UpdateObject(context.Background(), objId, header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
+		//It("update object invalid bk_obj_name", func() {
+		//	input := map[string]interface{}{
+		//		"bk_obj_name": "~!@#$%^&*()",
+		//	}
+		//	rsp, err := objectClient.UpdateObject(context.Background(), objId, header, input)
+		//	util.RegisterResponse(rsp)
+		//	Expect(err).NotTo(HaveOccurred())
+		//	Expect(rsp.Result).To(Equal(false))
+		//})
 
 		It("search objects", func() {
 			input := map[string]interface{}{
@@ -973,23 +973,23 @@ var _ = Describe("object test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 
-			It("create object attribute invalid PropertyName", func() {
-				input := &metadata.ObjAttDes{
-					Attribute: metadata.Attribute{
-						OwnerID:       "0",
-						ObjectID:      "cc_obj",
-						PropertyID:    "cc1",
-						PropertyName:  "~!@#$%^%^",
-						PropertyGroup: "default",
-						IsEditable:    true,
-						PropertyType:  "singlechar",
-					},
-				}
-				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
-			})
+			//It("create object attribute invalid PropertyName", func() {
+			//	input := &metadata.ObjAttDes{
+			//		Attribute: metadata.Attribute{
+			//			OwnerID:       "0",
+			//			ObjectID:      "cc_obj",
+			//			PropertyID:    "cc1",
+			//			PropertyName:  "~!@#$%^%^",
+			//			PropertyGroup: "default",
+			//			IsEditable:    true,
+			//			PropertyType:  "singlechar",
+			//		},
+			//	}
+			//	rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+			//	util.RegisterResponse(rsp)
+			//	Expect(err).NotTo(HaveOccurred())
+			//	Expect(rsp.Result).To(Equal(false))
+			//})
 
 			It("create object attribute invalid PropertyType", func() {
 				input := &metadata.ObjAttDes{
@@ -1058,15 +1058,15 @@ var _ = Describe("object test", func() {
 				Expect(rsp.Result).To(Equal(false))
 			})
 
-			It("update object attribute invalid bk_property_name", func() {
-				input := map[string]interface{}{
-					"bk_property_name": "~!@#$%^%^",
-				}
-				rsp, err := apiServerClient.UpdateObjectAtt(context.Background(), attrId1, header, input)
-				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false))
-			})
+			//It("update object attribute invalid bk_property_name", func() {
+			//	input := map[string]interface{}{
+			//		"bk_property_name": "~!@#$%^%^",
+			//	}
+			//	rsp, err := apiServerClient.UpdateObjectAtt(context.Background(), attrId1, header, input)
+			//	util.RegisterResponse(rsp)
+			//	Expect(err).NotTo(HaveOccurred())
+			//	Expect(rsp.Result).To(Equal(false))
+			//})
 
 			It("delete object attribute id="+attrId, func() {
 				rsp, err := apiServerClient.DeleteObjectAtt(context.Background(), attrId, header)
@@ -1301,20 +1301,20 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("create set invalid bk_set_name", func() {
-			input := mapstr.MapStr{
-				"bk_set_name":         "~!@#$%^&*()_+-=",
-				"bk_parent_id":        childInstIdInt,
-				"bk_supplier_account": "0",
-				"bk_biz_id":           bizIdInt,
-				"bk_service_status":   "1",
-				"bk_set_env":          "2",
-			}
-			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
+		//It("create set invalid bk_set_name", func() {
+		//	input := mapstr.MapStr{
+		//		"bk_set_name":         "~!@#$%^&*()_+-=",
+		//		"bk_parent_id":        childInstIdInt,
+		//		"bk_supplier_account": "0",
+		//		"bk_biz_id":           bizIdInt,
+		//		"bk_service_status":   "1",
+		//		"bk_set_env":          "2",
+		//	}
+		//	rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
+		//	util.RegisterResponse(rsp)
+		//	Expect(err).NotTo(HaveOccurred())
+		//	Expect(rsp.Result).To(Equal(false))
+		//})
 
 		It("update set", func() {
 			input := map[string]interface{}{
@@ -1346,15 +1346,15 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("update set invalid bk_set_name", func() {
-			input := map[string]interface{}{
-				"bk_set_name": "~!@#$%^&*()_+-=",
-			}
-			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
+		//It("update set invalid bk_set_name", func() {
+		//	input := map[string]interface{}{
+		//		"bk_set_name": "~!@#$%^&*()_+-=",
+		//	}
+		//	rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
+		//	util.RegisterResponse(rsp)
+		//	Expect(err).NotTo(HaveOccurred())
+		//	Expect(rsp.Result).To(Equal(false))
+		//})
 
 		It("update set biz, parent", func() {
 			input := map[string]interface{}{
@@ -1482,18 +1482,18 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("create module invalid bk_module_name", func() {
-			input := map[string]interface{}{
-				"bk_module_name":      "~!@#$%^&*()_+-=",
-				"bk_parent_id":        setId,
-				"service_category_id": 2,
-				"service_template_id": 0,
-			}
-			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
+		//It("create module invalid bk_module_name", func() {
+		//	input := map[string]interface{}{
+		//		"bk_module_name":      "~!@#$%^&*()_+-=",
+		//		"bk_parent_id":        setId,
+		//		"service_category_id": 2,
+		//		"service_template_id": 0,
+		//	}
+		//	rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+		//	util.RegisterResponse(rsp)
+		//	Expect(err).NotTo(HaveOccurred())
+		//	Expect(rsp.Result).To(Equal(false))
+		//})
 
 		It("create module invalid bk_parent_id", func() {
 			input := map[string]interface{}{
@@ -1550,15 +1550,15 @@ var _ = Describe("object test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("update module invalid bk_module_name", func() {
-			input := map[string]interface{}{
-				"bk_module_name": "~!@#$%^&*()_+-=",
-			}
-			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false))
-		})
+		//It("update module invalid bk_module_name", func() {
+		//	input := map[string]interface{}{
+		//		"bk_module_name": "~!@#$%^&*()_+-=",
+		//	}
+		//	rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
+		//	util.RegisterResponse(rsp)
+		//	Expect(err).NotTo(HaveOccurred())
+		//	Expect(rsp.Result).To(Equal(false))
+		//})
 
 		It("update module set, biz, parent", func() {
 			input := map[string]interface{}{
