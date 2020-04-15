@@ -64,10 +64,7 @@ const customRules = {
     },
     number: {
         validate: (value) => {
-            if (!String(value).length) {
-                return false
-            }
-            return /^(\-|\+)?\d+$/.test(value)
+            return /^(-)?[0-9]*$/.test(value)
         }
     },
     isBigger: {

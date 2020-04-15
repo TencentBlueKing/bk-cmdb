@@ -278,7 +278,7 @@ export function getValidateRules (property) {
         rules[propertyType] = true
         rules.length = propertyType === 'singlechar' ? 256 : 2000
     } else if (propertyType === 'int') {
-        rules.number = true
+        rules.numeric = true
     } else if (propertyType === 'float') {
         rules.float = true
     }
