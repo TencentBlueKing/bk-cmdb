@@ -12,7 +12,10 @@
 
 package common
 
-import "math"
+import (
+	"math"
+	"time"
+)
 
 const (
 	// HTTPCreate create method
@@ -885,29 +888,24 @@ const (
 	// BKHTTPOwnerID the owner
 	BKHTTPOwner = "HTTP_BK_SUPPLIER_ACCOUNT"
 	// BKHTTPOwnerID the owner id
-	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
-	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
+	BKHTTPOwnerID           = "HTTP_BLUEKING_SUPPLIER_ID"
 	BKHTTPCookieLanugageKey = "blueking_language"
-	//BKSessionLanugageKey = "language"
-	BKHTTPSupplierID = "bk_supplier_id"
-	BKHTTPRequestAppCode = "Bk-App-Code"
+	BKHTTPSupplierID        = "bk_supplier_id"
+	BKHTTPRequestAppCode    = "Bk-App-Code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID      = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime       = "Cc_Request_Time"
-	BKHTTPCCTransactionID     = "Cc_Txn_Id"
-	BKHTTPCCTxnTMServerAddr   = "Cc_Txn_Tm_addr-Ip"
-	BKHTTPCCTransactionNumber = "Cc_Txn_Number"
-	BKHTTPCCTxnSessionID      = "Cc_Txn_Session_ID"
-	BKHTTPCCTxnSessionState   = "Cc_Txn_Session_State"
+	BKHTTPOtherRequestID = "X-Bkapi-Request-Id"
 )
 
-type CCContextKey string
-
+// transaction related
 const (
-	CCContextKeyJoinOption = CCContextKey("cc_context_joinoption")
+	TransactionIdHeader      = "cc_transaction_id_string"
+	TransactionTimeoutHeader = "cc_transaction_timeout"
+
+	// mongodb default transaction timeout is 1 minute.
+	TransactionDefaultTimeout = 2 * time.Minute
 )
 
 const (

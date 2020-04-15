@@ -29,6 +29,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/synchronize"
 	ccSystem "configcenter/src/apimachinery/coreservice/system"
 	"configcenter/src/apimachinery/coreservice/topographics"
+	"configcenter/src/apimachinery/coreservice/transaction"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
@@ -48,6 +49,7 @@ type CoreServiceClientInterface interface {
 	SetTemplate() settemplate.SetTemplateInterface
 	HostApplyRule() hostapplyrule.HostApplyRuleInterface
 	System() ccSystem.SystemClientInterface
+	Txn() transaction.Interface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -116,4 +118,8 @@ func (c *coreService) SetTemplate() settemplate.SetTemplateInterface {
 
 func (c *coreService) HostApplyRule() hostapplyrule.HostApplyRuleInterface {
 	return hostapplyrule.NewHostApplyRuleClient(c.restCli)
+}
+
+func (c *coreService) Txn() transaction.Interface {
+	return transaction.NewTxn(c.restCli)
 }

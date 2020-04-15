@@ -282,6 +282,18 @@ func (s *coreService) ccSystem(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *coreService) transaction(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/transaction/commit", Handler: s.CommitTransaction})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/transaction/abort", Handler: s.AbortTransaction})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *coreService) initService(web *restful.WebService) {
 	s.initModelClassification(web)
 	s.initModel(web)
@@ -301,4 +313,5 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.ccSystem(web)
 	s.initSetTemplate(web)
 	s.initHostApplyRule(web)
+	s.transaction(web)
 }

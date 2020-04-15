@@ -24,7 +24,6 @@ import (
 
 var clientSet apimachinery.ClientSetInterface
 var tConfig TestConfig
-var header http.Header
 var reportUrl string
 var reportDir string
 
@@ -92,7 +91,7 @@ func GetTestConfig() TestConfig {
 }
 
 func GetHeader() http.Header {
-	header = make(http.Header)
+	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
 	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
@@ -107,6 +106,7 @@ func ClearDatabase() {
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 		URI:          tConfig.MongoURI,
+		RsName:       "rs0",
 	}
 	db, err := local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
@@ -114,7 +114,7 @@ func ClearDatabase() {
 		db.DropTable(context.Background(), tableName)
 	}
 	db.Close()
-	clientSet.AdminServer().Migrate(context.Background(), "0", "community", header)
+	clientSet.AdminServer().Migrate(context.Background(), "0", "community", GetHeader())
 }
 
 func GetReportUrl() string {

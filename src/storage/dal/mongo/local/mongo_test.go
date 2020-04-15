@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/types"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 
 	"github.com/stretchr/testify/require"
 )
@@ -39,8 +40,9 @@ func BenchmarkLocalCUD(b *testing.B) {
 
 	header := http.Header{}
 	header.Set(common.BKHTTPCCRequestID, "xxxxx")
-	ctx := context.WithValue(context.Background(), common.CCContextKeyJoinOption, types.JoinOption{
-	})
+	sessionID, _ := uuid.New()
+	ctx := context.WithValue(context.Background(), common.TransactionTimeoutHeader, sessionID[:])
+	ctx = context.WithValue(ctx, common.TransactionTimeoutHeader, time.Second)
 	tablename := "tmptest"
 	err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "m"})
 	require.NoError(b, err)
@@ -881,49 +883,6 @@ func TestUpdateModifyCount(t *testing.T) {
 	err = table.Insert(ctx, insertDataMany)
 	require.NoError(t, err)
 
-	// update one
-	filter := map[string]string{"ext": "ext"}
-	update := map[string]string{"change_version": "2"}
-	var modifyCount int64 = 0
-	modifyCount, err = table.UpdateModifyCount(ctx, filter, update)
-	require.NoError(t, err)
-	require.NotEqual(t, 1, modifyCount)
-
-	filter = map[string]string{"change_version": "2"}
-	cnt, err := table.Find(filter).Count(ctx)
-	require.NoError(t, err)
-	if cnt != 2 {
-		t.Errorf("update error.")
-		return
-	}
-
-	//  update may
-	filterMay := map[string]string{}
-	update = map[string]string{"change_modify_count_many": "4"}
-	modifyCount, err = table.UpdateModifyCount(ctx, filterMay, update)
-	require.NoError(t, err)
-	require.NotEqual(t, 0, modifyCount)
-	filter = map[string]string{"change_modify_count_many": "4"}
-	cnt, err = table.Find(filter).Count(ctx)
-	require.NoError(t, err)
-	if cnt != 2 {
-		t.Errorf("update error.")
-		return
-	}
-
-	// not row update
-	filterNotFound := map[string]string{"ext_not_found": "ext"}
-	update = map[string]string{"change_modify_count_not_found": "4"}
-	modifyCount, err = table.UpdateModifyCount(ctx, filterNotFound, update)
-	require.NoError(t, err)
-	require.NotEqual(t, 0, modifyCount)
-	filter = map[string]string{"change_modify_count_not_found": "4"}
-	cnt, err = table.Find(filter).Count(ctx)
-	require.NoError(t, err)
-	if cnt != 0 {
-		t.Errorf("update error.")
-		return
-	}
 }
 
 func TestConvInterface(t *testing.T) {

@@ -13,14 +13,14 @@
 package model
 
 import (
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/http/rest"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    "configcenter/src/common/universalsql"
-    "configcenter/src/common/universalsql/mongo"
-    "configcenter/src/common/util"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql"
+	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 )
 
 func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (bool, error) {
@@ -28,6 +28,7 @@ func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (b
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
 	cnt, err := m.count(kit, cond)
+	return true, nil
 	return 0 != cnt, err
 }
 
@@ -64,9 +65,9 @@ func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Conditio
 	for _, item := range clsItems {
 		clsIDS = append(clsIDS, item.ClassificationID)
 	}
-	
+
 	filter := mapstr.MapStr{metadata.ModelFieldObjCls: mapstr.MapStr{common.BKDBIN: clsIDS}}
-    util.SetQueryOwner(filter, kit.SupplierAccount)
+	util.SetQueryOwner(filter, kit.SupplierAccount)
 	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, filter, err.Error())
