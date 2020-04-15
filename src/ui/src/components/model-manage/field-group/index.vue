@@ -334,10 +334,6 @@
                     fieldIndex: null,
                     backView: ''
                 },
-                preview: {
-                    properties: [],
-                    groups: []
-                },
                 configProperty: {
                     show: false,
                     selected: []
@@ -787,7 +783,7 @@
                     }
                 })
                 const properties = await this.getProperties()
-                this.init(properties, this.preview.groups)
+                this.init(properties, this.groups)
             },
             handleAddField (group) {
                 this.slider.isEditField = false
