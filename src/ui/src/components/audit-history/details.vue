@@ -15,7 +15,7 @@
                 :row-border="true"
                 :col-border="true"
                 :cell-style="getCellStyle">
-                <bk-table-column prop="bk_property_name"></bk-table-column>
+                <bk-table-column prop="bk_property_name" :label="$t('属性')"></bk-table-column>
                 <bk-table-column v-if="!['create'].includes(details.action)"
                     prop="pre_data"
                     :label="$t('变更前')"
