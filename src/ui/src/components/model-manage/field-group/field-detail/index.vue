@@ -138,7 +138,8 @@
             isMainLineModel: {
                 type: Boolean,
                 default: false
-            }
+            },
+            customObjId: String
         },
         data () {
             return {
@@ -192,6 +193,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('objectModel', [
                 'activeModel',
@@ -251,8 +253,10 @@
         },
         methods: {
             ...mapActions('objectModelProperty', [
+                'createBizObjectAttribute',
                 'createObjectAttribute',
-                'updateObjectAttribute'
+                'updateObjectAttribute',
+                'updateBizObjectAttribute'
             ]),
             handleScrollbar () {
                 const el = this.$refs.sliderMain
@@ -288,7 +292,9 @@
                     this.fieldInfo.option.max = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.max) ? '' : Number(this.fieldInfo.option.max)
                 }
                 if (this.isEditField) {
-                    await this.updateObjectAttribute({
+                    const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
+                    await this[action]({
+                        bizId: this.bizId,
                         id: this.field.id,
                         params: this.$injectMetadata(this.fieldInfo, {
                             clone: true, inject: this.isInjectable
@@ -309,7 +315,9 @@
                         bk_obj_id: this.group.bk_obj_id,
                         bk_supplier_account: this.supplierAccount
                     }
-                    await this.createObjectAttribute({
+                    const action = this.customObjId ? 'createBizObjectAttribute' : 'createObjectAttribute'
+                    await this[action]({
+                        bizId: this.bizId,
                         params: this.$injectMetadata({
                             ...this.fieldInfo,
                             ...otherParams
