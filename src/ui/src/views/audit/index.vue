@@ -126,7 +126,7 @@
                 sortable="custom"
                 prop="bk_biz_name"
                 :label="$t('所属业务')">
-                <template slot-scope="{ row }">{{row.bk_biz_name || ($tools.getValue(row, 'operation_detail.basic_detail.bk_biz_name'))}}</template>
+                <template slot-scope="{ row }">{{getBusinessName(row)}}</template>
             </bk-table-column>
             <bk-table-column
                 prop="resource_name"
@@ -161,8 +161,8 @@
             :title="$t('操作详情')">
             <template slot="content" v-if="details.isShow">
                 <v-details
-                    v-if="details.showDetailsList.includes(details.data.audit_type)"
-                    :show-business="active === 'business'"
+                    v-if="active !== 'business'"
+                    :show-business="false"
                     :details="details.data">
                 </v-details>
                 <v-json-details v-else :details="details.data"></v-json-details>
@@ -342,7 +342,7 @@
             },
             getResourceName (row) {
                 if (['assign_host', 'unassign_host', 'transfer_host_module'].includes(row.action)) {
-                    return row.bk_host_innerip || '--'
+                    return row.bk_host_innerip || row.operation_detail.bk_host_innerip || '--'
                 }
                 if (['instance_association'].includes(row.resource_type)) {
                     return row.target_instance_name || '--'
@@ -355,6 +355,12 @@
                     return this.actionSet[`${row.resource_type}-${row.action}-${label}`]
                 }
                 return this.actionSet[`${row.resource_type}-${row.action}`]
+            },
+            getBusinessName (row) {
+                return row.bk_biz_name
+                    || this.$tools.getValue(row, 'operation_detail.bk_biz_name')
+                    || this.$tools.getValue(row, 'operation_detail.basic_detail.bk_biz_name')
+                    || '--'
             },
             async getTableData (event) {
                 try {

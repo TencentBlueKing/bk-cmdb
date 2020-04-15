@@ -43,6 +43,9 @@
                 }, {
                     "id": "host-update",
                     "name": "修改"
+                }, {
+                    "id": "host-transfer_host_module",
+                    "name": "转移模块"
                 }
             ]
         }
