@@ -465,7 +465,7 @@ const (
 	BKPort = "port"
 
 	// BKProcPortEnable whether enable port,  enable port use for monitor app. default value
-	BKProcPortEnable = "bk_port_enable"
+	BKProcPortEnable = "bk_enable_port"
 
 	// BKUser the user
 	BKUser = "user"

@@ -69,7 +69,7 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 
-	// process template bk_port_enable not set vaule, default value must be true
+	// process template bk_enable_port not set vaule, default value must be true
 	if template.Property.PortEnable.AsDefaultValue == nil {
 		blTrue := true
 		template.Property.PortEnable.AsDefaultValue = &blTrue
