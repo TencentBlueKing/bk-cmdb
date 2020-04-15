@@ -5,16 +5,17 @@
             :max-height="$APP.height - 120">
             <bk-table-column prop="property_name" :label="$t('属性名称')" show-overflow-tooltip></bk-table-column>
             <bk-table-column prop="property_value" :label="$t('变更前')" show-overflow-tooltip>
-                <template slot-scope="{ row }">{{row.property_value | formatter('singlechar')}}</template>
+                <template slot-scope="{ row }">{{getCellValue(row, 'before')}}</template>
             </bk-table-column>
             <bk-table-column prop="show_value" :label="$t('变更后')" show-overflow-tooltip>
-                <template slot-scope="{ row }">{{getAfterValue(row) | formatter('singlechar')}}</template>
+                <template slot-scope="{ row }">{{getCellValue(row, 'after')}}</template>
             </bk-table-column>
         </bk-table>
     </div>
 </template>
 
 <script>
+    import formatter from '@/filters/formatter'
     export default {
         props: {
             module: Object,
@@ -96,18 +97,17 @@
             initOthersData () {
                 this.detailsData = [...this.instance.changed_attributes]
             },
-            getAfterValue (row) {
+            getCellValue (row, type) {
                 const propertyId = row.property_id
-                const value = typeof row.template_property_value === 'object' ? row.template_property_value.value : row.template_property_value
+                let value = row.property_value
+                if (type === 'after') {
+                    value = typeof row.template_property_value === 'object' ? row.template_property_value.value : row.template_property_value
+                }
                 if (this.type !== 'others') {
                     const property = this.properties.find(property => property.bk_property_id === propertyId)
-                    const type = property.bk_property_type
-                    if (type === 'enum') {
-                        const option = (property.option || []).find(option => option.id === value)
-                        return option ? option.name : ''
-                    }
+                    return formatter(value, property)
                 }
-                return value
+                return formatter(value, 'singlechar')
             }
         }
     }

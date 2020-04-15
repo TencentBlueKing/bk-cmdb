@@ -34,6 +34,7 @@ type TestConfig struct {
 	TotalRequest   int64
 	DBWriteKBSize  int
 	MongoURI       string
+	MongoRsName    string
 	RedisCfg       RedisConfig
 }
 
@@ -53,6 +54,7 @@ func init() {
 	flag.StringVar(&tConfig.RedisCfg.RedisPort, "redis-port", "6379", "redis host port")
 	flag.StringVar(&tConfig.RedisCfg.RedisPasswd, "redis-passwd", "cc", "redis password")
 	flag.StringVar(&tConfig.MongoURI, "mongo-addr", "mongodb://127.0.0.1:27017/cmdb", "mongodb URI")
+	flag.StringVar(&tConfig.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
 	flag.StringVar(&reportUrl, "report-url", "http://127.0.0.1:8080/", "html report base url")
 	flag.StringVar(&reportDir, "report-dir", "report", "report directory")
 	flag.Parse()
@@ -106,7 +108,7 @@ func ClearDatabase() {
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 		URI:          tConfig.MongoURI,
-		RsName:       "rs0",
+		RsName:       tConfig.MongoRsName,
 	}
 	db, err := local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())

@@ -29,8 +29,9 @@ import (
 var Conf *Config
 
 type Config struct {
-	ZkAddr   string
-	MongoURI string
+	ZkAddr      string
+	MongoURI    string
+	MongoRsName string
 }
 
 // AddFlags add flags
@@ -38,6 +39,7 @@ func (c *Config) AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&c.ZkAddr, "zk-addr", os.Getenv("ZK_ADDR"), "the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR")
 	// TODO add zkuser and zkpwd
 	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"), "the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
+	cmd.PersistentFlags().StringVar(&c.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
 }
 
 type Service struct {
@@ -58,7 +60,7 @@ func NewZkService(zkAddr string) (*Service, error) {
 	return service, nil
 }
 
-func NewMongoService(mongoURI string) (*Service, error) {
+func NewMongoService(mongoURI string, mongoRsName string) (*Service, error) {
 	if mongoURI == "" {
 		return nil, errors.New("mongo-uri must set via flag or environment variable")
 	}
@@ -66,6 +68,7 @@ func NewMongoService(mongoURI string) (*Service, error) {
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 		URI:          mongoURI,
+		RsName:       mongoRsName,
 	}
 	db, err := local.NewMgo(mongoConfig, time.Minute)
 	if err != nil {
