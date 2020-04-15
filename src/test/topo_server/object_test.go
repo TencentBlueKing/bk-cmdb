@@ -920,11 +920,15 @@ var _ = Describe("object test", func() {
 			})
 
 			It("create object attribute long PropertyID", func() {
+				var longPropertyID string
+				for i := 0; i < 10000; i++ {
+					longPropertyID += "a"
+				}
 				input := &metadata.ObjAttDes{
 					Attribute: metadata.Attribute{
 						OwnerID:       "0",
 						ObjectID:      "cc_obj",
-						PropertyID:    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+						PropertyID:    longPropertyID,
 						PropertyName:  "1234567",
 						PropertyGroup: "default",
 						IsEditable:    true,

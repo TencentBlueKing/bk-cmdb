@@ -751,7 +751,10 @@ const (
 	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 15000
+	FieldTypeLongLenChar int = 2000
+
+	// FieldTypeUserLenChar the user char length limit
+	FieldTypeUserLenChar int = 2000
 
 	//FieldTypeStrictCharRegexp the single char regex expression
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
@@ -1100,10 +1103,10 @@ const (
 )
 
 const (
-	AttributePlaceHolderMaxLength = 300
-	AttributeOptionMaxLength      = 1000
-	AttributeIDMaxLength          = 20
-	AttributeNameMaxLength        = 20
+	AttributePlaceHolderMaxLength = 2000
+	AttributeOptionMaxLength      = 2000
+	AttributeIDMaxLength          = 128
+	AttributeNameMaxLength        = 128
 	AttributeUnitMaxLength        = 20
 	AttributeOptionValueMaxLength = 128
 	AttributeOptionArrayMaxLength = 200
