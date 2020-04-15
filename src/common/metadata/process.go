@@ -399,8 +399,8 @@ type Process struct {
 	Description     *string       `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
 	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
-	PortEnable      *bool         `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
-	GatewayIP       *string       `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip" structs:"bk_gateway_ip" mapstructure:"bk_gateway_ip"`
+	PortEnable      *bool         `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+  GatewayIP       *string       `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip" structs:"bk_gateway_ip" mapstructure:"bk_gateway_ip"`
 	GatewayPort     *string       `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port" structs:"bk_gateway_port" mapstructure:"bk_gateway_port"`
 	GatewayProtocol *ProtocolType `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol" structs:"bk_gateway_protocol" mapstructure:"bk_gateway_protocol"`
 	GatewayCity     *string       `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city" structs:"bk_gateway_city" mapstructure:"bk_gateway_city"`
@@ -1312,8 +1312,8 @@ type ProcessProperty struct {
 	Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
 	Description        PropertyString   `field:"description" json:"description" bson:"description"`
 	StartParamRegex    PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
-	PortEnable         PropertyBool     `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
-	GatewayIP          PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
+	PortEnable         PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+  GatewayIP          PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
 	GatewayPort        PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
 	GatewayProtocol    PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
 	GatewayCity        PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
