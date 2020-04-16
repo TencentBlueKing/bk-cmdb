@@ -399,7 +399,11 @@ type Process struct {
 	Description     *string       `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
 	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
-	PortEnable      *bool         `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
+	PortEnable      *bool         `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+  GatewayIP       *string       `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip" structs:"bk_gateway_ip" mapstructure:"bk_gateway_ip"`
+	GatewayPort     *string       `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port" structs:"bk_gateway_port" mapstructure:"bk_gateway_port"`
+	GatewayProtocol *ProtocolType `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol" structs:"bk_gateway_protocol" mapstructure:"bk_gateway_protocol"`
+	GatewayCity     *string       `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city" structs:"bk_gateway_city" mapstructure:"bk_gateway_city"`
 }
 
 type ServiceCategory struct {
@@ -634,6 +638,27 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) {
 		processInstance.PortEnable = property.PortEnable.Value
 	}
+
+	processInstance.GatewayIP = nil
+	if IsAsDefaultValue(property.GatewayIP.AsDefaultValue) {
+		processInstance.GatewayIP = property.GatewayIP.Value
+	}
+
+	processInstance.GatewayPort = nil
+	if IsAsDefaultValue(property.GatewayPort.AsDefaultValue) {
+		processInstance.GatewayPort = property.GatewayPort.Value
+	}
+
+	processInstance.GatewayProtocol = nil
+	if IsAsDefaultValue(property.GatewayProtocol.AsDefaultValue) {
+		processInstance.GatewayProtocol = property.GatewayProtocol.Value
+	}
+
+	processInstance.GatewayCity = nil
+	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) {
+		processInstance.GatewayCity = property.GatewayCity.Value
+	}
+
 	return processInstance
 }
 
@@ -673,6 +698,10 @@ func GetAllProcessPropertyFields() []string {
 	fields = append(fields, "priority")
 	fields = append(fields, "start_cmd")
 	fields = append(fields, common.BKProcPortEnable)
+	fields = append(fields, "bk_gateway_ip")
+	fields = append(fields, "bk_gateway_port")
+	fields = append(fields, "bk_gateway_protocol")
+	fields = append(fields, "bk_gateway_city")
 
 	return fields
 }
@@ -972,6 +1001,58 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 		}
 	}
 
+	if IsAsDefaultValue(t.GatewayIP.AsDefaultValue) {
+		if t.GatewayIP.Value == nil && i.GatewayIP != nil {
+			process["bk_gateway_ip"] = nil
+			changed = true
+		} else if t.GatewayIP.Value != nil && i.GatewayIP == nil {
+			process["bk_gateway_ip"] = *t.GatewayIP.Value
+			changed = true
+		} else if t.GatewayIP.Value != nil && i.GatewayIP != nil && *t.GatewayIP.Value != *i.GatewayIP {
+			process["bk_gateway_ip"] = *t.GatewayIP.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.GatewayPort.AsDefaultValue) {
+		if t.GatewayPort.Value == nil && i.GatewayPort != nil {
+			process["bk_gateway_port"] = nil
+			changed = true
+		} else if t.GatewayPort.Value != nil && i.GatewayPort == nil {
+			process["bk_gateway_port"] = *t.GatewayPort.Value
+			changed = true
+		} else if t.GatewayPort.Value != nil && i.GatewayPort != nil && *t.GatewayPort.Value != *i.GatewayPort {
+			process["bk_gateway_port"] = *t.GatewayPort.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.GatewayProtocol.AsDefaultValue) {
+		if t.GatewayProtocol.Value == nil && i.GatewayProtocol != nil {
+			process["bk_gateway_protocol"] = nil
+			changed = true
+		} else if t.GatewayProtocol.Value != nil && i.GatewayProtocol == nil {
+			process["bk_gateway_protocol"] = *t.GatewayProtocol.Value
+			changed = true
+		} else if t.GatewayProtocol.Value != nil && i.GatewayProtocol != nil && *t.GatewayProtocol.Value != *i.GatewayProtocol {
+			process["bk_gateway_protocol"] = *t.GatewayProtocol.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.GatewayCity.AsDefaultValue) {
+		if t.GatewayCity.Value == nil && i.GatewayCity != nil {
+			process["bk_gateway_city"] = nil
+			changed = true
+		} else if t.GatewayCity.Value != nil && i.GatewayCity == nil {
+			process["bk_gateway_city"] = *t.GatewayCity.Value
+			changed = true
+		} else if t.GatewayCity.Value != nil && i.GatewayCity != nil && *t.GatewayCity.Value != *i.GatewayCity {
+			process["bk_gateway_city"] = *t.GatewayCity.Value
+			changed = true
+		}
+	}
+
 	return process, changed
 }
 
@@ -1055,6 +1136,18 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	}
 	if IsAsDefaultValue(property.PortEnable.AsDefaultValue) == false {
 		editableFields = append(editableFields, common.BKProcPortEnable)
+	}
+	if IsAsDefaultValue(property.GatewayIP.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_gateway_ip")
+	}
+	if IsAsDefaultValue(property.GatewayPort.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_gateway_port")
+	}
+	if IsAsDefaultValue(property.GatewayProtocol.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_gateway_protocol")
+	}
+	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) == false {
+		editableFields = append(editableFields, "bk_gateway_city")
 	}
 	return editableFields
 }
@@ -1173,6 +1266,27 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data[common.BKProcPortEnable] = *input.PortEnable
 		}
 	}
+	if IsAsDefaultValue(property.GatewayIP.AsDefaultValue) == false {
+		if input.GatewayIP != nil {
+			data["bk_gateway_ip"] = *input.GatewayIP
+		}
+	}
+	if IsAsDefaultValue(property.GatewayPort.AsDefaultValue) == false {
+		if input.GatewayPort != nil {
+			data["bk_gateway_port"] = *input.GatewayPort
+		}
+	}
+	if IsAsDefaultValue(property.GatewayProtocol.AsDefaultValue) == false {
+		if input.GatewayProtocol != nil {
+			data["bk_gateway_protocol"] = *input.GatewayProtocol
+		}
+	}
+	if IsAsDefaultValue(property.GatewayCity.AsDefaultValue) == false {
+		if input.GatewayCity != nil {
+			data["bk_gateway_city"] = *input.GatewayCity
+		}
+	}
+
 	return data
 }
 
@@ -1198,7 +1312,11 @@ type ProcessProperty struct {
 	Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
 	Description        PropertyString   `field:"description" json:"description" bson:"description"`
 	StartParamRegex    PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
-	PortEnable         PropertyBool     `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
+	PortEnable         PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+  GatewayIP          PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
+	GatewayPort        PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
+	GatewayProtocol    PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
+	GatewayCity        PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
@@ -1433,8 +1551,8 @@ type ServiceInstance struct {
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
-	HostID            int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
+	HostID            int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
 
 	// the module that this service belongs to.
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id"`
