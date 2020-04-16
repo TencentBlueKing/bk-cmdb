@@ -71,7 +71,7 @@
                                 v-for="(property, fieldIndex) in group.properties"
                                 :class="{ 'only-ready': !isFieldEditable(property) }"
                                 :key="fieldIndex"
-                                @click="handleFieldDetailsView(!isFieldEditable(property), property)">
+                                @click="handleFieldDetailsView(property)">
                                 <span class="drag-logo"></span>
                                 <div class="drag-content">
                                     <div class="field-name">
@@ -80,24 +80,22 @@
                                     </div>
                                     <p>{{fieldTypeMap[property['bk_property_type']]}}</p>
                                 </div>
-                                <template v-if="!property['ispre']">
-                                    <i class="property-icon icon icon-cc-edit mr10"
-                                        :class="{ disabled: !isFieldEditable(property) }"
-                                        v-cursor="{
-                                            active: !updateAuth,
-                                            auth: [$OPERATION.U_MODEL]
-                                        }"
-                                        @click.stop="handleEditField(group, property)">
-                                    </i>
-                                    <i class="property-icon bk-icon icon-cc-delete"
-                                        :class="{ disabled: !isFieldEditable(property) }"
-                                        v-cursor="{
-                                            active: !updateAuth,
-                                            auth: [$OPERATION.U_MODEL]
-                                        }"
-                                        @click.stop="handleDeleteField({ property, index, fieldIndex })">
-                                    </i>
-                                </template>
+                                <i class="property-icon icon icon-cc-edit mr10"
+                                    :class="{ disabled: !isFieldEditable(property, false) }"
+                                    v-cursor="{
+                                        active: !updateAuth,
+                                        auth: [$OPERATION.U_MODEL]
+                                    }"
+                                    @click.stop="handleEditField(group, property)">
+                                </i>
+                                <i class="property-icon bk-icon icon-cc-delete"
+                                    :class="{ disabled: !isFieldEditable(property) }"
+                                    v-cursor="{
+                                        active: !updateAuth,
+                                        auth: [$OPERATION.U_MODEL]
+                                    }"
+                                    @click.stop="handleDeleteField({ property, index, fieldIndex })">
+                                </i>
                             </li>
                             <li class="property-add no-drag fl"
                                 :class="{ 'disabled': !updateAuth }"
@@ -360,8 +358,8 @@
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
             ]),
-            isFieldEditable (item) {
-                if (item.ispre || this.isReadOnly || !this.updateAuth) {
+            isFieldEditable (item, checkIspre = true) {
+                if ((checkIspre && item.ispre) || this.isReadOnly || !this.updateAuth) {
                     return false
                 }
                 if (!this.isAdminView) {
@@ -747,7 +745,7 @@
                 this.slider.isShow = true
             },
             handleEditField (group, property) {
-                if (!this.isFieldEditable(property)) return
+                if (!this.isFieldEditable(property, false)) return
                 this.slider.isEditField = true
                 this.slider.curField = property
                 this.slider.curGroup = group.info
@@ -804,8 +802,7 @@
                 this.slider.isShow = false
                 return true
             },
-            handleFieldDetailsView (show, field) {
-                if (!show) return
+            handleFieldDetailsView (field) {
                 this.fieldDetailsDialog.isShow = true
                 this.fieldDetailsDialog.field = field
             },

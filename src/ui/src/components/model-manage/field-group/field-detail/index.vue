@@ -27,11 +27,12 @@
                     name="fieldName"
                     :placeholder="$t('请输入字段名称')"
                     v-model.trim="fieldInfo['bk_property_name']"
-                    :disabled="isReadOnly"
+                    :disabled="isReadOnly || isSystemCreate"
                     v-validate="'required|enumName'">
                 </bk-input>
                 <p class="form-error">{{errors.first('fieldName')}}</p>
             </div>
+            <i class="icon-cc-exclamation-tips" v-if="isSystemCreate" v-bk-tooltips="$t('国际化配置翻译，不可修改')"></i>
         </label>
         <div class="form-label">
             <span class="label-text">
@@ -56,6 +57,7 @@
             <the-config
                 :type="fieldInfo['bk_property_type']"
                 :is-read-only="isReadOnly"
+                :ispre="isEditField && field.ispre"
                 :editable.sync="fieldInfo['editable']"
                 :isrequired.sync="fieldInfo['isrequired']"
             ></the-config>
@@ -205,6 +207,12 @@
                     }
                 }
                 return changedValues
+            },
+            isSystemCreate () {
+                if (this.isEditField) {
+                    return this.field.creator === 'cc_system'
+                }
+                return false
             }
         },
         watch: {
@@ -257,9 +265,10 @@
                     return
                 }
                 if (this.isEditField) {
+                    const params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
                     await this.updateObjectAttribute({
                         id: this.field.id,
-                        params: this.$injectMetadata(this.fieldInfo, {
+                        params: this.$injectMetadata(params, {
                             clone: true, inject: this.isInjectable
                         }),
                         config: {
@@ -292,6 +301,14 @@
                     })
                 }
                 this.$emit('save')
+            },
+            getPreFieldUpdateParams () {
+                const allowKey = ['bk_property_name', 'option', 'unit', 'placeholder']
+                const params = {}
+                allowKey.forEach(key => {
+                    params[key] = this.fieldInfo[key]
+                })
+                return params
             },
             cancel () {
                 this.$emit('cancel')
