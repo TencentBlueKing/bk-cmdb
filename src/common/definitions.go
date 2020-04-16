@@ -431,9 +431,6 @@ const (
 	// BKOperationDetailField the audit operation detail field
 	BKOperationDetailField = "operation_detail"
 
-	// BKOperationDetailField the audit operation detail field
-	BKBasicDetailField = "basic_detail"
-
 	// BKOperationTimeField the audit operation time field
 	BKOperationTimeField = "operation_time"
 
