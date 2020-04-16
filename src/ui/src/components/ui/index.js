@@ -2,6 +2,7 @@ import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
 import cloudSelector from './selector/cloud.vue'
+import serviceCategorySelector from './selector/service-category.vue'
 import details from './details/details.vue'
 import form from './form/form.vue'
 import formMultiple from './form/form-multiple.vue'
@@ -67,6 +68,7 @@ const install = (Vue, opts = {}) => {
         tips,
         dialog,
         cloudSelector,
+        serviceCategorySelector,
         auth,
         tableEmpty,
         list,
@@ -112,6 +114,7 @@ export default {
     tips,
     dialog,
     cloudSelector,
+    serviceCategorySelector,
     auth,
     tableEmpty,
     list,

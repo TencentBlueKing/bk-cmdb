@@ -53,7 +53,7 @@
                     <label class="filter-label">{{getFilterLabel(filterItem)}}</label>
                     <div class="filter-condition">
                         <filter-operator class="filter-operator"
-                            v-if="!['date', 'time'].includes(filterItem.bk_property_type)"
+                            v-if="!['date', 'time', 'category'].includes(filterItem.bk_property_type)"
                             v-model="filterItem.operator"
                             :type="getOperatorType(filterItem)">
                         </filter-operator>
@@ -80,6 +80,11 @@
                             class="filter-value"
                             v-model="filterItem.value">
                         </cmdb-cloud-selector>
+                        <cmdb-service-category
+                            v-else-if="filterItem.bk_property_id === 'service_category_id'"
+                            class="filter-value"
+                            v-model="filterItem.value">
+                        </cmdb-service-category>
                         <component class="filter-value"
                             v-else
                             :is="`cmdb-form-${filterItem.bk_property_type}`"
@@ -426,7 +431,9 @@
                         } else {
                             params[modelId].push({
                                 field: filterItem.bk_property_id,
-                                operator: filterItem.operator,
+                                operator: filterItem.bk_property_type === 'category'
+                                    ? '$in'
+                                    : filterItem.operator,
                                 value: filterItem.operator === '$multilike'
                                     ? filterValue.split('\n').filter(str => str.trim().length).map(str => str.trim())
                                     : filterValue
