@@ -8,12 +8,15 @@
                 clearable
                 right-icon="bk-icon icon-search"
                 v-model.trim="searchName"
-                @enter="hanldeFilterTemplates"
-                @clear="hanldeFilterTemplates">
+                @enter="handleFilterTemplates"
+                @clear="handleFilterTemplates">
             </bk-input>
             <span class="to-template" @click="handleLinkClick">
                 <i class="icon-cc-share"></i>
                 {{$t('跳转服务模版')}}
+            </span>
+            <span class="select-all fr" v-if="$parent.$parent.mode !== 'edit'">
+                <bk-checkbox :value="isSelectAll" @change="handleSelectAll">全选</bk-checkbox>
             </span>
         </div>
         <ul class="template-list clearfix"
@@ -104,6 +107,11 @@
                 }
             }
         },
+        computed: {
+            isSelectAll () {
+                return this.localSelected.length === this.allTemplates.length
+            }
+        },
         async created () {
             this.getTemplates()
             await this.getServiceCategory()
@@ -147,8 +155,15 @@
                     name: MENU_BUSINESS_SERVICE_TEMPLATE
                 })
             },
-            hanldeFilterTemplates () {
+            handleFilterTemplates () {
                 this.templates = this.allTemplates.filter(template => template.name.indexOf(this.searchName) > -1)
+            },
+            handleSelectAll (checked) {
+                if (checked) {
+                    this.localSelected = this.allTemplates.map(template => template.id)
+                } else {
+                    this.localSelected = []
+                }
             },
             async handleShowDetails (template = {}, event, disabled) {
                 this.curTemplate = template
@@ -237,6 +252,10 @@
             .icon-cc-share {
                 margin-top: -2px;
             }
+        }
+        .select-all {
+            @include inlineBlock;
+            line-height: 32px;
         }
     }
     .template-list {
