@@ -120,7 +120,7 @@
                 </div>
                 <div class="model-edge">
                     <div class="connection">
-                        <span class="name">{{relationName}}</span>
+                        <span class="name" :title="relationName">{{relationName}}</span>
                     </div>
                 </div>
                 <div class="model-item" :class="{ 'ispre': targetModel.ispre }">
@@ -132,7 +132,7 @@
             </div>
             <div class="topo-text">{{sourceModel['bk_obj_name']}} {{relationName}} {{targetModel['bk_obj_name']}}</div>
         </div>
-        <div class="btn-group">
+        <div class="btn-group" v-if="!isReadOnly">
             <bk-button theme="primary" :disabled="isReadOnly" :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
                 {{isEdit ? $t('保存') : $t('提交')}}
             </bk-button>
@@ -380,7 +380,7 @@
         .topo-image {
             display: flex;
             justify-content: space-between;
-            padding: 10px 88px;
+            padding: 10px 68px;
             background: #f3f8ff;
 
             .model-item {
@@ -428,6 +428,7 @@
 
                     .name {
                         position: absolute;
+                        max-width: 120px;
                         font-size: 12px;
                         color: #868b97;
                         padding: 2px 8px;
@@ -436,6 +437,8 @@
                         transform: translate(-50%, -50%);
                         left: 50%;
                         white-space: nowrap;
+                        text-align: center;
+                        @include ellipsis;
                     }
 
                     &::before {
