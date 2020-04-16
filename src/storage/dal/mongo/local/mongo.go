@@ -82,7 +82,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		return nil, err
 	}
 
-	if err := checkMongodbVersion(client); err != nil {
+	if err := checkMongodbVersion(connStr.Database, client); err != nil {
 		return nil, err
 	}
 
@@ -94,8 +94,8 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 }
 
 // from now on, mongodb version must >= 4.2.0
-func checkMongodbVersion(client *mongo.Client) error {
-	serverStatus, err := client.Database("cmdb").RunCommand(
+func checkMongodbVersion(db string, client *mongo.Client) error {
+	serverStatus, err := client.Database(db).RunCommand(
 		context.Background(),
 		bsonx.Doc{{"serverStatus", bsonx.Int32(1)}},
 	).DecodeBytes()
@@ -108,7 +108,7 @@ func checkMongodbVersion(client *mongo.Client) error {
 		return err
 	}
 
-	fields := strings.Split(version.StringValue(), ",")
+	fields := strings.Split(version.StringValue(), ".")
 	if len(fields) != 3 {
 		return fmt.Errorf("got invalid mongodb version: %v", version.StringValue())
 	}
