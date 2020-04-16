@@ -201,7 +201,14 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 
 		logContentMap[hostID] = logger.AuditLog(srvData.ctx, hostID)
 	}
-
+	
+	// auth: unregister hosts
+	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, iHostIDArr...); err != nil {
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
+		_ = resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		return
+	}
+	
 	input := &meta.DeleteHostRequest{
 		ApplicationID: appID,
 		HostIDArr:     iHostIDArr,
@@ -217,14 +224,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 		return
 	}
-
-	// auth: unregister hosts
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, iHostIDArr...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
-		_ = resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
-		return
-	}
-
+	
 	// ensure delete host add log
 	for _, ex := range delResult.Data {
 		delete(logContentMap, ex.OriginIndex)
