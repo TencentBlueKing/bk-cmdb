@@ -160,7 +160,7 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
 	if val, ok := data[metadata.AttributeFieldPlaceHolder]; ok && val != "" {
 		if placeholder, ok := val.(string); ok {
-			if err := a.FieldValid.ValidPlaceHoler(a.kit, placeholder); nil != err {
+			if err := a.FieldValid.ValidPlaceHolder(a.kit, placeholder); nil != err {
 				return err
 			}
 		}
