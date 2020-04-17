@@ -301,20 +301,20 @@ func (ps *parseStream) userCustom() *parseStream {
 }
 
 const (
-	deleteHostBatchPattern                    = "/api/v3/hosts/batch"
-	addHostsToHostPoolPattern                 = "/api/v3/hosts/add"
-	moveHostToBusinessModulePattern           = "/api/v3/hosts/modules"
-	moveResPoolToBizIdleModulePattern         = "/api/v3/hosts/modules/resource/idle"
-	moveHostsToBizFaultModulePattern          = "/api/v3/hosts/modules/fault"
-	moveHostsFromModuleToResPoolPattern       = "/api/v3/hosts/modules/resource"
-	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
-	moveHostsToBizRecycleModulePattern        = "/api/v3/hosts/modules/recycle"
-	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
-	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts/host/add/module"
-	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
-	findHostTopoRelationPattern               = "/api/v3/host/topo/relation/read"
-	updateHostCloudAreaFieldPattern           = "/api/v3/updatemany/hosts/cloudarea_field"
-	updateImportHostsPattern                  = "/api/v3/hosts/update"
+	deleteHostBatchPattern              = "/api/v3/hosts/batch"
+	addHostsToHostPoolPattern           = "/api/v3/hosts/add"
+	moveHostToBusinessModulePattern     = "/api/v3/hosts/modules"
+	moveResPoolToBizIdleModulePattern   = "/api/v3/hosts/modules/resource/idle"
+	moveHostsToBizFaultModulePattern    = "/api/v3/hosts/modules/fault"
+	moveHostsFromModuleToResPoolPattern = "/api/v3/hosts/modules/resource"
+	moveHostsToBizIdleModulePattern     = "/api/v3/hosts/modules/idle"
+	moveHostsToBizRecycleModulePattern  = "/api/v3/hosts/modules/recycle"
+	moveHostsFromRscPoolToAppModule     = "/api/v3/hosts/host/add/module"
+	moveHostAcrossBizPattern            = "/api/v3/hosts/modules/across/biz"
+	cleanHostInSetOrModulePattern       = "/api/v3/hosts/modules/idle/set"
+	findHostTopoRelationPattern         = "/api/v3/host/topo/relation/read"
+	updateHostCloudAreaFieldPattern     = "/api/v3/updatemany/hosts/cloudarea_field"
+	updateImportHostsPattern            = "/api/v3/hosts/update"
 
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -556,26 +556,6 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	// move hosts from one business module to another business module.
-	if ps.hitPattern(moveHostsFromOneToAnotherBizModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.MoveHostToAnotherBizModule,
-				},
-			},
-		}
-
-		return ps
-	}
-
 	if ps.hitPattern(moveHostsFromRscPoolToAppModule, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
@@ -588,6 +568,20 @@ func (ps *parseStream) host() *parseStream {
 			},
 		}
 
+		return ps
+	}
+
+	// transfer host to another business
+	if ps.hitPattern(moveHostAcrossBizPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveHostToAnotherBizModule,
+				},
+			},
+		}
 		return ps
 	}
 
