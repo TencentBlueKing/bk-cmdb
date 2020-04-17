@@ -127,23 +127,6 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
-	It("create object attribute bk_obj_id='cc_test' invalid bk_property_name", func() {
-		input := &metadata.ObjAttDes{
-			Attribute: metadata.Attribute{
-				ObjectID:     "cc_test",
-				PropertyID:   "test_unique2",
-				PropertyName: "~!#$%^&*()+{}|[]<>",
-				IsEditable:   true,
-				PropertyType: "singlechar",
-				IsRequired:   false,
-			},
-		}
-		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(false))
-	})
-
 	It("create object attribute invalid bk_obj_id", func() {
 		input := &metadata.ObjAttDes{
 			Attribute: metadata.Attribute{
@@ -457,18 +440,6 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
-	It("create inst invalid bk_inst_name", func() {
-		input := map[string]interface{}{
-			"bk_asset_id":  "345",
-			"bk_inst_name": "~!@#$%^&*()_+-=",
-			"bk_sn":        "1234",
-		}
-		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(false))
-	})
-
 	It("create inst bk_obj_id='bk_switch' duplicate bk_asset_id", func() {
 		input := map[string]interface{}{
 			"bk_asset_id":  "234",
@@ -508,16 +479,6 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-	})
-
-	It("update inst invalid bk_inst_name", func() {
-		input := map[string]interface{}{
-			"bk_inst_name": "~!@#$%^&*()_+-=",
-		}
-		rsp, err := instClient.UpdateInst(context.Background(), "0", "bk_switch", instId, header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(false))
 	})
 
 	It("update inst invalid instId", func() {

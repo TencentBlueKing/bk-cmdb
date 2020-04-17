@@ -12,7 +12,9 @@
 
 package common
 
-import "math"
+import (
+	"math"
+)
 
 const (
 	// HTTPCreate create method
@@ -745,10 +747,12 @@ const (
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
 
 	//FieldTypeSingleCharRegexp the single char regex expression
-	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	FieldTypeSingleCharRegexp string = `\S`
 
-	//FieldTypeLongCharRegexp the single char regex expression
-	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	//FieldTypeLongCharRegexp the long char regex expression\
+	//FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	FieldTypeLongCharRegexp string = `\S`
 )
 
 const (
