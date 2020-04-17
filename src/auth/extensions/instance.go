@@ -214,7 +214,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 
 		resourceType := meta.ModelInstance
 		for _, mainline := range mainlineAsst.Data.Info {
-			if mainline.ObjectID == mainline.ObjectID {
+			if object.ObjectID == mainline.ObjectID {
 				resourceType = meta.MainlineInstance
 			}
 		}
