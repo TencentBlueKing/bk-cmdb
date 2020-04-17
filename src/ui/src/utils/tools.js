@@ -285,6 +285,8 @@ export function getValidateRules (property) {
         rules.numeric = true
     } else if (propertyType === 'float') {
         rules.float = true
+    } else if (propertyType === 'objuser') {
+        rules.length = 2000
     }
     return rules
 }
