@@ -67,7 +67,7 @@ export default [{
     }]
 }, {
     name: MENU_BUSINESS_TRANSFER_HOST,
-    path: 'host/transfer/:type',
+    path: 'host/transfer/:type/:module?',
     component: () => import('@/views/host-operation/index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,

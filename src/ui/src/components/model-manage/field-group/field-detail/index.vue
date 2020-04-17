@@ -28,11 +28,12 @@
                         name="fieldName"
                         :placeholder="$t('请输入字段名称')"
                         v-model.trim="fieldInfo['bk_property_name']"
-                        :disabled="isReadOnly"
+                        :disabled="isReadOnly || isSystemCreate"
                         v-validate="'required|length:128'">
                     </bk-input>
                     <p class="form-error">{{errors.first('fieldName')}}</p>
                 </div>
+                <i class="icon-cc-exclamation-tips" v-if="isSystemCreate" v-bk-tooltips="$t('国际化配置翻译，不可修改')"></i>
             </label>
             <div class="form-label">
                 <span class="label-text">
@@ -59,6 +60,7 @@
                     :type="fieldInfo['bk_property_type']"
                     :is-read-only="isReadOnly"
                     :is-main-line-model="isMainLineModel"
+                    :ispre="isEditField && field.ispre"
                     :editable.sync="fieldInfo['editable']"
                     :isrequired.sync="fieldInfo['isrequired']"
                 ></the-config>
@@ -95,16 +97,16 @@
                     <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
                 </div>
             </div>
-        </div>
-        <div class="btn-group" :class="{ 'sticky-layout': scrollbar }">
-            <bk-button theme="primary"
-                :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
-                @click="saveField">
-                {{isEditField ? $t('保存') : $t('提交')}}
-            </bk-button>
-            <bk-button theme="default" @click="cancel">
-                {{$t('取消')}}
-            </bk-button>
+            <div class="btn-group" :class="{ 'sticky-layout': scrollbar }">
+                <bk-button theme="primary"
+                    :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
+                    @click="saveField">
+                    {{isEditField ? $t('保存') : $t('提交')}}
+                </bk-button>
+                <bk-button theme="default" @click="cancel">
+                    {{$t('取消')}}
+                </bk-button>
+            </div>
         </div>
     </div>
 </template>
@@ -148,7 +150,11 @@
                 type: Boolean,
                 default: false
             },
-            customObjId: String
+            customObjId: String,
+            propertyIndex: {
+                type: Number,
+                default: 0
+            }
         },
         data () {
             return {
@@ -232,6 +238,12 @@
                     }
                 }
                 return changedValues
+            },
+            isSystemCreate () {
+                if (this.isEditField) {
+                    return this.field.creator === 'cc_system'
+                }
+                return false
             }
         },
         watch: {
@@ -304,10 +316,11 @@
                 }
                 if (this.isEditField) {
                     const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
+                    const params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
                     await this[action]({
                         bizId: this.bizId,
                         id: this.field.id,
-                        params: this.$injectMetadata(this.fieldInfo, {
+                        params: this.$injectMetadata(params, {
                             clone: true, inject: this.isInjectable
                         }),
                         config: {
@@ -344,6 +357,14 @@
                     })
                 }
                 this.$emit('save', fieldId)
+            },
+            getPreFieldUpdateParams () {
+                const allowKey = ['option', 'unit', 'placeholder']
+                const params = {}
+                allowKey.forEach(key => {
+                    params[key] = this.fieldInfo[key]
+                })
+                return params
             },
             cancel () {
                 this.$emit('cancel')

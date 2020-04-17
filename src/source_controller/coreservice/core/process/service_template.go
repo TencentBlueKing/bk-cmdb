@@ -291,7 +291,7 @@ func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.L
 		}
 	}
 
-	if option.ServiceTemplateIDs != nil {
+	if option.ServiceTemplateIDs != nil && len(option.ServiceTemplateIDs) != 0{
 		filter[common.BKFieldID] = map[string][]int64{
 			common.BKDBIN: option.ServiceTemplateIDs,
 		}
