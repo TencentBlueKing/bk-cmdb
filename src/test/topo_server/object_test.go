@@ -106,7 +106,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ShouldNot(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 

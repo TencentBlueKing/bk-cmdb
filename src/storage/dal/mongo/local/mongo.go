@@ -82,9 +82,9 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		return nil, err
 	}
 
-	if err := checkMongodbVersion(connStr.Database, client); err != nil {
-		return nil, err
-	}
+	// if err := checkMongodbVersion(connStr.Database, client); err != nil {
+	// 	return nil, err
+	// }
 
 	return &Mongo{
 		dbc:    client,
