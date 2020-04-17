@@ -12,7 +12,7 @@
                         v-model.trim="fieldInfo['bk_property_id']"
                         :placeholder="$t('请输入唯一标识')"
                         :disabled="isEditField"
-                        v-validate="'required|fieldId'">
+                        v-validate="'required|fieldId|length:128'">
                     </bk-input>
                     <p class="form-error">{{$t('唯一标识必须为英文字母、数字和下划线组成')}}</p>
                 </div>
@@ -29,7 +29,7 @@
                         :placeholder="$t('请输入字段名称')"
                         v-model.trim="fieldInfo['bk_property_name']"
                         :disabled="isReadOnly"
-                        v-validate="'required|enumName'">
+                        v-validate="'required|length:128'">
                     </bk-input>
                     <p class="form-error">{{errors.first('fieldName')}}</p>
                 </div>
@@ -84,7 +84,15 @@
             </label>
             <div class="form-label">
                 <span class="label-text">{{$t('用户提示')}}</span>
-                <textarea class="raw" style="width: 94%;" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
+                <div class="cmdb-form-item" :class="{ 'is-error': errors.has('placeholder') }">
+                    <textarea style="width: 94%;"
+                        name="placeholder"
+                        v-model.trim="fieldInfo['placeholder']"
+                        :disabled="isReadOnly"
+                        v-validate="'length:2000'">
+                    </textarea>
+                    <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
+                </div>
             </div>
         </div>
         <div class="btn-group" :class="{ 'sticky-layout': scrollbar }">

@@ -74,7 +74,7 @@ const customRules = {
     },
     fieldId: {
         validate: (value) => {
-            return /^[a-z0-9_]{1,20}$/.test(value)
+            return /^[a-z0-9_]*$/.test(value)
         }
     },
     float: {
