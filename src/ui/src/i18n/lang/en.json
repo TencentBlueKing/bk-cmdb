@@ -1053,7 +1053,7 @@
     "蓝鲸业务拓扑节点提示": "Can not create node under BlueKing business.",
     "请编辑": "Please edit",
     "确认归还资源池": "Transfer to resource pool confirm",
-    "确认归还资源池主机数量": "Comfirm transfer {count} idle host(s) to resource pool?",
+    "确认归还资源池主机数量": "Confirm transfer {count} idle host(s) to resource pool?",
     "已选主机": "Host Count",
     "N台主机": "{count}",
     "变更确认": "Confirm Info",
@@ -1138,5 +1138,7 @@
     "已选实例": "Service Selected",
     "N个": "{ count }",
     "仅移除服务实例，主机无变更": "Only remove service instances, no host change",
-    "模型中需包含枚举字段才可以作为维度统计": "Models need to include enumerated fields for dimensional statistics"
+    "模型中需包含枚举字段才可以作为维度统计": "Models need to include enumerated fields for dimensional statistics",
+    "无": "none",
+    "国际化配置翻译，不可修改": "Translate by internationalization, uneditable"
 }

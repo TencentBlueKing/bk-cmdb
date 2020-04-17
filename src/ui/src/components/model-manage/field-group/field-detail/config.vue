@@ -2,11 +2,11 @@
     <div class="form-label">
         <span class="label-text">{{$t('字段设置')}}</span>
         <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isEditableShow">
-            <input type="checkbox" v-model="localValue.editable" :disabled="isReadOnly">
+            <input type="checkbox" v-model="localValue.editable" :disabled="isReadOnly || ispre">
             <span class="cmdb-checkbox-text">{{$t('可编辑')}}</span>
         </label>
         <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isRequiredShow && !isMainLineModel">
-            <input type="checkbox" v-model="localValue.isrequired" :disabled="isReadOnly">
+            <input type="checkbox" v-model="localValue.isrequired" :disabled="isReadOnly || ispre">
             <span class="cmdb-checkbox-text">{{$t('必填')}}</span>
         </label>
     </div>
@@ -34,7 +34,8 @@
             isMainLineModel: {
                 type: Boolean,
                 default: false
-            }
+            },
+            ispre: Boolean
         },
         data () {
             return {

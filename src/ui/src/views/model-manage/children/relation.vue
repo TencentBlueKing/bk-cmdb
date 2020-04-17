@@ -15,7 +15,7 @@
             class="relation-table"
             v-bkloading="{ isLoading: $loading() }"
             :data="table.list"
-            :max-height="$APP.height - 220"
+            :max-height="$APP.height - 320"
             :row-style="{
                 cursor: 'pointer'
             }"

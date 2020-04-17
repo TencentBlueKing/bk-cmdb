@@ -384,8 +384,8 @@
                 }
                 return false
             },
-            isFieldEditable (item) {
-                if (item.ispre || this.isReadOnly) {
+            isFieldEditable (item, checkIspre = true) {
+                if ((checkIspre && item.ispre) || this.isReadOnly || !this.updateAuth) {
                     return false
                 }
                 if (!this.isAdminView) {
