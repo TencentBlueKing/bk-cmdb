@@ -227,6 +227,7 @@
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 :group="slider.curGroup"
+                :custom-obj-id="customObjId"
                 @save="handleFieldSave"
                 @cancel="handleSliderBeforeClose">
             </the-field-detail>
