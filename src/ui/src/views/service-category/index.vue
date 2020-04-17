@@ -25,7 +25,7 @@
                     </div>
                     <template v-else>
                         <div class="category-name">
-                            <span>{{mainCategory['name']}}</span>
+                            <span class="category-name-text" :title="mainCategory.name">{{mainCategory.name}}</span>
                             <cmdb-auth v-if="!mainCategory['is_built_in']"
                                 :auth="$authResources({ type: $OPERATION.U_SERVICE_CATEGORY })">
                                 <bk-button slot-scope="{ disabled }"
@@ -460,9 +460,14 @@
                 }
             }
             .category-name {
-                @include ellipsis;
+                display: flex;
                 flex: 1;
+                width: 100%;
                 padding-right: 20px;
+                align-items: center;
+                .category-name-text {
+                    @include ellipsis;
+                }
                 .icon-cc-edit-shape {
                     font-size: 14px;
                     display: none;

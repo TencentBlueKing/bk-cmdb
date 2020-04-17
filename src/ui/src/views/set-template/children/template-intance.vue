@@ -251,16 +251,7 @@
         },
         methods: {
             getTopoPath (row) {
-                const topoPath = this.$tools.clone(row.topo_path)
-                if (topoPath.length) {
-                    const setIndex = topoPath.findIndex(path => path.ObjectID === 'set')
-                    if (setIndex > -1) {
-                        topoPath.splice(setIndex, 1)
-                    }
-                    const sortPath = topoPath.sort((prev, next) => prev.bk_inst_id - next.bk_inst_id)
-                    return sortPath.map(path => path.bk_inst_name).join(' / ')
-                }
-                return '--'
+                return [...row.topo_path].reverse().map(path => path.bk_inst_name).join(' / ') || '--'
             },
             async getData () {
                 const data = await this.getSetInstancesWithStatus('getSetInstanceData')
