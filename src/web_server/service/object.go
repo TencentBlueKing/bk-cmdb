@@ -351,7 +351,7 @@ func (s *Service) SearchBusiness(c *gin.Context) {
 			query.Condition[k] = mapstr.MapStr{
 				common.BKDBLIKE: params.SpecialCharChange(field),
 				// insensitive with the character case.
-				"$options": "i",
+				common.BKDBOPTIONS: "i",
 			}
 		}
 	}

@@ -144,6 +144,10 @@ const (
 	// BKDBLIKE the db operator
 	BKDBLIKE = "$regex"
 
+	// BKDBOPTIONS the db operator,used with $regex
+	// detail to see https://docs.mongodb.com/manual/reference/operator/query/regex/#op._S_options
+	BKDBOPTIONS = "$options"
+
 	// BKDBEQ the db operator
 	BKDBEQ = "$eq"
 
