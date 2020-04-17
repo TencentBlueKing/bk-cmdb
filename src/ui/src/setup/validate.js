@@ -47,14 +47,12 @@ const customRules = {
     },
     enumId: {
         validate: value => {
-            return /^[a-zA-Z0-9_]{1,20}$/.test(value)
+            return /^[a-zA-Z0-9_]*$/.test(value)
         }
     },
     enumName: {
         validate: (value) => {
-            /* eslint-disable */
-            return /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。\."\' \\/:]){1,15}$/.test(value)
-            /* eslint-enable */
+            return /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。\."\' \\/:])*$/.test(value)
         }
     },
     repeat: {

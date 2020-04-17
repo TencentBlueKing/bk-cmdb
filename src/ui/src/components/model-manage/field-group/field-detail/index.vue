@@ -86,6 +86,7 @@
                 <span class="label-text">{{$t('用户提示')}}</span>
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has('placeholder') }">
                     <textarea style="width: 94%;"
+                        class="raw"
                         name="placeholder"
                         v-model.trim="fieldInfo['placeholder']"
                         :disabled="isReadOnly"
@@ -273,15 +274,14 @@
                 this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
             },
             async validateValue () {
-                if (!await this.$validator.validateAll()) {
-                    return false
+                const validate = [
+                    this.$validator.validateAll()
+                ]
+                if (this.$refs.component) {
+                    validate.push(this.$refs.component.$validator.validateAll())
                 }
-                if (this.$refs.component && this.$refs.component.hasOwnProperty('validate')) {
-                    if (!await this.$refs.component.validate()) {
-                        return false
-                    }
-                }
-                return true
+                const results = await Promise.all(validate)
+                return results.every(result => result)
             },
             isNullOrUndefinedOrEmpty (value) {
                 return [null, '', undefined].includes(value)
