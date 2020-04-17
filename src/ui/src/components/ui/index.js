@@ -37,6 +37,8 @@ import textButton from './button/link-button.vue'
 import stickyLayout from './other/sticky-layout.vue'
 import permission from './permission/embed-permission.vue'
 import routerSubview from './other/router-subview.vue'
+import organization from './form/organization.vue'
+import propertyValue from './other/property-value.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -77,7 +79,9 @@ const install = (Vue, opts = {}) => {
         textButton,
         stickyLayout,
         permission,
-        routerSubview
+        routerSubview,
+        organization,
+        propertyValue
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -122,5 +126,7 @@ export default {
     textButton,
     stickyLayout,
     permission,
-    routerSubview
+    routerSubview,
+    organization,
+    propertyValue
 }

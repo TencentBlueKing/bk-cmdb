@@ -41,6 +41,9 @@
                         name: this.$t('不等于')
                     }],
                     'name': [{
+                        id: '$multilike',
+                        name: this.$t('包含')
+                    }, {
                         id: '$in',
                         name: this.$t('等于')
                     }, {

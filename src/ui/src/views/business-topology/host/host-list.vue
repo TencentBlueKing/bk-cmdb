@@ -23,7 +23,12 @@
                 :fixed="column.bk_property_id === 'bk_host_innerip'"
                 :class-name="column.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) }}
+                    <cmdb-property-value
+                        :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
+                        :show-unit="false"
+                        :show-title="true"
+                        :property="column">
+                    </cmdb-property-value>
                 </template>
             </bk-table-column>
         </bk-table>

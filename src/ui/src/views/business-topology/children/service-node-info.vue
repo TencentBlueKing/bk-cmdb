@@ -12,52 +12,8 @@
         }"
     >
         <cmdb-permission v-if="permission" class="permission-tips" :permission="permission"></cmdb-permission>
-        <template v-else>
-            <div class="template-info mb10 clearfix" v-if="( isSetNode || isModuleNode) && type === 'details'">
-                <template v-if="isModuleNode">
-                    <div class="info-item fl" :title="`${$t('服务模板')} : ${templateInfo.serviceTemplateName}`">
-                        <span class="name fl">{{$t('服务模板')}}</span>
-                        <div class="value fl">
-                            <div class="template-value" v-if="withTemplate" @click="goServiceTemplate">
-                                <span class="text link">{{templateInfo.serviceTemplateName}}</span>
-                                <i class="icon-cc-share"></i>
-                            </div>
-                            <span class="text" v-else>{{templateInfo.serviceTemplateName}}</span>
-                        </div>
-                    </div>
-                    <div class="info-item fl" :title="`${$t('服务分类')} : ${templateInfo.serviceCategory || '--'}`">
-                        <span class="name fl">{{$t('服务分类')}}</span>
-                        <div class="value fl">
-                            <span class="text">{{templateInfo.serviceCategory || '--'}}</span>
-                        </div>
-                    </div>
-                </template>
-                <template v-else-if="isSetNode">
-                    <div class="info-item fl" :title="`${$t('集群模板')} : ${templateInfo.setTemplateName}`">
-                        <span class="name fl">{{$t('集群模板')}}</span>
-                        <div class="value fl">
-                            <template v-if="withSetTemplate">
-                                <div class="template-value set-template fl" @click="goSetTemplate">
-                                    <span class="text link">{{templateInfo.setTemplateName}}</span>
-                                    <i class="icon-cc-share"></i>
-                                </div>
-                                <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
-                                    <bk-button slot-scope="{ disabled }"
-                                        :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
-                                        :disabled="!hasChange || disabled"
-                                        @click="handleSyncSetTemplate">
-                                        {{$t('同步集群')}}
-                                    </bk-button>
-                                </cmdb-auth>
-                            </template>
-                            <span class="text" v-else>{{templateInfo.setTemplateName}}</span>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </template>
         <cmdb-details class="topology-details"
-            v-if="type === 'details'"
+            v-else-if="type === 'details'"
             :class="{ pt10: !isSetNode && !isModuleNode }"
             :properties="properties"
             :property-groups="propertyGroups"

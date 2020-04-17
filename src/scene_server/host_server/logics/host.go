@@ -304,33 +304,27 @@ func (lgc *Logics) GetHostModuleRelation(ctx context.Context, cond metadata.Host
 
 // TransferHostAcrossBusiness  Transfer host across business,
 // delete old business  host and module relation
-func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dstAppID, hostID int64, moduleID []int64) errors.CCError {
-
-	bl, err := lgc.IsHostExistInApp(ctx, srcBizID, hostID)
+func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dstAppID int64, hostID []int64, moduleID []int64) errors.CCError {
+	notExistHostIDs, err := lgc.ExistHostIDSInApp(ctx, srcBizID, hostID)
 	if err != nil {
 		blog.Errorf("TransferHostAcrossBusiness IsHostExistInApp err:%s,input:{appID:%d,hostID:%d},rid:%s", err.Error(), srcBizID, hostID, lgc.rid)
 		return err
 	}
-	if !bl {
-		blog.Errorf("TransferHostAcrossBusiness Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", srcBizID, hostID, lgc.rid)
-		return lgc.ccErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
+	if len(notExistHostIDs) > 0 {
+		blog.Errorf("TransferHostAcrossBusiness Host does not belong to the current application; error, params:{appID:%d, hostID:%+v}, rid:%s", srcBizID, notExistHostIDs, lgc.rid)
+		return lgc.ccErr.Errorf(common.CCErrHostNotINAPP, notExistHostIDs)
 	}
-	audit := lgc.NewHostModuleLog([]int64{hostID})
+	audit := lgc.NewHostModuleLog(hostID)
 	if err := audit.WithPrevious(ctx); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, lgc.rid)
 		return lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
-	// auth: check host authorization
-	if err := lgc.AuthManager.AuthorizeByHostsIDs(ctx, lgc.header, meta.MoveHostToAnotherBizModule, hostID); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostID, err, lgc.rid)
-		return lgc.ccErr.Errorf(common.CCErrCommAuthorizeFailed)
-	}
 	// auth: deregister
-	if err := lgc.AuthManager.DeregisterHostsByID(ctx, lgc.header, hostID); err != nil {
+	if err := lgc.AuthManager.DeregisterHostsByID(ctx, lgc.header, hostID...); err != nil {
 		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", hostID, err, lgc.rid)
 		return lgc.ccErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
-	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: []int64{hostID}, DstApplicationID: dstAppID, DstModuleIDArr: moduleID}
+	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: hostID, DstApplicationID: dstAppID, DstModuleIDArr: moduleID}
 	delRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(ctx, lgc.header, conf)
 	if err != nil {
 		blog.Errorf("TransferHostAcrossBusiness http do error, err:%s, input:%+v, rid:%s", doErr.Error(), conf, lgc.rid)
@@ -348,7 +342,7 @@ func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dst
 	}
 
 	// auth: register host
-	if err := lgc.AuthManager.RegisterHostsByID(ctx, lgc.header, hostID); err != nil {
+	if err := lgc.AuthManager.RegisterHostsByID(ctx, lgc.header, hostID...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid: %s", hostID, err, lgc.rid)
 		return lgc.ccErr.Errorf(common.CCErrCommRegistResourceToIAMFailed)
 	}

@@ -21,13 +21,13 @@
                             class="cmdb-form-input"
                             :placeholder="$t('请输入ID')"
                             v-model.trim="item.id"
-                            v-validate="`required|enumId|repeat:${getOtherId(index)}`"
+                            v-validate="`required|enumId|length:128|repeat:${getOtherId(index)}`"
                             @input="handleInput"
                             :disabled="isReadOnly"
                             :name="`id${index}`"
                             :ref="`id${index}`">
                         </bk-input>
-                        <p class="form-error">{{errors.first(`id${index}`)}}</p>
+                        <p class="form-error" :title="errors.first(`id${index}`)">{{errors.first(`id${index}`)}}</p>
                     </div>
                 </div>
                 <div class="enum-name">
@@ -36,12 +36,12 @@
                             class="cmdb-form-input"
                             :placeholder="$t('请输入值')"
                             v-model.trim="item.name"
-                            v-validate="`required|enumName|repeat:${getOtherName(index)}`"
+                            v-validate="`required|enumName|length:128|repeat:${getOtherName(index)}`"
                             @input="handleInput"
                             :disabled="isReadOnly"
                             :name="`name${index}`">
                         </bk-input>
-                        <p class="form-error">{{errors.first(`name${index}`)}}</p>
+                        <p class="form-error" :title="errors.first(`name${index}`)">{{errors.first(`name${index}`)}}</p>
                     </div>
                 </div>
                 <bk-button text class="enum-btn" @click="deleteEnum(index)" :disabled="enumList.length === 1 || isReadOnly">
@@ -145,12 +145,7 @@
                 }
             },
             handleInput () {
-                this.$nextTick(async () => {
-                    const res = await this.$validator.validateAll()
-                    if (res) {
-                        this.$emit('input', this.enumList)
-                    }
-                })
+                this.$emit('input', this.enumList)
             },
             addEnum (index) {
                 this.enumList.push(this.generateEnum())

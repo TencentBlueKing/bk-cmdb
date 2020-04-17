@@ -12,7 +12,7 @@
                         v-model.trim="fieldInfo['bk_property_id']"
                         :placeholder="$t('请输入唯一标识')"
                         :disabled="isEditField"
-                        v-validate="'required|fieldId'">
+                        v-validate="'required|fieldId|length:128'">
                     </bk-input>
                     <p class="form-error">{{$t('唯一标识必须为英文字母、数字和下划线组成')}}</p>
                 </div>
@@ -28,11 +28,12 @@
                         name="fieldName"
                         :placeholder="$t('请输入字段名称')"
                         v-model.trim="fieldInfo['bk_property_name']"
-                        :disabled="isReadOnly"
-                        v-validate="'required|enumName'">
+                        :disabled="isReadOnly || isSystemCreate"
+                        v-validate="'required|length:128'">
                     </bk-input>
                     <p class="form-error">{{errors.first('fieldName')}}</p>
                 </div>
+                <i class="icon-cc-exclamation-tips" v-if="isSystemCreate" v-bk-tooltips="$t('国际化配置翻译，不可修改')"></i>
             </label>
             <div class="form-label">
                 <span class="label-text">
@@ -59,6 +60,7 @@
                     :type="fieldInfo['bk_property_type']"
                     :is-read-only="isReadOnly"
                     :is-main-line-model="isMainLineModel"
+                    :ispre="isEditField && field.ispre"
                     :editable.sync="fieldInfo['editable']"
                     :isrequired.sync="fieldInfo['isrequired']"
                 ></the-config>
@@ -84,18 +86,27 @@
             </label>
             <div class="form-label">
                 <span class="label-text">{{$t('用户提示')}}</span>
-                <textarea class="raw" style="width: 94%;" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
+                <div class="cmdb-form-item" :class="{ 'is-error': errors.has('placeholder') }">
+                    <textarea style="width: 94%;"
+                        class="raw"
+                        name="placeholder"
+                        v-model.trim="fieldInfo['placeholder']"
+                        :disabled="isReadOnly"
+                        v-validate="'length:2000'">
+                    </textarea>
+                    <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
+                </div>
             </div>
-        </div>
-        <div class="btn-group" :class="{ 'sticky-layout': scrollbar }">
-            <bk-button theme="primary"
-                :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
-                @click="saveField">
-                {{isEditField ? $t('保存') : $t('提交')}}
-            </bk-button>
-            <bk-button theme="default" @click="cancel">
-                {{$t('取消')}}
-            </bk-button>
+            <div class="btn-group" :class="{ 'sticky-layout': scrollbar }">
+                <bk-button theme="primary"
+                    :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
+                    @click="saveField">
+                    {{isEditField ? $t('保存') : $t('提交')}}
+                </bk-button>
+                <bk-button theme="default" @click="cancel">
+                    {{$t('取消')}}
+                </bk-button>
+            </div>
         </div>
     </div>
 </template>
@@ -139,7 +150,11 @@
                 type: Boolean,
                 default: false
             },
-            customObjId: String
+            customObjId: String,
+            propertyIndex: {
+                type: Number,
+                default: 0
+            }
         },
         data () {
             return {
@@ -176,6 +191,9 @@
                 }, {
                     id: 'list',
                     name: this.$t('列表')
+                }, {
+                    id: 'organization',
+                    name: this.$t('组织')
                 }],
                 fieldInfo: {
                     bk_property_name: '',
@@ -220,6 +238,12 @@
                     }
                 }
                 return changedValues
+            },
+            isSystemCreate () {
+                if (this.isEditField) {
+                    return this.field.creator === 'cc_system'
+                }
+                return false
             }
         },
         watch: {
@@ -269,15 +293,14 @@
                 this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
             },
             async validateValue () {
-                if (!await this.$validator.validateAll()) {
-                    return false
+                const validate = [
+                    this.$validator.validateAll()
+                ]
+                if (this.$refs.component) {
+                    validate.push(this.$refs.component.$validator.validateAll())
                 }
-                if (this.$refs.component && this.$refs.component.hasOwnProperty('validate')) {
-                    if (!await this.$refs.component.validate()) {
-                        return false
-                    }
-                }
-                return true
+                const results = await Promise.all(validate)
+                return results.every(result => result)
             },
             isNullOrUndefinedOrEmpty (value) {
                 return [null, '', undefined].includes(value)
@@ -293,10 +316,11 @@
                 }
                 if (this.isEditField) {
                     const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
+                    const params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
                     await this[action]({
                         bizId: this.bizId,
                         id: this.field.id,
-                        params: this.$injectMetadata(this.fieldInfo, {
+                        params: this.$injectMetadata(params, {
                             clone: true, inject: this.isInjectable
                         }),
                         config: {
@@ -333,6 +357,14 @@
                     })
                 }
                 this.$emit('save', fieldId)
+            },
+            getPreFieldUpdateParams () {
+                const allowKey = ['option', 'unit', 'placeholder']
+                const params = {}
+                allowKey.forEach(key => {
+                    params[key] = this.fieldInfo[key]
+                })
+                return params
             },
             cancel () {
                 this.$emit('cancel')
