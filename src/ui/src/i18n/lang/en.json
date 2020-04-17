@@ -1248,5 +1248,6 @@
     "跳转服务模板": "view in template",
     "导入字段": "Import Field",
     "第N行字段错误信息": "Line {N}:Field {field}，{info}",
-    "效果示意": "Renderings"
+    "效果示意": "Renderings",
+    "按照0-9a-z排序": "Sort by 0-9, a-z"
 }
