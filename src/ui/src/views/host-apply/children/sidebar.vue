@@ -43,6 +43,7 @@
                 ref="topologyTree"
                 :tree-options="treeOptions"
                 :action="actionMode"
+                :checked="checkedNodes"
                 @selected="handleTreeSelected"
                 @checked="handleTreeChecked"
             ></topology-tree>
@@ -94,7 +95,9 @@
                 treeOptions: {
                     showCheckbox: false,
                     selectable: true,
-                    checkOnClick: false
+                    checkOnClick: false,
+                    checkOnlyAvailableStrictly: false,
+                    displayMatchedNodeDescendants: true
                 },
                 actionMode: '',
                 showCheckedPanel: false,
@@ -104,6 +107,12 @@
         computed: {
             topologyTree () {
                 return this.$refs.topologyTree
+            },
+            checkedNodes () {
+                if (this.actionMode === 'batch-edit') {
+                    return this.checkedList.map(data => this.topologyTree.idGenerator(data))
+                }
+                return []
             }
         },
         watch: {
@@ -125,6 +134,7 @@
                 this.treeOptions.showCheckbox = true
                 this.treeOptions.selectable = false
                 this.treeOptions.checkOnClick = true
+                this.treeOptions.checkOnlyAvailableStrictly = true
             },
             handleTreeSelected (node) {
                 this.$emit('module-selected', node.data)
@@ -172,6 +182,7 @@
                 this.treeOptions.selectable = true
                 this.treeOptions.checkOnClick = false
                 this.showCheckedPanel = false
+                this.treeOptions.checkOnlyAvailableStrictly = false
                 this.actionMode = ''
                 this.removeChecked()
             }
