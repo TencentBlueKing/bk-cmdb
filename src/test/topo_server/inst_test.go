@@ -89,7 +89,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -106,7 +106,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -123,7 +123,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -232,7 +232,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -271,7 +271,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := objectClient.CreateObjectUnique(context.Background(), "cc_test", header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -296,7 +296,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "0", "cc_test", header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -326,7 +326,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := objectClient.UpdateObjectUnique(context.Background(), "cc_test", header, uniqueID, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -419,7 +419,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "0", "abcdefg", header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -430,7 +430,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -440,7 +440,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -450,7 +450,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "0", "bk_switch", header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -470,7 +470,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.UpdateInst(context.Background(), "0", "bk_switch", int64(1000), header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -480,7 +480,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.UpdateInst(context.Background(), "0", "cc_test", instId, header, input)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
@@ -494,7 +494,7 @@ var _ = Describe("inst test", func() {
 	It("delete inst with mismatch object", func() {
 		rsp, err := instClient.DeleteInst(context.Background(), "0", "cc_test", instId, header)
 		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).ShouldNot(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
