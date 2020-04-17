@@ -25,7 +25,10 @@ import (
 
 // CreateObjectBatch batch to create some objects
 func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
-	dataWithMetadata := MapStrWithMetadata{}
+	dataWithMetadata := struct {
+		Metadata *metadata.Metadata
+		Data     map[string]interface{}
+	}{}
 	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
 		ctx.RespAutoError(err)
 		return

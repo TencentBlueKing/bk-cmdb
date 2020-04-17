@@ -13,23 +13,23 @@
 package model
 
 import (
-    "context"
-    "fmt"
+	"context"
+	"fmt"
 	"regexp"
 	"strings"
-    "sync"
-    "time"
-    "unicode/utf8"
+	"sync"
+	"time"
+	"unicode/utf8"
 
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/http/rest"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    "configcenter/src/common/universalsql"
-    "configcenter/src/common/universalsql/mongo"
-    "configcenter/src/common/util"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql"
+	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/types"
 )
 
 var (
@@ -564,7 +564,6 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 
 	// 预定义字段，只能更新分组、分组内排序、名称、单位、提示语和option
 	if hasIsPreProperty {
-		hasNotAllowField := false
 		_ = data.ForEach(func(key string, val interface{}) error {
 			if key != metadata.AttributeFieldPropertyGroup &&
 				key != metadata.AttributeFieldPropertyIndex &&
@@ -572,15 +571,10 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 				key != metadata.AttributeFieldUnit &&
 				key != metadata.AttributeFieldPlaceHolder &&
 				key != metadata.AttributeFieldOption {
-				hasNotAllowField = true
+				data.Remove(key)
 			}
 			return nil
 		})
-		// 出现编辑预定义属性的字段
-		if hasNotAllowField {
-			blog.ErrorJSON("update model predefined attribute,input:%s, attr info:%s, rid:%s", cond.ToMapStr(), dbAttributeArr, kit.Rid)
-			return changeRow, kit.CCError.Error(common.CCErrCoreServiceNotUpdatePredefinedAttrErr)
-		}
 	}
 
 	if option, exists := data.Get(metadata.AttributeFieldOption); exists {

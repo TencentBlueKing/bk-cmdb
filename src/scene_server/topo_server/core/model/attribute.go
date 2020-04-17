@@ -118,7 +118,8 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 		return nil
 	}
 
-	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyType) {
+	// check if property type for creation is valid, can't update property type
+	if !isUpdate {
 		if _, err := a.FieldValid.Valid(a.kit, data, metadata.AttributeFieldPropertyType); nil != err {
 			return err
 		}
@@ -144,7 +145,8 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 		}
 	}
 
-	if !isUpdate || data.Exists(metadata.AttributeFieldOption) {
+	// check option validity for creation, update validation is in coreservice cause property type need to be obtained from db
+	if !isUpdate {
 		propertyType, err := data.String(metadata.AttributeFieldPropertyType)
 		if nil != err {
 			return a.kit.CCError.New(common.CCErrCommParamsIsInvalid, err.Error())
