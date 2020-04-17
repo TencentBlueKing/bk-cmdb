@@ -247,6 +247,7 @@ const (
 	// assign host(s) to a business
 	// located system/host/assignHostsToBusiness in auth center.
 	AssignHostsToBusiness ActionID = "assign_hosts_to_business"
+	HostTransferAcrossBiz ActionID = "host_transfer_across_biz"
 	BindModule            ActionID = "bind_module"
 	AdminEntrance         ActionID = "admin_entrance"
 )
@@ -347,11 +348,13 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	case meta.MoveHostToBizFaultModule,
 		meta.MoveHostToBizIdleModule,
 		meta.MoveHostToBizRecycleModule,
-		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
 		meta.MoveBizHostToModule:
 		return Edit, nil
+
+	case meta.MoveHostToAnotherBizModule:
+		return HostTransferAcrossBiz, nil
 
 	case meta.MoveHostFromModuleToResPool:
 		return Delete, nil
