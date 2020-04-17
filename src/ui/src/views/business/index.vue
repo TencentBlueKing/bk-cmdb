@@ -27,18 +27,12 @@
                 </icon-button>
             </div>
             <div class="options-filter clearfix fr">
-                <bk-select
+                <cmdb-property-selector
                     class="filter-selector fl"
                     v-model="filter.id"
-                    searchable
-                    font-size="medium"
-                    :clearable="false">
-                    <bk-option v-for="(option, index) in filter.options"
-                        :key="index"
-                        :id="option.id"
-                        :name="option.name">
-                    </bk-option>
-                </bk-select>
+                    :properties="properties"
+                    :object-unique="objectUnique">
+                </cmdb-property-selector>
                 <component class="filter-value fl"
                     v-if="['enum', 'list', 'organization'].includes(filter.type)"
                     :is="`cmdb-form-${filter.type}`"
@@ -138,6 +132,7 @@
                 <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-form
                         ref="form"
+                        :object-unique="objectUnique"
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
@@ -167,12 +162,15 @@
     import { mapState, mapGetters, mapActions } from 'vuex'
     import { MENU_RESOURCE_BUSINESS_HISTORY, MENU_RESOURCE_BUSINESS_DETAILS } from '@/dictionary/menu-symbol'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
+    import cmdbPropertySelector from '@/components/property-selector'
     export default {
         components: {
-            cmdbColumnsConfig
+            cmdbColumnsConfig,
+            cmdbPropertySelector
         },
         data () {
             return {
+                objectUnique: [],
                 properties: [],
                 propertyGroups: [],
                 table: {
@@ -193,10 +191,9 @@
                     }
                 },
                 filter: {
-                    id: '',
+                    id: 'bk_biz_name',
                     value: '',
-                    type: '',
-                    options: [],
+                    type: 'singlechar',
                     sendValue: ''
                 },
                 slider: {
@@ -276,8 +273,8 @@
                 })
                 await Promise.all([
                     this.getPropertyGroups(),
-                    this.setTableHeader(),
-                    this.setFilterOptions()
+                    this.getObjectUnique(),
+                    this.setTableHeader()
                 ])
 
                 // 配合全文检索过滤列表
@@ -313,6 +310,15 @@
                     return groups
                 })
             },
+            getObjectUnique () {
+                return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'biz',
+                    params: {}
+                }).then(data => {
+                    this.objectUnique = data
+                    return data
+                })
+            },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
                     const customColumns = this.customBusinessColumns.length ? this.customBusinessColumns : this.globalCustomColumns
@@ -322,19 +328,6 @@
                     this.updateTableHeader(properties)
                     this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
                 })
-            },
-            setFilterOptions () {
-                this.filter.options = this.properties.map(property => {
-                    return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name']
-                    }
-                })
-                if (this.$route.params.bizName) {
-                    this.filter.id = 'bk_biz_name'
-                } else {
-                    this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
-                }
             },
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {

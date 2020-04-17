@@ -382,7 +382,7 @@
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
-            ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
+            ...mapActions('hostSearch', ['searchHost']),
             getPropertyValue (modelId, propertyId, field) {
                 const model = this.properties[modelId]
                 if (!model) {

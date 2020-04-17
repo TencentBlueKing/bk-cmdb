@@ -55,17 +55,11 @@
                 </icon-button>
             </div>
             <div class="options-filter clearfix fr">
-                <bk-select class="filter-selector fl"
+                <cmdb-property-selector class="filter-selector fl"
                     v-model="filter.id"
-                    searchable
-                    font-size="medium"
-                    :clearable="false">
-                    <bk-option v-for="option in filter.options"
-                        :key="option.id"
-                        :id="option.id"
-                        :name="option.name">
-                    </bk-option>
-                </bk-select>
+                    :properties="properties"
+                    :object-unique="objectUnique">
+                </cmdb-property-selector>
                 <component class="filter-value fl"
                     v-if="['enum', 'list', 'organization'].includes(filter.type)"
                     :is="`cmdb-form-${filter.type}`"
@@ -164,6 +158,7 @@
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
                         :save-auth="attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST"
+                        :object-unique="objectUnique"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -213,10 +208,12 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbImport from '@/components/import/import'
     import { MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
+    import cmdbPropertySelector from '@/components/property-selector'
     export default {
         components: {
             cmdbColumnsConfig,
-            cmdbImport
+            cmdbImport,
+            cmdbPropertySelector
         },
         data () {
             return {
@@ -240,10 +237,9 @@
                     }
                 },
                 filter: {
-                    id: '',
+                    id: 'bk_inst_name',
                     value: '',
-                    type: '',
-                    options: []
+                    type: 'singlechar'
                 },
                 slider: {
                     show: false,
@@ -380,8 +376,8 @@
                     })
                     await Promise.all([
                         this.getPropertyGroups(),
-                        this.setTableHeader(),
-                        this.setFilterOptions()
+                        this.getObjectUnique(),
+                        this.setTableHeader()
                     ])
                     this.getTableData()
                 } catch (e) {
@@ -421,6 +417,17 @@
                     return groups
                 })
             },
+            getObjectUnique () {
+                return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: this.objId,
+                    params: this.$injectMetadata({}, {
+                        inject: !this.isPublicModel
+                    })
+                }).then(data => {
+                    this.objectUnique = data
+                    return data
+                })
+            },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
                     const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
@@ -430,15 +437,6 @@
                     this.updateTableHeader(properties)
                     this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
                 })
-            },
-            setFilterOptions () {
-                this.filter.options = this.properties.map(property => {
-                    return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name']
-                    }
-                })
-                this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
             },
             updateTableHeader (properties) {
                 this.table.header = properties.map(property => {
@@ -620,13 +618,7 @@
                     this.slider.show = false
                 }
             },
-            async handleMultipleEdit () {
-                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
-                    objId: this.objId,
-                    params: this.$injectMetadata({}, {
-                        inject: !this.isPublicModel
-                    })
-                })
+            handleMultipleEdit () {
                 this.attribute.type = 'multiple'
                 this.slider.title = this.$t('批量更新')
                 this.slider.show = true

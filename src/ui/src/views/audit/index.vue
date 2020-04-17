@@ -102,7 +102,7 @@
             v-bkloading="{ isLoading: $loading('getOperationLog') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 230"
+            :max-height="$APP.height - 310"
             :row-style="{ cursor: 'pointer' }"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
@@ -126,7 +126,7 @@
                 sortable="custom"
                 prop="bk_biz_name"
                 :label="$t('所属业务')">
-                <template slot-scope="{ row }">{{row.bk_biz_name || (row.basic_detail && row.basic_detail.bk_biz_name)}}</template>
+                <template slot-scope="{ row }">{{getBusinessName(row)}}</template>
             </bk-table-column>
             <bk-table-column
                 prop="resource_name"
@@ -161,8 +161,8 @@
             :title="$t('操作详情')">
             <template slot="content" v-if="details.isShow">
                 <v-details
-                    v-if="details.showDetailsList.includes(details.data.audit_type)"
-                    :show-business="active === 'business'"
+                    v-if="active !== 'business'"
+                    :show-business="false"
                     :details="details.data">
                 </v-details>
                 <v-json-details v-else :details="details.data"></v-json-details>
@@ -323,7 +323,7 @@
             }
         },
         async created () {
-            this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name')
+            this.$store.dispatch('objectBiz/getAuthorizedBusiness')
             await this.getTableData()
         },
         methods: {
@@ -331,7 +331,8 @@
                 if (row.label === null) {
                     const type = row.resource_type
                     if (type === 'model_instance') {
-                        const model = this.$store.getters['objectModelClassify/getModelById'](row.bk_obj_id) || {}
+                        const objId = row.operation_detail.bk_obj_id
+                        const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
                         return model.bk_obj_name || '--'
                     }
                     return this.funcModules[type] || '--'
@@ -341,12 +342,12 @@
             },
             getResourceName (row) {
                 if (['assign_host', 'unassign_host', 'transfer_host_module'].includes(row.action)) {
-                    return row.bk_host_innerip || '--'
+                    return row.bk_host_innerip || row.operation_detail.bk_host_innerip || '--'
                 }
                 if (['instance_association'].includes(row.resource_type)) {
                     return row.target_instance_name || '--'
                 }
-                return (row.basic_detail && row.basic_detail.resource_name) || '--'
+                return this.$tools.getValue(row, 'operation_detail.basic_detail.resource_name') || '--'
             },
             getResourceAction (row) {
                 if (row.label) {
@@ -354,6 +355,12 @@
                     return this.actionSet[`${row.resource_type}-${row.action}-${label}`]
                 }
                 return this.actionSet[`${row.resource_type}-${row.action}`]
+            },
+            getBusinessName (row) {
+                return row.bk_biz_name
+                    || this.$tools.getValue(row, 'operation_detail.bk_biz_name')
+                    || this.$tools.getValue(row, 'operation_detail.basic_detail.bk_biz_name')
+                    || '--'
             },
             async getTableData (event) {
                 try {
@@ -365,7 +372,7 @@
                             requestId: 'getOperationLog'
                         }
                     })
-                    this.table.list = res.info.map(item => ({ ...item, ...item.operation_detail }))
+                    this.table.list = res.info
                     this.table.pagination.count = res.count
                     // 有传入event参数时认为来自用户搜索
                     if (event) {

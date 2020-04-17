@@ -285,6 +285,8 @@ export function getValidateRules (property) {
         rules.numeric = true
     } else if (propertyType === 'float') {
         rules.float = true
+    } else if (propertyType === 'objuser') {
+        rules.length = 2000
     }
     return rules
 }
@@ -338,6 +340,12 @@ export function getPageParams (pagination) {
     }
 }
 
+export function localSort (data, compareKey) {
+    return data.sort((A, B) => {
+        return A[compareKey].localeCompare(B[compareKey], 'zh-Hans-CN', { sensitivity: 'accent', caseFirst: 'lower' })
+    })
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -357,5 +365,6 @@ export default {
     getValue,
     transformHostSearchParams,
     getDefaultPaginationConfig,
-    getPageParams
+    getPageParams,
+    localSort
 }

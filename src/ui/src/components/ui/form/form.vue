@@ -15,7 +15,7 @@
                                     v-if="checkEditable(property)"
                                     :key="propertyIndex">
                                     <div class="property-name">
-                                        <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
+                                        <span class="property-name-text" :class="{ required: isRequired(property) }">{{property['bk_property_name']}}</span>
                                         <i class="property-name-tooltips icon-cc-tips"
                                             v-if="property['placeholder']"
                                             v-bk-tooltips="htmlEncode(property['placeholder'])">
@@ -185,6 +185,16 @@
                 }
                 return !property.editable || property.isreadonly || this.disabledProperties.includes(property.bk_property_id)
             },
+            isRequired (property) {
+                if (property.isrequired) {
+                    return true
+                }
+                const unique = this.objectUnique.find(unique => unique.must_check)
+                if (unique) {
+                    return unique.keys.some(key => key.key_id === property.id)
+                }
+                return false
+            },
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')
                 temp.innerHTML = placeholder
@@ -197,7 +207,11 @@
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             getValidateRules (property) {
-                return this.$tools.getValidateRules(property)
+                const rules = this.$tools.getValidateRules(property)
+                if (this.isRequired(property)) {
+                    rules.required = true
+                }
+                return rules
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
