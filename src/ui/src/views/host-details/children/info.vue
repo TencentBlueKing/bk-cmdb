@@ -134,7 +134,8 @@
                 this.$router.push({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
-                        type: 'remove'
+                        type: 'remove',
+                        module: moduleId
                     },
                     query: {
                         sourceModel: 'module',
