@@ -117,7 +117,12 @@
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option'))}}
+                    <cmdb-property-value
+                        :value="row | hostValueFilter(column.objId, column.id)"
+                        :show-unit="false"
+                        :property="column.type"
+                        :options="getPropertyValue(column.objId, column.id, 'option')">
+                    </cmdb-property-value>
                 </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>

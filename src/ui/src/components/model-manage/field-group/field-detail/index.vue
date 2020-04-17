@@ -176,6 +176,9 @@
                 }, {
                     id: 'list',
                     name: this.$t('列表')
+                }, {
+                    id: 'organization',
+                    name: this.$t('组织')
                 }],
                 fieldInfo: {
                     bk_property_name: '',

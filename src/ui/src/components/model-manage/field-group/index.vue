@@ -302,7 +302,8 @@
                     'objuser': this.$t('用户'),
                     'timezone': this.$t('时区'),
                     'bool': 'bool',
-                    'list': this.$t('列表')
+                    'list': this.$t('列表'),
+                    'organization': this.$t('组织')
                 },
                 dialog: {
                     isShow: false,
