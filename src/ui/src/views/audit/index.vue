@@ -136,7 +136,7 @@
             <bk-table-column
                 :label="$t('操作描述')">
                 <template slot-scope="{ row }">
-                    {{`${getResourceAction(row)}"${getResourceName(row)}"`}}
+                    {{`${getResourceAction(row)}"${getTargetName(row)}"`}}
                 </template>
             </bk-table-column>
             <bk-table-column
@@ -161,8 +161,8 @@
             :title="$t('操作详情')">
             <template slot="content" v-if="details.isShow">
                 <v-details
-                    v-if="active !== 'business'"
-                    :show-business="false"
+                    v-if="details.showDetailsList.includes(details.data.audit_type)"
+                    :show-business="active === 'business'"
                     :details="details.data">
                 </v-details>
                 <v-json-details v-else :details="details.data"></v-json-details>
@@ -345,9 +345,15 @@
                     return row.bk_host_innerip || row.operation_detail.bk_host_innerip || '--'
                 }
                 if (['instance_association'].includes(row.resource_type)) {
-                    return row.target_instance_name || '--'
+                    return row.operation_detail.src_instance_name || '--'
                 }
-                return this.$tools.getValue(row, 'operation_detail.basic_detail.resource_name') || '--'
+                return this.$tools.getValue(row, 'operation_detail.resource_name') || '--'
+            },
+            getTargetName (row) {
+                if (row.resource_type === 'instance_association') {
+                    return row.operation_detail.target_instance_name
+                }
+                return this.getResourceName(row)
             },
             getResourceAction (row) {
                 if (row.label) {
@@ -359,7 +365,6 @@
             getBusinessName (row) {
                 return row.bk_biz_name
                     || this.$tools.getValue(row, 'operation_detail.bk_biz_name')
-                    || this.$tools.getValue(row, 'operation_detail.basic_detail.bk_biz_name')
                     || '--'
             },
             async getTableData (event) {
