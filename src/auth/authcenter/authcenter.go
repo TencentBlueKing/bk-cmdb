@@ -471,7 +471,7 @@ func convertAction(resourceType meta.ResourceType, action meta.Action) (ActionID
 		meta.MoveHostToBizFaultModule:    Edit,
 		meta.MoveHostToBizIdleModule:     Edit,
 		meta.MoveHostToBizRecycleModule:  Edit,
-		meta.MoveHostToAnotherBizModule:  Edit,
+		meta.MoveHostToAnotherBizModule:  HostTransferAcrossBiz,
 		meta.CleanHostInSetOrModule:      Edit,
 		meta.TransferHost:                Edit,
 		meta.MoveBizHostToModule:         Edit,

@@ -83,7 +83,6 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) Config {
 	if c.Mechanism == "" {
 		c.Mechanism = "SCRAM-SHA-1"
 	}
-	blog.ErrorJSON("xxx c: %s, configmap: %s", c, configmap)
 
 	maxOpenConns, err := strconv.ParseUint(configmap[prefix+".maxOpenConns"], 10, 64)
 	if err != nil {

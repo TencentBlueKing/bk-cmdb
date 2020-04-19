@@ -117,7 +117,12 @@
                 :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option'))}}
+                    <cmdb-property-value
+                        :value="row | hostValueFilter(column.objId, column.id)"
+                        :show-unit="false"
+                        :property="column.type"
+                        :options="getPropertyValue(column.objId, column.id, 'option')">
+                    </cmdb-property-value>
                 </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
@@ -377,7 +382,7 @@
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
-            ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
+            ...mapActions('hostSearch', ['searchHost']),
             getPropertyValue (modelId, propertyId, field) {
                 const model = this.properties[modelId]
                 if (!model) {

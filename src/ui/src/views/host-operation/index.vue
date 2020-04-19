@@ -8,7 +8,7 @@
                 <i18n path="N台主机">
                     <b class="info-count" place="count">{{resources.length}}</b>
                 </i18n>
-                <i class="edit-trigger icon icon-cc-edit" @click="handleChangeHost"></i>
+                <i class="edit-trigger icon icon-cc-edit" v-if="!isRemoveModule" @click="handleChangeHost"></i>
             </div>
         </div>
         <div class="info clearfix mb10" v-if="type !== 'remove'">
@@ -200,6 +200,10 @@
             },
             activeTab () {
                 return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
+            },
+            isRemoveModule () {
+                const { type, module } = this.$route.params
+                return type === 'remove' && module
             }
         },
         watch: {

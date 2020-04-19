@@ -15,7 +15,12 @@
                     <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
                         v-overflow-tips
                         v-show="property !== editState.property">
-                        {{$tools.getPropertyText(property, host) | filterShowText(property.unit)}}
+                        <cmdb-property-value
+                            :ref="`property-value-${property.bk_property_id}`"
+                            :value="host[property.bk_property_id]"
+                            :property="property"
+                            :show-title="false">
+                        </cmdb-property-value>
                     </span>
                     <template v-if="!loadingState.includes(property)">
                         <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
@@ -74,9 +79,9 @@
                                 </span>
                             </div>
                         </template>
-                        <template v-if="$tools.getPropertyText(property, host) !== '--' && property !== editState.property">
+                        <template v-if="host[property.bk_property_id] && property !== editState.property">
                             <div class="copy-box">
-                                <i class="property-copy icon-cc-details-copy" @click="handleCopy($tools.getPropertyText(property, host), property.bk_property_id)"></i>
+                                <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.bk_property_id)"></i>
                                 <transition name="fade">
                                     <span class="copy-tips"
                                         :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
@@ -176,7 +181,7 @@
                 }
             },
             getPlaceholder (property) {
-                const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+                const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
                 return this.$t(placeholderTxt, { name: property.bk_property_name })
             },
             isPropertyEditable (property) {
@@ -184,7 +189,7 @@
             },
             setEditState (property) {
                 const value = this.host[property.bk_property_id]
-                this.editState.value = value === null ? '' : value
+                this.editState.value = (value === null || value === undefined) ? '' : value
                 this.editState.property = property
                 this.$nextTick(() => {
                     const component = this.$refs[`component-${property.bk_property_id}`]
@@ -222,7 +227,9 @@
                 this.editState.property = null
                 this.editState.value = null
             },
-            handleCopy (copyText, propertyId) {
+            handleCopy (propertyId) {
+                const component = this.$refs[`property-value-${propertyId}`]
+                const copyText = component[0] ? component[0].$el.innerText : ''
                 this.$copyText(copyText).then(() => {
                     this.showCopyTips = propertyId
                     const timer = setTimeout(() => {

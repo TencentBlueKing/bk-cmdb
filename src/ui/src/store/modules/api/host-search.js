@@ -9,7 +9,7 @@
  */
 
 import $http from '@/api'
-import { transformHostSearchParams } from '@/utils/tools'
+import { transformHostSearchParams, localSort } from '@/utils/tools'
 
 const state = {
 
@@ -29,29 +29,14 @@ const actions = {
      * @return {Promise} promise 对象
      */
     searchHost ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`hosts/search`, transformHostSearchParams(params), config)
-    },
-
-    searchHostByInnerip (context, { bizId, innerip, config }) {
-        return $http.post(`hosts/search`, {
-            'bk_biz_id': bizId,
-            condition: ['biz', 'set', 'module', 'host'].map(model => {
-                return {
-                    'bk_obj_id': model,
-                    condition: []
-                }
-            }),
-            ip: {
-                flag: 'bk_host_innerip',
-                exact: 1,
-                data: [innerip]
-            },
-            page: {
-                start: 0,
-                limit: 1
+        return $http.post(`hosts/search`, transformHostSearchParams(params), config).then(data => {
+            if (data.hasOwnProperty('info')) {
+                data.info.forEach(host => {
+                    localSort(host.module, 'bk_module_name')
+                    localSort(host.set, 'bk_set_name')
+                })
             }
-        }, config).then(data => {
-            return data.info[0] || {}
+            return data
         })
     },
 
