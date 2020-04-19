@@ -76,7 +76,7 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 	})
 
 	if err != nil {
-		ctx.RespAutoError(err)
+		blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
 }

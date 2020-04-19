@@ -56,7 +56,7 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 		return nil
 	})
 	if err != nil {
-		ctx.RespAutoError(err)
+		blog.Errorf("create mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
 }
@@ -103,14 +103,14 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 			return err
 		}
 
+		ctx.RespEntity(nil)
 		return nil
 	})
 
 	if err != nil {
-		ctx.RespAutoError(err)
+		blog.Errorf("delete mainline association failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-	ctx.RespEntity(nil)
 }
 
 // SearchMainLineObjectTopo search the main line topo
