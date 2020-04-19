@@ -82,6 +82,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		return nil, err
 	}
 
+	// TODO: add this check later, this command needs authorize to get version.
 	// if err := checkMongodbVersion(connStr.Database, client); err != nil {
 	// 	return nil, err
 	// }

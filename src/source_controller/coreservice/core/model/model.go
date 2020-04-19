@@ -148,11 +148,14 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return dataResult, err
 	}
 
-	// _, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
-	// if nil != err {
-	// 	blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v", kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
-	// 	return dataResult, err
-	// }
+	if len(inputParam.Attributes) != 0 {
+		_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
+		if nil != err {
+			blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v", kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
+			return dataResult, err
+		}
+	}
+	
 	dataResult.Created.ID = id
 	return dataResult, nil
 }
