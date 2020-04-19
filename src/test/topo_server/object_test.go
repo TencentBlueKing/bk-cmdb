@@ -89,11 +89,11 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		It("create mainline object nonexist bk_asst_obj_id", func() {
+		It("create mainline object none exist bk_asst_obj_id", func() {
 			input := &metadata.MainLineObject{
 				Object: metadata.Object{
 					ObjCls:     "bk_biz_topo",
@@ -106,7 +106,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -123,7 +123,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -139,7 +139,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -155,7 +155,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -171,7 +171,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -187,7 +187,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -203,7 +203,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateModel(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -217,7 +217,7 @@ var _ = Describe("object test", func() {
 		It("delete mainline object twice", func() {
 			rsp, err := objectClient.DeleteModel(context.Background(), "0", "test_object", header)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -390,7 +390,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateClassification(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -403,7 +403,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateClassification(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -424,7 +424,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.UpdateClassification(context.Background(), clsId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -487,7 +487,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.DeleteClassification(context.Background(), "0", header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -502,7 +502,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -517,7 +517,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -532,7 +532,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -597,7 +597,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := objectClient.UpdateObject(context.Background(), objId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -737,7 +737,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -751,7 +751,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -765,7 +765,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -796,7 +796,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := objectClient.UpdatePropertyGroup(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -879,7 +879,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -897,7 +897,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -915,7 +915,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -937,7 +937,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -955,7 +955,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -1004,7 +1004,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := apiServerClient.UpdateObjectAtt(context.Background(), attrId1, header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -1065,7 +1065,7 @@ var _ = Describe("object test", func() {
 				}
 				rsp, err := objectClient.UpdatePropertyGroupObjectAtt(context.Background(), header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -1086,7 +1086,7 @@ var _ = Describe("object test", func() {
 			It("delete object attribute property group with object", func() {
 				rsp, err := objectClient.DeletePropertyGroup(context.Background(), strconv.FormatInt(groupId, 10), header)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(BeNil())
 				Expect(rsp.Result).To(Equal(false))
 			})
 
@@ -1184,7 +1184,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1199,7 +1199,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateSet(context.Background(), "1000", header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1214,7 +1214,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1228,7 +1228,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1243,7 +1243,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateSet(context.Background(), "2", header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1263,7 +1263,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, "10000", header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1273,7 +1273,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.UpdateSet(context.Background(), bizId, setId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1363,7 +1363,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1376,7 +1376,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateModule(context.Background(), "1000", setId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1389,7 +1389,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizId, "1000", header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1402,7 +1402,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateModule(context.Background(), "2", setId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1415,7 +1415,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1427,7 +1427,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1447,7 +1447,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, "10000", header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
@@ -1457,7 +1457,7 @@ var _ = Describe("object test", func() {
 			}
 			rsp, err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId1, header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).Should(BeNil())
 			Expect(rsp.Result).To(Equal(false))
 		})
 

@@ -74,11 +74,6 @@ func (r *RestUtility) AddHandler(action Action) {
 }
 
 func (r *RestUtility) AddToRestfulWebService(ws *restful.WebService) {
-	// ws := new(restful.WebService)
-	// getErrFunc := func() errors.CCErrorIf {
-	// 	return r.ErrorIf
-	// }
-	// ws.Path(cfg.RootPath).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	for _, action := range r.actions {
 		switch action.Verb {
@@ -111,6 +106,11 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 		ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 		ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 		ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
+		if txnID := header.Get(common.TransactionIdHeader); len(txnID) != 0 {
+			// we got a request with transaction info, which is only useful for coreservice.
+			ctx = context.WithValue(ctx, common.TransactionIdHeader, txnID)
+			ctx = context.WithValue(ctx, common.TransactionTimeoutHeader, header.Get(common.TransactionTimeoutHeader))
+		}
 		restContexts.Kit = &Kit{
 			Header:          header,
 			Rid:             rid,

@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/storage/dal"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 
 	"github.com/emicklei/go-restful"
@@ -32,7 +31,6 @@ import (
 
 type Service struct {
 	Engine      *backbone.Engine
-	Txn          dal.Transaction
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
