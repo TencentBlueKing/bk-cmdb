@@ -43,7 +43,6 @@ type Config struct {
 	Mechanism    string
 	MaxOpenConns uint64
 	MaxIdleConns uint64
-	TxnEnabled   string
 	RsName       string
 }
 
@@ -69,14 +68,13 @@ func (c Config) BuildURI() string {
 // ParseConfigFromKV returns a new config
 func ParseConfigFromKV(prefix string, configmap map[string]string) Config {
 	c := Config{
-		Address:    configmap[prefix+".host"],
-		Port:       configmap[prefix+".port"],
-		User:       configmap[prefix+".usr"],
-		Password:   configmap[prefix+".pwd"],
-		Database:   configmap[prefix+".database"],
-		Mechanism:  configmap[prefix+".mechanism"],
-		TxnEnabled: configmap[prefix+".txnEnabled"],
-		RsName:     configmap[prefix+".rsName"],
+		Address:   configmap[prefix+".host"],
+		Port:      configmap[prefix+".port"],
+		User:      configmap[prefix+".usr"],
+		Password:  configmap[prefix+".pwd"],
+		Database:  configmap[prefix+".database"],
+		Mechanism: configmap[prefix+".mechanism"],
+		RsName:    configmap[prefix+".rsName"],
 	}
 
 	if c.RsName == "" {
@@ -124,21 +122,6 @@ func (c Config) GetMongoClient() (db dal.RDB, err error) {
 		RsName:       c.RsName,
 	}
 	db, err = local.NewMgo(mongoConf, time.Minute)
-	if err != nil {
-		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
-	}
-	return
-}
-
-func (c Config) GetTransactionClient() (client dal.Transaction, err error) {
-	mongoConf := local.MongoConf{
-		MaxOpenConns: c.MaxOpenConns,
-		MaxIdleConns: c.MaxIdleConns,
-		URI:          c.BuildURI(),
-		RsName:       c.RsName,
-	}
-	client, err = local.NewMgo(mongoConf, time.Minute)
-
 	if err != nil {
 		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
 	}

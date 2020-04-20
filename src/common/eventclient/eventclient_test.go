@@ -27,7 +27,6 @@ func TestNewEventWithHeader(t *testing.T) {
 
 	header := http.Header{}
 	header.Set(common.BKHTTPOwnerID, "0")
-	header.Set(common.BKHTTPCCTransactionID, "123")
 	header.Set(common.BKHTTPCCRequestID, "456")
 	tests := []struct {
 		name string

@@ -10,73 +10,81 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"strconv"
 
 	"go.mongodb.org/mongo-driver/x/bsonx"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/session"
 )
 
-type SessionExposer struct{}
-
 type SessionInfo struct {
-	SessionID    string
-	TxnNumber    string
-	SessionState string
+	TxnNubmer int64
+	SessionID string
 }
 
-// GetSessionInfo get the session info from the param session
-func (s *SessionExposer) GetSessionInfo(session Session) (*SessionInfo, error) {
-	i, ok := session.(*sessionImpl)
+// GetSessionInfo get the transaction id and txnNumber from a session.
+func CmdbGetSessionInfo(sess Session) (string, int64, error) {
+	i, ok := sess.(*sessionImpl)
 	if !ok {
-		return nil, errors.New("the session is not type *sessionImpl")
+		return "", 0, errors.New("the session is not type *sessionImpl")
 	}
-	info := &SessionInfo{}
-	sessionIDBytes, err := i.clientSession.Server.SessionID.MarshalBSON()
-	if err != nil {
-		return nil, err
-	}
-	// use base64 to encode, to prevent the invalid header field value like "\x00"
-	info.SessionID = base64.StdEncoding.EncodeToString(sessionIDBytes)
-	info.TxnNumber = strconv.FormatInt(i.clientSession.Server.TxnNumber, 10)
-	info.SessionState = strconv.Itoa(int(i.clientSession.GetState()))
-	return info, nil
+	_, sessID := i.clientSession.Server.SessionID.Lookup("id").Binary()
+	return base64.StdEncoding.EncodeToString(sessID[:]),
+		i.clientSession.Server.TxnNumber, nil
 }
 
-// SetSessionInfo set the session info into the param session, make different session behave like same one
-func (s *SessionExposer) SetSessionInfo(session Session, info *SessionInfo) error {
-	i, ok := session.(*sessionImpl)
+// CmdbReloadSession is used to reset a created session's session id, so that we can 
+// put all the business operation 
+func CmdbReloadSession(sess Session, info *SessionInfo) error {
+	i, ok := sess.(*sessionImpl)
 	if !ok {
-		return errors.New("the session is not type *sessionImpl")
+		panic("the session is not type *sessionImpl")
 	}
 	sessionIDBytes, err := base64.StdEncoding.DecodeString(info.SessionID)
 	if err != nil {
 		return err
 	}
-	doc := bsonx.Doc{}
-	err = doc.UnmarshalBSON(sessionIDBytes)
-	if err != nil {
-		return err
+	idDoc := bsonx.Doc{{"id", bsonx.Binary(session.UUIDSubtype, sessionIDBytes[:])}}
+	i.clientSession.Server.SessionID = idDoc
+	i.clientSession.SessionID=idDoc
+	// i.didCommitAfterStart=false
+	if info.TxnNubmer > 1 {
+		// when the txnNumber is large than 1, it means that it's not the first transaction in 
+		// this session, we do not need to create a new transaction with this txnNumber and mongodb does
+		// not allow this, so we need to change the session status from Starting to InProgressing.
+		// set state to InProgressing in a same session id, then we can use the same
+		// transaction number as a transaction in a single transaction session.
+		// otherwise a error like this will be occured as follows:
+		// (NoSuchTransaction) Given transaction number 2 does not match any in-progress transactions. The active transaction number is 1
+		i.clientSession.SetState(2)
 	}
-	i.clientSession.Server.SessionID = doc
-	i.clientSession.Server.TxnNumber, _ = strconv.ParseInt(info.TxnNumber, 10, 64)
-	stateVal, err := strconv.Atoi(info.SessionState)
-	if err != nil {
-		return err
-	}
-	i.clientSession.SetState(uint8(stateVal))
 	return nil
 }
-
-// EndSession ends the session, just return the session to pool, not AbortTransaction
-func (s *SessionExposer) EndSession(session Session) error {
-	i, ok := session.(*sessionImpl)
+// CmdbPrepareCommitOrAbort set state to InProgress, so that we can commit with other
+// operation directly. otherwise mongodriver will do a false commit
+func CmdbPrepareCommitOrAbort(sess Session) {
+	i, ok := sess.(*sessionImpl)
 	if !ok {
-		return errors.New("the session is not type *sessionImpl")
+		panic("the session is not type *sessionImpl")
+	}
+
+	i.clientSession.SetState(2)
+	i.didCommitAfterStart=false
+}
+
+// CmdbContextWithSession set the session into context if context includes session info
+func CmdbContextWithSession(ctx context.Context, sess Session) SessionContext {
+	return contextWithSession(ctx, sess)
+}
+
+// CmdbReleaseSession is almost same with session.EndSession(), the difference is 
+// that CmdbReleaseSession do not abrot the transaction, and just release the net connection
+// it panic if it's not a valid sessionImpl
+// Note: do not use this, because our transaction plan do not allows to reuse a session server.
+// if we do this, the session server will be reused, and the txnNumber will be increased, we 
+// do not allow it happen.
+func CmdbReleaseSession(ctx context.Context, sess Session)  {
+	i, ok := sess.(*sessionImpl)
+	if !ok {
+		panic("the session is not type *sessionImpl")
 	}
 	i.clientSession.EndSession()
-	return nil
-}
-
-// SetContextSession set the session into context if context includes session info
-func (s *SessionExposer) ContextWithSession(ctx context.Context, sess Session) context.Context {
-	return contextWithSession(ctx, sess)
 }
