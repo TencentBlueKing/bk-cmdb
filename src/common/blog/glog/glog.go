@@ -1147,6 +1147,12 @@ func Errorf(format string, args ...interface{}) {
 	logging.printf(errorLog, format, args...)
 }
 
+// ErrorfDepthf acts as Errorf but uses depth to determine which call frame to log.
+// ErrorfDepthf(0, "%s", "msg") is the same as Errorf("%s", "msg").
+func ErrorfDepthf(depth int, format string, args ...interface{}) {
+	logging.printDepthf(errorLog, format, depth, args...)
+}
+
 // Fatal logs to the FATAL, ERROR, WARNING, and INFO logs,
 // including a stack trace of all running goroutines, then calls os.Exit(255).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.

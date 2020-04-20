@@ -87,9 +87,9 @@ var (
 	Warn  = glog.Warningf
 	Warnf = glog.Warningf
 
-	Error       = glog.Errorf
-	Errorf      = glog.Errorf
-	ErrorfDepth = glog.ErrorDepth
+	Error        = glog.Errorf
+	Errorf       = glog.Errorf
+	ErrorfDepthf = glog.ErrorfDepthf
 
 	Fatal  = glog.Fatal
 	Fatalf = glog.Fatalf

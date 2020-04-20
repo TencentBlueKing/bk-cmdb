@@ -407,7 +407,7 @@ def main(argv):
             mongo_pass = arg
             print('mongo_pass:', mongo_pass)
         elif opt in ("--rs_name",):
-            txn_enabled = arg
+            rs_name = arg
             print('rs_name:', rs_name)
         elif opt in ("--txn_enabled",):
             txn_enabled = arg
