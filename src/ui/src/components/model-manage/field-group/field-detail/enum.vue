@@ -148,7 +148,7 @@
                 this.$emit('input', this.enumList)
             },
             addEnum (index) {
-                this.enumList.push(this.generateEnum())
+                this.enumList.push(this.generateEnum({ is_default: false }))
                 this.$nextTick(() => {
                     this.$refs[`id${index + 1}`] && this.$refs[`id${index + 1}`][0].focus()
                 })
@@ -161,13 +161,14 @@
                 }
                 this.handleInput()
             },
-            generateEnum () {
-                return {
+            generateEnum (settings = {}) {
+                const defaults = {
                     id: '',
-                    is_default: false,
+                    is_default: true,
                     name: '',
                     type: 'text'
                 }
+                return { ...defaults, ...settings }
             },
             validate () {
                 return this.$validator.validateAll()
@@ -189,7 +190,7 @@
             handleSort () {
                 this.order = this.order * -1
                 this.enumList.sort((A, B) => {
-                    return A.id.localeCompare(B.id, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order
+                    return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order
                 })
 
                 this.$emit('input', this.enumList)
