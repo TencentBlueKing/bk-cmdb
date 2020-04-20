@@ -1260,7 +1260,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 	}
 
 	// find object's topology operation.
-	if ps.hitPattern(findObjectTopologyLatestPattern, http.MethodPut) {
+	if ps.hitPattern(findObjectTopologyLatestPattern, http.MethodPost) {
 		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
