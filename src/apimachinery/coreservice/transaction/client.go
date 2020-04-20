@@ -169,11 +169,11 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 
 	runErr := run()
 	if runErr != nil {
-		blog.ErrorfDepth(2, "run transaction, but run() function failed, err: %v, rid: %s", runErr, rid)
+		blog.ErrorfDepthf(2, "run transaction, but run() function failed, err: %v, rid: %s", runErr, rid)
 		// run() logic failed, then abort the transaction.
 		err := t.AbortTransaction(ctx, h)
 		if err != nil {
-			blog.ErrorfDepth(2, "abort the transaction failed, err: %v, rid: %s", err, rid)
+			blog.ErrorfDepthf(2, "abort the transaction failed, err: %v, rid: %s", err, rid)
 			return runErr
 		}
 		blog.V(4).InfoDepthf(2, "abort the transaction success. rid: %s", rid)
@@ -184,7 +184,7 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	// run() logic success, then commit the transaction.
 	err := t.CommitTransaction(ctx, h)
 	if err != nil {
-		blog.ErrorfDepth(2, "commit the transaction failed, err: %v, rid: %s", err, rid)
+		blog.ErrorfDepthf(2, "commit the transaction failed, err: %v, rid: %s", err, rid)
 		return runErr
 	}
 	blog.V(4).InfoDepthf(2, "commit the transaction success. rid: %s", rid)

@@ -190,6 +190,9 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 
 	tableName := common.GetInstTableName(objID)
 	if tableName == common.BKTableNameBaseInst {
+		if inputParam.Condition == nil {
+			inputParam.Condition = mapstr.MapStr{}
+		}
 		objIDCond, ok := inputParam.Condition[common.BKObjIDField]
 		if ok && objIDCond != objID {
 			blog.V(9).Infof("searchInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, kit.Rid)
