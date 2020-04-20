@@ -1,7 +1,19 @@
 <template>
     <div class="form-enum-layout">
-        <p class="title mb10">{{$t('枚举值')}}</p>
-        <ul class="form-enum-wrapper">
+        <div class="toolbar">
+            <p class="title">{{$t('枚举值')}}</p>
+            <i
+                v-bk-tooltips.top-start="$t('按照0-9a-z排序')"
+                :class="['sort-icon', `icon-cc-sort-${order > 0 ? 'up' : 'down'}`]"
+                @click="handleSort">
+            </i>
+        </div>
+        <vue-draggable
+            class="form-enum-wrapper"
+            tag="ul"
+            v-model="enumList"
+            :options="dragOptions"
+            @end="handleDragEnd">
             <li class="form-item" v-for="(item, index) in enumList" :key="index">
                 <div class="enum-id">
                     <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`id${index}`) }">
@@ -39,7 +51,7 @@
                     <i class="bk-icon icon-plus-circle-shape"></i>
                 </bk-button>
             </li>
-        </ul>
+        </vue-draggable>
         <div class="default-setting">
             <p class="title mb10">{{$t('默认值设置')}}</p>
             <bk-select style="width: 100%;"
@@ -57,7 +69,11 @@
 </template>
 
 <script>
+    import vueDraggable from 'vuedraggable'
     export default {
+        components: {
+            vueDraggable
+        },
         props: {
             value: {
                 type: [Array, String],
@@ -70,15 +86,18 @@
         },
         data () {
             return {
-                enumList: [{
-                    id: '',
-                    is_default: true,
-                    name: '',
-                    type: 'text'
-                }],
+                enumList: [this.generateEnum()],
                 defaultIndex: 0,
                 settingList: [],
-                defaultValue: ''
+                defaultValue: '',
+                dragOptions: {
+                    animation: 300,
+                    disabled: false,
+                    filter: '.enum-btn, .enum-id, .enum-name',
+                    preventOnFilter: false,
+                    ghostClass: 'ghost'
+                },
+                order: 1
             }
         },
         watch: {
@@ -101,7 +120,7 @@
         methods: {
             getOtherId (index) {
                 const idList = []
-                this.enumList.map((item, enumIndex) => {
+                this.enumList.forEach((item, enumIndex) => {
                     if (index !== enumIndex) {
                         idList.push(item.id)
                     }
@@ -110,7 +129,7 @@
             },
             getOtherName (index) {
                 const nameList = []
-                this.enumList.map((item, enumIndex) => {
+                this.enumList.forEach((item, enumIndex) => {
                     if (index !== enumIndex) {
                         nameList.push(item.name)
                     }
@@ -119,12 +138,7 @@
             },
             initValue () {
                 if (this.value === '') {
-                    this.enumList = [{
-                        id: '',
-                        is_default: true,
-                        name: '',
-                        type: 'text'
-                    }]
+                    this.enumList = [this.generateEnum()]
                 } else {
                     this.enumList = this.value.map(data => ({ ...data, type: 'text' }))
                     this.defaultIndex = this.enumList.findIndex(({ is_default: isDefault }) => isDefault)
@@ -134,13 +148,7 @@
                 this.$emit('input', this.enumList)
             },
             addEnum (index) {
-                this.enumList.push({
-                    id: '',
-                    is_default: false,
-                    name: '',
-                    type: 'text'
-                })
-                this.handleInput()
+                this.enumList.push(this.generateEnum({ is_default: false }))
                 this.$nextTick(() => {
                     this.$refs[`id${index + 1}`] && this.$refs[`id${index + 1}`][0].focus()
                 })
@@ -153,6 +161,15 @@
                 }
                 this.handleInput()
             },
+            generateEnum (settings = {}) {
+                const defaults = {
+                    id: '',
+                    is_default: true,
+                    name: '',
+                    type: 'text'
+                }
+                return { ...defaults, ...settings }
+            },
             validate () {
                 return this.$validator.validateAll()
             },
@@ -160,11 +177,23 @@
                 const itemIndex = this.enumList.findIndex(item => item.id === id)
                 if (itemIndex > -1) {
                     this.defaultIndex = itemIndex
-                    this.enumList = this.enumList.map(item => {
+                    this.enumList.forEach(item => {
                         item.is_default = item.id === id
-                        return item
                     })
+
+                    this.$emit('input', this.enumList)
                 }
+            },
+            handleDragEnd () {
+                this.$emit('input', this.enumList)
+            },
+            handleSort () {
+                this.order = this.order * -1
+                this.enumList.sort((A, B) => {
+                    return A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order
+                })
+
+                this.$emit('input', this.enumList)
             }
         }
     }
@@ -178,8 +207,28 @@
         .form-item {
             display: flex;
             align-items: center;
+            position: relative;
             font-size: 0;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            padding: 2px 2px 2px 28px;
+            cursor: move;
+
+            &::before {
+                content: '';
+                position: absolute;
+                top: 12px;
+                left: 8px;
+                width: 3px;
+                height: 3px;
+                border-radius: 50%;
+                background-color: #979ba5;
+                box-shadow: 0 5px 0 0 #979ba5,
+                    0 10px 0 0 #979ba5,
+                    5px 0 0 0 #979ba5,
+                    5px 5px 0 0 #979ba5,
+                    5px 10px 0 0 #979ba5;
+            }
+
             .enum-id {
                 width: 90px;
                 margin-right: 10px;
@@ -204,7 +253,43 @@
                     font-size: 18px;
                     text-align: center;
                 }
+
+                &.is-disabled {
+                    color: #dcdee5;
+                }
+                &:not(.is-disabled):hover {
+                    color: #979ba5;
+                }
             }
         }
+    }
+
+    .toolbar {
+        display: flex;
+        margin-bottom: 10px;
+        align-items: center;
+        line-height: 20px;
+
+        .sort-icon {
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            border: 1px solid #c4c6cc;
+            background: #fff;
+            border-radius: 2px;
+            font-size: 16px;
+            line-height: 18px;
+            text-align: center;
+            color: #c4c6cc;
+            cursor: pointer;
+
+            &:hover {
+                color: #979ba5;
+            }
+        }
+    }
+
+    .ghost {
+        border: 1px dashed $cmdbBorderFocusColor;
     }
 </style>
