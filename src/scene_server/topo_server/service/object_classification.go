@@ -202,7 +202,7 @@ func (s *Service) DeleteClassification(ctx *rest.Contexts) {
 	err = objClsAuditLog.WithPrevious(ctx.Kit, id)
 	if err != nil {
 		blog.Errorf("[api-cls] find Previous object group failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		//ctx.RespAutoError(err)
 	}
 
 	md := new(MetaShell)
