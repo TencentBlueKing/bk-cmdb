@@ -138,6 +138,12 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+	case ModelRes, ModelClassificationRes, ModelAttributeRes, ModelGroupRes:
+		operationDetail := new(ModelOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
 	default:
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -185,6 +191,12 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	case ModelAssociationRes:
 		operationDetail := new(ModelAssociationOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case ModelRes, ModelClassificationRes, ModelAttributeRes, ModelGroupRes:
+		operationDetail := new(ModelOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
