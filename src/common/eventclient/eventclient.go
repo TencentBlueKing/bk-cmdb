@@ -55,6 +55,9 @@ type ClientViaRedis struct {
 // we limit the queue size to 4k*2500=10M， assume that 4k per event
 const queueSize = 2500
 
+// txnQueueExpireTime set the expire time of txn queue in redis
+var txnQueueExpireTime = 600 * time.Second
+
 func NewClientViaRedis(cache *redis.Client, rdb dal.RDB) *ClientViaRedis {
 	ec := &ClientViaRedis{
 		rdb:   rdb,
@@ -169,14 +172,18 @@ func (c *ClientViaRedis) runPusher() {
 
 func (c *ClientViaRedis) pushToRedis(event *eventtmp) error {
 	if event.TxnID != "" {
-		z := redis.Z{
-			Score:  float64(time.Now().UTC().Unix()),
-			Member: event.TxnID,
-		}
-		if err := c.cache.ZAddNX(common.EventCacheEventTxnSet, z).Err(); err != nil {
-			return err
-		}
-		return c.cache.LPush(common.EventCacheEventTxnQueuePrefix+event.TxnID, event.data).Err()
+		_, err := c.cache.Pipelined(func(pipe *redis.Pipeline) error {
+			if err := pipe.LPush(common.EventCacheEventTxnQueuePrefix+event.TxnID, event.data).Err(); err != nil {
+				blog.Errorf("pushToRedis LPush failed, err: %v", err)
+				return err
+			}
+			if err := pipe.Expire(common.EventCacheEventTxnQueuePrefix+event.TxnID, txnQueueExpireTime).Err(); err != nil {
+				blog.Errorf("pushToRedis Expire failed, err: %v", err)
+				return err
+			}
+			return nil
+		})
+		return err
 	}
 	return c.cache.LPush(common.EventCacheEventQueueKey, event.data).Err()
 }
