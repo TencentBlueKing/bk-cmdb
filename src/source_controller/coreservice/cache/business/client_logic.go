@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"gopkg.in/redis.v5"
 )
 
 func (c *Client) getBusinessFromMongo(bizID int64) (string, error) {
@@ -54,7 +55,7 @@ func (c *Client) getBusinessBaseInfo() (list []BizBaseInfo, err error) {
 		return nil, fmt.Errorf("get bizlist keys %s falied. err: %v", bizKey.listKeyWithBiz(0), err)
 	}
 	for _, key := range keys {
-		id, name ,err := bizKey.parseListKeyValue(key)
+		instID, _, name, err := bizKey.parseListKeyValue(key)
 		if err != nil {
 			// invalid key, delete immediately
 			if c.rds.SRem(bizKey.listKeyWithBiz(0), key).Err() != nil {
@@ -63,7 +64,7 @@ func (c *Client) getBusinessBaseInfo() (list []BizBaseInfo, err error) {
 			return nil, fmt.Errorf("got invalid key %s", key)
 		}
 		list = append(list, BizBaseInfo{
-			BusinessID:   id,
+			BusinessID:   instID,
 			BusinessName: name,
 		})
 	}
@@ -71,17 +72,17 @@ func (c *Client) getBusinessBaseInfo() (list []BizBaseInfo, err error) {
 	return list, nil
 }
 
-func (c *Client) genBusinessListKeys(_ int64) ([]string, error)  {
+func (c *Client) genBusinessListKeys(_ int64) ([]string, error) {
 	bizList := make([]BizBaseInfo, 0)
-	err := c.db.Table(common.BKTableNameBaseApp).Find(nil).Fields(common.BKAppIDField,common.BKAppNameField).All(context.Background(), &bizList)
+	err := c.db.Table(common.BKTableNameBaseApp).Find(nil).Fields(common.BKAppIDField, common.BKAppNameField).All(context.Background(), &bizList)
 	if err != nil {
 		blog.Errorf("get all biz list from mongodb failed, err: %v", err)
 		return nil, err
 	}
 	list := make([]string, len(bizList))
 	for idx := range bizList {
-		list[idx] = bizKey.genListKeyValue(bizList[idx].BusinessID,bizList[idx].BusinessName)
-	}		
+		list[idx] = bizKey.genListKeyValue(bizList[idx].BusinessID, 0, bizList[idx].BusinessName)
+	}
 	return list, nil
 }
 
@@ -100,25 +101,29 @@ func (c *Client) tryRefreshBaseList(bizID int64, ref refreshList) {
 			c.lock.setUnRefreshing(ref.mainKey)
 		}()
 
-		// get expire key 
+		// get expire key
 		expireStart, err := c.rds.Get(ref.expireKey).Result()
 		if err != nil {
-			blog.Errorf("try to refresh list %s cache, but get expire key failed, er: %v", ref.expireKey, err)
-			return
+			if err != redis.Nil {
+				blog.Errorf("try to refresh list %s cache, but get expire key failed, er: %v", ref.expireKey, err)
+				return
+			}
+			expireStart = "0"
 		}
 
 		at, err := strconv.ParseInt(expireStart, 10, 64)
 		if err != nil {
-			blog.Errorf("try to refresh list %s cache, but get expire time failed, er: %v", ref.expireKey, err)		}
+			blog.Errorf("try to refresh list %s cache, but get expire time failed, er: %v", ref.expireKey, err)
+		}
 
 		// if the expire key is not exist, or has already expired, then refresh the cache.
-		if at > 0 && (time.Now().Unix() - at <= int64(ref.expireDuration)) {
+		if at > 0 && (time.Now().Unix()-at <= int64(ref.expireDuration)) {
 			// do not need refresh
 			return
 		}
 
 		// get the lock key, so that it can only be done by one instance.
-		success, err := c.rds.SetNX(ref.lockKey, 1, 15 * time.Second).Result()
+		success, err := c.rds.SetNX(ref.lockKey, 1, 15*time.Second).Result()
 		if err != nil {
 			blog.Errorf("sync %s list to refresh cache, but got redis lock failed, err: %v", ref.mainKey, err)
 			return
@@ -154,7 +159,7 @@ func (c *Client) tryRefreshBaseList(bizID int64, ref refreshList) {
 		realMap := make(map[string]bool)
 		wantMap := make(map[string]bool)
 		for _, key := range realKeys {
-			realMap[key]=true
+			realMap[key] = true
 		}
 
 		for _, k := range wantKeys {
@@ -202,25 +207,30 @@ func (c *Client) tryRefreshInstanceDetail(instID int64, ref refreshInstance) {
 			c.lock.setUnRefreshing(ref.mainKey)
 		}()
 
-		// get expire key 
+		// get expire key
 		expireStart, err := c.rds.Get(ref.expireKey).Result()
 		if err != nil {
-			blog.Errorf("try to refresh instance %s cache, but get expire key failed, er: %v", ref.expireKey, err)
+			if err != redis.Nil {
+				blog.Errorf("try to refresh instance %s cache, but get expire key failed, er: %v", ref.expireKey, err)
+				return
+			}
+			expireStart = "0"
 			return
 		}
 
 		at, err := strconv.ParseInt(expireStart, 10, 64)
 		if err != nil {
-			blog.Errorf("try to refresh instance %s cache, but get expire time failed, er: %v", ref.expireKey, err)		}
+			blog.Errorf("try to refresh instance %s cache, but get expire time failed, er: %v", ref.expireKey, err)
+		}
 
 		// if the expire key is not exist, or has already expired, then refresh the cache.
-		if at > 0 && (time.Now().Unix() - at <= int64(ref.expireDuration)) {
+		if at > 0 && (time.Now().Unix()-at <= int64(ref.expireDuration)) {
 			// do not need refresh
 			return
 		}
 
-		// get the lock key, so that it can only be done by one instance.
-		success, err := c.rds.SetNX(ref.lockKey, 1, 15 * time.Second).Result()
+		// get the lock key, so that it can only be done by one coreservice instance.
+		success, err := c.rds.SetNX(ref.lockKey, 1, 15*time.Second).Result()
 		if err != nil {
 			blog.Errorf("sync %s instance to refresh cache, but got redis lock failed, err: %v", ref.mainKey, err)
 			return
@@ -267,7 +277,7 @@ func (c *Client) getModuleBaseList(bizID int64) ([]ModuleBaseInfo, error) {
 
 	list := make([]ModuleBaseInfo, 0)
 	for _, key := range keys {
-		id, name ,err := moduleKey.parseListKeyValue(key)
+		moduleID, setID, name, err := moduleKey.parseListKeyValue(key)
 		if err != nil {
 			// invalid key, delete immediately
 			if c.rds.SRem(moduleKey.listKeyWithBiz(bizID), key).Err() != nil {
@@ -276,8 +286,9 @@ func (c *Client) getModuleBaseList(bizID int64) ([]ModuleBaseInfo, error) {
 			return nil, fmt.Errorf("got invalid key %s", key)
 		}
 		list = append(list, ModuleBaseInfo{
-			ModuleID:   id,
+			ModuleID:   moduleID,
 			ModuleName: name,
+			SetID:      setID,
 		})
 	}
 	return list, nil
@@ -292,7 +303,7 @@ func (c *Client) getSetBaseList(bizID int64) ([]SetBaseInfo, error) {
 
 	list := make([]SetBaseInfo, 0)
 	for _, key := range keys {
-		id, name ,err := setKey.parseListKeyValue(key)
+		setID, parentID, name, err := setKey.parseListKeyValue(key)
 		if err != nil {
 			// invalid key, delete immediately
 			if c.rds.SRem(setKey.listKeyWithBiz(bizID), key).Err() != nil {
@@ -301,8 +312,9 @@ func (c *Client) getSetBaseList(bizID int64) ([]SetBaseInfo, error) {
 			return nil, fmt.Errorf("got invalid key %s", key)
 		}
 		list = append(list, SetBaseInfo{
-			SetID:   id,
-			SetName: name,
+			SetID:    setID,
+			SetName:  name,
+			ParentID: parentID,
 		})
 	}
 	return list, nil
@@ -322,7 +334,7 @@ func (c *Client) getAllModuleBase(bizID int64) ([]ModuleBaseInfo, error) {
 		filter := mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		}
-		err = c.db.Table(common.BKTableNameBaseModule).Find(filter).Fields(common.BKModuleIDField,common.BKModuleNameField).All(context.Background(), &modules)
+		err = c.db.Table(common.BKTableNameBaseModule).Find(filter).Fields(common.BKModuleIDField, common.BKModuleNameField).All(context.Background(), &modules)
 		if err != nil {
 			blog.Errorf("get biz %d module list from mongodb failed, err: %v", bizID, err)
 			return nil, err
@@ -341,8 +353,8 @@ func (c *Client) genModuleListKeys(bizID int64) ([]string, error) {
 	}
 
 	keys := make([]string, len(moduleBaseList))
-	for idx, mod:= range moduleBaseList {
-		keys[idx] = moduleKey.genListKeyValue(mod.ModuleID, mod.ModuleName)
+	for idx, mod := range moduleBaseList {
+		keys[idx] = moduleKey.genListKeyValue(mod.ModuleID, mod.SetID, mod.ModuleName)
 	}
 	return keys, nil
 }
@@ -359,7 +371,7 @@ func (c *Client) getAllSetBase(bizID int64) ([]SetBaseInfo, error) {
 		filter := mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		}
-		err = c.db.Table(common.BKTableNameBaseSet).Find(filter).Fields(common.BKSetIDField,common.BKSetNameField).All(context.Background(), &modules)
+		err = c.db.Table(common.BKTableNameBaseSet).Find(filter).Fields(common.BKSetIDField, common.BKSetNameField).All(context.Background(), &modules)
 		if err != nil {
 			blog.Errorf("get biz %d set list from mongodb failed, err: %v", bizID, err)
 			return nil, err
@@ -370,7 +382,6 @@ func (c *Client) getAllSetBase(bizID int64) ([]SetBaseInfo, error) {
 	return list, nil
 }
 
-
 func (c *Client) genSetListKeys(bizID int64) ([]string, error) {
 	setList, err := c.getAllSetBase(bizID)
 	if err != nil {
@@ -379,12 +390,11 @@ func (c *Client) genSetListKeys(bizID int64) ([]string, error) {
 	}
 
 	keys := make([]string, len(setList))
-	for idx, set:= range setList {
-		keys[idx] = moduleKey.genListKeyValue(set.SetID, set.SetName)
+	for idx, set := range setList {
+		keys[idx] = moduleKey.genListKeyValue(set.SetID, set.ParentID, set.SetName)
 	}
 	return keys, nil
 }
-
 
 func (c *Client) getModuleDetailFromMongo(id int64) (string, error) {
 	mod := make(map[string]interface{})
@@ -396,7 +406,7 @@ func (c *Client) getModuleDetailFromMongo(id int64) (string, error) {
 		blog.Errorf("get module %d update from mongo failed, err: %v", id, err)
 		return "", err
 	}
-	js, _:= json.Marshal(mod)
+	js, _ := json.Marshal(mod)
 	return string(js), nil
 }
 
@@ -410,26 +420,26 @@ func (c *Client) getSetDetailFromMongo(id int64) (string, error) {
 		blog.Errorf("get module %d update from mongo failed, err: %v", id, err)
 		return "", err
 	}
-	js, _:= json.Marshal(set)
+	js, _ := json.Marshal(set)
 	return string(js), nil
 }
 
-func (c *Client) genCustomLevelListKeys(objID string , bizID int64) ([]string, error) {
+func (c *Client) genCustomLevelListKeys(objID string, bizID int64) ([]string, error) {
 	list, err := c.getCustomLevelBaseList(objID, bizID)
 	if err != nil {
-		blog.Errorf("get custom level list keys failed, err: %v", err )
+		blog.Errorf("get custom level list keys failed, err: %v", err)
 		return nil, err
 	}
 	keys := make([]string, len(list))
 	for _, inst := range list {
-		keys = append(keys, customKey.genListKeyValue(inst.InstanceID, inst.InstanceName))
+		keys = append(keys, customKey.genListKeyValue(inst.InstanceID, inst.ParentID, inst.InstanceName))
 	}
 	return keys, nil
 }
 
 func (c *Client) getCustomLevelBaseFromMongodb(objID string, bizID int64) ([]CustomInstanceBase, error) {
 	filter := mapstr.MapStr{
-		common.BKObjIDField: objID,
+		common.BKObjIDField:  objID,
 		common.MetadataField: meta.NewMetadata(bizID),
 	}
 	// count for paging use.
@@ -460,7 +470,7 @@ func (c *Client) getCustomLevelBaseList(objectID string, bizID int64) ([]CustomI
 
 	list := make([]CustomInstanceBase, 0)
 	for _, key := range keys {
-		id, name ,err := customKey.parseListKeyValue(key)
+		instID, parentID, name, err := customKey.parseListKeyValue(key)
 		if err != nil {
 			// invalid key, delete immediately
 			if c.rds.SRem(customKey.objListKeyWithBiz(objectID, bizID), key).Err() != nil {
@@ -469,9 +479,10 @@ func (c *Client) getCustomLevelBaseList(objectID string, bizID int64) ([]CustomI
 			return nil, fmt.Errorf("got invalid key %s", key)
 		}
 		list = append(list, CustomInstanceBase{
-			ObjectID: objectID, 
-			InstanceID: id,
+			ObjectID:     objectID,
+			InstanceID:   instID,
 			InstanceName: name,
+			ParentID:     parentID,
 		})
 	}
 	return list, nil
@@ -479,7 +490,7 @@ func (c *Client) getCustomLevelBaseList(objectID string, bizID int64) ([]CustomI
 
 func (c *Client) getCustomLevelDetail(objID string, instID int64) (string, error) {
 	filter := mapstr.MapStr{
-		common.BKObjIDField: objID,
+		common.BKObjIDField:  objID,
 		common.BKInstIDField: instID,
 	}
 	instance := make(map[string]interface{})
@@ -494,4 +505,3 @@ func (c *Client) getCustomLevelDetail(objID string, instID int64) (string, error
 	}
 	return string(js), nil
 }
-

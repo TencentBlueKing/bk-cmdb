@@ -10,35 +10,24 @@
  * limitations under the License.
  */
 
-package cache
+package service
 
 import (
-	"fmt"
-
-	"configcenter/src/source_controller/coreservice/cache/business"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/coreservice/cache/topo_tree"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/reflector"
-	"gopkg.in/redis.v5"
 )
 
-type Interface interface {
-	SearchTopologyTree(opt *topo_tree.SearchOption) ([]*topo_tree.Topology, error)
-}
-
-func NewCache(rds *redis.Client, db dal.DB, event reflector.Interface) (Interface, error) {
-	if err := business.NewCache(event, rds, db); err != nil {
-		return nil, fmt.Errorf("new business cache failed, err: %v", err)
+func (s *Service) SearchTopologyTree(ctx *rest.Contexts) {
+	opt := new(topo_tree.SearchOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	topo, err := s.Engine.CoreAPI.CoreService().Cache().SearchTopologyTree(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	bizClient := business.NewClient(rds, db)
-
-	cache := &cache{
-		TopologyTree: topo_tree.NewTopologyTree(bizClient),
-	}
-	return cache, nil
-}
-
-type cache struct {
-	*topo_tree.TopologyTree
+	ctx.RespEntity(topo)
 }

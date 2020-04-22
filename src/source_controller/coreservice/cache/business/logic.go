@@ -14,12 +14,14 @@ package business
 
 import (
 	"time"
-	
+
 	"configcenter/src/common/blog"
 )
 
 func upsertListCache(ms *forUpsertCache) {
 	listKeyName := ms.listKey
+	blog.V(3).Infof("received key %s %d/%s change event, and try refresh cache, data: %s", listKeyName, ms.instID, ms.name, string(ms.doc))
+
 	listKeys, err := ms.rds.SMembers(listKeyName).Result()
 	if err != nil {
 		blog.Errorf("upsert cache, but get all cached keys %s failed. err: %v", listKeyName, err)
@@ -28,7 +30,7 @@ func upsertListCache(ms *forUpsertCache) {
 
 	hitKey := ""
 	for _, key := range listKeys {
-		id, _, err := ms.parseListKeyValue(key)
+		id, parentID, _, err := ms.parseListKeyValue(key)
 		if err != nil {
 			blog.Errorf("got invalid cache %s key: %s, err: %v", listKeyName, key, err)
 			// invalid key, delete immediately
@@ -45,7 +47,7 @@ func upsertListCache(ms *forUpsertCache) {
 				if err != nil {
 					blog.Errorf("upsert cache, got invalid cache key %s, try to correct it, but get name failed, err: %v", listKeyName, key, err)
 				} else {
-					newKey := ms.genListKeyValue(id, name)
+					newKey := ms.genListKeyValue(id, parentID, name)
 					if err := ms.rds.SAdd(listKeyName, newKey).Err(); err != nil {
 						blog.Errorf("add new cache key failed, key: %s, err: %v", newKey, err)
 						// we do not return and continue
@@ -62,7 +64,7 @@ func upsertListCache(ms *forUpsertCache) {
 	defer pipeline.Close()
 
 	// check the key is change or a new one.
-	newKey := ms.genListKeyValue(ms.instID, ms.name)
+	newKey := ms.genListKeyValue(ms.instID, ms.parentID, ms.name)
 	if len(hitKey) == 0 {
 		// a new one, add it now
 		pipeline.SAdd(listKeyName, newKey)
@@ -91,5 +93,5 @@ func upsertListCache(ms *forUpsertCache) {
 		return
 	}
 
-	blog.V(4).Infof("received key %s %d/%s change event, and refresh cache success, data: %s",  listKeyName, ms.instID, ms.name, string(ms.doc))
+	blog.V(4).Infof("received key %s %d/%s change event, and refresh cache success, data: %s", listKeyName, ms.instID, ms.name, string(ms.doc))
 }

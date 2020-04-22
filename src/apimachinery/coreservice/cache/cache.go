@@ -13,32 +13,38 @@
 package cache
 
 import (
-	"fmt"
+	"net/http"
 
-	"configcenter/src/source_controller/coreservice/cache/business"
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/topo_tree"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/reflector"
-	"gopkg.in/redis.v5"
+	"golang.org/x/net/context"
 )
 
-type Interface interface {
-	SearchTopologyTree(opt *topo_tree.SearchOption) ([]*topo_tree.Topology, error)
-}
-
-func NewCache(rds *redis.Client, db dal.DB, event reflector.Interface) (Interface, error) {
-	if err := business.NewCache(event, rds, db); err != nil {
-		return nil, fmt.Errorf("new business cache failed, err: %v", err)
+func (b *baseCache) SearchTopologyTree(ctx context.Context, h http.Header, opt *topo_tree.SearchOption) ([]topo_tree.Topology, error) {
+	type Topo struct {
+		metadata.BaseResp `json:",inline"`
+		Data              []topo_tree.Topology `json:"data"`
 	}
 
-	bizClient := business.NewClient(rds, db)
+	resp := new(Topo)
 
-	cache := &cache{
-		TopologyTree: topo_tree.NewTopologyTree(bizClient),
+	err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/find/cache/topotree").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
-	return cache, nil
-}
 
-type cache struct {
-	*topo_tree.TopologyTree
+	if !resp.Result {
+		return nil, errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data, nil
 }

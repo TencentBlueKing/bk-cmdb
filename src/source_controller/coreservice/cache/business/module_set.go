@@ -31,8 +31,8 @@ type moduleSet struct {
 	collection string
 	rds        *redis.Client
 	event      reflector.Interface
-	db         dal.DB 
-	
+	db         dal.DB
+
 	lock refreshingLock
 }
 
@@ -72,41 +72,50 @@ func (ms *moduleSet) onUpsert(e *types.Event) {
 	instID := info[0].Int()
 	name := info[1].String()
 	if instID == 0 {
-		blog.Errorf("received %s upsert event, invalid id: %d, oid: %s", ms.collection, instID, e.Oid)
+		blog.Errorf("received %s upsert event, invalid instance id: %d, oid: %s", ms.collection, instID, e.Oid)
 		return
 	}
 
 	if len(name) == 0 {
-		blog.Errorf("received %s upsert event, invalid name: %s, oid: %s",ms.collection, name, e.Oid)
+		blog.Errorf("received %s upsert event, invalid name: %s, oid: %s", ms.collection, name, e.Oid)
 		return
 	}
 	bizID := info[2].Int()
 	if bizID == 0 {
-		blog.Errorf("received %s upsert event, got biz id is 0, oid: %s",ms.collection, e.Oid)
+		blog.Errorf("received %s upsert event, got biz id is 0, oid: %s", ms.collection, e.Oid)
 	}
-	
+
 	// save the oid relation immediately.
 	if err := ms.setOidRelation(e.Oid, instID); err != nil {
 		blog.Errorf("received %s upsert event, but set oid relation failed, oid: %s, id: %s, err: %v", ms.collection, e.Oid, instID, err)
 		// do not return, continue.
 	}
-	
+
 	var key keyGenerator
-	var nameFunc func(int64)(string, error)
+	var parentID int64
+	var nameFunc func(int64) (string, error)
 	switch ms.collection {
 	case common.BKTableNameBaseSet:
 		key = setKey
 		nameFunc = ms.getSetNameFromMongo
+		parentID = gjson.GetBytes(e.DocBytes, "bk_parent_id").Int()
 	case common.BKTableNameBaseModule:
 		key = moduleKey
 		nameFunc = ms.getModuleNameFromMongo
+		parentID = gjson.GetBytes(e.DocBytes, "bk_set_id").Int()
 	default:
 		blog.Errorf("received %s upsert event, unsupported", ms.collection)
 		return
 	}
-	
+
+	if parentID == 0 {
+		blog.Errorf("received %s upsert event, invalid parent id: %d, oid: %s", ms.collection, 0, e.Oid)
+		return
+	}
+
 	forUpsert := forUpsertCache{
 		instID:            instID,
+		parentID:          parentID,
 		name:              name,
 		doc:               e.DocBytes,
 		rds:               ms.rds,
@@ -128,7 +137,7 @@ func (ms *moduleSet) onDelete(e *types.Event) {
 		blog.Errorf("received %s delete event, but get oid: %s relation failed, err: %v", ms.collection, e.Oid)
 		return
 	}
-	
+
 	pipeline := ms.rds.Pipeline()
 	defer pipeline.Close()
 	pipeline.HDel(ms.key.objectIDKey(), e.Oid)
@@ -138,15 +147,15 @@ func (ms *moduleSet) onDelete(e *types.Event) {
 		blog.Errorf("received %s delete event, oid: %s, but delete data failed, err: %v", ms.collection, e.Oid, err)
 		return
 	}
-	
+
 	blog.V(4).Infof("received %s delete event, oid: %s, and delete data success.", ms.collection, e.Oid)
 }
 
 func (ms *moduleSet) onListDone() {}
 
 func (ms *moduleSet) setOidRelation(oid string, instID int64) error {
-	
-	 return ms.rds.HSet(ms.key.objectIDKey(), oid, instID).Err()
+
+	return ms.rds.HSet(ms.key.objectIDKey(), oid, instID).Err()
 }
 
 func (ms *moduleSet) getInstIDWithOid(oid string) (int64, error) {
@@ -154,9 +163,9 @@ func (ms *moduleSet) getInstIDWithOid(oid string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return strconv.ParseInt(id, 10, 64)
-} 
+}
 
 // getModuleFromMongo return only module id and name.
 func (ms *moduleSet) getModuleNameFromMongo(id int64) (string, error) {
@@ -176,11 +185,10 @@ func (ms *moduleSet) getSetNameFromMongo(id int64) (string, error) {
 	filter := mapstr.MapStr{
 		common.BKSetIDField: id,
 	}
-	
+
 	if err := ms.db.Table(common.BKTableNameBaseSet).Find(filter).One(context.Background(), mod); err != nil {
 		blog.Errorf("get module %d name from mongo failed, err: %v", id, err)
 		return "", err
 	}
 	return mod.ModuleName, nil
 }
-

@@ -13,7 +13,6 @@
 package business
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -28,35 +27,36 @@ const (
 )
 
 var bizKey = keyGenerator{
-	namespace:bizNamespace,
+	namespace:            bizNamespace,
 	name:                 bizKeyName,
 	listExpireDuration:   5 * time.Minute,
 	detailExpireDuration: 5 * time.Minute,
 }
 
 var moduleKey = keyGenerator{
-	namespace:bizNamespace,
+	namespace:            bizNamespace,
 	name:                 moduleKeyName,
 	listExpireDuration:   5 * time.Minute,
 	detailExpireDuration: 5 * time.Minute,
 }
 
 var setKey = keyGenerator{
-	namespace:bizNamespace,
+	namespace:            bizNamespace,
 	name:                 setKeyName,
 	listExpireDuration:   5 * time.Minute,
 	detailExpireDuration: 5 * time.Minute,
 }
 
 type keyName string
-const(
-	bizKeyName keyName = "biz"
+
+const (
+	bizKeyName    keyName = "biz"
 	moduleKeyName keyName = "module"
-	setKeyName = "set"
+	setKeyName            = "set"
 )
 
 type keyGenerator struct {
-	namespace string
+	namespace            string
 	name                 keyName
 	listExpireDuration   time.Duration
 	detailExpireDuration time.Duration
@@ -64,46 +64,51 @@ type keyGenerator struct {
 
 func (k keyGenerator) listKeyWithBiz(bizID int64) string {
 	if k.name == bizKeyName {
-		return k.namespace + string(k.name) + "_list"
+		return k.namespace + ":" + string(k.name) + "_list"
 	}
 	return fmt.Sprintf("%s:%s_list:%d", k.namespace, string(k.name), bizID)
 }
 
 func (k keyGenerator) listLockKeyWithBiz(bizID int64) string {
 	if k.name == bizKeyName {
-		return k.namespace + string(k.name) + "_list:lock"
+		return k.namespace + ":" + string(k.name) + "_list:lock"
 	}
 	return fmt.Sprintf("%s:%s_list:lock:%d", k.namespace, string(k.name), bizID)
 }
 
 func (k keyGenerator) listExpireKeyWithBiz(bizID int64) string {
 	if k.name == bizKeyName {
-		return k.namespace + string(k.name) + "_list:expire"
+		return k.namespace + ":" + string(k.name) + "_list:expire"
 	}
 	return fmt.Sprintf("%s:%s_list:expire:%d", k.namespace, string(k.name), bizID)
 }
 
-func (k keyGenerator) genListKeyValue(instID int64, instName string) string {
-	return strconv.FormatInt(instID, 10) + ":" + instName
+func (k keyGenerator) genListKeyValue(instID int64, parentID int64, instName string) string {
+	return strconv.FormatInt(instID, 10) + ":" + strconv.FormatInt(parentID, 10) + ":" + instName
 }
 
-func (k keyGenerator) parseListKeyValue(key string) (int64, string, error) {
-	index := strings.Index(key, ":")
-	if index == -1 {
-		return 0, "", errors.New("invalid key")
+func (k keyGenerator) parseListKeyValue(key string) (int64, int64, string, error) {
+	fields := strings.SplitN(key, ":", 3)
+	if len(fields) != 3 {
+		return 0, 0, "", fmt.Errorf("invalid key: %s", key)
 	}
 
-	id, err := strconv.ParseInt(key[:index], 10, 64)
+	instID, err := strconv.ParseInt(fields[0], 10, 64)
 	if err != nil {
-		return 0, "", errors.New("key with invalid id")
+		return 0, 0, "", fmt.Errorf("key: %s with invalid inst id, err: %v", key, err)
 	}
 
-	name := key[index+1:]
+	parentID, err := strconv.ParseInt(fields[1], 10, 64)
+	if err != nil {
+		return instID, 0, "", fmt.Errorf("key: %s with invalid parent id, err: %v", key, err)
+	}
+
+	name := fields[2]
 	if len(name) == 0 {
-		return id, "", errors.New("invalid key with empty name")
+		return instID, parentID, "", fmt.Errorf("key: %s with empty name, err: %v", key, err)
 	}
 
-	return id, name, nil
+	return instID, parentID, name, nil
 }
 
 func (k keyGenerator) detailKey(instID int64) string {
@@ -117,7 +122,6 @@ func (k keyGenerator) detailLockKey(instID int64) string {
 func (k keyGenerator) detailExpireKey(instID int64) string {
 	return fmt.Sprintf("%s:%s_detail:expire:%d", k.namespace, k.name, instID)
 }
-
 
 // this key is to save the document object id(as is _id) relations with the instance id
 func (k keyGenerator) objectIDKey() string {
@@ -133,7 +137,7 @@ var customKey = customKeyGen{
 // for business custom level cache storage usage.
 // to generate the custom object level key
 type customKeyGen struct {
-	namespace string
+	namespace            string
 	listExpireDuration   time.Duration
 	detailExpireDuration time.Duration
 }
@@ -168,38 +172,43 @@ func (c customKeyGen) objListExpireKeyWithBiz(objectID string, bizID int64) stri
 	return fmt.Sprintf("%s:%s_list:expire:%d", c.namespace, objectID, bizID)
 }
 
-func (c customKeyGen) genListKeyValue(objInstID int64, objInstName string) string {
-	return strconv.FormatInt(objInstID, 10) + ":" + objInstName
+func (c customKeyGen) genListKeyValue(objInstID int64, parentID int64, objInstName string) string {
+	return strconv.FormatInt(objInstID, 10) + ":" + strconv.FormatInt(parentID, 10) + ":" + objInstName
 }
 
-func (c customKeyGen) parseListKeyValue(key string) (int64, string, error) {
-	index := strings.Index(key, ":")
-	if index == -1 {
-		return 0, "", errors.New("invalid key")
+func (c customKeyGen) parseListKeyValue(key string) (int64, int64, string, error) {
+	fields := strings.SplitN(key, ":", 3)
+	if len(fields) != 3 {
+		return 0, 0, "", fmt.Errorf("invalid key: %s", key)
 	}
 
-	id, err := strconv.ParseInt(key[:index], 10, 64)
+	instID, err := strconv.ParseInt(fields[0], 10, 64)
 	if err != nil {
-		return 0, "", errors.New("key with invalid id")
+		return 0, 0, "", fmt.Errorf("key: %s with invalid inst id, err: %v", key, err)
 	}
 
-	name := key[index+1:]
+	parentID, err := strconv.ParseInt(fields[1], 10, 64)
+	if err != nil {
+		return instID, 0, "", fmt.Errorf("key: %s with invalid parent id, err: %v", key, err)
+	}
+
+	name := fields[2]
 	if len(name) == 0 {
-		return id, "", errors.New("invalid key with empty name")
+		return instID, parentID, "", fmt.Errorf("key: %s with empty name, err: %v", key, err)
 	}
 
-	return id, name, nil
+	return instID, parentID, name, nil
 }
 
 func (c customKeyGen) detailKey(objectID string, id int64) string {
 	return fmt.Sprintf("%s:%s_detail:%d", c.namespace, objectID, id)
 }
 
-func (c customKeyGen) detailLockKey(objectID string,id int64) string {
+func (c customKeyGen) detailLockKey(objectID string, id int64) string {
 	return fmt.Sprintf("%s:%s_detail:lock:%d", c.namespace, objectID, id)
 }
 
-func (c customKeyGen) detailExpireKey(objectID string,id int64) string {
+func (c customKeyGen) detailExpireKey(objectID string, id int64) string {
 	return fmt.Sprintf("%s:%s_detail:expire:%d", c.namespace, objectID, id)
 }
 
@@ -209,9 +218,9 @@ func (c customKeyGen) objectIDKey() string {
 }
 
 type oidValue struct {
-	biz int64 `json:"biz"`
-	instID int64 `json:"inst_id"`
-	obj string `json:"obj"`
+	biz    int64  `json:"biz"`
+	instID int64  `json:"inst_id"`
+	obj    string `json:"obj"`
 }
 
 // generate the value to save in oid key.
@@ -221,7 +230,7 @@ func (c customKeyGen) genObjectIDKeyValue(bizID, objInstID int64, objectID strin
 		instID: objInstID,
 		obj:    objectID,
 	})
-	return string(js) 
+	return string(js)
 }
 
 // parse the object key saved in cache to business id and instance id
@@ -230,11 +239,6 @@ func (c customKeyGen) parseObjectIDKeyValue(value string) (*oidValue, error) {
 	if err := json.Unmarshal([]byte(value), v); err != nil {
 		return nil, err
 	}
-	
+
 	return v, nil
 }
-
-
-
-
-

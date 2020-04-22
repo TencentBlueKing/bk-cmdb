@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
+	"configcenter/src/source_controller/coreservice/cache"
+	cacheop "configcenter/src/source_controller/coreservice/cache"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/auditlog"
@@ -40,6 +42,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	dalredis "configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/reflector"
 
 	"github.com/emicklei/go-restful"
 	"gopkg.in/redis.v5"
@@ -65,7 +68,8 @@ type coreService struct {
 	cfg         options.Config
 	core        core.Core
 	db          dal.RDB
-	cache       *redis.Client
+	rds         *redis.Client
+	cache       cache.Interface
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
@@ -102,7 +106,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 	}
 
 	s.db = db
-	s.cache = cache
+	s.rds = cache
 
 	// connect the remote mongodb
 	instance := instances.New(db, s, cache, lang)
@@ -122,6 +126,19 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		hostApplyRuleCore,
 		dbSystem.New(db),
 	)
+
+	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
+	if eventErr != nil {
+		blog.Errorf("new reflector failed, err: %v", err)
+		return eventErr
+	}
+
+	c, cacheErr := cacheop.NewCache(cache, db, event)
+	if cacheErr != nil {
+		blog.Errorf("new cache instance failed, err: %v", cacheErr)
+		return cacheErr
+	}
+	s.cache = c
 	return nil
 }
 

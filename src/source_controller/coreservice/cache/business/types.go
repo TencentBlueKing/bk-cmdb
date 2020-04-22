@@ -19,28 +19,29 @@ import (
 )
 
 type cacheCollection struct {
-	business *business
-	set *moduleSet
-	module *moduleSet
+	business    *business
+	set         *moduleSet
+	module      *moduleSet
 	customLevel *customLevel
 }
 
 type forUpsertCache struct {
-	instID int64
-	name   string
-	doc    []byte
+	instID   int64
+	parentID int64
+	name     string
+	doc      []byte
 
 	rds *redis.Client
 
 	// keys to be used
-	listKey       string
-	listExpireKey string
-	detailKey     string
-	detailExpireKey  string
-	
+	listKey         string
+	listExpireKey   string
+	detailKey       string
+	detailExpireKey string
+
 	// generate list value and parse list value
-	parseListKeyValue func(key string) (int64, string, error)
-	genListKeyValue func(instID int64, instName string) string
+	parseListKeyValue func(key string) (instIDint64, parentID int64, instName string, err error)
+	genListKeyValue   func(instID int64, parentID int64, instName string) string
 
 	// get the instance name with instance id from mongodb
 	getInstName func(instID int64) (name string, err error)
@@ -75,11 +76,13 @@ type BizBaseInfo struct {
 type ModuleBaseInfo struct {
 	ModuleID   int64  `json:"bk_module_id" bson:"bk_module_id"`
 	ModuleName string `json:"bk_module_name" bson:"bk_module_name"`
+	SetID      int64  `json:"bk_set_id" bson:"bk_set_id"`
 }
 
 type SetBaseInfo struct {
-	SetID   int64  `json:"bk_set_id" bson:"bk_set_id"`
-	SetName string `json:"bk_set_name" bson:"bk_set_name"`
+	SetID    int64  `json:"bk_set_id" bson:"bk_set_id"`
+	SetName  string `json:"bk_set_name" bson:"bk_set_name"`
+	ParentID int64  `json:"bk_parent_id" bson:"bk_parent_id"`
 }
 
 type MainlineTopoAssociation struct {
@@ -88,7 +91,8 @@ type MainlineTopoAssociation struct {
 }
 
 type CustomInstanceBase struct {
-	ObjectID string `json:"bk_obj_id" bson:"bk_obj_id"`
-	InstanceID int64 `json:"bk_inst_id" bson:"bk_inst_id"`
+	ObjectID     string `json:"bk_obj_id" bson:"bk_obj_id"`
+	InstanceID   int64  `json:"bk_inst_id" bson:"bk_inst_id"`
 	InstanceName string `json:"bk_inst_name" bson:"bk_inst_name"`
+	ParentID     int64  `json:"bk_parent_id" bson:"bk_parent_id"`
 }

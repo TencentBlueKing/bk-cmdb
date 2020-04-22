@@ -25,7 +25,6 @@ import (
 	"gopkg.in/redis.v5"
 )
 
-
 type business struct {
 	key   keyGenerator
 	rds   *redis.Client
@@ -70,9 +69,10 @@ func (b *business) onUpsert(e *types.Event) {
 		blog.Errorf("received biz upsert event, invalid biz name: %s, oid: %s", bizName, e.Oid)
 		return
 	}
-	
+
 	forUpsert := forUpsertCache{
 		instID:            bizID,
+		parentID:          0,
 		name:              bizName,
 		doc:               e.DocBytes,
 		rds:               b.rds,
@@ -84,7 +84,7 @@ func (b *business) onUpsert(e *types.Event) {
 		genListKeyValue:   bizKey.genListKeyValue,
 		getInstName:       b.getBusinessName,
 	}
-	
+
 	upsertListCache(&forUpsert)
 }
 

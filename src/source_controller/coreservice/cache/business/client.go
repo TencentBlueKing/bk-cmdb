@@ -14,6 +14,7 @@ package business
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -23,12 +24,11 @@ import (
 	"gopkg.in/redis.v5"
 )
 
-
 type Client struct {
 	rds   *redis.Client
 	event reflector.Interface
 	db    dal.DB
-	lock refreshingLock
+	lock  refreshingLock
 }
 
 func (c *Client) GetBizBaseList() ([]BizBaseInfo, error) {
@@ -131,7 +131,7 @@ func (c *Client) GetModule(moduleID int64) (string, error) {
 	})
 
 	mod, err := c.rds.Get(moduleKey.detailKey(moduleID)).Result()
-	if err == nil && len(mod) != 0{
+	if err == nil && len(mod) != 0 {
 		return mod, nil
 	}
 	blog.Errorf("get module: %d failed from redis, err: %v", err)
@@ -179,7 +179,7 @@ func (c *Client) GetSet(setID int64) (string, error) {
 	})
 
 	set, err := c.rds.Get(moduleKey.detailKey(setID)).Result()
-	if err == nil && len(set) != 0{
+	if err == nil && len(set) != 0 {
 		return set, nil
 	}
 	blog.Errorf("get set: %d failed from redis, err: %v", err)
@@ -197,14 +197,14 @@ func (c *Client) GetCustomLevelBaseList(objectID string, bizID int64) ([]CustomI
 			return c.genCustomLevelListKeys(objectID, bizID)
 		},
 	})
-	
+
 	list, err := c.getCustomLevelBaseList(objectID, bizID)
 	if err == nil {
 		return list, nil
-	} 
+	}
 	blog.Errorf("get biz: %s, obj: %s custom level list keys from cache failed, will get from mongodb, err: %v",
 		bizID, objectID, err)
-	
+
 	return c.getCustomLevelBaseFromMongodb(objectID, bizID)
 }
 
@@ -220,10 +220,20 @@ func (c *Client) GetCustomLevelDetail(objID string, instID int64) (string, error
 	})
 
 	set, err := c.rds.Get(customKey.detailKey(objID, instID)).Result()
-	if err == nil && len(set) != 0{
+	if err == nil && len(set) != 0 {
 		return set, nil
 	}
 	blog.Errorf("get biz custom level, obj:%s, inst: %d failed from redis, err: %v", objID, instID, err)
 	// get from db directly.
 	return c.getCustomLevelDetail(objID, instID)
+}
+
+func (c *Client) GetTopology() ([]string, error) {
+	// TODO: try refresh the cache.
+	key := customKey.topologyKey()
+	rank, err := c.rds.Get(key).Result()
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(rank, ","), nil
 }
