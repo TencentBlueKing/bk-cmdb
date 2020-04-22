@@ -15,7 +15,7 @@
                 :row-border="true"
                 :col-border="true"
                 :cell-style="getCellStyle">
-                <bk-table-column prop="bk_property_name"></bk-table-column>
+                <bk-table-column prop="bk_property_name" :label="$t('属性')"></bk-table-column>
                 <bk-table-column v-if="!['create'].includes(details.action)"
                     prop="pre_data"
                     :label="$t('变更前')"
@@ -41,7 +41,7 @@
 </template>
 
 <script>
-    import { mapState, mapGetters } from 'vuex'
+    import { mapState } from 'vuex'
     export default {
         props: {
             details: Object,
@@ -81,16 +81,8 @@
         },
         computed: {
             ...mapState('operationAudit', ['funcActions']),
-            ...mapGetters('objectBiz', ['authorizedBusiness']),
             operationDetail () {
                 return this.details.operation_detail
-            },
-            bizSet () {
-                const biz = {}
-                this.authorizedBusiness.forEach(({ bk_biz_id: bkBizId, bk_biz_name: bkBizName }) => {
-                    biz[bkBizId] = bkBizName
-                })
-                return biz
             },
             actionList () {
                 const funcMap = []
@@ -123,8 +115,7 @@
                 info.time = this.$tools.formatTime(this.details.operation_time)
                 info.user = this.details.user
                 if (this.showBusiness) {
-                    const basicDetail = this.operationDetail.basic_detail
-                    info.bizName = basicDetail && basicDetail.bk_biz_name
+                    info.bizName = this.operationDetail && this.operationDetail.bk_biz_name
                 }
                 return info
             },
@@ -148,27 +139,13 @@
                     })
                 } else if (this.hostOperations.includes(this.details.action)) {
                     const content = this.operationDetail
-                    const preBizId = content['pre_data']['bk_biz_id']
-                    const curBizId = content['cur_data']['bk_biz_id']
-                    const preSet = content['pre_data']['set'] || []
-                    const curSet = content['cur_data']['set'] || []
-                    const pre = []
-                    const cur = []
-                    preSet.forEach(set => {
-                        pre.push(this.getTopoPath(preBizId, set))
-                    })
-                    curSet.forEach(set => {
-                        cur.push(this.getTopoPath(curBizId, set))
-                    })
-                    const preData = pre.join('<br>')
-                    const curData = cur.join('<br>')
                     list.push({
                         'bk_property_name': this.$t('关联关系'),
-                        'pre_data': preData,
-                        'cur_data': curData
+                        'pre_data': this.getTopoPath(content.pre_data),
+                        'cur_data': this.getTopoPath(content.cur_data)
                     })
                 } else {
-                    const attribute = this.operationDetail.basic_detail.details.properties
+                    const attribute = this.operationDetail.details.properties
                     attribute.forEach(property => {
                         const preData = this.getCellValue(property, 'pre_data')
                         const curData = this.getCellValue(property, 'cur_data')
@@ -221,7 +198,7 @@
                 if (['instance_association'].includes(this.details.resource_type)) {
                     return data.target_instance_name || '--'
                 }
-                return (data.basic_detail && data.basic_detail.resource_name) || '--'
+                return data.resource_name || '--'
             },
             getResourceAction () {
                 const data = this.details
@@ -235,7 +212,7 @@
                 this.isShowAllFields = !this.isShowAllFields
             },
             getCellValue (property, type) {
-                const data = this.operationDetail.basic_detail.details[type]
+                const data = this.operationDetail.details[type]
                 let value
                 if (data) {
                     value = data[property.bk_property_id]
@@ -257,16 +234,15 @@
                 }
                 return {}
             },
-            getTopoPath (bizId, set) {
-                const path = [this.bizSet[bizId] || `业务ID：${bizId}`]
-                const module = ((set.module || [])[0] || {}).bk_module_name
-                if (set.bk_set_name) {
-                    path.push(set.bk_set_name)
-                }
-                if (module) {
-                    path.push(module)
-                }
-                return path.join('→')
+            getTopoPath (data) {
+                const paths = []
+                data.set.forEach(set => {
+                    const path = [data.bk_biz_name, set.bk_set_name]
+                    set.module.forEach(module => {
+                        paths.push([...path, module.bk_module_name].join('→'))
+                    })
+                })
+                return paths.join('<br>')
             }
         }
     }

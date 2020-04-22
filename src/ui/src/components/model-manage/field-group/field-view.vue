@@ -61,7 +61,7 @@
                 <div class="property-name">
                     <span>{{$t('用户提示')}}</span>：
                 </div>
-                <span class="property-value">{{field.description || '--'}}</span>
+                <span class="property-value">{{field.placeholder || '--'}}</span>
             </div>
             <div class="property-item enum-list" v-if="['enum', 'list'].includes(field.bk_property_type)">
                 <div class="property-name">
@@ -100,7 +100,8 @@
                     'objuser': this.$t('用户'),
                     'timezone': this.$t('时区'),
                     'bool': 'bool',
-                    'list': this.$t('列表')
+                    'list': this.$t('列表'),
+                    'organization': this.$t('组织')
                 },
                 scrollbar: false
             }

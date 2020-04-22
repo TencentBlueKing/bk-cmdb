@@ -15,7 +15,9 @@ package local
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,10 +26,11 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
-    dtype "configcenter/src/storage/types"
-    "go.mongodb.org/mongo-driver/bson"
+	dtype "configcenter/src/storage/types"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 	"gopkg.in/redis.v5"
 )
@@ -46,6 +49,7 @@ type MongoConf struct {
 	MaxOpenConns   uint64
 	MaxIdleConns   uint64
 	URI            string
+	RsName         string
 }
 
 // NewMgo returns new RDB
@@ -54,11 +58,19 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	if nil != err {
 		return nil, err
 	}
+	if config.RsName == "" {
+		return nil, fmt.Errorf("mongodb rsName not set")
+	}
 
+	// do not change this, our transaction plan need it to false.
+	// it's related with the transaction number(eg txnNumber) in a transaction session.
+	disableWriteRetry := false
 	conOpt := options.ClientOptions{
 		MaxPoolSize:    &config.MaxOpenConns,
 		MinPoolSize:    &config.MaxIdleConns,
 		ConnectTimeout: &timeout,
+		ReplicaSet:     &config.RsName,
+		RetryWrites:    &disableWriteRetry,
 	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(config.URI), &conOpt)
@@ -70,11 +82,54 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		return nil, err
 	}
 
+	// TODO: add this check later, this command needs authorize to get version.
+	// if err := checkMongodbVersion(connStr.Database, client); err != nil {
+	// 	return nil, err
+	// }
+
 	return &Mongo{
 		dbc:    client,
 		dbname: connStr.Database,
 		tm:     &TxnManager{},
 	}, nil
+}
+
+// from now on, mongodb version must >= 4.2.0
+func checkMongodbVersion(db string, client *mongo.Client) error {
+	serverStatus, err := client.Database(db).RunCommand(
+		context.Background(),
+		bsonx.Doc{{"serverStatus", bsonx.Int32(1)}},
+	).DecodeBytes()
+	if err != nil {
+		return err
+	}
+
+	version, err := serverStatus.LookupErr("version")
+	if err != nil {
+		return err
+	}
+
+	fields := strings.Split(version.StringValue(), ".")
+	if len(fields) != 3 {
+		return fmt.Errorf("got invalid mongodb version: %v", version.StringValue())
+	}
+	// version must be >= v4.2.0
+	major, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return fmt.Errorf("parse mongodb version %s major failed, err: %v", version.StringValue(), err)
+	}
+	if major < 4 {
+		return errors.New("mongodb version must be >= v4.2.0")
+	}
+
+	minor, err := strconv.Atoi(fields[1])
+	if err != nil {
+		return fmt.Errorf("parse mongodb version %s minor failed, err: %v", version.StringValue(), err)
+	}
+	if minor < 2 {
+		return errors.New("mongodb version must be >= v4.2.0")
+	}
+	return nil
 }
 
 // NewMgo returns new RDB
@@ -211,20 +266,6 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 		blog.V(4).InfoDepthf(2, "mongo find-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-
-	if f.hasSession(ctx) {
-		sess, err := f.getDistributedSession(ctx)
-		if err != nil {
-			return err
-		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer f.tm.SaveSession(sess)
-	} else if f.sess != nil {
-		ctx = se.ContextWithSession(ctx, f.sess)
-	}
-
 	findOpts := &options.FindOptions{}
 	if len(f.projection) != 0 {
 		findOpts.Projection = f.projection
@@ -243,11 +284,13 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 		f.filter = bson.M{}
 	}
 
-	cursor, err := f.dbc.Database(f.dbname).Collection(f.collName).Find(ctx, f.filter, findOpts)
-	if err != nil {
-		return err
-	}
-	return cursor.All(ctx, result)
+	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
+		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName).Find(ctx, f.filter, findOpts)
+		if err != nil {
+			return err
+		}
+		return cursor.All(ctx, result)
+	})
 }
 
 // One 查询一个
@@ -257,19 +300,6 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	defer func() {
 		blog.V(4).InfoDepthf(2, "mongo find-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
-
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if f.hasSession(ctx) {
-		sess, err := f.getDistributedSession(ctx)
-		if err != nil {
-			return err
-		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer f.tm.SaveSession(sess)
-	} else if f.sess != nil {
-		ctx = se.ContextWithSession(ctx, f.sess)
-	}
 
 	findOpts := &options.FindOptions{}
 	if len(f.projection) != 0 {
@@ -289,16 +319,19 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 		f.filter = bson.M{}
 	}
 
-	cursor, err := f.dbc.Database(f.dbname).Collection(f.collName).Find(ctx, f.filter, findOpts)
-	if err != nil {
-		return err
-	}
+	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
+		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName).Find(ctx, f.filter, findOpts)
+		if err != nil {
+			return err
+		}
 
-	defer cursor.Close(ctx)
-	for cursor.Next(ctx) {
-		return cursor.Decode(result)
-	}
-	return types.ErrDocumentNotFound
+		defer cursor.Close(ctx)
+		for cursor.Next(ctx) {
+			return cursor.Decode(result)
+		}
+		return types.ErrDocumentNotFound
+	})
+
 }
 
 // Count 统计数量(非事务)
@@ -309,25 +342,30 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 		blog.V(4).InfoDepthf(2, "mongo count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if f.hasSession(ctx) {
-		sess, err := f.getDistributedSession(ctx)
-		if err != nil {
-			return uint64(0), err
-		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer f.tm.SaveSession(sess)
-	} else if f.sess != nil {
-		ctx = se.ContextWithSession(ctx, f.sess)
-	}
-
 	if f.filter == nil {
 		f.filter = bson.M{}
 	}
-	cnt, err := f.dbc.Database(f.dbname).Collection(f.collName).CountDocuments(ctx, f.filter)
-	// 后续改成int64
-	return uint64(cnt), err
+
+	sessCtx, _, useTxn, err := f.tm.GetTxnContext(ctx, f.dbc)
+	if err != nil {
+		return 0, err
+	}
+	if !useTxn {
+		// not use transaction.
+		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName).CountDocuments(ctx, f.filter)
+		return uint64(cnt), err
+	} else {
+		// use transaction
+		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName).CountDocuments(sessCtx, f.filter)
+		// do not release th session, otherwise, the session will be returned to the
+		// session pool and will be reused. then mongodb driver will increase the transaction number
+		// automatically and do read/write retry if policy is set.
+		// mongo.CmdbReleaseSession(ctx, session)
+		if err != nil {
+			return 0, nil
+		}
+		return uint64(cnt), err
+	}
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
@@ -338,23 +376,12 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 		blog.V(4).InfoDepthf(2, "mongo insert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if c.hasSession(ctx) {
-		sess, err := c.getDistributedSession(ctx)
-		if err != nil {
-			return err
-		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer c.tm.SaveSession(sess)
-	} else if c.sess != nil {
-		ctx = se.ContextWithSession(ctx, c.sess)
-	}
-
 	rows := util.ConverToInterfaceSlice(docs)
 
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
-	return err
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
+		return err
+	})
 }
 
 // Update 更新数据
@@ -365,25 +392,15 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 		blog.V(4).InfoDepthf(2, "mongo update cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if c.hasSession(ctx) {
-		sess, err := c.getDistributedSession(ctx)
-		if err != nil {
-			return err
-		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer c.tm.SaveSession(sess)
-	} else if c.sess != nil {
-		ctx = se.ContextWithSession(ctx, c.sess)
-	}
-
 	if filter == nil {
 		filter = bson.M{}
 	}
+
 	data := bson.M{"$set": doc}
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
-	return err
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
+		return err
+	})
 }
 
 // Upsert 数据存在更新数据，否则新加数据
@@ -394,28 +411,17 @@ func (c *Collection) Upsert(ctx context.Context, filter types.Filter, doc interf
 		blog.V(4).InfoDepthf(2, "mongo upsert cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if c.hasSession(ctx) {
-		sess, err := c.getDistributedSession(ctx)
-		if err != nil {
-			return err
-		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer c.tm.SaveSession(sess)
-	} else if c.sess != nil {
-		ctx = se.ContextWithSession(ctx, c.sess)
-	}
-
 	// set upsert option
 	upsert := true
 	replaceOpt := &options.UpdateOptions{
 		Upsert: &upsert,
 	}
 	data := bson.M{"$set": doc}
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateOne(ctx, filter, data, replaceOpt)
+		return err
+	})
 
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateOne(ctx, filter, data, replaceOpt)
-	return err
 }
 
 // UpdateMultiModel 根据不同的操作符去更新数据
@@ -426,19 +432,6 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 		blog.V(4).InfoDepthf(2, "mongo update-multi-model cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if c.hasSession(ctx) {
-		sess, err := c.getDistributedSession(ctx)
-		if err != nil {
-			return err
-		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer c.tm.SaveSession(sess)
-	} else if c.sess != nil {
-		ctx = se.ContextWithSession(ctx, c.sess)
-	}
-
 	data := bson.M{}
 	for _, item := range updateModel {
 		if _, ok := data[item.Op]; ok {
@@ -447,37 +440,11 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 		data["$"+item.Op] = item.Doc
 	}
 
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
-	return err
-}
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
+		return err
+	})
 
-// UpdateModifyCount 更新数据,返回更新的条数
-func (c *Collection) UpdateModifyCount(ctx context.Context, filter types.Filter, doc interface{}) (int64, error) {
-	rid := ctx.Value(common.ContextRequestIDField)
-	start := time.Now()
-	defer func() {
-		blog.V(4).InfoDepthf(2, "mongo update-modify-count cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
-	}()
-
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if c.hasSession(ctx) {
-		sess, err := c.getDistributedSession(ctx)
-		if err != nil {
-			return 0, err
-		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer c.tm.SaveSession(sess)
-	} else if c.sess != nil {
-		ctx = se.ContextWithSession(ctx, c.sess)
-	}
-
-	data := bson.M{"$set": doc}
-	result, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
-	if err != nil {
-		return 0, nil
-	}
-	return result.ModifiedCount, nil
 }
 
 // Delete 删除数据
@@ -487,25 +454,14 @@ func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 	defer func() {
 		blog.V(4).InfoDepthf(2, "mongo delete cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
+		return err
+	})
 
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if c.hasSession(ctx) {
-		sess, err := c.getDistributedSession(ctx)
-		if err != nil {
-			return err
-		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer c.tm.SaveSession(sess)
-	} else if c.sess != nil {
-		ctx = se.ContextWithSession(ctx, c.sess)
-	}
-
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
-	return err
 }
 
-// NextSequence 获取新序列号(非事务), TODO test
+// NextSequence 获取新序列号(非事务)
 func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
@@ -621,7 +577,7 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 	defer func() {
 		blog.V(4).InfoDepthf(2, "mongo add-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
 	}()
-	
+
 	selector := dtype.Document{column: dtype.Document{"$exists": false}}
 	datac := dtype.Document{"$set": dtype.Document{column: value}}
 	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, selector, datac)
@@ -673,25 +629,15 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 		blog.V(4).InfoDepthf(2, "mongo aggregate-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if c.hasSession(ctx) {
-		sess, err := c.getDistributedSession(ctx)
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
 		if err != nil {
 			return err
 		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer c.tm.SaveSession(sess)
-	} else if c.sess != nil {
-		ctx = se.ContextWithSession(ctx, c.sess)
-	}
+		defer cursor.Close(ctx)
+		return decodeCusorIntoSlice(ctx, cursor, result)
+	})
 
-	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
-	if err != nil {
-		return err
-	}
-	defer cursor.Close(ctx)
-	return decodeCusorIntoSlice(ctx, cursor, result)
 }
 
 // AggregateOne aggregate one operation
@@ -702,28 +648,18 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 		blog.V(4).InfoDepthf(2, "mongo aggregate-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 
-	// 设置ctx的Session对象,用来处理事务
-	se := &mongo.SessionExposer{}
-	if c.hasSession(ctx) {
-		sess, err := c.getDistributedSession(ctx)
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
 		if err != nil {
 			return err
 		}
-		ctx = se.ContextWithSession(ctx, sess)
-		defer c.tm.SaveSession(sess)
-	} else if c.sess != nil {
-		ctx = se.ContextWithSession(ctx, c.sess)
-	}
+		defer cursor.Close(ctx)
+		for cursor.Next(ctx) {
+			return cursor.Decode(result)
+		}
+		return types.ErrDocumentNotFound
+	})
 
-	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Aggregate(ctx, pipeline)
-	if err != nil {
-		return err
-	}
-	defer cursor.Close(ctx)
-	for cursor.Next(ctx) {
-		return cursor.Decode(result)
-	}
-	return types.ErrDocumentNotFound
 }
 
 func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {

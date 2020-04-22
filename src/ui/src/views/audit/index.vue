@@ -24,7 +24,7 @@
                     </bk-select>
                 </div>
             </div>
-            <div class="option">
+            <div class="option action">
                 <span class="name" :title="$t('功能板块动作')">{{$t('功能板块动作')}}</span>
                 <div class="content">
                     <bk-select
@@ -48,7 +48,7 @@
                     </bk-select>
                 </div>
             </div>
-            <div class="option">
+            <div class="option resource">
                 <span class="name" :title="$t('操作对象')">{{$t('操作对象')}}</span>
                 <div class="content">
                     <bk-input v-model="filter.resourceName" clearable></bk-input>
@@ -65,7 +65,7 @@
                     </cmdb-form-date-range>
                 </div>
             </div>
-            <div class="option">
+            <div class="option operator">
                 <span class="name" :title="$t('操作账号')">{{$t('操作账号')}}</span>
                 <div class="content">
                     <cmdb-form-objuser
@@ -95,13 +95,14 @@
             </div>
             <div class="option option-btn">
                 <bk-button theme="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1, $event)">{{$t('查询')}}</bk-button>
+                <bk-button @click="handleClearFilter">{{$t('清空')}}</bk-button>
             </div>
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('getOperationLog') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 230"
+            :max-height="$APP.height - 310"
             :row-style="{ cursor: 'pointer' }"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
@@ -125,7 +126,7 @@
                 sortable="custom"
                 prop="bk_biz_name"
                 :label="$t('所属业务')">
-                <template slot-scope="{ row }">{{row.bk_biz_name || (row.basic_detail && row.basic_detail.bk_biz_name)}}</template>
+                <template slot-scope="{ row }">{{getBusinessName(row)}}</template>
             </bk-table-column>
             <bk-table-column
                 prop="resource_name"
@@ -135,7 +136,7 @@
             <bk-table-column
                 :label="$t('操作描述')">
                 <template slot-scope="{ row }">
-                    {{`${getResourceAction(row)}"${getResourceName(row)}"`}}
+                    {{`${getResourceAction(row)}"${getTargetName(row)}"`}}
                 </template>
             </bk-table-column>
             <bk-table-column
@@ -192,7 +193,8 @@
                         label: this.$t('资源')
                     }, {
                         name: 'other',
-                        label: this.$t('其他')
+                        label: this.$t('其他'),
+                        visible: false
                     }
                 ],
                 filter: {
@@ -321,7 +323,7 @@
             }
         },
         async created () {
-            this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name')
+            this.$store.dispatch('objectBiz/getAuthorizedBusiness')
             await this.getTableData()
         },
         methods: {
@@ -329,7 +331,8 @@
                 if (row.label === null) {
                     const type = row.resource_type
                     if (type === 'model_instance') {
-                        const model = this.$store.getters['objectModelClassify/getModelById'](row.bk_obj_id) || {}
+                        const objId = row.operation_detail.bk_obj_id
+                        const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
                         return model.bk_obj_name || '--'
                     }
                     return this.funcModules[type] || '--'
@@ -339,12 +342,18 @@
             },
             getResourceName (row) {
                 if (['assign_host', 'unassign_host', 'transfer_host_module'].includes(row.action)) {
-                    return row.bk_host_innerip || '--'
+                    return row.bk_host_innerip || row.operation_detail.bk_host_innerip || '--'
                 }
                 if (['instance_association'].includes(row.resource_type)) {
-                    return row.target_instance_name || '--'
+                    return row.operation_detail.src_instance_name || '--'
                 }
-                return (row.basic_detail && row.basic_detail.resource_name) || '--'
+                return this.$tools.getValue(row, 'operation_detail.resource_name') || '--'
+            },
+            getTargetName (row) {
+                if (row.resource_type === 'instance_association') {
+                    return row.operation_detail.target_instance_name
+                }
+                return this.getResourceName(row)
             },
             getResourceAction (row) {
                 if (row.label) {
@@ -352,6 +361,11 @@
                     return this.actionSet[`${row.resource_type}-${row.action}-${label}`]
                 }
                 return this.actionSet[`${row.resource_type}-${row.action}`]
+            },
+            getBusinessName (row) {
+                return row.bk_biz_name
+                    || this.$tools.getValue(row, 'operation_detail.bk_biz_name')
+                    || '--'
             },
             async getTableData (event) {
                 try {
@@ -363,7 +377,7 @@
                             requestId: 'getOperationLog'
                         }
                     })
-                    this.table.list = res.info.map(item => ({ ...item, ...item.operation_detail }))
+                    this.table.list = res.info
                     this.table.pagination.count = res.count
                     // 有传入event参数时认为来自用户搜索
                     if (event) {
@@ -412,6 +426,10 @@
             handleRowClick (item) {
                 this.details.data = item
                 this.details.isShow = true
+            },
+            handleClearFilter () {
+                this.handleResetFilter()
+                this.handlePageChange(1)
             }
         }
     }
@@ -431,17 +449,17 @@
             align-items: center;
             justify-content: flex-start;
             flex-direction: row;
-            flex-wrap: nowrap;
-            padding: 10px 0;
+            flex-wrap: wrap;
+            padding: 22px 0 10px 0;
             .option {
-                flex: 1 1;
-                margin: 0 1% 0 0;
+                flex: none;
+                width: 27%;
+                margin: 0 1.5% 12px 0;
                 white-space: nowrap;
                 font-size: 0;
                 display: flex;
                 align-items: center;
                 &.instance {
-                    flex: 1.2 1.2;
                     .bk-select {
                         width: 40%;
                         margin-right: 5px;
@@ -450,28 +468,66 @@
                         width: calc(60% - 5px);
                     }
                 }
+
+                &.action,
+                &.operator {
+                    .name {
+                        width: 96px;
+                        text-align: right;
+                    }
+                }
+
+                &.resource,
+                &.instance {
+                    .name {
+                        width: 70px;
+                        text-align: right;
+                    }
+                }
             }
             .option-btn {
-                flex: 0 0 60px;
-                margin: 0;
+                width: auto;
+                .bk-button + .bk-button {
+                    margin-left: 8px;
+                }
             }
             .name {
                 font-size: 14px;
-                padding-right: 5px;
+                padding-right: 10px;
                 @include ellipsis;
             }
             .content {
                 flex: 1;
-                max-width: 180px;
                 .bk-select {
                     width: 100%;
                 }
             }
         }
-        @media screen and (max-width: 1920px) {
-            .filter {
-                .name {
-                    max-width: 48px;
+
+    }
+
+    [bk-language="en"] {
+        .filter {
+            .name {
+                min-width: 70px;
+                text-align: right;
+            }
+
+            .option {
+                &.action,
+                &.operator {
+                    .name {
+                        width: 146px;
+                        text-align: right;
+                    }
+                }
+
+                &.resource,
+                &.instance {
+                    .name {
+                        width: 130px;
+                        text-align: right;
+                    }
                 }
             }
         }

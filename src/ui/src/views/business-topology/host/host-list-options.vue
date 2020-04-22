@@ -207,11 +207,20 @@
                 const setProperties = this.getProperties('set')
                 const moduleProperties = this.getProperties('module')
                 const removeProperties = ['bk_host_innerip', 'bk_host_outerip']
+                // 模块支持服务分类筛选
+                const insertProperties = [
+                    {
+                        bk_obj_id: 'module',
+                        bk_property_id: 'service_category_id',
+                        bk_property_name: this.$t('服务分类'),
+                        bk_property_type: 'category'
+                    }
+                ]
                 const hostProperties = this.hostProperties.filter(property => !removeProperties.includes(property.bk_property_id))
                 return {
                     host: hostProperties,
                     set: setProperties,
-                    module: moduleProperties
+                    module: [...moduleProperties, ...insertProperties]
                 }
             },
             hasSelection () {
@@ -386,7 +395,8 @@
                 this.sideslider.component = CmdbImport.name
                 this.sideslider.componentProps = {
                     templateUrl: `${window.API_HOST}importtemplate/host`,
-                    importUrl: `${window.API_HOST}/hosts/update`
+                    importUrl: `${window.API_HOST}hosts/update`,
+                    templdateAvailable: false
                 }
                 this.sideslider.title = this.$t('更新主机属性')
                 this.sideslider.show = true

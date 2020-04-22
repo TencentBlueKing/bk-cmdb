@@ -82,6 +82,7 @@ func GetClient() (*local.Mongo, error) {
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 		URI:          tConfig.MongoURI,
+		RsName:       "rs0",
 	}
 	m, err := local.NewMgo(mongoConfig, time.Minute)
 	if err != nil {

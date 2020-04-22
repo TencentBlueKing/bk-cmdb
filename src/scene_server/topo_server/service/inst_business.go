@@ -20,16 +20,16 @@ import (
 	"strconv"
 	"strings"
 
-    authmeta "configcenter/src/auth/meta"
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/condition"
-    "configcenter/src/common/http/rest"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/mapstruct"
-    "configcenter/src/common/metadata"
-    gparams "configcenter/src/common/paraparse"
-    "configcenter/src/common/util"
+	authmeta "configcenter/src/auth/meta"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
+	"configcenter/src/common/metadata"
+	gparams "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 )
 
 // CreateBusiness create a new business
@@ -41,62 +41,44 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 	}
 	data := dataWithMetadata.Data
 
-    var txnErr error
-    txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
-    if err != nil {
-        txnErr = err
-        blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
-        ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-        return
-    }
-    defer func() {
-        if txnErr == nil {
-            err = txn.CommitTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("CommitTransaction err: %+v", err)
-            }
-        } else {
-            blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
-            err = txn.AbortTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("AbortTransaction err: %+v", err)
-            }
-        }
-    }()
-
 	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, dataWithMetadata.Metadata)
 	if nil != err {
-		txnErr = err
 		blog.Errorf("failed to search the business, %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
-	business, err := s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data, dataWithMetadata.Metadata)
+	// do with transaction
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		business, err := s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data, dataWithMetadata.Metadata)
+		if err != nil {
+			blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return err
+		}
+
+		businessID, err := business.GetInstID()
+		if err != nil {
+			blog.Errorf("unexpected error, create business success, but get id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
+			return err
+		}
+
+		// auth: register business to iam
+		if err := s.AuthManager.RegisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, businessID); err != nil {
+			blog.Errorf("create business success, but register to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
+			return err
+		}
+		ctx.RespEntity(business)
+		return nil
+	})
+
 	if err != nil {
-		txnErr = err
 		blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
 		return
 	}
-
-	businessID, err := business.GetInstID()
-	if err != nil {
-		txnErr = err
-		blog.Errorf("unexpected error, create business success, but get id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
-		return
-	}
-
-	// auth: register business to iam
-	if err := s.AuthManager.RegisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, businessID); err != nil {
-		txnErr = err
-		blog.Errorf("create business success, but register to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
-		return
-	}
-	ctx.RespEntity(business)
 }
 
 // DeleteBusiness delete the business
@@ -391,7 +373,7 @@ func handleSpecialBusinessFieldSearchCond(input map[string]interface{}, userFiel
 				output[common.BKDBOR] = exactOr
 			} else {
 				attrVal := gparams.SpecialCharChange(targetStr)
-				output[i] = map[string]interface{}{"$regex": attrVal, "$options": "i"}
+				output[i] = map[string]interface{}{common.BKDBLIKE: attrVal, common.BKDBOPTIONS: "i"}
 			}
 		default:
 			output[i] = j

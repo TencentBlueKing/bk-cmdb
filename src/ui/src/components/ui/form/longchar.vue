@@ -1,12 +1,12 @@
 <template>
     <bk-input
-        clearable
         :placeholder="placeholder || $t('请输入长字符')"
         :disabled="disabled"
         :type="'textarea'"
         :rows="row"
         :maxlength="maxlength"
         :value="value"
+        :clearable="!disabled"
         @input="handleInput"
         @enter="handleEnter"
         @on-change="handleChange">

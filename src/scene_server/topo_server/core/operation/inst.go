@@ -367,6 +367,7 @@ func (c *commonInst) hasHost(kit *rest.Kit, targetInst inst.Inst, checkhost bool
 	if nil != err {
 		return nil, false, err
 	}
+	bizID, _ := targetInst.GetBizID()
 
 	targetObj := targetInst.GetObject()
 	// if this is a module object and need to check host, then check.
@@ -382,7 +383,7 @@ func (c *commonInst) hasHost(kit *rest.Kit, targetInst inst.Inst, checkhost bool
 	}
 
 	instIDS := make([]deletedInst, 0)
-	instIDS = append(instIDS, deletedInst{instID: id, obj: targetObj})
+	instIDS = append(instIDS, deletedInst{instID: id, bizID: bizID, obj: targetObj})
 	childInsts, err := targetInst.GetMainlineChildInst()
 	if nil != err {
 		return nil, false, err
@@ -467,6 +468,23 @@ func (c *commonInst) DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID 
 
 		NewSupplementary().Audit(kit, c.clientSet, delInst.obj, c).CommitDeleteLog(preAudit, nil, nil)
 	}
+
+	// clear set template sync status for set instances
+	bizSetMap := make(map[int64][]int64)
+	for _, delInst := range deleteIDS {
+		if delInst.obj.GetObjectID() == common.BKInnerObjIDSet {
+			bizSetMap[delInst.bizID] = append(bizSetMap[delInst.bizID], delInst.instID)
+		}
+	}
+	for bizID, setIDs := range bizSetMap {
+		if len(setIDs) != 0 {
+			if ccErr := c.clientSet.CoreService().SetTemplate().DeleteSetTemplateSyncStatus(kit.Ctx, kit.Header, bizID, setIDs); ccErr != nil {
+				blog.Errorf("[operation-set] failed to delete set template sync status failed, bizID: %d, setIDs: %+v, err: %s, rid: %s", bizID, setIDs, ccErr.Error(), kit.Rid)
+				return ccErr
+			}
+		}
+	}
+
 	return nil
 }
 

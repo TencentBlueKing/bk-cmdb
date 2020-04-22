@@ -78,7 +78,7 @@ func (ih *IAMHandler) diffAndSyncInstances(header http.Header, taskName string, 
 		time.Sleep(meta.IamRequestIntervalMillisecond * time.Millisecond)
 	}
 	if blog.V(5) {
-		blog.InfoJSON("ih.authManager.Authorize.RawPageListResources, count: %d,  result: %v", len(iamResources), iamResources)
+		blog.InfoJSON("ih.authManager.Authorize.RawPageListResources, count: %s,  result: %s", len(iamResources), iamResources)
 	}
 	realResources := make([]authmeta.BackendResource, 0)
 	for _, iamResource := range iamResources {
@@ -90,7 +90,7 @@ func (ih *IAMHandler) diffAndSyncInstances(header http.Header, taskName string, 
 		}
 	}
 	if blog.V(5) {
-		blog.InfoJSON("task: %s, count: %d, iam realResources is: %v", taskName, len(realResources), realResources)
+		blog.InfoJSON("task: %s, count: %s, iam realResources is: %s", taskName, len(realResources), realResources)
 	}
 	return ih.diffAndSyncCore(taskName, realResources, resources, skipDeregister)
 }
@@ -175,10 +175,10 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 	}
 
 	if len(needRegister) > 0 {
-		blog.InfoJSON("synchronize register %d resource that only in cmdb, resources: %s", len(needRegister), needRegister)
+		blog.InfoJSON("synchronize register %s resource that only in cmdb, resources: %s", len(needRegister), needRegister)
 		err := ih.authManager.Authorize.RegisterResource(ctx, needRegister...)
 		if err != nil {
-			blog.ErrorJSON("synchronize register %d resource that only in cmdb failed, resources: %s, err: %+v", len(needRegister), needRegister, err)
+			blog.ErrorJSON("synchronize register %s resource that only in cmdb failed, resources: %s, err: %+v", len(needRegister), needRegister, err)
 		}
 		// 云区域之前注册时没有层级, 需要解注册之后重新注册
 		if needRegister[0].Type == authmeta.Plat {
@@ -187,38 +187,38 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 				if err := ih.authManager.Authorize.RegisterResource(ctx, item); err == nil {
 					continue
 				}
-				blog.ErrorJSON("synchronize register plat failed, resource: %s, err: %+v", item, err)
+				blog.ErrorJSON("synchronize register plat failed, resource: %s, err: %s", item, err)
 
 				// may already in iam, try to update
 				if err := ih.authManager.Authorize.UpdateResource(ctx, &item); err == nil {
 					continue
 				}
-				blog.ErrorJSON("synchronize update register plat failed, resource: %s, err: %+v", item, err)
+				blog.ErrorJSON("synchronize update register plat failed, resource: %s, err: %s", item, err)
 
 				// maybe layers not the same, try to keep equal at best
 				if err := ih.authManager.Authorize.DeregisterResource(ctx, item); err != nil {
-					blog.ErrorJSON("synchronize deregister plat failed, resource: %s, err: %+v", item, err)
+					blog.ErrorJSON("synchronize deregister plat failed, resource: %s, err: %s", item, err)
 				}
 				if err := ih.authManager.Authorize.RegisterResource(ctx, item); err != nil {
-					blog.ErrorJSON("synchronize register plat failed, resource: %s, err: %+v", item, err)
+					blog.ErrorJSON("synchronize register plat failed, resource: %s, err: %s", item, err)
 				}
 			}
 		}
 	}
 
 	if len(needUpdate) > 0 {
-		blog.InfoJSON("synchronize update %d resource that only in cmdb, resources: %s", len(needUpdate), needUpdate)
+		blog.InfoJSON("synchronize update %s resource that only in cmdb, resources: %s", len(needUpdate), needUpdate)
 		for _, resource := range resources {
 			err := ih.authManager.Authorize.UpdateResource(ctx, &resource)
 			if err != nil {
-				blog.ErrorJSON("synchronize update resource failed, resource: %s, err: %+v", resource, err)
+				blog.ErrorJSON("synchronize update resource failed, resource: %s, err: %s", resource, err)
 			}
 			if err == nil {
 				continue
 			}
 			// maybe not in iam, try register
 			if err := ih.authManager.Authorize.RegisterResource(ctx, resource); err != nil {
-				blog.ErrorJSON("synchronize register resource failed, resource: %s, err: %+v", resource, err)
+				blog.ErrorJSON("synchronize register resource failed, resource: %s, err: %s", resource, err)
 			}
 			if err == nil {
 				continue
@@ -248,14 +248,14 @@ func (ih *IAMHandler) diffAndSyncCore(taskName string, iamResources []authmeta.B
 	}
 
 	if len(needDeregister) != 0 {
-		blog.InfoJSON("task: %s, synchronize deregister %d resource that only in iam, resources: %s", taskName, len(needDeregister), needDeregister)
+		blog.InfoJSON("task: %s, synchronize deregister %s resource that only in iam, resources: %s", taskName, len(needDeregister), needDeregister)
 		err := ih.authManager.Authorize.RawDeregisterResource(ctx, scope, needDeregister...)
 		if err != nil {
-			blog.ErrorJSON("task: %s, synchronize deregister resource that only in iam failed, resources: %s, err: %+v", taskName, needDeregister, err)
+			blog.ErrorJSON("task: %s, synchronize deregister resource that only in iam failed, resources: %s, err: %s", taskName, needDeregister, err)
 			// try to deregister one by one
 			for _, item := range needDeregister {
 				if err := ih.authManager.Authorize.RawDeregisterResource(ctx, scope, item); err != nil {
-					blog.InfoJSON("task: %s, synchronize deregister one %d resource that only in iam, resources: %s", taskName, len(needDeregister), needDeregister)
+					blog.InfoJSON("task: %s, synchronize deregister %s resource that only in iam, resources: %s", taskName, len(needDeregister), needDeregister)
 				}
 			}
 		}

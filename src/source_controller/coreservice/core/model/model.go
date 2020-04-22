@@ -72,7 +72,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s)", inputParam.Spec.ObjectID))
 	}
-	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%s, rid:%s", redisKey, looked, err, kit.Rid)
+	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%v, rid:%s", redisKey, looked, err, kit.Rid)
 
 	dataResult := &metadata.CreateOneDataResult{}
 
@@ -148,11 +148,14 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return dataResult, err
 	}
 
-	_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v", kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
-		return dataResult, err
+	if len(inputParam.Attributes) != 0 {
+		_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
+		if nil != err {
+			blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v", kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
+			return dataResult, err
+		}
 	}
+	
 	dataResult.Created.ID = id
 	return dataResult, nil
 }

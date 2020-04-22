@@ -532,6 +532,8 @@
     .form-objuser {
         height: 32px;
         font-size: 14px;
+        flex: 1;
+        width: 100%;
         cursor: text;
         .objuser-layout {
             position: relative;

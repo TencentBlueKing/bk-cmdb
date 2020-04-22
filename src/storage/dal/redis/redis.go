@@ -22,7 +22,6 @@ import (
 // Config define redis config
 type Config struct {
 	Address    string
-	Port       string
 	Password   string
 	Database   string
 	MasterName string
@@ -34,10 +33,9 @@ type Config struct {
 func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 	return Config{
 		Address:    conifgmap[prefix+".host"],
-		Port:       conifgmap[prefix+".port"],
 		Password:   conifgmap[prefix+".pwd"],
 		Database:   conifgmap[prefix+".database"],
-		MasterName: conifgmap[prefix+".mastername"],
+		MasterName: conifgmap[prefix+".masterName"],
 		Enable:     conifgmap[prefix+".enable"],
 	}
 }
@@ -47,10 +45,6 @@ func NewFromConfig(cfg Config) (*redis.Client, error) {
 	dbNum, err := strconv.Atoi(cfg.Database)
 	if nil != err {
 		return nil, err
-	}
-
-	if !strings.Contains(cfg.Address, ":") && len(cfg.Port) > 0 {
-		cfg.Address = cfg.Address + ":" + cfg.Port
 	}
 
 	var client *redis.Client

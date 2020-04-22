@@ -72,12 +72,15 @@ export function bool (value) {
     return '--'
 }
 
-export function enumeration (value, options) {
+export function enumeration (value, options, showId = false) {
     const option = (options || []).find(option => option.id === value)
     if (!option) {
         return '--'
     }
-    return `${option.name}(${option.id})`
+    if (showId) {
+        return `${option.name}(${option.id})`
+    }
+    return option.name
 }
 
 export function foreignkey (value) {

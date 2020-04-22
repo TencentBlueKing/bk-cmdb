@@ -81,7 +81,7 @@
             }
         },
         async created () {
-            this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name', this.requestConfig)
+            this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness', this.requestConfig)
             if (this.authorizedBusiness.length) {
                 this.init()
             } else {
