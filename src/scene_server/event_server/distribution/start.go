@@ -14,11 +14,7 @@ package distribution
 
 import (
 	"context"
-	"sync"
-	"time"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
 
@@ -45,20 +41,14 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
 
 	go cleanExpiredEvents(cache)
 
-	th := &TxnHandler{cache: cache, db: db, ctx: ctx, committed: make(chan string, 100), shouldClose: util.NewBool(false)}
-	go func() {
-		for {
-			if err := th.Run(); err != nil {
-				blog.Errorf("TxnHandler stopped with error: %v, we will try 1s later", err)
-			}
-			time.Sleep(time.Second)
-		}
-	}()
+	th := &TxnHandler{cache: cache}
+	th.Run()
 
 	return <-chErr
 }
 
 type EventHandler struct{ cache *redis.Client }
+
 type DistHandler struct {
 	cache *redis.Client
 	db    dal.RDB
@@ -66,10 +56,5 @@ type DistHandler struct {
 }
 
 type TxnHandler struct {
-	cache       *redis.Client
-	db          dal.RDB
-	ctx         context.Context
-	committed   chan string
-	shouldClose *util.AtomicBool
-	wg          sync.WaitGroup
+	cache *redis.Client
 }

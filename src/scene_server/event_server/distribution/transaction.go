@@ -24,13 +24,10 @@ import (
 TxnHandler commit all event at db transaction commits, elsewhere clear cached events if db transaction abort
 */
 
-func (th *TxnHandler) Run() (err error) {
+func (th *TxnHandler) Run() {
 	blog.Info("txn handle process started")
-
 	go th.handleCommit()
-	th.handleAbort()
-
-	return nil
+	go th.handleAbort()
 }
 
 // handleCommit to handle the txn which is committed

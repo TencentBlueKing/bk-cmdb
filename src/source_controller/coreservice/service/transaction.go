@@ -21,30 +21,23 @@ import (
 
 // CommitTransaction to commit transaction
 func (s *coreService) CommitTransaction(ctx *rest.Contexts) {
-	var err error
 	cap := new(metadata.TxnCapable)
-	if err = ctx.DecodeInto(cap); err != nil {
+	if err := ctx.DecodeInto(cap); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "decode transaction request body failed, err: %v", err)
 		return
 	}
 
-	// process event in the end
-	defer func() {
-		if err == nil {
-			if err := s.CommitEvent(cap.SessionID); err != nil {
-				blog.Errorf("CommitEvent failed, err:%v", err)
-			}
-		} else {
-			if err := s.AbortEvent(cap.SessionID); err != nil {
-				blog.Errorf("CommitEvent failed, err:%v", err)
-			}
-		}
-	}()
-
-	err = s.db.CommitTransaction(ctx.Kit.Ctx, cap)
+	err := s.db.CommitTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommCommitTransactionFailed, "commit transaction: %s failed, err: %v", cap.SessionID, err)
+		if err := s.AbortEvent(cap.SessionID); err != nil {
+			blog.Errorf("AbortEvent failed, err:%v", err)
+		}
 		return
+	}
+
+	if err := s.CommitEvent(cap.SessionID); err != nil {
+		blog.Errorf("CommitEvent failed, err:%v", err)
 	}
 
 	ctx.RespEntity(nil)
@@ -52,25 +45,22 @@ func (s *coreService) CommitTransaction(ctx *rest.Contexts) {
 
 // CommitTransaction to abort transaction
 func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
-	var err error
 	cap := new(metadata.TxnCapable)
-	if err = ctx.DecodeInto(cap); err != nil {
+	if err := ctx.DecodeInto(cap); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "decode transaction request body failed, err: %v", err)
 		return
 	}
 
-	// process event in the end
-	defer func() {
-		if err := s.AbortEvent(cap.SessionID); err != nil {
-			blog.Errorf("CommitEvent failed, err:%v", err)
-		}
-	}()
+	if err := s.AbortEvent(cap.SessionID); err != nil {
+		blog.Errorf("AbortEvent failed, err:%v", err)
+	}
 
-	err = s.db.AbortTransaction(ctx.Kit.Ctx, cap)
+	err := s.db.AbortTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommCommitTransactionFailed, "commit transaction: %s failed, err: %v", cap.SessionID, err)
 		return
 	}
+
 	ctx.RespEntity(nil)
 }
 
