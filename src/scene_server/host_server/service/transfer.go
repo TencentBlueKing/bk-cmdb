@@ -177,6 +177,8 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 		}(plan)
 
 	}
+	wg.Wait()
+
 	if firstErr != nil {
 		response := metadata.Response{
 			BaseResp: metadata.BaseResp{
@@ -190,8 +192,6 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 		_ = resp.WriteEntity(response)
 		return
 	}
-
-	wg.Wait()
 	if err := audit.SaveAudit(srvData.ctx); err != nil {
 		blog.Errorf("TransferHostWithAutoClearServiceInstance failed, save audit log failed, err: %s, HostIDs: %+v, rid: %s", err.Error(), option.HostIDs, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
