@@ -217,7 +217,8 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 
 	s.cache.Del(types.EventCacheDistIDPrefix+subID,
 		types.EventCacheDistQueuePrefix+subID,
-		types.EventCacheDistDonePrefix+subID)
+		types.EventCacheDistDonePrefix+subID,
+		types.EventCacheDistCallBackCountPrefix+subID)
 
 	msg, _ := json.Marshal(&sub)
 	s.cache.Publish(types.EventCacheProcessChannel, "delete"+string(msg))

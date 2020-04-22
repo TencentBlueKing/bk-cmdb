@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
+
+	"gopkg.in/redis.v5"
 )
 
 func (dh *DistHandler) StartDistribute() (err error) {
@@ -256,12 +258,18 @@ func (dh *DistHandler) popDistInst(subID int64) *metadata.DistInstCtx {
 }
 
 func (dh *DistHandler) saveDistDone(dist *metadata.DistInstCtx) (err error) {
-	if err = dh.cache.HSet(types.EventCacheDistDonePrefix+fmt.Sprint(dist.SubscriptionID), fmt.Sprint(dist.DstbID), dist.Raw).Err(); err != nil {
-		return
-	}
-	if err = dh.cache.Del(types.EventCacheDistRunningPrefix + fmt.Sprintf("%d_%d", dist.SubscriptionID, dist.DstbID)).Err(); err != nil {
-		return
-	}
+	_, err = dh.cache.Pipelined(func(pipe *redis.Pipeline) error {
+		if err = pipe.HSet(types.EventCacheDistDonePrefix+fmt.Sprint(dist.SubscriptionID), fmt.Sprint(dist.DstbID), dist.Raw).Err(); err != nil {
+			blog.Errorf("saveDistDone HSet failed, err: %v", err)
+			return err
+		}
+		if err = pipe.Del(types.EventCacheDistRunningPrefix + fmt.Sprintf("%d_%d", dist.SubscriptionID, dist.DstbID)).Err(); err != nil {
+			blog.Errorf("saveDistDone Del failed, err: %v", err)
+			return err
+		}
+		return nil
+	})
+
 	return
 }
 
