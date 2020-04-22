@@ -93,18 +93,17 @@ func (s *Service) DeleteModule(params types.ContextParams, pathParams, queryPara
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
 	}
 
-	err = s.Core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
-	if err != nil {
-		blog.Errorf("delete module failed, delete operation failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
-	}
-
 	// auth: deregister module to iam
 	if err := s.AuthManager.DeregisterModuleByID(params.Context, params.Header, moduleID); err != nil {
 		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
+	err = s.Core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
+	if err != nil {
+		blog.Errorf("delete module failed, delete operation failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
 	return nil, nil
 }
 
