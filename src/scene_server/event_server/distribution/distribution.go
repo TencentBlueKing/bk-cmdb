@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -259,18 +260,15 @@ func (dh *DistHandler) popDistInst(subID int64) *metadata.DistInstCtx {
 
 func (dh *DistHandler) saveDistDone(dist *metadata.DistInstCtx) (err error) {
 	_, err = dh.cache.Pipelined(func(pipe *redis.Pipeline) error {
-		if err = pipe.HSet(types.EventCacheDistDonePrefix+fmt.Sprint(dist.SubscriptionID), fmt.Sprint(dist.DstbID), dist.Raw).Err(); err != nil {
-			blog.Errorf("saveDistDone HSet failed, err: %v", err)
-			return err
-		}
-		if err = pipe.Del(types.EventCacheDistRunningPrefix + fmt.Sprintf("%d_%d", dist.SubscriptionID, dist.DstbID)).Err(); err != nil {
-			blog.Errorf("saveDistDone Del failed, err: %v", err)
-			return err
-		}
+		pipe.HSet(types.EventCacheDistDonePrefix+strconv.FormatInt(dist.SubscriptionID, 10), strconv.FormatInt(dist.DstbID, 10), dist.Raw)
+		pipe.Del(types.EventCacheDistRunningPrefix + fmt.Sprintf("%d_%d", dist.SubscriptionID, dist.DstbID))
 		return nil
 	})
-
-	return
+	if err != nil {
+		blog.Errorf("saveDistDone Pipelined failed, err: %v", err)
+		return err
+	}
+	return nil
 }
 
 func extractChangeAction(msg string) string {
