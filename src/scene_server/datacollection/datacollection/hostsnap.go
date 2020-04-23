@@ -338,77 +338,64 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
 	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
 
-	setter := map[string]interface{}{}
+	setter := map[string]interface{}{
+		"bk_cpu":                            cupnum,
+		"bk_cpu_module":                     cpumodule,
+		"bk_cpu_mhz":                        CPUMhz,
+		"bk_disk":                           disk / 1024 / 1024 / 1024,
+		"bk_mem":                            mem / 1024 / 1024,
+		"bk_os_type":                        ostype,
+		"bk_os_name":                        osname,
+		"bk_os_version":                     version,
+		"bk_host_name":                      hostname,
+		"bk_outer_mac":                      OuterMAC,
+		"bk_mac":                            InnerMAC,
+		"bk_os_bit":                         osbit,
+		common.HostFieldDockerClientVersion: dockerClientVersion,
+		common.HostFieldDockerServerVersion: dockerServerVersion,
+	}
 
 	if cupnum <= 0 {
 		blog.Infof("bk_cpu not found in message for %s", innerIP)
-	} else {
-		setter["bk_cpu"] = cupnum
 	}
 	if cpumodule == "" {
 		blog.Infof("bk_cpu_module not found in message for %s", innerIP)
-	} else {
-		setter["bk_cpu_module"] = cpumodule
 	}
 	if CPUMhz <= 0 {
 		blog.Infof("bk_cpu_mhz not found in message for %s", innerIP)
-	} else {
-		setter["bk_cpu_mhz"] = CPUMhz
 	}
 	if disk <= 0 {
 		blog.Infof("bk_disk not found in message for %s", innerIP)
-	} else {
-		setter["bk_disk"] = disk / 1024 / 1024 / 1024
 	}
 	if mem <= 0 {
 		blog.Infof("bk_mem not found in message for %s", innerIP)
-	} else {
-		setter["bk_mem"] = mem / 1024 / 1024
 	}
 	if ostype == "" {
 		blog.Infof("bk_os_type not found in message for %s", innerIP)
-	} else {
-		setter["bk_os_type"] = ostype
 	}
 	if osname == "" {
 		blog.Infof("bk_os_name not found in message for %s", innerIP)
-	} else {
-		setter["bk_os_name"] = osname
 	}
 	if version == "" {
 		blog.Infof("bk_os_version not found in message for %s", innerIP)
-	} else {
-		setter["bk_os_version"] = version
 	}
 	if hostname == "" {
 		blog.Infof("bk_host_name not found in message for %s", innerIP)
-	} else {
-		setter["bk_host_name"] = hostname
 	}
 	if outerIP != "" && OuterMAC == "" {
 		blog.Infof("bk_outer_mac not found in message for %s", innerIP)
-	} else {
-		setter["bk_outer_mac"] = outerIP
 	}
 	if InnerMAC == "" {
 		blog.Infof("bk_mac not found in message for %s", innerIP)
-	} else {
-		setter["bk_mac"] = InnerMAC
 	}
 	if osbit == "" {
 		blog.Infof("bk_os_bit not found in message for %s", innerIP)
-	} else {
-		setter["bk_os_bit"] = osbit
 	}
 	if dockerClientVersion == "" {
 		blog.Infof("docker_client_version not found in message for %s", innerIP)
-	} else {
-		setter["docker_client_version"] = dockerClientVersion
 	}
 	if dockerServerVersion == "" {
 		blog.Infof("docker_server_version not found in message for %s", innerIP)
-	} else {
-		setter["docker_server_version"] = dockerServerVersion
 	}
 
 	return setter
