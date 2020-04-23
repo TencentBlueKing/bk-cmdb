@@ -47,7 +47,7 @@ func getAssociatePrimaryKey(a []interface{}, primaryField []Property) []string {
 			if true == ok {
 				var itemVals []string
 				for _, field := range primaryField {
-					val, _ := instMap[field.ID]
+					val, _ := instMap[field.PropertyID]
 					if nil == val {
 						val = ""
 					}
@@ -164,8 +164,8 @@ func addExtFields(fields map[string]Property, extFields map[string]string) map[s
 	for extFieldID, extFieldName := range extFields {
 
 		fields[extFieldID] = Property{
-			ID:            "",
-			Name:          extFieldName,
+			PropertyID:    "",
+			PropertyName:  extFieldName,
 			NotObjPropery: true,
 			ExcelColIndex: excelColIndex,
 		}

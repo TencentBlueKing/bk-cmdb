@@ -50,3 +50,8 @@ type ObjectAttrGroupResult struct {
 	BaseResp `json:",inline"`
 	Data     []AttributeGroup `json:"data"`
 }
+
+type ObjectUniqueResult struct {
+	BaseResp `json:",inline"`
+	Data     []ObjectUnique `json:"data"`
+}

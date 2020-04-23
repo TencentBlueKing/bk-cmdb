@@ -126,19 +126,19 @@ func GetNetDevicefield(lang language.DefaultCCLanguageIf) map[string]Property {
 
 	return map[string]Property{
 		common.BKDeviceNameField: Property{
-			Name: lang.Language("import_device_comment_device_name"), ID: common.BKDeviceNameField,
+			PropertyName: lang.Language("import_device_comment_device_name"), PropertyID: common.BKDeviceNameField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 0, IsRequire: true,
 		},
 		common.BKDeviceModelField: Property{
-			Name: lang.Language("import_device_comment_device_model"), ID: common.BKDeviceModelField,
+			PropertyName: lang.Language("import_device_comment_device_model"), PropertyID: common.BKDeviceModelField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 1, IsRequire: true,
 		},
 		common.BKObjNameField: Property{
-			Name: lang.Language("import_device_comment_obj_name"), ID: common.BKObjNameField,
+			PropertyName: lang.Language("import_device_comment_obj_name"), PropertyID: common.BKObjNameField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 2, IsRequire: true,
 		},
 		common.BKVendorField: Property{
-			Name: lang.Language("import_device_comment_vendor"), ID: common.BKVendorField,
+			PropertyName: lang.Language("import_device_comment_vendor"), PropertyID: common.BKVendorField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 3, IsRequire: true,
 		},
 	}
@@ -149,13 +149,13 @@ func AddNetDeviceExtFields(originField map[string]Property, lang language.Defaul
 
 	field := map[string]Property{
 		common.BKDeviceIDField: Property{
-			Name:         lang.Language("import_device_comment_device_id"),
-			ID:           common.BKDeviceIDField,
+			PropertyName: lang.Language("import_device_comment_device_id"),
+			PropertyID:   common.BKDeviceIDField,
 			PropertyType: common.FieldTypeInt,
 		},
 		common.BKObjIDField: Property{
-			Name:         lang.Language("import_device_comment_obj_id"),
-			ID:           common.BKObjIDField,
+			PropertyName: lang.Language("import_device_comment_obj_id"),
+			PropertyID:   common.BKObjIDField,
 			PropertyType: common.FieldTypeSingleChar,
 		},
 	}

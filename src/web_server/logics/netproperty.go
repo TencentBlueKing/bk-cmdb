@@ -126,23 +126,23 @@ func GetNetPropertyField(lang language.DefaultCCLanguageIf) map[string]Property 
 
 	return map[string]Property{
 		common.BKPropertyNameField: Property{
-			Name: lang.Language("import_property_comment_property_name"), ID: common.BKPropertyNameField,
+			PropertyName: lang.Language("import_property_comment_property_name"), PropertyID: common.BKPropertyNameField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 0, IsRequire: true,
 		},
 		common.BKDeviceNameField: Property{
-			Name: lang.Language("import_property_comment_device_name"), ID: common.BKDeviceNameField,
+			PropertyName: lang.Language("import_property_comment_device_name"), PropertyID: common.BKDeviceNameField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 1, IsRequire: true,
 		},
 		common.BKOIDField: Property{
-			Name: lang.Language("import_property_comment_oid"), ID: common.BKOIDField,
+			PropertyName: lang.Language("import_property_comment_oid"), PropertyID: common.BKOIDField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 2, IsRequire: true,
 		},
 		common.BKPeriodField: Property{
-			Name: lang.Language("import_property_comment_period"), ID: common.BKPeriodField,
+			PropertyName: lang.Language("import_property_comment_period"), PropertyID: common.BKPeriodField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 3, IsRequire: false,
 		},
 		common.BKActionField: Property{
-			Name: lang.Language("import_property_comment_action"), ID: common.BKActionField,
+			PropertyName: lang.Language("import_property_comment_action"), PropertyID: common.BKActionField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 4, IsRequire: false,
 		},
 	}
@@ -153,33 +153,33 @@ func AddNetPropertyExtFields(originField map[string]Property, lang language.Defa
 
 	field := map[string]Property{
 		common.BKNetcollectPropertyIDField: Property{
-			Name:         lang.Language("import_property_comment_net_property_id"),
-			ID:           common.BKNetcollectPropertyIDField,
+			PropertyName: lang.Language("import_property_comment_net_property_id"),
+			PropertyID:   common.BKNetcollectPropertyIDField,
 			PropertyType: common.FieldTypeInt,
 		},
 		common.BKPropertyIDField: Property{
-			Name:         lang.Language("import_property_comment_property_id"),
-			ID:           common.BKPropertyIDField,
+			PropertyName: lang.Language("import_property_comment_property_id"),
+			PropertyID:   common.BKPropertyIDField,
 			PropertyType: common.FieldTypeSingleChar,
 		},
 		common.BKDeviceIDField: Property{
-			Name:         lang.Language("import_property_comment_device_id"),
-			ID:           common.BKDeviceIDField,
+			PropertyName: lang.Language("import_property_comment_device_id"),
+			PropertyID:   common.BKDeviceIDField,
 			PropertyType: common.FieldTypeInt,
 		},
 		common.BKObjIDField: Property{
-			Name:         lang.Language("import_property_comment_object_id"),
-			ID:           common.BKObjIDField,
+			PropertyName: lang.Language("import_property_comment_object_id"),
+			PropertyID:   common.BKObjIDField,
 			PropertyType: common.FieldTypeSingleChar,
 		},
 		common.BKObjNameField: Property{
-			Name:         lang.Language("import_property_comment_object_name"),
-			ID:           common.BKObjNameField,
+			PropertyName: lang.Language("import_property_comment_object_name"),
+			PropertyID:   common.BKObjNameField,
 			PropertyType: common.FieldTypeSingleChar,
 		},
 		meta.AttributeFieldUnit: Property{
-			Name:         lang.Language("import_property_comment_unit"),
-			ID:           meta.AttributeFieldUnit,
+			PropertyName: lang.Language("import_property_comment_unit"),
+			PropertyID:   meta.AttributeFieldUnit,
 			PropertyType: common.FieldTypeSingleChar,
 		},
 	}

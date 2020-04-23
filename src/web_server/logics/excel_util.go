@@ -106,8 +106,8 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 		if property.NotExport {
 			if property.IsOnly {
 				primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
-					ID:     property.ID,
-					Name:   property.Name,
+					ID:     property.PropertyID,
+					Name:   property.PropertyName,
 					StrVal: getPrimaryKey(val),
 				})
 			}
@@ -165,8 +165,8 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 
 		if property.IsOnly {
 			primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
-				ID:     property.ID,
-				Name:   property.Name,
+				ID:     property.PropertyID,
+				Name:   property.PropertyName,
 				StrVal: cell.String(),
 			})
 		}
@@ -319,11 +319,11 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 			// "(必填)"
 			isRequire = defLang.Language("web_excel_header_required")
 		}
-		if util.Contains(filter, field.ID) {
+		if util.Contains(filter, field.PropertyID) {
 			continue
 		}
 		cellName := sheet.Cell(0, index)
-		cellName.Value = field.Name + isRequire
+		cellName.Value = field.PropertyName + isRequire
 		cellName.SetStyle(getHeaderFirstRowCellStyle(field.IsRequire))
 
 		cellType := sheet.Cell(1, index)
@@ -331,7 +331,7 @@ func productExcelHealer(ctx context.Context, fields map[string]Property, filter 
 		cellType.SetStyle(styleCell)
 
 		cellEnName := sheet.Cell(2, index)
-		cellEnName.Value = field.ID
+		cellEnName.Value = field.PropertyID
 		cellEnName.SetStyle(styleCell)
 
 		switch field.PropertyType {

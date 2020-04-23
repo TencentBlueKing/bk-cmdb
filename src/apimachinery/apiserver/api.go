@@ -143,6 +143,21 @@ func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header, params map
 	return
 }
 
+func (a *apiServer) GetObjectUnique(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.ObjectUniqueResult, err error) {
+
+	resp = new(metadata.ObjectUniqueResult)
+	subPath := "/object/%s/unique/action/search"
+
+	err = a.client.Get().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (a *apiServer) GetHostData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)

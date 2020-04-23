@@ -85,7 +85,7 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 	}
 	var dbFields []string
 	for _, property := range propertyArr {
-		dbFields = append(dbFields, property.ID)
+		dbFields = append(dbFields, property.PropertyID)
 	}
 	instIDKey := metadata.GetInstIDFieldByObjID(objID)
 
@@ -117,15 +117,15 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 		var primaryKeysVal []PropertyPrimaryVal
 		for _, key := range propertyArr {
 			// use display , use string
-			val, err := inst.String(key.ID)
+			val, err := inst.String(key.PropertyID)
 			if err != nil {
 				blog.Warnf("FetchInstAssocationData get %s instance %s field error, err:%s, inst:%+v, rid:%s", objID, key, err.Error(), inst, rid)
 				isSkip = true
 				break
 			}
 			primaryKeysVal = append(primaryKeysVal, PropertyPrimaryVal{
-				ID:     key.ID,
-				Name:   key.Name,
+				ID:     key.PropertyID,
+				Name:   key.PropertyName,
 				StrVal: val,
 			})
 		}
