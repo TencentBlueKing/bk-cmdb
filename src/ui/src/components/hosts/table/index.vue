@@ -2,44 +2,7 @@
     <div class="hosts-table-layout">
         <div class="hosts-options">
             <div class="options-left">
-                <slot name="options-left">
-                    <bk-button class="options-button mr10" theme="primary"
-                        :disabled="!table.checked.length"
-                        @click="handleMultipleEdit">
-                        {{$t('编辑')}}
-                    </bk-button>
-                    <cmdb-auth class="inline-block-middle mr10" :auth="transferAuthResources">
-                        <bk-button slot-scope="{ disabled }"
-                            class="options-button"
-                            theme="default"
-                            :disabled="!table.checked.length || disabled"
-                            @click="transfer.show = true">
-                            {{$t('转移')}}
-                        </bk-button>
-                    </cmdb-auth>
-                    <bk-button class="options-button mr10"
-                        theme="default"
-                        type="submit"
-                        form="exportForm"
-                        :disabled="!table.checked.length">
-                        {{$t('导出')}}
-                    </bk-button>
-                    <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
-                        <input type="hidden" name="bk_host_id" :value="table.checked">
-                        <input type="hidden" name="export_custom_fields"
-                            v-if="usercustom[columnsConfigKey]"
-                            :value="usercustom[columnsConfigKey]">
-                        <input type="hidden" name="bk_biz_id" value="-1">
-                        <input type="hidden" name="metadata"
-                            v-if="$route.name !== 'resource'"
-                            :value="JSON.stringify($injectMetadata().metadata)">
-                    </form>
-                    <cmdb-clipboard-selector class="options-button"
-                        :list="clipboardList"
-                        :disabled="!table.checked.length"
-                        @on-copy="handleCopy">
-                    </cmdb-clipboard-selector>
-                </slot>
+                <slot name="options-left"></slot>
             </div>
             <div class="options-right clearfix">
                 <div class="fl" v-if="showScope">
@@ -161,34 +124,12 @@
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
         </bk-sideslider>
-        <bk-dialog class="bk-dialog-no-padding"
-            v-model="transfer.show"
-            draggable
-            :close-icon="false"
-            :show-footer="false"
-            :show-header="false"
-            :width="720">
-            <div class="transfer-title" slot="tools">
-                <i class="icon icon-cc-shift mr5"></i>
-                <span>{{$t('主机转移')}}</span>
-                <span v-if="selectedHosts.length === 1">{{selectedHosts[0]['host']['bk_host_innerip']}}</span>
-            </div>
-            <div class="transfer-content">
-                <cmdb-transfer-host v-if="transfer.show"
-                    :transfer-resource-auth="transferResourceAuth"
-                    :selected-hosts="selectedHosts"
-                    @on-success="handleTransferSuccess"
-                    @on-cancel="transfer.show = false">
-                </cmdb-transfer-host>
-            </div>
-        </bk-dialog>
     </div>
 </template>
 
 <script>
     import { mapGetters, mapActions, mapState } from 'vuex'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
-    import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
     import hostValueFilter from '@/filters/host'
     import {
@@ -200,7 +141,6 @@
     export default {
         components: {
             cmdbColumnsConfig,
-            cmdbTransferHost,
             cmdbHostFilter
         },
         filters: {
@@ -230,14 +170,6 @@
                 default: ''
             },
             deleteAuth: {
-                type: [String, Array],
-                default: ''
-            },
-            transferAuth: {
-                type: [String, Array],
-                default: ''
-            },
-            transferResourceAuth: {
                 type: [String, Array],
                 default: ''
             },
@@ -298,9 +230,6 @@
                     selected: [],
                     disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
-                transfer: {
-                    show: false
-                },
                 selectedCollection: '',
                 scope: 1
             }
@@ -310,12 +239,6 @@
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapState('hosts', ['collectionList', 'isHostSearch']),
-            transferAuthResources () {
-                const auth = this.transferAuth
-                if (!auth) return {}
-                if (Array.isArray(auth) && !auth.length) return {}
-                return this.$authResources({ type: auth })
-            },
             customColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
@@ -697,12 +620,6 @@
                     [this.columnsConfigKey]: []
                 })
             },
-            handleTransferSuccess () {
-                this.$emit('update-host-count')
-                this.table.checked = []
-                this.transfer.show = false
-                this.getHostList()
-            },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.tab.attribute.type !== 'details') {
                     const $form = this.tab.attribute.type === 'update' ? this.$refs.form : this.$refs.multipleForm
@@ -773,19 +690,6 @@
     }
     .hosts-table {
         margin-top: 14px;
-    }
-    .transfer-title {
-        height: 50px;
-        line-height: 50px;
-        background-color: #f9f9f9;
-        color: #333948;
-        font-weight: bold;
-        font-size: 14px;
-        padding: 0 30px;
-        border-bottom: 1px solid $cmdbBorderColor;
-    }
-    .transfer-content {
-        height: 540px;
     }
     .options-collection {
         width: 280px;

@@ -1258,5 +1258,6 @@
     "以下N台主机移除失败": "The following {N} hosts failed to be removed, {link}",
     "点击查看详情": "Details",
     "关闭按钮": "Close",
-    "失败详情": "Fail Details"
+    "失败详情": "Fail Details",
+    "业务不存在或无权限": "Permission denied or business non-exist"
 }
