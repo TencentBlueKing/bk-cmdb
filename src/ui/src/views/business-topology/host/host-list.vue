@@ -172,7 +172,7 @@
                 this.$router.push({
                     name: MENU_BUSINESS_HOST_DETAILS,
                     params: {
-                        business: this.bizId,
+                        bizId: this.bizId,
                         id: row.host.bk_host_id
                     },
                     query: {

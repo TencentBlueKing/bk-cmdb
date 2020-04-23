@@ -1251,5 +1251,6 @@
     "第N行字段错误信息": "Line {N}:Field {field}，{info}",
     "效果示意": "Renderings",
     "组织": "Organization",
-    "按照0-9a-z排序": "Sort by 0-9, a-z"
+    "按照0-9a-z排序": "Sort by 0-9, a-z",
+    "业务不存在或无权限": "Permission denied or business non-exist"
 }

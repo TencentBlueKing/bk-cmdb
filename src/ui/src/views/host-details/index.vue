@@ -63,7 +63,7 @@
                 return parseInt(this.$route.params.id)
             },
             business () {
-                const business = parseInt(this.$route.params.business)
+                const business = parseInt(this.$route.params.bizId)
                 if (isNaN(business)) {
                     return -1
                 }

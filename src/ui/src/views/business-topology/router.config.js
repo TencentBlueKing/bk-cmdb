@@ -46,7 +46,7 @@ export default [{
     }),
     children: [{
         name: MENU_BUSINESS_HOST_DETAILS,
-        path: ':business/host/:id',
+        path: 'host/:id',
         component: () => import('@/views/host-details/index'),
         meta: new Meta({
             owner: MENU_BUSINESS,
@@ -57,11 +57,11 @@ export default [{
             layout: {
                 previous: (view) => ({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    query: view.$route.query
+                    query: view.$route.query,
+                    params: {
+                        bizId: view.$route.params.bizId
+                    }
                 })
-            },
-            checkAvailable: (to, from, app) => {
-                return parseInt(to.params.business) === app.$store.getters['objectBiz/bizId']
             }
         })
     }]
