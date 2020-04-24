@@ -58,10 +58,9 @@ func (lgc *Logics) GetDefaultAppID(ctx context.Context) (int64, errors.CCError) 
 }
 
 func (lgc *Logics) GetAppDetails(ctx context.Context, fields string, condition map[string]interface{}) (types.MapStr, errors.CCError) {
-
+	fields = fields + "," + common.BkSupplierAccount
 	input := &metadata.QueryCondition{
 		Condition: condition,
-		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKAppIDField},
 		Fields:    strings.Split(fields, ","),
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, input)
@@ -74,11 +73,14 @@ func (lgc *Logics) GetAppDetails(ctx context.Context, fields string, condition m
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	if len(result.Data.Info) == 0 {
-		return make(map[string]interface{}), nil
+	supplier := util.GetOwnerID(lgc.header)
+	for idx, biz := range result.Data.Info {
+		if supplier == biz[common.BkSupplierAccount].(string) {
+			return result.Data.Info[idx], nil
+		}
 	}
 
-	return result.Data.Info[0], nil
+	return nil, errors.New(common.CCErrCommBizNotFoundError, "find resource pool biz failed")
 }
 
 func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (bool, errors.CCErrorCoder) {

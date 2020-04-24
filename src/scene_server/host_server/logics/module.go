@@ -32,8 +32,7 @@ import (
 
 func (lgc *Logics) GetResourcePoolModuleID(ctx context.Context, condition mapstr.MapStr) (int64, errors.CCError) {
 	query := &metadata.QueryCondition{
-		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKModuleIDField},
-		Fields:    []string{common.BKModuleIDField},
+		Fields:    []string{common.BKModuleIDField, common.BkSupplierAccount},
 		Condition: condition,
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
@@ -42,16 +41,24 @@ func (lgc *Logics) GetResourcePoolModuleID(ctx context.Context, condition mapstr
 		return -1, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetResourcePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
 		return -1, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	if len(result.Data.Info) == 0 {
-		blog.Errorf("GetResourcePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
 		return -1, lgc.ccErr.Error(common.CCErrTopoGetAppFailed)
 	}
 
-	return result.Data.Info[0].Int64(common.BKModuleIDField)
+	supplier := util.GetOwnerID(lgc.header)
+	for idx, mod := range result.Data.Info {
+		if supplier == mod[common.BkSupplierAccount].(string) {
+			return result.Data.Info[idx].Int64(common.BKModuleIDField)
+		}
+	}
+
+	blog.Errorf("can not get resource pool module id rid:%s", lgc.rid)
+	return -1, lgc.ccErr.Error(common.CCErrTopoGetAppFailed)
 }
 
 func (lgc *Logics) GetNormalModuleByModuleID(ctx context.Context, appID, moduleID int64) ([]mapstr.MapStr, errors.CCError) {
