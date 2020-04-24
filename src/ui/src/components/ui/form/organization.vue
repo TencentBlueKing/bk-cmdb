@@ -406,6 +406,7 @@
 <style lang="scss" scoped>
     .cmdb-organization-select {
         position: relative;
+        width: 100%;
         border: 1px solid #c4c6cc;
         background-color: #fff;
         border-radius: 2px;
