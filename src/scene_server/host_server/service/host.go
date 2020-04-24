@@ -193,7 +193,8 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 		return
 	}
 
-	logContentMap := make(map[int64]meta.AuditLog, 0)	hosts := make([]extensions.HostSimplify, 0)
+	logContentMap := make(map[int64]meta.AuditLog, 0)
+	hosts := make([]extensions.HostSimplify, 0)
 	for _, hostID := range iHostIDArr {
 		logger := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
 		if err := logger.WithPrevious(srvData.ctx, hostID, hostFields); err != nil {
@@ -207,13 +208,21 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 			blog.Errorf("delete host batch, but get host[%d] biz[%d] data failed, err: %v, rid:%s", hostID, appID, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
-		}		
+		}
+
+		detail, ok := logContentMap[hostID].OperationDetail.(*meta.InstanceOpDetail)
+		if !ok {
+			blog.Errorf("delete host batch, but got invalid operation detail, rid:%s", srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: errors.New(common.CCErrCommParamsValueInvalidError, "")})
+			return
+		}
+
 		hosts = append(hosts, extensions.HostSimplify{
 			BKAppIDField:       0,
 			BKHostIDField:      hostID,
-			BKHostInnerIPField: logContent.ExtKey,
+			BKHostInnerIPField: detail.ResourceName,
 		})
-		logContentMap[hostID] = logContent
+
 	}
 
 	input := &meta.DeleteHostRequest{
