@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -155,12 +156,30 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 		return nil, err
 	}
 
+	authInstances := make([]extensions.InstanceSimplify, 0)
+	_, insts, err := s.Core.InstOperation().FindInst(params, obj, &metadata.QueryInput{Condition: map[string]interface{}{
+		obj.GetInstIDFieldName(): map[string]interface{}{common.BKDBIN:deleteCondition.Delete.InstID}}}, false)
+	if nil != err {
+		blog.Errorf("DeleteInst failed, find authInstances to be deleted failed, error info is %s, rid: %s", err.Error(), params.ReqID)
+	}
+	for _, inst := range insts {
+		instID, _ := inst.GetInstID()
+		instName, _ := inst.GetInstName()
+		instBizID, _ := inst.GetBizID()
+		authInstances = append(authInstances, extensions.InstanceSimplify{
+			InstanceID: instID,
+			Name:       instName,
+			BizID:      instBizID,
+			ObjectID:   objID,
+		})
+	}
+
 	if err = s.Core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID, true); err != nil {
 		blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), objID, deleteCondition.Delete.InstID, params.ReqID)
 		return nil, err
 	}
 	// auth: deregister resources
-	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, obj.GetObjectID(), deleteCondition.Delete.InstID...); err != nil {
+	if err := s.AuthManager.DeregisterInstances(params.Context, params.Header, authInstances...); err != nil {
 		blog.Errorf("batch delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", deleteCondition.Delete.InstID, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
@@ -203,13 +222,29 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 		// TODO add custom mainline instance param validation
 	}
 
+	authInstances := make([]extensions.InstanceSimplify, 0)
+	_, insts, err := s.Core.InstOperation().FindInst(params, obj, &metadata.QueryInput{Condition: map[string]interface{}{obj.GetInstIDFieldName(): instID}}, false)
+	if nil != err {
+		blog.Errorf("DeleteInst failed, find authInstances to be deleted failed, error info is %s, rid: %s", err.Error(), params.ReqID)
+	}
+	for _, inst := range insts {
+		instName, _ := inst.GetInstName()
+		instBizID, _ := inst.GetBizID()
+		authInstances = append(authInstances, extensions.InstanceSimplify{
+			InstanceID: instID,
+			Name:       instName,
+			BizID:      instBizID,
+			ObjectID:   objID,
+		})
+	}
+
 	if err := s.Core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID}, true); err != nil {
 		blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instID: %d, rid: %s", err.Error(), objID, instID, params.ReqID)
 		return nil, err
 	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, obj.GetObjectID(), instID); err != nil {
+	if err := s.AuthManager.DeregisterInstances(params.Context, params.Header, authInstances...); err != nil {
 		blog.Errorf("delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", instID, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
