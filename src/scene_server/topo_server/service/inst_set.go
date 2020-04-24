@@ -187,17 +187,17 @@ func (s *Service) DeleteSets(params types.ContextParams, pathParams, queryParams
 	if err := s.CheckIsBuiltInSet(params, setIDs...); err != nil {
 		return nil, err
 	}
+	
+	// auth: deregister set
+	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, setIDs...); err != nil {
+		blog.Errorf("delete sets failed, deregister sets from iam failed, %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
 
 	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, cond.Delete.InstID)
 	if err != nil {
 		blog.Errorf("delete set %v failed, error info is %s, rid: %s", cond.Delete.InstID, err.Error(), params.ReqID)
 		return nil, err
-	}
-
-	// auth: deregister set
-	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, setIDs...); err != nil {
-		blog.Errorf("delete sets failed, deregister sets from iam failed, %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 	return nil, nil
 }
@@ -233,18 +233,17 @@ func (s *Service) DeleteSet(params types.ContextParams, pathParams, queryParams 
 		return nil, err
 	}
 
-	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, []int64{setID})
-	if err != nil {
-		blog.Errorf("delete sets failed, %+v, rid: %s", err, params.ReqID)
-		return nil, err
-	}
-
 	// auth: deregister set
 	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, setID); err != nil {
 		blog.Errorf("delete set failed, deregister set from iam failed, %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
+	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, []int64{setID})
+	if err != nil {
+		blog.Errorf("delete sets failed, %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
 	return nil, nil
 }
 
