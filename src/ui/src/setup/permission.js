@@ -20,7 +20,8 @@ const convertAuth = authList => {
     const scope = getScope()
     return http.post('auth/convert', {
         data: authList.map(auth => {
-            const { resource_type: type, action } = GET_AUTH_META(auth)
+            const combineAuth = typeof auth === 'object' ? auth.type : auth
+            const { resource_type: type, action } = GET_AUTH_META(combineAuth)
             return {
                 scope: scope === 'global' ? 'system' : 'biz',
                 attribute: {
@@ -40,7 +41,9 @@ export const translateAuth = async (authList = []) => {
         const business = store.state.objectBiz.authorizedBusiness.find(business => business.bk_biz_id === store.getters['objectBiz/bizId']) || {}
         const scope = getScope()
         return authList.map((auth, index) => {
-            const { resource_type: resourceType, action } = GET_AUTH_META(auth)
+            const isObjectAuth = typeof auth === 'object'
+            const combineAuth = isObjectAuth ? auth.type : auth
+            const { resource_type: resourceType, action } = GET_AUTH_META(combineAuth)
             return {
                 action_id: convertedAuth[index].action,
                 action_name: RESOURCE_ACTION_NAME[action],
@@ -55,8 +58,8 @@ export const translateAuth = async (authList = []) => {
                 resources: [[{
                     resource_type_name: RESOURCE_TYPE_NAME[resourceType],
                     resource_type: convertedAuth[index].type,
-                    resource_id: '',
-                    resource_name: ''
+                    resource_id: isObjectAuth ? (auth.resource_id || '') : '',
+                    resource_name: isObjectAuth ? (auth.resource_name || '') : ''
                 }]]
             }
         })

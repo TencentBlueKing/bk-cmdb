@@ -63,10 +63,8 @@
             v-bkloading="{ isLoading: $loading(['searchHosts', 'batchSearchProperties', 'post_searchGroup_host']) }"
             :data="table.list"
             :pagination="table.pagination"
-            :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 190"
             @selection-change="handleSelectionChange"
-            @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
@@ -77,14 +75,15 @@
                 :label="column.name"
                 :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
-                :class-name="column.id === 'bk_host_id' ? 'is-highlight' : ''"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
+                        :theme="column.id === 'bk_host_id' ? 'primary' : 'default'"
                         :value="row | hostValueFilter(column.objId, column.id)"
                         :show-unit="false"
                         :property="column.type"
-                        :options="getPropertyValue(column.objId, column.id, 'option')">
+                        :options="getPropertyValue(column.objId, column.id, 'option')"
+                        @click.native.stop="handleValueClick(row, column)">
                     </cmdb-property-value>
                 </template>
             </bk-table-column>
@@ -546,7 +545,10 @@
             handleSelectionChange (selection) {
                 this.table.checked = selection.map(item => item.host.bk_host_id)
             },
-            handleRowClick (item) {
+            handleValueClick (item, column) {
+                if (column.objId !== 'host' || column.id !== 'bk_host_id') {
+                    return false
+                }
                 const business = item.biz[0]
                 if (this.$route.meta.owner === MENU_BUSINESS) {
                     this.$router.push({

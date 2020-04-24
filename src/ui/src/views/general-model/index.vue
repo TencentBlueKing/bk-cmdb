@@ -109,8 +109,6 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 190"
-            :row-style="{ cursor: 'pointer' }"
-            @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange"
@@ -122,14 +120,30 @@
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
-                :class-name="column.id === 'bk_inst_id' ? 'is-highlight' : ''"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
+                        :theme="column.id === 'bk_inst_id' ? 'primary' : 'default'"
                         :show-unit="false"
                         :value="row[column.id]"
-                        :property="column.property">
+                        :property="column.property"
+                        @click.native.stop="handleValueClick(row, column)">
                     </cmdb-property-value>
+                </template>
+            </bk-table-column>
+            <bk-table-column fixed="right" :label="$t('操作')">
+                <template slot-scope="{ row }">
+                    <cmdb-auth
+                        :auth="$authResources({
+                            type: $OPERATION.D_INST,
+                            resource_id: row.bk_inst_id,
+                            resource_name: row.bk_inst_name,
+                            parent_layers: parentLayers
+                        })">
+                        <template slot-scope="{ disabled }">
+                            <bk-button theme="primary" text :disabled="disabled" @click.stop="handleDelete(row)">{{$t('删除')}}</bk-button>
+                        </template>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
             <cmdb-table-empty
@@ -440,7 +454,10 @@
                     }
                 })
             },
-            handleRowClick (item) {
+            handleValueClick (item, column) {
+                if (column.id !== 'bk_inst_id') {
+                    return false
+                }
                 this.$router.push({
                     name: MENU_RESOURCE_INSTANCE_DETAILS,
                     params: {
