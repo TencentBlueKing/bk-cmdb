@@ -9,7 +9,6 @@
  */
 
 import $http from '@/api'
-// import jsCookie from 'js-cookie'
 
 const state = {
     business: [],
@@ -25,8 +24,8 @@ const getters = {
 }
 
 const actions = {
-    getAuthorizedBusiness ({ commit }, sort, config = {}) {
-        return $http.get(`biz/with_reduced${sort ? '?sort=' + sort : ''}`, config).then(data => {
+    getAuthorizedBusiness ({ commit }, config = {}) {
+        return $http.get('biz/with_reduced?sort=bk_biz_name', config).then(data => {
             commit('setAuthorizedBusiness', data.info)
             return data.info
         })

@@ -99,6 +99,8 @@ export function getInstFormValues (properties, inst = {}, autoSelect = true) {
             values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
         } else if (['timezone'].includes(propertyType)) {
             values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
+        } else if (['organization'].includes(propertyType)) {
+            values[propertyId] = inst[propertyId] || null
         } else {
             values[propertyId] = inst.hasOwnProperty(propertyId) ? inst[propertyId] : ''
         }
@@ -282,9 +284,11 @@ export function getValidateRules (property) {
         rules[propertyType] = true
         rules.length = propertyType === 'singlechar' ? 256 : 2000
     } else if (propertyType === 'int') {
-        rules.numeric = true
+        rules.number = true
     } else if (propertyType === 'float') {
         rules.float = true
+    } else if (propertyType === 'objuser') {
+        rules.length = 2000
     }
     return rules
 }
@@ -338,6 +342,12 @@ export function getPageParams (pagination) {
     }
 }
 
+export function localSort (data, compareKey) {
+    return data.sort((A, B) => {
+        return A[compareKey].localeCompare(B[compareKey], 'zh-Hans-CN', { sensitivity: 'accent', caseFirst: 'lower' })
+    })
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -357,5 +367,6 @@ export default {
     getValue,
     transformHostSearchParams,
     getDefaultPaginationConfig,
-    getPageParams
+    getPageParams,
+    localSort
 }

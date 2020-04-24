@@ -76,6 +76,7 @@ type CC struct {
 	handler       *CCHandler
 	procName      string
 	previousProc  *ProcessConfig
+	previousExtra *ProcessConfig
 	previousLang  map[string]language.LanguageMap
 	previousError map[string]errors.ErrorCode
 }
@@ -157,8 +158,8 @@ func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
 
 	c.Lock()
 	defer c.Unlock()
-	prev := c.previousProc
-	c.previousProc = now
+	prev := c.previousExtra
+	c.previousExtra = now
 	if c.handler != nil {
 		if c.handler.OnExtraUpdate != nil {
 			go c.handler.OnExtraUpdate(*prev, *now)
@@ -284,7 +285,7 @@ func (c *CC) syncExtra() {
 	}
 
 	c.Lock()
-	if reflect.DeepEqual(conf, c.previousProc) {
+	if reflect.DeepEqual(conf, c.previousExtra) {
 		blog.V(5).Infof("sync *extra* config, but nothing is changed.")
 		c.Unlock()
 		return

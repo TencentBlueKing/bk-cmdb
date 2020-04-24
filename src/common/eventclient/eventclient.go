@@ -37,7 +37,7 @@ type Client interface {
 func NewEventWithHeader(header http.Header) *metadata.EventInst {
 	return &metadata.EventInst{
 		OwnerID:     util.GetOwnerID(header),
-		TxnID:       util.GetHTTPCCTransaction(header),
+		TxnID:       header.Get(common.TransactionIdHeader),
 		RequestID:   util.GetHTTPCCRequestID(header),
 		RequestTime: metadata.Now(),
 		ActionTime:  metadata.Now(),

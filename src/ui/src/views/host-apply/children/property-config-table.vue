@@ -44,18 +44,22 @@
             <template slot-scope="{ row }">
                 <template v-if="multiple">
                     <template v-for="(id, index) in moduleIdList">
-                        <div
-                            class="value-item"
-                            :key="index" v-show="showMore.expanded[row.id] || index < showMore.max"
-                            :title="getRuleValue(row.id, id) | formatter(row) | unit(row.unit)"
-                        >
-                            {{getRuleValue(row.id, id) | formatter(row) | unit(row.unit)}}
-                        </div>
+                        <cmdb-property-value
+                            v-show="showMore.expanded[row.id] || index < showMore.max"
+                            :tag="'div'"
+                            :key="index"
+                            :class-name="'value-item'"
+                            :value="getRuleValue(row.id, id)"
+                            :property="row">
+                        </cmdb-property-value>
                     </template>
                     <div v-show="moduleIdList.length > showMore.max" class="show-more">&nbsp;</div>
                 </template>
                 <template v-else>
-                    {{row.__extra__.value | formatter(row) | unit(row.unit)}}
+                    <cmdb-property-value
+                        :value="row.__extra__.value"
+                        :property="row">
+                    </cmdb-property-value>
                 </template>
             </template>
         </bk-table-column>

@@ -182,7 +182,7 @@
                         <bk-input v-model.trim="groupForm.groupName"
                             :placeholder="$t('请输入xx', { name: $t('分组名称') })"
                             name="groupName"
-                            v-validate="'required'">
+                            v-validate="'required|length:256'">
                         </bk-input>
                         <p class="form-error">{{errors.first('groupName')}}</p>
                     </div>
@@ -227,6 +227,7 @@
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 :group="slider.curGroup"
+                :custom-obj-id="customObjId"
                 @save="handleFieldSave"
                 @cancel="handleSliderBeforeClose">
             </the-field-detail>
@@ -301,7 +302,8 @@
                     'objuser': this.$t('用户'),
                     'timezone': this.$t('时区'),
                     'bool': 'bool',
-                    'list': this.$t('列表')
+                    'list': this.$t('列表'),
+                    'organization': this.$t('组织')
                 },
                 dialog: {
                     isShow: false,
@@ -333,10 +335,6 @@
                     index: null,
                     fieldIndex: null,
                     backView: ''
-                },
-                preview: {
-                    properties: [],
-                    groups: []
                 },
                 configProperty: {
                     show: false,
@@ -427,8 +425,8 @@
                 }
                 return false
             },
-            isFieldEditable (item) {
-                if (item.ispre || this.isReadOnly) {
+            isFieldEditable (item, checkIspre = true) {
+                if ((checkIspre && item.ispre) || this.isReadOnly || !this.updateAuth) {
                     return false
                 }
                 if (!this.isAdminView) {
@@ -787,7 +785,7 @@
                     }
                 })
                 const properties = await this.getProperties()
-                this.init(properties, this.preview.groups)
+                this.init(properties, this.groups)
             },
             handleAddField (group) {
                 this.slider.isEditField = false

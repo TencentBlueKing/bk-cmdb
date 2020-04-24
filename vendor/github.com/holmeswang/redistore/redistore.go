@@ -222,7 +222,7 @@ func NewRedisStoreWithSentinel(address []string, size int, masterName, network, 
 		Addrs:      address,
 		MasterName: masterName,
 		Dial: func(addr string) (redis.Conn, error) {
-			timeout := 500 * time.Microsecond
+			timeout := time.Second
 			c, err := redis.DialTimeout(network, addr, timeout, timeout, timeout)
 			if nil != err {
 				return nil, err

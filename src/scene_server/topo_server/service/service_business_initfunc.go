@@ -32,7 +32,7 @@ func (s *Service) initBusinessObject(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/object", Handler: s.SearchObject})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/object/{id}", Handler: s.UpdateObject})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/object/{id}", Handler: s.DeleteObject})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/find/objecttopology", Handler: s.SearchObjectTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objecttopology", Handler: s.SearchObjectTopo})
 
 	utility.AddToRestfulWebService(web)
 }

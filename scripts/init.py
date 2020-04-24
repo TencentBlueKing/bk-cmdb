@@ -54,28 +54,24 @@ def generate_config_file(
     # redis.conf
     redis_file_template_str = '''
 [redis]
-host = $redis_host
-port = $redis_port
+host = $redis_host:$redis_port
 pwd = $redis_pass
 database = 0
 maxOpenConns = 3000
 maxIDleConns = 1000
 
 [snap-redis]
-host = $redis_host
-port = $redis_port
+host = $redis_host:$redis_port
 pwd = $redis_pass
 database = 0
 
 [discover-redis]
-host = $redis_host
-port = $redis_port
+host = $redis_host:$redis_port
 pwd = $redis_pass
 database = 0
 
 [netcollect-redis]
-host = $redis_host
-port = $redis_port
+host = $redis_host:$redis_port
 pwd = $redis_pass
 database = 0
     '''
@@ -134,9 +130,6 @@ version = v3
 [session]
 name = cc3
 defaultlanguage = zh-cn
-host = $redis_host
-port = $redis_port
-secret = $redis_pass
 multiple_owner = 0
 [site]
 domain_url = ${cc_url}
@@ -192,8 +185,7 @@ mechanism = SCRAM-SHA-1
 txnEnabled = $txn_enabled
 rsName = $rs_name
 [redis]
-host = $redis_host
-port = $redis_port
+host = $redis_host:$redis_port
 pwd = $redis_pass
 database = 0
 maxOpenConns = 3000
@@ -415,7 +407,7 @@ def main(argv):
             mongo_pass = arg
             print('mongo_pass:', mongo_pass)
         elif opt in ("--rs_name",):
-            txn_enabled = arg
+            rs_name = arg
             print('rs_name:', rs_name)
         elif opt in ("--txn_enabled",):
             txn_enabled = arg

@@ -29,7 +29,6 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
-	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 )
 
@@ -72,6 +71,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	blog.Infof("srv conf: %+v", svrInfo)
+	blog.Infof("enableTxn is %t", op.EnableTxn)
 
 	server := new(TopoServer)
 	server.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
@@ -93,10 +93,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	server.Config.Mongo, err = engine.WithMongo()
-	if err != nil {
-		return err
-	}
 	server.Config.Redis, err = engine.WithRedis()
 	if err != nil {
 		return err
@@ -104,16 +100,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	server.Config.Auth, err = engine.WithAuth()
 	if err != nil {
 		return err
-	}
-
-	enableTxn := false
-	if server.Config.Mongo.TxnEnabled == "true" {
-		enableTxn = true
-	}
-	blog.Infof("enableTxn is %t", enableTxn)
-	txn, err := local.NewTransaction(enableTxn, server.Config.Mongo.GetMongoConf(), server.Config.Redis)
-	if err != nil {
-		return fmt.Errorf("initial transaction failed, err: %v", err)
 	}
 
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
@@ -140,8 +126,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Es:          essrv,
 		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
-		Txn:         txn,
-		EnableTxn:   enableTxn,
+		EnableTxn:   op.EnableTxn,
 		Config:      server.Config,
 	}
 

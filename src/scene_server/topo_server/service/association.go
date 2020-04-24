@@ -24,89 +24,46 @@ import (
 
 // CreateMainLineObject create a new model in the main line topo
 func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
-
-	var txnErr error    
-    txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
-    if err != nil {
-        txnErr = err
-        blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
-        ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-        return
-    }
-    defer func() {
-        if txnErr == nil {
-            err = txn.CommitTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("CommitTransaction err: %+v", err)
-            }
-        } else {
-            err = txn.AbortTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("AbortTransaction err: %+v", err)
-            }
-        }
-    }()
-
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 	mainLineAssociation := &metadata.Association{}
-	_, err = mainLineAssociation.Parse(data)
+	_, err := mainLineAssociation.Parse(data)
 	if nil != err {
-		txnErr = err
 		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s, rid: %s", data, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
-	ret, err := s.Core.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation, s.Config.BusinessTopoLevelMax)
+
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		ret, err := s.Core.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation, s.Config.BusinessTopoLevelMax)
+		if err != nil {
+			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return err
+		}
+
+		// auth: register mainline object
+		if err := s.AuthManager.RegisterMainlineObject(ctx.Kit.Ctx, ctx.Kit.Header, ret.Object()); err != nil {
+			blog.Errorf("create mainline object success, but register mainline model to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespEntityWithError(ret, ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
+			return err
+		}
+
+		ctx.RespEntity(ret)
+		return nil
+	})
 	if err != nil {
-		txnErr = err
-		blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		blog.Errorf("create mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-
-	// auth: register mainline object
-	if err := s.AuthManager.RegisterMainlineObject(ctx.Kit.Ctx, ctx.Kit.Header, ret.Object()); err != nil {
-		txnErr = err
-		blog.Errorf("create mainline object success, but register mainline model to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespEntityWithError(ret, ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
-		return
-	}
-
-	ctx.RespEntity(ret)
 }
 
 // DeleteMainLineObject delete a object int the main line topo
 func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
-
-    var txnErr error
-    txn, err := s.Txn.StartTransaction(&ctx.Kit.Ctx, ctx.Kit.Header)
-    if err != nil {
-        txnErr = err
-        blog.Errorf("StartTransaction err: %+v, rid: %s", err, ctx.Kit.Rid)
-        ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
-        return
-    }
-    defer func() {
-        if txnErr == nil {
-            err = txn.CommitTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("CommitTransaction err: %+v", err)
-            }
-        } else {
-            blog.Errorf("Occur err:%v, begin AbortTransaction", txnErr)
-            err = txn.AbortTransaction(ctx.Kit.Ctx)
-            if err != nil {
-                blog.Errorf("AbortTransaction err: %+v", err)
-            }
-        }
-    }()
-
 	objID := ctx.Request.PathParameter("bk_obj_id")
-
 	var bizID int64
 	md := new(MetaShell)
 	if err := ctx.DecodeInto(md); err != nil {
@@ -114,9 +71,9 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 		return
 	}
 	if md.Metadata != nil {
+		var err error
 		bizID, err = metadata.BizIDFromMetadata(*md.Metadata)
 		if err != nil {
-			txnErr = err
 			blog.Errorf("parse business id from request failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
 			return
@@ -126,28 +83,34 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 	// auth: collection iam resource before it really be deleted
 	iamResources, err := s.AuthManager.MakeResourcesByObjectIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID, objID)
 	if err != nil {
-		txnErr = err
 		blog.Errorf("MakeResourcesByObjectIDs failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed))
 		return
 	}
 
-	if err = s.Core.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID, md.Metadata); err != nil {
-		txnErr = err
-		blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed))
+	// do with transaction
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		if err = s.Core.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID, md.Metadata); err != nil {
+			blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed))
+			return nil
+		}
+
+		// auth: do deregister
+		if err := s.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
+			blog.Errorf("delete mainline association success, but deregister mainline model failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
+			return err
+		}
+
+		ctx.RespEntity(nil)
+		return nil
+	})
+
+	if err != nil {
+		blog.Errorf("delete mainline association failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-
-	// auth: do deregister
-	if err := s.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
-		txnErr = err
-		blog.Errorf("delete mainline association success, but deregister mainline model failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-		return
-	}
-
-	ctx.RespEntity(nil)
 }
 
 // SearchMainLineObjectTopo search the main line topo

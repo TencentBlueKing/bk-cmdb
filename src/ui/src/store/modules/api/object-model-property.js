@@ -32,6 +32,18 @@ const actions = {
     },
 
     /**
+     * 业务下创建对象模型属性
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    createBizObjectAttribute ({ commit, state, dispatch }, { bizId, params, config }) {
+        return $http.post(`/create/objectattr/biz/${bizId}`, params, config)
+    },
+
+    /**
      * 删除对象模型属性
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
@@ -54,6 +66,19 @@ const actions = {
      */
     updateObjectAttribute ({ commit, state, dispatch }, { id, params, config }) {
         return $http.put(`update/objectattr/${id}`, params, config)
+    },
+
+    /**
+     * 业务下更新对象属性模型
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} id 被删除的数据记录的唯一标识id
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    updateBizObjectAttribute ({ commit, state, dispatch }, { bizId, id, params, config }) {
+        return $http.put(`update/objectattr/biz/${bizId}/id/${id}`, params, config)
     },
 
     /**

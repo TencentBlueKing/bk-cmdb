@@ -758,6 +758,9 @@ const (
 	CCErrCoreServiceModelHasAssociationErr           = 1113031
 	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
 
+	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
+	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
+
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist

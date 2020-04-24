@@ -262,8 +262,8 @@ func (op *BasicOpDetail) WithName() string {
 }
 
 type InstanceOpDetail struct {
-	BasicOpDetail BasicOpDetail `json:"basic_detail" bson:"basic_detail"`
-	ModelID       string        `json:"bk_obj_id" bson:"bk_obj_id"`
+	BasicOpDetail `bson:",inline"`
+	ModelID       string `json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
 func (op *InstanceOpDetail) WithName() string {

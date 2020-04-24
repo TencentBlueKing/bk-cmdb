@@ -19,6 +19,7 @@
                         :key="column.id"
                         :prop="column.id"
                         :label="column.name"
+                        :render-header="(h, data) => renderColumnHeader(h, data, column.property)"
                         show-overflow-tooltip>
                         <template slot-scope="{ row }">{{getHostCellText(column.property, row)}}</template>
                     </bk-table-column>
@@ -177,6 +178,26 @@
                 this.table.list = res.info
                 this.fixPageLimitPosition()
             },
+            renderColumnHeader (h, { column }, property) {
+                if (column.property === 'bk_host_innerip') {
+                    return (
+                        <span>{ column.label } <i class="property-copy icon-cc-details-copy"
+                            title={'复制'}
+                            onClick={(e) => this.handleColumnCopy(column, property, e)}></i>
+                        </span>
+                    )
+                }
+                return column.label
+            },
+            handleColumnCopy (column, property, e) {
+                const copyContent = this.table.list.map(row => this.getHostCellText(property, row))
+                this.$copyText(copyContent.join('\n')).then(() => {
+                    this.$success(this.$t('复制成功'))
+                }, () => {
+                    this.$error(this.$t('复制失败'))
+                })
+                e.stopPropagation()
+            },
             handlePageChange (current) {
                 this.table.pagination.current = current
                 this.getPreviewList()
@@ -243,12 +264,18 @@
                 top: 12px;
                 right: 12px;
                 cursor: pointer;
-                font-size: 14px;
+                font-size: 20px;
                 font-weight: bold;
             }
         }
         .preview-table {
             padding: 0 20px 20px;
+
+            /deep/ .property-copy {
+                &:hover {
+                    color: #3a84ff;
+                }
+            }
         }
     }
 </style>

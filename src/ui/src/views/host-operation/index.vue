@@ -2,13 +2,33 @@
     <div class="layout" v-bkloading="{
         isLoading: $loading(Object.values(request)) || loading
     }">
+        <cmdb-tips
+            v-if="isRetry"
+            :tips-style="{
+                background: '#ffeded',
+                border: '1px solid #ffd2d2',
+                fontSize: '12px',
+                lineHeight: '30px',
+                padding: '2px 10px',
+                margin: '0 20px 20px'
+            }"
+            :icon-style="{
+                color: '#ea3636',
+                fontSize: '16px',
+                lineHeight: '30px'
+            }">
+            <i18n path="以下N台主机转移失败">
+                <span place="N">{{resources.length}}</span>
+                <bk-link class="fail-detail-link" theme="primary" @click="handleViewFailDetail" place="link">{{$t('点击查看详情')}}</bk-link>
+            </i18n>
+        </cmdb-tips>
         <div class="info clearfix mb20">
             <label class="info-label fl">{{$t('已选主机')}}：</label>
             <div class="info-content">
                 <i18n path="N台主机">
                     <b class="info-count" place="count">{{resources.length}}</b>
                 </i18n>
-                <i class="edit-trigger icon icon-cc-edit" @click="handleChangeHost"></i>
+                <i class="edit-trigger icon icon-cc-edit" v-if="!isRemoveModule" @click="handleChangeHost"></i>
             </div>
         </div>
         <div class="info clearfix mb10" v-if="type !== 'remove'">
@@ -71,6 +91,9 @@
                 <div class="tab-empty" v-else-if="isEmptyChange">
                     {{$t('无转移确认信息提示')}}
                 </div>
+                <div class="tab-empty" v-else>
+                    {{$t('无')}}
+                </div>
             </div>
         </div>
         <div class="options" :class="{ 'is-sticky': hasScrollbar }" v-show="!loading">
@@ -86,6 +109,30 @@
                 @confirm="handleDialogConfirm">
             </component>
         </cmdb-dialog>
+        <bk-dialog v-model="failDetailDialog.show"
+            theme="primary"
+            width="650"
+            header-position="left"
+            :mask-close="false"
+            title="失败详情">
+            <bk-table
+                :data="failDetailDialog.list"
+                :outer-border="false"
+                :header-border="false"
+                :header-cell-style="{ background: '#fff' }"
+                :height="369">
+                <bk-table-column :label="$t('内网IP')">
+                    <template slot-scope="{ row }">
+                        {{row.host.bk_host_innerip}}
+                    </template>
+                </bk-table-column>
+                <bk-table-column :label="$t('失败原因')" prop="message" show-overflow-tooltip>
+                </bk-table-column>
+            </bk-table>
+            <div slot="footer">
+                <bk-button @click="handleCloseFailDetail">{{$t('关闭按钮')}}</bk-button>
+            </div>
+        </bk-dialog>
     </div>
 </template>
 
@@ -168,6 +215,10 @@
                 },
                 targetModules: [],
                 resources: [],
+                failDetailDialog: {
+                    show: false,
+                    list: []
+                },
                 type: this.$route.params.type,
                 confirmParams: {},
                 moduleMap: {},
@@ -179,7 +230,8 @@
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', [
-                'getDefaultSearchCondition'
+                'getDefaultSearchCondition',
+                'failHostList'
             ]),
             confirmText () {
                 const textMap = {
@@ -187,7 +239,7 @@
                     idle: this.$t('确认转移'),
                     business: this.$t('确认转移')
                 }
-                return textMap[this.type]
+                return this.isRetry ? this.$t('失败重试') : textMap[this.type]
             },
             availableTabList () {
                 const map = {
@@ -200,6 +252,13 @@
             },
             activeTab () {
                 return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
+            },
+            isRemoveModule () {
+                const { type, module } = this.$route.params
+                return type === 'remove' && module
+            },
+            isRetry () {
+                return this.$route.query.retry === '1'
             }
         },
         watch: {
@@ -218,13 +277,17 @@
             }
         },
         async created () {
-            this.resolveData(this.$route)
-            this.setBreadcrumbs()
-            await Promise.all([
-                this.getTopologyModels(),
-                this.getHostInfo()
-            ])
-            this.getPreviewData()
+            if (this.isRetry && !this.failHostList.length) {
+                this.redirect()
+            } else {
+                this.resolveData(this.$route)
+                this.setBreadcrumbs()
+                await Promise.all([
+                    this.getTopologyModels(),
+                    this.getHostInfo()
+                ])
+                this.getPreviewData()
+            }
         },
         mounted () {
             addResizeListener(this.$refs.changeInfo, this.resizeHandler)
@@ -237,6 +300,12 @@
             await this.getHostInfo()
             this.$nextTick(this.setBreadcrumbs)
             this.getPreviewData()
+            next()
+        },
+        beforeRouteLeave (to, from, next) {
+            if (to.name !== MENU_BUSINESS_TRANSFER_HOST) {
+                this.$store.commit('businessHost/clearFailHostList')
+            }
             next()
         },
         methods: {
@@ -312,6 +381,9 @@
                     if (this.type === 'remove') {
                         this.setMoveToIdleHost(data)
                     }
+                    if (this.isRetry) {
+                        this.setFailHostTableList(data)
+                    }
                     this.loading = false
                 } catch (e) {
                     console.error(e)
@@ -377,6 +449,15 @@
                 })
                 const tab = this.tabList.find(tab => tab.id === 'createServiceInstance')
                 tab.props.info = Object.freeze(instanceInfo)
+            },
+            setFailHostTableList (data) {
+                this.failDetailDialog.list = this.failHostList.map(item => {
+                    const host = (this.hostInfo.find(data => data.host.bk_host_id === item.bk_host_id) || {}).host || {}
+                    return {
+                        ...item,
+                        host
+                    }
+                })
             },
             async getHostInfo () {
                 try {
@@ -539,6 +620,19 @@
                     }
                 })
             },
+            refreshRetry (hosts) {
+                this.$router.replace({
+                    name: MENU_BUSINESS_TRANSFER_HOST,
+                    params: {
+                        type: this.$route.params.type
+                    },
+                    query: {
+                        ...this.$route.query,
+                        resources: hosts.map(data => data.bk_host_id).join(','),
+                        retry: '1'
+                    }
+                })
+            },
             async handleConfrim () {
                 try {
                     const params = { ...this.confirmParams }
@@ -553,20 +647,49 @@
                             params.options.host_apply_conflict_resolvers = hostAttrsComponent.getHostApplyConflictResolvers()
                         }
                     }
-                    await this.$http.post(
+                    const { result, data } = await this.$http.post(
                         `host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, params, {
-                            requestId: this.request.confirm
+                            requestId: this.request.confirm,
+                            globalError: false,
+                            transformData: false
                         }
                     )
-                    const success = this.type === 'remove' ? '移除成功' : '转移成功'
-                    this.$success(this.$t(success))
-                    this.redirect()
+
+                    const successText = this.type === 'remove' ? '移除成功' : '转移成功'
+                    const errorText = this.type === 'remove' ? '主机移除结果' : '主机转移结果'
+                    if (!result) {
+                        const failList = []
+                        const successList = []
+                        data.forEach(item => {
+                            if (item.code !== 0) {
+                                failList.push(item)
+                            } else {
+                                successList.push(item)
+                            }
+                        })
+                        this.$error(this.$t(errorText, { success: successList.length, fail: failList.length }))
+
+                        // 刷新页面显示错误主机数据
+                        this.refreshRetry(failList)
+
+                        // 放入store用于刷新后使用
+                        this.$store.commit('businessHost/setFailHostList', failList)
+                    } else {
+                        this.$success(this.$t(successText))
+                        this.redirect()
+                    }
                 } catch (e) {
                     console.error(e)
                 }
             },
             handleCancel () {
                 this.redirect()
+            },
+            handleViewFailDetail () {
+                this.failDetailDialog.show = true
+            },
+            handleCloseFailDetail () {
+                this.failDetailDialog.show = false
             },
             redirect () {
                 if (this.$route.query.from) {
@@ -587,6 +710,10 @@
 <style lang="scss" scoped>
     .layout {
         padding: 15px 0 0 0;
+
+        .fail-detail-link {
+            vertical-align: unset;
+        }
     }
     .info {
         .info-label {

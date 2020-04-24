@@ -12,7 +12,10 @@
 
 package common
 
-import "math"
+import (
+	"math"
+	"time"
+)
 
 const (
 	// HTTPCreate create method
@@ -143,6 +146,10 @@ const (
 
 	// BKDBLIKE the db operator
 	BKDBLIKE = "$regex"
+
+	// BKDBOPTIONS the db operator,used with $regex
+	// detail to see https://docs.mongodb.com/manual/reference/operator/query/regex/#op._S_options
+	BKDBOPTIONS = "$options"
 
 	// BKDBEQ the db operator
 	BKDBEQ = "$eq"
@@ -431,9 +438,6 @@ const (
 	// BKOperationDetailField the audit operation detail field
 	BKOperationDetailField = "operation_detail"
 
-	// BKOperationDetailField the audit operation detail field
-	BKBasicDetailField = "basic_detail"
-
 	// BKOperationTimeField the audit operation time field
 	BKOperationTimeField = "operation_time"
 
@@ -462,7 +466,7 @@ const (
 	BKPort = "port"
 
 	// BKProcPortEnable whether enable port,  enable port use for monitor app. default value
-	BKProcPortEnable = "bk_port_enable"
+	BKProcPortEnable = "bk_enable_port"
 
 	// BKUser the user
 	BKUser = "user"
@@ -751,16 +755,21 @@ const (
 	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 15000
+	FieldTypeLongLenChar int = 2000
+
+	// FieldTypeUserLenChar the user char length limit
+	FieldTypeUserLenChar int = 2000
 
 	//FieldTypeStrictCharRegexp the single char regex expression
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
 
 	//FieldTypeSingleCharRegexp the single char regex expression
-	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	FieldTypeSingleCharRegexp string = `\S`
 
-	//FieldTypeLongCharRegexp the single char regex expression
-	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	//FieldTypeLongCharRegexp the long char regex expression\
+	//FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	FieldTypeLongCharRegexp string = `\S`
 )
 
 const (
@@ -885,29 +894,24 @@ const (
 	// BKHTTPOwnerID the owner
 	BKHTTPOwner = "HTTP_BK_SUPPLIER_ACCOUNT"
 	// BKHTTPOwnerID the owner id
-	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
-	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
+	BKHTTPOwnerID           = "HTTP_BLUEKING_SUPPLIER_ID"
 	BKHTTPCookieLanugageKey = "blueking_language"
-	//BKSessionLanugageKey = "language"
-	BKHTTPSupplierID = "bk_supplier_id"
-	BKHTTPRequestAppCode = "Bk-App-Code"
+	BKHTTPSupplierID        = "bk_supplier_id"
+	BKHTTPRequestAppCode    = "Bk-App-Code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID      = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime       = "Cc_Request_Time"
-	BKHTTPCCTransactionID     = "Cc_Txn_Id"
-	BKHTTPCCTxnTMServerAddr   = "Cc_Txn_Tm_addr-Ip"
-	BKHTTPCCTransactionNumber = "Cc_Txn_Number"
-	BKHTTPCCTxnSessionID      = "Cc_Txn_Session_ID"
-	BKHTTPCCTxnSessionState   = "Cc_Txn_Session_State"
+	BKHTTPOtherRequestID = "X-Bkapi-Request-Id"
 )
 
-type CCContextKey string
-
+// transaction related
 const (
-	CCContextKeyJoinOption = CCContextKey("cc_context_joinoption")
+	TransactionIdHeader      = "cc_transaction_id_string"
+	TransactionTimeoutHeader = "cc_transaction_timeout"
+
+	// mongodb default transaction timeout is 1 minute.
+	TransactionDefaultTimeout = 2 * time.Minute
 )
 
 const (
@@ -1100,10 +1104,10 @@ const (
 )
 
 const (
-	AttributePlaceHolderMaxLength = 300
-	AttributeOptionMaxLength      = 1000
-	AttributeIDMaxLength          = 20
-	AttributeNameMaxLength        = 20
+	AttributePlaceHolderMaxLength = 2000
+	AttributeOptionMaxLength      = 2000
+	AttributeIDMaxLength          = 128
+	AttributeNameMaxLength        = 128
 	AttributeUnitMaxLength        = 20
 	AttributeOptionValueMaxLength = 128
 	AttributeOptionArrayMaxLength = 200

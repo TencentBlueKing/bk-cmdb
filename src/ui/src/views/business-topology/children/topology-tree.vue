@@ -52,7 +52,7 @@
                 <span :class="['node-count fr', { 'is-selected': node.selected }]">
                     {{getNodeCount(data)}}
                 </span>
-                <span class="node-name">{{node.name}}</span>
+                <span class="node-name" :title="node.name">{{node.name}}</span>
             </div>
         </bk-big-tree>
         <bk-dialog class="bk-dialog-no-padding"
@@ -246,7 +246,7 @@
             getNodeCount (data) {
                 const count = data[this.nodeCountType]
                 if (typeof count === 'number') {
-                    return count > 999 ? '999+' : count
+                    return count
                 }
                 return 0
             },

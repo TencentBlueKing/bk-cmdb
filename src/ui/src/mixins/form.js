@@ -52,7 +52,7 @@ export default {
             return allGroups
         },
         $sortedProperties () {
-            const unique = this.objectUnique.find(unique => unique.must_check) || {}
+            const unique = this.isMultiple ? this.objectUnique.find(unique => unique.must_check) || {} : {}
             const uniqueKeys = unique.keys || []
             const sortKey = 'bk_property_index'
             const properties = this.properties.filter(property => {

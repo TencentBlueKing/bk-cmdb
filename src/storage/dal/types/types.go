@@ -15,10 +15,6 @@ package types
 import (
 	"context"
 	"errors"
-	"net/http"
-	"time"
-
-	ccErr "configcenter/src/common/errors"
 )
 
 // Errors defines
@@ -50,8 +46,6 @@ type Table interface {
 	Upsert(ctx context.Context, filter Filter, doc interface{}) error
 	// UpdateMultiModel  data based on operators.
 	UpdateMultiModel(ctx context.Context, filter Filter, updateModel ...ModeUpdate) error
-	// UpdateModifyCount 更新数据,返回更新的条数
-	UpdateModifyCount(ctx context.Context, filter Filter, doc interface{}) (int64, error)
 
 	// Delete 删除数据
 	Delete(ctx context.Context, filter Filter) error
@@ -103,24 +97,4 @@ type Index struct {
 	Name       string           `json:"name" bson:"name"`
 	Unique     bool             `json:"unique" bson:"unique"`
 	Background bool             `json:"background" bson:"background"`
-}
-
-type TxnWrapperOption struct {
-	Header http.Header
-	CCErr  ccErr.DefaultCCErrorIf
-}
-
-// JoinOption defind join transaction options
-type JoinOption struct {
-	SessionID    string // 会话ID
-	SessionState string // 会话状态
-	TxnNumber    string // 事务Number
-
-}
-
-type TxnOption struct {
-	// transaction timeout time
-	// min value: 5 * time.Second
-	// default: 5min
-	Timeout time.Duration
 }
