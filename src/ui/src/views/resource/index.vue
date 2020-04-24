@@ -3,7 +3,7 @@
         <cmdb-hosts-table class="resource-main" ref="resourceTable"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
-            :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
+            :columns-config-disabled-columns="['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
             :edit-auth="$OPERATION.U_RESOURCE_HOST"
             :delete-auth="$OPERATION.D_RESOURCE_HOST"
             :save-auth="$OPERATION.U_RESOURCE_HOST"
@@ -232,6 +232,7 @@
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
+                    injectId: 'host',
                     params: this.$injectMetadata({
                         bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount

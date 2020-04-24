@@ -77,18 +77,18 @@
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="bk_biz_id" label="ID" width="120" align="center" fixed></bk-table-column>
             <bk-table-column v-for="column in table.header"
-                :class-name="column.id === 'bk_biz_name' ? 'is-highlight' : ''"
+                :class-name="column.id === 'bk_biz_id' ? 'is-highlight' : ''"
                 sortable="custom"
-                :fixed="column.id === 'bk_biz_name'"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
+                min-width="80"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
                         :value="row[column.id]"
+                        :show-unit="false"
                         :property="column.property">
                     </cmdb-property-value>
                 </template>
@@ -213,7 +213,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_biz_name']
+                    disabledColumns: ['bk_biz_id', 'bk_biz_name']
                 }
             }
         },
@@ -262,6 +262,7 @@
         async created () {
             try {
                 this.properties = await this.searchObjectAttribute({
+                    injectId: 'biz',
                     params: this.$injectMetadata({
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount

@@ -15,13 +15,12 @@
             <bk-table-column type="selection" width="50" align="center"></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 show-overflow-tooltip
+                min-width="80"
                 :key="column.bk_property_id"
                 :label="$tools.getHeaderPropertyName(column)"
                 :sortable="getColumnSortable(column)"
                 :prop="column.bk_property_id"
-                :width="column.bk_property_id === 'bk_host_innerip' ? 130 : 'auto'"
-                :fixed="column.bk_property_id === 'bk_host_innerip'"
-                :class-name="column.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
+                :class-name="column.bk_property_id === 'bk_host_id' ? 'is-highlight' : ''">
                 <template slot-scope="{ row }">
                     <cmdb-property-value
                         :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
@@ -79,7 +78,7 @@
                 },
                 columnsConfig: {
                     selected: [],
-                    fixedColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    fixedColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
                 dialog: {
                     width: 720,

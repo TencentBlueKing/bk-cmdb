@@ -206,7 +206,7 @@
             filterProperties () {
                 const setProperties = this.getProperties('set')
                 const moduleProperties = this.getProperties('module')
-                const removeProperties = ['bk_host_innerip', 'bk_host_outerip']
+                const removeProperties = ['bk_host_id', 'bk_host_innerip', 'bk_host_outerip']
                 // 模块支持服务分类筛选
                 const insertProperties = [
                     {
@@ -467,7 +467,7 @@
                 this.sideslider.componentProps = {
                     properties: this.columnsConfigProperties,
                     selected: this.columnDisplayProperties,
-                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 }
                 this.sideslider.title = this.$t('列表显示属性配置')
                 this.sideslider.show = true

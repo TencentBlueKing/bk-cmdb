@@ -118,14 +118,15 @@
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 sortable="custom"
+                min-width="80"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
-                :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
-                :fixed="column.id === 'bk_inst_name'"
+                :class-name="column.id === 'bk_inst_id' ? 'is-highlight' : ''"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
+                        :show-unit="false"
                         :value="row[column.id]"
                         :property="column.property">
                     </cmdb-property-value>
@@ -177,7 +178,7 @@
         <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
-                :properties="columnProperties"
+                :properties="properties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
                 @on-apply="handleApplyColumnsConfig"
@@ -259,7 +260,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_inst_name']
+                    disabledColumns: ['bk_inst_id', 'bk_inst_name']
                 },
                 importSlider: {
                     show: false
@@ -306,15 +307,6 @@
                     resource_id: this.model.id,
                     resource_type: 'model'
                 }]
-            },
-            columnProperties () {
-                const instId = {
-                    bk_property_id: 'bk_inst_id',
-                    bk_property_name: 'ID'
-                }
-                const properties = this.properties
-                properties.push(instId)
-                return properties
             }
         },
         watch: {
@@ -365,6 +357,7 @@
                     this.setRencentlyData()
                     this.resetData()
                     this.properties = await this.searchObjectAttribute({
+                        injectId: this.objId,
                         params: this.$injectMetadata({
                             bk_obj_id: this.objId,
                             bk_supplier_account: this.supplierAccount
@@ -431,7 +424,7 @@
             setTableHeader () {
                 return new Promise((resolve, reject) => {
                     const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
-                    const headerProperties = this.$tools.getHeaderProperties(this.columnProperties, customColumns, this.columnsConfig.disabledColumns)
+                    const headerProperties = this.$tools.getHeaderProperties(this.properties, customColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.updateTableHeader(properties)
