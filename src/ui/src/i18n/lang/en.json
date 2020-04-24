@@ -1248,8 +1248,15 @@
     "进程表单锁定提示": "Uneditable，defined in template, {link}",
     "跳转服务模板": "view in template",
     "导入字段": "Import Field",
-    "第N行字段错误信息": "Line {N}:Field {field}，{info}",
+    "第N行字段错误信息": "Line {N}:Field {field}, {info}",
     "效果示意": "Renderings",
     "组织": "Organization",
-    "按照0-9a-z排序": "Sort by 0-9, a-z"
+    "按照0-9a-z排序": "Sort by 0-9, a-z",
+    "主机转移结果": "Successfully transferred {success} hosts, {fail} failed",
+    "主机移除结果": "Successfully removed {success} hosts, failed {fail}",
+    "以下N台主机转移失败": "The transfer of the following {N} hosts failed, {link}",
+    "以下N台主机移除失败": "The following {N} hosts failed to be removed, {link}",
+    "点击查看详情": "Details",
+    "关闭按钮": "Close",
+    "失败详情": "Fail Details"
 }
