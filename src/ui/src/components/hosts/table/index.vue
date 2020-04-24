@@ -72,12 +72,12 @@
             @page-limit-change="handleSizeChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
+                min-width="80"
                 :key="column.id"
                 :label="column.name"
                 :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
-                :fixed="column.id === 'bk_host_innerip'"
-                :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''"
+                :class-name="column.id === 'bk_host_id' ? 'is-highlight' : ''"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
@@ -158,7 +158,7 @@
             columnsConfigDisabledColumns: {
                 type: Array,
                 default () {
-                    return ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
+                    return ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
                 }
             },
             saveAuth: {
@@ -228,7 +228,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
                 selectedCollection: '',
                 scope: 1
@@ -253,7 +253,7 @@
             },
             filterProperties () {
                 const { module, set, host } = this.properties
-                const filterProperty = ['bk_host_innerip', 'bk_host_outerip']
+                const filterProperty = ['bk_host_id', 'bk_host_innerip', 'bk_host_outerip']
                 return {
                     host: host.filter(property => !filterProperty.includes(property.bk_property_id)),
                     module,
@@ -316,6 +316,7 @@
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
+                    injectId: 'host',
                     params: this.$injectMetadata({
                         bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount

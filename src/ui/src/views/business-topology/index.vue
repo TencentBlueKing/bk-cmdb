@@ -117,6 +117,7 @@
             },
             getProperties (models) {
                 return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
+                    injectId: 'host',
                     params: this.$injectMetadata({
                         bk_obj_id: {
                             $in: models.map(model => model.bk_obj_id)
