@@ -14,6 +14,16 @@ default:
 	@echo -e "\033[34mbuilding web... \033[0m"
 	@cd $(SOURCE_ROOT)/ui && bash ./build.sh ${NPM} ${BIN_PATH}
 	
+.PHONY:linux
+linux:
+	@echo ""
+	@echo -e "\033[34mbuilding server... \033[0m"
+	@rm -rf "./ui/node_modules"
+	@cd  $(SCRIPT_DIR) && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 bash ./build.sh
+	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
+	@echo -e "\033[34mbuilding web... \033[0m"
+	@cd $(SOURCE_ROOT)/ui && bash ./build.sh ${NPM} ${BIN_PATH}
+
 .PHONY:server
 server:
 	@echo ""
