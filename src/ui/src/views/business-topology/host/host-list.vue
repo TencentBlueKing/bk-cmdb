@@ -5,12 +5,10 @@
             v-bkloading="{ isLoading: $loading(Object.values(request)) || !commonRequestFinished }"
             :data="table.data"
             :pagination="table.pagination"
-            :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 250"
             @page-change="refresh"
             @page-limit-change="handleLimitChange"
             @sort-change="handleSortChange"
-            @row-click="handleRowClick"
             @selection-change="handleSelectionChange">
             <bk-table-column type="selection" width="50" align="center"></bk-table-column>
             <bk-table-column v-for="column in table.header"
@@ -19,14 +17,15 @@
                 :key="column.bk_property_id"
                 :label="$tools.getHeaderPropertyName(column)"
                 :sortable="getColumnSortable(column)"
-                :prop="column.bk_property_id"
-                :class-name="column.bk_property_id === 'bk_host_id' ? 'is-highlight' : ''">
+                :prop="column.bk_property_id">
                 <template slot-scope="{ row }">
                     <cmdb-property-value
+                        :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
                         :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
                         :show-unit="false"
                         :show-title="true"
-                        :property="column">
+                        :property="column"
+                        @click.native.stop="handleValueClick(row, column)">
                     </cmdb-property-value>
                 </template>
             </bk-table-column>
@@ -164,9 +163,9 @@
                 this.table.sort = this.$tools.getSort(sort)
                 this.refresh(1)
             },
-            handleRowClick (row, event, column) {
-                if (column.type === 'selection') {
-                    return false
+            handleValueClick (row, column) {
+                if (column.bk_obj_id !== 'host' || column.bk_property_id !== 'bk_host_id') {
+                    return
                 }
                 this.$router.push({
                     name: MENU_BUSINESS_HOST_DETAILS,

@@ -72,13 +72,10 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 200"
-            :row-style="{ cursor: 'pointer' }"
-            @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
             <bk-table-column v-for="column in table.header"
-                :class-name="column.id === 'bk_biz_id' ? 'is-highlight' : ''"
                 sortable="custom"
                 :key="column.id"
                 :prop="column.id"
@@ -87,10 +84,11 @@
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
-                        :show-unit="false"
+                        :theme="column.id === 'bk_biz_id' ? 'primary' : 'default'"
                         :value="row[column.id]"
                         :show-unit="false"
-                        :property="column.property">
+                        :property="column.property"
+                        @click.native.stop="handleValueClick(row, column)">
                     </cmdb-property-value>
                 </template>
             </bk-table-column>
@@ -340,11 +338,14 @@
                     }
                 })
             },
-            handleRowClick (item) {
+            handleValueClick (row, column) {
+                if (column.id !== 'bk_biz_id') {
+                    return false
+                }
                 this.$router.push({
                     name: MENU_RESOURCE_BUSINESS_DETAILS,
                     params: {
-                        bizId: item.bk_biz_id
+                        bizId: row.bk_biz_id
                     }
                 })
             },

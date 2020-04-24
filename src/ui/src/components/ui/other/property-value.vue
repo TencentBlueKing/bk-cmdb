@@ -1,5 +1,5 @@
 <template>
-    <compmoent :is="tag" v-bind="attrs">{{displayValue}}</compmoent>
+    <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`">{{displayValue}}</compmoent>
 </template>
 
 <script>
@@ -34,6 +34,13 @@
             className: {
                 type: String,
                 default: ''
+            },
+            theme: {
+                type: String,
+                default: 'default',
+                validator (value) {
+                    return ['primary', 'default'].includes(value)
+                }
             }
         },
         data () {
@@ -105,3 +112,10 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .value-primary-theme {
+        color: $primaryColor;
+        cursor: pointer;
+    }
+</style>
