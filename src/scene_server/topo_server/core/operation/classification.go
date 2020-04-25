@@ -100,6 +100,12 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
+	//package audit response
+	err = NewObjectAudit(c.clientSet, metadata.ModelClassificationRes).buildObjClsData(kit, class.ID).WithCurrent().SaveAuditLog(kit, metadata.AuditCreate)
+	if err != nil {
+		blog.Errorf("create object attribute %s success, but update to auditLog failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
+		return nil, err
+	}
 	return cls, nil
 }
 
@@ -138,6 +144,9 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 
 	}
 
+	//get PreData
+	objAudit := NewObjectAudit(c.clientSet, metadata.ModelClassificationRes).buildObjClsData(kit, id).WithPrevious()
+
 	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s, rid: %s", err.Error(), kit.Rid)
@@ -147,6 +156,13 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	if !rsp.Result {
 		blog.Errorf("failed to delete the classification, error info is %s, rid: %s", rsp.ErrMsg, kit.Rid)
 		return kit.CCError.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	//saveAuditLog
+	err = objAudit.SaveAuditLog(kit, metadata.AuditDelete)
+	if err != nil {
+		blog.Errorf("Delete object attribute group success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	return nil
@@ -250,6 +266,9 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 	// 	return err
 	// }
 
+	//get PreData
+	objAudit := NewObjectAudit(c.clientSet, metadata.ModelClassificationRes).buildObjClsData(kit, id).WithPrevious()
+
 	err := cls.Update(data)
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s, rid: %s", cls, err.Error(), kit.Rid)
@@ -269,5 +288,11 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 		}
 	}
 
+	//get CurData and saveAuditLog
+	err = objAudit.buildObjClsData(kit, id).WithCurrent().SaveAuditLog(kit, metadata.AuditUpdate)
+	if err != nil {
+		blog.Errorf("update object attribute-id %s success, but update to auditLog failed, err: %v, rid: %s", id, err, kit.Rid)
+		return err
+	}
 	return nil
 }

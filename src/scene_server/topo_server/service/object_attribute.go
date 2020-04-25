@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // CreateObjectAttribute create a new object attribute
@@ -88,25 +87,6 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 			return
 		}
-	}
-
-	objAttrAuditLog := operation.NewObjectAttrAudit(s.Engine.CoreAPI)
-	//get CurData for auditLog
-	err = objAttrAuditLog.MakeCurrent(attribute.ToMapStr())
-	if err != nil {
-		blog.Errorf("[api-att] make Current object failed, id: %+v, err: %s, rid: %s", attribute.ID, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-	}
-	//get AuditLog objectName
-	err = objAttrAuditLog.GetObjectInfo(ctx.Kit, attribute.ObjectID)
-	if err != nil {
-		blog.Errorf("[api-att] find objectInfo failed, id: %+v, err: %s, rid: %s", attribute.ID, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-	}
-	//package audit response
-	err = objAttrAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
-	if err != nil {
-		ctx.RespAutoError(err)
 	}
 
 	ctx.RespEntity(attrInfo[0])
@@ -188,13 +168,6 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	objAttrAuditLog := operation.NewObjectAttrAudit(s.Engine.CoreAPI)
-	//get PreData for auditLog
-	err = objAttrAuditLog.WithPrevious(ctx.Kit, id)
-	if err != nil {
-		blog.Errorf("[api-att] make Previous object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-	}
 	// adapt input path param with bk_biz_id
 	var bizID int64
 	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
@@ -231,25 +204,6 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	//get CurData for auditLog
-	err = objAttrAuditLog.WithCurrent(ctx.Kit, id)
-	if err != nil {
-		blog.Errorf("[api-att] make Current object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-	}
-	//get AuditLog objectName
-	err = objAttrAuditLog.GetObjectInfo(ctx.Kit, "")
-	if err != nil {
-		blog.Errorf("[api-att] find objectInfo failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-	}
-	//package audit response
-	err = objAttrAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
-	if err != nil {
-		ctx.RespAutoError(err)
-	}
-
 	ctx.RespEntity(nil)
 }
 
@@ -298,14 +252,6 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	objAttrAuditLog := operation.NewObjectAttrAudit(s.Engine.CoreAPI)
-	//get PreData for auditLog
-	err = objAttrAuditLog.WithPrevious(ctx.Kit, id)
-	if err != nil {
-		blog.Errorf("[api-att] make Previous object failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-	}
-
 	err = s.Core.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, md.Metadata)
 	if err != nil {
 		blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
@@ -322,18 +268,6 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
-	}
-
-	//get AuditLog objectName
-	err = objAttrAuditLog.GetObjectInfo(ctx.Kit, "")
-	if err != nil {
-		blog.Errorf("[api-att] find objectInfo failed, id: %+v, err: %s, rid: %s", id, err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-	}
-	//package audit response
-	err = objAttrAuditLog.SaveAuditLog(ctx.Kit, metadata.AuditCreate)
-	if err != nil {
-		ctx.RespAutoError(err)
 	}
 
 	ctx.RespEntity(nil)

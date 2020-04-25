@@ -245,12 +245,27 @@ type BasicOpDetail struct {
 }
 
 type ModelOpDetail struct {
-	// ObjectID is the name of the object. which is unique.
-	ObjectID string `json:"object_id" bson:"object_id"`
-	// ObjectName is the show name of the object, such as a switch model has a name "交换机"
-	ObjectName string `json:"object_name" bson:"object_name"`
-	// Details contains all the details information about a user's operation
-	Details *BasicContent `json:"details" bson:"details"`
+	ClassificationID   string    `json:"classification_id" bson:"classification_id"`
+	ClassificationName string    `json:"classification_name" bson:"classification_name"`
+	ObjectID           string    `json:"object_id" bson:"object_id"`
+	ObjectName         string    `json:"object_name" bson:"object_name"`
+	AttrGroupId        string    `json:"attribute_group_id" bson:"attribute_group_id"`
+	AttrGroupName      string    `json:"attribute_group_name" bson:"attribute_group_name"`
+	AttributeID        string    `json:"attribute_id" bson:"attribute_id"`
+	AttributeName      string    `json:"attribute_name" bson:"attribute_name"`
+	PreData            ModelData `json:"pre_data" bson:"pre_data"`
+	CurData            ModelData `json:"cur_data" bson:"cur_data"`
+}
+
+type ModelData struct {
+	ClassificationID   string `json:"classification_id" bson:"classification_id"`
+	ClassificationName string `json:"classification_name" bson:"classification_name"`
+	ObjectID           string `json:"object_id" bson:"object_id"`
+	ObjectName         string `json:"object_name" bson:"object_name"`
+	AttrGroupId        string `json:"attribute_group_id" bson:"attribute_group_id"`
+	AttrGroupName      string `json:"attribute_group_name" bson:"attribute_group_name"`
+	AttributeID        string `json:"attribute_id" bson:"attribute_id"`
+	AttributeName      string `json:"attribute_name" bson:"attribute_name"`
 }
 
 func (op *ModelOpDetail) WithName() string {

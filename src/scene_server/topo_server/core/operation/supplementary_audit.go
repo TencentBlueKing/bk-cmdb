@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -39,12 +38,6 @@ type AuditInterface interface {
 	CommitCreateLog(preData, currData *WrapperResult, inst inst.Inst, nonInnerAttributes []model.AttributeInterface)
 	CommitDeleteLog(preData, currData *WrapperResult, inst inst.Inst)
 	CommitUpdateLog(preData, currData *WrapperResult, inst inst.Inst, nonInnerAttributes []model.AttributeInterface)
-}
-
-type ModelAuditLog interface {
-	WithPrevious(*rest.Kit, int64) errors.CCError
-	WithCurrent(*rest.Kit, int64) errors.CCError
-	SaveAuditLog(*rest.Kit, metadata.ActionType) errors.CCError
 }
 
 type auditLog struct {

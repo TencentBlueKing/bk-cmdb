@@ -22,45 +22,60 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+type ObjAuditLog interface {
+	WithPrevious(*rest.Kit, int64) errors.CCError
+	WithCurrent(*rest.Kit, int64) errors.CCError
+	SaveAuditLog(*rest.Kit, metadata.ActionType) errors.CCError
+}
+
 type ObjectAudit struct {
-	auditType    metadata.AuditType
-	resourceType metadata.ResourceType
-	clientSet    apimachinery.ClientSetInterface
-	preData      map[string]interface{}
-	curData      map[string]interface{}
-	objectID     string
-	objectName   string
+	//auditType 定义这是模型相关审计（前端对应“其它”类）
+	auditType metadata.AuditType
+	//resourceType 模型审计中按资源种类有多个审计方式
+	resourceType     metadata.ResourceType
+	clientSet        apimachinery.ClientSetInterface
+	preData          metadata.ModelData
+	curData          metadata.ModelData
+	objClsID         string
+	objClsName       string
+	objectID         string
+	objectName       string
+	objAttrID        string
+	objAttrName      string
+	objAttrGroupID   string
+	objAttrGroupName string
 }
 
 func NewObjectAudit(clientSet apimachinery.ClientSetInterface, resourceType metadata.ResourceType) *ObjectAudit {
 	return &ObjectAudit{
 		auditType:    metadata.ModelType,
-		resourceType: metadata.ModelRes,
+		resourceType: resourceType,
 		clientSet:    clientSet,
 	}
 }
 
-func (log *ObjectAudit) WithPrevious(kit *rest.Kit, id int64) errors.CCError {
-	preData, err := log.buildLogData(kit, id)
-	if err != nil {
-		return err
-	}
-	log.preData = preData
-	return nil
+func (log *ObjectAudit) WithPrevious() *ObjectAudit {
+	log.preData.ClassificationID = log.objClsID
+	log.preData.ClassificationName = log.objClsName
+	log.preData.ObjectID = log.objectID
+	log.preData.ObjectName = log.objClsName
+	log.preData.AttributeID = log.objAttrID
+	log.preData.AttributeName = log.objAttrName
+	log.preData.AttrGroupId = log.objAttrGroupID
+	log.preData.AttrGroupName = log.objAttrGroupName
+	return log
 }
 
-func (log *ObjectAudit) MakeCurrent(curData map[string]interface{}) errors.CCError {
-	log.curData = curData
-	return nil
-}
-
-func (log *ObjectAudit) WithCurrent(kit *rest.Kit, id int64) errors.CCError {
-	curData, err := log.buildLogData(kit, id)
-	if err != nil {
-		return err
-	}
-	log.curData = curData
-	return nil
+func (log *ObjectAudit) WithCurrent() *ObjectAudit {
+	log.curData.ClassificationID = log.objClsID
+	log.curData.ClassificationName = log.objClsName
+	log.curData.ObjectID = log.objectID
+	log.curData.ObjectName = log.objClsName
+	log.curData.AttributeID = log.objAttrID
+	log.curData.AttributeName = log.objAttrName
+	log.curData.AttrGroupId = log.objAttrGroupID
+	log.curData.AttrGroupName = log.objAttrGroupName
+	return log
 }
 
 func (log *ObjectAudit) SaveAuditLog(kit *rest.Kit, auditAction metadata.ActionType) errors.CCError {
@@ -69,12 +84,16 @@ func (log *ObjectAudit) SaveAuditLog(kit *rest.Kit, auditAction metadata.ActionT
 		ResourceType: log.resourceType,
 		Action:       auditAction,
 		OperationDetail: &metadata.ModelOpDetail{
-			ObjectID:   log.objectID,
-			ObjectName: log.objectName,
-			Details: &metadata.BasicContent{
-				PreData: log.preData,
-				CurData: log.curData,
-			},
+			ClassificationID:   log.objClsID,
+			ClassificationName: log.objClsName,
+			ObjectID:           log.objectID,
+			ObjectName:         log.objectName,
+			AttrGroupId:        log.objAttrGroupID,
+			AttrGroupName:      log.objAttrGroupName,
+			AttributeID:        log.objAttrID,
+			AttributeName:      log.objAttrName,
+			PreData:            log.preData,
+			CurData:            log.curData,
 		},
 	}
 	auditResult, err := log.clientSet.CoreService().Audit().SaveAuditLog(kit.Ctx, kit.Header, auditLog)
@@ -86,24 +105,122 @@ func (log *ObjectAudit) SaveAuditLog(kit *rest.Kit, auditAction metadata.ActionT
 		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s,rid:%s", auditAction, auditAction, err, auditResult, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
 	}
-
 	return nil
 }
 
-func (log *ObjectAudit) buildLogData(kit *rest.Kit, ID int64) (map[string]interface{}, errors.CCError) {
+func (log *ObjectAudit) buildObjData(kit *rest.Kit, ID int64) *ObjectAudit {
 	query := mapstr.MapStr{"id": ID}
 	rsp, err := log.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
-		return nil, err
+		blog.Errorf("[audit] failed to build the objData, error info is %s, rid: %s", err.Error(), kit.Rid)
+		return nil
 	}
 	if rsp.Result != true {
-		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[audit] failed to build the objData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		return nil
 	}
 	if len(rsp.Data.Info) <= 0 {
-		return nil, kit.CCError.CCError(common.CCErrorModelNotFound)
+		blog.Errorf("[audit] failed to build the objData,err: %s", kit.CCError.CCError(common.CCErrorModelNotFound))
+		return nil
 	}
 	log.objectID = rsp.Data.Info[0].Spec.ObjectID
 	log.objectName = rsp.Data.Info[0].Spec.ObjectName
-	rspData := rsp.Data.Info[0].Spec.ToMapStr()
-	return rspData, nil
+	return log
 }
+
+func (log *ObjectAudit) buildObjClsData(kit *rest.Kit, ID int64) *ObjectAudit {
+	query := mapstr.MapStr{"id": ID}
+	rsp, err := log.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+	if err != nil {
+		blog.Errorf("[audit] failed to build the objClsData, error info is %s, rid: %s", err.Error(), kit.Rid)
+		return nil
+	}
+	if rsp.Result != true {
+		blog.Errorf("[audit] failed to build the objData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		return nil
+	}
+	if len(rsp.Data.Info) <= 0 {
+		blog.Errorf("[audit] failed to build the objData,err: %s", kit.CCError.CCError(common.CCErrorModelNotFound))
+		return nil
+	}
+	log.objClsID = rsp.Data.Info[0].ClassificationID
+	log.objClsName = rsp.Data.Info[0].ClassificationName
+	return log
+}
+
+func (log *ObjectAudit) buildObjAttrData(kit *rest.Kit, ID int64) *ObjectAudit {
+	query := mapstr.MapStr{"id": ID}
+	//get repData
+	rsp, err := log.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+	if err != nil {
+		blog.Errorf("[audit] failed to build the objAttrData, error info is %s, rid: %s", err.Error(), kit.Rid)
+		return nil
+	}
+	if rsp.Result != true {
+		blog.Errorf("[audit] failed to build the objAttrData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		return nil
+	}
+	if len(rsp.Data.Info) <= 0 {
+		blog.Errorf("[audit] failed to build the objAttrData,err: %s", kit.CCError.CCError(common.CCErrorModelNotFound))
+		return nil
+	}
+	log.objectID = rsp.Data.Info[0].ObjectID
+	log.objAttrID = rsp.Data.Info[0].PropertyID
+	log.objAttrName = rsp.Data.Info[0].PropertyName
+	log.objAttrGroupID = rsp.Data.Info[0].PropertyGroup
+	log.objAttrGroupName = rsp.Data.Info[0].PropertyName
+	err = log.getObjectInfo(kit, log.objectID)
+	if err != nil {
+		blog.Errorf("[audit] failed to get the objInfo,err: %s", err)
+	}
+	return log
+}
+
+func (log *ObjectAudit) getObjectInfo(kit *rest.Kit, objectID string) errors.CCError {
+	query := make(map[string]interface{})
+	if objectID == "" {
+		query = mapstr.MapStr{"bk_obj_id": log.objectID}
+	} else {
+		query = mapstr.MapStr{"bk_obj_id": objectID}
+	}
+	//get objectName
+	resp, err := log.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
+	if err != nil {
+		return err
+	}
+	if resp.Result != true {
+		return kit.CCError.New(resp.Code, resp.ErrMsg)
+	}
+	if len(resp.Data.Info) <= 0 {
+		return kit.CCError.CCError(common.CCErrorModelNotFound)
+	}
+	log.objectName = resp.Data.Info[0].Spec.ObjectName
+	return nil
+}
+
+func (log *ObjectAudit) buildObjAttrGroupData(kit *rest.Kit, ID int64) *ObjectAudit {
+	query := mapstr.MapStr{"id": ID}
+	rsp, err := log.clientSet.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, metadata.QueryCondition{Condition: query})
+	if err != nil {
+		blog.Errorf("[audit] failed to build the objAttrGroupData, error info is %s, rid: %s", err.Error(), kit.Rid)
+		return nil
+	}
+	if rsp.Result != true {
+		blog.Errorf("[audit] failed to build the objAttrGroupData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		return nil
+	}
+	if len(rsp.Data.Info) <= 0 {
+		blog.Errorf("[audit] failed to build the objAttrGroupData,err: %s", kit.CCError.CCError(common.CCErrorModelNotFound))
+		return nil
+	}
+	log.objectID = rsp.Data.Info[0].ObjectID
+	log.objAttrGroupID = rsp.Data.Info[0].GroupID
+	log.objAttrGroupName = rsp.Data.Info[0].GroupName
+	err = log.getObjectInfo(kit, log.objectID)
+	if err != nil {
+		blog.Errorf("[audit] failed to get the objInfo,err: %s", err)
+	}
+	return log
+}
+
+//Todo 后续还应补充从excel导入的审计功能
