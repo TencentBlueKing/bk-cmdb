@@ -25,14 +25,26 @@ export const before = async function (app, to, from, next) {
     
     const id = parseInt(to.params.bizId || window.localStorage.getItem('selectedBusiness'))
     const business = authorizedList.find(business => business.bk_biz_id === id)
+    const hasURLId = to.params.bizId
     if (business) {
         const isSubRoute = to.matched.length > 1
         toTopRoute.meta.view = 'default'
         window.localStorage.setItem('selectedBusiness', id)
         app.$store.commit('objectBiz/setBizId', id)
-        return !isSubRoute && next(`/business/${id}/index`)
+        if (!isSubRoute) {
+            return next(`/business/${id}/index`)
+        } else if (!hasURLId) {
+            return next({
+                name: to.name,
+                params: {
+                    ...to.params,
+                    bizId: id
+                },
+                query: to.query
+            })
+        }
+        return
     }
-    const hasURLId = to.params.bizId
     if (hasURLId) {
         toTopRoute.meta.view = 'permission'
         return next()

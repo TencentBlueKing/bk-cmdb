@@ -12,8 +12,8 @@
                         font-size="medium"
                         :clearable="false">
                         <bk-option id="all" :name="$t('全部主机')"></bk-option>
-                        <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
-                        <bk-option :id="1" :name="$t('未分配主机')"></bk-option>
+                        <bk-option id="0" :name="$t('已分配主机')"></bk-option>
+                        <bk-option id="1" :name="$t('未分配主机')"></bk-option>
                     </bk-select>
                 </div>
                 <div class="fr">
@@ -79,7 +79,7 @@
                 <template slot-scope="{ row }">
                     <cmdb-property-value
                         :theme="column.id === 'bk_host_id' ? 'primary' : 'default'"
-                        :value="row | hostValueFilter(column.objId, column.id)"
+                        :value="row | hostValueFilter(column.objId, column.id, column)"
                         :show-unit="false"
                         :property="column.type"
                         :options="getPropertyValue(column.objId, column.id, 'option')"
@@ -137,6 +137,8 @@
         MENU_RESOURCE_HOST_DETAILS,
         MENU_RESOURCE_BUSINESS_HOST_DETAILS
     } from '@/dictionary/menu-symbol'
+    import RouterQuery from '@/router/query'
+    import { getIPPayload } from '@/utils/host'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -195,7 +197,6 @@
                         count: 0,
                         ...this.$tools.getDefaultPaginationConfig()
                     },
-                    defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
                     exportUrl: `${window.API_HOST}hosts/export`,
                     stuff: {
@@ -204,10 +205,6 @@
                             emptyText: this.$t('bk.table.emptyText')
                         }
                     }
-                },
-                filter: {
-                    business: '',
-                    condition: {}
                 },
                 slider: {
                     show: false,
@@ -230,14 +227,14 @@
                     disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
                 selectedCollection: '',
-                scope: 1
+                scope: RouterQuery.get('scope', '1')
             }
         },
         computed: {
             ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapState('hosts', ['collectionList', 'isHostSearch']),
+            ...mapState('hosts', ['collectionList', 'condition']),
             customColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
@@ -278,23 +275,35 @@
             columnsConfigProperties () {
                 this.setTableHeader()
             },
-            scope () {
-                if (this.isHostSearch) return
-                this.handlePageChange(1, true)
+            scope (value) {
+                RouterQuery.setBatch({
+                    scope: value,
+                    ip: '',
+                    page: 1
+                })
+            },
+            condition () {
+                RouterQuery.set('_t', Date.now())
             }
         },
         async created () {
             try {
+                RouterQuery.watch(['ip', 'scope', 'exact', 'page', 'limit', 'condition', '_t'], ({
+                    scope = '1',
+                    page = 1,
+                    limit = this.table.pagination.limit
+                }) => {
+                    this.scope = scope
+                    this.table.pagination.current = parseInt(page)
+                    this.table.pagination.limit = parseInt(limit)
+                    this.getHostList()
+                }, { immediate: true, throttle: 16 })
                 await Promise.all([
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
                 if (this.showCollection) {
                     this.getCollectionList()
-                }
-                if (this.isHostSearch) {
-                    this.scope = 'all'
-                    this.$store.commit('hosts/setIsHostSearch', false)
                 }
             } catch (e) {
                 console.log(e)
@@ -450,34 +459,39 @@
                 return text.join(',') || '--'
             },
             getHostList (event) {
-                this.searchHost({
-                    params: this.injectScope({
-                        ...this.filter.condition,
-                        'bk_biz_id': this.filter.business,
-                        page: {
-                            start: (this.table.pagination.current - 1) * this.table.pagination.limit,
-                            limit: this.table.pagination.limit,
-                            sort: this.table.sort
+                try {
+                    this.searchHost({
+                        params: this.injectScope({
+                            bk_biz_id: -1,
+                            condition: this.condition,
+                            ip: getIPPayload(),
+                            page: {
+                                start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                                limit: this.table.pagination.limit,
+                                sort: this.table.sort
+                            }
+                        }),
+                        config: {
+                            requestId: 'searchHosts',
+                            cancelPrevious: true
                         }
-                    }),
-                    config: {
-                        requestId: 'searchHosts',
-                        cancelPrevious: true
-                    }
-                }).then(data => {
-                    this.table.pagination.count = data.count
-                    this.table.list = data.info
-
-                    if (event) {
-                        this.table.stuff.type = 'search'
-                    }
-
-                    return data
-                }).catch(e => {
-                    this.table.checked = []
-                    this.table.list = []
-                    this.table.pagination.count = 0
-                })
+                    }).then(data => {
+                        this.table.pagination.count = data.count
+                        this.table.list = data.info
+    
+                        if (event) {
+                            this.table.stuff.type = 'search'
+                        }
+    
+                        return data
+                    }).catch(e => {
+                        this.table.checked = []
+                        this.table.list = []
+                        this.table.pagination.count = 0
+                    })
+                } catch (e) {
+                    console.error(e)
+                }
             },
             injectScope (params) {
                 if (!this.showScope) {
@@ -490,7 +504,7 @@
                     const newCondition = {
                         field: 'default',
                         operator: '$eq',
-                        value: this.scope
+                        value: parseInt(this.scope)
                     }
                     const existCondition = biz.condition.find(condition => condition.field === 'default')
                     if (existCondition) {
@@ -501,21 +515,11 @@
                 }
                 return params
             },
-            search (business, condition, resetPage = false, event = false) {
-                this.filter.business = business
-                this.filter.condition = condition
-                if (resetPage) {
-                    this.table.pagination.current = 1
-                }
-                this.getHostList(event)
-            },
             handlePageChange (current, event) {
-                this.table.pagination.current = current
-                this.getHostList(event)
+                RouterQuery.set('page', current)
             },
             handleSizeChange (limit) {
-                this.table.pagination.limit = limit
-                this.handlePageChange(1)
+                RouterQuery.set('limit', limit)
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)
