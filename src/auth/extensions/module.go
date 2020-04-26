@@ -35,27 +35,34 @@ func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header ht
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(businessID)
-	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKModuleNameField},
-		Condition: cond.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
-	}
-	instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, query)
-	if err != nil {
-		blog.Errorf("get module:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
-		return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)
-	}
-
-	// extract modules
 	moduleArr := make([]ModuleSimplify, 0)
-	for _, instance := range instances.Data.Info {
-		moduleSimplify := ModuleSimplify{}
-		_, err := moduleSimplify.Parse(instance)
-		if err != nil {
-			blog.Errorf("parse module: %+v simplify information failed, err: %+v, rid: %s", instance, err, rid)
-			continue
+	count := -1
+	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+		query := &metadata.QueryCondition{
+			Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKModuleNameField},
+			Condition: cond.ToMapStr(),
+			Limit: metadata.SearchLimit{
+				Offset: int64(offset),
+				Limit:  common.BKMaxRecordsAtOnce,
+			},
 		}
-		moduleArr = append(moduleArr, moduleSimplify)
+		instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, query)
+		if err != nil {
+			blog.Errorf("get module:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
+			return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)
+		}
+
+		// extract modules
+		for _, instance := range instances.Data.Info {
+			moduleSimplify := ModuleSimplify{}
+			_, err := moduleSimplify.Parse(instance)
+			if err != nil {
+				blog.Errorf("parse module: %+v simplify information failed, err: %+v, rid: %s", instance, err, rid)
+				continue
+			}
+			moduleArr = append(moduleArr, moduleSimplify)
+		}
+		count = instances.Data.Count
 	}
 
 	blog.V(4).Infof("list modules by business:%d result: %+v, rid: %s", businessID, moduleArr, rid)
@@ -154,8 +161,8 @@ func (am *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
 		}},
 	}
 
-    p.ResourceType = p.Resources[0][0].ResourceType
-    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp

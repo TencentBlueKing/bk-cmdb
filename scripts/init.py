@@ -420,7 +420,7 @@ def main(argv):
         "auth_enabled": "false",
         "auth_app_code": "bk_cmdb",
         "auth_app_secret": "",
-        "auth_sync_workers": "1",
+        "auth_sync_workers": "100",
         "auth_sync_interval_minutes": "45",
     }
     full_text_search = 'off'

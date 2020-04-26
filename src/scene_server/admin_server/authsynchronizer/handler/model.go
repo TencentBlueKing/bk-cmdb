@@ -23,7 +23,7 @@ import (
 	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
 )
 
-// HandleSetSync do sync set of one business
+// HandleModelSync do sync model of one business
 func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)

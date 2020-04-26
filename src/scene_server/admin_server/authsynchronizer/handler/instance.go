@@ -27,7 +27,7 @@ import (
 	"configcenter/src/scene_server/admin_server/authsynchronizer/meta"
 )
 
-// HandleSetSync do sync set of one business
+// HandleInstanceSync do sync instance of one business
 func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 	object := task.Data.(metadata.Object)
 	header := task.Header.(http.Header)
