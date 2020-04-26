@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -185,12 +186,44 @@ func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 		return
 	}
 
-    // auth: deregister resources
-    if err := s.AuthManager.DeregisterInstanceByRawID(ctx.Kit.Ctx, ctx.Kit.Header, obj.GetObjectID(), deleteCondition.Delete.InstID...); err != nil {
-        blog.Errorf("batch delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", deleteCondition.Delete.InstID, err, ctx.Kit.Rid)
-        ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-        return
-    }
+	authInstances := make([]extensions.InstanceSimplify, 0)
+	input := &metadata.QueryInput{
+		Condition: map[string]interface{}{
+			obj.GetInstIDFieldName(): map[string]interface{}{
+				common.BKDBIN: deleteCondition.Delete.InstID,
+			}}}
+
+	_, insts, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, input, false)
+	if nil != err {
+		blog.Errorf("DeleteInst failed, find authInstances to be deleted failed, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	for _, inst := range insts {
+		instID, _ := inst.GetInstID()
+		instName, _ := inst.GetInstName()
+		instBizID, _ := inst.GetBizID()
+		authInstances = append(authInstances, extensions.InstanceSimplify{
+			InstanceID: instID,
+			Name:       instName,
+			BizID:      instBizID,
+			ObjectID:   objID,
+		})
+	}
+
+	if err = s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, deleteCondition.Delete.InstID, true); err != nil {
+		blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instIDs: %+v, rid: %s", err.Error(), objID, deleteCondition.Delete.InstID, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// auth: deregister resources
+	if err := s.AuthManager.DeregisterInstances(ctx.Kit.Ctx, ctx.Kit.Header, authInstances...); err != nil {
+		blog.Errorf("batch delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", deleteCondition.Delete.InstID, err, ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrCommUnRegistResourceToIAMFailed, "batch delete instance failed, deregister instance failed: %v", err)
+		return
+	}
 	ctx.RespEntity(nil)
 }
 
@@ -240,16 +273,34 @@ func (s *Service) DeleteInst(ctx *rest.Contexts) {
 		// TODO add custom mainline instance param validation
 	}
 
-    err = s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, []int64{instID}, true)
-    if err != nil {
-        ctx.RespAutoError(err)
-        return
-    }
+	authInstances := make([]extensions.InstanceSimplify, 0)
+	_, insts, err := s.Core.InstOperation().FindInst(ctx.Kit, obj, &metadata.QueryInput{Condition: map[string]interface{}{obj.GetInstIDFieldName(): instID}}, false)
+	if nil != err {
+		blog.Errorf("DeleteInst failed, find authInstances to be deleted failed, error info is %s, rid: %s", err.Error(), ctx.Kit)
+		ctx.RespAutoError(err)
+		return
+	}
+	for _, inst := range insts {
+		instName, _ := inst.GetInstName()
+		instBizID, _ := inst.GetBizID()
+		authInstances = append(authInstances, extensions.InstanceSimplify{
+			InstanceID: instID,
+			Name:       instName,
+			BizID:      instBizID,
+			ObjectID:   objID,
+		})
+	}
+
+	if err := s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, []int64{instID}, true); err != nil {
+		blog.Errorf("DeleteInst failed, DeleteInstByInstID failed, err: %s, objID: %s, instID: %d, rid: %s", err.Error(), objID, instID, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.DeregisterInstanceByRawID(ctx.Kit.Ctx, ctx.Kit.Header, obj.GetObjectID(), instID); err != nil {
-		blog.Errorf("delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s", instID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
+	if err := s.AuthManager.DeregisterInstances(ctx.Kit.Ctx, ctx.Kit.Header, authInstances...); err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommUnRegistResourceToIAMFailed, "delete instance failed, deregister instance failed, instID: %d, err: %s, rid: %s",
+			instID, err, ctx.Kit.Rid)
 		return
 	}
 	ctx.RespEntity(nil)

@@ -17,12 +17,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
+
+	"gopkg.in/redis.v5"
 )
 
 func (dh *DistHandler) StartDistribute() (err error) {
@@ -256,13 +259,16 @@ func (dh *DistHandler) popDistInst(subID int64) *metadata.DistInstCtx {
 }
 
 func (dh *DistHandler) saveDistDone(dist *metadata.DistInstCtx) (err error) {
-	if err = dh.cache.HSet(types.EventCacheDistDonePrefix+fmt.Sprint(dist.SubscriptionID), fmt.Sprint(dist.DstbID), dist.Raw).Err(); err != nil {
-		return
+	_, err = dh.cache.Pipelined(func(pipe *redis.Pipeline) error {
+		pipe.HSet(types.EventCacheDistDonePrefix+strconv.FormatInt(dist.SubscriptionID, 10), strconv.FormatInt(dist.DstbID, 10), dist.Raw)
+		pipe.Del(types.EventCacheDistRunningPrefix + fmt.Sprintf("%d_%d", dist.SubscriptionID, dist.DstbID))
+		return nil
+	})
+	if err != nil {
+		blog.Errorf("saveDistDone Pipelined failed, err: %v", err)
+		return err
 	}
-	if err = dh.cache.Del(types.EventCacheDistRunningPrefix + fmt.Sprintf("%d_%d", dist.SubscriptionID, dist.DstbID)).Err(); err != nil {
-		return
-	}
-	return
+	return nil
 }
 
 func extractChangeAction(msg string) string {

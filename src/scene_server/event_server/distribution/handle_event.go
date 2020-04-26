@@ -193,13 +193,16 @@ func (eh *EventHandler) nextDistID(eventType string) (nextid int64, err error) {
 }
 
 func (eh *EventHandler) SaveEventDone(event *metadata.EventInstCtx) (err error) {
-	if err = eh.cache.HSet(types.EventCacheEventDoneKey, fmt.Sprint(event.ID), event.Raw).Err(); err != nil {
-		return
+	_, err = eh.cache.Pipelined(func(pipe *redis.Pipeline) error {
+		pipe.HSet(types.EventCacheEventDoneKey, strconv.FormatInt(event.ID, 10), event.Raw)
+		pipe.Del(types.EventCacheEventRunningPrefix + strconv.FormatInt(event.ID, 10))
+		return nil
+	})
+	if err != nil {
+		blog.Errorf("SaveEventDone Pipelined failed, err: %v", err)
+		return err
 	}
-	if err = eh.cache.Del(types.EventCacheEventRunningPrefix + fmt.Sprint(event.ID)).Err(); err != nil {
-		return
-	}
-	return
+	return nil
 }
 
 func waitPreviousDone(cache *redis.Client, key string, id string, timeout time.Duration) (err error) {
