@@ -93,6 +93,16 @@ const router = new Router({
     ]
 })
 
+const beforeHooks = new Set()
+
+function runBeforeHooks () {
+    beforeHooks.forEach(callback => callback())
+}
+
+export const addBeforeHooks = function (hook) {
+    beforeHooks.add(hook)
+}
+
 const checkViewAuthorize = async to => {
     // owener判断已经发现无业务时
     if (to.meta.view === 'permission') {
@@ -149,13 +159,16 @@ const setupStatus = {
 }
 
 router.beforeEach((to, from, next) => {
-    console.log(to)
+    if (to.name === from.name) {
+        return next()
+    }
     Vue.nextTick(async () => {
         try {
             setLoading(true)
             if (setupStatus.preload) {
                 await preload(router.app)
             }
+            runBeforeHooks()
             await businessBeforeInterceptor(router.app, to, from, next)
             setAdminView(to)
 

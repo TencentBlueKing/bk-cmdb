@@ -96,6 +96,7 @@
     import CreateSet from './create-set.vue'
     import CreateModule from './create-module.vue'
     import Bus from '@/utils/bus'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             CreateNode,
@@ -111,7 +112,7 @@
         data () {
             return {
                 isBlueKing: false,
-                filter: '',
+                filter: RouterQuery.get('keyword', ''),
                 handleFilter: () => ({}),
                 nodeCountType: 'host_count',
                 nodeIconMap: {
@@ -142,6 +143,7 @@
         watch: {
             filter (value) {
                 this.handleFilter()
+                RouterQuery.set('keyword', value)
             },
             active (value) {
                 const map = {
@@ -161,6 +163,9 @@
             }
         },
         created () {
+            RouterQuery.watch('keyword', value => {
+                this.filter = value
+            })
             Bus.$on('refresh-count', this.refreshCount)
             this.handleFilter = debounce(() => {
                 this.$refs.tree.filter(this.filter)
@@ -251,6 +256,7 @@
                 return 0
             },
             handleSelectChange (node) {
+                RouterQuery.set('node', node.id)
                 this.$store.commit('businessHost/setSelectedNode', node)
                 Bus.$emit('toggle-host-filter', false)
                 if (!node.expanded) {
