@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -32,16 +33,26 @@ import (
 func (am *AuthManager) CollectServiceTemplatesByBusinessIDs(ctx context.Context, header http.Header, businessID int64) ([]metadata.ServiceTemplate, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	option := &metadata.ListServiceTemplateOption{
-		BusinessID: businessID,
-	}
-	templates, err := am.clientSet.CoreService().Process().ListServiceTemplates(ctx, header, option)
-	if err != nil {
-		blog.Errorf("list service templates by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
-		return nil, fmt.Errorf("list service templates by businessID:%d failed, err: %+v", businessID, err)
+	templates := make([]metadata.ServiceTemplate, 0)
+	count := -1
+	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+		option := &metadata.ListServiceTemplateOption{
+			BusinessID: businessID,
+			Page: metadata.BasePage{
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
+			},
+		}
+		result, err := am.clientSet.CoreService().Process().ListServiceTemplates(ctx, header, option)
+		if err != nil {
+			blog.Errorf("list service templates by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
+			return nil, fmt.Errorf("list service templates by businessID:%d failed, err: %+v", businessID, err)
+		}
+		templates = append(templates, result.Info...)
+		count = int(result.Count)
 	}
 
-	return templates.Info, nil
+	return templates, nil
 }
 
 func (am *AuthManager) collectServiceTemplateByIDs(ctx context.Context, header http.Header, templateIDs ...int64) ([]metadata.ServiceTemplate, error) {

@@ -35,29 +35,36 @@ import (
 // CollectAllBusiness get all business
 func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Header) ([]BusinessSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-
-	cond := metadata.QueryCondition{}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
-	if err != nil {
-		blog.Errorf("list business failed, err: %v, rid: %s", err, rid)
-		return nil, err
-	}
-
 	// step1 get business from core service
 	businessList := make([]BusinessSimplify, 0)
-	for _, business := range result.Data.Info {
-		businessSimplify := BusinessSimplify{}
-		_, err := businessSimplify.Parse(business)
+	count := -1
+	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+		cond := metadata.QueryCondition{
+			Limit: metadata.SearchLimit{
+				Offset: int64(offset),
+				Limit:  common.BKMaxRecordsAtOnce,
+			},
+			Condition: map[string]interface{}{
+				common.BKDefaultField: 0,
+			},
+		}
+		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
 		if err != nil {
-			blog.Errorf("parse businesses %+v simplify information failed, err: %+v, rid: %s", business, err, rid)
-			continue
+			blog.Errorf("list business failed, err: %v, rid: %s", err, rid)
+			return nil, err
 		}
-		if businessSimplify.IsDefault > 0 {
-			continue
+		for _, business := range result.Data.Info {
+			businessSimplify := BusinessSimplify{}
+			_, err := businessSimplify.Parse(business)
+			if err != nil {
+				blog.Errorf("parse businesses %+v simplify information failed, err: %+v, rid: %s", business, err, rid)
+				continue
+			}
+			businessList = append(businessList, businessSimplify)
 		}
-
-		businessList = append(businessList, businessSimplify)
+		count = result.Data.Count
 	}
+
 	return businessList, nil
 }
 
@@ -172,8 +179,8 @@ func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, hea
 		return nil, errors.New("get business detail failed")
 	}
 	p.ScopeName = businesses[0].BKAppNameField
-    p.ResourceType = p.Resources[0][0].ResourceType
-    p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
+	p.ResourceType = p.Resources[0][0].ResourceType
+	p.ResourceTypeName = p.Resources[0][0].ResourceTypeName
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
 	return &resp, nil
 }
@@ -317,7 +324,7 @@ func (am *AuthManager) GenBusinessNoPermissionResp(ctx context.Context, header h
 	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
 	p.ActionID = string(authcenter.Get)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
-    p.ResourceType = string(authcenter.SysBusinessInstance)
+	p.ResourceType = string(authcenter.SysBusinessInstance)
 	p.ResourceTypeName = authcenter.ResourceTypeIDMap[authcenter.SysBusinessInstance]
 	p.Resources = [][]metadata.Resource{
 		{{
