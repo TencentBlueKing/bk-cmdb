@@ -38,10 +38,6 @@ func (c *Client) getBusinessFromMongo(bizID int64) (string, error) {
 		return "", ccError.New(common.CCErrCommDBSelectFailed, err.Error())
 	}
 
-	if _, exist := biz[common.BKAppIDField]; !exist {
-		blog.Errorf("get business %d info from db, but not exist", bizID)
-		return "", ccError.New(common.CCErrCommBizNotFoundError, "")
-	}
 	js, _ := json.Marshal(biz)
 	return string(js), nil
 }
@@ -323,7 +319,10 @@ func (c *Client) getSetBaseList(bizID int64) ([]SetBaseInfo, error) {
 const step = 1000
 
 func (c *Client) getAllModuleBase(bizID int64) ([]ModuleBaseInfo, error) {
-	cnt, err := c.db.Table(common.BKTableNameBaseModule).Find(nil).Count(context.Background())
+	filter := mapstr.MapStr{
+		common.BKAppIDField: bizID,
+	}
+	cnt, err := c.db.Table(common.BKTableNameBaseModule).Find(filter).Count(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -331,10 +330,8 @@ func (c *Client) getAllModuleBase(bizID int64) ([]ModuleBaseInfo, error) {
 	list := make([]ModuleBaseInfo, 0)
 	for start := 0; start < int(cnt); start += step {
 		modules := make([]ModuleBaseInfo, 0)
-		filter := mapstr.MapStr{
-			common.BKAppIDField: bizID,
-		}
-		err = c.db.Table(common.BKTableNameBaseModule).Find(filter).Fields(common.BKModuleIDField, common.BKModuleNameField).All(context.Background(), &modules)
+		err = c.db.Table(common.BKTableNameBaseModule).Find(filter).Fields(common.BKModuleIDField, common.BKModuleNameField).
+			Start(uint64(start)).Limit(uint64(step)).All(context.Background(), &modules)
 		if err != nil {
 			blog.Errorf("get biz %d module list from mongodb failed, err: %v", bizID, err)
 			return nil, err
@@ -360,6 +357,10 @@ func (c *Client) genModuleListKeys(bizID int64) ([]string, error) {
 }
 
 func (c *Client) getAllSetBase(bizID int64) ([]SetBaseInfo, error) {
+	filter := mapstr.MapStr{
+		common.BKAppIDField: bizID,
+	}
+	
 	cnt, err := c.db.Table(common.BKTableNameBaseSet).Find(nil).Count(context.Background())
 	if err != nil {
 		return nil, err
@@ -368,10 +369,8 @@ func (c *Client) getAllSetBase(bizID int64) ([]SetBaseInfo, error) {
 	list := make([]SetBaseInfo, 0)
 	for start := 0; start < int(cnt); start += step {
 		modules := make([]SetBaseInfo, 0)
-		filter := mapstr.MapStr{
-			common.BKAppIDField: bizID,
-		}
-		err = c.db.Table(common.BKTableNameBaseSet).Find(filter).Fields(common.BKSetIDField, common.BKSetNameField).All(context.Background(), &modules)
+		err = c.db.Table(common.BKTableNameBaseSet).Find(filter).Fields(common.BKSetIDField, common.BKSetNameField).
+			Start(uint64(start)).Limit(uint64(step)).All(context.Background(), &modules)
 		if err != nil {
 			blog.Errorf("get biz %d set list from mongodb failed, err: %v", bizID, err)
 			return nil, err
@@ -451,7 +450,8 @@ func (c *Client) getCustomLevelBaseFromMongodb(objID string, bizID int64) ([]Cus
 	list := make([]CustomInstanceBase, 0)
 	for start := 0; start < int(cnt); start += step {
 		instances := make([]CustomInstanceBase, 0)
-		err = c.db.Table(common.BKTableNameBaseInst).Find(filter).All(context.Background(), &instances)
+		err = c.db.Table(common.BKTableNameBaseInst).Find(filter).
+			Start(uint64(start)).Limit(uint64(step)).All(context.Background(), &instances)
 		if err != nil {
 			blog.Errorf("get custom level object: %s, biz: %d, list keys, but get from mongodb failed, err: %v", objID, bizID, err)
 			return nil, err
