@@ -161,7 +161,7 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	t.locked = true
 
 	if !t.enableTxn {
-		return nil
+		return run()
 	}
 	rid := util.GetHTTPCCRequestID(h)
 	// revise the locked to false, so that we can commit or abort the transaction.

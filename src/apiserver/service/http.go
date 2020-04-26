@@ -91,11 +91,12 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	response.Body.Close()
-	blog.V(4).Infof("request id: %s, cost: %dms, action: %s, status code: %d, user: %s, app code: %s, url: %s",
-		req.Request.Header.Get(common.BKHTTPCCRequestID),
+	blog.V(4).Infof("cost: %dms, action: %s, status code: %d, user: %s, app code: %s, url: %s, rid: %s",
 		time.Since(start).Nanoseconds()/int64(time.Millisecond),
 		req.Request.Method, response.StatusCode,
 		req.Request.Header.Get(common.BKHTTPHeaderUser),
-		req.Request.Header.Get(common.BKHTTPRequestAppCode), url)
+		req.Request.Header.Get(common.BKHTTPRequestAppCode), url,
+		req.Request.Header.Get(common.BKHTTPCCRequestID),
+	)
 	return
 }
