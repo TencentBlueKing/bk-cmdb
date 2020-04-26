@@ -62,8 +62,8 @@
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
                         :template-url="importInst.templateUrl"
                         :import-url="importInst.importUrl"
-                        @success="getHostList(true)"
-                        @partialSuccess="getHostList(true)">
+                        @success="refreshList(true)"
+                        @partialSuccess="refreshList(true)">
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
                             {{$t('说明：内网IP为必填列')}}
                         </span>
@@ -107,10 +107,11 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions, mapState } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             cmdbHostsTable,
@@ -151,7 +152,6 @@
             ...mapGetters(['userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapState('hosts', ['filterParams']),
             buttons () {
                 return [{
                     id: 'edit',
@@ -195,18 +195,14 @@
                 if (!show) {
                     this.importInst.active = 'import'
                 }
-            },
-            filterParams () {
-                if (this.ready) {
-                    this.getHostList(false, true)
-                }
             }
         },
         async created () {
             try {
-                await this.getFullAmountBusiness()
-                await this.getProperties()
-                this.getHostList()
+                await Promise.all([
+                    this.getFullAmountBusiness(),
+                    this.getProperties()
+                ])
                 this.ready = true
             } catch (e) {
                 console.error(e)
@@ -247,25 +243,6 @@
                     })
                     return result
                 })
-            },
-            getHostList (resetPage = false, event = false) {
-                const params = this.getParams()
-                this.$refs.resourceTable.search(-1, params, resetPage, event)
-            },
-            getParams () {
-                const defaultModel = ['biz', 'set', 'module', 'host']
-                const params = {
-                    bk_biz_id: -1,
-                    ip: this.filterParams.ip,
-                    condition: defaultModel.map(model => {
-                        return {
-                            bk_obj_id: model,
-                            condition: this.filterParams[model] || [],
-                            fields: []
-                        }
-                    })
-                }
-                return params
             },
             handleAssignHosts (businessId, option) {
                 const business = {
@@ -309,6 +286,12 @@
                 }).finally(() => {
                     this.assignBusiness = 'empty'
                     this.assignDialog.show = false
+                })
+            },
+            refreshList () {
+                RouterQuery.setBatch({
+                    _t: Date.now(),
+                    ip: ''
                 })
             },
             handleChecked (checked) {

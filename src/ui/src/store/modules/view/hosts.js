@@ -14,7 +14,14 @@ const state = {
     collection: null,
     collectionList: [],
     propertyList: [],
-    isHostSearch: null
+    isHostSearch: null,
+    condition: ['biz', 'set', 'module', 'host'].map(modelId => {
+        return {
+            bk_obj_id: modelId,
+            fields: [],
+            condition: []
+        }
+    })
 }
 
 const getters = {
@@ -29,7 +36,8 @@ const getters = {
         })
 
         return state.propertyList
-    }
+    },
+    condition: state => state.condition
 }
 
 const mutations = {
@@ -71,6 +79,9 @@ const mutations = {
     },
     setPropertyList (state, list) {
         state.propertyList = list
+    },
+    setCondition (state, condition) {
+        state.condition = condition
     }
 }
 

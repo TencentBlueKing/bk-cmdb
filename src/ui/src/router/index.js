@@ -96,7 +96,7 @@ const router = new Router({
 const beforeHooks = new Set()
 
 function runBeforeHooks () {
-    beforeHooks.forEach(callback => callback())
+    return Promise.all(Array.from(beforeHooks).map(callback => callback()))
 }
 
 export const addBeforeHooks = function (hook) {
@@ -168,7 +168,7 @@ router.beforeEach((to, from, next) => {
             if (setupStatus.preload) {
                 await preload(router.app)
             }
-            runBeforeHooks()
+            await runBeforeHooks()
             await businessBeforeInterceptor(router.app, to, from, next)
             setAdminView(to)
 

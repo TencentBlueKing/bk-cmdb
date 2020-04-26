@@ -1,11 +1,12 @@
 import router, { addBeforeHooks } from './index'
-
-const unwatchs = []
+import throttle from 'lodash.throttle'
 
 class RouterQuery {
     constructor () {
+        this.unwatchs = []
         addBeforeHooks(() => {
-            unwatchs.forEach(unwatch => unwatch())
+            this.unwatchs.forEach(unwatch => unwatch())
+            this.unwatchs = []
         })
     }
     get app () {
@@ -39,6 +40,16 @@ class RouterQuery {
         })
     }
 
+    setBatch (query) {
+        this.app.$router.replace({
+            ...this.route,
+            query: {
+                ...this.route.query,
+                ...query
+            }
+        })
+    }
+
     delete (key) {
         const query = {
             ...this.route.query
@@ -57,8 +68,27 @@ class RouterQuery {
         })
     }
 
-    watch (key, callback) {
-        unwatchs.push(this.app.$watch(() => this.route.query[key], callback))
+    watch (key, handler, options = {}) {
+        let callback = handler
+        if (options.throttle) {
+            const interval = typeof options.throttle === 'number' ? options.throttle : 100
+            callback = throttle(handler, interval, { leading: false, trailing: true })
+        }
+        let expression = () => this.route.query[key]
+        const isMultipleKeys = Array.isArray(key)
+        if (isMultipleKeys) {
+            expression = () => {
+                const values = {}
+                key.forEach(key => {
+                    values[key] = this.route.query[key]
+                })
+                return values
+            }
+        }
+        this.unwatchs.push(this.app.$watch(expression, callback))
+        if (options.immediate) {
+            callback(expression())
+        }
     }
 }
 

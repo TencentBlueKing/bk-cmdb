@@ -132,18 +132,18 @@
                             this.navigateToBusiness(list, bizId)
                         }
                     } else {
-                        this.navigateToResource(list, 0)
+                        this.navigateToResource(list, 'all')
                     }
                 } catch (error) {
                     console.error(error)
                 }
             },
-            navigateToResource (list, type) {
+            navigateToResource (list, scope) {
                 this.$router.replace({
                     name: MENU_RESOURCE_HOST,
                     query: {
                         ip: list.join(','),
-                        default: type,
+                        scope: scope,
                         exact: 1
                     }
                 })
