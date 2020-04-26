@@ -13,9 +13,9 @@
                 :key="index">
                 <cmdb-collapse
                     :collapse.sync="groupState[group.info['bk_group_id']]">
-                    <div class="group-header clearfix" slot="title">
-                        <div class="header-title fl">
-                            <div class="group-name">
+                    <div class="group-header" slot="title">
+                        <div class="header-title">
+                            <div class="group-name" :title="group.info.bk_group_name">
                                 {{group.info['bk_group_name']}}
                                 <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('全局配置不可以在业务内调整')}}）</span>
                             </div>
@@ -195,8 +195,18 @@
                 </div>
             </div>
             <div class="group-dialog-footer" slot="footer">
-                <bk-button theme="primary" @click="handleCreateGroup" v-if="groupDialog.type === 'create'">{{$t('提交')}}</bk-button>
-                <bk-button theme="primary" @click="handleUpdateGroup" v-else>{{$t('保存')}}</bk-button>
+                <bk-button theme="primary"
+                    v-if="groupDialog.type === 'create'"
+                    :disabled="errors.has('groupName')"
+                    @click="handleCreateGroup">
+                    {{$t('提交')}}
+                </bk-button>
+                <bk-button theme="primary"
+                    v-else
+                    :disabled="errors.has('groupName')"
+                    @click="handleUpdateGroup">
+                    {{$t('保存')}}
+                </bk-button>
                 <bk-button @click="groupDialog.isShow = false">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
@@ -632,6 +642,10 @@
                 this.groupForm.groupName = group.info['bk_group_name']
             },
             async handleUpdateGroup () {
+                const valid = await this.$validator.validate('groupName')
+                if (!valid) {
+                    return
+                }
                 const curGroup = this.groupDialog.group
                 const isExist = this.groupedProperties.some(originalGroup => originalGroup !== curGroup && originalGroup.info['bk_group_name'] === this.groupForm.groupName)
                 if (isExist) {
@@ -672,12 +686,14 @@
                 this.groupDialog.isShow = false
             },
             async handleCreateGroup () {
+                const valid = await this.$validator.validate('groupName')
+                if (!valid) {
+                    return
+                }
                 const groupedProperties = this.groupedProperties
                 const isExist = groupedProperties.some(group => group.info['bk_group_name'] === this.groupForm.groupName)
                 if (isExist) {
                     this.$error(this.$t('该名字已经存在'))
-                    return
-                } else if (!await this.$validator.validateAll()) {
                     return
                 }
                 const groupId = Date.now().toString()
@@ -939,6 +955,8 @@
     }
     .group-header {
         .header-title {
+            display: flex;
+            align-items: center;
             height: 21px;
             padding: 0 21px 0 0;
             line-height: 21px;
@@ -961,10 +979,10 @@
                 color: $modelHighlightColor;
             }
             .group-name {
+                flex: 500px 0 0;
                 font-size: 16px;
                 font-weight: normal;
-                display: inline-block;
-                vertical-align: middle;
+                @include ellipsis;
                 span {
                     @include inlineBlock;
                     font-size: 12px;
@@ -978,7 +996,7 @@
                 color: #c3cdd7;
             }
             .title-icon-btn {
-                @include inlineBlock;
+                flex: 200px 0 0;
             }
             .icon-btn {
                 @include inlineBlock;
