@@ -42,27 +42,33 @@ func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header ht
 	if businessID == 0 {
 		cond.Merge(metadata.BizLabelNotExist)
 	}
-	query := &metadata.QueryCondition{
-		Fields: []string{
-			common.BKFieldID,
-			common.BKObjIDField,
-			common.BKObjNameField,
-			common.MetadataField,
-			common.BKIsPre,
-			common.BKClassificationIDField,
-		},
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
-		Condition: cond,
-	}
-	models, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, query)
-	if err != nil {
-		blog.Errorf("get models by business %d failed, err: %+v, rid: %s", businessID, err, rid)
-		return nil, fmt.Errorf("get models by business %d failed, err: %+v", businessID, err)
-	}
-
 	objects := make([]metadata.Object, 0)
-	for _, model := range models.Data.Info {
-		objects = append(objects, model.Spec)
+	count := int64(-1)
+	for offset := int64(0); count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+		query := &metadata.QueryCondition{
+			Condition: cond,
+			Limit: metadata.SearchLimit{
+				Offset: offset,
+				Limit:  common.BKMaxRecordsAtOnce,
+			},
+			Fields: []string{
+				common.BKFieldID,
+				common.BKObjIDField,
+				common.BKObjNameField,
+				common.MetadataField,
+				common.BKIsPre,
+				common.BKClassificationIDField,
+			},
+		}
+		models, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, query)
+		if err != nil {
+			blog.Errorf("get models by business %d failed, err: %+v, rid: %s", businessID, err, rid)
+			return nil, fmt.Errorf("get models by business %d failed, err: %+v", businessID, err)
+		}
+		for _, model := range models.Data.Info {
+			objects = append(objects, model.Spec)
+		}
+		count = models.Data.Count
 	}
 
 	blog.V(4).Infof("list model by business %d result: %+v, rid: %s", businessID, objects, rid)

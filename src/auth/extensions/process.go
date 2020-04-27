@@ -34,24 +34,31 @@ import (
 
 func (am *AuthManager) CollectProcessesByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]ProcessSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-
-	cond := metadata.QueryCondition{
-		Fields:    []string{common.BKAppIDField, common.BKProcessIDField, common.BKProcessNameField},
-		Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
-	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDProc, &cond)
-	if err != nil {
-		blog.V(3).Infof("get processes by business %d failed, err: %+v, rid: %s", businessID, err, rid)
-		return nil, fmt.Errorf("get processes by business %d failed, err: %+v", businessID, err)
-	}
 	processes := make([]ProcessSimplify, 0)
-	for _, cls := range result.Data.Info {
-		process := ProcessSimplify{}
-		_, err = process.Parse(cls)
+	count := -1
+	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+		cond := metadata.QueryCondition{
+			Fields:    []string{common.BKAppIDField, common.BKProcessIDField, common.BKProcessNameField},
+			Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
+			Limit: metadata.SearchLimit{
+				Offset: int64(offset),
+				Limit:  common.BKMaxRecordsAtOnce,
+			},
+		}
+		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDProc, &cond)
 		if err != nil {
+			blog.V(3).Infof("get processes by business %d failed, err: %+v, rid: %s", businessID, err, rid)
 			return nil, fmt.Errorf("get processes by business %d failed, err: %+v", businessID, err)
 		}
-		processes = append(processes, process)
+		for _, cls := range result.Data.Info {
+			process := ProcessSimplify{}
+			_, err = process.Parse(cls)
+			if err != nil {
+				return nil, fmt.Errorf("get processes by business %d failed, err: %+v", businessID, err)
+			}
+			processes = append(processes, process)
+		}
+		count = result.Data.Count
 	}
 	return processes, nil
 }
