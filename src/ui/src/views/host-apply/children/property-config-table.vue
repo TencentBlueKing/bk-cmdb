@@ -50,6 +50,7 @@
                             :key="index"
                             :class-name="'value-item'"
                             :value="getRuleValue(row.id, id)"
+                            :show-unit="false"
                             :property="row">
                         </cmdb-property-value>
                     </template>
@@ -57,6 +58,7 @@
                 </template>
                 <template v-else>
                     <cmdb-property-value
+                        :show-unit="false"
                         :value="row.__extra__.value"
                         :property="row">
                     </cmdb-property-value>
