@@ -458,12 +458,13 @@
                 if (column.id !== 'bk_inst_id') {
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_RESOURCE_INSTANCE_DETAILS,
                     params: {
                         objId: this.objId,
                         instId: item.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleSortChange (sort) {
@@ -692,11 +693,12 @@
                 })
             },
             routeToHistory () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'instanceHistory',
                     params: {
                         objId: this.objId
-                    }
+                    },
+                    history: true
                 })
             },
             handleSliderBeforeClose () {

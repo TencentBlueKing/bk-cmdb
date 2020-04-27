@@ -379,7 +379,7 @@
                         }
                     }).then(res => {
                         if (!res.result) {
-                            this.$router.replace({ name: '404' })
+                            this.$routerActions.redirect({ name: '404' })
                         } else {
                             return {
                                 service_instance_count: res.data.service_instance_count,
@@ -390,7 +390,7 @@
                     })
                 } catch (e) {
                     console.error(e)
-                    this.$router.replace({ name: '404' })
+                    this.$routerActions.redirect({ name: '404' })
                 }
             },
             async getServiceClassification () {
@@ -582,7 +582,7 @@
                 }
                 const moduleId = this.$route.params['moduleId']
                 if (moduleId) {
-                    this.$router.replace({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_AND_SERVICE,
                         query: {
                             node: 'module-' + this.$route.params.moduleId
@@ -594,7 +594,7 @@
             },
             handleCancelOperation () {
                 this.showUpdateInfo = false
-                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
+                this.$routerActions.redirect({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
             },
             handleSliderBeforeClose () {
                 const hasChanged = this.$refs.processForm.hasChange()

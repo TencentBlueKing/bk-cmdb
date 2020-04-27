@@ -1,5 +1,6 @@
 import router, { addBeforeHooks } from './index'
 import throttle from 'lodash.throttle'
+import { redirect } from './actions'
 
 class RouterQuery {
     constructor () {
@@ -31,7 +32,7 @@ class RouterQuery {
     }
 
     set (key, value) {
-        this.app.$router.replace({
+        redirect({
             ...this.route,
             query: {
                 ...this.route.query,
@@ -41,7 +42,7 @@ class RouterQuery {
     }
 
     setBatch (query) {
-        this.app.$router.replace({
+        redirect({
             ...this.route,
             query: {
                 ...this.route.query,
@@ -55,14 +56,14 @@ class RouterQuery {
             ...this.route.query
         }
         delete query[key]
-        this.app.$router.replace({
+        redirect({
             ...this.route,
             query: query
         })
     }
 
     clear () {
-        this.app.$router.replace({
+        redirect({
             ...this.route,
             query: {}
         })

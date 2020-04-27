@@ -193,8 +193,7 @@
         MENU_MODEL_MANAGEMENT,
         MENU_RESOURCE_HOST,
         MENU_RESOURCE_BUSINESS,
-        MENU_RESOURCE_INSTANCE,
-        MENU_MODEL_BUSINESS_TOPOLOGY
+        MENU_RESOURCE_INSTANCE
     } from '@/dictionary/menu-symbol'
     export default {
         components: {
@@ -406,7 +405,7 @@
                     this.$store.commit('objectModel/setActiveModel', model)
                     this.initModelInfo()
                 } else {
-                    this.$router.replace({ name: 'status404' })
+                    this.$routerActions.redirect({ name: 'status404' })
                 }
             },
             async getModelStatistics () {
@@ -504,8 +503,7 @@
                             requestId: 'deleteModel'
                         }
                     })
-                    const routerName = this.$route.query.from === 'business' ? MENU_MODEL_BUSINESS_TOPOLOGY : MENU_MODEL_MANAGEMENT
-                    this.$router.replace({ name: routerName })
+                    this.$routerActions.back()
                 } else {
                     await this.deleteObject({
                         id: this.activeModel['id'],
@@ -516,7 +514,7 @@
                             requestId: 'deleteModel'
                         }
                     })
-                    this.$router.replace({ name: MENU_MODEL_MANAGEMENT })
+                    this.$routerActions.redirect({ name: MENU_MODEL_MANAGEMENT })
                 }
                 this.$http.cancel('post_searchClassificationsObjects')
             },
@@ -527,11 +525,11 @@
                     biz: MENU_RESOURCE_BUSINESS
                 }
                 if (map.hasOwnProperty(model.bk_obj_id)) {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: map[model.bk_obj_id]
                     })
                 } else {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_INSTANCE,
                         params: {
                             objId: model.bk_obj_id

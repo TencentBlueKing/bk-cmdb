@@ -106,12 +106,14 @@
                 }
             },
             goToTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
+                        bizId: this.business,
                         templateId: this.moduleNode.data.service_template_id,
                         moduleId: this.moduleNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleAddHost () {
@@ -123,29 +125,33 @@
                 if (this.withTemplate) {
                     this.handleAddHost()
                 } else {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: 'createServiceInstance',
                         params: {
+                            bizId: this.business,
                             moduleId: this.moduleNode.data.bk_inst_id,
                             setId: this.moduleNode.parent.data.bk_inst_id
                         },
                         query: {
                             title: this.moduleNode.name
-                        }
+                        },
+                        history: true
                     })
                 }
             },
             handleDialogConfirm (selected) {
                 this.dialog.show = false
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'createServiceInstance',
                     params: {
+                        bizId: this.business,
                         setId: this.currentNode.parent.data.bk_inst_id,
                         moduleId: this.currentNode.data.bk_inst_id
                     },
                     query: {
                         resources: selected.map(item => item.host.bk_host_id).join(',')
-                    }
+                    },
+                    history: true
                 })
             },
             handleDialogCancel () {

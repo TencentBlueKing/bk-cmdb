@@ -372,18 +372,7 @@
                 })
             },
             handleGoBackModule () {
-                const query = this.$route.query
-                this.$router.replace({
-                    name: query.from ? query.from : this.$route.meta.menu.relative,
-                    params: {
-                        templateId: this.templateId,
-                        active: 'instance'
-                    },
-                    query: {
-                        tab: 'serviceInstance',
-                        node: 'module-' + this.modules[0]
-                    }
-                })
+                this.$routerActions.back()
             },
             getServiceInstanceIds () {
                 const ids = []

@@ -184,9 +184,6 @@
             setBreadcrumbs () {
                 this.$store.commit('setTitle', this.$t('删除历史'))
             },
-            back () {
-                this.$router.go(-1)
-            },
             setTimeResolver () {
                 return new Promise((resolve, reject) => {
                     this.opTimeResolver = () => {

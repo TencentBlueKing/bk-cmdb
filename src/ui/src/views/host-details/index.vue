@@ -108,7 +108,7 @@
                     if (info.length) {
                         this.$store.commit('hostDetails/setHostInfo', info[0])
                     } else {
-                        this.$router.replace({ name: 404 })
+                        this.$routerActions.redirect({ name: 404 })
                     }
                 } catch (e) {
                     console.error(e)

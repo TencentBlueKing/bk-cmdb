@@ -445,36 +445,32 @@
                 }
                 const business = item.biz[0]
                 if (this.$route.meta.owner === MENU_BUSINESS) {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_DETAILS,
                         params: {
+                            bizId: business.bk_biz_id,
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id
                         },
-                        query: {
-                            from: 'business'
-                        }
+                        history: true
                     })
                 } else if (business.default) {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
                             id: item.host.bk_host_id
                         },
-                        query: {
-                            from: 'resource'
-                        }
+                        history: true
                     })
                 } else {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_BUSINESS_HOST_DETAILS,
                         params: {
+                            bizId: business.bk_biz_id,
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id
                         },
-                        query: {
-                            from: 'resource'
-                        }
+                        history: true
                     })
                 }
             },
@@ -544,7 +540,7 @@
                 this.$emit('on-quick-search', property, value, operator)
             },
             routeToHistory () {
-                this.$router.push({ name: 'hostHistory' })
+                this.$routerActions.redirect({ name: 'hostHistory', history: true })
             },
             handleColumnConfigClick () {
                 this.$refs.hostFilter.$refs.filterPopper.instance.hide()

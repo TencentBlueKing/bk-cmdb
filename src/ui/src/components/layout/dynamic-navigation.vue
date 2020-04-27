@@ -236,12 +236,13 @@
                 })
             },
             handleToggleBusiness (id) {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     ...this.$route,
                     params: {
                         ...this.$route.params,
                         bizId: id
-                    }
+                    },
+                    reload: true
                 })
             }
         }

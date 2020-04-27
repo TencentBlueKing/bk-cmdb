@@ -342,11 +342,12 @@
                 if (column.id !== 'bk_biz_id') {
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_RESOURCE_BUSINESS_DETAILS,
                     params: {
                         bizId: row.bk_biz_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleSortChange (sort) {
@@ -484,8 +485,9 @@
                 })
             },
             routeToHistory () {
-                this.$router.push({
-                    name: MENU_RESOURCE_BUSINESS_HISTORY
+                this.$routerActions.redirect({
+                    name: MENU_RESOURCE_BUSINESS_HISTORY,
+                    history: true
                 })
             },
             handleSliderBeforeClose () {

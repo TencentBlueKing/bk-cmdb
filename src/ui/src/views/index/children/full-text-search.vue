@@ -178,7 +178,7 @@
             },
             jumpPage (source) {
                 if (source['hitsType'] === 'host') {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
                             id: source['bk_host_id'].toString().replace(/(\<\/?em\>)/g, '')
@@ -200,7 +200,7 @@
                         })
                         return
                     }
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_INSTANCE,
                         params: {
                             objId: source['bk_obj_id'],
@@ -209,7 +209,7 @@
                     })
                 } else if (source['hitsType'] === 'biz') {
                     const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: name,
                         params: {
                             bizName: source['bk_biz_name'].toString().replace(/(\<\/?em\>)/g, '')

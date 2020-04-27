@@ -179,13 +179,13 @@
             },
             showMoreHost () {
                 const name = this.isAdminView ? 'resource' : 'hosts'
-                this.$router.push({
+                this.$routerActions.redirect({
                     name,
                     params: {
-                        text: this.keyword,
-                        inner: true,
-                        outer: true,
-                        exact: false
+                        ip: this.keyword,
+                        inner: 1,
+                        outer: 1,
+                        exact: 0
                     }
                 })
             },

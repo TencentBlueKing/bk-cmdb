@@ -139,7 +139,7 @@
                         <bk-button
                             outline
                             theme="primary"
-                            @click="$router.push({ name: hostAndServiceRouteName })"
+                            @click="$routerActions.redirect({ name: hostAndServiceRouteName })"
                         >
                             {{$t('跳转创建')}}
                         </bk-button>
@@ -299,7 +299,7 @@
                 })
             },
             handleViewConflict () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
                     query: {
                         mid: this.moduleId
@@ -307,7 +307,7 @@
                 })
             },
             handleEdit () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_EDIT,
                     query: {
                         mid: this.moduleId

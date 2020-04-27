@@ -350,7 +350,7 @@
                 }
             },
             handleCloneInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'cloneServiceInstance',
                     params: {
                         instanceId: this.instance.id,
@@ -361,25 +361,28 @@
                     query: {
                         title: this.instance.name,
                         node: this.currentNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             handleDeleteInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_DELETE_SERVICE,
                     params: {
                         ids: this.instance.id,
                         moduleId: this.currentNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleAddProcessToTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.currentNode.data.service_template_id,
                         moduleId: this.currentNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleSyncProcessToInstance () {
