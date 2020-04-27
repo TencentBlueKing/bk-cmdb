@@ -40,9 +40,10 @@ func (am *AuthManager) CollectProcessesByBusinessID(ctx context.Context, header 
 		cond := metadata.QueryCondition{
 			Fields:    []string{common.BKAppIDField, common.BKProcessIDField, common.BKProcessNameField},
 			Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
-			Limit: metadata.SearchLimit{
-				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
 			},
 		}
 		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDProc, &cond)

@@ -50,12 +50,13 @@ func (am *AuthManager) CollectClassificationByBusinessIDs(ctx context.Context, h
 	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
 		query := &metadata.QueryCondition{
 			Condition: cond,
-			Limit: metadata.SearchLimit{
-				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
 			},
 		}
-		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjClassifiction, query)
+		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjClassification, query)
 		if err != nil {
 			blog.Errorf("get module:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 			return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)

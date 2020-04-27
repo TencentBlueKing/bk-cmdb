@@ -40,9 +40,10 @@ func (am *AuthManager) CollectAllPlats(ctx context.Context, header http.Header) 
 		cond := metadata.QueryCondition{
 			Fields:    []string{common.BKCloudIDField, common.BKCloudNameField},
 			Condition: mapstr.MapStr(map[string]interface{}{}),
-			Limit: metadata.SearchLimit{
-				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
 			},
 		}
 		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDPlat, &cond)

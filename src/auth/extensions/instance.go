@@ -40,9 +40,10 @@ func (am *AuthManager) CollectInstancesByModelID(ctx context.Context, header htt
 		cond := metadata.QueryCondition{
 			Condition: map[string]interface{}{common.BKObjIDField: objectID},
 			Fields:    []string{common.BKInstIDField, common.BKInstNameField, common.BKAppIDField, common.BKObjIDField},
-			Limit: metadata.SearchLimit{
-				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
 			},
 		}
 		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, objectID, &cond)

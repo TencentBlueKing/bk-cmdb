@@ -47,9 +47,10 @@ func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header ht
 	for offset := int64(0); count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
 		query := &metadata.QueryCondition{
 			Condition: cond,
-			Limit: metadata.SearchLimit{
-				Offset: offset,
-				Limit:  common.BKMaxRecordsAtOnce,
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: int(offset),
 			},
 			Fields: []string{
 				common.BKFieldID,

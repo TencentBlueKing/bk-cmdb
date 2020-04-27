@@ -173,7 +173,11 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 		query := &metadata.QueryCondition{
 			Fields:    []string{common.BKHostIDField},
 			Condition: cond.ToMapStr(),
-			Limit:     metadata.SearchLimit{Offset: int64(offset), Limit: common.BKMaxRecordsAtOnce},
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
+			},
 		}
 		hosts, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameModuleHostConfig, query)
 		if err != nil {
@@ -267,9 +271,10 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 		cond := metadata.QueryCondition{
 			Fields:    []string{common.BKHostIDField, common.BKHostNameField, common.BKHostInnerIPField},
 			Condition: condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs).ToMapStr(),
-			Limit: metadata.SearchLimit{
-				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
 			},
 		}
 		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDHost, &cond)

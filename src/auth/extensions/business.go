@@ -40,9 +40,10 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 	count := -1
 	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
 		cond := metadata.QueryCondition{
-			Limit: metadata.SearchLimit{
-				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
 			},
 			Condition: map[string]interface{}{
 				common.BKDefaultField: 0,

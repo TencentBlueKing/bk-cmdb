@@ -39,9 +39,10 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 		query := &metadata.QueryCondition{
 			Condition: cond,
 			Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKSetNameField},
-			Limit: metadata.SearchLimit{
-				Offset: int64(offset),
-				Limit:  common.BKMaxRecordsAtOnce,
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
 			},
 		}
 		instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, query)
