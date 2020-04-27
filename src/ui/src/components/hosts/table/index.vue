@@ -7,7 +7,7 @@
             <div class="options-right clearfix">
                 <div class="fl" v-if="showScope">
                     <i class="options-split"></i>
-                    <bk-select class="options-collection"
+                    <bk-select style="width: 280px;"
                         v-model="scope"
                         font-size="medium"
                         :clearable="false">
@@ -17,30 +17,6 @@
                     </bk-select>
                 </div>
                 <div class="fr">
-                    <bk-select class="options-collection bgc-white"
-                        v-if="showCollection"
-                        ref="collectionSelector"
-                        v-model="selectedCollection"
-                        font-size="medium"
-                        :loading="$loading('searchCollection')"
-                        :placeholder="$t('请选择收藏条件')"
-                        @selected="handleCollectionSelect"
-                        @clear="handleCollectionClear"
-                        @toggle="handleCollectionToggle">
-                        <bk-option v-for="collection in collectionList"
-                            :key="collection.id"
-                            :id="collection.id"
-                            :name="collection.name">
-                            <span class="collection-name" :title="collection.name">{{collection.name}}</span>
-                            <i class="bk-icon icon-close" @click.stop="handleDeleteCollection(collection)"></i>
-                        </bk-option>
-                        <div slot="extension">
-                            <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
-                                <i class="bk-icon icon-plus-circle"></i>
-                                {{$t('新增条件')}}
-                            </a>
-                        </div>
-                    </bk-select>
                     <cmdb-host-filter class="ml10"
                         ref="hostFilter"
                         :properties="filterProperties"
@@ -174,7 +150,6 @@
                 type: [String, Array],
                 default: ''
             },
-            showCollection: Boolean,
             showHistory: Boolean,
             showScope: Boolean
         },
@@ -226,7 +201,6 @@
                     selected: [],
                     disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
-                selectedCollection: '',
                 scope: RouterQuery.get('scope', '1')
             }
         },
@@ -234,7 +208,7 @@
             ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapState('hosts', ['collectionList', 'condition']),
+            ...mapState('hosts', ['condition']),
             customColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
@@ -302,9 +276,6 @@
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
-                if (this.showCollection) {
-                    this.getCollectionList()
-                }
             } catch (e) {
                 console.log(e)
             }
@@ -350,87 +321,6 @@
                     this.propertyGroups = groups
                     return groups
                 })
-            },
-            async getCollectionList () {
-                try {
-                    const data = await this.$store.dispatch('hostFavorites/searchFavorites', {
-                        params: {
-                            condition: {
-                                bk_biz_id: this.$store.getters['objectBiz/bizId']
-                            }
-                        },
-                        config: {
-                            requestId: 'searchCollection'
-                        }
-                    })
-                    this.$store.commit('hosts/setCollectionList', data.info)
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            handleCollectionToggle (isOpen) {
-                if (isOpen) {
-                    this.$refs.hostFilter.$refs.filterPopper.instance.hide()
-                }
-            },
-            async handleDeleteCollection (collection) {
-                try {
-                    await this.$store.dispatch('hostFavorites/deleteFavorites', {
-                        id: collection.id,
-                        config: {
-                            requestId: 'deleteFavorites'
-                        }
-                    })
-                    this.$success(this.$t('删除成功'))
-                    this.selectedCollection = ''
-                    this.$store.commit('hosts/deleteCollection', collection.id)
-                    this.handleCollectionClear()
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            handleCollectionSelect (value) {
-                const collection = this.collectionList.find(collection => collection.id === value)
-                try {
-                    const filterList = JSON.parse(collection.query_params).map(condition => {
-                        return {
-                            bk_obj_id: condition.bk_obj_id,
-                            bk_property_id: condition.field,
-                            operator: condition.operator,
-                            value: condition.value
-                        }
-                    })
-                    const info = JSON.parse(collection.info)
-                    const filterIP = {
-                        text: info.ip_list.join('\n'),
-                        exact: info.exact_search,
-                        inner: info.bk_host_innerip,
-                        outer: info.bk_host_outerip
-                    }
-                    this.$store.commit('hosts/setFilterList', filterList)
-                    this.$store.commit('hosts/setFilterIP', filterIP)
-                    this.$store.commit('hosts/setCollection', collection)
-                    setTimeout(() => {
-                        this.$refs.hostFilter.handleSearch(false)
-                    }, 0)
-                } catch (e) {
-                    this.$error(this.$t('应用收藏条件失败，转换数据错误'))
-                    console.error(e.message)
-                }
-            },
-            handleCollectionClear () {
-                this.$store.commit('hosts/clearFilter')
-                this.$refs.hostFilter.handleReset()
-                this.$refs.hostFilter.$refs.filterPopper.instance.hide()
-                const key = this.$route.meta.filterPropertyKey
-                const customData = this.$store.getters['userCustom/getCustomData'](key, [])
-                this.$store.commit('hosts/setFilterList', customData)
-            },
-            handleCreateCollection () {
-                this.$store.commit('hosts/clearFilter')
-                this.selectedCollection = ''
-                this.$refs.collectionSelector.close()
-                this.$refs.hostFilter.handleToggleFilter()
             },
             setTableHeader () {
                 const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
@@ -697,48 +587,5 @@
     }
     .hosts-table {
         margin-top: 14px;
-    }
-    .options-collection {
-        width: 280px;
-    }
-    /deep/ .bk-option-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        .collection-name {
-            @include ellipsis;
-            flex: 1;
-        }
-        &:hover {
-            .icon-close {
-                display: inline-block;
-            }
-        }
-        .icon-close {
-            font-size: 14px;
-            font-weight: bold;
-            margin-top: 1px;
-            color: #979BA5;
-            display: none;
-            &:hover {
-                color: #3a84ff;
-            }
-        }
-    }
-    .collection-create {
-        display: inline-block;
-        width: 60%;
-        font-size: 12px;
-        color: #63656E;
-        line-height: 32px;
-        cursor: pointer;
-        &:hover {
-            color: #3a84ff;
-        }
-        .bk-icon {
-            font-size: 14px;
-            display: inline-block;
-            vertical-align: -2px;
-        }
     }
 </style>

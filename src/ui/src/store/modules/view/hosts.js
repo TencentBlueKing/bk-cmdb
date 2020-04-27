@@ -1,21 +1,9 @@
-const defaultParams = {
-    ip: {
-        flag: 'bk_host_innerip|bk_host_outer',
-        exact: 0,
-        data: []
-    }
-}
 const state = {
     filterList: [],
-    filterIP: null,
-    filterParams: {
-        ...defaultParams
-    },
     collection: null,
     collectionList: [],
     propertyList: [],
-    isHostSearch: null,
-    condition: ['biz', 'set', 'module', 'host'].map(modelId => {
+    condition: ['biz', 'set', 'module', 'host', 'object'].map(modelId => {
         return {
             bk_obj_id: modelId,
             fields: [],
@@ -44,20 +32,11 @@ const mutations = {
     setFilterList (state, list) {
         state.filterList = list
     },
-    setFilterIP (state, IP) {
-        state.filterIP = IP
-    },
-    setFilterParams (state, params) {
-        state.filterParams = params
-    },
     setCollectionList (state, list) {
         state.collectionList = list
     },
     setCollection (state, collection) {
         state.collection = collection
-    },
-    setIsHostSearch (state, boolean) {
-        state.isHostSearch = boolean
     },
     addCollection (state, collection) {
         state.collectionList.push(collection)
@@ -70,12 +49,7 @@ const mutations = {
     },
     clearFilter (state) {
         state.filterList = []
-        state.filterIP = null
-        state.filterParams = {
-            ...defaultParams
-        }
         state.collection = null
-        state.isHostSearch = false
     },
     setPropertyList (state, list) {
         state.propertyList = list
