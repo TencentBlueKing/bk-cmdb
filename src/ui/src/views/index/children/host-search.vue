@@ -82,12 +82,6 @@
                             return
                         }
                         this.checkTargetPage(searchList)
-                        // this.$store.commit('hosts/setFilterIP', {
-                        //     text: searchList.join('\n'),
-                        //     exact: true
-                        // })
-                        // this.$store.commit('hosts/setIsHostSearch', true)
-                        // this.$router.push({ name: MENU_RESOURCE_HOST })
                     } catch (e) {
                         console.error(e)
                     }

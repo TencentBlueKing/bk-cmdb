@@ -164,6 +164,7 @@
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus'
     import RouterQuery from '@/router/query'
+    import { getIPPayload } from '@/utils/host'
     export default {
         components: {
             filterOperator,
@@ -240,19 +241,6 @@
                     resolve()
                 }
             })
-            this.unwatch = this.$watch(() => {
-                return {
-                    inner: this.ip.inner,
-                    outer: this.ip.outer,
-                    exact: this.ip.exact
-                }
-            }, ({ inner, outer, exact }) => {
-                RouterQuery.setBatch({
-                    inner: inner ? '1' : '0',
-                    outer: outer ? '1' : '0',
-                    exact: exact ? '1' : '0'
-                })
-            })
             RouterQuery.watch(['ip', 'exact', 'inner', 'outer'], ({
                 ip = '',
                 exact = '1',
@@ -268,7 +256,6 @@
         },
         beforeDestroy () {
             Bus.$off('toggle-host-filter', this.handleToggleFilter)
-            this.unwatch()
             this.$store.commit('hosts/clearFilter')
         },
         methods: {
@@ -333,21 +320,8 @@
             },
             handleSearch (toggle = true) {
                 const params = this.getParams()
-                this.$store.commit('hosts/setFilterParams', params)
-                this.$store.commit('hosts/setCondition', ['biz', 'set', 'module', 'host'].map(modelId => {
-                    return {
-                        bk_obj_id: modelId,
-                        fields: [],
-                        condition: params[modelId]
-                    }
-                }))
-                if (toggle) {
-                    this.handleToggleFilter()
-                }
-                RouterQuery.setBatch({
-                    ip: params.ip.data.join(','),
-                    exact: params.ip.exact
-                })
+                this.updateQuery(params)
+                toggle && this.handleToggleFilter()
             },
             handleCreateCollection () {
                 const instance = this.$refs.collectionPopover.instance
@@ -415,26 +389,26 @@
                 this.collectionName = ''
             },
             handleReset () {
-                this.ip = { ...this.defaultIpConfig }
                 this.filterCondition.forEach(filterItem => {
                     filterItem.value = ''
                 })
+                RouterQuery.setBatch({
+                    ip: '',
+                    exact: 0,
+                    inner: 1,
+                    outer: 1
+                })
                 const params = this.getParams()
-                this.$store.commit('hosts/setFilterParams', params)
+                this.updateQuery(params)
             },
             getParams () {
                 const params = {
-                    ip: {
-                        data: this.getIPList(),
-                        exact: this.ip.exact ? 1 : 0,
-                        flag: ['bk_host_innerip', 'bk_host_outerip'].filter((flag, index) => {
-                            return index === 0 ? this.ip.inner : this.ip.outer
-                        }).join('|')
-                    },
+                    ip: getIPPayload(),
                     host: [],
                     module: [],
                     set: [],
-                    biz: []
+                    biz: [],
+                    object: []
                 }
                 this.filterCondition.forEach(filterItem => {
                     const filterValue = filterItem.value
@@ -464,6 +438,23 @@
                     }
                 })
                 return params
+            },
+            updateQuery (params) {
+                this.$store.commit('hosts/setCondition', ['biz', 'set', 'module', 'host', 'object'].map(modelId => {
+                    return {
+                        bk_obj_id: modelId,
+                        fields: [],
+                        condition: params[modelId]
+                    }
+                }))
+                const flags = params.ip.flag.split('|')
+                RouterQuery.setBatch({
+                    ip: params.ip.data.join(','),
+                    exact: params.ip.exact,
+                    inner: flags.includes('bk_host_innerip') ? 1 : 0,
+                    outer: flags.includes('bk_host_outerip') ? 1 : 0,
+                    _t: Date.now()
+                })
             },
             getIPList () {
                 const list = []

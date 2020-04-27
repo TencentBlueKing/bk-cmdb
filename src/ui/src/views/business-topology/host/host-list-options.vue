@@ -150,6 +150,7 @@
         MENU_BUSINESS_TRANSFER_HOST
     } from '@/dictionary/menu-symbol'
     import Formatter from '@/filters/formatter.js'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             HostFilter,
@@ -280,18 +281,16 @@
                         }
                     })
                     const info = JSON.parse(collection.info)
-                    const filterIP = {
-                        text: info.ip_list.join('\n'),
-                        exact: info.exact_search,
-                        inner: info.bk_host_innerip,
-                        outer: info.bk_host_outerip
-                    }
                     this.$store.commit('hosts/setFilterList', filterList)
-                    this.$store.commit('hosts/setFilterIP', filterIP)
                     this.$store.commit('hosts/setCollection', collection)
-                    setTimeout(() => {
-                        this.$refs.hostFilter.handleSearch(false)
-                    }, 0)
+                    RouterQuery.setBatch({
+                        ip: info.ip_list.join(','),
+                        exact: info.exact_search ? 1 : 0,
+                        inner: info.bk_host_innerip ? 1 : 0,
+                        outer: info.bk_host_outerip ? 1 : 0,
+                        page: 1,
+                        _t: Date.now()
+                    })
                 } catch (e) {
                     this.$error(this.$t('应用收藏条件失败，转换数据错误'))
                     console.error(e.message)

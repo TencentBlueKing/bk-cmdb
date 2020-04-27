@@ -6,7 +6,7 @@
             :data="table.data"
             :pagination="table.pagination"
             :max-height="$APP.height - 250"
-            @page-change="refresh"
+            @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @sort-change="handleSortChange"
             @selection-change="handleSelectionChange">
@@ -46,13 +46,14 @@
     import ModuleSelector from './module-selector.vue'
     import MoveToResourceConfirm from './move-to-resource-confirm.vue'
     import hostValueFilter from '@/filters/host'
-    import debounce from 'lodash.debounce'
     import { mapGetters, mapState } from 'vuex'
     import {
         MENU_BUSINESS_HOST_DETAILS,
         MENU_BUSINESS_TRANSFER_HOST
     } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus.js'
+    import RouterQuery from '@/router/query'
+    import { getIPPayload } from '@/utils/host'
     export default {
         components: {
             HostListOptions,
@@ -90,8 +91,7 @@
                     table: Symbol('table'),
                     moveToResource: Symbol('moveToResource'),
                     moveToIdleModule: Symbol('moveToIdleModule')
-                },
-                refresh: null
+                }
             }
         },
         computed: {
@@ -101,10 +101,9 @@
             ...mapGetters('businessHost', [
                 'columnsConfigProperties',
                 'selectedNode',
-                'getDefaultSearchCondition',
                 'commonRequest'
             ]),
-            ...mapState('hosts', ['filterParams']),
+            ...mapGetters('hosts', ['condition']),
             customColumns () {
                 const customColumnKey = this.$route.meta.customInstanceColumn
                 return this.usercustom[customColumnKey] || []
@@ -119,22 +118,21 @@
             },
             columnsConfigProperties () {
                 this.setTableHeader()
-            },
-            selectedNode (node) {
-                node && this.active && this.refresh(1)
-            },
-            filterParams () {
-                this.selectedNode && this.refresh(1)
             }
         },
         created () {
-            this.refresh = debounce(current => {
-                this.handlePageChange(current)
-            }, 10)
-            Bus.$on('refresh-list', this.handlePageChange)
-        },
-        beforeDestroy () {
-            Bus.$off('refresh-list', this.handlePageChange)
+            RouterQuery.watch(['inner', 'outer', 'exact', 'node', 'ip', 'tab', 'page', 'limit', '_t'], ({
+                tab = 'hostList',
+                node,
+                page = 1,
+                limit = this.table.pagination.limit
+            }) => {
+                this.table.pagination.current = parseInt(page)
+                this.table.pagination.limit = parseInt(limit)
+                if (tab === 'hostList' && node) {
+                    this.getHostList()
+                }
+            }, { throttle: 16, immediate: true })
         },
         methods: {
             setTableHeader () {
@@ -152,16 +150,17 @@
                 return (isHostProperty && !isForeignKey) ? 'custom' : false
             },
             handlePageChange (current) {
-                this.table.pagination.current = current
-                this.getHostList()
+                RouterQuery.set('page', current)
             },
             handleLimitChange (limit) {
-                this.table.pagination.limit = limit
-                this.refresh(1)
+                RouterQuery.setBatch({
+                    limit: limit,
+                    page: 1
+                })
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)
-                this.refresh(1)
+                RouterQuery.set('_t', Date.now())
             },
             handleValueClick (row, column) {
                 if (column.bk_obj_id !== 'host' || column.bk_property_id !== 'bk_host_id') {
@@ -203,16 +202,13 @@
             getParams () {
                 const params = {
                     bk_biz_id: this.bizId,
-                    ip: this.filterParams.ip,
+                    ip: getIPPayload(),
                     page: {
                         ...this.$tools.getPageParams(this.table.pagination),
                         sort: this.table.sort
                     },
-                    condition: this.getDefaultSearchCondition()
+                    condition: this.condition
                 }
-                params.condition.forEach(modleCondition => {
-                    modleCondition.condition = this.filterParams[modleCondition.bk_obj_id] || []
-                })
                 const idMap = {
                     host: 'bk_host_id',
                     set: 'bk_set_id',
@@ -308,9 +304,12 @@
                         hosts: [...this.table.selection],
                         target: internalModule
                     })
-                    this.refresh(1)
                     this.table.selection = []
                     this.$success('转移成功')
+                    RouterQuery.setBatch({
+                        _t: Date.now(),
+                        page: 1
+                    })
                 } catch (e) {
                     console.error(e)
                 }
@@ -346,8 +345,11 @@
                         hosts: [...this.table.selection]
                     })
                     this.table.selection = []
-                    this.refresh(1)
                     this.$success('转移成功')
+                    RouterQuery.setBatch({
+                        _t: Date.now(),
+                        page: 1
+                    })
                 } catch (e) {
                     console.error(e)
                 }
