@@ -351,6 +351,10 @@
             this.setDynamicBreadcrumbs()
             this.reload()
         },
+        beforeRouteUpdate (to, from, next) {
+            this.setDynamicBreadcrumbs()
+            next()
+        },
         methods: {
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),

@@ -27,6 +27,7 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
         // 注入bizId，未改造的页面跳转，可能会遗漏了bizId的设置
         if (resolved.matched.length && resolved.matched[0].name === MENU_BUSINESS && !params.bizId) {
             to.params.bizId = router.app.$route.params.bizId
+            console.warn('路由跳转未提供参数bizId, 已自动注入当前URL中的bizId')
         }
         router.replace(to)
     }
@@ -35,8 +36,12 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
 export const back = function () {
     const queryStr = router.app.$route.query._f
     if (queryStr) {
-        const route = JSON.parse(Base64.decode(queryStr))
-        redirect(route)
+        try {
+            const route = JSON.parse(Base64.decode(queryStr))
+            redirect(route)
+        } catch (error) {
+            router.go(-1)
+        }
     } else {
         router.go(-1)
     }

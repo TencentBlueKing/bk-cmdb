@@ -18,7 +18,11 @@
             from () {
                 const queryStr = this.$route.query._f
                 if (queryStr) {
-                    return JSON.parse(Base64.decode(queryStr))
+                    try {
+                        return JSON.parse(Base64.decode(queryStr))
+                    } catch (error) {
+                        return null
+                    }
                 }
                 return null
             }
