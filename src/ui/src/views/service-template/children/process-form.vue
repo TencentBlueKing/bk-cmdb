@@ -73,7 +73,7 @@
 <script>
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
-    import { mapGetters, mapMutations } from 'vuex'
+    import { mapMutations } from 'vuex'
     export default {
         mixins: [formMixins],
         props: {
@@ -97,6 +97,7 @@
                 type: Boolean,
                 default: true
             },
+            dataIndex: Number,
             showOptions: {
                 type: Boolean,
                 default: true
@@ -147,7 +148,6 @@
             }
         },
         computed: {
-            ...mapGetters('serviceProcess', ['hasProcessName']),
             groupedProperties () {
                 const properties = this.$groupedProperties.map(properties => {
                     const filterProperties = properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
@@ -193,7 +193,8 @@
         methods: {
             ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
             getPropertyEditStatus (property) {
-                return (this.type === 'update' && ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']))
+                const uneditable = ['bk_func_name', 'bk_process_name'].includes(property['bk_property_id']) && !this.isCreatedService
+                return (this.type === 'update' && uneditable)
                     || !this.values[property['bk_property_id']]['as_default_value']
             },
             changedValues () {
@@ -303,18 +304,12 @@
                     } else if (result && this.isCreatedService) {
                         const cloneValues = this.$tools.clone(this.values)
                         const formatValue = this.$parent.$parent.formatSubmitData(cloneValues)
-                        if (this.type === 'create' && !this.hasProcessName(formatValue)) {
-                            this.values['sign_id'] = new Date().getTime()
+                        if (this.type === 'create') {
                             this.addLocalProcessTemplate(formatValue)
                             this.$emit('on-cancel')
                         } else if (this.type === 'update') {
-                            this.updateLocalProcessTemplate(formatValue)
+                            this.updateLocalProcessTemplate({ process: formatValue, index: this.dataIndex })
                             this.$emit('on-cancel')
-                        } else {
-                            this.$bkMessage({
-                                message: this.$t('进程名称已存在'),
-                                theme: 'error'
-                            })
                         }
                     } else if (result) {
                         this.$emit('on-submit', this.values, this.changedValues(), this.type)
