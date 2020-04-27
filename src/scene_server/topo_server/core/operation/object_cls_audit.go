@@ -22,42 +22,36 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-type ObjAuditLog interface {
-	buildSnapshotForPre() ObjAuditLog
-	buildSnapshotForCur() ObjAuditLog
-	SaveAuditLog(metadata.ActionType) errors.CCError
-}
-
-type ObjectAudit struct {
+type ObjectClsAudit struct {
 	kit          *rest.Kit
 	clientSet    apimachinery.ClientSetInterface
 	auditType    metadata.AuditType
 	resourceType metadata.ResourceType
 	id           int64
-	bkObjID      string
-	bkObjName    string
-	preData      metadata.Object
-	curData      metadata.Object
+	objClsID     string
+	objClsName   string
+	preData      metadata.Classification
+	curData      metadata.Classification
 }
 
-func NewObjectAudit(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, ID int64) ObjAuditLog {
-	return &ObjectAudit{
+func NewObjectClsAudit(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, ID int64) ObjAuditLog {
+	return &ObjectClsAudit{
 		kit:          kit,
 		clientSet:    clientSet,
 		auditType:    metadata.ModelType,
-		resourceType: metadata.ModelRes,
+		resourceType: metadata.ModelClassificationRes,
 		id:           ID,
 	}
 }
 
-func (log *ObjectAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCError {
+func (log *ObjectClsAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCError {
 	auditLog := metadata.AuditLog{
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
 		Action:       auditAction,
 		OperationDetail: &metadata.BasicOpDetail{
 			ResourceID:   log.id,
-			ResourceName: log.bkObjName,
+			ResourceName: log.objClsName,
 			Details: &metadata.BasicContent{
 				PreData: log.preData.ToMapStr(),
 				CurData: log.curData.ToMapStr(),
@@ -76,44 +70,44 @@ func (log *ObjectAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCE
 	return nil
 }
 
-func (log *ObjectAudit) buildSnapshotForPre() ObjAuditLog {
+func (log *ObjectClsAudit) buildSnapshotForPre() ObjAuditLog {
 	query := mapstr.MapStr{"id": log.id}
-	rsp, err := log.clientSet.CoreService().Model().ReadModel(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
+	rsp, err := log.clientSet.CoreService().Model().ReadModelClassification(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
-		blog.Errorf("[audit] failed to build the objData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
+		blog.Errorf("[audit] failed to build the objClsData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
 		return nil
 	}
 	if rsp.Result != true {
-		blog.Errorf("[audit] failed to build the objData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[audit] failed to build the objClsData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
 		return nil
 	}
 	if len(rsp.Data.Info) <= 0 {
-		blog.Errorf("[audit] failed to build the objData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
+		blog.Errorf("[audit] failed to build the objClsData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
 		return nil
 	}
-	log.preData = rsp.Data.Info[0].Spec
-	log.bkObjID = log.preData.ObjectID
-	log.bkObjName = log.preData.ObjectName
+	log.preData = rsp.Data.Info[0]
+	log.objClsID = log.preData.ClassificationID
+	log.objClsName = log.preData.ClassificationName
 	return log
 }
 
-func (log *ObjectAudit) buildSnapshotForCur() ObjAuditLog {
+func (log *ObjectClsAudit) buildSnapshotForCur() ObjAuditLog {
 	query := mapstr.MapStr{"id": log.id}
-	rsp, err := log.clientSet.CoreService().Model().ReadModel(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
+	rsp, err := log.clientSet.CoreService().Model().ReadModelClassification(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
-		blog.Errorf("[audit] failed to build the objData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
+		blog.Errorf("[audit] failed to build the objClsData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
 		return nil
 	}
 	if rsp.Result != true {
-		blog.Errorf("[audit] failed to build the objData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
+		blog.Errorf("[audit] failed to build the objClsData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
 		return nil
 	}
 	if len(rsp.Data.Info) <= 0 {
-		blog.Errorf("[audit] failed to build the objData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
+		blog.Errorf("[audit] failed to build the objClsData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
 		return nil
 	}
-	log.curData = rsp.Data.Info[0].Spec
-	log.bkObjID = log.curData.ObjectID
-	log.bkObjName = log.curData.ObjectName
+	log.curData = rsp.Data.Info[0]
+	log.objClsID = log.curData.ClassificationID
+	log.objClsName = log.curData.ClassificationName
 	return log
 }

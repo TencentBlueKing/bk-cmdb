@@ -491,7 +491,7 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	}
 
 	//package audit response
-	err = NewObjectAudit(o.clientSet, metadata.ModelRes).buildObjData(kit, obj.Object().ID).WithCurrent().SaveAuditLog(kit, metadata.AuditCreate)
+	err = NewObjectAudit(kit, o.clientSet, obj.Object().ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
 	if err != nil {
 		blog.Errorf("update object %s success, but update to auditLog failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
 		return nil, err
@@ -589,7 +589,7 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool, metaD
 	}
 
 	//get PreData
-	objAudit := NewObjectAudit(o.clientSet, metadata.ModelRes).buildObjData(kit, id).WithPrevious()
+	objAudit := NewObjectAudit(kit, o.clientSet, id).buildSnapshotForPre()
 
 	// DeleteModelCascade 将会删除模型/模型属性/属性分组/唯一校验
 	rsp, err := o.clientSet.CoreService().Model().DeleteModelCascade(kit.Ctx, kit.Header, id)
@@ -609,7 +609,7 @@ func (o *object) DeleteObject(kit *rest.Kit, id int64, needCheckInst bool, metaD
 	}
 
 	//saveAuditLog
-	err = objAudit.SaveAuditLog(kit, metadata.AuditDelete)
+	err = objAudit.SaveAuditLog(metadata.AuditDelete)
 	if err != nil {
 		blog.Errorf("Delete object %s success, but update to auditLog failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
 		return err
@@ -774,7 +774,7 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	*/
 
 	//get PreData
-	objAudit := NewObjectAudit(o.clientSet, metadata.ModelRes).buildObjData(kit, id).WithPrevious()
+	objAudit := NewObjectAudit(kit, o.clientSet, id).buildSnapshotForPre()
 
 	// check repeated
 	exists, err := obj.IsExists()
@@ -805,7 +805,7 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	}
 
 	//get CurData and saveAuditLog
-	err = objAudit.buildObjData(kit, id).WithCurrent().SaveAuditLog(kit, metadata.AuditUpdate)
+	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
 	if err != nil {
 		blog.Errorf("update object %s success, but update to auditLog failed, err: %v, rid: %s", object.ObjectName, err, kit.Rid)
 		return err

@@ -150,7 +150,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 	}
 
 	//package audit response
-	err = NewObjectAudit(a.clientSet, metadata.ModelAttributeRes).buildObjAttrData(kit, att.Attribute().ID).WithCurrent().SaveAuditLog(kit, metadata.AuditCreate)
+	err = NewObjectAttrAudit(kit, a.clientSet, att.Attribute().ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
 	if err != nil {
 		blog.Errorf("create object attribute %s success, but update to auditLog failed, err: %v, rid: %s", att.Attribute().PropertyName, err, kit.Rid)
 		return nil, err
@@ -181,7 +181,7 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 
 	for _, attrItem := range attrItems {
 		//get PreData
-		objAudit := NewObjectAudit(a.clientSet, metadata.ModelAttributeRes).buildObjAttrData(kit, attrItem.Attribute().ID).WithPrevious()
+		objAudit := NewObjectAttrAudit(kit, a.clientSet, attrItem.Attribute().ID).buildSnapshotForPre()
 
 		// delete the attribute
 		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(context.Background(), kit.Header, attrItem.Attribute().ObjectID, &metadata.DeleteOption{Condition: cond.ToMapStr()})
@@ -195,7 +195,7 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 			return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 		//saveAuditLog
-		err = objAudit.SaveAuditLog(kit, metadata.AuditDelete)
+		err = objAudit.SaveAuditLog(metadata.AuditDelete)
 		if err != nil {
 			blog.Errorf("Delete object attribute success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
 			return err
@@ -312,7 +312,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	}
 
 	//get PreData
-	objAudit := NewObjectAudit(a.clientSet, metadata.ModelAttributeRes).buildObjAttrData(kit, attID).WithPrevious()
+	objAudit := NewObjectAttrAudit(kit, a.clientSet, attID).buildSnapshotForPre()
 
 	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(context.Background(), kit.Header, &input)
 	if nil != err {
@@ -326,7 +326,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	}
 
 	//get CurData and saveAuditLog
-	err = objAudit.buildObjAttrData(kit, attID).WithCurrent().SaveAuditLog(kit, metadata.AuditUpdate)
+	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
 	if err != nil {
 		blog.Errorf("update object attribute-id %s success, but update to auditLog failed, err: %v, rid: %s", attID, err, kit.Rid)
 		return err

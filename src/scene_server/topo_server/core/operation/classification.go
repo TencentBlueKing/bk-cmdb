@@ -101,7 +101,7 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 	}
 
 	//package audit response
-	err = NewObjectAudit(c.clientSet, metadata.ModelClassificationRes).buildObjClsData(kit, class.ID).WithCurrent().SaveAuditLog(kit, metadata.AuditCreate)
+	err = NewObjectClsAudit(kit, c.clientSet, class.ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
 	if err != nil {
 		blog.Errorf("create object attribute %s success, but update to auditLog failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
 		return nil, err
@@ -145,7 +145,7 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	}
 
 	//get PreData
-	objAudit := NewObjectAudit(c.clientSet, metadata.ModelClassificationRes).buildObjClsData(kit, id).WithPrevious()
+	objAudit := NewObjectClsAudit(kit, c.clientSet, id).buildSnapshotForPre()
 
 	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), kit.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
@@ -159,7 +159,7 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 	}
 
 	//saveAuditLog
-	err = objAudit.SaveAuditLog(kit, metadata.AuditDelete)
+	err = objAudit.SaveAuditLog(metadata.AuditDelete)
 	if err != nil {
 		blog.Errorf("Delete object attribute group success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -267,7 +267,7 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 	// }
 
 	//get PreData
-	objAudit := NewObjectAudit(c.clientSet, metadata.ModelClassificationRes).buildObjClsData(kit, id).WithPrevious()
+	objAudit := NewObjectClsAudit(kit, c.clientSet, id).buildSnapshotForPre()
 
 	err := cls.Update(data)
 	if nil != err {
@@ -289,7 +289,7 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 	}
 
 	//get CurData and saveAuditLog
-	err = objAudit.buildObjClsData(kit, id).WithCurrent().SaveAuditLog(kit, metadata.AuditUpdate)
+	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
 	if err != nil {
 		blog.Errorf("update object attribute-id %s success, but update to auditLog failed, err: %v, rid: %s", id, err, kit.Rid)
 		return err

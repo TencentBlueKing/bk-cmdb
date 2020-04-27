@@ -138,8 +138,8 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
-	case ModelRes, ModelClassificationRes, ModelAttributeRes, ModelGroupRes:
-		operationDetail := new(ModelOpDetail)
+	case ModelAttributeRes, ModelGroupRes:
+		operationDetail := new(ModelAttrOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -194,8 +194,8 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
-	case ModelRes, ModelClassificationRes, ModelAttributeRes, ModelGroupRes:
-		operationDetail := new(ModelOpDetail)
+	case ModelAttributeRes, ModelGroupRes:
+		operationDetail := new(ModelAttrOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -244,36 +244,25 @@ type BasicOpDetail struct {
 	Details *BasicContent `json:"details" bson:"details"`
 }
 
-type ModelOpDetail struct {
-	ClassificationID   string    `json:"classification_id" bson:"classification_id"`
-	ClassificationName string    `json:"classification_name" bson:"classification_name"`
-	ObjectID           string    `json:"object_id" bson:"object_id"`
-	ObjectName         string    `json:"object_name" bson:"object_name"`
-	AttrGroupId        string    `json:"attribute_group_id" bson:"attribute_group_id"`
-	AttrGroupName      string    `json:"attribute_group_name" bson:"attribute_group_name"`
-	AttributeID        string    `json:"attribute_id" bson:"attribute_id"`
-	AttributeName      string    `json:"attribute_name" bson:"attribute_name"`
-	PreData            ModelData `json:"pre_data" bson:"pre_data"`
-	CurData            ModelData `json:"cur_data" bson:"cur_data"`
-}
-
-type ModelData struct {
-	ClassificationID   string `json:"classification_id" bson:"classification_id"`
-	ClassificationName string `json:"classification_name" bson:"classification_name"`
-	ObjectID           string `json:"object_id" bson:"object_id"`
-	ObjectName         string `json:"object_name" bson:"object_name"`
-	AttrGroupId        string `json:"attribute_group_id" bson:"attribute_group_id"`
-	AttrGroupName      string `json:"attribute_group_name" bson:"attribute_group_name"`
-	AttributeID        string `json:"attribute_id" bson:"attribute_id"`
-	AttributeName      string `json:"attribute_name" bson:"attribute_name"`
-}
-
-func (op *ModelOpDetail) WithName() string {
-	return "ModelDetail"
-}
-
 func (op *BasicOpDetail) WithName() string {
 	return "BasicDetail"
+}
+
+type ModelAttrOpDetail struct {
+	// the business id of the resource if it belongs to a business.
+	BusinessID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	// BkObjName is the name of the model which contains these resources.
+	BkObjName string `json:"bk_obj_name" bson:"bk_obj_name"`
+	// ResourceID is the id of the resource. which is a unique id.
+	ResourceID int64 `json:"resource_id" bson:"resource_id"`
+	// ResourceName is the name of the resource.it may be attrName or attrGrpName here.
+	ResourceName string `json:"resource_name" bson:"resource_name"`
+	// Details contains all the details information about a user's operation
+	Details *BasicContent `json:"details" bson:"details"`
+}
+
+func (op *ModelAttrOpDetail) WithName() string {
+	return "ModelAttrDetail"
 }
 
 type InstanceOpDetail struct {
