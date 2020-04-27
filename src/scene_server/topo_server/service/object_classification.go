@@ -29,13 +29,22 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	cls, err := s.Core.ClassificationOperation().CreateClassification(ctx.Kit, data)
-	if nil != err {
-		ctx.RespAutoError(err)
+
+	err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		cls, err := s.Core.ClassificationOperation().CreateClassification(ctx.Kit, data)
+		if nil != err {
+			ctx.RespAutoError(err)
+			return err
+		}
+
+		ctx.RespEntity(cls.ToMapStr())
+		return nil
+	})
+
+	if err != nil {
+		blog.Errorf("CreateClassification failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-
-	ctx.RespEntity(cls.ToMapStr())
 }
 
 // SearchClassificationWithObjects search the classification with objects
@@ -139,13 +148,21 @@ func (s *Service) UpdateClassification(ctx *rest.Contexts) {
 	}
 	data.Remove(metadata.BKMetadata)
 
-	err = s.Core.ClassificationOperation().UpdateClassification(ctx.Kit, data, id, cond)
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Core.ClassificationOperation().UpdateClassification(ctx.Kit, data, id, cond)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return err
+		}
+
+		ctx.RespEntity(nil)
+		return nil
+	})
+
 	if err != nil {
-		ctx.RespAutoError(err)
+		blog.Errorf("UpdateClassification failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-
-	ctx.RespEntity(nil)
 }
 
 // DeleteClassification delete the object classification
@@ -163,11 +180,20 @@ func (s *Service) DeleteClassification(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	err = s.Core.ClassificationOperation().DeleteClassification(ctx.Kit, id, cond, md.Metadata)
-	if nil != err {
-		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.ClassificationOperation().DeleteClassification(ctx.Kit, id, cond, md.Metadata)
+		if nil != err {
+			blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return err
+		}
+		ctx.RespEntity(nil)
+		return nil
+	})
+
+	if err != nil {
+		blog.Errorf("DeleteClassification failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-	ctx.RespEntity(nil)
 }

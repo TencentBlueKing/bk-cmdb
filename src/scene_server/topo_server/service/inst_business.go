@@ -102,17 +102,25 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	// auth: deregister business to iam
-	if err := s.AuthManager.DeregisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, bizID); err != nil {
-		blog.Errorf("delete business failed, deregister business failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		// auth: deregister business to iam
+		if err := s.AuthManager.DeregisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, bizID); err != nil {
+			blog.Errorf("delete business failed, deregister business failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
+			return err
+		}
+		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, obj, bizID, md.Metadata); err != nil {
+			ctx.RespAutoError(err)
+			return err
+		}
+		ctx.RespEntity(nil)
+		return nil
+	})
+
+	if err != nil {
+		blog.Errorf("DeleteBusiness failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-	if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, obj, bizID, md.Metadata); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(nil)
 }
 
 // UpdateBusiness update the business
@@ -137,20 +145,28 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, dataWithMetadata.Data, obj, bizID, dataWithMetadata.Metadata)
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, dataWithMetadata.Data, obj, bizID, dataWithMetadata.Metadata)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return err
+		}
+
+		// auth: update registered business to iam
+		if err := s.AuthManager.UpdateRegisteredBusinessByID(ctx.Kit.Ctx, ctx.Kit.Header, bizID); err != nil {
+			blog.Errorf("update business success, but update registered business failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed))
+			return err
+		}
+
+		ctx.RespEntity(nil)
+		return nil
+	})
+
 	if err != nil {
-		ctx.RespAutoError(err)
+		blog.Errorf("UpdateBusiness failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-
-	// auth: update registered business to iam
-	if err := s.AuthManager.UpdateRegisteredBusinessByID(ctx.Kit.Ctx, ctx.Kit.Header, bizID); err != nil {
-		blog.Errorf("update business success, but update registered business failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed))
-		return
-	}
-
-	ctx.RespEntity(nil)
 }
 
 // UpdateBusinessStatus update the business status
@@ -227,18 +243,26 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, obj, bizID, data.Metadata)
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, updateData, obj, bizID, data.Metadata)
+		if err != nil {
+			blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return err
+		}
+		if err := s.AuthManager.UpdateRegisteredBusinessByID(ctx.Kit.Ctx, ctx.Kit.Header, bizID); err != nil {
+			blog.Errorf("UpdateBusinessStatus failed, update register business info failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
+			return err
+		}
+		ctx.RespEntity(nil)
+		return nil
+	})
+
 	if err != nil {
-		blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		blog.Errorf("UpdateBusinessStatus failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-	if err := s.AuthManager.UpdateRegisteredBusinessByID(ctx.Kit.Ctx, ctx.Kit.Header, bizID); err != nil {
-		blog.Errorf("UpdateBusinessStatus failed, update register business info failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
-		return
-	}
-	ctx.RespEntity(nil)
 }
 
 // find business list with these info：
@@ -542,25 +566,34 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 	}
 
 	dataWithMetadata.Data.Set(common.BKDefaultField, common.DefaultAppFlag)
-	business, err := s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, dataWithMetadata.Data, dataWithMetadata.Metadata)
-	if err != nil {
-		ctx.RespAutoError(fmt.Errorf("create business failed, err: %+v", err))
-		return
-	}
 
-	businessID, err := business.GetInstID()
-	if err != nil {
-		ctx.RespAutoError(fmt.Errorf("unexpected error, create default business success, but get id failed, err: %+v", err))
-		return
-	}
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		business, err := s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		if err != nil {
+			ctx.RespAutoError(fmt.Errorf("create business failed, err: %+v", err))
+			return err
+		}
 
-	// auth: register business to iam
-	if err := s.AuthManager.RegisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, businessID); err != nil {
-		blog.Errorf("create default business failed, register business failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
+		businessID, err := business.GetInstID()
+		if err != nil {
+			ctx.RespAutoError(fmt.Errorf("unexpected error, create default business success, but get id failed, err: %+v", err))
+			return err
+		}
+
+		// auth: register business to iam
+		if err := s.AuthManager.RegisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, businessID); err != nil {
+			blog.Errorf("create default business failed, register business failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
+			return err
+		}
+		ctx.RespEntity(business)
+		return nil
+	})
+
+	if err != nil {
+		blog.Errorf("CreateDefaultBusiness failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-	ctx.RespEntity(business)
 }
 
 func (s *Service) GetInternalModule(ctx *rest.Contexts) {

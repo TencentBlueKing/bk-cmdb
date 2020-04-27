@@ -102,13 +102,21 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 		return
 	}
 
-	module, err := s.Core.ModuleOperation().CreateModule(ctx.Kit, obj, bizID, setID, dataWithMetadata.Data)
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		module, err := s.Core.ModuleOperation().CreateModule(ctx.Kit, obj, bizID, setID, dataWithMetadata.Data)
+		if err != nil {
+			blog.Errorf("[api-module] create module failed, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return err
+		}
+		ctx.RespEntity(module)
+		return nil
+	})
+
 	if err != nil {
-		blog.Errorf("[api-module] create module failed, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		blog.Errorf("CreateModule failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-	ctx.RespEntity(module)
 }
 
 func (s *Service) CheckIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors.CCErrorCoder {
@@ -196,21 +204,29 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	// auth: deregister module to iam
-	if err := s.AuthManager.DeregisterModuleByID(ctx.Kit.Ctx, ctx.Kit.Header, moduleID); err != nil {
-		blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
 
-	err = s.Core.ModuleOperation().DeleteModule(ctx.Kit, obj, bizID, []int64{setID}, []int64{moduleID})
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		// auth: deregister module to iam
+		if err := s.AuthManager.DeregisterModuleByID(ctx.Kit.Ctx, ctx.Kit.Header, moduleID); err != nil {
+			blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return err
+		}
+
+		err = s.Core.ModuleOperation().DeleteModule(ctx.Kit, obj, bizID, []int64{setID}, []int64{moduleID})
+		if err != nil {
+			blog.Errorf("delete module failed, delete operation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return err
+		}
+		ctx.RespEntity(nil)
+		return nil
+	})
+
 	if err != nil {
-		blog.Errorf("delete module failed, delete operation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		blog.Errorf("DeleteModule failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-	ctx.RespEntity(nil)
-	return
 }
 
 // UpdateModule update the module
@@ -264,14 +280,22 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Core.ModuleOperation().UpdateModule(ctx.Kit, dataWithMetadata.Data, obj, bizID, setID, moduleID)
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.ModuleOperation().UpdateModule(ctx.Kit, dataWithMetadata.Data, obj, bizID, setID, moduleID)
+		if err != nil {
+			blog.Errorf("update module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return err
+		}
+
+		ctx.RespEntity(nil)
+		return nil
+	})
+
 	if err != nil {
-		blog.Errorf("update module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		blog.Errorf("UpdateModule failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-
-	ctx.RespEntity(nil)
 }
 
 func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
@@ -526,45 +550,53 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 			common.HostApplyEnabledField: requestBody.Enable,
 		},
 	}
-	result, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, updateOption)
-	if err != nil {
-		blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
-		return
-	}
-	if ccErr := result.CCError(); ccErr != nil {
-		blog.ErrorJSON("SearchRuleRelatedModules failed, update module instance failed, updateOption: %s, response: %s, rid: %s", updateOption, result, ctx.Kit.Rid)
-		ctx.RespAutoError(ccErr)
-		return
-	}
-	if requestBody.ClearRules {
-		listRuleOption := metadata.ListHostApplyRuleOption{
-			ModuleIDs: []int64{moduleID},
-			Page: metadata.BasePage{
-				Limit: common.BKNoLimit,
-			},
+
+	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		result, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, updateOption)
+		if err != nil {
+			blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+			return err
 		}
-		listRuleResult, ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, listRuleOption)
-		if ccErr != nil {
-			blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, ctx.Kit.Rid)
+		if ccErr := result.CCError(); ccErr != nil {
+			blog.ErrorJSON("SearchRuleRelatedModules failed, update module instance failed, updateOption: %s, response: %s, rid: %s", updateOption, result, ctx.Kit.Rid)
 			ctx.RespAutoError(ccErr)
-			return
+			return err
 		}
-		ruleIDs := make([]int64, 0)
-		for _, item := range listRuleResult.Info {
-			ruleIDs = append(ruleIDs, item.ID)
-		}
-		if len(ruleIDs) > 0 {
-			deleteRuleOption := metadata.DeleteHostApplyRuleOption{
-				RuleIDs: ruleIDs,
+		if requestBody.ClearRules {
+			listRuleOption := metadata.ListHostApplyRuleOption{
+				ModuleIDs: []int64{moduleID},
+				Page: metadata.BasePage{
+					Limit: common.BKNoLimit,
+				},
 			}
-			if ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, deleteRuleOption); ccErr != nil {
+			listRuleResult, ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, listRuleOption)
+			if ccErr != nil {
 				blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, ctx.Kit.Rid)
 				ctx.RespAutoError(ccErr)
-				return
+				return err
+			}
+			ruleIDs := make([]int64, 0)
+			for _, item := range listRuleResult.Info {
+				ruleIDs = append(ruleIDs, item.ID)
+			}
+			if len(ruleIDs) > 0 {
+				deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+					RuleIDs: ruleIDs,
+				}
+				if ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, deleteRuleOption); ccErr != nil {
+					blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, ctx.Kit.Rid)
+					ctx.RespAutoError(ccErr)
+					return err
+				}
 			}
 		}
+		ctx.RespEntity(result.Data)
+		return nil
+	})
+
+	if err != nil {
+		blog.Errorf("UpdateModuleHostApplyEnableStatus failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		return
 	}
-	ctx.RespEntity(result.Data)
-	return
 }
