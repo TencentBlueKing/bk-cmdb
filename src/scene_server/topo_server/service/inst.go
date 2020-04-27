@@ -181,11 +181,6 @@ func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 		// TODO add custom mainline instance param validation
 	}
 
-	if err := s.Core.InstOperation().DeleteInstByInstID(ctx.Kit, obj, deleteCondition.Delete.InstID, true); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
 	authInstances := make([]extensions.InstanceSimplify, 0)
 	input := &metadata.QueryInput{
 		Condition: map[string]interface{}{
