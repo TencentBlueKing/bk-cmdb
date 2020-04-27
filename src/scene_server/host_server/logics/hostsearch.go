@@ -103,6 +103,9 @@ type searchHost struct {
 	cacheInfoMap searchHostInfoMapCache
 	totalHostCnt int
 
+	searchedHostIDs []int64
+	searchCloudIDs  []int64
+
 	ccErr errors.DefaultCCErrorIf
 	ccRid string
 	ctx   context.Context
@@ -197,12 +200,8 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) 
 		return nil, 0, nil
 	}
 
-	hostIDArr := make([]int64, 0)
-	for _, hostInfoItem := range sh.hostInfoArr {
-		hostIDArr = append(hostIDArr, hostInfoItem.hostID)
-	}
 	queryCond := metadata.HostModuleRelationRequest{
-		HostIDArr: hostIDArr,
+		HostIDArr: sh.searchedHostIDs,
 	}
 	mhconfig, err := sh.lgc.GetConfigByCond(sh.ctx, queryCond)
 	if err != nil {
@@ -305,24 +304,11 @@ func (sh *searchHost) fillHostCloudInfo(hostInfo, searchHostItem mapstr.MapStr) 
 }
 
 func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, errors.CCError) {
-	cloudIDMap := make(map[int64]bool, 0)
-	for _, hostInfoItem := range sh.hostInfoArr {
 
-		cloudID, err := hostInfoItem.hostInfo.Int64(common.BKCloudIDField)
-		if err != nil {
-			blog.Warnf("hostSearch not found  cloud id in hsot, hostInfo:%d, rid:%s", hostInfoItem.hostInfo, sh.ccRid)
-			continue
-		}
-		cloudIDMap[cloudID] = true
-	}
-	var cloudIDArr []int64
-	for cloudID := range cloudIDMap {
-		cloudIDArr = append(cloudIDArr, cloudID)
-	}
 	queryInput := &metadata.QueryCondition{}
 	queryInput.Condition = mapstr.MapStr{
 		common.BKCloudIDField: mapstr.MapStr{
-			common.BKDBIN: cloudIDArr,
+			common.BKDBIN: sh.searchCloudIDs,
 		},
 	}
 	result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.ctx, sh.pheader, common.BKInnerObjIDPlat, queryInput)
@@ -711,6 +697,37 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	}
 
 	sh.totalHostCnt = gResult.Data.Count
+
+	if sh.searchedHostIDs == nil {
+		sh.searchedHostIDs = make([]int64, 0)
+	}
+	if sh.searchCloudIDs == nil {
+		sh.searchCloudIDs = make([]int64, 0)
+	}
+
+	for _, host := range gResult.Data.Info {
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			return err
+		}
+
+		cloudID, err := host.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.Warnf("hostSearch not found  cloud id in hsot, hostInfo:%d, rid:%s", host, sh.ccRid)
+			continue
+		}
+		sh.searchedHostIDs = append(sh.searchedHostIDs, hostID)
+		sh.searchCloudIDs = append(sh.searchCloudIDs, cloudID)
+
+		sh.hostInfoArr = append(sh.hostInfoArr, hostInfoStruct{
+			hostID:   hostID,
+			hostInfo: host,
+		})
+	}
+
+	sh.searchedHostIDs = util.IntArrayUnique(sh.searchedHostIDs)
+	sh.searchCloudIDs = util.IntArrayUnique(sh.searchCloudIDs)
+
 	for _, host := range gResult.Data.Info {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {

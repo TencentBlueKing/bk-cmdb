@@ -119,7 +119,7 @@ func (s *Service) ListResourcePoolHosts(req *restful.Request, resp *restful.Resp
 		return
 	}
 	result := meta.NewSuccessResponse(hostResult)
-	_ = resp.WriteEntity(result)
+	_ = resp.WriteAsJson(result)
 }
 
 // ListHosts list host under business specified by path parameter
@@ -161,10 +161,10 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	result := meta.NewSuccessResponse(hostResult)
-	_ = resp.WriteEntity(result)
+	_ = resp.WriteAsJson(result)
 }
 
-func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.ListHostsParameter) (result meta.ListHostResult, ccErr errors.CCErrorCoder) {
+func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.ListHostsParameter) (result *meta.ListHostResult, ccErr errors.CCErrorCoder) {
 	ctx := util.NewContextFromHTTPHeader(header)
 	rid := util.ExtractRequestIDFromContext(ctx)
 	srvData := s.newSrvComm(header)
@@ -192,7 +192,7 @@ func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.L
 		}
 	}
 
-	option := meta.ListHosts{
+	option := &meta.ListHosts{
 		BizID:              bizID,
 		SetIDs:             setIDs,
 		ModuleIDs:          parameter.ModuleIDs,
@@ -229,7 +229,7 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 	}
 
 	parameter.Page.Limit = common.BKMaxPageSize
-	option := meta.ListHosts{
+	option := &meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,
 	}
@@ -241,7 +241,7 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 	}
 
 	result := meta.NewSuccessResponse(host)
-	_ = resp.WriteEntity(result)
+	_ = resp.WriteAsJson(result)
 }
 
 // ListBizHostsTopo list hosts under business specified by path parameter with their topology information
@@ -281,7 +281,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	}
 
 	// search all hosts
-	option := meta.ListHosts{
+	option := &meta.ListHosts{
 		BizID:              bizID,
 		HostPropertyFilter: parameter.HostPropertyFilter,
 		Page:               parameter.Page,
@@ -295,7 +295,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 
 	if len(hosts.Info) == 0 {
 		result := meta.NewSuccessResponse(hosts)
-		_ = resp.WriteEntity(result)
+		_ = resp.WriteAsJson(result)
 		return
 	}
 
@@ -431,7 +431,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	}
 
 	result := meta.NewSuccessResponse(hostTopos)
-	_ = resp.WriteEntity(result)
+	_ = resp.WriteAsJson(result)
 }
 
 func (s *Service) CountTopoNodeHosts(req *restful.Request, resp *restful.Response) {
