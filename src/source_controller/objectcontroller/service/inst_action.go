@@ -150,7 +150,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	blog.Infof("update object type:%s,data:%v,condition:%v", objType, data, condition)
+	blog.V(3).Infof("update object type:%s,data:%v,condition:%v", objType, data, condition)
 	err = cli.UpdateObjByCondition(ctx, db, objType, data, condition)
 	if err != nil {
 		blog.Errorf("update object type:%s,data:%v,condition:%v,error:%v", objType, data, condition, err)
@@ -270,7 +270,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	input[common.CreateTimeField] = time.Now()
 	input[common.LastTimeField] = time.Now()
 	input = util.SetModOwner(input, ownerID)
-	blog.Infof("create object type:%s,data:%v", objType, input)
+	blog.V(3).Infof("create object type:%s,data:%v", objType, input)
 	var idName string
 	id, err := cli.CreateObjectIntoDB(ctx, db, objType, input, &idName)
 	if err != nil {
@@ -343,7 +343,7 @@ func (cli *Service) CreateInstObjects(req *restful.Request, resp *restful.Respon
 	instIDField := common.GetInstIDField(objID)
 
 	for idx, inst := range input {
-		if idx == -1 {
+		if idx == -1 || inst == nil {
 			continue
 		}
 
@@ -402,10 +402,10 @@ func (cli *Service) CreateInstObjects(req *restful.Request, resp *restful.Respon
 			errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, defErr.Error(common.CCErrObjectSelectInstFailed).Error()))
 			continue
 		}
-		blog.InfoJSON("instance result %s condition %s", result, cond.ToMapStr())
+		blog.V(3).Infof("instance result:%v, condition:%v", result, cond.ToMapStr())
 
 		if len(result) > 0 {
-			blog.InfoJSON("update", result, cond.ToMapStr(), attrs)
+			blog.V(3).Infof("update, cond:%s, inst: %v", cond.ToMapStr(), inst)
 			if err = validator.ValidateUpdate(inst, result[0]); err != nil {
 				blog.Errorf("update object valid err type:%s,data:%v,condition:%v,error:%v", objType, inst, cond.ToMapStr(), err)
 				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, err.Error()))
@@ -503,7 +503,7 @@ func (cli *Service) CreateInstObjects(req *restful.Request, resp *restful.Respon
 			inst[common.BKObjIDField] = objID
 		}
 		inst = util.SetModOwner(inst, ownerID)
-		blog.Infof("create object type:%s,data:%v", objType, inst)
+		blog.V(3).Infof("create object type:%s,data:%v", objType, inst)
 		var idName string
 		id, err := cli.CreateObjectIntoDB(ctx, db, objType, inst, &idName)
 		if err != nil {
