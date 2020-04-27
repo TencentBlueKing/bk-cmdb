@@ -133,7 +133,7 @@
                 }
             },
             navigateToResource (list, scope) {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_RESOURCE_HOST,
                     query: {
                         ip: list.join(','),
@@ -143,7 +143,7 @@
                 })
             },
             navigateToBusiness (list, bizId) {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     params: {
                         bizId

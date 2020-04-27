@@ -432,7 +432,7 @@
                 this.handleHideLenovo()
             },
             resetIndex () {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_INDEX
                 })
                 const timer = setTimeout(() => {
@@ -460,7 +460,7 @@
                 this.$set(this.result, 'data', this.$tools.clone(this.query.data))
                 this.beforeKeywords = this.keywords
                 this.$store.commit('fullTextSearch/setSearchHistory', this.keywords)
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_INDEX,
                     query: {
                         keywords: this.keywords,
@@ -480,7 +480,7 @@
                 })
             },
             handleGoResource (host) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_RESOURCE_HOST_DETAILS,
                     params: {
                         id: host.bk_host_id
@@ -503,7 +503,7 @@
                     })
                     return
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_RESOURCE_INSTANCE,
                     params: {
                         objId: source['bk_obj_id'],
@@ -513,7 +513,7 @@
             },
             handleGoBusiness (source) {
                 const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: name,
                     params: {
                         bizName: source['bk_biz_name']

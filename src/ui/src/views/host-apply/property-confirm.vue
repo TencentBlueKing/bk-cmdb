@@ -115,7 +115,7 @@
             // 无配置数据时强制跳转至入口页
             if (!Object.keys(this.propertyConfig).length) {
                 this.leaveConfirmConfig.active = false
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY
                 })
             } else {
@@ -156,7 +156,7 @@
                     query.module = this.propertyConfig.bk_module_ids[0]
                 }
                 this.$store.commit('hostApply/clearRuleDraft')
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY,
                     query
                 })
@@ -222,7 +222,7 @@
             },
             handlePrevStep () {
                 this.leaveConfirmConfig.active = false
-                this.$router.back()
+                this.$routerActions.back()
             },
             handleStatusModalBack () {
                 this.goBack()
@@ -232,13 +232,13 @@
                 if (!this.isBatch) {
                     query.node = `module-${this.propertyConfig.bk_module_ids[0]}`
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query
                 })
             },
             handleViewFailed () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_FAILED,
                     query: this.$route.query
                 })

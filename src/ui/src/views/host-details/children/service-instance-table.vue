@@ -230,22 +230,16 @@
                 this.header = header
             },
             handleDeleteInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_DELETE_SERVICE,
                     params: {
                         ids: this.instance.id
                     },
-                    query: {
-                        from: this.$route.path,
-                        query: {
-                            ...this.$route.query,
-                            tab: 'service'
-                        }
-                    }
+                    history: true
                 })
             },
             goTopologyInstance () {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
                         tab: 'serviceInstance',

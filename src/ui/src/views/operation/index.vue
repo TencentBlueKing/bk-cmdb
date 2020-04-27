@@ -639,7 +639,7 @@
                 })
             },
             goRouter (route) {
-                this.$router.push({ name: route })
+                this.$routerActions.redirect({ name: route })
             },
             dateChange (date) {
                 this.dateChart.data.maxTime = date[1]

@@ -25,8 +25,7 @@
         },
         methods: {
             async handleClick () {
-                const config = typeof this.previous === 'function' ? await this.previous(this.$parent.$refs.view) : this.previous
-                this.$router.replace(config)
+                this.$routerActions.redirect(this.from)
             }
         }
     }

@@ -18,11 +18,7 @@ export default [{
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return model && !model.bk_ispaused
         },
-        layout: {
-            previous: {
-                name: MENU_RESOURCE_MANAGEMENT
-            }
-        }
+        layout: {}
     }),
     children: [{
         name: MENU_RESOURCE_INSTANCE_DETAILS,
@@ -37,16 +33,7 @@ export default [{
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
                 return model && !model.bk_ispaused
             },
-            layout: {
-                previous () {
-                    return {
-                        name: MENU_RESOURCE_INSTANCE,
-                        params: {
-                            objId: window.CMDB_APP.$route.params.objId
-                        }
-                    }
-                }
-            }
+            layout: {}
         })
     }]
 }, {
@@ -57,16 +44,7 @@ export default [{
         menu: {
             relative: MENU_RESOURCE_MANAGEMENT
         },
-        layout: {
-            previous () {
-                return {
-                    name: MENU_RESOURCE_INSTANCE,
-                    params: {
-                        objId: window.CMDB_APP.$route.params.objId
-                    }
-                }
-            }
-        },
+        layout: {},
         checkAvailable: (to, from, app) => {
             const modelId = to.params.objId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)

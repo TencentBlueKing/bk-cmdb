@@ -70,11 +70,11 @@
                     biz: MENU_RESOURCE_BUSINESS
                 }
                 if (map.hasOwnProperty(model.bk_obj_id)) {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: map[model.bk_obj_id]
                     })
                 } else {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_INSTANCE,
                         params: {
                             objId: model.bk_obj_id

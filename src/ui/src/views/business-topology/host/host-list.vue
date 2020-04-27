@@ -166,16 +166,13 @@
                 if (column.bk_obj_id !== 'host' || column.bk_property_id !== 'bk_host_id') {
                     return
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_DETAILS,
                     params: {
                         bizId: this.bizId,
                         id: row.host.bk_host_id
                     },
-                    query: {
-                        from: 'business',
-                        node: this.selectedNode.id
-                    }
+                    history: true
                 })
             },
             handleSelectionChange (selection) {
@@ -315,7 +312,7 @@
                 }
             },
             gotoTransferPage (modules) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
                         type: this.dialog.props.moduleType
@@ -326,7 +323,8 @@
                         targetModules: modules.map(node => node.data.bk_inst_id).join(','),
                         resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
                         node: this.selectedNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             async moveHostToResource () {

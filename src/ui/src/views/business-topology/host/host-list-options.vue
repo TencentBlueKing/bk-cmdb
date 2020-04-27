@@ -349,7 +349,7 @@
                     event.stopPropagation()
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
                         type: 'remove'
@@ -359,7 +359,8 @@
                         sourceId: this.selectedNode.data.bk_inst_id,
                         resources: this.$parent.table.selection.map(item => item.host.bk_host_id).join(','),
                         node: this.selectedNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             async handleExport (event) {
@@ -433,7 +434,7 @@
                 }
             },
             gotoTransferPage (selected) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'createServiceInstance',
                     params: {
                         setId: this.selectedNode.parent.data.bk_inst_id,
@@ -443,7 +444,8 @@
                         resources: selected.map(item => item.host.bk_host_id).join(','),
                         title: this.selectedNode.data.bk_inst_name,
                         node: this.selectedNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             handleDialogCancel () {

@@ -168,7 +168,7 @@
             },
             handleGoEdit () {
                 const checkedIds = this.checkedList.map(item => item.bk_inst_id)
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_EDIT,
                     query: {
                         mid: checkedIds.join(','),
