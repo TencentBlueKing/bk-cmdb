@@ -73,8 +73,7 @@
                 } else {
                     displayValue = this.$options.filters['formatter'](value, this.property, this.options)
                 }
-
-                this.displayValue = (this.showUnit && displayValue !== '--') ? `${displayValue}${unit}` : displayValue
+                this.displayValue = (this.showUnit && unit && displayValue !== '--') ? `${displayValue}${unit}` : displayValue
             },
             async getOrganization (value) {
                 let displayValue
