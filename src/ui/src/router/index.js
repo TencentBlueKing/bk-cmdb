@@ -159,6 +159,7 @@ const setupStatus = {
 }
 
 router.beforeEach((to, from, next) => {
+    router.app.$store.commit('setTitle', '')
     if (to.name === from.name) {
         return next()
     }
@@ -202,7 +203,6 @@ router.afterEach((to, from) => {
         if (setupStatus.afterload) {
             afterload(router.app, to, from)
         }
-        router.app.$store.commit('setTitle', '')
     } catch (e) {
         console.error(e)
     } finally {
