@@ -96,7 +96,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
+                    <cmdb-auth @click.native.stop :auth="$authResources({ type: $OPERATION.BUSINESS_ARCHIVE })">
                         <template slot-scope="{ disabled }">
                             <span class="text-primary"
                                 style="color: #dcdee5 !important; cursor: not-allowed;"
