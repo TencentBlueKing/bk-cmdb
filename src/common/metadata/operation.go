@@ -144,7 +144,7 @@ type AttributesOption struct {
 	ID        string `json:"id" bson:"id"`
 	Name      string `json:"name" bson:"name"`
 	Type      string `json:"type" bson:"type"`
-	IsDefault string `json:"is_default" bson:"is_default"`
+	IsDefault bool   `json:"is_default" bson:"is_default"`
 }
 
 type ChartClassification struct {

@@ -46,7 +46,7 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")
 	}
 
-	// if attribute filter is set, add id attribute and convert display_name to the real name field
+	// if attribute filter is set, add id attribute and convert display_name to the real name field TODO confirm how to provide path attribute
 	var attrs []string
 	if len(filter.Attrs) > 0 {
 		attrs = append(filter.Attrs, idField)

@@ -29,6 +29,7 @@ const (
 
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
+// TODO confirm how to filter path attribute
 func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
 	operator := filter.Operator
 
