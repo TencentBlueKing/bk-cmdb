@@ -64,10 +64,36 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.ResourceTypeID) ([]t
 		blog.ErrorJSON("read model attribute failed, error code: %s, error message: %s, param: %s, rid: %s", res.Code, res.ErrMsg, param, kit.Rid)
 		return nil, res.CCError()
 	}
+
+	// get object id name map for common instances
+	objIDNameMap := make(map[string]string)
+	if resourceType == iam.SysInstance {
+		objIDs := make([]string, 0)
+		for _, attr := range res.Data.Info {
+			objIDs = append(objIDs, attr.ObjectID)
+		}
+		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
+			Fields: []string{common.BKObjIDField, common.BKObjNameField},
+			Page:   metadata.BasePage{Limit: common.BKNoLimit},
+			Condition: map[string]interface{}{
+				common.BKObjIDField: map[string]interface{}{
+					common.BKDBIN: objIDs,
+				},
+			},
+		})
+		if err != nil {
+			blog.Errorf("get model failed, error: %s, rid: %s", err.Error(), kit.Rid)
+			return nil, err
+		}
+		for _, obj := range modelRes.Data.Info {
+			objIDNameMap[obj.Spec.ObjectID] = obj.Spec.ObjectName
+		}
+	}
+
 	for _, attr := range res.Data.Info {
 		displayName := attr.PropertyName
 		if resourceType == iam.SysInstance {
-			displayName = attr.ObjectID + "-" + attr.PropertyName
+			displayName = objIDNameMap[attr.ObjectID] + "-" + attr.PropertyName
 		}
 		attrs = append(attrs, types.AttrResource{
 			ID:          attr.PropertyID,
