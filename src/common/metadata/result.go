@@ -92,8 +92,8 @@ type SuccessResponse struct {
 	Data     interface{} `json:"data"`
 }
 
-func NewSuccessResponse(data interface{}) SuccessResponse {
-	return SuccessResponse{
+func NewSuccessResponse(data interface{}) *SuccessResponse {
+	return &SuccessResponse{
 		BaseResp: SuccessBaseResp,
 		Data:     data,
 	}

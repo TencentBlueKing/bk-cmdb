@@ -35,29 +35,37 @@ import (
 // CollectAllBusiness get all business
 func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Header) ([]BusinessSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-
-	cond := metadata.QueryCondition{}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
-	if err != nil {
-		blog.Errorf("list business failed, err: %v, rid: %s", err, rid)
-		return nil, err
-	}
-
-	// step1 get business from logics service
+	// step1 get business from core service
 	businessList := make([]BusinessSimplify, 0)
-	for _, business := range result.Data.Info {
-		businessSimplify := BusinessSimplify{}
-		_, err := businessSimplify.Parse(business)
+	count := -1
+	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+		cond := metadata.QueryCondition{
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
+			},
+			Condition: map[string]interface{}{
+				common.BKDefaultField: 0,
+			},
+		}
+		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
 		if err != nil {
-			blog.Errorf("parse businesses %+v simplify information failed, err: %+v, rid: %s", business, err, rid)
-			continue
+			blog.Errorf("list business failed, err: %v, rid: %s", err, rid)
+			return nil, err
 		}
-		if businessSimplify.IsDefault > 0 {
-			continue
+		for _, business := range result.Data.Info {
+			businessSimplify := BusinessSimplify{}
+			_, err := businessSimplify.Parse(business)
+			if err != nil {
+				blog.Errorf("parse businesses %+v simplify information failed, err: %+v, rid: %s", business, err, rid)
+				continue
+			}
+			businessList = append(businessList, businessSimplify)
 		}
-
-		businessList = append(businessList, businessSimplify)
+		count = result.Data.Count
 	}
+
 	return businessList, nil
 }
 

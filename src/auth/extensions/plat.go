@@ -34,23 +34,32 @@ import (
 
 func (am *AuthManager) CollectAllPlats(ctx context.Context, header http.Header) ([]PlatSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
-
-	cond := metadata.QueryCondition{
-		Condition: mapstr.MapStr(map[string]interface{}{}),
-	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDPlat, &cond)
-	if err != nil {
-		blog.V(3).Infof("get all plats, err: %+v, rid: %s", err, rid)
-		return nil, fmt.Errorf("get all plats, err: %+v", err)
-	}
 	plats := make([]PlatSimplify, 0)
-	for _, cls := range result.Data.Info {
-		plat := PlatSimplify{}
-		_, err = plat.Parse(cls)
-		if err != nil {
-			return nil, fmt.Errorf("get all plat failed, err: %+v", err)
+	count := -1
+	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+		cond := metadata.QueryCondition{
+			Fields:    []string{common.BKCloudIDField, common.BKCloudNameField},
+			Condition: mapstr.MapStr(map[string]interface{}{}),
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
+			},
 		}
-		plats = append(plats, plat)
+		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDPlat, &cond)
+		if err != nil {
+			blog.V(3).Infof("get all plats, err: %+v, rid: %s", err, rid)
+			return nil, fmt.Errorf("get all plats, err: %+v", err)
+		}
+		for _, cls := range result.Data.Info {
+			plat := PlatSimplify{}
+			_, err = plat.Parse(cls)
+			if err != nil {
+				return nil, fmt.Errorf("get all plat failed, err: %+v", err)
+			}
+			plats = append(plats, plat)
+		}
+		count = result.Data.Count
 	}
 	return plats, nil
 }

@@ -126,6 +126,7 @@
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
+                        :show-unit="false"
                         :value="row[column.id]"
                         :property="column.property">
                     </cmdb-property-value>
