@@ -728,16 +728,6 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	sh.searchedHostIDs = util.IntArrayUnique(sh.searchedHostIDs)
 	sh.searchCloudIDs = util.IntArrayUnique(sh.searchCloudIDs)
 
-	for _, host := range gResult.Data.Info {
-		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-		if err != nil {
-			return err
-		}
-		sh.hostInfoArr = append(sh.hostInfoArr, hostInfoStruct{
-			hostID:   hostID,
-			hostInfo: host,
-		})
-	}
 	return nil
 }
 

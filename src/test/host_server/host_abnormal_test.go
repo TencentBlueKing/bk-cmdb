@@ -2142,7 +2142,7 @@ func clearData() {
 					HostIDs:       hostIds,
 				}
 				rsp1, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input1)
-				util.RegisterResponse(rsp)
+				util.RegisterResponse(rsp1)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp1.Result).To(Equal(true))
 
@@ -2152,7 +2152,7 @@ func clearData() {
 					HostIDs:       hostIds,
 				}
 				rsp2, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input2)
-				util.RegisterResponse(rsp)
+				util.RegisterResponse(rsp2)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp2.Result).To(Equal(true))
 			}
@@ -2175,7 +2175,7 @@ func clearData() {
 			},
 		}
 		rsp3, err := hostServerClient.SearchHost(context.Background(), header, input3)
-		util.RegisterResponse(rsp)
+		util.RegisterResponse(rsp3)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp3.Result).To(Equal(true))
 		// By(fmt.Sprintf("*********bid:%v, data:%+v*******", bizId, rsp3.Data))
