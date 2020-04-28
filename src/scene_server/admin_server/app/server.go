@@ -70,6 +70,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil && auth.IsAuthed() {
 		blog.Errorf("parse authcenter error: %v, config: %+v", err, config.ConfigMap)
 	}
+
+	process.Config.Iam, err = iam.ParseConfigFromKV("auth", config.ConfigMap)
+	if err != nil && auth.IsAuthed() {
+		blog.Errorf("parse iam error: %v, config: %+v", err, config.ConfigMap)
+	}
 	service := svc.NewService(ctx)
 
 	input := &backbone.BackboneParameter{
