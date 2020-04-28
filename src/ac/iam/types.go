@@ -207,7 +207,7 @@ type ResourceActionID string
 
 const (
 	EditBusinessHost                   ResourceActionID = "edit_biz_host"
-	BusinessHostTransferToResourcePool ResourceActionID = "biz_host_transfer_to_resource_pool"
+	BusinessHostTransferToResourcePool ResourceActionID = "unassign_biz_host"
 
 	CreateBusinessCustomQuery ResourceActionID = "create_biz_dynamic_query"
 	EditBusinessCustomQuery   ResourceActionID = "edit_biz_dynamic_query"
@@ -241,8 +241,8 @@ const (
 	CreateResourcePoolHost              ResourceActionID = "create_resource_pool_host"
 	EditResourcePoolHost                ResourceActionID = "edit_resource_pool_host"
 	DeleteResourcePoolHost              ResourceActionID = "delete_resource_pool_host"
-	ResourcePoolHostTransferToBusiness  ResourceActionID = "resource_pool_host_transfer_to_biz"
-	ResourcePoolHostTransferToDirectory ResourceActionID = "resource_pool_host_transfer_to_directory"
+	ResourcePoolHostTransferToBusiness  ResourceActionID = "assign_host_to_biz"
+	ResourcePoolHostTransferToDirectory ResourceActionID = "host_transfer_in_resource_pool"
 
 	CreateResourcePoolDirectory ResourceActionID = "create_resource_pool_directory"
 	EditResourcePoolDirectory   ResourceActionID = "edit_resource_pool_directory"

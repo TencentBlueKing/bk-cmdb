@@ -116,7 +116,7 @@ func genBusinessHostActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	transferToResourcePoolRelatedResource := append(relatedResource, resourcePoolDirResource)
@@ -128,7 +128,7 @@ func genBusinessHostActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: transferToResourcePoolRelatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -168,7 +168,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -178,7 +178,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -188,7 +188,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -198,7 +198,7 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		Type:                 View,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -214,7 +214,7 @@ func genBusinessCustomFieldActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -254,7 +254,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -264,7 +264,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -274,7 +274,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -314,7 +314,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -324,7 +324,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -334,7 +334,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -374,7 +374,7 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -384,7 +384,7 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -394,7 +394,7 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -434,7 +434,7 @@ func genBusinessSetTemplateActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -444,7 +444,7 @@ func genBusinessSetTemplateActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -454,7 +454,7 @@ func genBusinessSetTemplateActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -470,7 +470,7 @@ func genBusinessTopologyActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -480,7 +480,7 @@ func genBusinessTopologyActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -490,7 +490,7 @@ func genBusinessTopologyActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -506,7 +506,7 @@ func genBusinessHostApplyActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -546,7 +546,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -556,7 +556,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -566,7 +566,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	transferToBusinessRelatedResource := append(relatedResource, businessResource)
@@ -577,7 +577,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: transferToBusinessRelatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	transferToDirectoryRelatedResource := append(relatedResource, resourcePoolDirResource)
@@ -588,7 +588,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: transferToDirectoryRelatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -603,7 +603,7 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -613,7 +613,7 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -623,7 +623,7 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -638,7 +638,7 @@ func genBusinessActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -648,7 +648,7 @@ func genBusinessActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -658,7 +658,7 @@ func genBusinessActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -668,7 +668,7 @@ func genBusinessActions() []ResourceAction {
 		Type:                 View,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -680,7 +680,6 @@ func genCloudAreaActions() []ResourceAction {
 			Name:   "云区域",
 			NameEn: "Cloud Area",
 			ResourceTypeChain: []ResourceChain{
-				businessChain,
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysCloudArea,
@@ -708,7 +707,7 @@ func genCloudAreaActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -718,7 +717,7 @@ func genCloudAreaActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -728,7 +727,7 @@ func genCloudAreaActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -740,7 +739,10 @@ func genInstanceActions() []ResourceAction {
 			Name:   "实例",
 			NameEn: "Instance",
 			ResourceTypeChain: []ResourceChain{
-				businessChain,
+				{
+					SystemID: SystemIDCMDB,
+					ID:       SysModel,
+				},
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysInstance,
@@ -768,7 +770,7 @@ func genInstanceActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -778,7 +780,7 @@ func genInstanceActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -788,7 +790,7 @@ func genInstanceActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -798,7 +800,7 @@ func genInstanceActions() []ResourceAction {
 		Type:                 View,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -810,7 +812,6 @@ func genEventPushingActions() []ResourceAction {
 			Name:   "事件推送",
 			NameEn: "Event Pushing",
 			ResourceTypeChain: []ResourceChain{
-				businessChain,
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysEventPushing,
@@ -838,7 +839,7 @@ func genEventPushingActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -848,7 +849,7 @@ func genEventPushingActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -858,7 +859,7 @@ func genEventPushingActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -868,7 +869,7 @@ func genEventPushingActions() []ResourceAction {
 		Type:                 View,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -880,7 +881,6 @@ func genCloudAccountActions() []ResourceAction {
 			Name:   "云账户",
 			NameEn: "Cloud Account",
 			ResourceTypeChain: []ResourceChain{
-				businessChain,
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysCloudAccount,
@@ -908,7 +908,7 @@ func genCloudAccountActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -918,7 +918,7 @@ func genCloudAccountActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -928,7 +928,7 @@ func genCloudAccountActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -938,7 +938,7 @@ func genCloudAccountActions() []ResourceAction {
 		Type:                 View,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -950,7 +950,6 @@ func genCloudResourceTaskActions() []ResourceAction {
 			Name:   "云资源任务",
 			NameEn: "Cloud Resource Task",
 			ResourceTypeChain: []ResourceChain{
-				businessChain,
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysCloudResourceTask,
@@ -978,7 +977,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -988,7 +987,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -998,7 +997,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -1008,7 +1007,7 @@ func genCloudResourceTaskActions() []ResourceAction {
 		Type:                 View,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -1020,7 +1019,6 @@ func genModelActions() []ResourceAction {
 			Name:   "模型",
 			NameEn: "Model",
 			ResourceTypeChain: []ResourceChain{
-				businessChain,
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysModel,
@@ -1048,7 +1046,7 @@ func genModelActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -1058,7 +1056,7 @@ func genModelActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -1068,7 +1066,7 @@ func genModelActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -1078,7 +1076,7 @@ func genModelActions() []ResourceAction {
 		Type:                 View,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -1090,7 +1088,6 @@ func genAssociationTypeActions() []ResourceAction {
 			Name:   "关联类型",
 			NameEn: "Association Type",
 			ResourceTypeChain: []ResourceChain{
-				businessChain,
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysAssociationType,
@@ -1118,7 +1115,7 @@ func genAssociationTypeActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -1128,7 +1125,7 @@ func genAssociationTypeActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -1138,7 +1135,7 @@ func genAssociationTypeActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -1150,7 +1147,6 @@ func genModelGroupActions() []ResourceAction {
 			Name:   "模型分组",
 			NameEn: "Model Group",
 			ResourceTypeChain: []ResourceChain{
-				businessChain,
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysModelGroup,
@@ -1178,7 +1174,7 @@ func genModelGroupActions() []ResourceAction {
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -1188,7 +1184,7 @@ func genModelGroupActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -1198,7 +1194,7 @@ func genModelGroupActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -1213,7 +1209,7 @@ func genBusinessLayerActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 	return actions
 }
@@ -1227,7 +1223,7 @@ func genModelTopologyViewActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 	return actions
 }
@@ -1241,7 +1237,7 @@ func genOperationStatisticActions() []ResourceAction {
 		Type:                 View,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	actions = append(actions, ResourceAction{
@@ -1251,7 +1247,7 @@ func genOperationStatisticActions() []ResourceAction {
 		Type:                 Edit,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 
 	return actions
@@ -1266,7 +1262,7 @@ func genAuditLogActions() []ResourceAction {
 		Type:                 View,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
-		Version:              0,
+		Version:              1,
 	})
 	return actions
 }

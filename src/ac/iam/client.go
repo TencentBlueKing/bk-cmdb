@@ -14,10 +14,19 @@ package iam
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+)
+
+const (
+	codeNotFound = 1901404
+)
+
+var (
+	ErrNotFound = errors.New("Not Found")
 )
 
 type iamClient struct {
@@ -56,10 +65,7 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
-		WithParam("fields", "base_info").
-		WithParam("fields", "resource_types").
-		WithParam("fields", "actions").
-		WithParam("fields", "action_topology").
+		WithParam("fields", "base_info,resource_types,actions,action_topology").
 		Body(nil).Do()
 	err := result.Into(resp)
 	if err != nil {
@@ -67,6 +73,9 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 	}
 
 	if resp.Code != 0 {
+		if resp.Code == codeNotFound {
+			return resp, ErrNotFound
+		}
 		return nil, &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("get system info failed, code: %d, msg:%s", resp.Code, resp.Message),
@@ -79,7 +88,7 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 // Note: can only update provider_config.host field.
 func (c *iamClient) UpdateSystemConfig(ctx context.Context, config *SysConfig) error {
 	sys := new(System)
-	config.Auth = ""
+	config.Auth = "basic"
 	sys.ProviderConfig = config
 	resp := new(BaseResponse)
 	result := c.client.Put().
@@ -232,7 +241,7 @@ func (c *iamClient) DeleteAction(ctx context.Context, actionIDs []ResourceAction
 	}
 
 	resp := new(BaseResponse)
-	result := c.client.Put().
+	result := c.client.Delete().
 		SubResourcef("/api/v1/model/systems/%s/actions", c.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).

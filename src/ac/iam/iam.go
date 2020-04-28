@@ -68,12 +68,12 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 
 func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	systemResp, err := i.client.GetSystemInfo(ctx)
-	if err != nil {
+	if err != nil && err != ErrNotFound {
 		blog.Errorf("get system info failed, error: %s", err.Error())
 		return err
 	}
 	// if iam cmdb system has not been registered, register system
-	if systemResp.Data.BaseInfo.ID == "" {
+	if err == ErrNotFound {
 		sys := System{
 			ID:          SystemIDCMDB,
 			Name:        SystemNameCMDB,
@@ -157,21 +157,25 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	}
 
 	// remove redundant actions, then remove redundant resource types whose related actions are all deleted
-	removedResourceActionIDs := make([]ResourceActionID, len(removedResourceActionMap))
-	for resourceActionID, _ := range removedResourceActionMap {
-		removedResourceActionIDs = append(removedResourceActionIDs, resourceActionID)
+	if actionLen := len(removedResourceActionMap); actionLen > 0 {
+		removedResourceActionIDs := make([]ResourceActionID, actionLen)
+		for resourceActionID, _ := range removedResourceActionMap {
+			removedResourceActionIDs = append(removedResourceActionIDs, resourceActionID)
+		}
+		if err = i.client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
+			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
+			return err
+		}
 	}
-	if err = i.client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
-		blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
-		return err
-	}
-	removedResourceTypeIDs := make([]ResourceTypeID, len(removedResourceTypeMap))
-	for resourceType, _ := range removedResourceTypeMap {
-		removedResourceTypeIDs = append(removedResourceTypeIDs, resourceType)
-	}
-	if err = i.client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
-		blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s", err.Error(), removedResourceTypeIDs)
-		return err
+	if typeLen := len(removedResourceTypeMap); typeLen > 0 {
+		removedResourceTypeIDs := make([]ResourceTypeID, len(removedResourceTypeMap))
+		for resourceType, _ := range removedResourceTypeMap {
+			removedResourceTypeIDs = append(removedResourceTypeIDs, resourceType)
+		}
+		if err = i.client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
+			blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s", err.Error(), removedResourceTypeIDs)
+			return err
+		}
 	}
 	return nil
 }
