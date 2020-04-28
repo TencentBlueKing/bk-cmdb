@@ -164,6 +164,7 @@
                     :inst="attribute.inst.edit"
                     :type="attribute.type"
                     :is-created-service="isCreateMode"
+                    :data-index="attribute.dataIndex"
                     :save-disabled="false"
                     :has-used="hasUsed"
                     @on-submit="handleSaveProcess"
@@ -216,6 +217,7 @@
                 emptyText: this.$t('请选择一级分类'),
                 attribute: {
                     type: null,
+                    dataIndex: null,
                     inst: {
                         details: {},
                         edit: {}
@@ -295,7 +297,8 @@
             ...mapActions('serviceTemplate', [
                 'createServiceTemplate',
                 'updateServiceTemplate',
-                'findServiceTemplate'
+                'findServiceTemplate',
+                'deleteServiceTemplate'
             ]),
             ...mapActions('processTemplate', [
                 'createProcessTemplate',
@@ -494,22 +497,23 @@
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
             },
-            handleUpdateProcess (template) {
+            handleUpdateProcess (template, index) {
                 try {
                     this.slider.show = true
                     this.slider.title = template['bk_func_name']['value']
                     this.attribute.type = 'update'
                     this.attribute.inst.edit = template
+                    this.attribute.dataIndex = index
                 } catch (e) {
                     console.error(e)
                 }
             },
-            handleDeleteProcess (template) {
+            handleDeleteProcess (template, index) {
                 this.$bkInfo({
                     title: this.$t('确认删除模板进程'),
                     confirmFn: () => {
                         if (this.isCreateMode) {
-                            this.deleteLocalProcessTemplate(template)
+                            this.deleteLocalProcessTemplate({ process: template, index })
                             this.processList = this.localProcessTemplate
                         } else {
                             this.deleteProcessTemplate({
@@ -540,6 +544,18 @@
                 }).then(() => {
                     this.$success(this.$t('创建成功'))
                     this.handleCancelOperation()
+                }).catch(async e => {
+                    // 新建进程失败静默删除服务模板
+                    await this.deleteServiceTemplate({
+                        params: {
+                            data: this.$injectMetadata({
+                                service_template_id: this.formData.templateId
+                            }, {
+                                injectBizId: true
+                            })
+                        }
+                    })
+                    this.formData.templateId = ''
                 })
             },
             async handleSubmit () {
@@ -611,7 +627,7 @@
                 this.$router.replace({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
             },
             handleSliderBeforeClose () {
-                const hasChanged = this.$refs.processForm.hasChange()
+                const hasChanged = this.$refs.processForm && this.$refs.processForm.hasChange()
                 if (hasChanged) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
