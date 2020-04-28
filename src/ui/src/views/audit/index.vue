@@ -109,21 +109,18 @@
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
             <bk-table-column
-                sortable="custom"
                 prop="resource_type"
                 class-name="is-highlight"
                 :label="$t('功能板块')"
                 :formatter="getResourceType">
             </bk-table-column>
             <bk-table-column
-                sortable="custom"
                 prop="action"
                 :label="$t('动作')"
                 :formatter="getResourceAction">
             </bk-table-column>
             <bk-table-column
                 v-if="active === 'business'"
-                sortable="custom"
                 prop="bk_biz_name"
                 :label="$t('所属业务')">
                 <template slot-scope="{ row }">{{getBusinessName(row)}}</template>
@@ -147,7 +144,6 @@
                 <template slot-scope="{ row }">{{$tools.formatTime(row.operation_time)}}</template>
             </bk-table-column>
             <bk-table-column
-                sortable="custom"
                 prop="user"
                 :label="$t('操作账号')">
             </bk-table-column>
@@ -182,6 +178,9 @@
             vJsonDetails
         },
         data () {
+            // 受审计日志性能影响，限制最多显示100条
+            const paginationConfig = this.$tools.getDefaultPaginationConfig()
+            paginationConfig['limit-list'] = paginationConfig['limit-list'].filter(limit => limit !== 500)
             return {
                 active: 'business',
                 tabPanels: [
@@ -214,7 +213,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        ...this.$tools.getDefaultPaginationConfig()
+                        ...paginationConfig
                     },
                     defaultSort: '-operation_time',
                     sort: '-operation_time',
