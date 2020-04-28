@@ -8,6 +8,7 @@
         </bk-input>
         <bk-big-tree ref="tree" class="topology-tree"
             selectable
+            display-matched-node-descendants
             :expand-on-click="false"
             :style="{
                 height: $APP.height - 160 + 'px'
