@@ -77,7 +77,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		//errChan := make(chan error, 1)
 		//mongoConf, err := engine.WithMongo()
 		//if nil != err {
-		//	blog.Errorf("get redis conf failed: %s", err.Error())
+		//	blog.Errorf("get mongo conf failed: %s", err.Error())
 		//	return err
 		//}
 		//go func() {
