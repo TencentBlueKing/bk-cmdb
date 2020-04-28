@@ -208,6 +208,10 @@ func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 		return common.BKAppIDField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldID
+	case iam.Set:
+		return common.BKSetIDField
+	case iam.Module:
+		return common.BKModuleIDField
 	default:
 		return ""
 	}
@@ -240,6 +244,10 @@ func GetResourceNameField(resourceType iam.ResourceTypeID) string {
 		return common.BKAppNameField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldName
+	case iam.Set:
+		return common.BKSetNameField
+	case iam.Module:
+		return common.BKModuleNameField
 	default:
 		return ""
 	}

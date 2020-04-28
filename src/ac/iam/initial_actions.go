@@ -89,6 +89,14 @@ func genBusinessHostActions() []ResourceAction {
 		ResourceTypeChain: []ResourceChain{
 			// select the business at first.
 			businessChain,
+			{
+				SystemID: SystemIDCMDB,
+				ID:       Set,
+			},
+			{
+				SystemID: SystemIDCMDB,
+				ID:       Module,
+			},
 			// then select the host instances.
 			{
 				SystemID: SystemIDCMDB,

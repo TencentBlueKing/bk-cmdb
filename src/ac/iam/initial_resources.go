@@ -40,7 +40,10 @@ func genBusinessResources() []ResourceType {
 			NameEn:        "Business Host",
 			Description:   "业务下的机器",
 			DescriptionEn: "hosts under a business",
-			Parents:       []Parent{businessParent},
+			Parents: []Parent{{
+				SystemID:   SystemIDCMDB,
+				ResourceID: Module,
+			}},
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/instance/resource",
 			},
@@ -137,6 +140,34 @@ func genBusinessResources() []ResourceType {
 			Description:   "服务模板用于实例化服务实例",
 			DescriptionEn: "service template is used to instantiate a service instance ",
 			Parents:       []Parent{businessParent},
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/business/resource",
+			},
+			Version: 1,
+		},
+		// only for host topology usage, not related to actions
+		{
+			ID:            Set,
+			Name:          "集群",
+			NameEn:        "Set",
+			Description:   "集群列表",
+			DescriptionEn: "all the sets in blueking cmdb.",
+			Parents:       []Parent{businessParent},
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/business/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            Module,
+			Name:          "模块",
+			NameEn:        "Module",
+			Description:   "模块列表",
+			DescriptionEn: "all the modules in blueking cmdb.",
+			Parents: []Parent{{
+				SystemID:   SystemIDCMDB,
+				ResourceID: Set,
+			}},
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/business/resource",
 			},

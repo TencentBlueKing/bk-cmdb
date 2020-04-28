@@ -128,8 +128,8 @@ func (lgc *Logics) ListSystemInstance(kit *rest.Kit, req types.PullResourceReq) 
 	return lgc.ListInstance(kit, cond, req.Type, req.Page)
 }
 
-// list business scope instances which only has biz as parent
-func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq) (*types.ListInstanceResult, error) {
+// list business scope instances which has parent id field in its data, like biz parent instances has bk_biz_id field
+func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq, parentType iam.ResourceTypeID) (*types.ListInstanceResult, error) {
 	if req.Page.IsIllegal() {
 		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
@@ -144,8 +144,11 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
 	}
 
+	parentIDField := types.GetResourceIDField(parentType)
+	parentNameField := types.GetResourceNameField(parentType)
+	parentObjID := GetInstanceResourceObjID(parentType)
 	if filter.Parent != nil {
-		if filter.Parent.Type != iam.Business {
+		if filter.Parent.Type != parentType {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 		// if filter parent id is not int64 type, return empty result
@@ -154,7 +157,7 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 			blog.Errorf("filter.parent.id %s parse int failed, error: %s, rid: %s", filter.Parent.ID, err.Error(), kit.Rid)
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
-		cond[common.BKAppIDField] = id
+		cond[parentIDField] = id
 		return lgc.ListInstance(kit, cond, req.Type, req.Page)
 	}
 
@@ -174,12 +177,12 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 			continue
 		}
 
-		if resourceType != iam.Business {
+		if resourceType != parentType {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 		// filter ancestor topology, try to get from cache first
 		// TODO get ancestor from cache
-		//keys, err := lgc.cache.Keys(common.BKCacheKeyV3Prefix + common.BKInnerObjIDApp + "*").Result()
+		//keys, err := lgc.cache.Keys(common.BKCacheKeyV3Prefix + parentObjID + "*").Result()
 		//if err != nil {
 		//	blog.ErrorJSON("get cache keys for object %s failed, error: %s, rid: %s", objID, err.Error(), kit.Rid)
 		//	return nil, err
@@ -203,9 +206,9 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 		//		return nil, err
 		//	}
 		//	regex := regexp.MustCompile(fmt.Sprintf(".*%s.*", strings.Join(keywords, "|")))
-		//	ancestorName := util.GetStrByInterface(instance[common.BKAppNameField])
+		//	ancestorName := util.GetStrByInterface(instance[parentNameField])
 		//	if regex.MatchString(ancestorName) {
-		//		ancestorID, err := util.GetInt64ByInterface(instance[common.BKAppIDField])
+		//		ancestorID, err := util.GetInt64ByInterface(instance[parentIDField])
 		//		if err != nil {
 		//			blog.ErrorJSON("parse ancestorID %s to int64 failed, error: %s, rid: %s", ancestorID, err.Error(), kit.Rid)
 		//			return nil, err
@@ -216,12 +219,12 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 		//}
 		ancestorQuery := &metadata.QueryCondition{
 			Condition: map[string]interface{}{
-				common.BKAppNameField: keywordCond,
+				parentNameField: keywordCond,
 			},
 			Page:   metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
-			Fields: []string{common.BKAppIDField, common.BKAppNameField},
+			Fields: []string{parentIDField, parentNameField},
 		}
-		result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, ancestorQuery)
+		result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, parentObjID, ancestorQuery)
 		if err != nil {
 			blog.ErrorJSON("get ancestor failed, err: %s, ancestorQuery: %s,rid:%s", err.Error(), ancestorQuery, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -230,18 +233,18 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 			blog.ErrorJSON("get ancestor failed, error message: %s, ancestorQuery: %s,rid:%s", result.ErrMsg, ancestorQuery, kit.Rid)
 			return nil, result.CCError()
 		}
-		for _, biz := range result.Data.Info {
-			ancestorID, err := util.GetInt64ByInterface(biz[common.BKAppIDField])
+		for _, ancestor := range result.Data.Info {
+			ancestorID, err := util.GetInt64ByInterface(ancestor[parentIDField])
 			if err != nil {
-				blog.ErrorJSON("parse ancestorID %s to int64 failed, error: %s, rid: %s", biz[common.BKAppIDField], err.Error(), kit.Rid)
+				blog.ErrorJSON("parse ancestorID %s to int64 failed, error: %s, rid: %s", ancestor[parentIDField], err.Error(), kit.Rid)
 				return nil, err
 			}
-			ancestorMap[strconv.FormatInt(ancestorID, 10)] = util.GetStrByInterface(biz[common.BKAppNameField])
+			ancestorMap[strconv.FormatInt(ancestorID, 10)] = util.GetStrByInterface(ancestor[parentNameField])
 			ancestorIDs = append(ancestorIDs, ancestorID)
 		}
 		if len(ancestorIDs) > 0 {
 			// business instances stores relation in field like bk_biz_id which is the ancestor's id field
-			cond[common.BKAppIDField] = map[string]interface{}{common.BKDBIN: ancestorIDs}
+			cond[parentIDField] = map[string]interface{}{common.BKDBIN: ancestorIDs}
 		}
 	}
 
@@ -261,17 +264,17 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 		return nil, err
 	}
 
-	// get all instances' biz ancestor if no biz is filtered
+	// get all instances' ancestor if none is filtered
 	for _, ancestor := range filter.ResourceTypeChain {
-		if ancestor.ID != iam.Business {
+		if ancestor.ID != parentType {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 	}
 	ancestorIDs := make([]int64, 0)
 	for _, inst := range data.Info {
-		ancestorID, err := util.GetInt64ByInterface(inst[common.BKAppIDField])
+		ancestorID, err := util.GetInt64ByInterface(inst[parentIDField])
 		if err != nil {
-			blog.ErrorJSON("parse ancestorID %s to int64 failed, error: %s, rid: %s", inst[common.BKAppIDField], err.Error(), kit.Rid)
+			blog.ErrorJSON("parse ancestorID %s to int64 failed, error: %s, rid: %s", inst[parentIDField], err.Error(), kit.Rid)
 			return nil, err
 		}
 		ancestorIDs = append(ancestorIDs, ancestorID)
@@ -279,14 +282,14 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 	if len(ancestorMap) == 0 {
 		ancestorQuery := &metadata.QueryCondition{
 			Condition: map[string]interface{}{
-				common.BKAppIDField: map[string]interface{}{
+				parentIDField: map[string]interface{}{
 					common.BKDBIN: ancestorIDs,
 				},
 			},
 			Page:   metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
-			Fields: []string{common.BKAppIDField, common.BKAppNameField},
+			Fields: []string{parentIDField, parentNameField},
 		}
-		result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, ancestorQuery)
+		result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, parentObjID, ancestorQuery)
 		if err != nil {
 			blog.ErrorJSON("get ancestor failed, err: %s, ancestorQuery: %s,rid:%s", err.Error(), ancestorQuery, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -295,8 +298,8 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 			blog.ErrorJSON("get ancestor failed, error message: %s, ancestorQuery: %s,rid:%s", result.ErrMsg, ancestorQuery, kit.Rid)
 			return nil, result.CCError()
 		}
-		for _, biz := range result.Data.Info {
-			ancestorMap[util.GetStrByInterface(biz[common.BKAppIDField])] = util.GetStrByInterface(biz[common.BKAppNameField])
+		for _, ancestor := range result.Data.Info {
+			ancestorMap[util.GetStrByInterface(ancestor[parentIDField])] = util.GetStrByInterface(ancestor[parentNameField])
 		}
 	}
 	instances := make([]types.InstanceResource, 0)
@@ -305,9 +308,9 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, req types.PullResourceReq
 			ID:          util.GetStrByInterface(inst[idField]),
 			DisplayName: util.GetStrByInterface(inst[nameField]),
 		}
-		ancestorID := util.GetStrByInterface(inst[common.BKAppIDField])
+		ancestorID := util.GetStrByInterface(inst[parentIDField])
 		instance.Path = append(instance.Path, types.InstancePath{
-			Type:        iam.Business,
+			Type:        parentType,
 			ID:          ancestorID,
 			DisplayName: ancestorMap[ancestorID],
 		})
@@ -520,15 +523,14 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, req types.PullResourceReq) (*
 			if filter.Parent.Type != iam.SysResourcePoolDirectory {
 				return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 			}
-			relationReq = &metadata.HostModuleRelationRequest{ModuleIDArr: []int64{parentID}}
 		} else if req.Type == iam.BizHostInstance {
-			if filter.Parent.Type != iam.Business {
+			if filter.Parent.Type != iam.Module {
 				return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 			}
-			relationReq = &metadata.HostModuleRelationRequest{ApplicationID: parentID}
 		} else {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
+		relationReq = &metadata.HostModuleRelationRequest{ModuleIDArr: []int64{parentID}}
 		hostIDs := make([]int64, 0)
 		hostRsp, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relationReq)
 		if err != nil {

@@ -158,6 +158,8 @@ const (
 
 const (
 	Business                  ResourceTypeID = "business"
+	Set                       ResourceTypeID = "set"
+	Module                    ResourceTypeID = "module"
 	BizHostInstance           ResourceTypeID = "biz_host_instance"
 	BizCustomQuery            ResourceTypeID = "biz_custom_query"
 	BizTopology               ResourceTypeID = "biz_topology"
