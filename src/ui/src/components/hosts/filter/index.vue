@@ -293,6 +293,8 @@
                 }
             },
             handleAddFilter () {
+                // fix遮盖层问题
+                window.__bk_zIndex_manager.nextZIndex()
                 this.$refs.propertySelector.isShow = true
             },
             async handleDeteleFilter (filterItem) {
