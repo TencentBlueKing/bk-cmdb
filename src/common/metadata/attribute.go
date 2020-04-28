@@ -1019,15 +1019,16 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 }
 
 var HostApplyFieldMap = map[string]bool{
-	common.BKHostInnerIPField: false,
-	common.BKHostOuterIPField: false,
 	common.BKOperatorField:    true,
 	common.BKBakOperatorField: true,
+	"bk_state":                true,
+	"bk_sla":                  true,
+	common.BKHostInnerIPField: false,
+	common.BKHostOuterIPField: false,
 	common.BKAssetIDField:     false,
 	common.BKSNField:          false,
 	"bk_comment":              false,
 	"bk_service_term":         false,
-	"bk_sla":                  true,
 	common.BKCloudIDField:     false,
 	"bk_state_name":           false,
 	"bk_province_name":        false,
