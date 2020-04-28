@@ -1,5 +1,5 @@
 <template>
-    <div class="create-template-wrapper" v-bkloading="{ isLoading: $loading('getSingleServiceTemplate') }">
+    <div class="create-template-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="info-group">
             <h3>{{$t('基本属性')}}</h3>
 
@@ -239,7 +239,14 @@
                 isEditName: false,
                 isEditNameLoading: false,
                 deletable: false,
-                showUpdateInfo: false
+                showUpdateInfo: false,
+                request: {
+                    template: Symbol('template'),
+                    category: Symbol('category'),
+                    properties: Symbol('properties'),
+                    propertyGroups: Symbol('propertiyGroups'),
+                    processList: Symbol('processList')
+                }
             }
         },
         computed: {
@@ -304,9 +311,6 @@
             async refresh () {
                 try {
                     await this.reload()
-                    if (!this.isCreateMode) {
-                        this.initEdit()
-                    }
                     if (this.setActive) {
                         Bus.$emit('active-change', 'instance')
                         this.$route.params.active = null
@@ -326,90 +330,100 @@
                     this.$store.commit('setTitle', this.$t('模板详情'))
                 }
             },
-            initEdit () {
-                this.formData.templateId = this.originTemplateValues['id']
-                this.formData.templateName = this.originTemplateValues['name']
-                this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']
-                this.formData.secondaryClassification = this.originTemplateValues['service_category_id']
-                // 备份，用于取消编辑
-                this.formData.originMainClassification = this.formData.mainClassification
-                this.formData.originSecondaryClassification = this.formData.secondaryClassification
-
-                this.hasUsed = this.isCreateMode ? false : Boolean(this.originTemplateValues['service_instance_count'])
-                this.getProcessList()
-            },
             async reload () {
-                if (!this.isCreateMode) {
-                    this.getSingleServiceTemplate()
+                try {
+                    const request = [
+                        this.getProperties(),
+                        this.getPropertyGroups(),
+                        this.getServiceClassification()
+                    ]
+                    if (!this.isCreateMode) {
+                        request.push(this.getSingleServiceTemplate())
+                        request.push(this.getProcessList())
+                    }
+                    const [properties, groups, { info: categories }, templateResponse] = await Promise.all(request)
+                    this.properties = properties
+                    this.propertyGroups = groups
+                    const categoryList = categories.map(item => item.category)
+                    this.mainList = categoryList.filter(classification => !classification.bk_parent_id)
+                    this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
+                    if (!this.isCreateMode) {
+                        const { result, data } = templateResponse
+                        if (!result) {
+                            this.$router.replace({ name: '404' })
+                            return
+                        }
+                        // 原始数据
+                        this.originTemplateValues = {
+                            service_instance_count: data.service_instance_count,
+                            process_instance_count: data.process_instance_count,
+                            ...data.template
+                        }
+                        // 表单数据
+                        const secondCategoryId = data.template.service_category_id
+                        const secondCategory = this.allSecondaryList.find(category => category.id === secondCategoryId) || {}
+                        this.formData.templateId = data.template.id
+                        this.formData.templateName = data.template.name
+                        this.formData.mainClassification = secondCategory.bk_parent_id
+                        this.formData.secondaryClassification = secondCategoryId
+                        // 备份，用于取消编辑
+                        this.formData.originMainClassification = secondCategory.bk_parent_id
+                        this.formData.originSecondaryClassification = secondCategoryId
+                        this.hasUsed = data.service_instance_count > 0
+                    }
+                } catch (e) {
+                    console.error(e)
                 }
-                this.properties = await this.searchObjectAttribute({
+            },
+            getProperties () {
+                return this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: 'process',
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
-                        requestId: `searchObjectAttribute_templateProcess`,
-                        fromCache: false
+                        requestId: this.request.properties,
+                        fromCache: true
                     }
                 })
-                await this.getServiceClassification()
-                this.getPropertyGroups()
             },
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'process',
                     params: this.$injectMetadata(),
                     config: {
-                        fromCache: true,
-                        requestId: 'post_searchGroup_process'
+                        requestId: this.request.propertyGroups,
+                        fromCache: true
                     }
-                }).then(groups => {
-                    this.propertyGroups = groups
-                    return groups
                 })
             },
-            async getSingleServiceTemplate () {
-                try {
-                    this.originTemplateValues = await this.findServiceTemplate({
-                        id: this.templateId,
-                        config: {
-                            requestId: 'getSingleServiceTemplate',
-                            globalError: false,
-                            transformData: false
-                        }
-                    }).then(res => {
-                        if (!res.result) {
-                            this.$router.replace({ name: '404' })
-                        } else {
-                            return {
-                                service_instance_count: res.data.service_instance_count,
-                                process_instance_count: res.data.process_instance_count,
-                                ...res.data.template
-                            }
-                        }
-                    })
-                } catch (e) {
-                    console.error(e)
-                    this.$router.replace({ name: '404' })
-                }
+            getSingleServiceTemplate () {
+                return this.findServiceTemplate({
+                    id: this.templateId,
+                    config: {
+                        requestId: this.request.template,
+                        globalError: false,
+                        transformData: false
+                    }
+                })
             },
-            async getServiceClassification () {
-                const result = await this.searchServiceCategory({
+            getServiceClassification () {
+                return this.searchServiceCategory({
                     params: this.$injectMetadata({}, { injectBizId: true }),
                     config: {
-                        requestId: 'get_proc_services_categories'
+                        requestId: this.request.category
                     }
                 })
-                const categoryList = result.info.map(item => item['category'])
-                this.mainList = categoryList.filter(classification => !classification['bk_parent_id'])
-                this.allSecondaryList = categoryList.filter(classification => classification['bk_parent_id'])
             },
             getProcessList () {
                 this.processLoading = true
                 this.getBatchProcessTemplate({
                     params: this.$injectMetadata({
-                        service_template_id: this.originTemplateValues['id']
-                    }, { injectBizId: true })
+                        service_template_id: Number(this.templateId)
+                    }, { injectBizId: true }),
+                    config: {
+                        requestId: this.request.processList
+                    }
                 }).then(data => {
                     this.processList = data.info.map(template => {
                         return {
@@ -618,7 +632,7 @@
             getServiceCategory () {
                 const first = this.mainList.find(first => first.id === this.formData.mainClassification) || {}
                 const second = this.allSecondaryList.find(second => second.id === this.formData.secondaryClassification) || {}
-                return `${first.name} / ${second.name}`
+                return `${first.name || '--'} / ${second.name || '--'}`
             },
             getButtonText () {
                 if (this.isCreateMode) {
