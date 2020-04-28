@@ -76,7 +76,6 @@
                 slot="empty"
                 :stuff="emptyStuff">
                 <div class="empty-text">
-                    <img src="../../../assets/images/empty-content.png" alt="">
                     <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
                 </div>
             </cmdb-table-empty>
