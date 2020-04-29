@@ -39,16 +39,6 @@ type moduleSet struct {
 
 func (ms *moduleSet) Run() error {
 
-	cap := &reflector.Capable{
-		OnChange: reflector.OnChangeEvent{
-			OnLister:     ms.onUpsert,
-			OnAdd:        ms.onUpsert,
-			OnUpdate:     ms.onUpsert,
-			OnListerDone: ms.onListDone,
-			OnDelete:     ms.onDelete,
-		},
-	}
-
 	opts := types.Options{
 		EventStruct: new(map[string]interface{}),
 		Collection:  ms.collection,
@@ -62,6 +52,16 @@ func (ms *moduleSet) Run() error {
 		}
 		// can not find list done key, do with list watch
 		page := 500
+		cap := &reflector.Capable{
+			OnChange: reflector.OnChangeEvent{
+				OnLister:     ms.onUpsert,
+				OnAdd:        ms.onUpsert,
+				OnUpdate:     ms.onUpsert,
+				OnListerDone: ms.onListDone,
+				OnDelete:     ms.onDelete,
+			},
+		}
+
 		listOpts := &types.ListWatchOptions{
 			Options:  opts,
 			PageSize: &page,
@@ -70,11 +70,18 @@ func (ms *moduleSet) Run() error {
 		return ms.event.ListWatcher(context.Background(), listOpts, cap)
 	}
 
+	watchCap := &reflector.Capable{
+		OnChange: reflector.OnChangeEvent{
+			OnAdd:    ms.onUpsert,
+			OnUpdate: ms.onUpsert,
+			OnDelete: ms.onDelete,
+		},
+	}
 	watchOpts := &types.WatchOptions{
 		Options: opts,
 	}
 	blog.Infof("do %s cache with only watch", ms.collection)
-	return ms.event.Watcher(context.Background(), watchOpts, cap)
+	return ms.event.Watcher(context.Background(), watchOpts, watchCap)
 
 }
 

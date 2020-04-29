@@ -37,7 +37,6 @@ func (c *Client) getBusinessFromMongo(bizID int64) (string, error) {
 		blog.Errorf("get business %d info from db, but failed, err: %v", bizID, err)
 		return "", ccError.New(common.CCErrCommDBSelectFailed, err.Error())
 	}
-
 	js, _ := json.Marshal(biz)
 	return string(js), nil
 }
@@ -54,8 +53,8 @@ func (c *Client) getBusinessBaseInfo() (list []BizBaseInfo, err error) {
 		instID, _, name, err := bizKey.parseListKeyValue(key)
 		if err != nil {
 			// invalid key, delete immediately
-			if c.rds.SRem(bizKey.listKeyWithBiz(0), key).Err() != nil {
-				blog.Errorf("delete invalid biz hash %s key: %s failed,", bizKey.listKeyWithBiz(0), key)
+			if err := c.rds.SRem(bizKey.listKeyWithBiz(0), key).Err(); err != nil {
+				blog.Errorf("delete invalid biz hash %s key: %s failed, err: %v", bizKey.listKeyWithBiz(0), key, err)
 			}
 			return nil, fmt.Errorf("got invalid key %s", key)
 		}
@@ -113,7 +112,7 @@ func (c *Client) tryRefreshBaseList(bizID int64, ref refreshList) {
 		}
 
 		// if the expire key is not exist, or has already expired, then refresh the cache.
-		if at > 0 && (time.Now().Unix()-at <= int64(ref.expireDuration)) {
+		if at > 0 && (time.Now().Unix()-at <= int64(ref.expireDuration/time.Second)) {
 			// do not need refresh
 			return
 		}
@@ -220,7 +219,7 @@ func (c *Client) tryRefreshInstanceDetail(instID int64, ref refreshInstance) {
 		}
 
 		// if the expire key is not exist, or has already expired, then refresh the cache.
-		if at > 0 && (time.Now().Unix()-at <= int64(ref.expireDuration)) {
+		if at > 0 && (time.Now().Unix()-at <= int64(ref.expireDuration/time.Second)) {
 			// do not need refresh
 			return
 		}
@@ -360,7 +359,7 @@ func (c *Client) getAllSetBase(bizID int64) ([]SetBaseInfo, error) {
 	filter := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
-	
+
 	cnt, err := c.db.Table(common.BKTableNameBaseSet).Find(nil).Count(context.Background())
 	if err != nil {
 		return nil, err

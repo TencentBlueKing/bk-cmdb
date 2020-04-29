@@ -14,11 +14,9 @@ package business
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"sync"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -36,13 +34,7 @@ type customLevel struct {
 	rds   *redis.Client
 	event reflector.Interface
 	db    dal.DB
-	// topologyListDone to indicate the mainline topology has already been listed
-	// and it's time to watch the custom level instance.
-	topologyListDone bool
-	// stores topology object id rank from biz to host
-	topologyRank []string
-	lock         refreshingLock
-
+	lock  refreshingLock
 	// key is object id
 	customWatch map[string]context.CancelFunc
 	customLock  sync.Mutex
@@ -63,21 +55,21 @@ func (m *customLevel) Run() error {
 
 // to watch mainline topology change for it's cache update.
 func (m *customLevel) runMainlineTopology() error {
-	cap := &reflector.Capable{
-		OnChange: reflector.OnChangeEvent{
-			OnLister:     m.onChange,
-			OnAdd:        m.onChange,
-			OnUpdate:     m.onChange,
-			OnListerDone: m.onMainlineTopologyListDone,
-			OnDelete:     m.onChange,
-		},
-	}
 
 	_, err := m.rds.Get(mainlineTopologyListDoneKey).Result()
 	if err != nil {
 		if err != redis.Nil {
 			blog.Errorf("get biz list done redis key failed, err: %v", err)
 			return fmt.Errorf("get biz list done redis key failed, err: %v", err)
+		}
+		cap := &reflector.Capable{
+			OnChange: reflector.OnChangeEvent{
+				OnLister:     m.onChange,
+				OnAdd:        m.onChange,
+				OnUpdate:     m.onChange,
+				OnListerDone: m.onMainlineTopologyListDone,
+				OnDelete:     m.onChange,
+			},
 		}
 		page := 500
 		opts := &types.ListWatchOptions{
@@ -94,6 +86,13 @@ func (m *customLevel) runMainlineTopology() error {
 		return m.event.ListWatcher(context.Background(), opts, cap)
 	}
 
+	watchCap := &reflector.Capable{
+		OnChange: reflector.OnChangeEvent{
+			OnAdd:    m.onChange,
+			OnUpdate: m.onChange,
+			OnDelete: m.onChange,
+		},
+	}
 	watchOpts := &types.WatchOptions{
 		Options: types.Options{
 			EventStruct: new(map[string]interface{}),
@@ -104,31 +103,22 @@ func (m *customLevel) runMainlineTopology() error {
 		},
 	}
 	blog.Info("do mainline topology cache with only watch.")
-	return m.event.Watcher(context.Background(), watchOpts, cap)
+	return m.event.Watcher(context.Background(), watchOpts, watchCap)
 }
 
 // to watch each custom level object instance's change for cache update.
 func (m *customLevel) runCustomLevelInstance() error {
 
-	endAt := time.After(2 * time.Minute)
-	for {
-		select {
-		case <-endAt:
-			return errors.New("wait for custom level instance watch failed")
-		default:
-		}
-		m.customLock.Lock()
-		done := m.topologyListDone
-		m.customLock.Unlock()
-		if done {
-			break
-		}
-		time.Sleep(1 * time.Second)
+	relations, err := m.getMainlineTopology()
+	if err != nil {
+		blog.Errorf("received mainline topology change event, but get it from mongodb failed, err: %v", err)
+		return err
 	}
+	// rank start from biz to host
+	rank := m.rankMainlineTopology(relations)
 
-	m.customLock.Lock()
-	rank := m.topologyRank
-	m.customLock.Unlock()
+	// reconcile the custom watch
+	m.reconcileCustomWatch(rank)
 
 	for _, objID := range rank {
 		if objID == "biz" || objID == "module" || objID == "set" || objID == "host" {
@@ -154,23 +144,22 @@ func (m *customLevel) runCustomWatch(objID string) error {
 		},
 	}
 
-	cap := &reflector.Capable{
-		OnChange: reflector.OnChangeEvent{
-			OnLister: m.onUpsertCustomInstance,
-			OnAdd:    m.onUpsertCustomInstance,
-			OnUpdate: m.onUpsertCustomInstance,
-			OnListerDone: func() {
-				m.onCustomInstanceListDone(objID)
-			},
-			OnDelete: m.onDeleteCustomInstance,
-		},
-	}
-
 	_, err := m.rds.Get(m.key.listDoneKey(objID)).Result()
 	if err != nil {
 		if err != redis.Nil {
 			blog.Errorf("get biz mainline key: %s list done redis key failed, err: %v", m.key.listDoneKey(objID), err)
 			return fmt.Errorf("get biz mainline key: %s list done redis key failed, err: %v", m.key.listDoneKey(objID), err)
+		}
+		listCap := &reflector.Capable{
+			OnChange: reflector.OnChangeEvent{
+				OnLister: m.onUpsertCustomInstance,
+				OnAdd:    m.onUpsertCustomInstance,
+				OnUpdate: m.onUpsertCustomInstance,
+				OnListerDone: func() {
+					m.onCustomInstanceListDone(objID)
+				},
+				OnDelete: m.onDeleteCustomInstance,
+			},
 		}
 		// do with list watch
 		page := 500
@@ -184,8 +173,16 @@ func (m *customLevel) runCustomWatch(objID string) error {
 		m.customWatch[objID] = cancel
 		m.customLock.Unlock()
 		blog.Infof("do custom level object: %s instance sync cache with list watch.", objID)
-		return m.event.ListWatcher(ctx, listOpts, cap)
+		return m.event.ListWatcher(ctx, listOpts, listCap)
 
+	}
+
+	watchCap := &reflector.Capable{
+		OnChange: reflector.OnChangeEvent{
+			OnAdd:    m.onUpsertCustomInstance,
+			OnUpdate: m.onUpsertCustomInstance,
+			OnDelete: m.onDeleteCustomInstance,
+		},
 	}
 
 	watchOpts := &types.WatchOptions{
@@ -196,7 +193,7 @@ func (m *customLevel) runCustomWatch(objID string) error {
 	m.customWatch[objID] = cancel
 	m.customLock.Unlock()
 	blog.Infof("do custom level object: %s instance sync cache with only watch.", objID)
-	return m.event.Watcher(ctx, watchOpts, cap)
+	return m.event.Watcher(ctx, watchOpts, watchCap)
 }
 
 // reconcileCustomWatch to check if the custom watch is coordinate with
@@ -261,17 +258,11 @@ func (m *customLevel) onChange(_ *types.Event) {
 	// reconcile the custom watch
 	m.reconcileCustomWatch(rank)
 
-	// update local rank
-	m.customLock.Lock()
-	m.topologyRank = rank
-	m.customLock.Unlock()
-
 	// then set the rank to cache
 	m.rds.Set(m.key.topologyKey(), m.key.topologyValue(rank), 0)
 }
 
 func (m *customLevel) onMainlineTopologyListDone() {
-	m.topologyListDone = true
 	if err := m.rds.Set(mainlineTopologyListDoneKey, "done", 0).Err(); err != nil {
 		blog.Errorf("list business mainline topology to cache and list done, but set list done key: %s failed, err: %v",
 			mainlineTopologyListDoneKey, err)

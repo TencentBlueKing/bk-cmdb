@@ -35,16 +35,6 @@ type business struct {
 
 func (b *business) Run() error {
 
-	cap := &reflector.Capable{
-		OnChange: reflector.OnChangeEvent{
-			OnLister:     b.onUpsert,
-			OnAdd:        b.onUpsert,
-			OnUpdate:     b.onUpsert,
-			OnListerDone: b.onListDone,
-			OnDelete:     b.onDelete,
-		},
-	}
-
 	opts := types.Options{
 		EventStruct: new(map[string]interface{}),
 		Collection:  common.BKTableNameBaseApp,
@@ -56,7 +46,15 @@ func (b *business) Run() error {
 			blog.Errorf("get biz list done redis key failed, err: %v", err)
 			return fmt.Errorf("get biz list done redis key failed, err: %v", err)
 		}
-
+		listCap := &reflector.Capable{
+			OnChange: reflector.OnChangeEvent{
+				OnLister:     b.onUpsert,
+				OnAdd:        b.onUpsert,
+				OnUpdate:     b.onUpsert,
+				OnListerDone: b.onListDone,
+				OnDelete:     b.onDelete,
+			},
+		}
 		// do with list watcher.
 		page := 500
 		listOpts := &types.ListWatchOptions{
@@ -64,15 +62,22 @@ func (b *business) Run() error {
 			PageSize: &page,
 		}
 		blog.Info("do business cache with list watcher.")
-		return b.event.ListWatcher(context.Background(), listOpts, cap)
+		return b.event.ListWatcher(context.Background(), listOpts, listCap)
 	}
 
+	watchCap := &reflector.Capable{
+		OnChange: reflector.OnChangeEvent{
+			OnAdd:    b.onUpsert,
+			OnUpdate: b.onUpsert,
+			OnDelete: b.onDelete,
+		},
+	}
 	// do with watcher only.
 	watchOpts := &types.WatchOptions{
 		Options: opts,
 	}
 	blog.Info("do business cache with only watcher")
-	return b.event.Watcher(context.Background(), watchOpts, cap)
+	return b.event.Watcher(context.Background(), watchOpts, watchCap)
 }
 
 func (b *business) onUpsert(e *types.Event) {

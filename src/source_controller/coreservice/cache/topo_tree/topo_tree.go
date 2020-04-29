@@ -267,6 +267,9 @@ func (do *doSearch) searchModule() {
 }
 
 func (do *doSearch) createTopology() (*Topology, error) {
+	if do.opt.BusinessID == 0 {
+		return nil, errors.New("create topology, but biz id is 0")
+	}
 	do.searchCustomLevel()
 	do.searchSet()
 	do.searchModule()
@@ -401,6 +404,9 @@ func (do *doSearch) withSet() (*Topology, error) {
 		}
 		subTrees := make([]Tree, 0)
 		for _, mod := range modules {
+			if mod.SetID != set.id {
+				continue
+			}
 			subTrees = append(subTrees, Tree{
 				Object:   "module",
 				InstName: mod.ModuleName,

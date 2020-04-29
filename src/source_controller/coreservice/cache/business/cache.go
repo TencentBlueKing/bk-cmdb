@@ -28,25 +28,25 @@ var clientOnce sync.Once
 var cache *cacheCollection
 
 func NewClient(rds *redis.Client, db dal.DB) *Client {
-	
+
 	if client != nil {
 		return client
 	}
-	
+
 	clientOnce.Do(func() {
-		client =  &Client{
-			rds:               rds,
-			db:                db,
-			lock: refreshingLock{refreshing:make(map[string]bool)},
+		client = &Client{
+			rds:  rds,
+			db:   db,
+			lock: refreshingLock{refreshing: make(map[string]bool)},
 		}
 	})
-	
+
 	return client
 }
 
 // Attention, it can only be called for once.
 func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
-	
+
 	if cache != nil {
 		return nil
 	}
@@ -58,11 +58,11 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 		event: event,
 		db:    db,
 	}
-	
+
 	if err := biz.Run(); err != nil {
 		return fmt.Errorf("run biz cache failed, err: %v", err)
 	}
-	
+
 	module := &moduleSet{
 		key:        moduleKey,
 		collection: common.BKTableNameBaseModule,
@@ -74,9 +74,9 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 	if err := module.Run(); err != nil {
 		return fmt.Errorf("run module cache failed, err: %v", err)
 	}
-	
+
 	set := &moduleSet{
-		key:        moduleKey,
+		key:        setKey,
 		collection: common.BKTableNameBaseSet,
 		rds:        rds,
 		event:      event,
@@ -86,22 +86,20 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 	if err := set.Run(); err != nil {
 		return fmt.Errorf("run set cache failed, err: %v", err)
 	}
-	
+
 	custom := &customLevel{
-		key:              customKey,
-		rds:              rds,
-		event:            event,
-		db:               db,
-		topologyListDone: false,
-		topologyRank:     make([]string, 0),
-		lock:             refreshingLock{refreshing: make(map[string]bool)},
-		customWatch:      make(map[string]context.CancelFunc),
+		key:         customKey,
+		rds:         rds,
+		event:       event,
+		db:          db,
+		lock:        refreshingLock{refreshing: make(map[string]bool)},
+		customWatch: make(map[string]context.CancelFunc),
 	}
 	if err := custom.Run(); err != nil {
 		return fmt.Errorf("run biz custom level cache failed, err: %v", err)
 	}
-	
-	cache =&cacheCollection{
+
+	cache = &cacheCollection{
 		business:    biz,
 		set:         set,
 		module:      module,

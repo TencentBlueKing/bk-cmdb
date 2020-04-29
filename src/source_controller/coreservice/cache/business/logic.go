@@ -82,8 +82,6 @@ func upsertListCache(ms *forUpsertCache) {
 	pipeline.Set(ms.detailKey, string(ms.doc), 0)
 
 	// set the expire key
-	// pipeline.Set(ms.key.listExpireKeyWithBiz(ms.bizID), time.Now().Unix(), 0)
-	// pipeline.Set(ms.key.detailExpireKey(ms.instID), time.Now().Unix(), 0)
 	pipeline.Set(ms.listExpireKey, time.Now().Unix(), 0)
 	pipeline.Set(ms.detailExpireKey, time.Now().Unix(), 0)
 

@@ -33,10 +33,10 @@ type Client struct {
 
 func (c *Client) GetBizBaseList() ([]BizBaseInfo, error) {
 	c.tryRefreshBaseList(0, refreshList{
-		mainKey:        moduleKey.listKeyWithBiz(0),
-		lockKey:        moduleKey.listLockKeyWithBiz(0),
-		expireKey:      moduleKey.listExpireKeyWithBiz(0),
-		expireDuration: moduleKey.listExpireDuration,
+		mainKey:        bizKey.listKeyWithBiz(0),
+		lockKey:        bizKey.listLockKeyWithBiz(0),
+		expireKey:      bizKey.listExpireKeyWithBiz(0),
+		expireDuration: bizKey.listExpireDuration,
 		getList:        c.genBusinessListKeys,
 	})
 
@@ -70,10 +70,10 @@ func (c *Client) GetBusiness(bizID int64) (string, error) {
 
 	// try to refresh cache.
 	c.tryRefreshInstanceDetail(bizID, refreshInstance{
-		mainKey:        moduleKey.detailKey(bizID),
-		lockKey:        moduleKey.detailLockKey(bizID),
-		expireKey:      moduleKey.detailExpireKey(bizID),
-		expireDuration: moduleKey.detailExpireDuration,
+		mainKey:        bizKey.detailKey(bizID),
+		lockKey:        bizKey.detailLockKey(bizID),
+		expireKey:      bizKey.detailExpireKey(bizID),
+		expireDuration: bizKey.detailExpireDuration,
 		getDetail:      c.getModuleDetailFromMongo,
 	})
 
