@@ -63,7 +63,6 @@
                                             :allow-clear="true"
                                             :options="getEnumOptions(property)"
                                             :disabled="disabled"
-                                            :multiple="true"
                                             v-model="property.value">
                                         </component>
                                         <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
@@ -94,7 +93,6 @@
                                             :data-vv-name="property.propertyId"
                                             :allow-clear="true"
                                             :disabled="disabled"
-                                            :multiple="true"
                                             v-model="property.value">
                                         </cmdb-cloud-selector>
                                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
@@ -104,7 +102,6 @@
                                             :data-vv-name="property.propertyId"
                                             :is="`cmdb-form-${property.propertyType}`"
                                             :disabled="disabled"
-                                            :multiple="['timezone', 'organization'].includes(property.propertyType)"
                                             v-model="property.value">
                                         </component>
                                         <i class="userapi-delete fr bk-icon icon-close"
