@@ -362,9 +362,9 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 		// automatically and do read/write retry if policy is set.
 		// mongo.CmdbReleaseSession(ctx, session)
 		if err != nil {
-			return 0, nil
+			return 0, err
 		}
-		return uint64(cnt), err
+		return uint64(cnt), nil
 	}
 }
 
