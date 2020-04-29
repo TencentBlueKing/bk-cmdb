@@ -62,6 +62,11 @@ type keyGenerator struct {
 	detailExpireDuration time.Duration
 }
 
+// return a key which can indicate whether the resources has already been listed.
+func (k keyGenerator) listDoneKey() string {
+	return k.namespace + ":" + string(k.name) + ":listdone"
+}
+
 func (k keyGenerator) listKeyWithBiz(bizID int64) string {
 	if k.name == bizKeyName {
 		return k.namespace + ":" + string(k.name) + "_list"
@@ -140,6 +145,10 @@ type customKeyGen struct {
 	namespace            string
 	listExpireDuration   time.Duration
 	detailExpireDuration time.Duration
+}
+
+func (c customKeyGen) listDoneKey(objectID string) string {
+	return c.namespace + ":listdone:" + objectID
 }
 
 // key to store the mainline topology, except the host object.

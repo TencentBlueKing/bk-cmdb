@@ -14,6 +14,7 @@ package business
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -33,14 +34,7 @@ type business struct {
 }
 
 func (b *business) Run() error {
-	page := 500
-	opts := &types.ListWatchOptions{
-		Options: types.Options{
-			EventStruct: new(map[string]interface{}),
-			Collection:  common.BKTableNameBaseApp,
-		},
-		PageSize: &page,
-	}
+
 	cap := &reflector.Capable{
 		OnChange: reflector.OnChangeEvent{
 			OnLister:     b.onUpsert,
@@ -51,7 +45,34 @@ func (b *business) Run() error {
 		},
 	}
 
-	return b.event.ListWatcher(context.Background(), opts, cap)
+	opts := types.Options{
+		EventStruct: new(map[string]interface{}),
+		Collection:  common.BKTableNameBaseApp,
+	}
+
+	_, err := b.rds.Get(b.key.listDoneKey()).Result()
+	if err != nil {
+		if err != redis.Nil {
+			blog.Errorf("get biz list done redis key failed, err: %v", err)
+			return fmt.Errorf("get biz list done redis key failed, err: %v", err)
+		}
+
+		// do with list watcher.
+		page := 500
+		listOpts := &types.ListWatchOptions{
+			Options:  opts,
+			PageSize: &page,
+		}
+		blog.Info("do business cache with list watcher.")
+		return b.event.ListWatcher(context.Background(), listOpts, cap)
+	}
+
+	// do with watcher only.
+	watchOpts := &types.WatchOptions{
+		Options: opts,
+	}
+	blog.Info("do business cache with only watcher")
+	return b.event.Watcher(context.Background(), watchOpts, cap)
 }
 
 func (b *business) onUpsert(e *types.Event) {
@@ -92,8 +113,14 @@ func (b *business) onDelete(e *types.Event) {
 	blog.V(4).Infof("received *unexpected* delete biz event, oid: %s, operate: %s, doc: %s", e.Oid, e.OperationType, e.DocBytes)
 }
 
+// onListDone is to tell us that all the business has been list from mongodb and already
+// sync it to cache.
 func (b *business) onListDone() {
-
+	if err := b.rds.Set(b.key.listDoneKey(), "done", 0).Err(); err != nil {
+		blog.Errorf("list business data to cache and list done, but set list done key failed, err: %v", err)
+		return
+	}
+	blog.Info("list business data to cache and list done")
 }
 
 func (b *business) getBusinessName(bizID int64) (string, error) {

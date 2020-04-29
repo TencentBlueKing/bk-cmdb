@@ -96,3 +96,5 @@ type CustomInstanceBase struct {
 	InstanceName string `json:"bk_inst_name" bson:"bk_inst_name"`
 	ParentID     int64  `json:"bk_parent_id" bson:"bk_parent_id"`
 }
+
+const mainlineTopologyListDoneKey = "<mainlineTopologyListDoneKey>"

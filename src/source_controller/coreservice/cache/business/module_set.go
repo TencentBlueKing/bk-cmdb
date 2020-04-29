@@ -14,6 +14,7 @@ package business
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -37,14 +38,7 @@ type moduleSet struct {
 }
 
 func (ms *moduleSet) Run() error {
-	page := 500
-	opts := &types.ListWatchOptions{
-		Options: types.Options{
-			EventStruct: new(map[string]interface{}),
-			Collection:  ms.collection,
-		},
-		PageSize: &page,
-	}
+
 	cap := &reflector.Capable{
 		OnChange: reflector.OnChangeEvent{
 			OnLister:     ms.onUpsert,
@@ -55,7 +49,33 @@ func (ms *moduleSet) Run() error {
 		},
 	}
 
-	return ms.event.ListWatcher(context.Background(), opts, cap)
+	opts := types.Options{
+		EventStruct: new(map[string]interface{}),
+		Collection:  ms.collection,
+	}
+
+	_, err := ms.rds.Get(ms.key.listDoneKey()).Result()
+	if err != nil {
+		if err != redis.Nil {
+			blog.Errorf("get  %s list done redis key failed, err: %v", ms.collection, err)
+			return fmt.Errorf("get %s list done redis key failed, err: %v", ms.collection, err)
+		}
+		// can not find list done key, do with list watch
+		page := 500
+		listOpts := &types.ListWatchOptions{
+			Options:  opts,
+			PageSize: &page,
+		}
+		blog.Infof("do %s cache with list watch", ms.collection)
+		return ms.event.ListWatcher(context.Background(), listOpts, cap)
+	}
+
+	watchOpts := &types.WatchOptions{
+		Options: opts,
+	}
+	blog.Infof("do %s cache with only watch", ms.collection)
+	return ms.event.Watcher(context.Background(), watchOpts, cap)
+
 }
 
 func (ms *moduleSet) onUpsert(e *types.Event) {
@@ -151,7 +171,13 @@ func (ms *moduleSet) onDelete(e *types.Event) {
 	blog.V(4).Infof("received %s delete event, oid: %s, and delete data success.", ms.collection, e.Oid)
 }
 
-func (ms *moduleSet) onListDone() {}
+func (ms *moduleSet) onListDone() {
+	if err := ms.rds.Set(ms.key.listDoneKey(), "done", 0).Err(); err != nil {
+		blog.Errorf("list %s cache done, but set list done key failed, err: %v", ms.key.listDoneKey(), err)
+		return
+	}
+	blog.Infof("list %s cache done", ms.key.listDoneKey())
+}
 
 func (ms *moduleSet) setOidRelation(oid string, instID int64) error {
 

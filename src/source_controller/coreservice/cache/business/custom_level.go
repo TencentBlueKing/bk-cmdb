@@ -63,17 +63,6 @@ func (m *customLevel) Run() error {
 
 // to watch mainline topology change for it's cache update.
 func (m *customLevel) runMainlineTopology() error {
-	page := 500
-	opts := &types.ListWatchOptions{
-		Options: types.Options{
-			EventStruct: new(map[string]interface{}),
-			Collection:  common.BKTableNameObjAsst,
-			Filter: mapstr.MapStr{
-				common.AssociationKindIDField: common.AssociationKindMainline,
-			},
-		},
-		PageSize: &page,
-	}
 	cap := &reflector.Capable{
 		OnChange: reflector.OnChangeEvent{
 			OnLister:     m.onChange,
@@ -83,7 +72,39 @@ func (m *customLevel) runMainlineTopology() error {
 			OnDelete:     m.onChange,
 		},
 	}
-	return m.event.ListWatcher(context.Background(), opts, cap)
+
+	_, err := m.rds.Get(mainlineTopologyListDoneKey).Result()
+	if err != nil {
+		if err != redis.Nil {
+			blog.Errorf("get biz list done redis key failed, err: %v", err)
+			return fmt.Errorf("get biz list done redis key failed, err: %v", err)
+		}
+		page := 500
+		opts := &types.ListWatchOptions{
+			Options: types.Options{
+				EventStruct: new(map[string]interface{}),
+				Collection:  common.BKTableNameObjAsst,
+				Filter: mapstr.MapStr{
+					common.AssociationKindIDField: common.AssociationKindMainline,
+				},
+			},
+			PageSize: &page,
+		}
+		blog.Info("do mainline topology cache with list watch.")
+		return m.event.ListWatcher(context.Background(), opts, cap)
+	}
+
+	watchOpts := &types.WatchOptions{
+		Options: types.Options{
+			EventStruct: new(map[string]interface{}),
+			Collection:  common.BKTableNameObjAsst,
+			Filter: mapstr.MapStr{
+				common.AssociationKindIDField: common.AssociationKindMainline,
+			},
+		},
+	}
+	blog.Info("do mainline topology cache with only watch.")
+	return m.event.Watcher(context.Background(), watchOpts, cap)
 }
 
 // to watch each custom level object instance's change for cache update.
@@ -124,33 +145,58 @@ func (m *customLevel) runCustomLevelInstance() error {
 }
 
 func (m *customLevel) runCustomWatch(objID string) error {
-	page := 500
-	opts := &types.ListWatchOptions{
-		Options: types.Options{
-			EventStruct: new(map[string]interface{}),
-			Collection:  common.BKTableNameBaseInst,
-			Filter: mapstr.MapStr{
-				common.BKObjIDField: objID,
-			},
-		},
-		PageSize: &page,
-	}
-	cap := &reflector.Capable{
-		OnChange: reflector.OnChangeEvent{
-			OnLister:     m.onUpsertCustomInstance,
-			OnAdd:        m.onUpsertCustomInstance,
-			OnUpdate:     m.onUpsertCustomInstance,
-			OnListerDone: m.onCustomInstanceListDone,
-			OnDelete:     m.onDeleteCustomInstance,
+
+	opts := types.Options{
+		EventStruct: new(map[string]interface{}),
+		Collection:  common.BKTableNameBaseInst,
+		Filter: mapstr.MapStr{
+			common.BKObjIDField: objID,
 		},
 	}
 
+	cap := &reflector.Capable{
+		OnChange: reflector.OnChangeEvent{
+			OnLister: m.onUpsertCustomInstance,
+			OnAdd:    m.onUpsertCustomInstance,
+			OnUpdate: m.onUpsertCustomInstance,
+			OnListerDone: func() {
+				m.onCustomInstanceListDone(objID)
+			},
+			OnDelete: m.onDeleteCustomInstance,
+		},
+	}
+
+	_, err := m.rds.Get(m.key.listDoneKey(objID)).Result()
+	if err != nil {
+		if err != redis.Nil {
+			blog.Errorf("get biz mainline key: %s list done redis key failed, err: %v", m.key.listDoneKey(objID), err)
+			return fmt.Errorf("get biz mainline key: %s list done redis key failed, err: %v", m.key.listDoneKey(objID), err)
+		}
+		// do with list watch
+		page := 500
+		listOpts := &types.ListWatchOptions{
+			Options:  opts,
+			PageSize: &page,
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		m.customLock.Lock()
+		m.customWatch[objID] = cancel
+		m.customLock.Unlock()
+		blog.Infof("do custom level object: %s instance sync cache with list watch.", objID)
+		return m.event.ListWatcher(ctx, listOpts, cap)
+
+	}
+
+	watchOpts := &types.WatchOptions{
+		Options: opts,
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	m.customLock.Lock()
 	m.customWatch[objID] = cancel
 	m.customLock.Unlock()
-
-	return m.event.ListWatcher(ctx, opts, cap)
+	blog.Infof("do custom level object: %s instance sync cache with only watch.", objID)
+	return m.event.Watcher(ctx, watchOpts, cap)
 }
 
 // reconcileCustomWatch to check if the custom watch is coordinate with
@@ -226,6 +272,12 @@ func (m *customLevel) onChange(_ *types.Event) {
 
 func (m *customLevel) onMainlineTopologyListDone() {
 	m.topologyListDone = true
+	if err := m.rds.Set(mainlineTopologyListDoneKey, "done", 0).Err(); err != nil {
+		blog.Errorf("list business mainline topology to cache and list done, but set list done key: %s failed, err: %v",
+			mainlineTopologyListDoneKey, err)
+		return
+	}
+	blog.Info("list business mainline topology to cache and list done")
 }
 
 // onUpsertCustomInstance is to upsert the custom object instance cache.
@@ -292,8 +344,13 @@ func (m *customLevel) onUpsertCustomInstance(e *types.Event) {
 	m.upsertOid(objID, bizID, instID, e.Oid)
 }
 
-func (m *customLevel) onCustomInstanceListDone() {
-
+func (m *customLevel) onCustomInstanceListDone(objID string) {
+	if err := m.rds.Set(m.key.listDoneKey(objID), "done", 0).Err(); err != nil {
+		blog.Errorf("list business custom level %s to cache and list done, but set list done key: %s failed, err: %v",
+			objID, m.key.listDoneKey(objID), err)
+		return
+	}
+	blog.Infof("list business custom level %s to cache and list done", objID)
 }
 
 func (m *customLevel) onDeleteCustomInstance(e *types.Event) {
