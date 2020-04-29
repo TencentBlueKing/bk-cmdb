@@ -458,6 +458,7 @@
                         this.$http.cancel('post_searchBusiness_$ne_disabled')
                     })
                 } else {
+                    delete values.bk_biz_id // properties中注入了前端自定义的bk_biz_id属性
                     this.createBusiness({
                         params: values
                     }).then(() => {

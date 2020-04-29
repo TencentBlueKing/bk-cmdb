@@ -649,6 +649,7 @@
                         })
                     })
                 } else {
+                    delete values.bk_inst_id // properties中注入了前端自定义的bk_inst_id属性
                     this.createInst({
                         params: this.$injectMetadata(values, { inject: !this.isPublicModel }),
                         objId: this.objId
