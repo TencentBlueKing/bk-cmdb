@@ -210,6 +210,7 @@
                     })
                     const processList = []
                     const differenceType = ['changed', 'added', 'removed']
+                    let changedCategory = null
                     differences.forEach(difference => {
                         differenceType.forEach(type => {
                             difference[type].forEach(info => {
@@ -229,10 +230,10 @@
                                 }
                             })
                         })
+                        changedCategory = (difference.changed_attributes || []).find(attr => attr.property_id === 'service_category_id')
                     })
-                    const serviceCategoryDifference = differences.find(difference => (difference.changed_attributes || []).length)
-                    if (serviceCategoryDifference) {
-                        const categoryInfo = await this.getServiceCategoryDifference(serviceCategoryDifference)
+                    if (changedCategory) {
+                        const categoryInfo = await this.getServiceCategoryDifference(changedCategory)
                         categoryInfo.confirmed = !processList.length
                         processList.push(categoryInfo)
                     }
@@ -242,7 +243,7 @@
                     console.error(e)
                 }
             },
-            async getServiceCategoryDifference (difference) {
+            async getServiceCategoryDifference (changedCategory) {
                 try {
                     const categoryInfo = {
                         type: 'others',
@@ -255,7 +256,7 @@
                         this.getServiceModules()
                     ])
                     this.categories = categories
-                    const templateCategoryId = difference.changed_attributes[0].template_property_value
+                    const templateCategoryId = changedCategory.template_property_value
                     categoryInfo.service_category = this.getCagetoryPath(templateCategoryId)
                     modules.forEach(module => {
                         if (module.service_category_id !== templateCategoryId) {
@@ -280,8 +281,10 @@
             },
             getCagetoryPath (id) {
                 const second = this.categories.find(second => second.category.id === id)
-                const first = this.categories.find(first => first.category.id === second.category.bk_parent_id)
-                return [first.category.name, second.category.name].join(' / ')
+                const first = this.categories.find(first => first.category.id === this.$tools.getValue(second, 'category.bk_parent_id'))
+                const firstName = this.$tools.getValue(first, 'category.name') || '--'
+                const secondName = this.$tools.getValue(second, 'category.name') || '--'
+                return [firstName, secondName].join(' / ')
             },
             getServiceModules () {
                 return this.$store.dispatch('serviceTemplate/getServiceTemplateModules', {

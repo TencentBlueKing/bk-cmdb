@@ -76,7 +76,6 @@
                 slot="empty"
                 :stuff="emptyStuff">
                 <div class="empty-text">
-                    <img src="../../../assets/images/empty-content.png" alt="">
                     <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
                 </div>
             </cmdb-table-empty>
@@ -127,7 +126,7 @@
                         id: 0
                     },
                     {
-                        name: `${this.$t('标签')}(value)`,
+                        name: this.$t('标签值'),
                         id: 1,
                         children: [{
                             id: '',
@@ -136,7 +135,7 @@
                         conditions: []
                     },
                     {
-                        name: `${this.$t('标签')}(key)`,
+                        name: this.$t('标签键'),
                         id: 2,
                         children: [{
                             id: '',

@@ -37,7 +37,7 @@
                         @mouseenter="handleShowDetails(template, $event, $parent.$parent.serviceExistHost(template.id))"
                         @mouseleave="handlehideTips">
                         <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
-                        <span class="template-name" :title="template.name">{{template.name}}</span>
+                        <span class="template-name">{{template.name}}</span>
                     </li>
                 </template>
             </template>
@@ -56,11 +56,15 @@
             v-show="tips.show">
             <div class="disabled-tips" v-show="processInfo.disabled">{{$t('该模块下有主机不可取消')}}</div>
             <div class="info-item">
-                <span>{{$t('服务分类')}} ：</span>
+                <span class="label">{{$t('模板名称')}} ：</span>
+                <div class="details">{{curTemplate.name}}</div>
+            </div>
+            <div class="info-item">
+                <span class="label">{{$t('服务分类')}} ：</span>
                 <div class="details">{{processInfo.cagetory}}</div>
             </div>
             <div class="info-item">
-                <span>{{$t('服务进程')}} ：</span>
+                <span class="label">{{$t('服务进程')}} ：</span>
                 <div class="details">
                     <p v-for="(item, index) in processInfo.processes" :key="index">{{item}}</p>
                     <template v-if="!processInfo.processes.length">
@@ -204,6 +208,7 @@
                 this.tips.instance && this.tips.instance.destroy()
                 this.tips.instance = this.$bkPopover(event.target, {
                     content: this.$refs.templateDetails,
+                    delay: 300,
                     zIndex: 9999,
                     width: 'auto',
                     trigger: 'manual',
@@ -351,6 +356,11 @@
         }
         .info-item {
             display: flex;
+
+            .label {
+                font-size: 12px;
+                font-weight: 700;
+            }
         }
         .details {
             font-size: 12px;

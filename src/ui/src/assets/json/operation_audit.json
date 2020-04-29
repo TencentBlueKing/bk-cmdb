@@ -37,12 +37,18 @@
             "id": "host",
             "name": "主机",
             "operations": [
-                {
+               {
                     "id": "host-unassign_host",
                     "name": "归还主机"
                 }, {
                     "id": "host-update",
                     "name": "修改"
+                }, {
+                    "id": "host-delete",
+                    "name": "删除"
+                }, {
+                    "id": "host-create",
+                    "name": "新增"
                 }, {
                     "id": "host-transfer_host_module",
                     "name": "转移模块"

@@ -80,9 +80,10 @@
                                             :disabled="disabled">
                                         </cmdb-search-input>
                                         <cmdb-form-date-range class="filter-field-value"
+                                            v-else-if="['date', 'time'].includes(property.propertyType)"
                                             v-validate="'required'"
                                             :data-vv-name="property.propertyId"
-                                            v-else-if="['date', 'time'].includes(property.propertyType)"
+                                            :disabled="disabled"
                                             v-model="property.value">
                                         </cmdb-form-date-range>
                                         <cmdb-cloud-selector
@@ -91,6 +92,7 @@
                                             v-validate="'required'"
                                             :data-vv-name="property.propertyId"
                                             :allow-clear="true"
+                                            :disabled="disabled"
                                             v-model="property.value">
                                         </cmdb-cloud-selector>
                                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"

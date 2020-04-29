@@ -15,15 +15,11 @@ package event
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/common/json"
 	"configcenter/src/storage/stream/types"
-	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*types.Watcher, error) {
@@ -70,10 +66,16 @@ func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*t
 			e.database, opts.Collection, opts.Filter, err)
 	}
 
+	listOptions := &types.ListOptions{
+		Filter:      opts.Filter,
+		EventStruct: opts.EventStruct,
+		Collection:  opts.Collection,
+		PageSize:    opts.PageSize,
+	}
 	eventChan := make(chan *types.Event, types.DefaultEventChanSize)
 	go func() {
 		// list all the data from the collection and send it as an event now.
-		e.lister(ctx, totalCnt, opts, eventChan)
+		e.lister(ctx, true, totalCnt, listOptions, eventChan)
 
 		select {
 		case <-ctx.Done():
@@ -82,14 +84,6 @@ func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*t
 			return
 		default:
 
-		}
-
-		// tell the user that the list operation has already done.
-		// we only send for once.
-		eventChan <- &types.Event{
-			Oid:           "",
-			Document:      reflect.New(reflect.TypeOf(opts.EventStruct)).Elem().Interface(),
-			OperationType: types.ListDone,
 		}
 
 		// all the data has already listed and send the event.
@@ -101,75 +95,5 @@ func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*t
 		EventChan: eventChan,
 	}
 	return watcher, nil
-
-}
-
-func (e *Event) lister(ctx context.Context, cnt int64, opts *types.ListWatchOptions, ch chan *types.Event) {
-
-	pageSize := *opts.PageSize
-	for start := 0; start < int(cnt); start += pageSize {
-		reset := func() {
-			// sleep a while and retry later
-			time.Sleep(3 * time.Second)
-		}
-
-		findOpts := new(options.FindOptions)
-		findOpts.SetSkip(int64(start))
-		findOpts.SetLimit(int64(pageSize))
-
-	retry:
-		cursor, err := e.client.Database(e.database).
-			Collection(opts.Collection).
-			Find(ctx, opts.Filter, findOpts)
-		if err != nil {
-			blog.Errorf("list watch operation, but list db: %s, collection: %s failed, will *retry later*, err: %v",
-				e.database, opts.Collection, err)
-			reset()
-			continue
-		}
-
-		for cursor.Next(ctx) {
-			select {
-			case <-ctx.Done():
-				blog.Errorf("received stopped lister signal, stop list db: %s, collection: %s, err: %v", e.database,
-					opts.Collection, ctx.Err())
-				return
-			default:
-
-			}
-
-			// create a new event struct for use
-			result := reflect.New(reflect.TypeOf(opts.EventStruct)).Elem()
-			err := cursor.Decode(result.Addr().Interface())
-			if err != nil {
-				blog.Errorf("list watch operation, but list db: %s, collection: %s with cursor failed, will *retry later*, err: %v",
-					e.database, opts.Collection, err)
-
-				reset()
-				cursor.Close(ctx)
-				goto retry
-			}
-
-			byt, _ := json.Marshal(result.Addr().Interface())
-			oid := gjson.GetBytes(byt, "_id").String()
-
-			// send the event now
-			ch <- &types.Event{
-				Oid:           oid,
-				Document:      result.Interface(),
-				OperationType: types.Lister,
-				DocBytes:      byt,
-			}
-		}
-
-		if err := cursor.Err(); err != nil {
-			blog.Errorf("list watch operation, but list db: %s, collection: %s with cursor failed, will *retry later*, err: %v",
-				e.database, opts.Collection, err)
-			reset()
-			cursor.Close(ctx)
-			goto retry
-		}
-		cursor.Close(ctx)
-	}
 
 }

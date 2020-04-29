@@ -293,6 +293,8 @@
                 }
             },
             handleAddFilter () {
+                // fix遮盖层问题
+                window.__bk_zIndex_manager.nextZIndex()
                 this.$refs.propertySelector.isShow = true
             },
             async handleDeteleFilter (filterItem) {
@@ -543,8 +545,13 @@
         padding: 0;
         line-height: 30px;
     }
-    .filter-trigger.is-active {
-        color: #3A84FF;
+    .filter-trigger {
+        &.is-active {
+            color: #3A84FF;
+            &:hover {
+                color: #3A84FF;
+            }
+        }
     }
     .filter-title {
         position: relative;
@@ -558,6 +565,10 @@
             color: #979BA5;
             &:hover {
                 color: #63656E;
+            }
+
+            /deep/ .bk-icon {
+                font-size: 22px;
             }
         }
     }
