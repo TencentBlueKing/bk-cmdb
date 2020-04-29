@@ -191,7 +191,7 @@
                         id: 0
                     },
                     {
-                        name: this.$t('标签键'),
+                        name: this.$t('标签值'),
                         id: 1,
                         children: [{
                             id: '',
@@ -200,7 +200,7 @@
                         conditions: []
                     },
                     {
-                        name: this.$t('标签值'),
+                        name: this.$t('标签键'),
                         id: 2,
                         children: [{
                             id: '',

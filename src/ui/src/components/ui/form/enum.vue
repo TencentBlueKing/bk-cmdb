@@ -4,6 +4,7 @@
         :clearable="allowClear"
         :searchable="searchable"
         :disabled="disabled"
+        :multiple="multiple"
         :placeholder="placeholder"
         :font-size="fontSize"
         :popover-options="{
@@ -24,10 +25,14 @@
         name: 'cmdb-form-enum',
         props: {
             value: {
-                type: [String, Number],
+                type: [Array, String, Number],
                 default: ''
             },
             disabled: {
+                type: Boolean,
+                default: false
+            },
+            multiple: {
                 type: Boolean,
                 default: false
             },

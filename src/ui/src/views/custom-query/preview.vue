@@ -1,5 +1,5 @@
 <template>
-    <div class="userapi-preview-wrapper">
+    <div class="userapi-preview-wrapper" :style="{ 'z-index': nextIndex }">
         <div class="mask" @click="closePreview"></div>
         <div class="userapi-preview">
             <h3 class="preview-title">{{$t('预览查询')}}</h3>
@@ -56,7 +56,8 @@
                         limit: 10
                     },
                     sort: ''
-                }
+                },
+                nextIndex: 0
             }
         },
         computed: {
@@ -103,6 +104,7 @@
             }
         },
         created () {
+            this.nextIndex = window.__bk_zIndex_manager.nextZIndex()
             this.setTableHeader()
             this.getPreviewList()
         },
@@ -230,7 +232,6 @@
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 2400;
         .mask {
             position: absolute;
             top: 0;

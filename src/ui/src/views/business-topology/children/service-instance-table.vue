@@ -469,7 +469,7 @@
                     },
                     disabled: false,
                     id: 1,
-                    name: `${this.$t('标签')}(value)`,
+                    name: this.$t('标签值'),
                     values: [{
                         id: label.value,
                         name: label.value

@@ -4,6 +4,7 @@
         :clearable="allowClear"
         :searchable="searchable"
         :disabled="disabled"
+        :multiple="multiple"
         :placeholder="placeholder"
         :font-size="fontSize"
         :popover-options="{
@@ -23,10 +24,14 @@
         name: 'cmdb-form-list',
         props: {
             value: {
-                type: String,
+                type: [Array, String],
                 default: ''
             },
             disabled: {
+                type: Boolean,
+                default: false
+            },
+            multiple: {
                 type: Boolean,
                 default: false
             },
