@@ -217,7 +217,7 @@
                 this.services = [...this.originalServices]
             },
             handleGoTopoBusiness () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             }

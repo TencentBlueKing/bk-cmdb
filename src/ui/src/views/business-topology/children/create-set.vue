@@ -13,6 +13,7 @@
                     :clearable="false"
                     :searchable="setTemplateList.length > 7"
                     :placeholder="$t('请选择xx', { name: $t('集群模板') })"
+                    :loading="$loading(request.setTemplate)"
                     v-model="setTemplate"
                     v-validate.disabled="'required'"
                     data-vv-name="setTemplate">
@@ -71,7 +72,10 @@
                 setTemplate: '',
                 setName: '',
                 rows: 1,
-                setTemplateList: []
+                setTemplateList: [],
+                request: {
+                    setTemplate: Symbol('setTemplate')
+                }
             }
         },
         computed: {
@@ -121,7 +125,7 @@
                             bizId: this.business,
                             params: {},
                             config: {
-                                requestId: 'getSetTemplates'
+                                requestId: this.request.setTemplate
                             }
                         })
                         const list = (data.info || []).map(template => ({ ...template.set_template }))
@@ -152,8 +156,11 @@
                 })
             },
             handleAddTemplate () {
-                this.$router.replace({
-                    name: MENU_BUSINESS_SET_TEMPLATE
+                this.$routerActions.redirect({
+                    name: MENU_BUSINESS_SET_TEMPLATE,
+                    params: {
+                        bizId: this.business
+                    }
                 })
             },
             handleCancel () {

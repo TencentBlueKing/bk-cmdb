@@ -8,6 +8,8 @@ import afterload from '@/setup/afterload'
 
 import index from '@/views/index/router.config'
 
+import { before as businessBeforeInterceptor } from './business-interceptor'
+
 import {
     MENU_INDEX,
     MENU_BUSINESS,
@@ -62,9 +64,12 @@ const router = new Router({
         {
             name: MENU_BUSINESS,
             component: dynamicRouterView,
+            components: {
+                default: dynamicRouterView,
+                permission: require('@/views/status/non-exist-business').default
+            },
             children: businessViews,
-            path: '/business',
-            redirect: '/business/index'
+            path: '/business/:bizId?'
         }, {
             name: MENU_MODEL,
             component: dynamicRouterView,
@@ -87,6 +92,16 @@ const router = new Router({
         }
     ]
 })
+
+const beforeHooks = new Set()
+
+function runBeforeHooks () {
+    return Promise.all(Array.from(beforeHooks).map(callback => callback()))
+}
+
+export const addBeforeHooks = function (hook) {
+    beforeHooks.add(hook)
+}
 
 const checkViewAuthorize = async to => {
     // owener判断已经发现无业务时
@@ -122,21 +137,21 @@ const setAdminView = to => {
 
 // 进入业务二级导航时需要先加载业务
 // 在App.vue中添加一个隐藏的业务选择器，业务选择器完成设置后resolve对应的promise
-const checkOwner = async (to, from) => {
-    const toMatched = (to.matched || [])[0] || {}
-    const fromMatched = (from.matched || [])[0] || {}
-    if (toMatched.name === MENU_BUSINESS) {
-        if (fromMatched.name !== MENU_BUSINESS) {
-            router.app.$store.commit('createBusinessSelectorPromise')
-        }
-        router.app.$store.commit('setBusinessSelectorVisible', true)
-        const result = await router.app.$store.state.businessSelectorPromise
-        to.meta.view = result ? 'default' : 'permission'
-    } else {
-        to.meta.view = 'default'
-        router.app.$store.commit('setBusinessSelectorVisible', false)
-    }
-}
+// const checkOwner = async (to, from) => {
+//     const toMatched = (to.matched || [])[0] || {}
+//     const fromMatched = (from.matched || [])[0] || {}
+//     if (toMatched.name === MENU_BUSINESS) {
+//         if (fromMatched.name !== MENU_BUSINESS) {
+//             router.app.$store.commit('createBusinessSelectorPromise')
+//         }
+//         router.app.$store.commit('setBusinessSelectorVisible', true)
+//         const result = await router.app.$store.state.businessSelectorPromise
+//         to.meta.view = result ? 'default' : 'permission'
+//     } else {
+//         to.meta.view = 'default'
+//         router.app.$store.commit('setBusinessSelectorVisible', false)
+//     }
+// }
 
 const setupStatus = {
     preload: true,
@@ -144,13 +159,18 @@ const setupStatus = {
 }
 
 router.beforeEach((to, from, next) => {
+    router.app.$store.commit('setTitle', '')
+    if (to.name === from.name) {
+        return next()
+    }
     Vue.nextTick(async () => {
         try {
             setLoading(true)
             if (setupStatus.preload) {
                 await preload(router.app)
             }
-            await checkOwner(to, from)
+            await runBeforeHooks()
+            await businessBeforeInterceptor(router.app, to, from, next)
             setAdminView(to)
 
             const isAvailable = checkAvailable(to, from)
@@ -160,6 +180,7 @@ router.beforeEach((to, from, next) => {
             await checkViewAuthorize(to)
             return next()
         } catch (e) {
+            console.error(e)
             if (e.__CANCEL__) {
                 next()
             } else if (e instanceof StatusError) {
@@ -182,7 +203,6 @@ router.afterEach((to, from) => {
         if (setupStatus.afterload) {
             afterload(router.app, to, from)
         }
-        router.app.$store.commit('setTitle', '')
     } catch (e) {
         console.error(e)
     } finally {

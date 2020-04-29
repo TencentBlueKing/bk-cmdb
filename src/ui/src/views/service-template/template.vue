@@ -4,7 +4,7 @@
             type="unborder-card"
             :show-header="isUpdate"
             :active.sync="active">
-            <bk-tab-panel :label="$t('服务模板配置')" render-directive="if" name="config">
+            <bk-tab-panel :label="$t('服务模板配置')" name="config">
                 <service-template-config :style="{ padding: isUpdate ? '20px 18px' : '0 20px' }"></service-template-config>
             </bk-tab-panel>
             <bk-tab-panel :label="$t('服务模板实例')" name="instance" v-if="isUpdate">

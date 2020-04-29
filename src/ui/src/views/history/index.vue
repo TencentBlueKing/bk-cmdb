@@ -184,9 +184,6 @@
             setBreadcrumbs () {
                 this.$store.commit('setTitle', this.$t('删除历史'))
             },
-            back () {
-                this.$router.go(-1)
-            },
             setTimeResolver () {
                 return new Promise((resolve, reject) => {
                     this.opTimeResolver = () => {
@@ -230,8 +227,8 @@
                         this.pagination.count = log.count
                         const list = log.info.map(data => {
                             return {
-                                ...(data.content['cur_data'] ? data.content['cur_data'] : data.content['pre_data']),
-                                'op_time': data.op_time
+                                ...data.operation_detail.details.pre_data,
+                                'op_time': data.operation_time
                             }
                         })
                         this.list = list
@@ -244,16 +241,20 @@
             getSearchParams () {
                 const params = {
                     condition: {
-                        'op_type': 3,
-                        'op_time': this.opTime,
-                        'op_target': this.objId
+                        action: ['delete'],
+                        bk_biz_id: null,
+                        category: this.objId === 'host' ? 'business' : 'resource',
+                        operation_time: this.opTime,
+                        resource_id: null,
+                        resource_name: null,
+                        resource_type: this.objId === 'host' ? ['host'] : ['model_instance']
                     },
                     start: (this.pagination.current - 1) * this.pagination.limit,
                     limit: this.pagination.limit,
-                    sort: '-op_time'
+                    sort: '-operation_time'
                 }
                 if (this.objId === 'host' && this.ip) {
-                    params.condition.ext_key = { '$regex': this.ip }
+                    params.condition.resource_name = this.ip
                 }
                 return params
             },

@@ -174,7 +174,7 @@
                 // 使离开确认失活
                 this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
                         query: {
                             mid: this.$route.query.mid
@@ -189,7 +189,7 @@
                 this.propertyModalVisible = true
             },
             handleCancel () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY,
                     query: {
                         module: this.moduleId

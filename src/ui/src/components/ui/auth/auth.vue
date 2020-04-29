@@ -33,7 +33,13 @@
         computed: {
             resources () {
                 if (!this.auth.type) return []
-                return Array.isArray(this.auth.type) ? this.auth.type : [this.auth.type]
+                const types = Array.isArray(this.auth.type) ? this.auth.type : [this.auth.type]
+                return types.map(type => {
+                    return {
+                        ...this.auth,
+                        type: type
+                    }
+                })
             }
         },
         watch: {

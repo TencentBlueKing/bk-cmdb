@@ -14,11 +14,13 @@
         },
         methods: {
             handleRedirect () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
+                        bizId: this.$route.params.bizId,
                         templateId: this.serviceTemplateId
-                    }
+                    },
+                    history: true
                 })
             }
         }

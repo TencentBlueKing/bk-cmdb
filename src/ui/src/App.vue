@@ -9,17 +9,16 @@
             <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
         </div>
         <the-header></the-header>
-        <router-view class="views-layout" v-bkloading="{ isLoading: isIndex && globalLoading }"></router-view>
+        <router-view class="views-layout"
+            v-bkloading="{ isLoading: isIndex && globalLoading }"
+            :name="topView">
+        </router-view>
         <the-permission-modal ref="permissionModal"></the-permission-modal>
         <the-login-modal ref="loginModal"
             v-if="loginUrl"
             :login-url="loginUrl"
             :success-url="loginSuccessUrl">
         </the-login-modal>
-        <cmdb-business-selector v-if="businessSelectorVisible" hidden
-            @on-select="resolveBusinessSelectorPromise"
-            @business-empty="resolveBusinessSelectorPromise">
-        </cmdb-business-selector>
     </div>
 </template>
 
@@ -54,13 +53,17 @@
             }
         },
         computed: {
-            ...mapGetters(['globalLoading', 'businessSelectorVisible', 'mainFullScreen']),
+            ...mapGetters(['globalLoading', 'mainFullScreen']),
             ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey']),
             isIndex () {
                 return this.$route.name === MENU_INDEX
             },
             hideBreadcrumbs () {
                 return !(this.$route.meta.layout || {}).breadcrumbs
+            },
+            topView () {
+                const topRoute = this.$route.matched[0]
+                return (topRoute && topRoute.meta.view) || 'default'
             }
         },
         mounted () {
@@ -74,9 +77,6 @@
             removeResizeListener(this.$el, this.calculateAppHeight)
         },
         methods: {
-            resolveBusinessSelectorPromise (val) {
-                this.$store.commit('resolveBusinessSelectorPromise', !!val)
-            },
             calculateAppHeight () {
                 this.$store.commit('setAppHeight', this.$el.offsetHeight)
             }

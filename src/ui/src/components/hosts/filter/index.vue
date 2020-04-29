@@ -163,6 +163,8 @@
     import { mapState, mapGetters } from 'vuex'
     import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus'
+    import RouterQuery from '@/router/query'
+    import { getIPPayload } from '@/utils/host'
     export default {
         components: {
             filterOperator,
@@ -201,7 +203,7 @@
             }
         },
         computed: {
-            ...mapState('hosts', ['filterList', 'filterIP', 'collection', 'isHostSearch']),
+            ...mapState('hosts', ['filterList', 'collection']),
             ...mapGetters('hosts', ['isCollection']),
             isFilterActive () {
                 const hasIP = !!this.ip.text.replace(/\n|;|；|,|，/g, '').length
@@ -221,9 +223,6 @@
             filterList (newList, oldList) {
                 this.setFilterCondition()
             },
-            filterIP (value) {
-                this.initCustomFilterIP()
-            },
             filterCondition () {
                 this.checkIsScrolling()
             },
@@ -242,40 +241,39 @@
                     resolve()
                 }
             })
-            await this.initCustomFilterIP()
+            RouterQuery.watch(['ip', 'exact', 'inner', 'outer'], ({
+                ip = '',
+                exact = '1',
+                inner = '1',
+                outer = '1'
+            }) => {
+                this.ip.text = ip.split(',').join('\n')
+                this.ip.exact = parseInt(exact) === 1
+                this.ip.inner = parseInt(inner) === 1
+                this.ip.outer = parseInt(outer) === 1
+            }, { immediate: true })
             await this.initCustomFilterList()
-            this.isHostSearch && this.handleSearch()
         },
         beforeDestroy () {
             Bus.$off('toggle-host-filter', this.handleToggleFilter)
             this.$store.commit('hosts/clearFilter')
         },
         methods: {
-            initCustomFilterIP () {
-                if (this.filterIP) {
-                    Object.assign(this.ip, this.filterIP)
-                } else {
-                    this.ip = { ...this.defaultIpConfig }
-                }
-            },
             initCustomFilterList () {
                 const key = this.$route.meta.filterPropertyKey
                 const customData = this.$store.getters['userCustom/getCustomData'](key, [])
                 if (!customData.length && !this.isCollection) {
-                    customData.push(...[
-                        {
-                            bk_obj_id: 'host',
-                            bk_property_id: 'operator',
-                            operator: '',
-                            value: ''
-                        },
-                        {
-                            bk_obj_id: 'host',
-                            bk_property_id: 'bk_cloud_id',
-                            operator: '',
-                            value: ''
-                        }
-                    ])
+                    customData.push({
+                        bk_obj_id: 'host',
+                        bk_property_id: 'operator',
+                        operator: '$eq',
+                        value: ''
+                    }, {
+                        bk_obj_id: 'host',
+                        bk_property_id: 'bk_cloud_id',
+                        operator: '$eq',
+                        value: ''
+                    })
                 }
                 this.$store.commit('hosts/setFilterList', customData)
             },
@@ -324,10 +322,8 @@
             },
             handleSearch (toggle = true) {
                 const params = this.getParams()
-                this.$store.commit('hosts/setFilterParams', params)
-                if (toggle) {
-                    this.handleToggleFilter()
-                }
+                this.updateQuery(params)
+                toggle && this.handleToggleFilter()
             },
             handleCreateCollection () {
                 const instance = this.$refs.collectionPopover.instance
@@ -395,26 +391,26 @@
                 this.collectionName = ''
             },
             handleReset () {
-                this.ip = { ...this.defaultIpConfig }
                 this.filterCondition.forEach(filterItem => {
                     filterItem.value = ''
                 })
+                RouterQuery.set({
+                    ip: '',
+                    exact: 0,
+                    inner: 1,
+                    outer: 1
+                })
                 const params = this.getParams()
-                this.$store.commit('hosts/setFilterParams', params)
+                this.updateQuery(params)
             },
             getParams () {
                 const params = {
-                    ip: {
-                        data: this.getIPList(),
-                        exact: this.ip.exact ? 1 : 0,
-                        flag: ['bk_host_innerip', 'bk_host_outerip'].filter((flag, index) => {
-                            return index === 0 ? this.ip.inner : this.ip.outer
-                        }).join('|')
-                    },
+                    ip: getIPPayload(),
                     host: [],
                     module: [],
                     set: [],
-                    biz: []
+                    biz: [],
+                    object: []
                 }
                 this.filterCondition.forEach(filterItem => {
                     const filterValue = filterItem.value
@@ -444,6 +440,23 @@
                     }
                 })
                 return params
+            },
+            updateQuery (params) {
+                this.$store.commit('hosts/setCondition', ['biz', 'set', 'module', 'host', 'object'].map(modelId => {
+                    return {
+                        bk_obj_id: modelId,
+                        fields: [],
+                        condition: params[modelId]
+                    }
+                }))
+                const flags = params.ip.flag.split('|')
+                RouterQuery.set({
+                    ip: params.ip.data.join(','),
+                    exact: params.ip.exact,
+                    inner: flags.includes('bk_host_innerip') ? 1 : 0,
+                    outer: flags.includes('bk_host_outerip') ? 1 : 0,
+                    _t: Date.now()
+                })
             },
             getIPList () {
                 const list = []

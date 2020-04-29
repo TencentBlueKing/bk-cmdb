@@ -55,7 +55,6 @@
 <script>
     import HostSelector from '@/views/business-topology/host/host-selector.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
-    import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'
     export default {
         name: 'create-service-instance',
@@ -144,7 +143,7 @@
                         }
                     })
                     if (!data.count) {
-                        this.$router.replace({ name: '404' })
+                        this.$routerActions.redirect({ name: '404' })
                     } else {
                         this.moduleInstance = data.info[0]
                     }
@@ -261,13 +260,7 @@
                 }
             },
             handleBackToModule () {
-                this.$router.replace({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    query: {
-                        node: 'module-' + this.moduleId,
-                        tab: this.$route.query.tab
-                    }
-                })
+                this.$routerActions.back()
             }
         }
     }

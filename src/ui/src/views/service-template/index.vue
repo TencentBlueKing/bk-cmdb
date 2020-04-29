@@ -248,12 +248,13 @@
                 this.getTableData(true)
             },
             operationTemplate (id, type) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
                         templateId: id,
                         isEdit: type === 'edit'
-                    }
+                    },
+                    history: true
                 })
             },
             deleteTemplate (template) {
@@ -297,7 +298,7 @@
                 this.operationTemplate(row.id)
             },
             handleTipsLinkClick () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             }
