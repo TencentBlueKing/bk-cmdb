@@ -418,7 +418,7 @@
                 })
             },
             async createSet (value) {
-                const data = await this.$store.dispatch('objectSet/createSetBatch', {
+                const data = await this.$store.dispatch('objectSet/createset', {
                     bizId: this.bizId,
                     params: {
                         sets: value.map(set => {

@@ -186,7 +186,8 @@
                         inner: 1,
                         outer: 1,
                         exact: 0
-                    }
+                    },
+                    history: true
                 })
             },
             handleClickOutside () {

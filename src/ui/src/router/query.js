@@ -32,22 +32,15 @@ class RouterQuery {
     }
 
     set (key, value) {
+        const query = { ...this.route.query }
+        if (typeof key === 'object') {
+            Object.assign(query, key)
+        } else {
+            query[key] = value
+        }
         redirect({
             ...this.route,
-            query: {
-                ...this.route.query,
-                [key]: value
-            }
-        })
-    }
-
-    setBatch (query) {
-        redirect({
-            ...this.route,
-            query: {
-                ...this.route.query,
-                ...query
-            }
+            query: query
         })
     }
 
@@ -70,14 +63,25 @@ class RouterQuery {
     }
 
     watch (key, handler, options = {}) {
+        const watchOptions = {
+            immediate: false,
+            deep: false
+        }
+        for (const optionKey in watchOptions) {
+            if (options.hasOwnProperty(optionKey)) {
+                watchOptions[optionKey] = options[optionKey]
+            }
+        }
         let callback = handler
-        if (options.throttle) {
+        if (options.hasOwnProperty('throttle')) {
             const interval = typeof options.throttle === 'number' ? options.throttle : 100
             callback = throttle(handler, interval, { leading: false, trailing: true })
         }
         let expression = () => this.route.query[key]
-        const isMultipleKeys = Array.isArray(key)
-        if (isMultipleKeys) {
+        if (key === '*') {
+            expression = () => this.route.query
+            watchOptions.deep = true
+        } else if (Array.isArray(key)) {
             expression = () => {
                 const values = {}
                 key.forEach(key => {
@@ -86,10 +90,7 @@ class RouterQuery {
                 return values
             }
         }
-        this.unwatchs.push(this.app.$watch(expression, callback))
-        if (options.immediate) {
-            callback(expression())
-        }
+        this.unwatchs.push(this.app.$watch(expression, callback, watchOptions))
     }
 }
 

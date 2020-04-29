@@ -289,7 +289,7 @@
                 })
             },
             refreshList () {
-                RouterQuery.setBatch({
+                RouterQuery.set({
                     _t: Date.now(),
                     ip: ''
                 })

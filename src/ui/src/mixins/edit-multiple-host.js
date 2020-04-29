@@ -46,7 +46,7 @@ export default {
                     }
                 })
                 this.slider.show = false
-                RouterQuery.setBatch({
+                RouterQuery.set({
                     _t: Date.now(),
                     page: 1
                 })

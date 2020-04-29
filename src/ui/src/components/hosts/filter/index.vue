@@ -392,7 +392,7 @@
                 this.filterCondition.forEach(filterItem => {
                     filterItem.value = ''
                 })
-                RouterQuery.setBatch({
+                RouterQuery.set({
                     ip: '',
                     exact: 0,
                     inner: 1,
@@ -448,7 +448,7 @@
                     }
                 }))
                 const flags = params.ip.flag.split('|')
-                RouterQuery.setBatch({
+                RouterQuery.set({
                     ip: params.ip.data.join(','),
                     exact: params.ip.exact,
                     inner: flags.includes('bk_host_innerip') ? 1 : 0,
