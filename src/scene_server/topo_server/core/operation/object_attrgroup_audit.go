@@ -105,7 +105,6 @@ func (log *ObjectAttrGroupAudit) buildSnapshotForPre() ObjAuditLog {
 	log.bkObjectID = log.preData.ObjectID
 	log.bkGroupID = log.preData.GroupID
 	log.bkGroupName = log.preData.GroupName
-	//todo: bizID may change location
 	log.bizID, _ = log.preData.Metadata.ParseBizID()
 	return log
 }
@@ -129,7 +128,6 @@ func (log *ObjectAttrGroupAudit) buildSnapshotForCur() ObjAuditLog {
 	log.bkObjectID = log.curData.ObjectID
 	log.bkGroupID = log.curData.GroupID
 	log.bkGroupName = log.curData.GroupName
-	//todo: bizID may change location
 	log.bizID, _ = log.preData.Metadata.ParseBizID()
 	return log
 }
