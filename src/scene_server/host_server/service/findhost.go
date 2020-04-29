@@ -66,7 +66,7 @@ func (s *Service) ListBizHosts(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	if key, err := parameter.Validate(); err != nil {
-		blog.ErrorJSON("ListBizHosts failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter, err, srvData.rid)
+		blog.ErrorJSON("ListBizHosts failed, Validate failed,parameter:%s, err: %s, rid:%s", parameter, err, srvData.rid)
 		ccErr := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, key)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
@@ -125,7 +125,7 @@ func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.L
 		SetIDs:             setIDs,
 		ModuleIDs:          parameter.ModuleIDs,
 		HostPropertyFilter: parameter.HostPropertyFilter,
-		HostPropertyList:   parameter.HostPropertyList,
+		Fields:             parameter.Fields,
 		Page:               parameter.Page,
 	}
 	hostResult, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
@@ -158,7 +158,7 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 	}
 	option := &meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
-		HostPropertyList:   parameter.HostPropertyList,
+		Fields:             parameter.Fields,
 		Page:               parameter.Page,
 	}
 	host, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
@@ -187,7 +187,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 		return
 	}
 	if key, err := parameter.Validate(); err != nil {
-		blog.ErrorJSON("ListHostByTopoNode failed, decode body failed,parameter:%s, err: %#v, rid:%s", parameter, err, srvData.rid)
+		blog.ErrorJSON("ListHostByTopoNode failed, Validate failed,parameter:%s, err: %s, rid:%s", parameter, err, srvData.rid)
 		ccErr := srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, key)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
@@ -212,7 +212,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	option := &meta.ListHosts{
 		BizID:              bizID,
 		HostPropertyFilter: parameter.HostPropertyFilter,
-		HostPropertyList:   parameter.HostPropertyList,
+		Fields:             parameter.Fields,
 		Page:               parameter.Page,
 	}
 	hosts, err := s.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
@@ -277,7 +277,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	}
 	sets, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, query)
 	if err != nil {
-		blog.ErrorJSON("get set by condition: %s failed, err: %+v, rid: %s", cond.ToMapStr(), err, rid)
+		blog.ErrorJSON("get set by condition: %s failed, err: %s, rid: %s", cond.ToMapStr(), err, rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
@@ -306,7 +306,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	}
 	modules, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, query)
 	if err != nil {
-		blog.ErrorJSON("get module by condition: %s failed, err: %+v, rid: %s", cond.ToMapStr(), err, rid)
+		blog.ErrorJSON("get module by condition: %s failed, err: %s, rid: %s", cond.ToMapStr(), err, rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}

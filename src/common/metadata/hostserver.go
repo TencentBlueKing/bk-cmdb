@@ -121,7 +121,7 @@ type ListHostsParameter struct {
 	SetCond            []ConditionItem           `json:"set_cond"`
 	ModuleIDs          []int64                   `json:"bk_module_ids"`
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
-	HostPropertyList   []string                  `json:"host_property_list"`
+	Fields             []string                  `json:"fields"`
 	Page               BasePage                  `json:"page"`
 }
 
@@ -134,8 +134,8 @@ func (option ListHostsParameter) Validate() (string, error) {
 		if key, err := option.HostPropertyFilter.Validate(); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
-		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
 		}
 	}
 
@@ -144,7 +144,7 @@ func (option ListHostsParameter) Validate() (string, error) {
 
 type ListHostsWithNoBizParameter struct {
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
-	HostPropertyList   []string                  `json:"host_property_list"`
+	Fields             []string                  `json:"fields"`
 	Page               BasePage                  `json:"page"`
 }
 
@@ -157,8 +157,8 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 		if key, err := option.HostPropertyFilter.Validate(); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
-		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
 		}
 	}
 
@@ -175,7 +175,7 @@ type ListHosts struct {
 	SetIDs             []int64                   `json:"bk_set_ids"`
 	ModuleIDs          []int64                   `json:"bk_module_ids"`
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
-	HostPropertyList   []string                  `json:"host_property_list"`
+	Fields             []string                  `json:"fields"`
 	Page               BasePage                  `json:"page"`
 }
 
