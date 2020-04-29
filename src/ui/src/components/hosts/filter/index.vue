@@ -433,7 +433,7 @@
                         } else {
                             params[modelId].push({
                                 field: filterItem.bk_property_id,
-                                operator: filterItem.bk_property_type === 'category'
+                                operator: ['category', 'organization'].includes(filterItem.bk_property_type)
                                     ? '$in'
                                     : filterItem.operator,
                                 value: filterItem.operator === '$multilike'
