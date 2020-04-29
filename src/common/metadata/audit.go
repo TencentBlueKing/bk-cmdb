@@ -249,16 +249,9 @@ func (op *BasicOpDetail) WithName() string {
 }
 
 type ModelAttrOpDetail struct {
-	// the business id of the resource if it belongs to a business.
-	BusinessID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
-	// BkObjName is the name of the model which contains these resources.
-	BkObjName string `json:"bk_obj_name" bson:"bk_obj_name"`
-	// ResourceID is the id of the resource. which is a unique id.
-	ResourceID int64 `json:"resource_id" bson:"resource_id"`
-	// ResourceName is the name of the resource.it may be attrName or attrGrpName here.
-	ResourceName string `json:"resource_name" bson:"resource_name"`
-	// Details contains all the details information about a user's operation
-	Details *BasicContent `json:"details" bson:"details"`
+	BasicOpDetail `bson:",inline"`
+	BkObjID       string `json:"bk_obj_id" bson:"bk_obj_id"`
+	BkObjName     string `json:"bk_obj_name" bson:"bk_obj_name"`
 }
 
 func (op *ModelAttrOpDetail) WithName() string {

@@ -59,13 +59,16 @@ func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors
 		ResourceType: log.resourceType,
 		Action:       auditAction,
 		OperationDetail: &metadata.ModelAttrOpDetail{
-			BusinessID:   log.bizID,
-			BkObjName:    log.bkObjectName,
-			ResourceID:   log.id,
-			ResourceName: log.propertyName,
-			Details: &metadata.BasicContent{
-				PreData: log.preData.ToMapStr(),
-				CurData: log.curData.ToMapStr(),
+			BkObjID:   log.bkObjectID,
+			BkObjName: log.bkObjectName,
+			BasicOpDetail: metadata.BasicOpDetail{
+				BusinessID:   log.bizID,
+				ResourceID:   log.id,
+				ResourceName: log.propertyName,
+				Details: &metadata.BasicContent{
+					PreData: log.preData.ToMapStr(),
+					CurData: log.curData.ToMapStr(),
+				},
 			},
 		},
 	}
@@ -101,6 +104,7 @@ func (log *ObjectAttrAudit) buildSnapshotForPre() ObjAuditLog {
 	log.bkObjectID = log.preData.ObjectID
 	log.propertyID = log.preData.PropertyID
 	log.propertyName = log.preData.PropertyName
+	//todo: bizID may change location
 	log.bizID, _ = log.preData.Metadata.ParseBizID()
 	return log
 }
@@ -125,7 +129,8 @@ func (log *ObjectAttrAudit) buildSnapshotForCur() ObjAuditLog {
 	log.bkObjectID = log.curData.ObjectID
 	log.propertyID = log.curData.PropertyID
 	log.propertyName = log.curData.PropertyName
-	log.bizID, _ = log.preData.Metadata.ParseBizID()
+	//todo: bizID may change location
+	log.bizID, _ = log.curData.Metadata.ParseBizID()
 	return log
 }
 

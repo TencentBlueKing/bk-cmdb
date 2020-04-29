@@ -60,13 +60,16 @@ func (log *ObjectAttrGroupAudit) SaveAuditLog(auditAction metadata.ActionType) e
 		ResourceType: log.resourceType,
 		Action:       auditAction,
 		OperationDetail: &metadata.ModelAttrOpDetail{
-			BusinessID:   log.bizID,
-			BkObjName:    log.bkObjectName,
-			ResourceID:   log.id,
-			ResourceName: log.bkGroupName,
-			Details: &metadata.BasicContent{
-				PreData: log.preData.ToMapStr(),
-				CurData: log.curData.ToMapStr(),
+			BkObjID:   log.bkObjectID,
+			BkObjName: log.bkObjectName,
+			BasicOpDetail: metadata.BasicOpDetail{
+				BusinessID:   log.bizID,
+				ResourceID:   log.id,
+				ResourceName: log.bkGroupName,
+				Details: &metadata.BasicContent{
+					PreData: log.preData.ToMapStr(),
+					CurData: log.curData.ToMapStr(),
+				},
 			},
 		},
 	}
@@ -102,6 +105,7 @@ func (log *ObjectAttrGroupAudit) buildSnapshotForPre() ObjAuditLog {
 	log.bkObjectID = log.preData.ObjectID
 	log.bkGroupID = log.preData.GroupID
 	log.bkGroupName = log.preData.GroupName
+	//todo: bizID may change location
 	log.bizID, _ = log.preData.Metadata.ParseBizID()
 	return log
 }
@@ -125,6 +129,7 @@ func (log *ObjectAttrGroupAudit) buildSnapshotForCur() ObjAuditLog {
 	log.bkObjectID = log.curData.ObjectID
 	log.bkGroupID = log.curData.GroupID
 	log.bkGroupName = log.curData.GroupName
+	//todo: bizID may change location
 	log.bizID, _ = log.preData.Metadata.ParseBizID()
 	return log
 }
