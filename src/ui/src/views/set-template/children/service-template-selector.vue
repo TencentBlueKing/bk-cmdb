@@ -155,7 +155,7 @@
                 return this.localSelected.map(id => this.allTemplates.find(template => template.id === id))
             },
             handleLinkClick () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_SERVICE_TEMPLATE
                 })
             },

@@ -357,18 +357,12 @@
                 if (disabled) {
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_DELETE_SERVICE,
                     params: {
                         ids: this.checked.map(instance => instance.id).join('/')
                     },
-                    query: {
-                        from: this.$route.path,
-                        query: {
-                            ...this.$route.query,
-                            tab: 'service'
-                        }
-                    }
+                    history: true
                 })
             },
             handleCheckChange (checked, instance) {
@@ -432,7 +426,7 @@
                 el.showChildMenu(children)
             },
             handleGoAddInstance () {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             },

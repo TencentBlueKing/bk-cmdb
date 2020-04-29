@@ -148,11 +148,12 @@
             },
             handleViewRules (property) {
                 const rule = this.hostRelatedRules.find(rule => rule.bk_attribute_id === property.id) || {}
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY,
                     query: {
                         module: rule.bk_module_id
-                    }
+                    },
+                    history: true
                 })
             },
             hasRelatedRules (property) {

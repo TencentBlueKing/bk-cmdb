@@ -50,6 +50,7 @@
     import ServiceNodeInfo from './children/service-node-info.vue'
     import { mapGetters } from 'vuex'
     import Bus from '@/utils/bus.js'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             TopologyTree,
@@ -59,7 +60,7 @@
         },
         data () {
             return {
-                activeTab: this.$route.query.tab || 'hostList',
+                activeTab: RouterQuery.get('tab', 'hostList'),
                 layout: {
                     topologyCollapse: false
                 },
@@ -87,9 +88,13 @@
             activeTab (tab) {
                 const refresh = (this.$refs[tab] || {}).refresh
                 typeof refresh === 'function' && refresh(1)
+                RouterQuery.set('tab', tab)
             }
         },
         async created () {
+            RouterQuery.watch('tab', value => {
+                this.activeTab = value
+            })
             try {
                 const topologyModels = await this.getTopologyModels()
                 const properties = await this.getProperties(topologyModels)
@@ -117,6 +122,7 @@
             },
             getProperties (models) {
                 return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
+                    injectId: 'host',
                     params: this.$injectMetadata({
                         bk_obj_id: {
                             $in: models.map(model => model.bk_obj_id)

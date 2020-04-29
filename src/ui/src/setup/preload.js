@@ -27,8 +27,11 @@ export function getGlobalUsercustom (app) {
     return app.$store.dispatch('userCustom/getGlobalUsercustom', {
         config: {
             ...preloadConfig,
-            fromCache: false
+            fromCache: false,
+            globalError: false
         }
+    }).catch(() => {
+        return {}
     })
 }
 

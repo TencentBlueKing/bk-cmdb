@@ -112,9 +112,10 @@
             },
             undragbbleProperties () {
                 const undragbbleProperties = []
-                this.localSelected.forEach(propertyId => {
-                    if (this.disabledColumns.includes(propertyId)) {
-                        const property = this.properties.find(property => property['bk_property_id'] === propertyId)
+                this.disabledColumns.forEach(id => {
+                    const isSelected = this.localSelected.includes(id)
+                    if (isSelected) {
+                        const property = this.properties.find(property => property.bk_property_id === id)
                         if (property) {
                             undragbbleProperties.push(property)
                         }

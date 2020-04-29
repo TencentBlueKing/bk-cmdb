@@ -709,16 +709,17 @@
                     id: `${this.business}_${this.instance.set_template_id}`,
                     instancesId: [this.instance.bk_set_id]
                 })
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setSync',
                     params: {
                         setTemplateId: this.instance.set_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             goServiceTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.instance.service_template_id,
@@ -727,11 +728,12 @@
                     query: {
                         node: this.selectedNode.id,
                         tab: 'nodeInfo'
-                    }
+                    },
+                    history: true
                 })
             },
             goSetTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'view',
@@ -741,7 +743,8 @@
                     query: {
                         node: this.selectedNode.id,
                         tab: 'nodeInfo'
-                    }
+                    },
+                    history: true
                 })
             },
             async getSelectedNodeHostCount () {

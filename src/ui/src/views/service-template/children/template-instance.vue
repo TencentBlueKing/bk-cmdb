@@ -165,15 +165,13 @@
                 return true
             },
             handleSync (row) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'syncServiceFromTemplate',
                     params: {
                         modules: row.bk_module_id,
                         template: this.serviceTemplateId
                     },
-                    query: {
-                        form: 'operationalTemplate'
-                    }
+                    history: true
                 })
             },
             checkSelectable (row) {
@@ -183,15 +181,13 @@
                 this.table.selection = selection
             },
             handleBatchSync () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'syncServiceFromTemplate',
                     params: {
                         template: this.serviceTemplateId,
                         modules: this.table.selection.map(row => row.bk_module_id).join(',')
                     },
-                    query: {
-                        from: 'operationalTemplate'
-                    }
+                    history: true
                 })
             },
             filterData () {
@@ -219,7 +215,7 @@
                 return timeA - timeB
             },
             handleToCreatedInstance () {
-                this.$router.push({ name: MENU_BUSINESS_HOST_AND_SERVICE })
+                this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             }
         }
     }
