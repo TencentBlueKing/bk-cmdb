@@ -1,15 +1,18 @@
-const state = {
-    filterList: [],
-    collection: null,
-    collectionList: [],
-    propertyList: [],
-    condition: ['biz', 'set', 'module', 'host', 'object'].map(modelId => {
+function getDefaultCondition () {
+    return ['biz', 'set', 'module', 'host', 'object'].map(modelId => {
         return {
             bk_obj_id: modelId,
             fields: [],
             condition: []
         }
     })
+}
+const state = {
+    filterList: [],
+    collection: null,
+    collectionList: [],
+    propertyList: [],
+    condition: getDefaultCondition()
 }
 
 const getters = {
@@ -50,6 +53,7 @@ const mutations = {
     clearFilter (state) {
         state.filterList = []
         state.collection = null
+        state.condition = getDefaultCondition()
     },
     setPropertyList (state, list) {
         state.propertyList = list

@@ -153,7 +153,7 @@
                 RouterQuery.set('page', current)
             },
             handleLimitChange (limit) {
-                RouterQuery.setBatch({
+                RouterQuery.set({
                     limit: limit,
                     page: 1
                 })
@@ -204,7 +204,7 @@
                         ...this.$tools.getPageParams(this.table.pagination),
                         sort: this.table.sort
                     },
-                    condition: this.condition
+                    condition: this.$tools.clone(this.condition)
                 }
                 const idMap = {
                     host: 'bk_host_id',
@@ -216,11 +216,17 @@
                 const nodeData = this.selectedNode.data
                 const conditionObjectId = Object.keys(idMap).includes(nodeData.bk_obj_id) ? nodeData.bk_obj_id : 'object'
                 const selectedNodeCondition = params.condition.find(target => target.bk_obj_id === conditionObjectId)
-                selectedNodeCondition.condition.push({
-                    field: idMap[conditionObjectId],
-                    operator: '$eq',
-                    value: nodeData.bk_inst_id
-                })
+                const existCondition = selectedNodeCondition.condition.find(({ field }) => field === idMap[conditionObjectId])
+                if (existCondition) {
+                    existCondition.operator = '$eq'
+                    existCondition.value = nodeData.bk_inst_id
+                } else {
+                    selectedNodeCondition.condition.push({
+                        field: idMap[conditionObjectId],
+                        operator: '$eq',
+                        value: nodeData.bk_inst_id
+                    })
+                }
                 return params
             },
             handleTransfer (type) {
@@ -303,7 +309,7 @@
                     })
                     this.table.selection = []
                     this.$success('转移成功')
-                    RouterQuery.setBatch({
+                    RouterQuery.set({
                         _t: Date.now(),
                         page: 1
                     })
@@ -344,7 +350,7 @@
                     })
                     this.table.selection = []
                     this.$success('转移成功')
-                    RouterQuery.setBatch({
+                    RouterQuery.set({
                         _t: Date.now(),
                         page: 1
                     })

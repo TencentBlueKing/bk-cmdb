@@ -14,7 +14,7 @@ export const getIPPayload = function () {
     if (outer) {
         flag.push('bk_host_outerip')
     }
-    const exact = RouterQuery.get('exact', '1') === '1' ? 1 : 0
+    const exact = parseInt(RouterQuery.get('exact', '1')) === 1 ? 1 : 0
     return {
         data: data,
         flag: flag.join('|'),

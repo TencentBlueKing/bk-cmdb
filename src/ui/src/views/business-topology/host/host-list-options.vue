@@ -283,7 +283,7 @@
                     const info = JSON.parse(collection.info)
                     this.$store.commit('hosts/setFilterList', filterList)
                     this.$store.commit('hosts/setCollection', collection)
-                    RouterQuery.setBatch({
+                    RouterQuery.set({
                         ip: info.ip_list.join(','),
                         exact: info.exact_search ? 1 : 0,
                         inner: info.bk_host_innerip ? 1 : 0,

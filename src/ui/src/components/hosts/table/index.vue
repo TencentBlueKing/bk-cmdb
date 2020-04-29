@@ -250,7 +250,7 @@
                 this.setTableHeader()
             },
             scope (value) {
-                RouterQuery.setBatch({
+                RouterQuery.set({
                     scope: value,
                     ip: '',
                     page: 1

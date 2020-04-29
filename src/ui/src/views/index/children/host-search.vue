@@ -139,7 +139,8 @@
                         ip: list.join(','),
                         scope: scope,
                         exact: 1
-                    }
+                    },
+                    history: true
                 })
             },
             navigateToBusiness (list, bizId) {
@@ -151,7 +152,8 @@
                     query: {
                         ip: list.join(','),
                         exact: 1
-                    }
+                    },
+                    history: true
                 })
             }
         }
