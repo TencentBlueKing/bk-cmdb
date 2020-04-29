@@ -156,8 +156,11 @@
                 })
             },
             handleAddTemplate () {
-                this.$router.replace({
-                    name: MENU_BUSINESS_SET_TEMPLATE
+                this.$routerActions.redirect({
+                    name: MENU_BUSINESS_SET_TEMPLATE,
+                    params: {
+                        bizId: this.business
+                    }
                 })
             },
             handleCancel () {

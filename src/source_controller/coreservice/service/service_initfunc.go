@@ -303,6 +303,17 @@ func (s *coreService) initCache(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *coreService) initCount(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/resource/count", Handler: s.GetCountByFilter})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *coreService) initService(web *restful.WebService) {
 	s.initModelClassification(web)
 	s.initModel(web)
@@ -323,5 +334,6 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initSetTemplate(web)
 	s.initHostApplyRule(web)
 	s.transaction(web)
+	s.initCount(web)
 	s.initCache(web)
 }

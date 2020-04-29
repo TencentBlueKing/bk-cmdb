@@ -344,7 +344,7 @@
                 }
             },
             handleLinkServiceTopo () {
-                this.$router.push({ name: MENU_BUSINESS_HOST_AND_SERVICE })
+                this.$routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
             },
             async handleFilter (current = 1, event) {
                 this.pagination.current = current
@@ -384,11 +384,12 @@
                     id: `${this.business}_${this.templateId}`,
                     instancesId: this.checkedList
                 })
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setSync',
                     params: {
                         setTemplateId: this.templateId
-                    }
+                    },
+                    history: true
                 })
             },
             handleSync (row) {
@@ -396,11 +397,12 @@
                     id: `${this.business}_${this.templateId}`,
                     instancesId: [row.bk_set_id]
                 })
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setSync',
                     params: {
                         setTemplateId: this.templateId
-                    }
+                    },
+                    history: true
                 })
             },
             async handleRetry (row) {
@@ -422,11 +424,12 @@
                 }
             },
             routeToHistory () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'syncHistory',
                     params: {
                         templateId: this.templateId
-                    }
+                    },
+                    history: true
                 })
             }
         }

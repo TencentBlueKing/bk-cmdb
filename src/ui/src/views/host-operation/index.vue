@@ -144,8 +144,7 @@
     import HostSelector from '@/views/business-topology/host/host-selector.vue'
     import HostAttrsAutoApply from './children/host-attrs-auto-apply.vue'
     import {
-        MENU_BUSINESS_TRANSFER_HOST,
-        MENU_BUSINESS_HOST_AND_SERVICE
+        MENU_BUSINESS_TRANSFER_HOST
     } from '@/dictionary/menu-symbol'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { mapGetters } from 'vuex'
@@ -531,7 +530,7 @@
             },
             handleRemoveModule (id) {
                 const targetModules = this.targetModules.filter(exist => exist !== id)
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
                         type: 'business'
@@ -597,7 +596,7 @@
                 }
             },
             refreshRemoveHost (hosts) {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
                         type: this.$route.params.type
@@ -609,7 +608,7 @@
                 })
             },
             gotoTransferPage (modules) {
-                this.$router.replace({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
                         type: this.dialog.props.moduleType
@@ -692,16 +691,7 @@
                 this.failDetailDialog.show = false
             },
             redirect () {
-                if (this.$route.query.from) {
-                    this.$router.replace(this.$route.query.from)
-                } else {
-                    this.$router.replace({
-                        name: MENU_BUSINESS_HOST_AND_SERVICE,
-                        query: {
-                            node: `${this.$route.query.sourceModel}-${this.$route.query.sourceId}`
-                        }
-                    })
-                }
+                this.$routerActions.back()
             }
         }
     }

@@ -264,7 +264,12 @@
                 this.$emit('cancel')
             },
             jumpServiceTemplate () {
-                this.$router.push({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
+                this.$routerActions.redirect({
+                    name: MENU_BUSINESS_SERVICE_TEMPLATE,
+                    params: {
+                        bizId: this.business
+                    }
+                })
             }
         }
     }

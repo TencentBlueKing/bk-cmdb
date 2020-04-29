@@ -60,8 +60,8 @@
 
 <script>
     import {
-        MENU_RESOURCE_INSTANCE,
-        MENU_RESOURCE_BUSINESS,
+        MENU_RESOURCE_INSTANCE_DETAILS,
+        MENU_RESOURCE_BUSINESS_DETAILS,
         MENU_RESOURCE_HOST_DETAILS,
         MENU_RESOURCE_BUSINESS_HISTORY
     } from '@/dictionary/menu-symbol'
@@ -178,11 +178,12 @@
             },
             jumpPage (source) {
                 if (source['hitsType'] === 'host') {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
                             id: source['bk_host_id'].toString().replace(/(\<\/?em\>)/g, '')
-                        }
+                        },
+                        history: true
                     })
                 } else if (source['hitsType'] === 'object') {
                     const model = this.getModelById(source['bk_obj_id'])
@@ -200,20 +201,23 @@
                         })
                         return
                     }
-                    this.$router.push({
-                        name: MENU_RESOURCE_INSTANCE,
+                    this.$routerActions.redirect({
+                        name: MENU_RESOURCE_INSTANCE_DETAILS,
                         params: {
                             objId: source['bk_obj_id'],
                             instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
-                        }
+                        },
+                        history: true
                     })
                 } else if (source['hitsType'] === 'biz') {
-                    const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS
-                    this.$router.push({
+                    const name = source.bk_data_status === 'disabled' ? MENU_RESOURCE_BUSINESS_HISTORY : MENU_RESOURCE_BUSINESS_DETAILS
+                    this.$routerActions.redirect({
                         name: name,
                         params: {
+                            bizId: source.bk_biz_id,
                             bizName: source['bk_biz_name'].toString().replace(/(\<\/?em\>)/g, '')
-                        }
+                        },
+                        history: true
                     })
                 }
             },

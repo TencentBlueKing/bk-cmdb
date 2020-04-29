@@ -43,25 +43,7 @@ export default [{
                 U_HOST_APPLY
             }
         },
-        layout: {
-            previous (view) {
-                return new Promise((resolve, reject) => {
-                    view.leaveConfirmConfig.active = false
-                    view.$nextTick(() => {
-                        const config = {
-                            name: MENU_BUSINESS_HOST_APPLY_EDIT,
-                            query: {
-                                mid: view.$route.query.mid
-                            }
-                        }
-                        if (view.isBatch) {
-                            config.query.batch = 1
-                        }
-                        resolve(config)
-                    })
-                })
-            }
-        }
+        layout: {}
     })
 }, {
     name: MENU_BUSINESS_HOST_APPLY_EDIT,
@@ -78,18 +60,7 @@ export default [{
                 U_HOST_APPLY
             }
         },
-        layout: {
-            previous (view) {
-                const config = {
-                    name: MENU_BUSINESS_HOST_APPLY,
-                    query: {}
-                }
-                if (String(view.$route.query.mid).indexOf(',') === -1) {
-                    config.query.module = view.$route.query.mid
-                }
-                return config
-            }
-        }
+        layout: {}
     })
 }, {
     name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
@@ -106,16 +77,7 @@ export default [{
                 U_HOST_APPLY
             }
         },
-        layout: {
-            previous (view) {
-                return {
-                    name: MENU_BUSINESS_HOST_APPLY,
-                    query: {
-                        module: view.$route.query.mid
-                    }
-                }
-            }
-        }
+        layout: {}
     })
 }, {
     name: MENU_BUSINESS_HOST_APPLY_FAILED,
@@ -132,10 +94,6 @@ export default [{
                 U_HOST_APPLY
             }
         },
-        layout: {
-            previous: {
-                name: MENU_BUSINESS_HOST_APPLY
-            }
-        }
+        layout: {}
     })
 }]

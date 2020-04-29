@@ -1,12 +1,13 @@
 <template>
     <div class="breadcrumbs-layout clearfix">
-        <i class="icon icon-cc-arrow fl" v-if="previous" @click="handleClick"></i>
+        <i class="icon icon-cc-arrow fl" v-if="from && current" @click="handleClick"></i>
         <h1 class="current fl">{{current}}</h1>
     </div>
 </template>
 
 <script>
     import { mapGetters } from 'vuex'
+    import { Base64 } from 'js-base64'
     export default {
         computed: {
             ...mapGetters(['title']),
@@ -14,14 +15,21 @@
                 const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
                 return this.title || this.$route.meta.title || menuI18n
             },
-            previous () {
-                return this.$route.meta.layout && this.$route.meta.layout.previous
+            from () {
+                const queryStr = this.$route.query._f
+                if (queryStr) {
+                    try {
+                        return JSON.parse(Base64.decode(queryStr))
+                    } catch (error) {
+                        return null
+                    }
+                }
+                return null
             }
         },
         methods: {
             async handleClick () {
-                const config = typeof this.previous === 'function' ? await this.previous(this.$parent.$refs.view) : this.previous
-                this.$router.replace(config)
+                this.$routerActions.redirect(this.from)
             }
         }
     }

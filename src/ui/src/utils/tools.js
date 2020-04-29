@@ -328,11 +328,14 @@ const defaultPaginationConfig = window.innerHeight > 750
     ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
     : { limit: 10, 'limit-list': [10, 50, 100, 500] }
 export function getDefaultPaginationConfig () {
-    return {
-        current: 1,
+    const RouterQuery = require('@/router/query').default
+    const config = {
         count: 0,
-        ...defaultPaginationConfig
+        current: parseInt(RouterQuery.get('page', 1)),
+        limit: parseInt(RouterQuery.get('limit', defaultPaginationConfig.limit)),
+        'limit-list': defaultPaginationConfig['limit-list']
     }
+    return config
 }
 
 export function getPageParams (pagination) {

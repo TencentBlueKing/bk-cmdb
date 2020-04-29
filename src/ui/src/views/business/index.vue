@@ -72,25 +72,23 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 200"
-            :row-style="{ cursor: 'pointer' }"
-            @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange">
-            <bk-table-column prop="bk_biz_id" label="ID" width="120" align="center" fixed></bk-table-column>
             <bk-table-column v-for="column in table.header"
-                :class-name="column.id === 'bk_biz_name' ? 'is-highlight' : ''"
                 sortable="custom"
-                :fixed="column.id === 'bk_biz_name'"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
+                min-width="80"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
-                        :show-unit="false"
+                        :theme="column.id === 'bk_biz_id' ? 'primary' : 'default'"
                         :value="row[column.id]"
-                        :property="column.property">
+                        :show-unit="false"
+                        :property="column.property"
+                        @click.native.stop="handleValueClick(row, column)">
                     </cmdb-property-value>
                 </template>
             </bk-table-column>
@@ -214,7 +212,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_biz_name']
+                    disabledColumns: ['bk_biz_id', 'bk_biz_name']
                 }
             }
         },
@@ -263,6 +261,7 @@
         async created () {
             try {
                 this.properties = await this.searchObjectAttribute({
+                    injectId: 'biz',
                     params: this.$injectMetadata({
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount
@@ -339,12 +338,16 @@
                     }
                 })
             },
-            handleRowClick (item) {
-                this.$router.push({
+            handleValueClick (row, column) {
+                if (column.id !== 'bk_biz_id') {
+                    return false
+                }
+                this.$routerActions.redirect({
                     name: MENU_RESOURCE_BUSINESS_DETAILS,
                     params: {
-                        bizId: item.bk_biz_id
-                    }
+                        bizId: row.bk_biz_id
+                    },
+                    history: true
                 })
             },
             handleSortChange (sort) {
@@ -482,8 +485,9 @@
                 })
             },
             routeToHistory () {
-                this.$router.push({
-                    name: MENU_RESOURCE_BUSINESS_HISTORY
+                this.$routerActions.redirect({
+                    name: MENU_RESOURCE_BUSINESS_HISTORY,
+                    history: true
                 })
             },
             handleSliderBeforeClose () {

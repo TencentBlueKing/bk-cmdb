@@ -160,20 +160,22 @@
                 }
             },
             handleCreate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'create'
-                    }
+                    },
+                    history: true
                 })
             },
             handleEdit (row) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'edit',
                         templateId: row.id
-                    }
+                    },
+                    history: true
                 })
             },
             async handleDelete (row) {
@@ -214,21 +216,22 @@
                 if (!column.property) {
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'view',
                         templateId: row.id
-                    }
+                    },
+                    history: true
                 })
             },
             handleGoBusinessTopo () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             },
             handleGoServiceTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_SERVICE_TEMPLATE
                 })
             }

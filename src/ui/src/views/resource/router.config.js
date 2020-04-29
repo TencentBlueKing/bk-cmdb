@@ -15,11 +15,7 @@ export default [{
         menu: {
             i18n: '主机'
         },
-        layout: {
-            previous: {
-                name: MENU_RESOURCE_MANAGEMENT
-            }
-        },
+        layout: {},
         filterPropertyKey: 'resource_host_filter_properties'
     }),
     children: [{
@@ -32,11 +28,7 @@ export default [{
                 i18n: '主机详情',
                 relative: [MENU_RESOURCE_HOST, MENU_RESOURCE_MANAGEMENT]
             },
-            layout: {
-                previous: {
-                    name: MENU_RESOURCE_HOST
-                }
-            }
+            layout: {}
         })
     }, {
         name: MENU_RESOURCE_BUSINESS_HOST_DETAILS,
@@ -48,11 +40,7 @@ export default [{
                 i18n: '主机详情',
                 relative: [MENU_RESOURCE_HOST, MENU_RESOURCE_MANAGEMENT]
             },
-            layout: {
-                previous: {
-                    name: MENU_RESOURCE_HOST
-                }
-            }
+            layout: {}
         })
     }]
 }, {
@@ -63,10 +51,6 @@ export default [{
         menu: {
             relative: MENU_RESOURCE_MANAGEMENT
         },
-        layout: {
-            previous: {
-                name: MENU_RESOURCE_HOST
-            }
-        }
+        layout: {}
     })
 }]

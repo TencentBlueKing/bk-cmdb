@@ -79,7 +79,7 @@
                 return this.availableCollectedData.includes(model.id)
             },
             handleClick (model) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'generalModel',
                     params: {
                         objId: model.bk_obj_id

@@ -729,7 +729,7 @@
                 this.handleCloseProcessForm()
             },
             handleCreateServiceInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'createServiceInstance',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
@@ -739,7 +739,8 @@
                         title: this.currentNode.data.bk_inst_name,
                         node: this.currentNode.id,
                         tab: 'serviceInstance'
-                    }
+                    },
+                    history: true
                 })
             },
             handleCheckALL (checked) {
@@ -763,12 +764,13 @@
                 if (disabled) {
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_DELETE_SERVICE,
                     params: {
                         ids: this.checked.map(instance => instance.id).join('/'),
                         moduleId: this.currentNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             copyIp () {
@@ -779,12 +781,13 @@
                 })
             },
             handleSyncTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'syncServiceFromModule',
                     params: {
                         modules: String(this.currentNode.data.bk_inst_id),
                         template: this.currentNode.data.service_template_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleShowBatchLabel (disabled) {
