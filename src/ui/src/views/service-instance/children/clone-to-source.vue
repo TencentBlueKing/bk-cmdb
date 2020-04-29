@@ -76,6 +76,7 @@
 </template>
 
 <script>
+    import { processTableHeader } from '@/dictionary/table-header'
     export default {
         name: 'clone-to-source',
         props: {
@@ -105,18 +106,7 @@
         },
         computed: {
             header () {
-                const display = [
-                    'bk_func_name',
-                    'bk_process_name',
-                    'bk_start_param_regex',
-                    'bind_ip',
-                    'port',
-                    'bk_port_enable',
-                    'protocol',
-                    'work_path',
-                    'user'
-                ]
-                const header = display.map(id => {
+                const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
