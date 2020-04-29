@@ -333,6 +333,7 @@ type CombinedRule struct {
 var (
 	// 嵌套层级的深度按树的高度计算，查询条件最大深度为3即最多嵌套2层
 	MaxDeep = 3
+	HostSearchMaxDeep = 3
 )
 
 func (r CombinedRule) GetDeep() int {

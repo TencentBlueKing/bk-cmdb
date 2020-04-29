@@ -423,10 +423,10 @@ func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header, dat *m
 	return
 }
 
-func (h *host) ListHosts(ctx context.Context, header http.Header, option metadata.ListHosts) (metadata.ListHostResult, error) {
+func (h *host) ListHosts(ctx context.Context, header http.Header, option *metadata.ListHosts) (*metadata.ListHostResult, error) {
 	type Result struct {
 		metadata.BaseResp `json:",inline"`
-		Data              metadata.ListHostResult `json:"data"`
+		Data              *metadata.ListHostResult `json:"data"`
 	}
 	result := Result{}
 	subPath := "/findmany/hosts/list_hosts"

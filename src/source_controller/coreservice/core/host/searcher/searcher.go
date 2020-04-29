@@ -36,6 +36,11 @@ func New(db dal.RDB, cache *redis.Client) Searcher {
 	}
 }
 
+// host properties which must return
+var hostPropertiesNeed = map[string]bool{
+	common.BKHostIDField: true,
+}
+
 // ListHosts search host with topo node info and host property
 func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (searchResult *metadata.ListHostResult, err error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -109,6 +114,22 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 	limit := uint64(option.Page.Limit)
 	start := uint64(option.Page.Start)
 	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start)
+
+	fields := option.HostPropertyList
+	if len(fields) != 0 {
+		// add host properties which must return if not exist in request param
+		fieldsMap := map[string]bool{}
+		for _, property := range fields {
+			fieldsMap[property] = true
+		}
+		for property := range hostPropertiesNeed {
+			if _, ok := fieldsMap[property]; !ok {
+				fields = append(fields, property)
+			}
+		}
+	}
+	query.Fields(fields...)
+
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	} else {
