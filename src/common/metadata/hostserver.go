@@ -163,8 +163,8 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 		if key, err := option.HostPropertyFilter.Validate(); err != nil {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
-		if option.HostPropertyFilter.GetDeep() > querybuilder.HostSearchMaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
 		}
 	}
 
@@ -202,7 +202,7 @@ func (option ListHosts) Validate() (errKey string, err error) {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.HostSearchMaxDeep)
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
 		}
 	}
 

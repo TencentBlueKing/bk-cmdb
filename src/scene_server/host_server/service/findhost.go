@@ -228,7 +228,6 @@ func (s *Service) ListHostsWithNoBiz(req *restful.Request, resp *restful.Respons
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
 		return
 	}
-	parameter.Page.Limit = common.BKMaxPageSize
 
 	option := &meta.ListHosts{
 		HostPropertyFilter: parameter.HostPropertyFilter,
