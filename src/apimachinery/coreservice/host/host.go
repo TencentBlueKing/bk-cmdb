@@ -59,7 +59,7 @@ type HostClientInterface interface {
 	GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error)
 
 	// search host
-	ListHosts(ctx context.Context, header http.Header, option metadata.ListHosts) (resp metadata.ListHostResult, err error)
+	ListHosts(ctx context.Context, header http.Header, option *metadata.ListHosts) (resp *metadata.ListHostResult, err error)
 
 	// update host's cloud area field
 	UpdateHostCloudAreaField(ctx context.Context, header http.Header, option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
