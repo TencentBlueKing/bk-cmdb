@@ -48,6 +48,16 @@ func NewObjectAttrAudit(kit *rest.Kit, clientSet apimachinery.ClientSetInterface
 }
 
 func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCError {
+	preData := log.preData.ToMapStr()
+	curData := log.curData.ToMapStr()
+	switch auditAction {
+	case metadata.AuditDelete:
+		curData = nil
+	case metadata.AuditCreate:
+		preData = nil
+	case metadata.AuditUpdate:
+		//do nothing
+	}
 	//get objectName
 	err := log.getObjectInfo(log.kit, log.bkObjectID)
 	if err != nil {
@@ -66,8 +76,8 @@ func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors
 				ResourceID:   log.id,
 				ResourceName: log.propertyName,
 				Details: &metadata.BasicContent{
-					PreData: log.preData.ToMapStr(),
-					CurData: log.curData.ToMapStr(),
+					PreData: preData,
+					CurData: curData,
 				},
 			},
 		},

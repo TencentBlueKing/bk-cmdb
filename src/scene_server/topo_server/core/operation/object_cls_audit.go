@@ -45,6 +45,16 @@ func NewObjectClsAudit(kit *rest.Kit, clientSet apimachinery.ClientSetInterface,
 }
 
 func (log *ObjectClsAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCError {
+	preData := log.preData.ToMapStr()
+	curData := log.curData.ToMapStr()
+	switch auditAction {
+	case metadata.AuditDelete:
+		curData = nil
+	case metadata.AuditCreate:
+		preData = nil
+	case metadata.AuditUpdate:
+		//do nothing
+	}
 	auditLog := metadata.AuditLog{
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
@@ -53,8 +63,8 @@ func (log *ObjectClsAudit) SaveAuditLog(auditAction metadata.ActionType) errors.
 			ResourceID:   log.id,
 			ResourceName: log.objClsName,
 			Details: &metadata.BasicContent{
-				PreData: log.preData.ToMapStr(),
-				CurData: log.curData.ToMapStr(),
+				PreData: preData,
+				CurData: curData,
 			},
 		},
 	}

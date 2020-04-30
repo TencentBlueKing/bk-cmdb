@@ -48,12 +48,21 @@ func NewObjectAttrGroupAudit(kit *rest.Kit, clientSet apimachinery.ClientSetInte
 }
 
 func (log *ObjectAttrGroupAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCError {
+	preData := log.preData.ToMapStr()
+	curData := log.curData.ToMapStr()
+	switch auditAction {
+	case metadata.AuditDelete:
+		curData = nil
+	case metadata.AuditCreate:
+		preData = nil
+	case metadata.AuditUpdate:
+		//do nothing
+	}
 	//get objectName
 	err := log.getObjectInfo(log.kit, log.bkObjectID)
 	if err != nil {
 		blog.Errorf("[audit] failed to get the objInfo,err: %s", err)
 	}
-
 	//make auditLog
 	auditLog := metadata.AuditLog{
 		AuditType:    log.auditType,
@@ -67,8 +76,8 @@ func (log *ObjectAttrGroupAudit) SaveAuditLog(auditAction metadata.ActionType) e
 				ResourceID:   log.id,
 				ResourceName: log.bkGroupName,
 				Details: &metadata.BasicContent{
-					PreData: log.preData.ToMapStr(),
-					CurData: log.curData.ToMapStr(),
+					PreData: preData,
+					CurData: curData,
 				},
 			},
 		},
