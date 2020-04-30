@@ -1,22 +1,48 @@
 <template>
     <div class="wrapper">
-        <form class="form" action="">
+        <form class="form" method="POST">
             <h1 class="title">
                 <img class="logo" src="./assets/blueking_cn.svg" alt="logo" width="178" height="33">
             </h1>
-            <div class="form-error">{login_error}</div>
+            <div class="form-error" ref="error">{{error}}</div>
             <div class="form-item">
                 <img class="form-item-icon" src="./assets/user.svg" width="16" height="16">
-                <input id="user" type="text" name="username" placeholder="用户名" autocomplete="off">
+                <input id="user" type="text" name="username" placeholder="用户名" autocomplete="off" v-model.trim="username">
             </div>
             <div class="form-item">
                 <img class="form-item-icon" src="./assets/password.svg" width="16" height="16">
-                <input class="password" id="password" type="password" name="password" placeholder="密码">
+                <input class="password" id="password" type="password" name="password" placeholder="密码" v-model.trim="password">
             </div>
-            <button class="form-submit" type="submit">登录</button>
+            <button class="form-submit" type="submit" @click="handleSubmit">登录</button>
         </form>
     </div>
 </template>
+
+<script>
+export default {
+    data () {
+        return {
+            username: '',
+            password: '',
+            error: window.LOGIN_ERROR
+        }
+    },
+    methods: {
+        handleSubmit (event) {
+            if (!this.username.length) {
+                this.error = '请输入用户名'
+                event.preventDefault()
+                return
+            }
+            if (!this.password.length) {
+                this.error = '请输入密码'
+                event.preventDefault()
+                return
+            }
+        }
+    }
+}
+</script>
 
 <style lang="scss" scoped>
 .wrapper {
