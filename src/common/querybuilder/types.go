@@ -126,12 +126,12 @@ var SupportOperators = map[Operator]bool{
 	OperatorIsNull:    false,
 	OperatorIsNotNull: false,
 
-	OperatorExist:    false,
+	OperatorExist:    true,
 	OperatorNotExist: false,
 }
 
 func (op Operator) Validate() error {
-	if support, ok := SupportOperators[op]; support == false || ok == false {
+	if support, ok := SupportOperators[op]; !support || !ok {
 		return fmt.Errorf("unsupported operator: %s", op)
 	}
 	return nil
@@ -163,11 +163,11 @@ func (r AtomRule) Validate() (string, error) {
 
 var (
 	// TODO: should we support dot field separator here?
-	ValidFieldPattern = regexp.MustCompile(`^[a-zA-Z][\d\w\-_.]*$`)
+	ValidFieldPattern = regexp.MustCompile(`^[a-zA-Z0-9][\d\w\-_.]*$`)
 )
 
 func (r AtomRule) validateField() error {
-	if ValidFieldPattern.MatchString(r.Field) == false {
+	if !ValidFieldPattern.MatchString(r.Field) {
 		return fmt.Errorf("invalid field: %s", r.Field)
 	}
 	return nil
@@ -332,7 +332,7 @@ type CombinedRule struct {
 
 var (
 	// 嵌套层级的深度按树的高度计算，查询条件最大深度为3即最多嵌套2层
-	MaxDeep = 3
+	MaxDeep           = 3
 )
 
 func (r CombinedRule) GetDeep() int {
@@ -353,9 +353,6 @@ func (r CombinedRule) Validate() (string, error) {
 	if r.Rules == nil || len(r.Rules) == 0 {
 		return "rules", fmt.Errorf("combined rules shouldn't be empty")
 	}
-	if r.GetDeep() > MaxDeep {
-		return "rules", fmt.Errorf("exceed max query condition deepth: %d", MaxDeep)
-	}
 	for idx, rule := range r.Rules {
 		if key, err := rule.Validate(); err != nil {
 			return fmt.Sprintf("rules[%d].%s", idx, key), err
@@ -370,9 +367,6 @@ func (r CombinedRule) ToMgo() (mgoFilter map[string]interface{}, key string, err
 	}
 	if r.Rules == nil || len(r.Rules) == 0 {
 		return nil, "rules", fmt.Errorf("combined rules shouldn't be empty")
-	}
-	if r.GetDeep() > MaxDeep {
-		return nil, "rules", fmt.Errorf("exceed max query condition deepth: %d", MaxDeep)
 	}
 	filters := make([]map[string]interface{}, 0)
 	for idx, rule := range r.Rules {

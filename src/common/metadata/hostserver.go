@@ -121,12 +121,48 @@ type ListHostsParameter struct {
 	SetCond            []ConditionItem           `json:"set_cond"`
 	ModuleIDs          []int64                   `json:"bk_module_ids"`
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Fields             []string                  `json:"fields"`
 	Page               BasePage                  `json:"page"`
+}
+
+func (option ListHostsParameter) Validate() (string, error) {
+	if key, err := option.Page.Validate(false); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+		}
+	}
+
+	return "", nil
 }
 
 type ListHostsWithNoBizParameter struct {
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Fields             []string                  `json:"fields"`
 	Page               BasePage                  `json:"page"`
+}
+
+func (option ListHostsWithNoBizParameter) Validate() (string, error) {
+	if key, err := option.Page.Validate(false); err != nil {
+		return fmt.Sprintf("page.%s", key), err
+	}
+
+	if option.HostPropertyFilter != nil {
+		if key, err := option.HostPropertyFilter.Validate(); err != nil {
+			return fmt.Sprintf("host_property_filter.%s", key), err
+		}
+		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+		}
+	}
+
+	return "", nil
 }
 
 type TimeRange struct {
@@ -139,11 +175,12 @@ type ListHosts struct {
 	SetIDs             []int64                   `json:"bk_set_ids"`
 	ModuleIDs          []int64                   `json:"bk_module_ids"`
 	HostPropertyFilter *querybuilder.QueryFilter `json:"host_property_filter"`
+	Fields             []string                  `json:"fields"`
 	Page               BasePage                  `json:"page"`
 }
 
 func (option ListHosts) Validate() (string, error) {
-	if key, err := option.Page.Validate(); err != nil {
+	if key, err := option.Page.Validate(false); err != nil {
 		return fmt.Sprintf("page.%s", key), err
 	}
 
