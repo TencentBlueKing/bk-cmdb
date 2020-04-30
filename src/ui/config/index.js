@@ -101,6 +101,9 @@ module.exports = {
         // Template for index.html
         index: `${path.resolve(config.BUILD_OUTPUT)}/web/index.html`,
 
+        // Template for login.html
+        login: `${path.resolve(config.BUILD_OUTPUT)}/web/login.html`,
+
         // Paths
         assetsRoot: `${path.resolve(config.BUILD_OUTPUT)}/web`,
 
