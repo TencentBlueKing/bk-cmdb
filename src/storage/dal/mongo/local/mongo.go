@@ -160,6 +160,9 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 		if strings.Contains(err.Error(), "E11000 duplicate") {
 			return true
 		}
+		if strings.Contains(err.Error(), "IndexOptionsConflict") {
+			return true
+		}
 	}
 	return err == types.ErrDuplicated
 }
