@@ -10,20 +10,24 @@
  * limitations under the License.
  */
 
-package reflector
+package count
 
-import "configcenter/src/storage/stream/types"
+import (
+	"context"
+	"net/http"
 
-type Capable struct {
-	OnChange OnChangeEvent
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/errors"
+)
+
+type CountClientInterface interface {
+	GetCountByFilter(ctx context.Context, h http.Header, table string, filters []map[string]interface{}) ([]int64, errors.CCErrorCoder)
 }
 
-type OnChangeEvent struct {
-	// only used when list watch is used.
-	OnLister     func(event *types.Event)
-	OnListerDone func()
-	// only used when list watch is used.
-	OnAdd    func(event *types.Event)
-	OnUpdate func(event *types.Event)
-	OnDelete func(event *types.Event)
+func NewCountClientInterface(client rest.ClientInterface) CountClientInterface {
+	return &count{client: client}
+}
+
+type count struct {
+	client rest.ClientInterface
 }

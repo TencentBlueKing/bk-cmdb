@@ -290,6 +290,26 @@ func (s *coreService) transaction(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/transaction/commit", Handler: s.CommitTransaction})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/transaction/abort", Handler: s.AbortTransaction})
+	utility.AddToRestfulWebService(web)
+}
+
+func (s *coreService) initCache(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/topotree", Handler: s.SearchTopologyTree})
+
+	utility.AddToRestfulWebService(web)
+}
+
+func (s *coreService) initCount(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/resource/count", Handler: s.GetCountByFilter})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -314,4 +334,6 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initSetTemplate(web)
 	s.initHostApplyRule(web)
 	s.transaction(web)
+	s.initCount(web)
+	s.initCache(web)
 }

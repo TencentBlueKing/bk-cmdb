@@ -755,13 +755,15 @@ const (
 	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
 	CCErrCoreServiceModelHasAssociationErr           = 1113031
 	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
+	// SearchTopoTreeScanTooManyData means hit too many data, we return directly.
+	SearchTopoTreeScanTooManyData = 1113033
 
 	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
 	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
-	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
+	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %s does not exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
 
 	// synchronize_server 1114xxx

@@ -199,6 +199,10 @@ type Event struct {
 	OperationType OperType
 }
 
+func (e *Event) String() string {
+	return fmt.Sprintf("event detail, oper: %s, oid: %s, doc: %s", e.OperationType, e.Oid, e.DocBytes)	
+}
+
 // mongodb change stream token, which represent a event's identity.
 type EventToken struct {
 	// Hex value of document's _id

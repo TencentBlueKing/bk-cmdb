@@ -32,6 +32,7 @@ func (s *Service) initAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/model/{owner_id}", Handler: s.SearchMainLineObjectTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{bk_obj_id}", Handler: s.SearchObjectByClassificationID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/inst/{owner_id}/{bk_biz_id}", Handler: s.SearchBusinessTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/cache/topotree", Handler: s.SearchTopologyTree})
 	// TODO: delete this api, it's not used by front.
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", Handler: s.SearchMainLineChildInstTopo})
 
@@ -255,7 +256,7 @@ func (s *Service) initIdentifier(web *restful.WebService) {
 }
 
 // 全文索引
-func (s *Service) initFind(web *restful.WebService) {
+func (s *Service) initFullTextSearch(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.Engine.CCErr,
 		Language: s.Engine.Language,
@@ -290,7 +291,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initBusinessGraphics(web)
 	s.initBusinessInst(web)
 
-	s.initFind(web)
+	s.initFullTextSearch(web)
 	s.initSetTemplate(web)
 	s.initInternalTask(web)
 }

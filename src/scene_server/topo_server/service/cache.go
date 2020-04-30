@@ -10,20 +10,24 @@
  * limitations under the License.
  */
 
-package reflector
+package service
 
-import "configcenter/src/storage/stream/types"
+import (
+	"configcenter/src/common/http/rest"
+	"configcenter/src/source_controller/coreservice/cache/topo_tree"
+)
 
-type Capable struct {
-	OnChange OnChangeEvent
-}
+func (s *Service) SearchTopologyTree(ctx *rest.Contexts) {
+	opt := new(topo_tree.SearchOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	topo, err := s.Engine.CoreAPI.CoreService().Cache().SearchTopologyTree(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 
-type OnChangeEvent struct {
-	// only used when list watch is used.
-	OnLister     func(event *types.Event)
-	OnListerDone func()
-	// only used when list watch is used.
-	OnAdd    func(event *types.Event)
-	OnUpdate func(event *types.Event)
-	OnDelete func(event *types.Event)
+	ctx.RespEntity(topo)
 }

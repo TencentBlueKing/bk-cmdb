@@ -221,7 +221,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	hostID := ctx.Request.PathParameter(common.BKHostIDField)
 	key := common.RedisSnapKeyPrefix + hostID
-	result, err := s.cache.Get(key).Result()
+	result, err := s.rds.Get(key).Result()
 	if nil != err && err != redis.Nil {
 		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))

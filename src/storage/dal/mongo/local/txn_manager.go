@@ -79,7 +79,6 @@ func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, e
 		return 0, err
 	}
 	num := incrBy.Val()
-	fmt.Printf("txn number key: %s, num: %d\n", key, num)
 	// value of (num - num/2 +1) is the real transaction number
 	// in a distribute session.
 	return num, nil
