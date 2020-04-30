@@ -6,9 +6,13 @@
                     <search-select-mix></search-select-mix>
                 </div>
                 <div class="action-menu" v-show="!actionMode">
-                    <bk-dropdown-menu>
+                    <bk-dropdown-menu
+                        @show="showBatchDropdown = true"
+                        @hide="showBatchDropdown = false"
+                        font-size="medium">
                         <div :class="['dropdown-trigger', { selected: actionMode }]" slot="dropdown-trigger">
-                            <i class="bk-cc-icon icon-cc-menu"></i>
+                            <span>{{$t('批量操作')}}</span>
+                            <i :class="['bk-icon icon-angle-down', { 'icon-flip': showBatchDropdown }]"></i>
                         </div>
                         <ul class="bk-dropdown-list" slot="dropdown-content">
                             <li>
@@ -101,7 +105,8 @@
                 },
                 actionMode: '',
                 showCheckedPanel: false,
-                checkedList: []
+                checkedList: [],
+                showBatchDropdown: false
             }
         },
         computed: {
@@ -209,12 +214,12 @@
         }
         .action-menu {
             flex: none;
-            margin-left: 12px;
+            margin-left: 8px;
 
             .dropdown-trigger {
                 border: 1px solid #c4c6cc;
                 border-radius: 2px;
-                width: 32px;
+                padding: 0 8px;
                 height: 32px;
                 text-align: center;
                 line-height: 32px;
@@ -227,17 +232,10 @@
                     border-color: #3a84ff;
                     color: #3a84ff;
                 }
-                .icon-cc-menu {
-                    color: #979ba5;
-                    font-size: 20px;
-                    vertical-align: unset;
-                }
 
-                &.selected {
-                    border: 1px solid #3a84ff;
-                    .icon-cc-menu {
-                        color: #3a84ff;
-                    }
+                .icon-angle-down {
+                    font-size: 22px;
+                    margin: -3px -5px 0 -4px
                 }
             }
         }
@@ -350,23 +348,29 @@
         }
     }
 
-    .bk-dropdown-list > li a {
-        display: block;
-        height: 32px;
-        line-height: 33px;
-        padding: 0 16px;
-        color: #63656e;
-        font-size: 12px;
-        text-decoration: none;
-        white-space: nowrap;
-
-        &:hover {
-            background-color: #eaf3ff;
-            color: #3a84ff;
+    .bk-dropdown-list {
+        .auth-box {
+            width: 100%;
         }
 
-        &.disabled {
-            color: #c4c6cc;
+        > li a {
+            display: block;
+            height: 32px;
+            line-height: 33px;
+            padding: 0 16px;
+            color: #63656e;
+            font-size: 14px;
+            text-decoration: none;
+            white-space: nowrap;
+
+            &:hover {
+                background-color: #eaf3ff;
+                color: #3a84ff;
+            }
+
+            &.disabled {
+                color: #c4c6cc;
+            }
         }
     }
 </style>
