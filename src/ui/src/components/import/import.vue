@@ -3,7 +3,7 @@
         <div class="up-file upload-file" v-bkloading="{ isLoading: isLoading }">
             <img src="../../assets/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile" />
-            <i18n path="导入提示" tag="p" :places="{ allowType: allowType.join(','), maxSize: maxSize }">
+            <i18n path="导入提示" tag="p" :places="{ allowType: allowType.join(','), maxSize: maxSizeLocal }">
                 <b place="clickUpload">{{$t('点击上传')}}</b>
                 <br place="breakRow">
             </i18n>
@@ -97,7 +97,7 @@
             },
             maxSize: {
                 type: Number,
-                default: 500 // kb
+                default: 20 * 1024 // kb
             },
             uploadDone: {
                 type: Function,
@@ -129,6 +129,9 @@
         computed: {
             allowTypeRegExp () {
                 return new RegExp(`^.*?.(${this.allowType.join('|')})$`)
+            },
+            maxSizeLocal () {
+                return this.maxSize.toLocaleString()
             }
         },
         methods: {
@@ -142,7 +145,7 @@
                     return false
                 } else if (fileInfo.size / 1024 > this.maxSize) {
                     this.$refs.fileInput.value = ''
-                    this.$error(this.$t('文件大小溢出', { maxSize: this.maxSize }))
+                    this.$error(this.$t('文件大小溢出', { maxSize: this.maxSizeLocal }))
                     return false
                 } else {
                     this.fileInfo.name = fileInfo.name

@@ -60,7 +60,7 @@
             getInstanceCount (model) {
                 const data = this.instanceCount.find(data => data.bk_obj_id === model.bk_obj_id)
                 if (data) {
-                    return data.instance_count > 999 ? '999+' : data.instance_count
+                    return data.instance_count
                 }
                 return 0
             },
