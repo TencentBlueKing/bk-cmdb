@@ -19,29 +19,28 @@
 </template>
 
 <script>
-export default {
-    data () {
-        return {
-            username: '',
-            password: '',
-            error: window.LOGIN_ERROR
-        }
-    },
-    methods: {
-        handleSubmit (event) {
-            if (!this.username.length) {
-                this.error = '请输入用户名'
-                event.preventDefault()
-                return
+    export default {
+        data () {
+            return {
+                username: '',
+                password: '',
+                error: window.LOGIN_ERROR
             }
-            if (!this.password.length) {
-                this.error = '请输入密码'
-                event.preventDefault()
-                return
+        },
+        methods: {
+            handleSubmit (event) {
+                if (!this.username.length) {
+                    this.error = '请输入用户名'
+                    event.preventDefault()
+                    return
+                }
+                if (!this.password.length) {
+                    this.error = '请输入密码'
+                    event.preventDefault()
+                }
             }
         }
     }
-}
 </script>
 
 <style lang="scss" scoped>
@@ -49,6 +48,7 @@ export default {
     height: 100%;
     overflow: hidden;
     background: url(./assets/login_bg.png) center center no-repeat;
+    background-size: 100% 100%;
 }
 .form {
     width: 400px;
