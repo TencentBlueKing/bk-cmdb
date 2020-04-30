@@ -14,12 +14,12 @@ package cache
 
 import (
 	"net/http"
+	"context"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/topo_tree"
-	"golang.org/x/net/context"
 )
 
 func (b *baseCache) SearchTopologyTree(ctx context.Context, h http.Header, opt *topo_tree.SearchOption) ([]topo_tree.Topology, error) {
