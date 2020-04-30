@@ -66,10 +66,10 @@ func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 
 // CommitEvent used when a transaction is committed to make all related events valid
 func (s *coreService) CommitEvent(txnID string) error {
-	return s.cache.LPush(common.EventCacheEventTxnCommitQueueKey, txnID).Err()
+	return s.rds.LPush(common.EventCacheEventTxnCommitQueueKey, txnID).Err()
 }
 
 // AbortEvent used when a transaction is aborted to make all related events invalid
 func (s *coreService) AbortEvent(txnID string) error {
-	return s.cache.LPush(common.EventCacheEventTxnAbortQueueKey, txnID).Err()
+	return s.rds.LPush(common.EventCacheEventTxnAbortQueueKey, txnID).Err()
 }

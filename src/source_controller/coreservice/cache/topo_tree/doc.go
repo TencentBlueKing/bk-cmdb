@@ -10,20 +10,11 @@
  * limitations under the License.
  */
 
-package reflector
+package topo_tree
 
-import "configcenter/src/storage/stream/types"
-
-type Capable struct {
-	OnChange OnChangeEvent
-}
-
-type OnChangeEvent struct {
-	// only used when list watch is used.
-	OnLister     func(event *types.Event)
-	OnListerDone func()
-	// only used when list watch is used.
-	OnAdd    func(event *types.Event)
-	OnUpdate func(event *types.Event)
-	OnDelete func(event *types.Event)
-}
+/*
+This package is used to support the business topology tree search.
+It use event watch mechanism to cache the business topology related resources, like business list,
+mainline instance list, set list, module list etc.
+It use redis to store the cache, so that we can provide a high performance topology query api.
+*/

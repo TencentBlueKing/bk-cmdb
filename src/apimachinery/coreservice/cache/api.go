@@ -10,20 +10,24 @@
  * limitations under the License.
  */
 
-package reflector
+package cache
 
-import "configcenter/src/storage/stream/types"
+import (
+	"context"
+	"net/http"
 
-type Capable struct {
-	OnChange OnChangeEvent
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/source_controller/coreservice/cache/topo_tree"
+)
+
+type Interface interface {
+	SearchTopologyTree(ctx context.Context, h http.Header, opt *topo_tree.SearchOption) ([]topo_tree.Topology, error)
 }
 
-type OnChangeEvent struct {
-	// only used when list watch is used.
-	OnLister     func(event *types.Event)
-	OnListerDone func()
-	// only used when list watch is used.
-	OnAdd    func(event *types.Event)
-	OnUpdate func(event *types.Event)
-	OnDelete func(event *types.Event)
+func NewCacheClient(client rest.ClientInterface) Interface {
+	return &baseCache{client: client}
+}
+
+type baseCache struct {
+	client rest.ClientInterface
 }

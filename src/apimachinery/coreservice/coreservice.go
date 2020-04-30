@@ -18,6 +18,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/association"
 	"configcenter/src/apimachinery/coreservice/auditlog"
 	"configcenter/src/apimachinery/coreservice/count"
+	"configcenter/src/apimachinery/coreservice/cache"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/hostapplyrule"
 	"configcenter/src/apimachinery/coreservice/instance"
@@ -52,6 +53,7 @@ type CoreServiceClientInterface interface {
 	System() ccSystem.SystemClientInterface
 	Txn() transaction.Interface
 	Count() count.CountClientInterface
+	Cache() cache.Interface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -128,4 +130,8 @@ func (c *coreService) Txn() transaction.Interface {
 
 func (c *coreService) Count() count.CountClientInterface {
 	return count.NewCountClientInterface(c.restCli)
+}
+
+func (c *coreService) Cache() cache.Interface {
+	return cache.NewCacheClient(c.restCli)
 }
