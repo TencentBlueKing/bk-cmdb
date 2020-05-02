@@ -682,7 +682,6 @@ const DefaultInstName string = "实例名"
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 
-
 // bk_classification_id value
 const BKNetwork = "bk_network"
 
@@ -1009,38 +1008,11 @@ const (
 	HostFieldDockerServerVersion = "docker_server_version"
 )
 
-const TemplateStatusField = "status"
 const BKStatusField = "status"
-
-const (
-	TemplateStatusDraft   = "draft"
-	TemplateStatusOnline  = "online"
-	TemplateStatusHistory = "history"
-)
 
 const (
 	BKProcInstanceOpUser             = "proc instance user"
 	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
-)
-
-const (
-	GSEProcOPStop           = 1
-	GSEProcOPQueryStatus    = 2
-	GSEProcOPRegister       = 3
-	GSEProcOPUnregister     = 4
-	GSEProcOPRegisterStart  = 5
-	GSEProcOPUnregisterStop = 6
-	GSEProcOPRestart        = 7
-	GSEProcOPReload         = 8
-	GSEProcOPKill           = 9
-)
-const (
-	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
-	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
-	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
-	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
-	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
-	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
 )
 
 // association fields

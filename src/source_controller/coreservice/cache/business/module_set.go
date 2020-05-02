@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/source_controller/coreservice/cache/tools"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
@@ -34,7 +35,7 @@ type moduleSet struct {
 	event      reflector.Interface
 	db         dal.DB
 
-	lock refreshingLock
+	lock tools.RefreshingLock
 }
 
 func (ms *moduleSet) Run() error {

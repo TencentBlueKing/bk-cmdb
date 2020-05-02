@@ -48,3 +48,45 @@ func (b *baseCache) SearchTopologyTree(ctx context.Context, h http.Header, opt *
 
 	return resp.Data, nil
 }
+
+func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (jsonString string, err error) {
+
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/find/cache/host/with_inner_ip").
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data, nil
+}
+
+func (b *baseCache) SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (jsonString string, err error) {
+
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/find/cache/host/with_host_id").
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data, nil
+}

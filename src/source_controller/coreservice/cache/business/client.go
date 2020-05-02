@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/source_controller/coreservice/cache/tools"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
 	"gopkg.in/redis.v5"
@@ -28,7 +29,7 @@ type Client struct {
 	rds   *redis.Client
 	event reflector.Interface
 	db    dal.DB
-	lock  refreshingLock
+	lock  tools.RefreshingLock
 }
 
 func (c *Client) GetBizBaseList() ([]BizBaseInfo, error) {

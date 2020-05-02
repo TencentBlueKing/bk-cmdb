@@ -125,7 +125,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 			delete(host, common.BKHostInnerIPField)
 
 			// get host info before really change it
-			preData, _, _ = lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
+			preData, _, _ = lgc.GetHostInstanceDetails(ctx, intHostID)
 
 			// update host instance.
 			if err := instance.updateHostInstance(index, host, intHostID); err != nil {
@@ -147,7 +147,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 		successMsg = append(successMsg, strconv.FormatInt(index, 10))
 
 		// host info after it changed
-		curData, _, err := lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
+		curData, _, err := lgc.GetHostInstanceDetails(ctx, intHostID)
 		if err != nil {
 			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
