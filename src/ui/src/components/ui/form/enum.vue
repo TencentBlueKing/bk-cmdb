@@ -61,7 +61,7 @@
         },
         data () {
             return {
-                selected: ''
+                selected: this.multiple ? [] : ''
             }
         },
         computed: {
@@ -92,7 +92,7 @@
                     if (this.value === '') {
                         const defaultOption = this.options.find(option => option['is_default'])
                         if (defaultOption) {
-                            this.selected = defaultOption.id
+                            this.selected = this.multiple ? [defaultOption.id] : defaultOption.id
                         } else {
                             this.$emit('input', null)
                         }
