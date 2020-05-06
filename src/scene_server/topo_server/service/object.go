@@ -13,26 +13,24 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // CreateObjectBatch batch to create some objects
 func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
-	dataWithMetadata := struct {
-		Metadata *metadata.Metadata
-		Data     map[string]interface{}
-	}{}
+	dataWithMetadata := MapStrWithMetadata{}
 	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+	dataWithMetadata.Data.Remove(common.MetadataField)
 	ctx.RespEntityWithError(s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata))
 }
 
