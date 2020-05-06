@@ -48,10 +48,16 @@ func CreateServiceTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 	createIndexArr := []types.Index{
 		{
 			Keys: map[string]int32{
-				common.BKFieldID:    1,
+				common.BKFieldID: 1,
+			},
+			Name:       "idx_id",
+			Background: true,
+		},
+		{
+			Keys: map[string]int32{
 				common.BKAppIDField: 1,
 			},
-			Name:       "idx_id_bkBizID",
+			Name:       "idx_bkBizID",
 			Background: true,
 		},
 	}
@@ -64,10 +70,22 @@ func CreateProcessTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 		{
 			Keys: map[string]int32{
 				common.BKServiceTemplateIDField: 1,
-				common.BKFieldID:                1,
-				common.BKAppIDField:             1,
 			},
-			Name:       "idx_serviceTemplateID_id_bkBizID",
+			Name:       "idx_serviceTemplateID",
+			Background: true,
+		},
+		{
+			Keys: map[string]int32{
+				common.BKFieldID: 1,
+			},
+			Name:       "idx_id",
+			Background: true,
+		},
+		{
+			Keys: map[string]int32{
+				common.BKAppIDField: 1,
+			},
+			Name:       "idx_bkBizID",
 			Background: true,
 		},
 	}
@@ -79,11 +97,23 @@ func CreateServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 	createIndexArr := []types.Index{
 		{
 			Keys: map[string]int32{
-				common.BKFieldID:                1,
-				common.BKAppIDField:             1,
+				common.BKFieldID: 1,
+			},
+			Name:       "idx_id",
+			Background: true,
+		},
+		{
+			Keys: map[string]int32{
+				common.BKAppIDField: 1,
+			},
+			Name:       "idx_bkBizID",
+			Background: true,
+		},
+		{
+			Keys: map[string]int32{
 				common.BKServiceTemplateIDField: 1,
 			},
-			Name:       "idx_id_bkBizID_serviceTemplateID",
+			Name:       "idx_serviceTemplateID",
 			Background: true,
 		},
 	}
