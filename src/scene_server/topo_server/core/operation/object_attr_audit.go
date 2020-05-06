@@ -33,6 +33,7 @@ type ObjectAttrAudit struct {
 	propertyName string
 	bkObjectID   string
 	bkObjectName string
+	bkObjClsID   string
 	preData      metadata.Attribute
 	curData      metadata.Attribute
 }
@@ -58,10 +59,14 @@ func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors
 	case metadata.AuditUpdate:
 		//do nothing
 	}
-	//get objectName
+	//get objectName and objClsID
 	err := log.getObjectInfo(log.kit, log.bkObjectID)
 	if err != nil {
 		blog.Errorf("[audit] failed to get the objInfo,err: %s", err)
+	}
+	//如果目标为自定义层级下的自定义字段，则auditType需要由"model"更改为"BusinessResourceType"
+	if log.bkObjClsID == "bk_biz_topo" {
+		log.auditType = metadata.BusinessResourceType
 	}
 	//make auditLog
 	auditLog := metadata.AuditLog{
@@ -84,11 +89,11 @@ func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors
 	}
 	auditResult, err := log.clientSet.CoreService().Audit().SaveAuditLog(log.kit.Ctx, log.kit.Header, auditLog)
 	if err != nil {
-		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %+v,rid:%s", auditAction, auditAction, err, auditResult, log.kit.Rid)
+		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %+v,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
 		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
 	}
 	if auditResult.Result != true {
-		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s,rid:%s", auditAction, auditAction, err, auditResult, log.kit.Rid)
+		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
 		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
 	}
 	return nil
@@ -161,5 +166,6 @@ func (log *ObjectAttrAudit) getObjectInfo(kit *rest.Kit, bkObjectID string) erro
 		return kit.CCError.CCError(common.CCErrorModelNotFound)
 	}
 	log.bkObjectName = resp.Data.Info[0].Spec.ObjectName
+	log.bkObjClsID = resp.Data.Info[0].Spec.ObjCls
 	return nil
 }
