@@ -13,6 +13,7 @@
 package host
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -22,7 +23,6 @@ import (
 	"configcenter/src/source_controller/coreservice/cache/tools"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
-	"golang.org/x/net/context"
 	"gopkg.in/redis.v5"
 )
 
