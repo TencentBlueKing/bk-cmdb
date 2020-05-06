@@ -58,7 +58,7 @@ func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, busine
 	return headers, nil
 }
 
-func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, ownerID, hostID string) (map[string]interface{}, string, errors.CCError) {
+func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, hostID int64) (map[string]interface{}, string, errors.CCError) {
 	// get host details, pre data
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostByID(ctx, lgc.header, hostID)
 	if err != nil {

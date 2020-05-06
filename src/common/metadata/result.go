@@ -48,6 +48,13 @@ func (br *BaseResp) ToString() string {
 	return fmt.Sprintf("code:%d, message:%s", br.Code, br.ErrMsg)
 }
 
+// JsonStringResp defines a response that do not parse the data field to a struct
+// but decode it to a json string if possible
+type JsonStringResp struct {
+	BaseResp
+	Data string
+}
+
 // Permission  describes all the authorities that a user
 // is need, when he attempts to operate a resource.
 // Permission is used only when a user do not have the authority to

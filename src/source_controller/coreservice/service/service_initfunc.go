@@ -298,7 +298,9 @@ func (s *coreService) initCache(web *restful.WebService) {
 		ErrorIf:  s.engine.CCErr,
 		Language: s.engine.Language,
 	})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/topotree", Handler: s.SearchTopologyTree})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/topotree", Handler: s.SearchTopologyTreeInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_inner_ip", Handler: s.SearchHostWithInnerIPInCache})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/host/with_host_id", Handler: s.SearchHostWithHostIDInCache})
 
 	utility.AddToRestfulWebService(web)
 }

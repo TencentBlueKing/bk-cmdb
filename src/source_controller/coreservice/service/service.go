@@ -69,7 +69,7 @@ type coreService struct {
 	core        core.Core
 	db          dal.RDB
 	rds         *redis.Client
-	cache       cache.Interface
+	cacheSet    *cache.ClientSet
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
@@ -138,7 +138,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		blog.Errorf("new cache instance failed, err: %v", cacheErr)
 		return cacheErr
 	}
-	s.cache = c
+	s.cacheSet = c
 	return nil
 }
 

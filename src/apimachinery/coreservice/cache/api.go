@@ -17,11 +17,14 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/topo_tree"
 )
 
 type Interface interface {
 	SearchTopologyTree(ctx context.Context, h http.Header, opt *topo_tree.SearchOption) ([]topo_tree.Topology, error)
+	SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (jsonString string, err error)
+	SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (jsonString string, err error)
 }
 
 func NewCacheClient(client rest.ClientInterface) Interface {

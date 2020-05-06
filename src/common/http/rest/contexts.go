@@ -72,6 +72,20 @@ func (c *Contexts) RespEntity(data interface{}) {
 	c.writeAsJson(metadata.NewSuccessResp(data))
 }
 
+const stringResp = "{\"result\": true, \"bk_error_code\": 0, \"bk_error_msg\": \"success\", \"data\": %s}"
+
+// RespString response the data format to a json string.
+// the data is a string, and do not need marshal, can return directly.
+func (c *Contexts) RespString(data string) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Set("Content-Type", "application/json")
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	resp := fmt.Sprintf(stringResp, data)
+	c.resp.Write([]byte(resp))
+}
+
 func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
@@ -241,7 +255,7 @@ func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interfac
 			ErrMsg: c.Kit.CCError.CCErrorf(errCode, errorf).Error(),
 			Code:   errCode,
 		},
-		Data: "",
+		Data: nil,
 	}
 	c.writeAsJson(&body)
 }
@@ -260,7 +274,7 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 			ErrMsg: c.Kit.CCError.Error(errCode).Error(),
 			Code:   errCode,
 		},
-		Data: "",
+		Data: nil,
 	}
 
 	c.writeAsJson(&body)

@@ -284,7 +284,7 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 		return
 	}
 
-	details, _, err := srvData.lgc.GetHostInstanceDetails(srvData.ctx, srvData.ownerID, hostID)
+	details, _, err := srvData.lgc.GetHostInstanceDetails(srvData.ctx, hostIDInt64)
 	if err != nil {
 		blog.Errorf("get host details failed, err: %v,host:%s,rid:%s", err, hostID, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})

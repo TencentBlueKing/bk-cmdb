@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/source_controller/coreservice/cache/tools"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
@@ -34,7 +35,7 @@ type customLevel struct {
 	rds   *redis.Client
 	event reflector.Interface
 	db    dal.DB
-	lock  refreshingLock
+	lock  tools.RefreshingLock
 	// key is object id
 	customWatch map[string]context.CancelFunc
 	customLock  sync.Mutex
