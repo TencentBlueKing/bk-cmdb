@@ -27,6 +27,7 @@ func (lgc *Logics) FindHostByModuleIDs(ctx context.Context, data *metadata.HostM
 	hostSearchParam := new(metadata.HostCommonSearch)
 	hostSearchParam.Page = data.Page
 
+	hostFindCond := metadata.SearchCondition{ObjectID: common.BKInnerObjIDHost, Condition: []metadata.ConditionItem{}, Fields: data.Fields}
 	condItem := metadata.ConditionItem{Field: common.BKModuleIDField, Operator: common.BKDBIN, Value: data.ModuleIDS}
 	moduleFindCond := metadata.SearchCondition{ObjectID: common.BKInnerObjIDModule, Condition: []metadata.ConditionItem{condItem}, Fields: []string{}}
 	setFindCond := metadata.SearchCondition{ObjectID: common.BKInnerObjIDSet, Condition: []metadata.ConditionItem{}, Fields: []string{}}
@@ -45,7 +46,7 @@ func (lgc *Logics) FindHostByModuleIDs(ctx context.Context, data *metadata.HostM
 	}
 	hostSearchParam.AppID = bizID
 
-	hostSearchParam.Condition = []metadata.SearchCondition{moduleFindCond, setFindCond, bizFindCond}
+	hostSearchParam.Condition = []metadata.SearchCondition{hostFindCond, moduleFindCond, setFindCond, bizFindCond}
 
 	findHostInst := NewSearchHost(ctx, lgc, hostSearchParam)
 	findHostInst.ParseCondition()
