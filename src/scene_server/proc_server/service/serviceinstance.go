@@ -746,8 +746,7 @@ func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, he
 	}
 
 	// just for better performance
-	if module.ServiceCategoryID == serviceTpl.ServiceCategoryID &&
-		module.ModuleName == serviceTpl.Name {
+	if module.ServiceCategoryID == serviceTpl.ServiceCategoryID {
 		return changedAttributes, nil
 	}
 
@@ -774,17 +773,6 @@ func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, he
 			PropertyName:          attributeMap[field].PropertyName,
 			PropertyValue:         module.ServiceCategoryID,
 			TemplatePropertyValue: serviceTpl.ServiceCategoryID,
-		}
-		changedAttributes = append(changedAttributes, changedAttribute)
-	}
-	if module.ModuleName != serviceTpl.Name {
-		field := "bk_module_name"
-		changedAttribute := metadata.ModuleChangedAttribute{
-			ID:                    attributeMap[field].ID,
-			PropertyID:            field,
-			PropertyName:          attributeMap[field].PropertyName,
-			PropertyValue:         module.ModuleName,
-			TemplatePropertyValue: serviceTpl.Name,
 		}
 		changedAttributes = append(changedAttributes, changedAttribute)
 	}
