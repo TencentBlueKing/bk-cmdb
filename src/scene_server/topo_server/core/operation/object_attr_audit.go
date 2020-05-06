@@ -33,7 +33,6 @@ type ObjectAttrAudit struct {
 	propertyName string
 	bkObjectID   string
 	bkObjectName string
-	bkObjClsID   string
 	preData      metadata.Attribute
 	curData      metadata.Attribute
 }
@@ -59,13 +58,13 @@ func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors
 	case metadata.AuditUpdate:
 		//do nothing
 	}
-	//get objectName and objClsID
+	//get objectName
 	err := log.getObjectInfo(log.kit, log.bkObjectID)
 	if err != nil {
 		blog.Errorf("[audit] failed to get the objInfo,err: %s", err)
 	}
 	//如果目标为自定义层级下的自定义字段，则auditType需要由"model"更改为"BusinessResourceType"
-	if log.bkObjClsID == "bk_biz_topo" {
+	if log.bizID != 0 {
 		log.auditType = metadata.BusinessResourceType
 	}
 	//make auditLog
@@ -166,6 +165,5 @@ func (log *ObjectAttrAudit) getObjectInfo(kit *rest.Kit, bkObjectID string) erro
 		return kit.CCError.CCError(common.CCErrorModelNotFound)
 	}
 	log.bkObjectName = resp.Data.Info[0].Spec.ObjectName
-	log.bkObjClsID = resp.Data.Info[0].Spec.ObjCls
 	return nil
 }
