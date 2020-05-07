@@ -40,6 +40,7 @@ type Service struct {
 	disc        discovery.DiscoveryInterface
 	CacheDB     *redis.Client
 	AuthManager *extensions.AuthManager
+	EnableTxn   bool
 }
 
 type srvComm struct {

@@ -13,16 +13,16 @@
 package service
 
 import (
-	"configcenter/src/auth"
 	"encoding/json"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
+	"configcenter/src/auth"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
@@ -57,10 +57,17 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err := srvData.lgc.LockHost(srvData.ctx, input)
-	if nil != err {
-		blog.Errorf("lock host, handle host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		err := srvData.lgc.LockHost(srvData.ctx, input)
+		if nil != err {
+			blog.Errorf("lock host, handle host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
 		return
 	}
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -99,10 +106,17 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err := srvData.lgc.UnlockHost(srvData.ctx, input)
-	if nil != err {
-		blog.Errorf("unlock host, handle host unlock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		err := srvData.lgc.UnlockHost(srvData.ctx, input)
+		if nil != err {
+			blog.Errorf("unlock host, handle host unlock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: txnErr})
 		return
 	}
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))

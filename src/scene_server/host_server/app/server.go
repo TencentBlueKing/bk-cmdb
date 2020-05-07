@@ -94,6 +94,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.Engine = engine
 	service.Config = hostSrv.Config
 	service.CacheDB = cacheDB
+	service.EnableTxn = op.EnableTxn
 	hostSrv.Core = engine
 	hostSrv.Service = service
 
