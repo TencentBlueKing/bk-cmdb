@@ -257,12 +257,15 @@
                 return 0
             },
             handleSelectChange (node) {
-                RouterQuery.set('node', node.id)
                 this.$store.commit('businessHost/setSelectedNode', node)
                 Bus.$emit('toggle-host-filter', false)
                 if (!node.expanded) {
                     this.$refs.tree.setExpanded(node.id)
                 }
+                RouterQuery.set({
+                    node: node.id,
+                    _t: Date.now()
+                })
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'

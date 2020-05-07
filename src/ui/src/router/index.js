@@ -8,10 +8,12 @@ import afterload from '@/setup/afterload'
 
 import index from '@/views/index/router.config'
 
-import { before as businessBeforeInterceptor } from './business-interceptor'
+import {
+    before as businessBeforeInterceptor
+} from './business-interceptor'
 
 import {
-    MENU_INDEX,
+    MENU_ENTRY,
     MENU_BUSINESS,
     MENU_RESOURCE,
     MENU_MODEL,
@@ -48,11 +50,6 @@ const redirectRouters = [{
     redirect: {
         name: '404'
     }
-}, {
-    path: '/',
-    redirect: {
-        name: MENU_INDEX
-    }
 }]
 
 const router = new Router({
@@ -60,10 +57,15 @@ const router = new Router({
     routes: [
         ...redirectRouters,
         ...statusRouters,
-        ...index,
+        {
+            name: MENU_ENTRY,
+            component: dynamicRouterView,
+            children: [...index],
+            path: '/',
+            redirect: '/index'
+        },
         {
             name: MENU_BUSINESS,
-            component: dynamicRouterView,
             components: {
                 default: dynamicRouterView,
                 permission: require('@/views/status/non-exist-business').default
@@ -135,24 +137,6 @@ const setAdminView = to => {
     router.app.$store.commit('setAdminView', isAdminView)
 }
 
-// 进入业务二级导航时需要先加载业务
-// 在App.vue中添加一个隐藏的业务选择器，业务选择器完成设置后resolve对应的promise
-// const checkOwner = async (to, from) => {
-//     const toMatched = (to.matched || [])[0] || {}
-//     const fromMatched = (from.matched || [])[0] || {}
-//     if (toMatched.name === MENU_BUSINESS) {
-//         if (fromMatched.name !== MENU_BUSINESS) {
-//             router.app.$store.commit('createBusinessSelectorPromise')
-//         }
-//         router.app.$store.commit('setBusinessSelectorVisible', true)
-//         const result = await router.app.$store.state.businessSelectorPromise
-//         to.meta.view = result ? 'default' : 'permission'
-//     } else {
-//         to.meta.view = 'default'
-//         router.app.$store.commit('setBusinessSelectorVisible', false)
-//     }
-// }
-
 const setupStatus = {
     preload: true,
     afterload: true
@@ -170,7 +154,10 @@ router.beforeEach((to, from, next) => {
                 await preload(router.app)
             }
             await runBeforeHooks()
-            await businessBeforeInterceptor(router.app, to, from, next)
+            const shouldContinue = await businessBeforeInterceptor(router.app, to, from, next)
+            if (!shouldContinue) {
+                return false
+            }
             setAdminView(to)
 
             const isAvailable = checkAvailable(to, from)
