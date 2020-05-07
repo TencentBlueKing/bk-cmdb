@@ -37,7 +37,7 @@
             :is-show.sync="details.show"
             :width="800"
             :title="$t('操作详情')">
-            <cmdb-host-history-details :details="details.data" slot="content" v-if="details.show"></cmdb-host-history-details>
+            <cmdb-host-history-details :details="details.data" slot="content"></cmdb-host-history-details>
         </bk-sideslider>
     </div>
 </template>
@@ -116,7 +116,7 @@
                 } else if (['instance_association'].includes(row.resource_type)) {
                     name = data.target_instance_name
                 } else {
-                    name = data.basic_detail && data.basic_detail.resource_name
+                    name = data.resource_name
                 }
                 return `${action}"${name}"`
             },

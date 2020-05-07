@@ -1,5 +1,5 @@
 <template>
-    <compmoent :is="tag" v-bind="attrs">{{displayValue}}</compmoent>
+    <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`">{{displayValue}}</compmoent>
 </template>
 
 <script>
@@ -34,6 +34,13 @@
             className: {
                 type: String,
                 default: ''
+            },
+            theme: {
+                type: String,
+                default: 'default',
+                validator (value) {
+                    return ['primary', 'default'].includes(value)
+                }
             }
         },
         data () {
@@ -73,9 +80,7 @@
                 } else {
                     displayValue = this.$options.filters['formatter'](value, this.property, this.options)
                 }
-
-                displayValue = displayValue || '--'
-                this.displayValue = (this.showUnit && displayValue !== '--') ? `${displayValue}${unit}` : displayValue
+                this.displayValue = (this.showUnit && unit && displayValue !== '--') ? `${displayValue}${unit}` : displayValue
             },
             async getOrganization (value) {
                 let displayValue
@@ -107,3 +112,10 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .value-primary-theme {
+        color: $primaryColor;
+        cursor: pointer;
+    }
+</style>

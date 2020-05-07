@@ -63,6 +63,7 @@
                                             :allow-clear="true"
                                             :options="getEnumOptions(property)"
                                             :disabled="disabled"
+                                            :multiple="true"
                                             v-model="property.value">
                                         </component>
                                         <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
@@ -80,9 +81,10 @@
                                             :disabled="disabled">
                                         </cmdb-search-input>
                                         <cmdb-form-date-range class="filter-field-value"
+                                            v-else-if="['date', 'time'].includes(property.propertyType)"
                                             v-validate="'required'"
                                             :data-vv-name="property.propertyId"
-                                            v-else-if="['date', 'time'].includes(property.propertyType)"
+                                            :disabled="disabled"
                                             v-model="property.value">
                                         </cmdb-form-date-range>
                                         <cmdb-cloud-selector
@@ -91,6 +93,8 @@
                                             v-validate="'required'"
                                             :data-vv-name="property.propertyId"
                                             :allow-clear="true"
+                                            :disabled="disabled"
+                                            :multiple="true"
                                             v-model="property.value">
                                         </cmdb-cloud-selector>
                                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
@@ -100,6 +104,7 @@
                                             :data-vv-name="property.propertyId"
                                             :is="`cmdb-form-${property.propertyType}`"
                                             :disabled="disabled"
+                                            :multiple="['timezone', 'organization'].includes(property.propertyType)"
                                             v-model="property.value">
                                         </component>
                                         <i class="userapi-delete fr bk-icon icon-close"
@@ -329,6 +334,12 @@
                             operator: property.operator,
                             value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
                         })
+                    } else if (Array.isArray(property.value)) {
+                        param['condition'].push({
+                            field: property.propertyId,
+                            operator: '$in',
+                            value: property.value
+                        })
                     } else {
                         let operator = property.operator
                         let value = property.value
@@ -494,6 +505,16 @@
                     return property.value.join('\n')
                 }
                 return (property.value === null || property.value === undefined) ? '' : property.value
+            },
+            getUserPropertyDefaultValue (property) {
+                if (
+                    ['list', 'enum', 'timezone', 'organization'].includes(property.propertyType)
+                    || ['bk_cloud_id'].includes(property.propertyId)
+                ) {
+                    return []
+                } else {
+                    return ''
+                }
             },
             async previewUserAPI () {
                 if (!await this.$validator.validateAll()) {
@@ -678,6 +699,7 @@
                 const removePropertyList = propertySeletorElm.removePropertyList
                 this.userProperties = this.userProperties.filter(property => !removePropertyList.includes(`${property.objId}-${property.propertyId}`))
                 for (let i = 0; i < addPropertyList.length; i++) {
+                    const property = this.filterList.find(property => property.filter_id === addPropertyList[i].filter_id)
                     const {
                         'bk_property_id': propertyId,
                         'bk_property_name': propertyName,
@@ -685,7 +707,7 @@
                         'bk_asst_obj_id': asstObjId,
                         'bk_obj_id': objId,
                         unit
-                    } = this.filterList.find(property => property.filter_id === addPropertyList[i].filter_id)
+                    } = property
                     this.userProperties.push({
                         objId,
                         propertyId,
@@ -695,7 +717,7 @@
                         asstObjId,
                         unit,
                         operator: this.operatorMap.hasOwnProperty(propertyType) ? this.operatorMap[propertyType] : '',
-                        value: ''
+                        value: this.getUserPropertyDefaultValue(property)
                     })
                 }
                 this.handleHideQueryCondition()

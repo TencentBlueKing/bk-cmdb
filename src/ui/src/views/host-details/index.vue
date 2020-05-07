@@ -63,7 +63,7 @@
                 return parseInt(this.$route.params.id)
             },
             business () {
-                const business = parseInt(this.$route.params.business)
+                const business = parseInt(this.$route.params.bizId)
                 if (isNaN(business)) {
                     return -1
                 }
@@ -108,7 +108,7 @@
                     if (info.length) {
                         this.$store.commit('hostDetails/setHostInfo', info[0])
                     } else {
-                        this.$router.replace({ name: 404 })
+                        this.$routerActions.redirect({ name: 404 })
                     }
                 } catch (e) {
                     console.error(e)

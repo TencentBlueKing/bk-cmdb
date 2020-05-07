@@ -14,6 +14,7 @@ package hostsnap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -28,52 +29,37 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 
 	"github.com/tidwall/gjson"
 	"gopkg.in/redis.v5"
 )
 
-var (
-	fetchDBInterval = time.Minute * 10
-)
-
 type HostSnap struct {
 	redisCli    *redis.Client
 	authManager extensions.AuthManager
-	httpHeader  http.Header
 	*backbone.Engine
 
-	cache     *Cache
 	cachelock sync.RWMutex
 	ctx       context.Context
 	db        dal.RDB
 }
 
-type Cache struct {
-	cache map[bool]*HostCache
-	flag  bool
-}
-
 func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager extensions.AuthManager) *HostSnap {
-	header := http.Header{}
-	header.Add(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
-	header.Add(common.BKHTTPHeaderUser, common.CCSystemCollectorUserName)
 	h := &HostSnap{
-		redisCli:   redisCli,
-		ctx:        ctx,
-		db:         db,
-		httpHeader: header,
-		cache: &Cache{
-			cache: map[bool]*HostCache{},
-			flag:  false,
-		},
+		redisCli:    redisCli,
+		ctx:         ctx,
+		db:          db,
 		authManager: authManager,
 		Engine:      engine,
 	}
-	go h.fetchDBLoop()
 	return h
 }
+
+var compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
+	"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
+	common.HostFieldDockerClientVersion, common.HostFieldDockerServerVersion}
 
 func (h *HostSnap) Analyze(mesg string) error {
 	var data = mesg
@@ -81,83 +67,105 @@ func (h *HostSnap) Analyze(mesg string) error {
 		data = gjson.Get(mesg, "data").String()
 	}
 	val := gjson.Parse(data)
-	host := h.getHostByVal(&val)
-	if host == nil {
-		blog.Warnf("[data-collection][hostsnap] host not found, continue, %s", val.String())
+	header, rid := newHeaderWithRid()
+	cloudID := val.Get("cloudid").Int()
+	ips := getIPS(&val)
+	host, err := h.getHostByVal(header, cloudID, ips, &val)
+	if err != nil {
+		return err
+	}
+
+	if len(host) == 0 {
+		blog.Warnf("snapshot host not found, continue, %s, rid :%s", val.String(), rid)
 		return fmt.Errorf("host not found, continue, value: %s", val.String())
 	}
-	hostID := host.get(common.BKHostIDField)
-	hostIdInt64, ok := hostID.(int64)
-	if !ok {
-		blog.Errorf("host id convert from interface to int64 failed, fail to update host, hostId:%v", hostID)
-		return fmt.Errorf("host id convert from interface to int64 failed, fail to update host")
+
+	elements := gjson.GetMany(host, common.BKHostIDField, common.BKHostInnerIPField, common.BKHostOuterIPField)
+	// check host id field
+	if !elements[0].Exists() {
+		blog.Errorf("snapshot analyze, but host id not exist, host: %s, rid: %s", host, rid)
+		return errors.New("host id not exist")
 	}
-	hostIdStr := strconv.FormatInt(hostIdInt64, 10)
-	if hostIdStr == "" {
-		blog.Warnf("[data-collection][hostsnap] host id not found, continue, %s", val.String())
-		return fmt.Errorf("get host id failed, return, val: %s", val.String())
+	hostID := elements[0].Int()
+	if hostID == 0 {
+		blog.Errorf("snapshot analyze, but host id is 0, host: %s, rid: %s", host, rid)
+		return errors.New("host id can not be 0")
 	}
 
-	if err := h.redisCli.Set(common.RedisSnapKeyPrefix+hostIdStr, data, time.Minute*10).Err(); err != nil {
-		blog.Errorf("[data-collection][hostsnap] save snapshot %s to redis failed: %s", common.RedisSnapKeyPrefix+hostIdStr, err.Error())
+	// check inner ip
+	if !elements[1].Exists() {
+		blog.Errorf("snapshot analyze, but host inner ip not exist, host: %s, rid: %s", host, rid)
+		return errors.New("host inner ip not exist")
 	}
 
-	innerIp, ok := host.get(common.BKHostInnerIPField).(string)
-	if !ok {
-		blog.Infof("[data-collection][hostsnap] innerip is empty, continue, %s", val.String())
-		return fmt.Errorf("get host innerIp failed")
+	innerIP := elements[1].String()
+	outerIP := elements[2].String()
+
+	key := common.RedisSnapKeyPrefix + strconv.FormatInt(hostID, 10)
+	if err := h.redisCli.Set(key, data, time.Minute*10).Err(); err != nil {
+		blog.Errorf("save snapshot key: %s to redis failed: %v, rid: %s", key, err, rid)
 	}
-	outIp, ok := host.get(common.BKHostOuterIPField).(string)
-	if !ok {
-		blog.Warnf("[data-collection][hostsnap] outerip is not string, %s", val.String())
-	}
-	setter := parseSetter(&val, innerIp, outIp)
+
+	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
-	if !needToUpdate(setter, host) {
+	if !needToUpdate(raw, host) {
 		return nil
+	}
+
+	blog.Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
+		hostID, innerIP, cloudID, host, raw, rid)
+
+	// add auditLog
+	preData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, header, hostID)
+	if err != nil {
+		blog.Errorf("snapshot get host previous data failed, err: %s, hostID: %d, rid: %s", err, hostID, rid)
+		return err
+	}
+	if !preData.Result {
+		blog.Errorf("snapshot get host previous data failed, code: %d, err: %s, hostID: %d, rid: %s",
+			preData.Code, preData.ErrMsg, hostID, rid)
+		return err
 	}
 
 	opt := &metadata.UpdateOption{
 		Condition: map[string]interface{}{
-			common.BKHostIDField: hostIdInt64,
+			common.BKHostIDField: hostID,
 		},
 		Data: mapstr.NewFromMap(setter),
 	}
-	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.httpHeader, common.BKInnerObjIDHost, opt)
+
+	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)
 	if err != nil {
-		blog.Errorf("Update host http do error, err: %v,input:%+v,param:%+v", err, data, opt)
+		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %v, rid: %s", hostID, innerIP, err, rid)
 		return err
 	}
 	if !res.Result {
-		blog.Errorf("failed to update host, error msg: %v", res.ErrMsg)
-		return fmt.Errorf("UpdateInstacne http response error,err code: %d, err msg: %v, opt: %v", res.Code, res.ErrMsg, opt)
+		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %s, rid: %s", hostID, innerIP, res.ErrMsg, rid)
+		return fmt.Errorf("update snapshot failed, err: %s", res.ErrMsg)
 	}
 
-	preData := host.clone()
-	copyVal(setter, host)
+	curData := make(map[string]interface{}, 0)
+	for k, v := range preData.Data {
+		if value, exist := setter[k]; exist {
+			// set with the new value
+			curData[k] = value
+			continue
+		}
+		curData[k] = v
+	}
 
-	// add auditLog
-	curData, err := h.CoreAPI.CoreService().Host().GetHostByID(h.ctx, h.httpHeader, hostIdStr)
+	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}}
+	moduleHost, err := h.CoreAPI.CoreService().Host().GetHostModuleRelation(h.ctx, header, input)
 	if err != nil {
-		blog.Errorf("GetHostByID http request failed, err: %s, hostID: %s", err, hostIdStr)
-		return err
-	}
-	if !curData.Result {
-		blog.Errorf("GetHostByID http response error, err code:%d, err msg: %s, hostID: %s", curData.Code, curData.ErrMsg, hostIdStr)
-		return err
-	}
-	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostIdInt64}}
-	moduleHost, err := h.CoreAPI.CoreService().Host().GetHostModuleRelation(h.ctx, h.httpHeader, input)
-	if err != nil {
-		blog.Errorf("[data-collection][hostsnap] GetConfigByCond http do error, err:%s, input:%+v", err.Error(), input)
+		blog.Errorf("snapshot get host: %d/%s module relation failed, err:%v, rid: %s", hostID, innerIP, err, rid)
 		return err
 	}
 	if !moduleHost.Result {
-		blog.Errorf("GetConfigByCond http response error, err code:%d, err msg:%s, input:%+v", moduleHost.Code, moduleHost.ErrMsg, input)
-		return fmt.Errorf("[data-collection][hostsnap] get moduleHostConfig failed, fail to create auditLog")
+		blog.Errorf("snapshot get host: %d%s module relation failed, err: %v, rid: %s", hostID, innerIP, moduleHost.ErrMsg, rid)
+		return fmt.Errorf("snapshot get moduleHostConfig failed, fail to create auditLog")
 	}
 
-	audit := auditlog.NewAudit(h.CoreAPI, h.httpHeader)
+	audit := auditlog.NewAudit(h.CoreAPI, header)
 	properties, err := audit.GetAuditLogProperty(h.ctx, common.BKInnerObjIDHost)
 	if err != nil {
 		return err
@@ -182,53 +190,50 @@ func (h *HostSnap) Analyze(mesg string) error {
 			BasicOpDetail: metadata.BasicOpDetail{
 				BusinessID:   bizID,
 				BusinessName: bizName,
-				ResourceID:   hostIdInt64,
-				ResourceName: innerIp,
+				ResourceID:   hostID,
+				ResourceName: innerIP,
 				Details: &metadata.BasicContent{
-					PreData:    preData,
-					CurData:    curData.Data,
+					PreData:    preData.Data,
+					CurData:    curData,
 					Properties: properties,
 				},
 			},
 			ModelID: common.BKInnerObjIDHost,
 		},
 	}
-	result, err := h.CoreAPI.CoreService().Audit().SaveAuditLog(h.ctx, h.httpHeader, auditLog)
+	result, err := h.CoreAPI.CoreService().Audit().SaveAuditLog(h.ctx, header, auditLog)
 	if err != nil {
-		blog.Errorf("create host audit log failed, http failed, err:%s", err.Error())
+		blog.Errorf("snapshot create host %d/%s audit log failed, err: %v, rid: %s", hostID, innerIP, err.Error())
 		return err
 	}
 	if !result.Result {
-		blog.Errorf("create host audit log failed, err code:%d, err msg:%s", result.Code, result.ErrMsg)
-		return fmt.Errorf("create host audit log failed, err msg: %s", result.ErrMsg)
+		blog.Errorf("snapshot create host %d/%s audit log failed, err: %s, rid: %s", hostID, innerIP, result.ErrMsg, rid)
+		return fmt.Errorf("create host audit log failed, err: %s", result.ErrMsg)
 	}
+
+	blog.Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %s, rid: %s",
+		hostID, innerIP, gjson.Get(mesg, "cloudid").String(), rid)
 
 	return nil
 }
 
-func copyVal(a map[string]interface{}, b *HostInst) {
-	for k, v := range a {
-		b.set(k, v)
-	}
-}
-
-func needToUpdate(a map[string]interface{}, b *HostInst) bool {
-	for k, v := range a {
-		if b.get(k) == nil && v == "" {
-			continue
-		}
-		if b.get(k) != v {
+func needToUpdate(src, toCompare string) bool {
+	srcElements := gjson.GetMany(src, compareFields...)
+	compareElements := gjson.GetMany(toCompare, compareFields...)
+	for idx := range compareFields {
+		// compare these value with string directly to avoid empty value or null value.
+		if srcElements[idx].String() != compareElements[idx].String() {
 			return true
 		}
 	}
 	return false
 }
 
-func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interface{} {
+func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interface{}, string) {
 	var cpumodule = val.Get("data.cpu.cpuinfo.0.modelName").String()
-	var cupnum int64
+	var cpunum int64
 	for _, core := range val.Get("data.cpu.cpuinfo.#.cores").Array() {
-		cupnum += core.Int()
+		cpunum += core.Int()
 	}
 	var CPUMhz = val.Get("data.cpu.cpuinfo.0.mhz").Int()
 	var disk int64
@@ -275,12 +280,14 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
 	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
 
+	disk = disk >> 10 >> 10 >> 10
+	mem = mem >> 10 >> 10
 	setter := map[string]interface{}{
-		"bk_cpu":                            cupnum,
+		"bk_cpu":                            cpunum,
 		"bk_cpu_module":                     cpumodule,
 		"bk_cpu_mhz":                        CPUMhz,
-		"bk_disk":                           disk / 1024 / 1024 / 1024,
-		"bk_mem":                            mem / 1024 / 1024,
+		"bk_disk":                           disk,
+		"bk_mem":                            mem,
 		"bk_os_type":                        ostype,
 		"bk_os_name":                        osname,
 		"bk_os_version":                     version,
@@ -292,86 +299,115 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		common.HostFieldDockerServerVersion: dockerServerVersion,
 	}
 
-	if cupnum <= 0 {
-		blog.Infof("bk_cpu not found in message for %s", innerIP)
+	raw := strings.Builder{}
+	raw.WriteByte('{')
+	raw.WriteString("\"bk_cpu\":")
+	raw.WriteString(strconv.FormatInt(cpunum, 10))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_cpu_module\":")
+	raw.Write([]byte("\"" + cpumodule + "\""))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_cpu_mhz\":")
+	raw.WriteString(strconv.FormatInt(CPUMhz, 10))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_disk\":")
+	raw.WriteString(strconv.FormatInt(disk, 10))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_mem\":")
+	raw.WriteString(strconv.FormatInt(mem, 10))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_os_type\":")
+	raw.Write([]byte("\"" + ostype + "\""))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_os_name\":")
+	raw.Write([]byte("\"" + osname + "\""))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_os_version\":")
+	raw.Write([]byte("\"" + version + "\""))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_host_name\":")
+	raw.Write([]byte("\"" + hostname + "\""))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_outer_mac\":")
+	raw.Write([]byte("\"" + OuterMAC + "\""))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_mac\":")
+	raw.Write([]byte("\"" + InnerMAC + "\""))
+	raw.WriteString(",")
+	raw.WriteString("\"bk_os_bit\":")
+	raw.Write([]byte("\"" + osbit + "\""))
+	raw.WriteString(",")
+	raw.WriteString("\"docker_client_version\":")
+	raw.Write([]byte("\"" + dockerClientVersion + "\""))
+	raw.WriteString(",")
+	raw.WriteString("\"docker_server_version\":")
+	raw.Write([]byte("\"" + dockerServerVersion + "\""))
+	raw.WriteByte('}')
+
+	if cpunum <= 0 {
+		blog.V(4).Infof("bk_cpu not found in message for %s", innerIP)
 	}
 	if cpumodule == "" {
-		blog.Infof("bk_cpu_module not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_cpu_module not found in message for %s", innerIP)
 	}
 	if CPUMhz <= 0 {
-		blog.Infof("bk_cpu_mhz not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_cpu_mhz not found in message for %s", innerIP)
 	}
 	if disk <= 0 {
-		blog.Infof("bk_disk not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_disk not found in message for %s", innerIP)
 	}
 	if mem <= 0 {
-		blog.Infof("bk_mem not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_mem not found in message for %s", innerIP)
 	}
 	if ostype == "" {
-		blog.Infof("bk_os_type not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_os_type not found in message for %s", innerIP)
 	}
 	if osname == "" {
-		blog.Infof("bk_os_name not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_os_name not found in message for %s", innerIP)
 	}
 	if version == "" {
-		blog.Infof("bk_os_version not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_os_version not found in message for %s", innerIP)
 	}
 	if hostname == "" {
-		blog.Infof("bk_host_name not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_host_name not found in message for %s", innerIP)
 	}
 	if outerIP != "" && OuterMAC == "" {
-		blog.Infof("bk_outer_mac not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_outer_mac not found in message for %s", innerIP)
 	}
 	if InnerMAC == "" {
-		blog.Infof("bk_mac not found in message for %s", innerIP)
+		blog.V(4).Infof("bk_mac not found in message for %s", innerIP)
 	}
 
-	return setter
+	return setter, raw.String()
 }
 
-func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
-	cloudid := val.Get("cloudid").String()
-	ownerID := val.Get("bizid").String()
+var reqireFields = append(compareFields, "bk_host_id", "bk_host_innerip", "bk_host_outerip")
 
-	ips := getIPS(val)
-	if len(ips) > 0 {
-		blog.Infof("[data-collection][hostsnap] handle clouid: %s ips: %v", cloudid, ips)
-		for _, ip := range ips {
-			if host := h.getCache().get(cloudid + "::" + ip); host != nil {
-				return host
-			}
-		}
+func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string, val *gjson.Result) (string, error) {
+	rid := util.GetHTTPCCRequestID(header)
 
-		blog.Infof("[data-collection][hostsnap] ips not in cache clouid: %s,ip: %v", cloudid, ips)
-		cloudIDInt, err := strconv.Atoi(cloudid)
-		if nil != err {
-			blog.Infof("[data-collection][hostsnap] cloudid \"%s\" not integer", cloudid)
-			return nil
-		}
-		condition := map[string]interface{}{
-			common.BKCloudIDField: cloudIDInt,
-			common.BKHostInnerIPField: map[string]interface{}{
-				common.BKDBIN: ips,
-			},
-			common.BKOwnerIDField: ownerID,
-		}
-		result := make([]map[string]interface{}, 0)
-		err = h.db.Table(common.BKTableNameBaseHost).Find(condition).All(h.ctx, &result)
-		if err != nil {
-			blog.Errorf("[data-collection][hostsnap] fetch db error %v", err)
-		}
-		for index := range result {
-			cloudID := fmt.Sprint(result[index][common.BKCloudIDField])
-			innerIP := fmt.Sprint(result[index][common.BKHostInnerIPField])
-			inst := &HostInst{data: result[index]}
-			h.setCache(cloudID+"::"+innerIP, inst)
-			return inst
-		}
-		blog.Infof("[data-collection][hostsnap] ips not in cache and db, clouid: %v, ip: %v", cloudid, ips)
-	} else {
-		blog.Errorf("[data-collection][hostsnap] message has no ip, message:%s", val.String())
+	if len(ips) == 0 {
+		blog.Warnf("snapshot message has no ip, message:%s, rid: %s", val.String(), rid)
+		return "", errors.New("snapshot has no ip fields")
 	}
-	return nil
+
+	for _, ip := range ips {
+		opt := &metadata.SearchHostWithInnerIPOption{
+			InnerIP: ip,
+			CloudID: cloudID,
+			Fields:  reqireFields,
+		}
+
+		host, err := h.Engine.CoreAPI.CoreService().Cache().SearchHostWithInnerIP(context.Background(), header, opt)
+		if err != nil {
+			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID, err, rid)
+			return "", err
+		}
+		return host, nil
+
+	}
+
+	return "", errors.New("can not find ip in snapshot")
 }
 
 func getIPS(val *gjson.Result) (ips []string) {
@@ -391,431 +427,13 @@ func getIPS(val *gjson.Result) (ips []string) {
 	return ips
 }
 
-func (h *HostSnap) getCache() *HostCache {
-	h.cachelock.RLock()
-	defer h.cachelock.RUnlock()
-	return h.cache.cache[h.cache.flag]
-}
-
-func (h *HostSnap) setCache(key string, val *HostInst) {
-	h.cachelock.Lock()
-	h.cache.cache[h.cache.flag].set(key, val)
-	h.cachelock.Unlock()
-}
-
-func (h *HostSnap) fetchDBLoop() {
-	h.cachelock.Lock()
-	h.cache.cache[h.cache.flag] = h.fetch()
-	h.cachelock.Unlock()
-
-	for range time.Tick(fetchDBInterval) {
-		cache := h.fetch()
-		h.cachelock.Lock()
-		h.cache.cache[!h.cache.flag] = cache
-		h.cache.flag = !h.cache.flag
-		h.cachelock.Unlock()
-	}
-}
-
-func (h *HostSnap) fetch() *HostCache {
-	hostcache := &HostCache{data: map[string]*HostInst{}}
-
-	const limit = uint64(1000)
-	var start = uint64(0)
-	for {
-		result := make([]map[string]interface{}, 0)
-		err := h.db.Table(common.BKTableNameBaseHost).Find(nil).Start(start).Limit(limit).All(h.ctx, &result)
-		if err != nil {
-			blog.Errorf("[data-collection][hostsnap] fetch db error %v", err)
-		}
-		for index := range result {
-			cloudid := fmt.Sprint(result[index][common.BKCloudIDField])
-			innerip := fmt.Sprint(result[index][common.BKHostInnerIPField])
-			hostcache.data[cloudid+"::"+innerip] = &HostInst{data: result[index]}
-		}
-		if uint64(len(result)) < limit {
-			break
-		}
-		start += limit
-	}
-	blog.Infof("[data-collection][hostsnap] success fetch %d collections to cache", len(hostcache.data))
-	return hostcache
-}
-
-type HostInst struct {
-	sync.RWMutex
-	data map[string]interface{}
-}
-
-func (h *HostInst) get(key string) interface{} {
-	h.RLock()
-	value := h.data[key]
-	h.RUnlock()
-	return value
-}
-
-func (h *HostInst) clone() map[string]interface{} {
-	cloneHost := make(map[string]interface{})
-	h.RLock()
-	for key, value := range h.data {
-		cloneHost[key] = value
-	}
-	h.RUnlock()
-	return cloneHost
-}
-
-func (h *HostInst) set(key string, value interface{}) {
-	h.Lock()
-	h.data[key] = value
-	h.Unlock()
-}
-
-type HostCache struct {
-	sync.RWMutex
-	data map[string]*HostInst
-}
-
-func (h *HostCache) get(key string) *HostInst {
-	h.RLock()
-	value := h.data[key]
-	h.RUnlock()
-	return value
-}
-
-func (h *HostCache) set(key string, value *HostInst) {
-	h.Lock()
-	h.data[key] = value
-	h.Unlock()
+func newHeaderWithRid() (http.Header, string) {
+	header := http.Header{}
+	header.Add(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
+	header.Add(common.BKHTTPHeaderUser, common.CCSystemCollectorUserName)
+	rid := util.GenerateRID()
+	header.Add(common.BKHTTPCCRequestID, rid)
+	return header, rid
 }
 
 const MockMessage = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\":\\\"192.168.1.7\\\",\\\"bizid\\\":0,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\",\\\"utctime\\\":\\\"2017-09-19 08:57:07\\\",\\\"country\\\":\\\"Asia\\\",\\\"city\\\":\\\"Shanghai\\\",\\\"cpu\\\":{\\\"cpuinfo\\\":[{\\\"cpu\\\":0,\\\"vendorID\\\":\\\"GenuineIntel\\\",\\\"family\\\":\\\"6\\\",\\\"model\\\":\\\"63\\\",\\\"stepping\\\":2,\\\"physicalID\\\":\\\"0\\\",\\\"coreID\\\":\\\"0\\\",\\\"cores\\\":1,\\\"modelName\\\":\\\"Intel(R) Xeon(R) CPU E5-26xx v3\\\",\\\"mhz\\\":2294.01,\\\"cacheSize\\\":4096,\\\"flags\\\":[\\\"fpu\\\",\\\"vme\\\",\\\"de\\\",\\\"pse\\\",\\\"tsc\\\",\\\"msr\\\",\\\"pae\\\",\\\"mce\\\",\\\"cx8\\\",\\\"apic\\\",\\\"sep\\\",\\\"mtrr\\\",\\\"pge\\\",\\\"mca\\\",\\\"cmov\\\",\\\"pat\\\",\\\"pse36\\\",\\\"clflush\\\",\\\"mmx\\\",\\\"fxsr\\\",\\\"sse\\\",\\\"sse2\\\",\\\"ss\\\",\\\"ht\\\",\\\"syscall\\\",\\\"nx\\\",\\\"lm\\\",\\\"constant_tsc\\\",\\\"up\\\",\\\"rep_good\\\",\\\"unfair_spinlock\\\",\\\"pni\\\",\\\"pclmulqdq\\\",\\\"ssse3\\\",\\\"fma\\\",\\\"cx16\\\",\\\"pcid\\\",\\\"sse4_1\\\",\\\"sse4_2\\\",\\\"x2apic\\\",\\\"movbe\\\",\\\"popcnt\\\",\\\"tsc_deadline_timer\\\",\\\"aes\\\",\\\"xsave\\\",\\\"avx\\\",\\\"f16c\\\",\\\"rdrand\\\",\\\"hypervisor\\\",\\\"lahf_lm\\\",\\\"abm\\\",\\\"xsaveopt\\\",\\\"bmi1\\\",\\\"avx2\\\",\\\"bmi2\\\"],\\\"microcode\\\":\\\"1\\\"}],\\\"per_usage\\\":[3.0232169701043103],\\\"total_usage\\\":3.0232169701043103,\\\"per_stat\\\":[{\\\"cpu\\\":\\\"cpu0\\\",\\\"user\\\":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\":6.68,\\\"iowait\\\":528.24,\\\"irq\\\":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0,\\\"guestNice\\\":0,\\\"stolen\\\":0}],\\\"total_stat\\\":{\\\"cpu\\\":\\\"cpu-total\\\",\\\"user\\\":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\":6.68,\\\"iowait\\\":528.24,\\\"irq\\\":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0,\\\"guestNice\\\":0,\\\"stolen\\\":0}},\\\"env\\\":{\\\"crontab\\\":[{\\\"user\\\":\\\"root\\\",\\\"content\\\":\\\"#secu-tcs-agent monitor, install at Fri Sep 15 16:12:02 CST 2017\\\\n* * * * * /usr/local/sa/agent/secu-tcs-agent-mon-safe.sh /usr/local/sa/agent \\\\u003e /dev/null 2\\\\u003e\\\\u00261\\\\n*/1 * * * * /usr/local/qcloud/stargate/admin/start.sh \\\\u003e /dev/null 2\\\\u003e\\\\u00261 \\\\u0026\\\\n*/20 * * * * /usr/sbin/ntpdate ntpupdate.tencentyun.com \\\\u003e/dev/null \\\\u0026\\\\n*/1 * * * * cd /usr/local/gse/gseagent; ./cron_agent.sh 1\\\\u003e/dev/null 2\\\\u003e\\\\u00261\\\\n\\\"}],\\\"host\\\":\\\"127.0.0.1  localhost  localhost.localdomain  VM_0_31_centos\\\\n::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\\\\n\\\",\\\"route\\\":\\\"Kernel IP routing table\\\\nDestination     Gateway         Genmask         Flags Metric Ref    Use Iface\\\\n10.0.0.0        0.0.0.0         255.255.255.0   U     0      0        0 eth0\\\\n169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 eth0\\\\n0.0.0.0         10.0.0.1        0.0.0.0         UG    0      0        0 eth0\\\\n\\\"},\\\"disk\\\":{\\\"diskstat\\\":{\\\"vda1\\\":{\\\"major\\\":252,\\\"minor\\\":1,\\\"readCount\\\":24347,\\\"mergedReadCount\\\":570,\\\"writeCount\\\":696357,\\\"mergedWriteCount\\\":4684783,\\\"readBytes\\\":783955968,\\\"writeBytes\\\":22041231360,\\\"readSectors\\\":1531164,\\\"writeSectors\\\":43049280,\\\"readTime\\\":80626,\\\"writeTime\\\":12704736,\\\"iopsInProgress\\\":0,\\\"ioTime\\\":822057,\\\"weightedIoTime\\\":12785026,\\\"name\\\":\\\"vda1\\\",\\\"serialNumber\\\":\\\"\\\",\\\"speedIORead\\\":0,\\\"speedByteRead\\\":0,\\\"speedIOWrite\\\":2.9,\\\"speedByteWrite\\\":171144.53333333333,\\\"util\\\":0.0025666666666666667,\\\"avgrq_sz\\\":115.26436781609195,\\\"avgqu_sz\\\":0.06568333333333334,\\\"await\\\":22.649425287356323,\\\"svctm\\\":0.8850574712643678}},\\\"partition\\\":[{\\\"device\\\":\\\"/dev/vda1\\\",\\\"mountpoint\\\":\\\"/\\\",\\\"fstype\\\":\\\"ext3\\\",\\\"opts\\\":\\\"rw,noatime,acl,user_xattr\\\"}],\\\"usage\\\":[{\\\"path\\\":\\\"/\\\",\\\"fstype\\\":\\\"ext2/ext3\\\",\\\"total\\\":52843638784,\\\"free\\\":47807447040,\\\"used\\\":2351915008,\\\"usedPercent\\\":4.4507060113962345,\\\"inodesTotal\\\":3276800,\\\"inodesUsed\\\":29554,\\\"inodesFree\\\":3247246,\\\"inodesUsedPercent\\\":0.9019165039062501}]},\\\"load\\\":{\\\"load_avg\\\":{\\\"load1\\\":0,\\\"load5\\\":0,\\\"load15\\\":0}},\\\"mem\\\":{\\\"meminfo\\\":{\\\"total\\\":1044832256,\\\"available\\\":805912576,\\\"used\\\":238919680,\\\"usedPercent\\\":22.866797864249705,\\\"free\\\":92041216,\\\"active\\\":521183232,\\\"inactive\\\":352964608,\\\"wired\\\":0,\\\"buffers\\\":110895104,\\\"cached\\\":602976256,\\\"writeback\\\":0,\\\"dirty\\\":151552,\\\"writebacktmp\\\":0},\\\"vmstat\\\":{\\\"total\\\":0,\\\"used\\\":0,\\\"free\\\":0,\\\"usedPercent\\\":0,\\\"sin\\\":0,\\\"sout\\\":0}},\\\"net\\\":{\\\"interface\\\":[{\\\"mtu\\\":65536,\\\"name\\\":\\\"lo\\\",\\\"hardwareaddr\\\":\\\"28:31:52:1d:c6:0a\\\",\\\"flags\\\":[\\\"up\\\",\\\"loopback\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\\"127.0.0.1/8\\\"}]},{\\\"mtu\\\":1500,\\\"name\\\":\\\"eth0\\\",\\\"hardwareaddr\\\":\\\"52:54:00:19:2e:e8\\\",\\\"flags\\\":[\\\"up\\\",\\\"broadcast\\\",\\\"multicast\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\\"127.0.0.1/24\\\"}]}],\\\"dev\\\":[{\\\"name\\\":\\\"lo\\\",\\\"speedSent\\\":0,\\\"speedRecv\\\":0,\\\"speedPacketsSent\\\":0,\\\"speedPacketsRecv\\\":0,\\\"bytesSent\\\":604,\\\"bytesRecv\\\":604,\\\"packetsSent\\\":2,\\\"packetsRecv\\\":2,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\\":0,\\\"dropout\\\":0,\\\"fifoin\\\":0,\\\"fifoout\\\":0},{\\\"name\\\":\\\"eth0\\\",\\\"speedSent\\\":574,\\\"speedRecv\\\":214,\\\"speedPacketsSent\\\":3,\\\"speedPacketsRecv\\\":2,\\\"bytesSent\\\":161709123,\\\"bytesRecv\\\":285910298,\\\"packetsSent\\\":1116625,\\\"packetsRecv\\\":1167796,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\\":0,\\\"dropout\\\":0,\\\"fifoin\\\":0,\\\"fifoout\\\":0}],\\\"netstat\\\":{\\\"established\\\":2,\\\"syncSent\\\":1,\\\"synRecv\\\":0,\\\"finWait1\\\":0,\\\"finWait2\\\":0,\\\"timeWait\\\":0,\\\"close\\\":0,\\\"closeWait\\\":0,\\\"lastAck\\\":0,\\\"listen\\\":2,\\\"closing\\\":0},\\\"protocolstat\\\":[{\\\"protocol\\\":\\\"udp\\\",\\\"stats\\\":{\\\"inDatagrams\\\":176253,\\\"inErrors\\\":0,\\\"noPorts\\\":1,\\\"outDatagrams\\\":199569,\\\"rcvbufErrors\\\":0,\\\"sndbufErrors\\\":0}}]},\\\"system\\\":{\\\"info\\\":{\\\"hostname\\\":\\\"VM_0_31_centos\\\",\\\"uptime\\\":348315,\\\"bootTime\\\":1505463112,\\\"procs\\\":142,\\\"os\\\":\\\"linux\\\",\\\"platform\\\":\\\"centos\\\",\\\"platformFamily\\\":\\\"rhel\\\",\\\"platformVersion\\\":\\\"6.2\\\",\\\"kernelVersion\\\":\\\"2.6.32-504.30.3.el6.x86_64\\\",\\\"virtualizationSystem\\\":\\\"\\\",\\\"virtualizationRole\\\":\\\"\\\",\\\"hostid\\\":\\\"96D0F4CA-2157-40E6-BF22-6A7CD9B6EB8C\\\",\\\"systemtype\\\":\\\"64-bit\\\"}}}}\", \"timestamp\": 1505811427, \"dtEventTime\": \"2017-09-19 16:57:07\", \"dtEventTimeStamp\": 1505811427000}"
-
-const MockMessageData = `{
-    "ip": "192.168.1.7",
-    "bizid": 0,
-    "cloudid": 0,
-    "data": {
-        "timezone": 8,
-        "datetime": "2017-09-19 16:57:07",
-        "utctime": "2017-09-19 08:57:07",
-        "country": "Asia",
-        "city": "Shanghai",
-        "cpu": {
-            "cpuinfo": [
-                {
-                    "cpu": 0,
-                    "vendorID": "GenuineIntel",
-                    "family": "6",
-                    "model": "63",
-                    "stepping": 2,
-                    "physicalID": "0",
-                    "coreID": "0",
-                    "cores": 1,
-                    "modelName": "Intel(R) Xeon(R) CPU E5-26xx v3",
-                    "mhz": 2294.01,
-                    "cacheSize": 4096,
-                    "flags": [
-                        "fpu",
-                        "vme",
-                        "de",
-                        "pse",
-                        "tsc",
-                        "msr",
-                        "pae",
-                        "mce",
-                        "cx8",
-                        "apic",
-                        "sep",
-                        "mtrr",
-                        "pge",
-                        "mca",
-                        "cmov",
-                        "pat",
-                        "pse36",
-                        "clflush",
-                        "mmx",
-                        "fxsr",
-                        "sse",
-                        "sse2",
-                        "ss",
-                        "ht",
-                        "syscall",
-                        "nx",
-                        "lm",
-                        "constant_tsc",
-                        "up",
-                        "rep_good",
-                        "unfair_spinlock",
-                        "pni",
-                        "pclmulqdq",
-                        "ssse3",
-                        "fma",
-                        "cx16",
-                        "pcid",
-                        "sse4_1",
-                        "sse4_2",
-                        "x2apic",
-                        "movbe",
-                        "popcnt",
-                        "tsc_deadline_timer",
-                        "aes",
-                        "xsave",
-                        "avx",
-                        "f16c",
-                        "rdrand",
-                        "hypervisor",
-                        "lahf_lm",
-                        "abm",
-                        "xsaveopt",
-                        "bmi1",
-                        "avx2",
-                        "bmi2"
-                    ],
-                    "microcode": "1"
-                }
-            ],
-            "per_usage": [
-                3.0232169701043103
-            ],
-            "total_usage": 3.0232169701043103,
-            "per_stat": [
-                {
-                    "cpu": "cpu0",
-                    "user": 5206.09,
-                    "system": 6107.04,
-                    "idle": 337100.84,
-                    "nice": 6.68,
-                    "iowait": 528.24,
-                    "irq": 0.02,
-                    "softirq": 13.48,
-                    "steal": 0,
-                    "guest": 0,
-                    "guestNice": 0,
-                    "stolen": 0
-                }
-            ],
-            "total_stat": {
-                "cpu": "cpu-total",
-                "user": 5206.09,
-                "system": 6107.04,
-                "idle": 337100.84,
-                "nice": 6.68,
-                "iowait": 528.24,
-                "irq": 0.02,
-                "softirq": 13.48,
-                "steal": 0,
-                "guest": 0,
-                "guestNice": 0,
-                "stolen": 0
-            }
-        },
-        "env": {
-            "crontab": [
-                {
-                    "user": "root",
-                    "content": "#secu-tcs-agent monitor, install at Fri Sep 15 16:12:02 CST 2017\n* * * * * /usr/local/sa/agent/secu-tcs-agent-mon-safe.sh /usr/local/sa/agent > /dev/null 2>&1\n*/1 * * * * /usr/local/qcloud/stargate/admin/start.sh > /dev/null 2>&1 &\n*/20 * * * * /usr/sbin/ntpdate ntpupdate.tencentyun.com >/dev/null &\n*/1 * * * * cd /usr/local/gse/gseagent; ./cron_agent.sh 1>/dev/null 2>&1\n"
-                }
-            ],
-            "host": "127.0.0.1  localhost  localhost.localdomain  VM_0_31_centos\n::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n",
-            "route": "Kernel IP routing table\nDestination     Gateway         Genmask         Flags Metric Ref    Use Iface\n10.0.0.0        0.0.0.0         255.255.255.0   U     0      0        0 eth0\n169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 eth0\n0.0.0.0         10.0.0.1        0.0.0.0         UG    0      0        0 eth0\n"
-        },
-        "disk": {
-            "diskstat": {
-                "vda1": {
-                    "major": 252,
-                    "minor": 1,
-                    "readCount": 24347,
-                    "mergedReadCount": 570,
-                    "writeCount": 696357,
-                    "mergedWriteCount": 4684783,
-                    "readBytes": 783955968,
-                    "writeBytes": 22041231360,
-                    "readSectors": 1531164,
-                    "writeSectors": 43049280,
-                    "readTime": 80626,
-                    "writeTime": 12704736,
-                    "iopsInProgress": 0,
-                    "ioTime": 822057,
-                    "weightedIoTime": 12785026,
-                    "name": "vda1",
-                    "serialNumber": "",
-                    "speedIORead": 0,
-                    "speedByteRead": 0,
-                    "speedIOWrite": 2.9,
-                    "speedByteWrite": 171144.53333333333,
-                    "util": 0.0025666666666666667,
-                    "avgrq_sz": 115.26436781609195,
-                    "avgqu_sz": 0.06568333333333334,
-                    "await": 22.649425287356323,
-                    "svctm": 0.8850574712643678
-                }
-            },
-            "partition": [
-                {
-                    "device": "/dev/vda1",
-                    "mountpoint": "/",
-                    "fstype": "ext3",
-                    "opts": "rw,noatime,acl,user_xattr"
-                }
-            ],
-            "usage": [
-                {
-                    "path": "/",
-                    "fstype": "ext2/ext3",
-                    "total": 52843638784,
-                    "free": 47807447040,
-                    "used": 2351915008,
-                    "usedPercent": 4.4507060113962345,
-                    "inodesTotal": 3276800,
-                    "inodesUsed": 29554,
-                    "inodesFree": 3247246,
-                    "inodesUsedPercent": 0.9019165039062501
-                }
-            ]
-        },
-        "load": {
-            "load_avg": {
-                "load1": 0,
-                "load5": 0,
-                "load15": 0
-            }
-        },
-        "mem": {
-            "meminfo": {
-                "total": 1044832256,
-                "available": 805912576,
-                "used": 238919680,
-                "usedPercent": 22.866797864249705,
-                "free": 92041216,
-                "active": 521183232,
-                "inactive": 352964608,
-                "wired": 0,
-                "buffers": 110895104,
-                "cached": 602976256,
-                "writeback": 0,
-                "dirty": 151552,
-                "writebacktmp": 0
-            },
-            "vmstat": {
-                "total": 0,
-                "used": 0,
-                "free": 0,
-                "usedPercent": 0,
-                "sin": 0,
-                "sout": 0
-            }
-        },
-        "net": {
-            "interface": [
-                {
-                    "mtu": 65536,
-                    "name": "lo",
-                    "hardwareaddr": "28:31:52:1d:c6:0a",
-                    "flags": [
-                        "up",
-                        "loopback"
-                    ],
-                    "addrs": [
-                        {
-                            "addr": "127.0.0.1/8"
-                        }
-                    ]
-                },
-                {
-                    "mtu": 1500,
-                    "name": "eth0",
-                    "hardwareaddr": "52:54:00:19:2e:e8",
-                    "flags": [
-                        "up",
-                        "broadcast",
-                        "multicast"
-                    ],
-                    "addrs": [
-                        {
-                            "addr": "127.0.0.1/24"
-                        }
-                    ]
-                }
-            ],
-            "dev": [
-                {
-                    "name": "lo",
-                    "speedSent": 0,
-                    "speedRecv": 0,
-                    "speedPacketsSent": 0,
-                    "speedPacketsRecv": 0,
-                    "bytesSent": 604,
-                    "bytesRecv": 604,
-                    "packetsSent": 2,
-                    "packetsRecv": 2,
-                    "errin": 0,
-                    "errout": 0,
-                    "dropin": 0,
-                    "dropout": 0,
-                    "fifoin": 0,
-                    "fifoout": 0
-                },
-                {
-                    "name": "eth0",
-                    "speedSent": 574,
-                    "speedRecv": 214,
-                    "speedPacketsSent": 3,
-                    "speedPacketsRecv": 2,
-                    "bytesSent": 161709123,
-                    "bytesRecv": 285910298,
-                    "packetsSent": 1116625,
-                    "packetsRecv": 1167796,
-                    "errin": 0,
-                    "errout": 0,
-                    "dropin": 0,
-                    "dropout": 0,
-                    "fifoin": 0,
-                    "fifoout": 0
-                }
-            ],
-            "netstat": {
-                "established": 2,
-                "syncSent": 1,
-                "synRecv": 0,
-                "finWait1": 0,
-                "finWait2": 0,
-                "timeWait": 0,
-                "close": 0,
-                "closeWait": 0,
-                "lastAck": 0,
-                "listen": 2,
-                "closing": 0
-            },
-            "protocolstat": [
-                {
-                    "protocol": "udp",
-                    "stats": {
-                        "inDatagrams": 176253,
-                        "inErrors": 0,
-                        "noPorts": 1,
-                        "outDatagrams": 199569,
-                        "rcvbufErrors": 0,
-                        "sndbufErrors": 0
-                    }
-                }
-            ]
-        },
-        "system": {
-            "info": {
-                "hostname": "VM_0_31_centos",
-                "uptime": 348315,
-                "bootTime": 1505463112,
-                "procs": 142,
-                "os": "linux",
-                "platform": "centos",
-                "platformFamily": "rhel",
-                "platformVersion": "6.2",
-                "kernelVersion": "2.6.32-504.30.3.el6.x86_64",
-                "virtualizationSystem": "",
-                "virtualizationRole": "",
-                "hostid": "96D0F4CA-2157-40E6-BF22-6A7CD9B6EB8C",
-                "systemtype": "64-bit"
-            }
-        }
-    }
-}`

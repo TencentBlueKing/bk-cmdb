@@ -22,7 +22,8 @@ type OnChangeEvent struct {
 	// only used when list watch is used.
 	OnLister     func(event *types.Event)
 	OnListerDone func()
-	OnAdd        func(event *types.Event)
-	OnUpdate     func(event *types.Event)
-	OnDelete     func(event *types.Event)
+	// only used when list watch is used.
+	OnAdd    func(event *types.Event)
+	OnUpdate func(event *types.Event)
+	OnDelete func(event *types.Event)
 }

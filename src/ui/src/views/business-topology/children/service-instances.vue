@@ -191,7 +191,7 @@
                         id: 0
                     },
                     {
-                        name: this.$t('标签键'),
+                        name: this.$t('标签值'),
                         id: 1,
                         children: [{
                             id: '',
@@ -200,7 +200,7 @@
                         conditions: []
                     },
                     {
-                        name: this.$t('标签值'),
+                        name: this.$t('标签键'),
                         id: 2,
                         children: [{
                             id: '',
@@ -729,7 +729,7 @@
                 this.handleCloseProcessForm()
             },
             handleCreateServiceInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'createServiceInstance',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
@@ -739,7 +739,8 @@
                         title: this.currentNode.data.bk_inst_name,
                         node: this.currentNode.id,
                         tab: 'serviceInstance'
-                    }
+                    },
+                    history: true
                 })
             },
             handleCheckALL (checked) {
@@ -763,12 +764,13 @@
                 if (disabled) {
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_DELETE_SERVICE,
                     params: {
                         ids: this.checked.map(instance => instance.id).join('/'),
                         moduleId: this.currentNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             copyIp () {
@@ -779,12 +781,13 @@
                 })
             },
             handleSyncTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'syncServiceFromModule',
                     params: {
                         modules: String(this.currentNode.data.bk_inst_id),
                         template: this.currentNode.data.service_template_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleShowBatchLabel (disabled) {

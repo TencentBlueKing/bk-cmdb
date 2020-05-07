@@ -45,7 +45,7 @@ func (s *Service) WebService() *gin.Engine {
 	middleware.Engine = s.Engine
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
-	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot + "/index.html")
+	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot + "/index.html", s.Config.Site.HtmlRoot + "/login.html")
 
 	ws.POST("/hosts/import", s.ImportHost)
 	ws.POST("/hosts/export", s.ExportHost)
@@ -55,6 +55,8 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportInst)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportInst)
 	ws.POST("/logout", s.LogOutUser)
+	ws.GET("/login", s.Login)
+	ws.POST("/login", s.LoginUser)
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportObject)
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportObject)
 	ws.GET("/user/list", s.GetUserList)

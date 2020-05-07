@@ -160,6 +160,9 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 		if strings.Contains(err.Error(), "E11000 duplicate") {
 			return true
 		}
+		if strings.Contains(err.Error(), "IndexOptionsConflict") {
+			return true
+		}
 	}
 	return err == types.ErrDuplicated
 }
@@ -362,9 +365,9 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 		// automatically and do read/write retry if policy is set.
 		// mongo.CmdbReleaseSession(ctx, session)
 		if err != nil {
-			return 0, nil
+			return 0, err
 		}
-		return uint64(cnt), err
+		return uint64(cnt), nil
 	}
 }
 

@@ -111,20 +111,33 @@ func createAPIRspStr(errcode int, info string) (string, error) {
 }
 
 func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
-	cid := util.GetHTTPCCRequestID(req.Request.Header)
+	isOtherReq := httpHeaderRidFilter(req.Request.Header)
+	if isOtherReq {
+		content, _ := util.PeekRequest(req.Request)
+		blog.Infof("ESB Request: uri: %v, header: %v, body: %s", req.Request.RequestURI, req.Request.Header, content)
+	}
+}
+
+func HTTPHeaderRidFilter(header http.Header) {
+	httpHeaderRidFilter(header)
+}
+
+func httpHeaderRidFilter(header http.Header)  bool {
+	cid := util.GetHTTPCCRequestID(header)
 	if "" == cid {
-		cid = GetHTTPOtherRequestID(req.Request.Header)
+		cid = GetHTTPOtherRequestID(header)
 		if cid == "" {
 			cid = util.GenerateRID()
-		} else {
-			content, _ := util.PeekRequest(req.Request)
-			blog.Infof("ESB Request: uri: %v, header: %v, body: %s", req.Request.RequestURI, req.Request.Header, content)
+		} else  {
+			return true 
 		}
 
-		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
-	resp.Header().Set(common.BKHTTPCCRequestID, cid)
+	header.Set(common.BKHTTPCCRequestID, cid)
+	return  false 
 }
+
+
 
 func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {
 	blog.Errorf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method, req.Request.RequestURI)

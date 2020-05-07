@@ -20,7 +20,7 @@
 </template>
 
 <script>
-    import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
+    import { MENU_RESOURCE_HOST, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     export default {
         data () {
             return {
@@ -81,12 +81,7 @@
                             this.$warn(this.$t('请输入完整IP进行搜索，多个IP用换行分割'))
                             return
                         }
-                        this.$store.commit('hosts/setFilterIP', {
-                            text: searchList.join('\n'),
-                            exact: true
-                        })
-                        this.$store.commit('hosts/setIsHostSearch', true)
-                        this.$router.push({ name: MENU_RESOURCE_HOST })
+                        this.checkTargetPage(searchList)
                     } catch (e) {
                         console.error(e)
                     }
@@ -94,6 +89,72 @@
                     this.searchContent = ''
                     this.textareaDom && this.textareaDom.focus()
                 }
+            },
+            async checkTargetPage (list) {
+                try {
+                    const { info } = await this.$store.dispatch('hostSearch/searchHost', {
+                        params: {
+                            bk_biz_id: -1,
+                            condition: [{
+                                bk_obj_id: 'biz',
+                                condition: [],
+                                fields: []
+                            }],
+                            ip: {
+                                data: list,
+                                flag: 'bk_host_innerip|bk_host_outerip',
+                                exact: 1
+                            }
+                        }
+                    })
+                    const bizSet = new Set()
+                    const resourceBizId = -1
+                    info.forEach(({ biz }) => {
+                        biz.forEach(data => {
+                            if (data.default === 1) { // 资源池的dfault为1
+                                bizSet.add(resourceBizId)
+                            } else {
+                                bizSet.add(data.bk_biz_id)
+                            }
+                        })
+                    })
+                    if (bizSet.size === 1) {
+                        const bizId = bizSet.values().next().value
+                        if (bizId === resourceBizId) {
+                            this.navigateToResource(list, 1)
+                        } else {
+                            this.navigateToBusiness(list, bizId)
+                        }
+                    } else {
+                        this.navigateToResource(list, 'all')
+                    }
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            navigateToResource (list, scope) {
+                this.$routerActions.redirect({
+                    name: MENU_RESOURCE_HOST,
+                    query: {
+                        ip: list.join(','),
+                        scope: scope,
+                        exact: 1
+                    },
+                    history: true
+                })
+            },
+            navigateToBusiness (list, bizId) {
+                this.$routerActions.redirect({
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    params: {
+                        bizId
+                    },
+                    query: {
+                        ip: list.join(','),
+                        exact: 1
+                    },
+                    history: true
+                })
             }
         }
     }

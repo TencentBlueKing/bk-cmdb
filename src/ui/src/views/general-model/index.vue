@@ -61,36 +61,36 @@
                     :object-unique="objectUnique">
                 </cmdb-property-selector>
                 <component class="filter-value fl"
-                    v-if="['enum', 'list', 'organization'].includes(filter.type)"
-                    :is="`cmdb-form-${filter.type}`"
+                    v-if="['enum', 'list', 'organization'].includes(filterType)"
+                    :is="`cmdb-form-${filterType}`"
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     :clearable="true"
                     :auto-select="false"
                     v-model="filter.value"
                     font-size="medium"
-                    @on-selected="handlePageChange(1, true)"
-                    @on-checked="handlePageChange(1, true)">
+                    @on-selected="handleFilterValueChange"
+                    @on-checked="handleFilterValueChange">
                 </component>
                 <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
-                    v-else-if="filter.type === 'int'"
+                    v-else-if="filterType === 'int'"
                     v-model.number="filter.value"
                     clearable
                     right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="handlePageChange(1, true)"
-                    @clear="handlePageChange(1)">
+                    @enter="handleFilterValueChange"
+                    @clear="handleFilterValueChange">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
-                    v-else-if="filter.type === 'float'"
+                    v-else-if="filterType === 'float'"
                     v-model.number="filter.value"
                     clearable
                     right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="handlePageChange(1, true)"
-                    @clear="handlePageChange(1)">
+                    @enter="handleFilterValueChange"
+                    @clear="handleFilterValueChange">
                 </bk-input>
                 <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
@@ -99,8 +99,8 @@
                     right-icon="icon-search"
                     font-size="medium"
                     :placeholder="$t('快速查询')"
-                    @enter="handlePageChange(1, true)"
-                    @clear="handlePageChange(1)">
+                    @enter="handleFilterValueChange"
+                    @clear="handleFilterValueChange">
                 </bk-input>
             </div>
         </div>
@@ -109,8 +109,6 @@
             :data="table.list"
             :pagination="table.pagination"
             :max-height="$APP.height - 190"
-            :row-style="{ cursor: 'pointer' }"
-            @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-limit-change="handleSizeChange"
             @page-change="handlePageChange"
@@ -118,17 +116,34 @@
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 sortable="custom"
+                min-width="80"
                 :key="column.id"
                 :prop="column.id"
                 :label="column.name"
-                :class-name="column.id === 'bk_inst_name' ? 'is-highlight' : ''"
-                :fixed="column.id === 'bk_inst_name'"
                 show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <cmdb-property-value
+                        :theme="column.id === 'bk_inst_id' ? 'primary' : 'default'"
+                        :show-unit="false"
                         :value="row[column.id]"
-                        :property="column.property">
+                        :property="column.property"
+                        @click.native.stop="handleValueClick(row, column)">
                     </cmdb-property-value>
+                </template>
+            </bk-table-column>
+            <bk-table-column fixed="right" :label="$t('操作')">
+                <template slot-scope="{ row }">
+                    <cmdb-auth
+                        :auth="$authResources({
+                            type: $OPERATION.D_INST,
+                            resource_id: row.bk_inst_id,
+                            resource_name: row.bk_inst_name,
+                            parent_layers: parentLayers
+                        })">
+                        <template slot-scope="{ disabled }">
+                            <bk-button theme="primary" text :disabled="disabled" @click.stop="handleDelete(row)">{{$t('删除')}}</bk-button>
+                        </template>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
             <cmdb-table-empty
@@ -177,7 +192,7 @@
         <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
             <cmdb-columns-config slot="content"
                 v-if="columnsConfig.show"
-                :properties="columnProperties"
+                :properties="properties"
                 :selected="columnsConfig.selected"
                 :disabled-columns="columnsConfig.disabledColumns"
                 @on-apply="handleApplyColumnsConfig"
@@ -209,6 +224,7 @@
     import cmdbImport from '@/components/import/import'
     import { MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
     import cmdbPropertySelector from '@/components/property-selector'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -238,7 +254,7 @@
                 },
                 filter: {
                     id: 'bk_inst_name',
-                    value: '',
+                    value: RouterQuery.get('filter', ''),
                     type: 'singlechar'
                 },
                 slider: {
@@ -259,7 +275,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_inst_name']
+                    disabledColumns: ['bk_inst_id', 'bk_inst_name']
                 },
                 importSlider: {
                     show: false
@@ -307,23 +323,18 @@
                     resource_type: 'model'
                 }]
             },
-            columnProperties () {
-                const instId = {
-                    bk_property_id: 'bk_inst_id',
-                    bk_property_name: 'ID'
+            filterType () {
+                const propertyId = this.filter.id
+                const property = this.properties.find(property => property.bk_property_id === propertyId)
+                if (property) {
+                    return property.bk_property_type
                 }
-                const properties = this.properties
-                properties.push(instId)
-                return properties
+                return 'singlechar'
             }
         },
         watch: {
             'filter.id' (id) {
                 this.filter.value = ''
-                this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
-            },
-            'filter.value' () {
-                this.$route.query.instId = null
             },
             'slider.show' (show) {
                 if (!show) {
@@ -342,8 +353,23 @@
             }
         },
         created () {
+            RouterQuery.watch('*', ({
+                page = 1,
+                limit = this.table.pagination.limit,
+                filter = ''
+            }) => {
+                this.filter.id = 'bk_inst_name'
+                this.filter.value = filter
+                this.table.pagination.current = parseInt(page)
+                this.table.pagination.limit = parseInt(limit)
+                this.getTableData(!!filter)
+            })
             this.setDynamicBreadcrumbs()
             this.reload()
+        },
+        beforeRouteUpdate (to, from, next) {
+            this.setDynamicBreadcrumbs()
+            next()
         },
         methods: {
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
@@ -365,6 +391,7 @@
                     this.setRencentlyData()
                     this.resetData()
                     this.properties = await this.searchObjectAttribute({
+                        injectId: this.objId,
                         params: this.$injectMetadata({
                             bk_obj_id: this.objId,
                             bk_supplier_account: this.supplierAccount
@@ -379,10 +406,22 @@
                         this.getObjectUnique(),
                         this.setTableHeader()
                     ])
-                    this.getTableData()
+                    RouterQuery.set({
+                        _t: Date.now()
+                    })
                 } catch (e) {
                     // ignore
                 }
+            },
+            handleFilterValueChange () {
+                const query = {
+                    _t: Date.now(),
+                    page: 1
+                }
+                if (this.filter.id === 'bk_inst_name') {
+                    query.filter = this.filter.value
+                }
+                RouterQuery.set(query)
             },
             resetData () {
                 this.table = {
@@ -431,7 +470,7 @@
             setTableHeader () {
                 return new Promise((resolve, reject) => {
                     const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
-                    const headerProperties = this.$tools.getHeaderProperties(this.columnProperties, customColumns, this.columnsConfig.disabledColumns)
+                    const headerProperties = this.$tools.getHeaderProperties(this.properties, customColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.updateTableHeader(properties)
@@ -447,26 +486,37 @@
                     }
                 })
             },
-            handleRowClick (item) {
-                this.$router.push({
+            handleValueClick (item, column) {
+                if (column.id !== 'bk_inst_id') {
+                    return false
+                }
+                this.$routerActions.redirect({
                     name: MENU_RESOURCE_INSTANCE_DETAILS,
                     params: {
                         objId: this.objId,
                         instId: item.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)
-                this.handlePageChange(1)
+                RouterQuery.set({
+                    _t: Date.now()
+                })
             },
             handleSizeChange (size) {
-                this.table.pagination.limit = size
-                this.handlePageChange(1)
+                RouterQuery.set({
+                    limit: size,
+                    page: 1,
+                    _t: Date.now()
+                })
             },
             handlePageChange (page, withFilter = false) {
-                this.table.pagination.current = page
-                this.getTableData(withFilter)
+                RouterQuery.set({
+                    page: page,
+                    _t: Date.now()
+                })
             },
             handleSelectChange (selection) {
                 this.table.checked = selection.map(row => row.bk_inst_id)
@@ -512,7 +562,7 @@
                     }
                 }
                 if (this.filter.id && String(this.filter.value).length) {
-                    const filterType = this.filter.type
+                    const filterType = this.filterType
                     let filterValue = this.filter.value
                     if (filterType === 'bool') {
                         const convertValue = [true, false].find(bool => bool.toString() === filterValue)
@@ -551,14 +601,6 @@
                             value: filterValue
                         })
                     }
-                } else if (this.$route.params.instId) {
-                    // 配合全文检索过滤列表
-                    params.condition[this.objId].push({
-                        field: 'bk_inst_id',
-                        operator: '$in',
-                        value: [Number(this.$route.params.instId)]
-                    })
-                    this.$route.params.instId = null
                 }
                 return params
             },
@@ -585,7 +627,9 @@
                         }).then(() => {
                             this.slider.show = false
                             this.$success(this.$t('删除成功'))
-                            this.getTableData()
+                            RouterQuery.set({
+                                _t: Date.now()
+                            })
                         })
                     }
                 })
@@ -597,17 +641,23 @@
                         instId: originalValues['bk_inst_id'],
                         params: this.$injectMetadata(values, { inject: !this.isPublicModel })
                     }).then(() => {
-                        this.getTableData()
                         this.attribute.inst.details = Object.assign({}, originalValues, values)
                         this.handleCancel()
                         this.$success(this.$t('修改成功'))
+                        RouterQuery.set({
+                            _t: Date.now()
+                        })
                     })
                 } else {
+                    delete values.bk_inst_id // properties中注入了前端自定义的bk_inst_id属性
                     this.createInst({
                         params: this.$injectMetadata(values, { inject: !this.isPublicModel }),
                         objId: this.objId
                     }).then(() => {
-                        this.handlePageChange(1)
+                        RouterQuery.set({
+                            _t: Date.now(),
+                            page: 1
+                        })
                         this.handleCancel()
                         this.$success(this.$t('创建成功'))
                     })
@@ -640,7 +690,10 @@
                 }).then(() => {
                     this.$success(this.$t('修改成功'))
                     this.slider.show = false
-                    this.handlePageChange(1)
+                    RouterQuery.set({
+                        _t: Date.now(),
+                        page: 1
+                    })
                 })
             },
             handleMultipleCancel () {
@@ -667,7 +720,9 @@
                 }).then(() => {
                     this.$success(this.$t('删除成功'))
                     this.table.checked = []
-                    this.getTableData()
+                    RouterQuery.set({
+                        _t: Date.now()
+                    })
                 })
             },
             handleApplyColumnsConfig (properties) {
@@ -682,11 +737,12 @@
                 })
             },
             routeToHistory () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'instanceHistory',
                     params: {
                         objId: this.objId
-                    }
+                    },
+                    history: true
                 })
             },
             handleSliderBeforeClose () {

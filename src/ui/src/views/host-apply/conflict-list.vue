@@ -104,7 +104,7 @@
                 this.$store.commit('setTitle', this.$t('策略失效主机'))
             },
             goBack () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY
                 })
             },
@@ -158,7 +158,7 @@
                 this.goBack()
             },
             handleViewHost () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
                         node: `module-${this.moduleIds[0]}`
@@ -166,7 +166,7 @@
                 })
             },
             handleViewFailed () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_FAILED,
                     query: this.$route.query
                 })

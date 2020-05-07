@@ -4,7 +4,7 @@
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
                 :handler-offset="3"
-                :min="300"
+                :min="310"
                 :max="480">
                 <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
             </cmdb-resize-layout>
@@ -139,7 +139,7 @@
                         <bk-button
                             outline
                             theme="primary"
-                            @click="$router.push({ name: hostAndServiceRouteName })"
+                            @click="$routerActions.redirect({ name: hostAndServiceRouteName })"
                         >
                             {{$t('跳转创建')}}
                         </bk-button>
@@ -299,7 +299,7 @@
                 })
             },
             handleViewConflict () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
                     query: {
                         mid: this.moduleId
@@ -307,7 +307,7 @@
                 })
             },
             handleEdit () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_EDIT,
                     query: {
                         mid: this.moduleId
@@ -330,7 +330,7 @@
         height: 100%;
     }
     .tree-layout {
-        width: 300px;
+        width: 310px;
         height: 100%;
         border-right: 1px solid $cmdbLayoutBorderColor;
     }

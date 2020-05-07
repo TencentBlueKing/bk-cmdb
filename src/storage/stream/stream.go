@@ -27,6 +27,7 @@ import (
 
 // Stream Interface defines all the functionality it have.
 type Interface interface {
+	List(ctx context.Context, opts *types.ListOptions) (ch chan *types.Event, err error)
 	Watch(ctx context.Context, opts *types.WatchOptions) (*types.Watcher, error)
 	ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*types.Watcher, error)
 }
