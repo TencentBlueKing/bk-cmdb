@@ -125,6 +125,14 @@ type Options struct {
 
 	// Collection defines which collection you want you watch.
 	Collection string
+
+	// StartAfterToken describe where you want to watch the event.
+	// Note: the returned event does'nt contains the token represented,
+	// and will returns event just after this token.
+	StartAfterToken *EventToken
+
+	// Ensures that this watch will provide events that occurred after this timestamp.
+	StartAtTime *TimeStamp
 }
 
 var defaultMaxAwaitTime = time.Second
@@ -151,12 +159,13 @@ func (opts *Options) CheckSetDefault() error {
 	return nil
 }
 
+type TimeStamp struct {
+	T uint32
+	I uint32
+}
+
 type WatchOptions struct {
 	Options
-	// StartAfterToken describe where you want to watch the event.
-	// Note: the returned event does'nt contains the token represented,
-	// and will returns event just after this token.
-	StartAfterToken *EventToken
 }
 
 var defaultListPageSize = 1000
@@ -197,10 +206,16 @@ type Event struct {
 	Document      interface{}
 	DocBytes      []byte
 	OperationType OperType
+
+	// The timestamp from the oplog entry associated with the event.
+	ClusterTime TimeStamp
+
+	// event token for resume after.
+	Token EventToken
 }
 
 func (e *Event) String() string {
-	return fmt.Sprintf("event detail, oper: %s, oid: %s, doc: %s", e.OperationType, e.Oid, e.DocBytes)	
+	return fmt.Sprintf("event detail, oper: %s, oid: %s, doc: %s", e.OperationType, e.Oid, e.DocBytes)
 }
 
 // mongodb change stream token, which represent a event's identity.
