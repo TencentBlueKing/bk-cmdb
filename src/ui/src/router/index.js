@@ -179,7 +179,6 @@ router.beforeEach((to, from, next) => {
                 next()
             }
         } finally {
-            setLoading(false)
             setupStatus.preload = false
         }
     })
