@@ -52,11 +52,11 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		isBizCustomField = true
 	}
 
-	err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	var attrInfo []*metadata.ObjAttDes
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		var err error
 		attr, err := s.Core.AttributeOperation().CreateObjectAttribute(ctx.Kit, data, metaData)
 		if nil != err {
-			ctx.RespAutoError(err)
 			return err
 		}
 
@@ -64,22 +64,19 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		attribute := attr.Attribute()
 		if err := s.AuthManager.RegisterModelAttribute(ctx.Kit.Ctx, ctx.Kit.Header, *attribute); err != nil {
 			blog.Errorf("create object attribute success, but register model attribute to auth failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
-			return err
+			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 
 		cond := condition.CreateCondition()
 		cond.Field("id").Eq(attribute.ID)
-		attrInfo, err := s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, metaData)
+		attrInfo, err = s.Core.AttributeOperation().FindObjectAttributeWithDetail(ctx.Kit, cond, metaData)
 		if err != nil {
 			blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh))
-			return err
+			return ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
 		}
 		if len(attrInfo) <= 0 {
 			blog.Errorf("create object attribute success, but get attributes detail failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh))
-			return err
+			return ctx.Kit.CCError.CCError(common.CCErrorTopoSearchModelAttriFailedPleaseRefresh)
 		}
 
 		// adapt output metadata and bk_biz_id. TODO remove this
@@ -87,18 +84,17 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 			attrInfo[0].BizID, err = attrInfo[0].Metadata.ParseBizID()
 			if err != nil {
 				blog.ErrorJSON("parse attribute(%s) business id failed, err: %s", attribute, err.Error())
-				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-				return err
+				return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 			}
 		}
-		ctx.RespEntity(attrInfo[0])
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("CreateObjectAttribute failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(attrInfo[0])
 }
 
 // SearchObjectAttribute search the object attributes
@@ -201,28 +197,26 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	data.Remove(common.BKPropertyIndexField)
 	data.Remove(common.BKPropertyGroupField)
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err = s.Core.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
 
 		// auth: update registered resource
 		if err := s.AuthManager.UpdateRegisteredModelAttributeByID(ctx.Kit.Ctx, ctx.Kit.Header, id); err != nil {
 			blog.Errorf("update object attribute success , but update registered model attribute to auth failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
-			return err
+			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("UpdateObjectAttribute failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // DeleteObjectAttribute delete the object attribute
@@ -257,23 +251,20 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		ruleIDs = append(ruleIDs, item.ID)
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		// auth: update registered resource
 		if err := s.AuthManager.DeregisterModelAttributeByID(ctx.Kit.Ctx, ctx.Kit.Header, id); err != nil {
 			blog.Errorf("delete object attribute failed, deregister model attribute to auth failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-			return err
+			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
 
 		md := new(MetaShell)
 		if err := ctx.DecodeInto(md); err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
 		err = s.Core.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, md.Metadata)
 		if err != nil {
 			blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
 
@@ -283,19 +274,17 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 			}
 			if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, 0, deleteRuleOption); err != nil {
 				blog.Errorf("delete object attribute success, but DeleteHostApplyRule failed, params: %+v, err: %+v, rid: %s", deleteRuleOption, err, ctx.Kit.Rid)
-				ctx.RespAutoError(err)
 				return err
 			}
 		}
-
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("DeleteObjectAttribute failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
@@ -313,22 +302,22 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		result, err := s.Core.AttributeOperation().UpdateObjectAttributeIndex(ctx.Kit, objID, data, id)
+	var result *metadata.UpdateAttrIndexData
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		result, err = s.Core.AttributeOperation().UpdateObjectAttributeIndex(ctx.Kit, objID, data, id)
 		if err != nil {
 			blog.Errorf("UpdateObjectAttributeIndex failed, error info is %s , rid: %s", err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
-
-		ctx.RespEntity(result)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("UpdateObjectAttributeIndex failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(result)
 }
 
 // ListHostModelAttribute list host model's attributes

@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // CreateClassification create a new object classification
@@ -30,21 +31,21 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 		return
 	}
 
-	err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		cls, err := s.Core.ClassificationOperation().CreateClassification(ctx.Kit, data)
+	var cls model.Classification
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		cls, err = s.Core.ClassificationOperation().CreateClassification(ctx.Kit, data)
 		if nil != err {
-			ctx.RespAutoError(err)
 			return err
 		}
-
-		ctx.RespEntity(cls.ToMapStr())
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("CreateClassification failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(cls.ToMapStr())
 }
 
 // SearchClassificationWithObjects search the classification with objects
@@ -148,21 +149,19 @@ func (s *Service) UpdateClassification(ctx *rest.Contexts) {
 	}
 	data.Remove(metadata.BKMetadata)
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err := s.Core.ClassificationOperation().UpdateClassification(ctx.Kit, data, id, cond)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
-
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("UpdateClassification failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // DeleteClassification delete the object classification
@@ -181,19 +180,18 @@ func (s *Service) DeleteClassification(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err = s.Core.ClassificationOperation().DeleteClassification(ctx.Kit, id, cond, md.Metadata)
 		if nil != err {
 			blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s , rid: %s", ctx.Request.PathParameter("id"), err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("DeleteClassification failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }

@@ -26,6 +26,7 @@ import (
 	parser "configcenter/src/common/paraparse"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/core/inst"
 )
 
 func (s *Service) IsSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, errors.CCErrorCoder) {
@@ -102,21 +103,22 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		module, err := s.Core.ModuleOperation().CreateModule(ctx.Kit, obj, bizID, setID, dataWithMetadata.Data)
+	var module inst.Inst
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		module, err = s.Core.ModuleOperation().CreateModule(ctx.Kit, obj, bizID, setID, dataWithMetadata.Data)
 		if err != nil {
 			blog.Errorf("[api-module] create module failed, error info is %s, rid: %s", err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(module)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("CreateModule failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(module)
 }
 
 func (s *Service) CheckIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) errors.CCErrorCoder {
@@ -205,28 +207,26 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		// auth: deregister module to iam
 		if err := s.AuthManager.DeregisterModuleByID(ctx.Kit.Ctx, ctx.Kit.Header, moduleID); err != nil {
 			blog.Errorf("delete module failed, deregister module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
 
 		err = s.Core.ModuleOperation().DeleteModule(ctx.Kit, obj, bizID, []int64{setID}, []int64{moduleID})
 		if err != nil {
 			blog.Errorf("delete module failed, delete operation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("DeleteModule failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // UpdateModule update the module
@@ -280,22 +280,20 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err = s.Core.ModuleOperation().UpdateModule(ctx.Kit, dataWithMetadata.Data, obj, bizID, setID, moduleID)
 		if err != nil {
 			blog.Errorf("update module failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
-
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("UpdateModule failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 func (s *Service) ListModulesByServiceTemplateID(ctx *rest.Contexts) {
@@ -551,17 +549,17 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 		},
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		result, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, updateOption)
+	var result *metadata.UpdatedOptionResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		result, err = s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, updateOption)
 		if err != nil {
 			blog.Errorf("SearchRuleRelatedModules failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
-			return err
+			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if ccErr := result.CCError(); ccErr != nil {
 			blog.ErrorJSON("SearchRuleRelatedModules failed, update module instance failed, updateOption: %s, response: %s, rid: %s", updateOption, result, ctx.Kit.Rid)
-			ctx.RespAutoError(ccErr)
-			return err
+			return ccErr
 		}
 		if requestBody.ClearRules {
 			listRuleOption := metadata.ListHostApplyRuleOption{
@@ -573,8 +571,7 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 			listRuleResult, ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, listRuleOption)
 			if ccErr != nil {
 				blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, ctx.Kit.Rid)
-				ctx.RespAutoError(ccErr)
-				return err
+				return ccErr
 			}
 			ruleIDs := make([]int64, 0)
 			for _, item := range listRuleResult.Info {
@@ -586,17 +583,16 @@ func (s *Service) UpdateModuleHostApplyEnableStatus(ctx *rest.Contexts) {
 				}
 				if ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, deleteRuleOption); ccErr != nil {
 					blog.ErrorJSON("SearchRuleRelatedModules failed, ListHostApplyRule failed, bizID: %s, listRuleOption: %s, rid: %s", bizID, listRuleOption, ctx.Kit.Rid)
-					ctx.RespAutoError(ccErr)
-					return err
+					return ccErr
 				}
 			}
 		}
-		ctx.RespEntity(result.Data)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("UpdateModuleHostApplyEnableStatus failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(result.Data)
 }

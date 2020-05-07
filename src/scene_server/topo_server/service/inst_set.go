@@ -62,7 +62,6 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	}
 	batchCreateResult := make([]OneSetCreateResult, 0)
 	var firstErr error
-	var errMsg string
 	for idx, set := range batchBody.Sets {
 		if _, ok := set[common.MetadataField]; ok == false {
 			set[common.MetadataField] = batchBody.Metadata
@@ -72,29 +71,24 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		}
 		set[common.BKAppIDField] = bizID
 
-		err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-			result, err := s.createSet(ctx.Kit, bizID, obj, set, &batchBody.Metadata)
-			errMsg = ""
-			if err != nil {
-				errMsg = err.Error()
-			}
+		var result interface{}
+		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+			var err error
+			result, err = s.createSet(ctx.Kit, bizID, obj, set, &batchBody.Metadata)
 			if err != nil && firstErr == nil {
 				firstErr = err
 			}
 			if err != nil && blog.V(3) {
 				blog.InfoJSON("batch create set at index:%d failed, data: %s, err: %s, rid: %s", idx, set, err.Error(), ctx.Kit.Rid)
 			}
-			batchCreateResult = append(batchCreateResult, OneSetCreateResult{
-				Index:    idx,
-				Data:     result,
-				ErrorMsg: errMsg,
-			})
 			return err
 		})
 
-		if err != nil {
-			blog.Errorf("createSet failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		}
+		batchCreateResult = append(batchCreateResult, OneSetCreateResult{
+			Index:    idx,
+			Data:     result,
+			ErrorMsg: txnErr.Error(),
+		})
 	}
 	ctx.RespEntityWithError(batchCreateResult, firstErr)
 }
@@ -121,20 +115,21 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		resp, err := s.createSet(ctx.Kit, bizID, obj, dataWithMetadata.Data, dataWithMetadata.Metadata)
+	var resp interface{}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		resp, err = s.createSet(ctx.Kit, bizID, obj, dataWithMetadata.Data, dataWithMetadata.Metadata)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(resp)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("CreateSet failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(resp)
 }
 
 func (s *Service) createSet(kit *rest.Kit, bizID int64, obj model.Object, data mapstr.MapStr, metaData *metadata.Metadata) (interface{}, error) {
@@ -225,28 +220,26 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		// auth: deregister set
 		if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setIDs...); err != nil {
 			blog.Errorf("delete sets failed, deregister sets from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-			return err
+			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
 
 		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID, data.Metadata)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("DeleteSets failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // DeleteSet delete the set
@@ -289,28 +282,26 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		// auth: deregister set
 		if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setID); err != nil {
 			blog.Errorf("delete set failed, deregister set from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-			return err
+			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
 
 		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, []int64{setID}, md.Metadata)
 		if err != nil {
 			blog.Errorf("delete sets failed, %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("DeleteSet failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // UpdateSet update the set
@@ -342,28 +333,26 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err = s.Core.SetOperation().UpdateSet(ctx.Kit, dataWithMetadata.Data, obj, bizID, setID, dataWithMetadata.Metadata)
 		if err != nil {
 			blog.Errorf("update set failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
 
 		// auth: update register set
 		if err := s.AuthManager.UpdateRegisteredSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setID); err != nil {
 			blog.Errorf("update set success, but update registered set failed, %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
-			return err
+			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("UpdateSet failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // SearchSet search the set

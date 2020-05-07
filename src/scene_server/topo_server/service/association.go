@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // CreateMainLineObject create a new model in the main line topo
@@ -37,28 +38,30 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		ret, err := s.Core.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation, s.Config.BusinessTopoLevelMax)
+	var ret model.Object
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().CreateMainlineAssociation(ctx.Kit, mainLineAssociation, s.Config.BusinessTopoLevelMax)
 		if err != nil {
 			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
 
 		// auth: register mainline object
 		if err := s.AuthManager.RegisterMainlineObject(ctx.Kit.Ctx, ctx.Kit.Header, ret.Object()); err != nil {
 			blog.Errorf("create mainline object success, but register mainline model to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespEntityWithError(ret, ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
-			return err
+			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 
-		ctx.RespEntity(ret)
 		return nil
 	})
-	if err != nil {
-		blog.Errorf("create mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(ret)
+
 }
 
 // DeleteMainLineObject delete a object int the main line topo
@@ -89,28 +92,26 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 	}
 
 	// do with transaction
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		if err := s.Core.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID, md.Metadata); err != nil {
 			blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed))
-			return err
+			return ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed)
 		}
 
 		// auth: do deregister
 		if err := s.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
 			blog.Errorf("delete mainline association success, but deregister mainline model failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-			return err
+			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
-
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("delete mainline association failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
+
 }
 
 // SearchMainLineObjectTopo search the main line topo
@@ -305,26 +306,25 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		ret, err := s.Core.AssociationOperation().CreateType(ctx.Kit, request)
+	var ret *metadata.CreateAssociationTypeResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().CreateType(ctx.Kit, request)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
 
 		if ret.Code != 0 {
-			ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
 			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
 		}
-
-		ctx.RespEntity(ret.Data)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("CreateAssociationType failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(ret.Data)
 }
 
 func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
@@ -340,26 +340,25 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		ret, err := s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
+	var ret *metadata.UpdateAssociationTypeResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
 
 		if ret.Code != 0 {
-			ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
 			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
 		}
-
-		ctx.RespEntity(ret.Data)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("UpdateAssociationType failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(ret.Data)
 }
 
 func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
@@ -369,26 +368,25 @@ func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		ret, err := s.Core.AssociationOperation().DeleteType(ctx.Kit, asstTypeID)
+	var ret *metadata.DeleteAssociationTypeResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().DeleteType(ctx.Kit, asstTypeID)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
 
 		if ret.Code != 0 {
-			ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
 			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
 		}
-
-		ctx.RespEntity(ret.Data)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("DeleteAssociationType failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(ret.Data)
 }
 
 func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
@@ -419,26 +417,25 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
-	err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		ret, err := s.Core.AssociationOperation().CreateInst(ctx.Kit, request)
+	var ret *metadata.CreateAssociationInstResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().CreateInst(ctx.Kit, request)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
 
 		if ret.Code != 0 {
-			ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
 			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
 		}
-
-		ctx.RespEntity(ret.Data)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("CreateAssociationInst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(ret.Data)
 }
 
 func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
@@ -453,26 +450,26 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		ret, err := s.Core.AssociationOperation().DeleteInst(ctx.Kit, id, md.Metadata)
+	var ret *metadata.DeleteAssociationInstResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id, md.Metadata)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
 
 		if ret.Code != 0 {
-			ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
 			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
 		}
 
-		ctx.RespEntity(ret.Data)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("DeleteAssociationInst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(ret.Data)
 }
 
 func (s *Service) SearchTopoPath(ctx *rest.Contexts) {

@@ -30,21 +30,21 @@ func (s *Service) CreateObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		association, err := s.Core.AssociationOperation().CreateCommonAssociation(ctx.Kit, assoc, &assoc.Metadata)
+	var association *metadata.Association
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		association, err = s.Core.AssociationOperation().CreateCommonAssociation(ctx.Kit, assoc, &assoc.Metadata)
 		if nil != err {
-			ctx.RespAutoError(err)
 			return err
 		}
-
-		ctx.RespEntity(association)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("CreateObjectAssociation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(association)
 }
 
 // SearchObjectAssociation search  object association by object id
@@ -134,20 +134,19 @@ func (s *Service) DeleteObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err = s.Core.AssociationOperation().DeleteAssociationWithPreCheck(ctx.Kit, id)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("DeleteObjectAssociation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // UpdateObjectAssociation update object association
@@ -165,20 +164,19 @@ func (s *Service) UpdateObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err = s.Core.AssociationOperation().UpdateAssociation(ctx.Kit, dataWithMetadata.Data, id, dataWithMetadata.Metadata)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("UpdateObjectAssociation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // ImportInstanceAssociation import instance  association
@@ -191,19 +189,19 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		ret, err := s.Core.AssociationOperation().ImportInstAssociation(context.Background(), ctx.Kit, objID, request.AssociationInfoMap, s.Language)
+	var ret metadata.ResponeImportAssociationData
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().ImportInstAssociation(context.Background(), ctx.Kit, objID, request.AssociationInfoMap, s.Language)
 		if err != nil {
-			ctx.RespEntityWithError(ret, err)
 			return err
 		}
-
-		ctx.RespEntity(ret)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("ImportInstanceAssociation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(ret)
 }

@@ -19,36 +19,36 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // CreateObjectBatch batch to create some objects
 func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
-	dataWithMetadata := struct {
-		Metadata *metadata.Metadata
-		Data     map[string]interface{}
-	}{}
+	dataWithMetadata := MapStrWithMetadata{}
 	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+	dataWithMetadata.Data.Remove(common.MetadataField)
 
-	err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		ret, err := s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata)
+	var ret mapstr.MapStr
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata)
 		if err != nil {
-			ctx.RespEntityWithError(ret, err)
 			return err
 		}
-
-		ctx.RespEntity(ret)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("CreateObjectBatch failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(ret)
 }
 
 // SearchObjectBatch batch to search some objects
@@ -77,21 +77,21 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		return
 	}
 
-	err := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		rsp, err := s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
+	var rsp model.Object
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		rsp, err = s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
 		if nil != err {
-			ctx.RespAutoError(err)
 			return err
 		}
-
-		ctx.RespEntity(rsp.ToMapStr())
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("CreateObject failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(rsp.ToMapStr())
 }
 
 // SearchObject search some objects by condition
@@ -152,20 +152,19 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err = s.Core.ObjectOperation().UpdateObject(ctx.Kit, data, id)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("UpdateObject failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // DeleteObject delete the object
@@ -184,20 +183,19 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
 		err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true, md.Metadata)
 		if err != nil {
-			ctx.RespAutoError(err)
 			return err
 		}
-		ctx.RespEntity(nil)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("DeleteObject failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(nil)
 }
 
 // GetModelStatistics 用于统计各个模型的实例数(Web页面展示需要)
