@@ -1,4 +1,4 @@
-/*
+  /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
@@ -57,6 +57,7 @@ type ProcServer struct {
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
 	Logic              *logics.Logic
+	EnableTxn          bool
 }
 
 func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
