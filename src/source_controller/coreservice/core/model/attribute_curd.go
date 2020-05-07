@@ -98,12 +98,14 @@ func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, proper
 	cond := map[string]interface{}{
 		common.BKObjIDField: objID,
 	}
-	orCond := make([]map[string]interface{}, 0)
 
+	andCond := make([]map[string]interface{}, 0)
 	if isCreate {
 		nameFieldCond := map[string]interface{}{common.BKPropertyNameField: propertyName}
 		idFieldCond := map[string]interface{}{common.BKPropertyIDField: propertyID}
-		orCond = append(orCond, nameFieldCond, idFieldCond)
+		andCond = append(andCond, map[string]interface{}{
+			common.BKDBOR: []map[string]interface{}{nameFieldCond, idFieldCond},
+		})
 	} else {
 		// update attribute. not change name, 无需判断
 		if propertyName == "" {
@@ -115,11 +117,13 @@ func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, proper
 
 	isExist, bizID := meta.Label.Get(common.BKAppIDField)
 	if isExist {
-		orCond = append(orCond, metadata.BizLabelNotExist, map[string]interface{}{metadata.MetadataBizField: bizID})
+		andCond = append(andCond, map[string]interface{}{
+			common.BKDBOR: []map[string]interface{}{metadata.BizLabelNotExist, {metadata.MetadataBizField: bizID}},
+		})
 	}
 
-	if len(orCond) > 0 {
-		cond[common.BKDBOR] = orCond
+	if len(andCond) > 0 {
+		cond[common.BKDBAND] = andCond
 	}
 	util.SetModOwner(cond, kit.SupplierAccount)
 
