@@ -147,6 +147,9 @@ agent_app_url = ${agent_url}/console/?app=bk_agent_setup
 authscheme = $auth_scheme
 [login]
 version=$loginVersion
+
+[biz]
+default_app_name=蓝鲸
     '''
 
     template = FileTemplate(common_file_template_str)
