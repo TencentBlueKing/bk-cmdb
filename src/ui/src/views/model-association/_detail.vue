@@ -11,10 +11,10 @@
                         name="asstId"
                         :disabled="isReadOnly || isEdit"
                         v-model.trim="relationInfo['bk_asst_id']"
-                        v-validate="'required|associationId|length:20'"
+                        v-validate="'required|associationId|length:128'"
                         :placeholder="$t('请输入英文标识')">
                     </bk-input>
-                    <p class="form-error">{{errors.first('asstId')}}</p>
+                    <p class="form-error" :title="errors.first('asstId')">{{errors.first('asstId')}}</p>
                 </div>
             </label>
             <label class="form-label">
