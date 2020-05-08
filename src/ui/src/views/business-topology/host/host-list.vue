@@ -130,7 +130,7 @@
                 this.table.pagination.current = parseInt(page)
                 this.table.pagination.limit = parseInt(limit)
                 tab === 'hostList' && node && this.selectedNode && this.getHostList()
-            }, { throttle: 16, immediate: true })
+            }, { throttle: 16, immediate: true, ignore: ['keyword'] })
         },
         methods: {
             setTableHeader () {

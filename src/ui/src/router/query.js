@@ -2,6 +2,60 @@ import router, { addBeforeHooks } from './index'
 import throttle from 'lodash.throttle'
 import { redirect } from './actions'
 
+function createWatchOptions (key, options) {
+    const watchOptions = {
+        immediate: false,
+        deep: false
+    }
+    for (const key in watchOptions) {
+        if (options.hasOwnProperty(key)) {
+            watchOptions[key] = options[key]
+        }
+    }
+    if (key === '*') {
+        watchOptions.deep = true
+    }
+    return watchOptions
+}
+
+function createCallback (keys, handler, options = {}) {
+    const callback = (values, oldValues = {}) => {
+        if (Array.isArray(keys)) {
+            const watchValues = {}
+            const oldWatchValues = {}
+            keys.forEach(key => {
+                watchValues[key] = values[key]
+                oldWatchValues[key] = oldValues[key]
+            })
+            const hasChange = keys.some(key => String(watchValues[key]) !== String(oldWatchValues[key]))
+            hasChange && handler(watchValues, oldWatchValues)
+        } else if (keys === '*') {
+            const cloneValues = { ...values }
+            const cloneOldValues = { ...oldValues }
+            if (options.hasOwnProperty('ignore')) {
+                const ignoreKeys = Array.isArray(options.ignore) ? options.ignore : [options.ignore]
+                ignoreKeys.forEach(key => {
+                    delete cloneValues[key]
+                    delete cloneOldValues[key]
+                })
+            }
+            const hasChange = Object.keys(cloneValues).some(key => String(cloneValues[key]) !== String(cloneOldValues[key]))
+            hasChange && handler(cloneValues, cloneOldValues)
+        } else {
+            const value = String(values[keys])
+            const oldValue = String(oldValues[keys])
+            value !== oldValue && handler(value, oldValue)
+        }
+    }
+
+    if (options.hasOwnProperty('throttle')) {
+        const interval = typeof options.throttle === 'number' ? options.throttle : 100
+        return throttle(callback, interval, { leading: false, trailing: true })
+    }
+
+    return callback
+}
+
 class RouterQuery {
     constructor () {
         this.unwatchs = []
@@ -63,33 +117,9 @@ class RouterQuery {
     }
 
     watch (key, handler, options = {}) {
-        const watchOptions = {
-            immediate: false,
-            deep: false
-        }
-        for (const optionKey in watchOptions) {
-            if (options.hasOwnProperty(optionKey)) {
-                watchOptions[optionKey] = options[optionKey]
-            }
-        }
-        let callback = handler
-        if (options.hasOwnProperty('throttle')) {
-            const interval = typeof options.throttle === 'number' ? options.throttle : 100
-            callback = throttle(handler, interval, { leading: false, trailing: true })
-        }
-        let expression = () => this.route.query[key]
-        if (key === '*') {
-            expression = () => this.route.query
-            watchOptions.deep = true
-        } else if (Array.isArray(key)) {
-            expression = () => {
-                const values = {}
-                key.forEach(key => {
-                    values[key] = this.route.query[key]
-                })
-                return values
-            }
-        }
+        const watchOptions = createWatchOptions(key, options)
+        const callback = createCallback(key, handler, options)
+        const expression = () => this.route.query
         this.unwatchs.push(this.app.$watch(expression, callback, watchOptions))
     }
 }
