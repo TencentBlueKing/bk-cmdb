@@ -405,7 +405,7 @@ func (cli *Service) CreateInstObjects(req *restful.Request, resp *restful.Respon
 		blog.V(3).Infof("instance result:%v, condition:%v", result, cond.ToMapStr())
 
 		if len(result) > 0 {
-			blog.V(3).Infof("update, cond:%s, inst: %v", cond.ToMapStr(), inst)
+			blog.V(3).Infof("update, cond:%v, inst: %v", cond.ToMapStr(), inst)
 			if err = validator.ValidateUpdate(inst, result[0]); err != nil {
 				blog.Errorf("update object valid err type:%s,data:%v,condition:%v,error:%v", objType, inst, cond.ToMapStr(), err)
 				errors = append(errors, defLang.Languagef("import_row_int_error_str", idx, err.Error()))
@@ -481,7 +481,7 @@ func (cli *Service) CreateInstObjects(req *restful.Request, resp *restful.Respon
 					"header":   headers,
 				},
 				CreateTime: time.Now(),
-				InstID:    originData["bk_inst_id"].(int64),
+				InstID:     int64(id),
 			}
 			err = db.Table(common.BKTableNameOperationLog).Insert(ctx, logRow)
 			if err != nil {
