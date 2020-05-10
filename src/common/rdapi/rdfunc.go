@@ -122,22 +122,21 @@ func HTTPHeaderRidFilter(header http.Header) {
 	httpHeaderRidFilter(header)
 }
 
-func httpHeaderRidFilter(header http.Header)  bool {
+func httpHeaderRidFilter(header http.Header) bool {
 	cid := util.GetHTTPCCRequestID(header)
 	if "" == cid {
 		cid = GetHTTPOtherRequestID(header)
 		if cid == "" {
 			cid = util.GenerateRID()
-		} else  {
-			return true 
+		} else {
+			header.Set(common.BKHTTPCCRequestID, cid)
+			return true
 		}
 
 	}
 	header.Set(common.BKHTTPCCRequestID, cid)
-	return  false 
+	return false
 }
-
-
 
 func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {
 	blog.Errorf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method, req.Request.RequestURI)

@@ -160,8 +160,10 @@ func (opts *Options) CheckSetDefault() error {
 }
 
 type TimeStamp struct {
-	T uint32
-	I uint32
+	// the most significant 32 bits are a time_t value (seconds since the Unix epoch)
+	Sec uint32 `json:"sec"`
+	// the least significant 32 bits are an incrementing ordinal for operations within a given second.
+	Nano uint32 `json:"nano"`
 }
 
 type WatchOptions struct {

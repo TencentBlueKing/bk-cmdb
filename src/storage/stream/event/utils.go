@@ -87,8 +87,8 @@ func generateOptions(opts *types.Options) (mongo.Pipeline, *options.ChangeStream
 
 	if opts.StartAfterToken == nil && opts.StartAtTime != nil {
 		streamOptions.SetStartAtOperationTime(&primitive.Timestamp{
-			T: opts.StartAtTime.T,
-			I: opts.StartAtTime.I,
+			T: opts.StartAtTime.Sec,
+			I: opts.StartAtTime.Nano,
 		})
 	}
 

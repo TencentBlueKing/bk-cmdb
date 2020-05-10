@@ -108,8 +108,8 @@ func (e *Event) loopWatch(ctx context.Context,
 				Document:      newStruct.Field(1).Addr().Interface(),
 				DocBytes:      byt,
 				ClusterTime: types.TimeStamp{
-					T: base.ClusterTime.T,
-					I: base.ClusterTime.I,
+					Sec:  base.ClusterTime.T,
+					Nano: base.ClusterTime.I,
 				},
 				Token: base.Token,
 			}

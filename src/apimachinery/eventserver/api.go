@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/watch"
 )
 
 func (e *eventServer) Query(ctx context.Context, ownerID string, appID string, h http.Header, dat metadata.ParamSubscriptionSearch) (resp *metadata.Response, err error) {
@@ -97,6 +98,18 @@ func (e *eventServer) Rebook(ctx context.Context, ownerID string, appID string, 
 		WithContext(ctx).
 		Body(subscription).
 		SubResourcef(subPath, ownerID, appID, subscribeID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (e *eventServer) Watch(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (resp []*watch.WatchEventResp, err error) {
+	resp = make([]*watch.WatchEventResp, 0)
+	err = e.client.Post().
+		WithContext(ctx).
+		Body(opts).
+		SubResourcef("/watch/resource/%s", opts.Resource).
 		WithHeaders(h).
 		Do().
 		Into(resp)

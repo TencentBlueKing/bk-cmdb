@@ -57,6 +57,7 @@ const (
 	BKTableNameBasePlat    = "cc_PlatBase"
 	BKTableNameBaseSet     = "cc_SetBase"
 	BKTableNameBaseProcess = "cc_Process"
+	BKTableNameDelArchive  = "cc_DelArchive"
 
 	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
 	BKTableNameSystem           = "cc_System"
