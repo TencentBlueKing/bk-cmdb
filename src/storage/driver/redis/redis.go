@@ -52,7 +52,7 @@ func Client() *redis.Client {
 func ClientInstance(prefix string) *redis.Client {
 	lock.RLock()
 	defer lock.RUnlock()
-	if db, ok := cacheMap[defaultPrefix]; ok {
+	if db, ok := cacheMap[prefix]; ok {
 		return db
 	}
 	return nil
