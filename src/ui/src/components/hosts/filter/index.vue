@@ -243,9 +243,9 @@
             })
             RouterQuery.watch(['ip', 'exact', 'inner', 'outer'], ({
                 ip = '',
-                exact = '1',
-                inner = '1',
-                outer = '1'
+                exact = this.ip.exact ? '1' : '0',
+                inner = this.ip.inner ? '1' : '0',
+                outer = this.ip.outer ? '1' : '0'
             }) => {
                 this.ip.text = ip.split(',').join('\n')
                 this.ip.exact = parseInt(exact) === 1
@@ -391,21 +391,22 @@
                 this.collectionName = ''
             },
             handleReset () {
+                this.ip = { ...this.defaultIpConfig }
                 this.filterCondition.forEach(filterItem => {
                     filterItem.value = ''
-                })
-                RouterQuery.set({
-                    ip: '',
-                    exact: 0,
-                    inner: 1,
-                    outer: 1
                 })
                 const params = this.getParams()
                 this.updateQuery(params)
             },
             getParams () {
+                const inputIPPlayload = {
+                    data: this.getIPList(),
+                    inner: this.ip.inner,
+                    outer: this.ip.outer,
+                    exact: this.ip.exact
+                }
                 const params = {
-                    ip: getIPPayload(),
+                    ip: getIPPayload(inputIPPlayload),
                     host: [],
                     module: [],
                     set: [],
@@ -455,6 +456,7 @@
                     exact: params.ip.exact,
                     inner: flags.includes('bk_host_innerip') ? 1 : 0,
                     outer: flags.includes('bk_host_outerip') ? 1 : 0,
+                    page: 1,
                     _t: Date.now()
                 })
             },
