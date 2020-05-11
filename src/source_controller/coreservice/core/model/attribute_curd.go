@@ -316,6 +316,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 
 	objPublicFields := make(map[string][]string)
 	objBizFields := make([]bizObjectFields, 0)
+	hostApplyFields := make(map[int64][]int64)
 
 	// TODO: now, we only support set, module, host model's biz attribute clean operation.
 	for _, attr := range attrs {
@@ -355,6 +356,9 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 			}
 			objPublicFields[attr.ObjectID] = append(objPublicFields[attr.ObjectID], attr.PropertyID)
 		}
+		if attr.ObjectID == common.BKInnerObjIDHost {
+			hostApplyFields[biz] = append(hostApplyFields[biz], attr.ID)
+		}
 	}
 
 	// delete these attribute's filed in the model instance
@@ -379,7 +383,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 				if err := m.cleanHostAttributeField(ctx, ownerID, ele); err != nil {
 					return err
 				}
-				return nil
+				continue
 			}
 
 			cond = mapstr.MapStr{}
@@ -422,7 +426,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 			if err := m.cleanHostAttributeField(ctx, ownerID, ele); err != nil {
 				return err
 			}
-			return nil
+			continue
 		}
 
 		cond := mapstr.MapStr{
@@ -445,6 +449,11 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 	wg.Wait()
 	if hitError != nil {
 		return hitError
+	}
+
+	// step 3: clean host apply fields
+	if err := m.cleanHostApplyField(ctx, ownerID, hostApplyFields); err != nil {
+		return err
 	}
 
 	return nil
@@ -494,6 +503,34 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 		}
 	}
 
+	return nil
+
+}
+
+func (m *modelAttribute) cleanHostApplyField(ctx context.Context, ownerID string, hostApplyFields map[int64][]int64) error {
+	orCond := make([]map[string]interface{}, 0)
+	for bizID, attrIDs := range hostApplyFields {
+		attrCond := map[string]interface{}{
+			common.BKAttributeIDField: map[string]interface{}{
+				common.BKDBIN: attrIDs,
+			},
+		}
+		// global attribute requires removing host apply rules for all biz
+		if bizID != 0 {
+			attrCond[common.BKAppIDField] = bizID
+		}
+		orCond = append(orCond, attrCond)
+	}
+	if len(orCond) == 0 {
+		return nil
+	}
+	cond := make(map[string]interface{})
+	cond = util.SetQueryOwner(cond, ownerID)
+	cond[common.BKDBOR] = orCond
+	if err := m.dbProxy.Table(common.BKTableNameHostApplyRule).Delete(ctx, cond); err != nil {
+		blog.ErrorJSON("cleanHostApplyField failed, err: %s, cond: %s", err, cond)
+		return err
+	}
 	return nil
 
 }
