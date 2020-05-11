@@ -89,7 +89,7 @@
         z-index: 1;
     }
     .search-layout {
-        height: calc(100% + 50px);
+        height: 100%;
         transition: all 0.4s;
         .search-tab {
             max-width: 726px;

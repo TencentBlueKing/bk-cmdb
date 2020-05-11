@@ -5,7 +5,7 @@
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
             :class="{ unfold: unfold, flexible: !navStick }">
-            <div class="business-wrapper" v-if="isBusinessNav">
+            <div class="business-wrapper" v-show="isBusinessNav">
                 <transition name="fade">
                     <cmdb-business-selector class="business-selector"
                         v-show="unfold"
@@ -182,6 +182,9 @@
                 }
             },
             checkExactActive () {
+                if (!this.$refs.menuLink) {
+                    return
+                }
                 this.$nextTick(() => {
                     this.hasExactActive = this.$refs.menuLink.some(link => link.$el.classList.contains('active'))
                 })
@@ -235,7 +238,10 @@
                     stick: !this.navStick
                 })
             },
-            handleToggleBusiness (id) {
+            handleToggleBusiness (id, oldValue) {
+                if (!oldValue || id === oldValue) {
+                    return false
+                }
                 this.$routerActions.redirect({
                     ...this.$route,
                     params: {

@@ -212,15 +212,32 @@
                 }
             },
             setDefaultState () {
-                const businessNodeId = this.$refs.tree.nodes[0].id
-                const queryNodeId = this.$route.query.node
-                let defaultNodeId = businessNodeId
+                const defaultNodeId = this.getDefaultNodeId()
+                if (defaultNodeId) {
+                    this.$refs.tree.setExpanded(defaultNodeId)
+                    this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
+                }
+            },
+            getDefaultNodeId () {
+                // 从其他页面跳转过来需要筛选节点，例如：删除集群模板中的服务模板
+                const keyword = RouterQuery.get('keyword', '')
+                if (keyword) {
+                    const [firstMatchedNode] = this.$refs.tree.filter(keyword.trim())
+                    if (firstMatchedNode) {
+                        return firstMatchedNode.id
+                    }
+                }
+                // 选中指定的节点
+                const queryNodeId = RouterQuery.get('node', '')
                 if (queryNodeId) {
                     const node = this.$refs.tree.getNodeById(queryNodeId)
-                    defaultNodeId = node ? queryNodeId : businessNodeId
+                    if (node) {
+                        return node.id
+                    }
                 }
-                this.$refs.tree.setExpanded(defaultNodeId)
-                this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
+                // 选中第一个节点
+                const [firstNode] = this.$refs.tree.nodes
+                return firstNode ? firstNode.id : null
             },
             getInstanceTopology () {
                 return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
@@ -257,12 +274,15 @@
                 return 0
             },
             handleSelectChange (node) {
-                RouterQuery.set('node', node.id)
                 this.$store.commit('businessHost/setSelectedNode', node)
                 Bus.$emit('toggle-host-filter', false)
                 if (!node.expanded) {
                     this.$refs.tree.setExpanded(node.id)
                 }
+                RouterQuery.set({
+                    node: node.id,
+                    _t: Date.now()
+                })
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'

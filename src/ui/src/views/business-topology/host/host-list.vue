@@ -121,7 +121,7 @@
             }
         },
         created () {
-            RouterQuery.watch(['inner', 'outer', 'exact', 'node', 'ip', 'tab', 'page', 'limit', '_t'], ({
+            RouterQuery.watch('*', ({
                 tab = 'hostList',
                 node,
                 page = 1,
@@ -129,10 +129,8 @@
             }) => {
                 this.table.pagination.current = parseInt(page)
                 this.table.pagination.limit = parseInt(limit)
-                if (tab === 'hostList' && node) {
-                    this.getHostList()
-                }
-            }, { throttle: 16, immediate: true })
+                tab === 'hostList' && node && this.selectedNode && this.getHostList()
+            }, { throttle: 16, immediate: true, ignore: ['keyword'] })
         },
         methods: {
             setTableHeader () {

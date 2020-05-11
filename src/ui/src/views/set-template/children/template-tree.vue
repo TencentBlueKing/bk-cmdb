@@ -17,7 +17,7 @@
                     <bk-popover v-if="serviceExistHost(service.id)">
                         <i class="options-delete icon icon-cc-tips-close disabled"></i>
                         <i18n path="该模块下有主机不可删除" tag="p" class="service-tips" slot="content">
-                            <span place="link" @click="handleGoTopoBusiness">{{$t('跳转查看')}}</span>
+                            <span place="link" @click="handleGoTopoBusiness(service)">{{$t('跳转查看')}}</span>
                         </i18n>
                     </bk-popover>
                     <i v-else class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>
@@ -216,9 +216,13 @@
             recoveryService () {
                 this.services = [...this.originalServices]
             },
-            handleGoTopoBusiness () {
+            handleGoTopoBusiness (service) {
                 this.$routerActions.redirect({
-                    name: MENU_BUSINESS_HOST_AND_SERVICE
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
+                    query: {
+                        keyword: service.name
+                    },
+                    history: true
                 })
             }
         }

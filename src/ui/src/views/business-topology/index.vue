@@ -99,7 +99,7 @@
                 const topologyModels = await this.getTopologyModels()
                 const properties = await this.getProperties(topologyModels)
                 this.$store.commit('businessHost/setTopologyModels', topologyModels)
-                this.$store.commit('businessHost/setPropertyMap', properties)
+                this.$store.commit('businessHost/setPropertyMap', Object.freeze(properties))
                 this.$store.commit('businessHost/resolveCommonRequest')
             } catch (e) {
                 console.error(e)
