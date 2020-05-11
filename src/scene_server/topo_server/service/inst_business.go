@@ -30,6 +30,7 @@ import (
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/core/inst"
 )
 
 // CreateBusiness create a new business
@@ -50,35 +51,34 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 
 	data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
 	// do with transaction
-	err = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		business, err := s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data, dataWithMetadata.Metadata)
+	var business inst.Inst
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		business, err = s.Core.BusinessOperation().CreateBusiness(ctx.Kit, obj, data, dataWithMetadata.Metadata)
 		if err != nil {
 			blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 			return err
 		}
 
 		businessID, err := business.GetInstID()
 		if err != nil {
 			blog.Errorf("unexpected error, create business success, but get id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
-			return err
+			return ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid)
 		}
 
 		// auth: register business to iam
 		if err := s.AuthManager.RegisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, businessID); err != nil {
 			blog.Errorf("create business success, but register to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
-			return err
+			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
 		}
-		ctx.RespEntity(business)
 		return nil
 	})
 
-	if err != nil {
-		blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(business)
 }
 
 // DeleteBusiness delete the business
