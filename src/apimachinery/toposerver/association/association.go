@@ -12,6 +12,7 @@
 package association
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"fmt"
 	"net/http"
@@ -186,6 +187,25 @@ func (asst *Association) SearchObjectAssoWithAssoKindList(ctx context.Context, h
 	err = asst.client.Post().
 		WithContext(ctx).
 		Body(assoKindIDs).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (asst *Association) SearchBusinessTopo(ctx context.Context, h http.Header, bizID int64, s mapstr.MapStr) (resp *metadata.SearchBusinessTopoResult, err error) {
+	if s == nil {
+		s := make(mapstr.MapStr)
+		s["requestID"] = "getInstTopo"
+	}
+	resp = new(metadata.SearchBusinessTopoResult)
+	subPath := fmt.Sprintf("/find/topoinst/biz/%d", bizID)
+
+	err = asst.client.Post().
+		WithContext(ctx).
+		Body(s).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

@@ -148,6 +148,11 @@ type ListAssociationsWithAssociationKindResult struct {
 	Data     AssociationList `json:"data"`
 }
 
+type SearchBusinessTopoResult struct {
+	BaseResp `json:",inline"`
+	Data     []*TopoInstRst `json:"data"`
+}
+
 type AssociationList struct {
 	Associations []AssociationDetail `json:"associations"`
 }

@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -192,7 +193,6 @@ func (sh *searchHost) SearchHostByConds() errors.CCError {
 }
 
 func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) {
-
 	if sh.noData {
 		return nil, 0, nil
 	}
@@ -278,7 +278,6 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) 
 		searchHostItem = sh.fillHostModuleInfo(levelInfo, searchHostItem)
 		hostInfo := sh.fillHostCloudInfo(hostInfoItem.hostInfo, searchHostItem)
 		searchHostItem.Set(common.BKInnerObjIDHost, hostInfo)
-
 		result = append(result, searchHostItem)
 	}
 	return result, sh.totalHostCnt, nil
@@ -424,6 +423,12 @@ func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInf
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
 	for _, appLevelInfo := range appInfoLevelInst {
+		//查找mainline，取出业务拓扑自定义部分
+		topoList, err := sh.fetchBusinessTopoInfo(appLevelInfo.appID)
+		if err != nil {
+			blog.Errorf("[hostServer][hostSearch] SearchBusinessTopo error: %v, rid: %s", err, sh.ccRid)
+		}
+
 		for _, setLevelInfo := range appLevelInfo.setInfoMap {
 			for mdouleID := range setLevelInfo.moduleInfoMap {
 				moduleInfo, ok := sh.cacheInfoMap.moduleInfoMap[mdouleID]
@@ -441,7 +446,12 @@ func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInf
 				for key, val := range moduleInfo {
 					datacp[key] = val
 				}
-				datacp[TopoModuleName] = appLevelInfo.appName + SplitFlag + setLevelInfo.setName + SplitFlag + moduleName
+				//此处模型拓扑datacp[TopoModuleName]缺少自定义模型的内容----故补充
+				topoModuleName := appLevelInfo.appName
+				for _, name := range *topoList {
+					topoModuleName = fmt.Sprintf("%s%s%s", topoModuleName, SplitFlag, name)
+				}
+				datacp[TopoModuleName] = topoModuleName + SplitFlag + setLevelInfo.setName + SplitFlag + moduleName
 				moduleInfoArr = append(moduleInfoArr, datacp)
 			}
 		}
@@ -450,6 +460,33 @@ func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInf
 
 	searchHostItem[common.BKInnerObjIDModule] = moduleInfoArr
 	return searchHostItem
+}
+
+func (sh *searchHost) fetchBusinessTopoInfo(bizID int64) (*[]string, errors.CCError) {
+	resp, err := sh.lgc.CoreAPI.TopoServer().Association().SearchBusinessTopo(sh.ctx, sh.lgc.header, bizID, nil)
+	if err != nil {
+		blog.Errorf("[hostServer][hostSearch] SearchBusinessTopo error: %v, rid: %s", err, sh.ccRid)
+		return nil, err
+	}
+	list := resp.Data
+	topoList := new([]string)
+	topoList = recursionSortMainlineName(list, topoList)
+	return topoList, nil
+}
+
+func recursionSortMainlineName(results []*metadata.TopoInstRst, topoList *[]string) *[]string {
+	for _, result := range results {
+		if result.ObjID == "set" {
+			return topoList
+		}
+		if result.ObjID == "biz" {
+			recursionSortMainlineName(result.Child, topoList)
+			continue
+		}
+		*topoList = append(*topoList, result.InstName)
+		recursionSortMainlineName(result.Child, topoList)
+	}
+	return topoList
 }
 
 func (sh *searchHost) fetchTopoAppCacheInfo(appIDArr []int64) (map[int64]mapstr.MapStr, errors.CCError) {
@@ -582,7 +619,6 @@ func (sh *searchHost) searchByMainline() errors.CCError {
 	var err error
 	setIDArr := make([]int64, 0)
 	objSetIDArr := make([]int64, 0)
-
 	// search mainline object by cond
 	if len(sh.conds.mainlineCond.Condition) > 0 {
 		objSetIDArr, err = sh.lgc.GetSetIDByObjectCond(sh.ctx, sh.hostSearchParam.AppID, sh.conds.mainlineCond.Condition)

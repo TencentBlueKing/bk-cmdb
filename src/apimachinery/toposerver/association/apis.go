@@ -12,6 +12,7 @@
 package association
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"net/http"
 
@@ -32,6 +33,7 @@ type AssociationInterface interface {
 	CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(ctx context.Context, h http.Header, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
 	SearchObjectAssoWithAssoKindList(ctx context.Context, h http.Header, assoKindIDs metadata.AssociationKindIDs) (resp *metadata.ListAssociationsWithAssociationKindResult, err error)
+	SearchBusinessTopo(ctx context.Context, h http.Header, bizID int64, s mapstr.MapStr) (resp *metadata.SearchBusinessTopoResult, err error)
 }
 
 func NewAssociationInterface(client rest.ClientInterface) AssociationInterface {
