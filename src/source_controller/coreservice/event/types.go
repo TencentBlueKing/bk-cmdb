@@ -15,6 +15,7 @@ package event
 import (
 	"fmt"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/watch"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/stream"
@@ -41,4 +42,5 @@ type FlowOptions struct {
 	rds        *redis.Client
 	watch      stream.Interface
 	db         dal.DB
+	isMaster   discovery.ServiceManageInterface
 }

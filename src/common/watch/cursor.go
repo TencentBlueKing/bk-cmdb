@@ -72,14 +72,13 @@ func (ct CursorType) ToInt() int {
 func (ct *CursorType) ParseInt(typ int) {
 	switch typ {
 	case 1:
-		t := Host
-		ct = &t
+		*ct = NoEvent
 	case 2:
-		t := ModuleHostRelation
-		ct = &t
+		*ct = Host
+	case 3:
+		*ct = ModuleHostRelation
 	default:
-		unknown := UnknownType
-		ct = &unknown
+		*ct = UnknownType
 	}
 }
 
@@ -88,7 +87,7 @@ func (ct *CursorType) ParseInt(typ int) {
 type Cursor struct {
 	Type        CursorType
 	ClusterTime types.TimeStamp
-	// a 6 bit a-z random string to avoid the caller to generated a self-defined cursor.
+	// a random hex string to avoid the caller to generated a self-defined cursor.
 	Oid string
 }
 

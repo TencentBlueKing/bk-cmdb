@@ -15,6 +15,7 @@ package event
 import (
 	"context"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
@@ -22,11 +23,12 @@ import (
 	"gopkg.in/redis.v5"
 )
 
-func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface) error {
+func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface, isMaster discovery.ServiceManageInterface) error {
 	e := Event{
-		rds:   rds,
-		watch: watch,
-		db:    db,
+		rds:      rds,
+		watch:    watch,
+		db:       db,
+		isMaster: isMaster,
 	}
 
 	if err := e.runHost(context.Background()); err != nil {
@@ -43,9 +45,10 @@ func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface) error {
 }
 
 type Event struct {
-	rds   *redis.Client
-	watch stream.Interface
-	db    dal.DB
+	rds      *redis.Client
+	watch    stream.Interface
+	db       dal.DB
+	isMaster discovery.ServiceManageInterface
 }
 
 func (e *Event) runHost(ctx context.Context) error {
@@ -55,6 +58,7 @@ func (e *Event) runHost(ctx context.Context) error {
 		rds:        e.rds,
 		watch:      e.watch,
 		db:         e.db,
+		isMaster:   e.isMaster,
 	}
 
 	return newFlow(ctx, opts)
@@ -67,6 +71,7 @@ func (e *Event) runModuleHostRelation(ctx context.Context) error {
 		rds:        e.rds,
 		watch:      e.watch,
 		db:         e.db,
+		isMaster:   e.isMaster,
 	}
 
 	return newFlow(ctx, opts)

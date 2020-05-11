@@ -34,9 +34,9 @@ func newFlow(ctx context.Context, opts FlowOptions) error {
 	flow := Flow{
 		FlowOptions: opts,
 		retrySignal: make(chan struct{}),
-		lastToken:   "",
 	}
 	flow.cleanExpiredEvents()
+	flow.cleanDelArchiveData()
 
 	return flow.RunFlow(ctx)
 }
@@ -44,17 +44,28 @@ func newFlow(ctx context.Context, opts FlowOptions) error {
 type Flow struct {
 	FlowOptions
 	retrySignal chan struct{}
-	lastToken   string
 }
 
 func (f *Flow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
+
+	for {
+		if !f.isMaster.IsMaster() {
+			blog.V(4).Infof("run flow, but not master, waiting")
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		break
+	}
+
+	blog.Infof("start run flow for key: %s, turn to master, not start flow event.", f.key.Namespace())
 	startToken, err := f.getStartToken()
 	if err != nil {
 		blog.Errorf("run flow, but get start token failed, err: %v", err)
 		return err
 	}
 
+	blog.Infof("start run flow for key: %s with token: %s.", f.key.Namespace(), startToken)
 	event := make(map[string]interface{})
 	watchOpts := &types.WatchOptions{
 		Options: types.Options{
@@ -98,13 +109,20 @@ func (f *Flow) tryLoopFlow(ctx context.Context, opts *types.WatchOptions) error 
 				cancel()
 
 				// use the last token to resume so that we can start again from where we stopped.
-				blog.Warnf("the former loop flow: %s failed, start retry again from token: %s.", f.Collection, f.lastToken)
+				lastToken, err := f.getStartToken()
+				if err != nil {
+					blog.Errorf("run flow, but get last event token failed, err: %v", err)
+					// notify retry signal
+					close(f.retrySignal)
+					continue
+				}
+				blog.Warnf("the former loop flow: %s failed, start retry again from token: %s.", f.Collection, lastToken)
 
 				// set start after token if needed.
-				if f.lastToken != "" {
+				if lastToken != "" {
 					// we have already received the new event and handle it success,
 					// so we need to use this token. otherwise, we should still use the opts.StartAfterToken
-					opts.StartAfterToken = &types.EventToken{Data: f.lastToken}
+					opts.StartAfterToken = &types.EventToken{Data: lastToken}
 				}
 
 				cancelCtx, cancel = context.WithCancel(ctx)
@@ -116,7 +134,7 @@ func (f *Flow) tryLoopFlow(ctx context.Context, opts *types.WatchOptions) error 
 					blog.Errorf("loop flow %s failed, err: %v", f.Collection, err)
 					continue
 				}
-				blog.Warnf("retry loop flow: %s from token: %s success.", f.Collection, f.lastToken)
+				blog.Warnf("retry loop flow: %s from token: %s success.", f.Collection, lastToken)
 			}
 		}
 
@@ -134,8 +152,17 @@ func (f *Flow) loopFlow(ctx context.Context, opts *types.WatchOptions) error {
 	}
 	go func() {
 		for e := range watcher.EventChan {
-			blog.V(4).Infof("run flow, received collection %s event, type: %s, doc :%s", f.Collection,
-				e.OperationType, e.DocBytes)
+
+			if !f.isMaster.IsMaster() {
+				blog.V(4).Infof("run flow, received collection %s event, type: %s, oid: %s, but not master, skip.", f.Collection,
+					e.OperationType, e.Oid)
+				continue
+			}
+
+			blog.V(4).Infof("run flow, received collection %s event, type: %s, oid :%s", f.Collection, e.OperationType, e.Oid)
+			if blog.V(5) {
+				blog.Infof("event doc details: %s, oid: %s", e.Oid)
+			}
 
 			switch e.OperationType {
 			case types.Insert, types.Update, types.Replace:
@@ -154,9 +181,6 @@ func (f *Flow) loopFlow(ctx context.Context, opts *types.WatchOptions) error {
 					return
 				}
 
-				// do upsert success, update the last token for resume watch usage.
-				f.lastToken = e.Token.Data
-
 			case types.Delete:
 				if retry, err := f.doDelete(e); err != nil {
 					blog.Errorf("run flow, but do delete failed, doc: %s, err: %v, oid: %s", e.DocBytes, err, e.Oid)
@@ -171,9 +195,6 @@ func (f *Flow) loopFlow(ctx context.Context, opts *types.WatchOptions) error {
 					// exist this goroutine.
 					return
 				}
-
-				// update the last token for resume watch usage.
-				f.lastToken = e.Token.Data
 
 			case types.Invalidate:
 				blog.Errorf("loop flow, received invalid event operation type, doc: %s", e.DocBytes)

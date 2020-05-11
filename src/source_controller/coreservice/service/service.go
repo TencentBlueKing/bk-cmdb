@@ -148,7 +148,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		return watchErr
 	}
 
-	if err := watchEvent.NewEvent(s.db, s.rds, watcher); err != nil {
+	if err := watchEvent.NewEvent(s.db, s.rds, watcher, engine.ServiceManageInterface); err != nil {
 		blog.Errorf("new watch event failed, err: %v", err)
 		return err
 	}

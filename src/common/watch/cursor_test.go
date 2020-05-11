@@ -64,7 +64,7 @@ func TestCursorDecode(t *testing.T) {
 	}
 
 	if cursor.Type != Host {
-		t.Errorf("decode cursor, got invalid cursor type: %d", cursor.Type)
+		t.Errorf("decode cursor, got invalid cursor type: %s", cursor.Type)
 		return
 	}
 
