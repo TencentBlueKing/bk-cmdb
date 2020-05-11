@@ -349,6 +349,32 @@ func (ps *ProcServer) getOneModule(ctx *rest.Contexts, filter map[string]interfa
 	return moduleInst, nil
 }
 
+func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*metadata.ModuleInst, errors.CCErrorCoder) {
+	moduleFilter := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: moduleIDs,
+			},
+		},
+	}
+	modules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleFilter)
+	if err != nil {
+		blog.Errorf("getModules failed, moduleIDs: %+v, err: %s, rid: %s", moduleIDs, err.Error(), ctx.Kit.Rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err)
+	}
+	moduleInsts := make([]*metadata.ModuleInst, 0)
+	for _, module := range modules.Data.Info {
+		moduleInst := new(metadata.ModuleInst)
+		if err := module.ToStructByTag(moduleInst, "field"); err != nil {
+			blog.Errorf("getModules failed, unmarshal json failed, module: %+v, err: %+v, rid: %s", module, err, ctx.Kit.Rid)
+			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
+		}
+		moduleInsts = append(moduleInsts, moduleInst)
+
+	}
+	return moduleInsts, nil
+}
+
 func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstanceID int64, processData map[string]interface{}) errors.CCErrorCoder {
 	rid := ctx.Kit.Rid
 
