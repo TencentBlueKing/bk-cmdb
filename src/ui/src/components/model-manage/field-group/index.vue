@@ -182,7 +182,7 @@
                         <bk-input v-model.trim="groupForm.groupName"
                             :placeholder="$t('请输入xx', { name: $t('分组名称') })"
                             name="groupName"
-                            v-validate="'required|length:256'">
+                            v-validate="'required|length:128'">
                         </bk-input>
                         <p class="form-error">{{errors.first('groupName')}}</p>
                     </div>
