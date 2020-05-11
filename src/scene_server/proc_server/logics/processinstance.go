@@ -127,7 +127,7 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) errors.CCEr
 	return nil
 }
 
-func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) error {
+func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) errors.CCErrorCoder {
 	if procIDs == nil {
 		return nil
 	}
@@ -140,12 +140,12 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
-		return err
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
 		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procIDs, result.ErrMsg)
-		return kit.CCError.Error(result.Code)
+		return result.CCError()
 	}
 
 	return nil

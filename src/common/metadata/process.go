@@ -714,11 +714,11 @@ func GetAllProcessPropertyFields() []string {
 }
 
 // ExtractChangeInfo get changes that will be applied to process instance
-func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
+func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool, bool) {
 	t := pt.Property
-	var changed bool
+	var changed, isNamePortChanged bool
 	if t == nil || i == nil {
-		return nil, false
+		return nil, false, false
 	}
 
 	process := make(mapstr.MapStr)
@@ -843,12 +843,15 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 		if t.ProcessName.Value == nil && i.ProcessName != nil {
 			process["bk_process_name"] = nil
 			changed = true
+			isNamePortChanged = true
 		} else if t.ProcessName.Value != nil && i.ProcessName == nil {
 			process["bk_process_name"] = *t.ProcessName.Value
 			changed = true
+			isNamePortChanged = true
 		} else if t.ProcessName.Value != nil && i.ProcessName != nil && *t.ProcessName.Value != *i.ProcessName {
 			process["bk_process_name"] = *t.ProcessName.Value
 			changed = true
+			isNamePortChanged = true
 		}
 	}
 
@@ -856,12 +859,15 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 		if t.Port.Value == nil && i.Port != nil {
 			process["port"] = nil
 			changed = true
+			isNamePortChanged = true
 		} else if t.Port.Value != nil && i.Port == nil {
 			process["port"] = *t.Port.Value
 			changed = true
+			isNamePortChanged = true
 		} else if t.Port.Value != nil && i.Port != nil && *t.Port.Value != *i.Port {
 			process["port"] = *t.Port.Value
 			changed = true
+			isNamePortChanged = true
 		}
 	}
 
@@ -1060,7 +1066,7 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 		}
 	}
 
-	return process, changed
+	return process, changed, isNamePortChanged
 }
 
 // FilterEditableFields only return editable fields
