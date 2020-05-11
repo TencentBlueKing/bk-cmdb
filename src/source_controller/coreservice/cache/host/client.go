@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/cache/tools"
 	"configcenter/src/storage/dal"
@@ -54,7 +55,7 @@ func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWith
 		if len(opt.Fields) == 0 {
 			return data, nil
 		}
-		return *cutJsonDataWithFields(&data, opt.Fields), nil
+		return *json.CutJsonDataWithFields(&data, opt.Fields), nil
 	}
 
 	// data has already expired, need to refresh from db
@@ -71,7 +72,7 @@ func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWith
 		return string(detail), nil
 	} else {
 		h := string(detail)
-		return *cutJsonDataWithFields(&h, opt.Fields), nil
+		return *json.CutJsonDataWithFields(&h, opt.Fields), nil
 	}
 }
 
@@ -92,6 +93,6 @@ func (c *Client) GetHostWithInnerIP(ctx context.Context, opt *metadata.SearchHos
 	if len(opt.Fields) == 0 {
 		return *detail, nil
 	} else {
-		return *cutJsonDataWithFields(detail, opt.Fields), nil
+		return *json.CutJsonDataWithFields(detail, opt.Fields), nil
 	}
 }
