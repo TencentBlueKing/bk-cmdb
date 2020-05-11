@@ -14,7 +14,7 @@
     "sync-magicbox": "node build/sync-magicbox.js"
   },
   "dependencies": {
-    "@blueking/paas-login": "0.0.3",
+    "@blueking/paas-login": "0.0.6",
     "@icon-cool/bk-icon-cmdb": "0.0.15",
     "axios": "0.18.0",
     "bk-magic-vue": "2.1.13-beta.1",
