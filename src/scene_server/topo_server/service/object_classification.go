@@ -34,7 +34,6 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	ctx.RespEntity(cls.ToMapStr())
 }
 
@@ -144,7 +143,6 @@ func (s *Service) UpdateClassification(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	ctx.RespEntity(nil)
 }
 
@@ -157,7 +155,6 @@ func (s *Service) DeleteClassification(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	md := new(MetaShell)
 	if err := ctx.DecodeInto(md); err != nil {
 		ctx.RespAutoError(err)
