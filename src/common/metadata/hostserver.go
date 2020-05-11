@@ -119,6 +119,7 @@ type HostModuleFind struct {
 	ModuleIDS []int64   `json:"bk_module_ids"`
 	Metadata  *Metadata `json:"metadata"`
 	AppID     int64     `json:"bk_biz_id"`
+	Fields    []string  `json:"fields"`
 	Page      BasePage  `json:"page"`
 }
 
