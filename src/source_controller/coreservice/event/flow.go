@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -49,16 +50,6 @@ type Flow struct {
 func (f *Flow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
 
-	for {
-		if !f.isMaster.IsMaster() {
-			blog.V(4).Infof("run flow, but not master, waiting")
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		break
-	}
-
-	blog.Infof("start run flow for key: %s, turn to master, not start flow event.", f.key.Namespace())
 	startToken, err := f.getStartToken()
 	if err != nil {
 		blog.Errorf("run flow, but get start token failed, err: %v", err)
@@ -216,6 +207,16 @@ func (f *Flow) doUpsert(e *types.Event) (retry bool, err error) {
 }
 
 func (f *Flow) do(e *types.Event) (retry bool, err error) {
+	blog.Infof("run flow, received %s %s event, oid: %s", f.Collection, e.OperationType, e.Oid)
+	blog.V(5).Infof("event doc detail: %s, oid: %s", e.DocBytes, e.Oid)
+
+	// validate the event is valid or not.
+	// the invalid event will be dropped.
+	if err := f.key.Validate(e.DocBytes); err != nil {
+		blog.Errorf("run flow, received %s event, but got invalid event, doc: %s err: %v, oid: %s", f.Collection, e.DocBytes, err, e.Oid)
+		return false, err
+	}
+
 	keys, err := f.rds.HMGet(f.key.MainHashKey(), f.key.HeadKey(), f.key.TailKey()).Result()
 	if err != nil {
 		return true, err
@@ -267,7 +268,7 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 	// get previous node with previous cursor
 	prev, err := f.rds.HGet(f.key.MainHashKey(), prevCursor).Result()
 	if err != nil {
-		blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, e.Oid)
+		blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, err, e.Oid)
 		return true, err
 	}
 
@@ -282,10 +283,11 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 }
 
 func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
+	name := f.key.Name(e.DocBytes)
 
 	currentCursor, err := watch.GetEventCursor(f.Collection, e)
 	if err != nil {
-		blog.Errorf("initialize head tail node, but get cursor failed, err: %v, oid: %s", err, e.Oid)
+		blog.Errorf("initialize head tail node, but get cursor failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
 		return false, err
 	}
 
@@ -300,7 +302,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 
 	nByte, err := json.Marshal(newNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal new node failed, node: %v, oid: %s", *newNode, e.Oid)
+		blog.Errorf("run flow, marshal new node failed, node: %v, name: %s, err: %v oid: %s", *newNode, name, err, e.Oid)
 		return false, err
 	}
 
@@ -310,7 +312,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 	}
 	hByte, err := json.Marshal(headNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal head node failed, node: %v, oid: %s", *headNode, e.Oid)
+		blog.Errorf("run flow, marshal head node failed, node: %v, name: %s, err: %v, oid: %s", *headNode, name, err, e.Oid)
 		return false, err
 	}
 
@@ -323,7 +325,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 
 	tByte, err := json.Marshal(tailNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal tail node failed, node: %v, oid: %s", *tailNode, e.Oid)
+		blog.Errorf("run flow, marshal tail node failed, node: %v, name: %s, err: %v, oid: %s", *tailNode, name, err, e.Oid)
 		return false, err
 	}
 
@@ -333,18 +335,34 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 		f.key.TailKey(): string(tByte),
 	}
 
+	getLock := f.getLockWithRetry(f.key.LockKey(), e.Oid)
+	if !getLock {
+		blog.Errorf("run flow, set head and tail key, name: %s, op: %s, do not get lock and return, oid: %s", name, e.OperationType, e.Oid)
+		return true, errors.New("get lock failed")
+	}
+
+	// already get the lock. prepare to release the lock.
+	releaseLock := func() {
+		if err := f.rds.Del(f.key.LockKey()).Err(); err != nil {
+			blog.ErrorfDepthf(1, "run flow, set head and tail key, name: %s, op: %s, release lock failed, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
+		}
+	}
+
 	pipe := f.rds.Pipeline()
 	pipe.HMSet(f.key.MainHashKey(), val)
 	pipe.Set(f.key.DetailKey(currentCursor), string(e.DocBytes), 0)
 	if _, err := pipe.Exec(); err != nil {
-		blog.Errorf("run flow, set head and tail key failed, err: %v, oid: %s", err, e.Oid)
+		releaseLock()
+		blog.Errorf("run flow, set head and tail key failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
 		return true, err
 	}
-	blog.Infof("insert watch event for %s success, cursor: %s, oid: %s", f.Collection, currentCursor, e.Oid)
+	releaseLock()
+	blog.Infof("insert watch event for %s success, name: %s, cursor: %s, oid: %s", f.Collection, name, currentCursor, e.Oid)
 	return false, nil
 }
 
 func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
+	blog.Infof("received delete %s event, oid: %s", f.Collection, e.Oid)
 	filter := mapstr.MapStr{
 		"oid": e.Oid,
 	}
@@ -353,6 +371,9 @@ func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 	if err != nil {
 		blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
 			f.Collection, e.Oid, err)
+		if strings.Contains(err.Error(), "document not found") {
+			return false, err
+		}
 		return true, err
 	}
 
@@ -392,9 +413,11 @@ func (f *Flow) getStartToken() (token string, err error) {
 // if an error occurred, then the caller should check the retry is true or not, if true, then this event
 // need to be retry later.
 func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *types.Event) (retry bool, err error) {
+	name := f.key.Name(e.DocBytes)
+
 	currentCursor, err := watch.GetEventCursor(f.Collection, e)
 	if err != nil {
-		blog.Errorf("get event cursor failed, err: %v, oid: %s ", err, e.Oid)
+		blog.Errorf("get event cursor failed, name: %s, err: %v, oid: %s ", name, err, e.Oid)
 		return false, err
 	}
 	prevNode.NextCursor = currentCursor
@@ -411,7 +434,7 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 
 	nBytes, err := json.Marshal(newNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal new node failed, node: %+v err: %v, oid: %s", *newNode, err, e.Oid)
+		blog.Errorf("run flow, marshal new node failed, name: %s, node: %+v err: %v, oid: %s", name, *newNode, err, e.Oid)
 		return false, err
 	}
 
@@ -423,13 +446,13 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 	}
 	tBytes, err := json.Marshal(tailNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal tail node failed, node: %+v, err: %v, oid: %s", *tailNode, err, e.Oid)
+		blog.Errorf("run flow, marshal tail node failed, name: %s, node: %+v, err: %v, oid: %s", name, *tailNode, err, e.Oid)
 		return false, err
 	}
 
 	pBytes, err := json.Marshal(prevNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal previous node failed, node： %+v err: %v, oid: %s", *prevNode, err, e.Oid)
+		blog.Errorf("run flow, marshal previous node failed, name: %s, node： %+v err: %v, oid: %s", name, *prevNode, err, e.Oid)
 		return false, err
 	}
 
@@ -438,13 +461,54 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 		currentCursor:   string(nBytes),
 		f.key.TailKey(): string(tBytes),
 	}
+
+	getLock := f.getLockWithRetry(f.key.LockKey(), e.Oid)
+	if !getLock {
+		blog.Errorf("run flow, insert node, name: %s, op: %s, do not get lock and return, oid: %s", name, e.OperationType, e.Oid)
+		return true, errors.New("get lock failed")
+	}
+
+	// already get the lock. prepare to release the lock.
+	releaseLock := func() {
+		if err := f.rds.Del(f.key.LockKey()).Err(); err != nil {
+			blog.ErrorfDepthf(1, "run flow, insert node, name: %s, op: %s, release lock failed, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
+		}
+	}
+
 	pipe := f.rds.Pipeline()
 	pipe.HMSet(f.key.MainHashKey(), values)
 	pipe.Set(f.key.DetailKey(currentCursor), string(e.DocBytes), 0)
 	if _, err := pipe.Exec(); err != nil {
-		blog.Errorf("run flow, but insert node failed, err: %v, oid: %s", err, e.Oid)
+		releaseLock()
+		blog.Errorf("run flow, but insert node failed, name: %s, op: %s, err: %v, oid: %s", name, e.OperationType, err, e.Oid)
 		return true, err
 	}
-	blog.Infof("insert watch event for %s success, cursor: %s, oid: %s", f.Collection, currentCursor, e.Oid)
+
+	// release the lock immediately.
+	releaseLock()
+	blog.Infof("insert watch event for %s success, op: %s cursor: %s, name: %s, oid: %s",
+		f.Collection, e.OperationType, currentCursor, name, e.Oid)
 	return false, nil
+}
+
+func (f *Flow) getLockWithRetry(name string, oid string) bool {
+	getLock := false
+	for retry := 0; retry < 10; retry++ {
+		// get operate lock to avoid concurrent revise the chain
+		success, err := f.rds.SetNX(f.key.LockKey(), "lock", 5*time.Second).Result()
+		if err != nil {
+			blog.Errorf("get lock failed, err: %v, oid: %s", name, err, oid)
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+
+		if !success {
+			blog.Warnf("do not get lock, oid: %s", name, oid)
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+		getLock = true
+		break
+	}
+	return getLock
 }

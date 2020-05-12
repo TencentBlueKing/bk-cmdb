@@ -30,8 +30,8 @@ func getLoopInternalMinutes() int {
 	// give a random sleep interval to avoid clean different resource keys
 	// at the same time.
 	rand.Seed(time.Now().UnixNano())
-	// time range [60, 120] minutes
-	return 60 + (rand.Intn(60-1) + 1)
+	// time range [60, 180] minutes
+	return 120 + (rand.Intn(60-1) + 1)
 }
 
 func (f *Flow) cleanExpiredEvents() {
@@ -67,12 +67,13 @@ func (f *Flow) cleanExpiredEvents() {
 				blog.Infof("clean expired events for key: %s, loop interval minutes: %d, rid: %s", f.key.Namespace(), minute, rid)
 			}
 
-			blog.Infof("start clean expired events for key: %s, rid: ", f.key.Namespace(), rid)
+			blog.Infof("start clean expired events for key: %s, rid: %s", f.key.Namespace(), rid)
 
 			nodes, err := f.getNodesFromCursor(100, headKey, f.key)
 			if err != nil {
 				blog.Errorf("clean expired events for key: %s, but get cursor node from head failed, err: %v, rid: %s",
 					f.key.Namespace(), err, rid)
+				continueLoop = false
 				continue
 			}
 
@@ -80,20 +81,22 @@ func (f *Flow) cleanExpiredEvents() {
 				// TODO: repair the node chain when this happen.
 				blog.Errorf("clean expired events for key: %s, but got 0 nodes, at least we have tail node, rid: %s",
 					f.key.Namespace(), rid)
+				continueLoop = false
 				continue
 			}
 
 			if len(nodes) == 1 {
 				// no events is occurred
 				if nodes[0].Cursor == headKey {
-					blog.Infof("clean expired events for key: %s success, * no events found *, rid: %s",
-						f.key.Namespace(), rid)
+					blog.Infof("clean expired events for key: %s success, * no events found *, rid: %s", f.key.Namespace(), rid)
+					continueLoop = false
 					continue
 				}
 				// have only one node, but not target to the head key.
 				// something is wrong when this happens.
 				// TODO: repair the event chain.
 				blog.Errorf("clean expired events for key: %s, but something is wrong. rid: %s", f.key.Namespace(), rid)
+				continueLoop = false
 				continue
 			}
 			expiredNodes := make([]*watch.ChainNode, 0)
@@ -107,8 +110,9 @@ func (f *Flow) cleanExpiredEvents() {
 					}
 					// if the first node is not expired, then no node is expired after it.
 					if time.Now().Unix()-int64(node.ClusterTime.Sec) <= f.key.TTLSeconds() {
-						blog.Infof("clean expired events for key: %s success, * no expired keys *, head cursor: %s. rid: %s",
+						blog.V(4).Infof("clean expired events for key: %s success, * no expired keys *, head cursor: %s. rid: %s",
 							f.key.Namespace(), node.Cursor, rid)
+						continueLoop = false
 						goto loop
 					}
 					expiredNodes = append(expiredNodes, node)
@@ -121,6 +125,7 @@ func (f *Flow) cleanExpiredEvents() {
 				} else {
 					// if a node which is not expired occurred, break the loop immediately. nodes after it
 					// is definitely not expired.
+					continueLoop = false
 					break
 				}
 			}
@@ -136,6 +141,27 @@ func (f *Flow) cleanExpiredEvents() {
 			if err != nil {
 				blog.Errorf("clean expired events for key: %s, but marshal head node failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
 				continue
+			}
+
+			// get operate lock to avoid concurrent revise the chain
+			success, err := f.rds.SetNX(f.key.LockKey(), 1, 5*time.Second).Result()
+			if err != nil {
+				blog.Errorf("clean expired events for key: %s, but get lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+
+			if !success {
+				blog.Errorf("clean expired events for key: %s, get lock success, rid: %s", f.key.Namespace(), rid)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+
+			// already get the lock. prepare to release the lock.
+			releaseLock := func() {
+				if err := f.rds.Del(f.key.LockKey()).Err(); err != nil {
+					blog.Errorf("clean expired events for key: %s, but delete lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
+				}
 			}
 
 			pipe := f.rds.Pipeline()
@@ -164,8 +190,11 @@ func (f *Flow) cleanExpiredEvents() {
 				}
 				tBytes, err := json.Marshal(tailNode)
 				if err != nil {
+					releaseLock()
+
 					blog.Errorf("clean expired events for key: %s, but marshal tail node failed, err: %v, rid: %s",
 						f.key.Namespace(), err, rid)
+					continueLoop = false
 					continue
 				}
 				pipe.HSet(mainKey, tailKey, string(tBytes))
@@ -174,14 +203,16 @@ func (f *Flow) cleanExpiredEvents() {
 			// do the clean operation.
 			_, err = pipe.Exec()
 			if err != nil {
+				releaseLock()
+
 				blog.Errorf("clean expired events for key: %s, but do redis pipeline failed, err: %v, rid: %s",
 					f.key.Namespace(), err, rid)
+				time.Sleep(5 * time.Second)
 				continue
 			}
+			releaseLock()
 
-			if !continueLoop {
-				blog.Infof("clean expired events for key: %s success. rid: %s", f.key.Namespace(), rid)
-			}
+			blog.Infof("clean expired events for key: %s success. rid: %s", f.key.Namespace(), rid)
 			// sleep a while during the loop
 			time.Sleep(30 * time.Second)
 		}
@@ -256,7 +287,6 @@ func (f *Flow) doClean(rid string) {
 				time.Sleep(10 * time.Second)
 				success = false
 				continue
-
 			}
 
 			oids := make([]string, len(docs))

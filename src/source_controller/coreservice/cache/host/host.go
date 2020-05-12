@@ -156,7 +156,7 @@ func (h *hostCache) onListDone() {
 }
 
 func (h *hostCache) upsertOid(oid string, hostID int64) {
-	if err := h.rds.HSet(h.key.HostOidKey(), oid, strconv.FormatInt(hostID, 10)).Err(); err != nil {
+	if err := h.rds.HSet(h.key.HostOidKey(), oid, hostID).Err(); err != nil {
 		blog.Errorf("upsert host: %d cache oid key: %s, but hset failed, err: %v", hostID, h.key.HostOidKey(), err)
 		return
 	}
