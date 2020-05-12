@@ -37,5 +37,6 @@ func (s *Service) Index(c *gin.Context) {
 		"userName":       userName,
 		"agentAppUrl":    s.Config.AgentAppUrl,
 		"authCenter":     s.Config.AuthCenter,
+		"bkDesktop":      s.Config.BkDesktopUrl,
 	})
 }
