@@ -15,7 +15,6 @@ package host
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +28,8 @@ import (
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
 	"github.com/tidwall/gjson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"gopkg.in/redis.v5"
 )
 
@@ -95,7 +96,6 @@ func (h *hostCache) onUpsert(e *types.Event) {
 		return
 	}
 
-	h.upsertOid(e.Oid, hostID)
 	// get host details from db again to avoid dirty data.
 	ips, cloudID, detail, err := getHostDetailsFromMongoWithHostID(h.db, hostID)
 	if err != nil {
@@ -107,35 +107,33 @@ func (h *hostCache) onUpsert(e *types.Event) {
 
 func (h *hostCache) onDelete(e *types.Event) {
 	blog.Infof("received host delete event, oid: %s", e.Oid)
-	// get host id with oid
-	hostIDStr, err := h.rds.HGet(h.key.HostOidKey(), e.Oid).Result()
+
+	filter := mapstr.MapStr{
+		"oid": e.Oid,
+	}
+	doc := bsonx.Doc{}
+	err := h.db.Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
 	if err != nil {
-		blog.Errorf("received host delete event, oid: %s, but get host id failed, err: %v", e.Oid, err)
+		blog.Errorf("received delete host event, but get archive deleted doc from mongodb failed, oid: %s, err: %v", e.Oid, err)
 		return
 	}
 
-	hostID, err := strconv.ParseInt(hostIDStr, 64, 10)
+	byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
 	if err != nil {
-		blog.Errorf("received host delete event, oid: %s, but parse host id failed, err: %v", e.Oid, err)
+		blog.Errorf("received delete host event, but marshal doc to bytes failed, oid: %s, err: %v", e.Oid, err)
 		return
 	}
-	host, err := h.rds.Get(h.key.HostDetailKey(hostID)).Result()
-	if err != nil {
-		blog.Errorf("received host delete event, oid: %s, but get host cache detail failed, err: %v", e.Oid, err)
-		return
-	}
-	elements := gjson.GetMany(host, common.BKCloudIDField, common.BKHostInnerIPField)
+
+	elements := gjson.GetManyBytes(byt, common.BKCloudIDField, common.BKHostInnerIPField, common.BKHostIDField)
 	cloudID := elements[0].Int()
 	ips := elements[1].String()
+	hostID := elements[2].Int()
 
 	pipe := h.rds.Pipeline()
 	// delete cloud id and ip pair
 	for _, ip := range strings.Split(ips, ",") {
 		pipe.Del(h.key.IPCloudIDKey(ip, cloudID))
 	}
-
-	// delete oid relation
-	pipe.HDel(h.key.HostOidKey(), e.Oid)
 
 	// delete host details
 	pipe.Del(h.key.HostDetailKey(hostID))
@@ -144,7 +142,7 @@ func (h *hostCache) onDelete(e *types.Event) {
 		blog.Errorf("received host delete event, oid: %s, but delete oid and detail failed, err: %v", e.Oid, err)
 		return
 	}
-	blog.Infof("received host delete event, oid: %s, delete oid and host id: %d detail success", e.Oid, hostID)
+	blog.Infof("received host delete event, oid: %s, delete oid and host id: %d, ip: %s detail success", e.Oid, hostID, ips)
 }
 
 func (h *hostCache) onListDone() {
@@ -153,20 +151,6 @@ func (h *hostCache) onListDone() {
 		return
 	}
 	blog.Info("list host data to cache and list done")
-}
-
-func (h *hostCache) upsertOid(oid string, hostID int64) {
-	if err := h.rds.HSet(h.key.HostOidKey(), oid, hostID).Err(); err != nil {
-		blog.Errorf("upsert host: %d cache oid key: %s, but hset failed, err: %v", hostID, h.key.HostOidKey(), err)
-		return
-	}
-}
-
-func (h *hostCache) deleteOid(oid string) {
-	if err := h.rds.HDel(h.key.HostOidKey(), oid).Err(); err != nil {
-		blog.Errorf("delete host oid: %s cache oid key: %s, but hdel failed, err: %v", oid, h.key.HostOidKey(), err)
-		return
-	}
 }
 
 // refreshHostDetailCache refresh the host's detail cache
