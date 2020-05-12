@@ -207,6 +207,9 @@ func (f *Flow) doUpsert(e *types.Event) (retry bool, err error) {
 }
 
 func (f *Flow) do(e *types.Event) (retry bool, err error) {
+	blog.Infof("run flow, received %s %s event, oid: %s", f.Collection, e.OperationType, e.Oid)
+	blog.V(5).Infof("event doc detail: %s, oid: %s", e.DocBytes, e.Oid)
+
 	// validate the event is valid or not.
 	// the invalid event will be dropped.
 	if err := f.key.Validate(e.DocBytes); err != nil {
@@ -344,7 +347,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 }
 
 func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
-	blog.Errorf("received delete %s event, oid: %s", f.Collection, e.Oid)
+	blog.Infof("received delete %s event, oid: %s", f.Collection, e.Oid)
 	filter := mapstr.MapStr{
 		"oid": e.Oid,
 	}
@@ -447,10 +450,10 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 	pipe.HMSet(f.key.MainHashKey(), values)
 	pipe.Set(f.key.DetailKey(currentCursor), string(e.DocBytes), 0)
 	if _, err := pipe.Exec(); err != nil {
-		blog.Errorf("run flow, but insert node failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
+		blog.Errorf("run flow, but insert node failed, name: %s, op: %s err: %v, oid: %s", name, e.OperationType, err, e.Oid)
 		return true, err
 	}
-	blog.Infof("insert watch event for %s success, cursor: %s, name: %s, oid: %s",
-		f.Collection, currentCursor, name, e.Oid)
+	blog.Infof("insert watch event for %s success, op: %s cursor: %s, name: %s, oid: %s",
+		f.Collection, e.OperationType, currentCursor, name, e.Oid)
 	return false, nil
 }
