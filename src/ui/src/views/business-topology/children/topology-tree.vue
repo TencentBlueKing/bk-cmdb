@@ -164,7 +164,7 @@
             }
         },
         created () {
-            RouterQuery.watch('keyword', value => {
+            this.unwatch = RouterQuery.watch('keyword', value => {
                 this.filter = value
             })
             Bus.$on('refresh-count', this.refreshCount)
@@ -174,6 +174,7 @@
             this.initTopology()
         },
         beforeDestroy () {
+            this.unwatch()
             Bus.$off('refresh-count', this.refreshCount)
             clearInterval(this.timer)
         },

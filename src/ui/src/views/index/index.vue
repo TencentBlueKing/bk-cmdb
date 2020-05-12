@@ -22,9 +22,7 @@
             </div>
         </div>
         <the-map style="user-select: none;"></the-map>
-        <div class="copyright">
-            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有. {{site.buildVersion}}
-        </div>
+        <the-footer></the-footer>
     </div>
 </template>
 
@@ -32,13 +30,15 @@
     import hostSearch from './children/host-search'
     import searchInput from './children/search-input'
     import theMap from './children/map'
+    import theFooter from './children/footer'
     import { mapGetters } from 'vuex'
     export default {
         name: 'index',
         components: {
             hostSearch,
             searchInput,
-            theMap
+            theMap,
+            theFooter
         },
         data () {
             return {
@@ -123,19 +123,5 @@
         .tab-content {
             height: 100%;
         }
-    }
-    .copyright{
-        position: absolute;
-        width: calc(100% - 50px);
-        height: 43px;
-        left: 25px;
-        bottom: 0;
-        line-height: 42px;
-        font-size: 12px;
-        text-align: center;
-        color: #C4C6CC;
-        border-top: 1px solid #DCDEE5;
-        background-color: #F5F6FA;
-        z-index: 2;
     }
 </style>

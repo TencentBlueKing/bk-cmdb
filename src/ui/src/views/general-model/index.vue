@@ -353,7 +353,7 @@
             }
         },
         created () {
-            RouterQuery.watch('*', ({
+            this.unwatch = RouterQuery.watch('*', ({
                 page = 1,
                 limit = this.table.pagination.limit,
                 filter = ''
@@ -366,6 +366,9 @@
             })
             this.setDynamicBreadcrumbs()
             this.reload()
+        },
+        beforeDestroy () {
+            this.unwatch()
         },
         beforeRouteUpdate (to, from, next) {
             this.setDynamicBreadcrumbs()
