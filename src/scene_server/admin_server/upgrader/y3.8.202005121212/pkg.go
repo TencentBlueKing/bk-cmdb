@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_8_202005151212
+package y3_8_202005121212
 
 import (
 	"context"
@@ -21,11 +21,11 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.8.202005151212", upgrade)
+	upgrader.RegistUpgrader("y3.8.202005121212", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	blog.Infof("start execute y3.8.202005151212")
+	blog.Infof("start execute y3.8.202005121212")
 
 	if err := createTable(ctx, db, conf); err != nil {
 		blog.Errorf("create tables failed, err %s", err.Error())
