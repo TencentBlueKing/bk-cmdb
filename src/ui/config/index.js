@@ -27,7 +27,8 @@ const dev = {
         'BUILD_VERSION': 'dev',
         'USER_ROLE': '"1"',
         'USER_NAME': '"admin"',
-        'FULL_TEXT_SEARCH': '"off"'
+        'FULL_TEXT_SEARCH': '"off"',
+        'BK_DESKTOP': '""'
     }),
 
     // Paths
