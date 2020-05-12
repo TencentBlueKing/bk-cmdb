@@ -42,7 +42,6 @@
         },
         data () {
             return {
-                year: (new Date()).getFullYear(),
                 activeName: 'host',
                 inSearchPaddingTop: null,
                 showSearchTab: true,
