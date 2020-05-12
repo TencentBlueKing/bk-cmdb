@@ -196,7 +196,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ModelAttributeRes, ModelGroupRes:
 		operationDetail := new(ModelAttrOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
