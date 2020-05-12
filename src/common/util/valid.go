@@ -217,6 +217,8 @@ func IsInnerObject(objID string) bool {
 		return true
 	case common.BKInnerObjIDSet:
 		return true
+	case common.BKInnerObjIDPod:
+		return true
 	}
 
 	return false

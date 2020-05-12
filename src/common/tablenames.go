@@ -57,6 +57,7 @@ const (
 	BKTableNameBasePlat    = "cc_PlatBase"
 	BKTableNameBaseSet     = "cc_SetBase"
 	BKTableNameBaseProcess = "cc_Process"
+	BKTableNameBasePod     = "cc_PodBase"
 
 	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
 	BKTableNameSystem           = "cc_System"
@@ -174,6 +175,8 @@ func GetInstTableName(objID string) string {
 		return BKTableNameBaseProcess
 	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
+	case BKInnerObjIDPod:
+		return BKTableNameBasePod
 	default:
 		return BKTableNameBaseInst
 	}

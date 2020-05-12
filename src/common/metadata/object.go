@@ -80,6 +80,8 @@ func GetInstIDFieldByObjID(objID string) string {
 		return common.BKProcIDField
 	case common.BKInnerObjIDPlat:
 		return common.BKCloudIDField
+	case common.BKInnerObjIDPod:
+		return common.BKPodIDField
 	default:
 		return common.BKInstIDField
 	}
@@ -100,6 +102,8 @@ func GetInstNameFieldName(objID string) string {
 		return common.BKProcNameField
 	case common.BKInnerObjIDPlat:
 		return common.BKCloudNameField
+	case common.BKInnerObjIDPod:
+		return common.BKPodNameField
 	default:
 		return common.BKInstNameField
 	}
@@ -125,6 +129,8 @@ func (o *Object) GetObjectType() string {
 		return o.ObjectID
 	case common.BKInnerObjIDPlat:
 		return o.ObjectID
+	case common.BKInnerObjIDPod:
+		return o.ObjectID
 	default:
 		return common.BKInnerObjIDObject
 	}
@@ -149,6 +155,8 @@ func (o *Object) IsCommon() bool {
 	case common.BKInnerObjIDProc:
 		return false
 	case common.BKInnerObjIDPlat:
+		return false
+	case common.BKInnerObjIDPod:
 		return false
 	default:
 		return true

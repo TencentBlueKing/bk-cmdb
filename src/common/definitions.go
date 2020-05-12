@@ -102,11 +102,14 @@ const (
 	// BKInnerObjIDConfigTemp the inner object
 	BKInnerObjIDConfigTemp = "config_template"
 
-	// BKInnerObjIDTempVerion the inner object
+	// BKInnerObjIDTempVersion the inner object
 	BKInnerObjIDTempVersion = "template_version"
 
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
+
+	// BKInnerObjIDPod the inner object
+	BKInnerObjIDPod = "pod"
 
 	// BKInnerObjIDSwitch the inner object
 	BKInnerObjIDSwitch = "bk_switch"
@@ -294,6 +297,18 @@ const (
 
 	// BKHostNameField the host name field
 	BKHostNameField = "bk_host_name"
+
+	// BKPodIDField the pod id field
+	BKPodIDField = "bk_pod_id"
+
+	// BKPodNameField the pod name field
+	BKPodNameField = "bk_pod_name"
+
+	// BKPodNamespaceField the pod namespace field
+	BKPodNamespaceField = "bk_pod_namespace"
+
+	// BKPodClusterField the pod cluster field
+	BKPodClusterField = "bk_pod_cluster"
 
 	// BKAppNameField the app name field
 	BKAppNameField = "bk_biz_name"
@@ -748,6 +763,9 @@ const (
 
 	// FieldTypeOrganization the organization field type
 	FieldTypeOrganization string = "organization"
+
+	// FieldTypeJsonList the json type
+	FieldTypeJsonList string = "jsonlist"
 
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256

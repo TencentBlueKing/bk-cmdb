@@ -795,6 +795,17 @@ const (
 	CCErrTaskUnLockedTaskFail     = 1117006
 	CCErrTaskListTaskFail         = 1117007
 
+	// container server
+	// CCErrContainerCreateManyPodAllFail get all fail when create many pod
+	CCErrContainerCreateManyPodAllFail = 1118001
+	// CCErrContainerCreateManyPodPartialFail get partial fail when create many pod
+	CCErrContainerCreateManyPodPartialFail = 1118002
+	// CCErrContainerGetPodModuleFail get module info of pod fail
+	CCErrContainerGetPodModuleFail = 1118401
+	// CCErrContainerCreatePodInstanceFail create pod instance fail
+	CCErrContainerCreatePodInstanceFail = 1118402
+
+
 	/** TODO: 以下错误码需要改造 **/
 
 	// json
