@@ -23,6 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
@@ -458,10 +459,48 @@ func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 		blog.V(4).InfoDepthf(2, "mongo delete cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		if err := c.tryArchiveDeletedDoc(ctx, filter); err != nil {
+			return err
+		}
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
 		return err
 	})
 
+}
+
+func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filter) error {
+	switch c.collName {
+	case common.BKTableNameModuleHostConfig:
+	case common.BKTableNameBaseHost:
+	default:
+		// do not archive the delete docs
+		return nil
+	}
+
+	docs := make([]bsonx.Doc, 0)
+	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Find(ctx, filter, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := cursor.All(ctx, &docs); err != nil {
+		return err
+	}
+
+	if len(docs) == 0 {
+		return nil
+	}
+
+	archives := make([]interface{}, len(docs))
+	for idx, doc := range docs {
+		archives[idx] = metadata.DeleteArchive{
+			Oid:    doc.Lookup("_id").ObjectID().Hex(),
+			Detail: doc.Delete("_id"),
+		}
+	}
+
+	_, err = c.dbc.Database(c.dbname).Collection(common.BKTableNameDelArchive).InsertMany(ctx, archives)
+	return err
 }
 
 // NextSequence 获取新序列号(非事务)

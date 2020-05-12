@@ -55,6 +55,7 @@
     import MENU_DICTIONARY from '@/dictionary/menu'
     import {
         MENU_BUSINESS,
+        MENU_BUSINESS_HOST_AND_SERVICE,
         MENU_RESOURCE,
         MENU_RESOURCE_BUSINESS,
         MENU_RESOURCE_HOST,
@@ -243,7 +244,7 @@
                     return false
                 }
                 this.$routerActions.redirect({
-                    ...this.$route,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     params: {
                         ...this.$route.params,
                         bizId: id

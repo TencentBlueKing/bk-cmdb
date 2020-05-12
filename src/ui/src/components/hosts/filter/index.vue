@@ -241,7 +241,7 @@
                     resolve()
                 }
             })
-            RouterQuery.watch(['ip', 'exact', 'inner', 'outer'], ({
+            this.unwatch = RouterQuery.watch(['ip', 'exact', 'inner', 'outer'], ({
                 ip = '',
                 exact = this.ip.exact ? '1' : '0',
                 inner = this.ip.inner ? '1' : '0',
@@ -256,6 +256,7 @@
         },
         beforeDestroy () {
             Bus.$off('toggle-host-filter', this.handleToggleFilter)
+            this.unwatch()
             this.$store.commit('hosts/clearFilter')
         },
         methods: {

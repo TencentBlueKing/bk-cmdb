@@ -262,7 +262,7 @@
         },
         async created () {
             try {
-                RouterQuery.watch(['ip', 'scope', 'exact', 'page', 'limit', 'condition', '_t'], ({
+                this.unwatch = RouterQuery.watch(['ip', 'scope', 'exact', 'page', 'limit', 'condition', '_t'], ({
                     scope = '1',
                     page = 1,
                     limit = this.table.pagination.limit
@@ -279,6 +279,9 @@
             } catch (e) {
                 console.log(e)
             }
+        },
+        beforeDestroy () {
+            this.unwatch()
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),

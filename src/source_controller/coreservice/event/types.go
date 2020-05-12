@@ -10,22 +10,37 @@
  * limitations under the License.
  */
 
-package metadata
+package event
 
-type SearchHostWithInnerIPOption struct {
-	InnerIP string `json:"bk_host_innerip"`
-	CloudID int64  `json:"bk_cloud_id"`
-	// only return these fields in hosts.
-	Fields []string `json:"fields"`
+import (
+	"fmt"
+
+	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/common/watch"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/stream"
+	"gopkg.in/redis.v5"
+)
+
+// get resource key
+func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
+	var key Key
+	switch res {
+	case watch.Host:
+		key = HostKey
+	case watch.ModuleHostRelation:
+		key = ModuleHostRelationKey
+	default:
+		return key, fmt.Errorf("unsupported cursor type %s", res)
+	}
+	return key, nil
 }
 
-type SearchHostWithIDOption struct {
-	HostID int64 `json:"bk_host_id"`
-	// only return these fields in hosts.
-	Fields []string `json:"fields"`
-}
-
-type DeleteArchive struct {
-	Oid    string      `json:"oid" bson:"oid"`
-	Detail interface{} `json:"detail" bson:"detail"`
+type FlowOptions struct {
+	Collection string
+	key        Key
+	rds        *redis.Client
+	watch      stream.Interface
+	db         dal.DB
+	isMaster   discovery.ServiceManageInterface
 }
