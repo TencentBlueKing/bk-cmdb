@@ -95,7 +95,8 @@ module.exports = {
             'AUTH_CENTER': '{{.authCenter}}',
             'USER_ROLE': '{{.role}}',
             'USER_NAME': '{{.userName}}',
-            'FULL_TEXT_SEARCH': '{{.fullTextSearch}}'
+            'FULL_TEXT_SEARCH': '{{.fullTextSearch}}',
+            'BK_DESKTOP': '{{.bkDesktop}}'
         }),
 
         // Template for index.html
