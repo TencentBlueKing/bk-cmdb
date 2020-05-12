@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -138,6 +139,11 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			uri = requestUrl.Path
 		}
 		duration := util.ToMillisecond(time.Since(before))
+
+		if !utf8.ValidString(uri) {
+			blog.Errorf("uri: %s not utf-8", uri)
+			return
+		}
 
 		s.requestDuration.With(s.label(LabelHandler, uri)).Observe(duration)
 		s.requestTotal.With(s.label(
