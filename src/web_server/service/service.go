@@ -13,6 +13,8 @@
 package service
 
 import (
+	"os"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/metadata"
@@ -37,6 +39,7 @@ type Service struct {
 }
 
 func (s *Service) WebService() *gin.Engine {
+	setGinMode()
 	ws := gin.Default()
 
 	ws.Use(middleware.RequestIDMiddleware)
@@ -84,6 +87,15 @@ func (s *Service) WebService() *gin.Engine {
 	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
 
 	return ws
+}
+
+func setGinMode() {
+	mode := os.Getenv("GIN_MODE")
+	if mode == "" {
+		gin.SetMode(gin.ReleaseMode)
+		return
+	}
+	gin.SetMode(mode)
 }
 
 func (s *Service) Healthz(c *gin.Context) {
