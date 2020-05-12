@@ -92,7 +92,7 @@
             }
         },
         async created () {
-            RouterQuery.watch('tab', value => {
+            this.unwatch = RouterQuery.watch('tab', value => {
                 this.activeTab = value
             })
             try {
@@ -107,6 +107,7 @@
         },
         beforeDestroy () {
             this.$store.commit('businessHost/clear')
+            this.unwatch()
         },
         methods: {
             handleTabToggle () {
