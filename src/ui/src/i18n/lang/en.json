@@ -1259,5 +1259,8 @@
     "点击查看详情": "Details",
     "关闭按钮": "Close",
     "失败详情": "Fail Details",
-    "业务不存在或无权限": "Permission denied or business non-exist"
+    "业务不存在或无权限": "Permission denied or business non-exist",
+    "新增字段": "Create Attribute",
+    "修改字段": "Update Attribute",
+    "删除字段": "Delete Attribute"
 }

@@ -340,11 +340,17 @@
                 return this.funcModules[key[0]] || '--'
             },
             getResourceName (row) {
+                // 转移主机类的操作实例
                 if (['assign_host', 'unassign_host', 'transfer_host_module'].includes(row.action)) {
                     return row.bk_host_innerip || row.operation_detail.bk_host_innerip || '--'
                 }
+                // 关联关系的操作实例
                 if (['instance_association'].includes(row.resource_type)) {
                     return row.operation_detail.src_instance_name || '--'
+                }
+                // 自定义字段的操作实例
+                if (['model_attribute'].includes(row.resource_type)) {
+                    return `${row.operation_detail.bk_obj_name}/${row.operation_detail.resource_name}`
                 }
                 return this.$tools.getValue(row, 'operation_detail.resource_name') || '--'
             },
