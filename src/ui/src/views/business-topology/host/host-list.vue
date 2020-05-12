@@ -121,7 +121,7 @@
             }
         },
         created () {
-            RouterQuery.watch('*', ({
+            this.unwatch = RouterQuery.watch('*', ({
                 tab = 'hostList',
                 node,
                 page = 1,
@@ -131,6 +131,9 @@
                 this.table.pagination.limit = parseInt(limit)
                 tab === 'hostList' && node && this.selectedNode && this.getHostList()
             }, { throttle: 16, immediate: true, ignore: ['keyword'] })
+        },
+        beforeDestroy () {
+            this.unwatch()
         },
         methods: {
             setTableHeader () {

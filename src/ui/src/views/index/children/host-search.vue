@@ -10,7 +10,9 @@
                 @focus="handleFocus"
                 @blur="handleBlur">
             </bk-input>
-            <bk-button theme="primary" class="search-btn" @click="handleSearch">
+            <bk-button theme="primary" class="search-btn"
+                :loading="$loading(request.search)"
+                @click="handleSearch">
                 <i class="bk-icon icon-search"></i>
                 {{$t('搜索')}}
             </bk-button>
@@ -29,7 +31,10 @@
                 searchContent: '',
                 textarea: '',
                 showEllipsis: false,
-                textareaDom: null
+                textareaDom: null,
+                request: {
+                    search: Symbol('search')
+                }
             }
         },
         watch: {
@@ -105,6 +110,10 @@
                                 flag: 'bk_host_innerip|bk_host_outerip',
                                 exact: 1
                             }
+                        },
+                        config: {
+                            requestId: this.request.search,
+                            cancelPrevious: true
                         }
                     })
                     const bizSet = new Set()

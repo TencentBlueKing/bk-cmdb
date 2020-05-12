@@ -1,4 +1,4 @@
-import router, { addBeforeHooks } from './index'
+import router from './index'
 import throttle from 'lodash.throttle'
 import { redirect } from './actions'
 
@@ -58,11 +58,7 @@ function createCallback (keys, handler, options = {}) {
 
 class RouterQuery {
     constructor () {
-        this.unwatchs = []
-        addBeforeHooks(() => {
-            this.unwatchs.forEach(unwatch => unwatch())
-            this.unwatchs = []
-        })
+        this.router = router
     }
     get app () {
         return router.app
@@ -120,7 +116,7 @@ class RouterQuery {
         const watchOptions = createWatchOptions(key, options)
         const callback = createCallback(key, handler, options)
         const expression = () => this.route.query
-        this.unwatchs.push(this.app.$watch(expression, callback, watchOptions))
+        return this.app.$watch(expression, callback, watchOptions)
     }
 }
 

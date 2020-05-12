@@ -13,6 +13,7 @@
 package event
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -27,7 +28,6 @@ import (
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/bsonx"
-	"golang.org/x/net/context"
 	"gopkg.in/redis.v5"
 )
 
