@@ -34,7 +34,7 @@ func (am *AuthManager) CollectAllPlats(ctx context.Context, header http.Header) 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	plats := make([]PlatSimplify, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		cond := metadata.QueryCondition{
 			Fields:    []string{common.BKCloudIDField, common.BKCloudNameField},
 			Condition: mapstr.MapStr(map[string]interface{}{}),
