@@ -429,14 +429,21 @@
                                 value: filterItem.value[1]
                             }])
                         } else {
+                            let operator = filterItem.operator
+                            let value = filterValue
+
+                            if (['category', 'organization'].includes(filterItem.bk_property_type)) {
+                                operator = '$in'
+                            }
+
+                            if (filterItem.operator === '$multilike' || ['bk_set_name', 'bk_module_name'].includes(filterItem.bk_property_id)) {
+                                value = filterValue.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
+                            }
+
                             params[modelId].push({
                                 field: filterItem.bk_property_id,
-                                operator: ['category', 'organization'].includes(filterItem.bk_property_type)
-                                    ? '$in'
-                                    : filterItem.operator,
-                                value: filterItem.operator === '$multilike'
-                                    ? filterValue.split('\n').filter(str => str.trim().length).map(str => str.trim())
-                                    : filterValue
+                                operator,
+                                value
                             })
                         }
                     }
