@@ -256,7 +256,7 @@ const (
 	AdminEntrance         ActionID = "admin_entrance"
 
 	WatchHost         ActionID = "host"
-	WatchHostRelation ActionID = "hostRelation"
+	WatchHostRelation ActionID = "host_relation"
 )
 
 var ActionIDNameMap = map[ActionID]string{

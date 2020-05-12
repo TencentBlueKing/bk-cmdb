@@ -15,6 +15,7 @@ package event
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -49,16 +50,6 @@ type Flow struct {
 func (f *Flow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
 
-	for {
-		if !f.isMaster.IsMaster() {
-			blog.V(4).Infof("run flow, but not master, waiting")
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		break
-	}
-
-	blog.Infof("start run flow for key: %s, turn to master, not start flow event.", f.key.Namespace())
 	startToken, err := f.getStartToken()
 	if err != nil {
 		blog.Errorf("run flow, but get start token failed, err: %v", err)
@@ -345,6 +336,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 }
 
 func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
+	blog.Errorf("received delete %s event, oid: %s", f.Collection, e.Oid)
 	filter := mapstr.MapStr{
 		"oid": e.Oid,
 	}
@@ -353,6 +345,9 @@ func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 	if err != nil {
 		blog.Errorf("received delete %s event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
 			f.Collection, e.Oid, err)
+		if strings.Contains(err.Error(), "document not found") {
+			return false, err
+		}
 		return true, err
 	}
 
