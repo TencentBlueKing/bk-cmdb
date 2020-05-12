@@ -48,7 +48,7 @@ func (s *Service) WebService() *restful.Container {
 	}
 
 	api := new(restful.WebService)
-	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/topo/v3/").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	// init service actions
 	s.initService(api)
