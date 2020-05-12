@@ -207,6 +207,13 @@ func (f *Flow) doUpsert(e *types.Event) (retry bool, err error) {
 }
 
 func (f *Flow) do(e *types.Event) (retry bool, err error) {
+	// validate the event is valid or not.
+	// the invalid event will be dropped.
+	if err := f.key.Validate(e.DocBytes); err != nil {
+		blog.Errorf("run flow, received %s event, but got invalid event, doc: %s err: %v, oid: %s", f.Collection, e.DocBytes, err, e.Oid)
+		return false, err
+	}
+
 	keys, err := f.rds.HMGet(f.key.MainHashKey(), f.key.HeadKey(), f.key.TailKey()).Result()
 	if err != nil {
 		return true, err
@@ -258,7 +265,7 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 	// get previous node with previous cursor
 	prev, err := f.rds.HGet(f.key.MainHashKey(), prevCursor).Result()
 	if err != nil {
-		blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, e.Oid)
+		blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, err, e.Oid)
 		return true, err
 	}
 

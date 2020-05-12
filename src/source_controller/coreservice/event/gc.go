@@ -67,12 +67,13 @@ func (f *Flow) cleanExpiredEvents() {
 				blog.Infof("clean expired events for key: %s, loop interval minutes: %d, rid: %s", f.key.Namespace(), minute, rid)
 			}
 
-			blog.Infof("start clean expired events for key: %s, rid: ", f.key.Namespace(), rid)
+			blog.Infof("start clean expired events for key: %s, rid: %s", f.key.Namespace(), rid)
 
 			nodes, err := f.getNodesFromCursor(100, headKey, f.key)
 			if err != nil {
 				blog.Errorf("clean expired events for key: %s, but get cursor node from head failed, err: %v, rid: %s",
 					f.key.Namespace(), err, rid)
+				continueLoop = false
 				continue
 			}
 
@@ -80,20 +81,22 @@ func (f *Flow) cleanExpiredEvents() {
 				// TODO: repair the node chain when this happen.
 				blog.Errorf("clean expired events for key: %s, but got 0 nodes, at least we have tail node, rid: %s",
 					f.key.Namespace(), rid)
+				continueLoop = false
 				continue
 			}
 
 			if len(nodes) == 1 {
 				// no events is occurred
 				if nodes[0].Cursor == headKey {
-					blog.Infof("clean expired events for key: %s success, * no events found *, rid: %s",
-						f.key.Namespace(), rid)
+					blog.Infof("clean expired events for key: %s success, * no events found *, rid: %s", f.key.Namespace(), rid)
+					continueLoop = false
 					continue
 				}
 				// have only one node, but not target to the head key.
 				// something is wrong when this happens.
 				// TODO: repair the event chain.
 				blog.Errorf("clean expired events for key: %s, but something is wrong. rid: %s", f.key.Namespace(), rid)
+				continueLoop = false
 				continue
 			}
 			expiredNodes := make([]*watch.ChainNode, 0)
@@ -107,8 +110,9 @@ func (f *Flow) cleanExpiredEvents() {
 					}
 					// if the first node is not expired, then no node is expired after it.
 					if time.Now().Unix()-int64(node.ClusterTime.Sec) <= f.key.TTLSeconds() {
-						blog.Infof("clean expired events for key: %s success, * no expired keys *, head cursor: %s. rid: %s",
+						blog.V(4).Infof("clean expired events for key: %s success, * no expired keys *, head cursor: %s. rid: %s",
 							f.key.Namespace(), node.Cursor, rid)
+						continueLoop = false
 						goto loop
 					}
 					expiredNodes = append(expiredNodes, node)
@@ -121,6 +125,7 @@ func (f *Flow) cleanExpiredEvents() {
 				} else {
 					// if a node which is not expired occurred, break the loop immediately. nodes after it
 					// is definitely not expired.
+					continueLoop = false
 					break
 				}
 			}
@@ -166,6 +171,7 @@ func (f *Flow) cleanExpiredEvents() {
 				if err != nil {
 					blog.Errorf("clean expired events for key: %s, but marshal tail node failed, err: %v, rid: %s",
 						f.key.Namespace(), err, rid)
+					continueLoop = false
 					continue
 				}
 				pipe.HSet(mainKey, tailKey, string(tBytes))
@@ -180,6 +186,8 @@ func (f *Flow) cleanExpiredEvents() {
 			}
 
 			if !continueLoop {
+				// do not loop again,
+				continueLoop = false
 				blog.Infof("clean expired events for key: %s success. rid: %s", f.key.Namespace(), rid)
 			}
 			// sleep a while during the loop
@@ -256,7 +264,6 @@ func (f *Flow) doClean(rid string) {
 				time.Sleep(10 * time.Second)
 				success = false
 				continue
-
 			}
 
 			oids := make([]string, len(docs))

@@ -12,18 +12,34 @@
 
 package event
 
-import "configcenter/src/common"
+import (
+	"fmt"
+
+	"configcenter/src/common"
+	"github.com/tidwall/gjson"
+)
 
 const watchCacheNamespace = common.BKCacheKeyV3Prefix + "watch:"
 
+var hostFields = []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField}
+
 var HostKey = Key{
 	namespace:  watchCacheNamespace + "host",
-	ttlSeconds: 3 * 60 * 60,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, hostFields...)
+		for idx := range hostFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", hostFields[idx])
+			}
+		}
+		return nil
+	},
 }
 
 var ModuleHostRelationKey = Key{
 	namespace:  watchCacheNamespace + "host_relation",
-	ttlSeconds: 3 * 60 * 60,
+	ttlSeconds: 6 * 60 * 60,
 }
 
 type Key struct {
@@ -33,6 +49,10 @@ type Key struct {
 	// if use's watch start from value is older than time.Now().Unix() - startFrom value,
 	// that means use's is watching event that has already deleted, it's not allowed.
 	ttlSeconds int64
+
+	// validator validate whether the event data is valid or not.
+	// if not, then this event should not be handle, should be dropped.
+	validator func(doc []byte) error
 }
 
 // MainKey is the hashmap key
@@ -60,4 +80,12 @@ func (k Key) Namespace() string {
 
 func (k Key) TTLSeconds() int64 {
 	return k.ttlSeconds
+}
+
+func (k Key) Validate(doc []byte) error {
+	if k.validator != nil {
+		return k.validator(doc)
+	}
+
+	return nil
 }
