@@ -107,3 +107,7 @@ func (k Key) Name(doc []byte) string {
 	}
 	return ""
 }
+
+func (k Key) LockKey() string {
+	return k.namespace + ":lock"
+}

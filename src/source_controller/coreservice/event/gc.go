@@ -30,8 +30,8 @@ func getLoopInternalMinutes() int {
 	// give a random sleep interval to avoid clean different resource keys
 	// at the same time.
 	rand.Seed(time.Now().UnixNano())
-	// time range [60, 120] minutes
-	return 60 + (rand.Intn(60-1) + 1)
+	// time range [60, 180] minutes
+	return 120 + (rand.Intn(60-1) + 1)
 }
 
 func (f *Flow) cleanExpiredEvents() {
@@ -143,6 +143,27 @@ func (f *Flow) cleanExpiredEvents() {
 				continue
 			}
 
+			// get operate lock to avoid concurrent revise the chain
+			success, err := f.rds.SetNX(f.key.LockKey(), 1, 5*time.Second).Result()
+			if err != nil {
+				blog.Errorf("clean expired events for key: %s, but get lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+
+			if !success {
+				blog.Errorf("clean expired events for key: %s, get lock success, rid: %s", f.key.Namespace(), rid)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+
+			// already get the lock. prepare to release the lock.
+			releaseLock := func() {
+				if err := f.rds.Del(f.key.LockKey()).Err(); err != nil {
+					blog.Errorf("clean expired events for key: %s, but delete lock failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
+				}
+			}
+
 			pipe := f.rds.Pipeline()
 			// redirect the head key.
 			pipe.HSet(mainKey, headKey, hBytes)
@@ -169,6 +190,8 @@ func (f *Flow) cleanExpiredEvents() {
 				}
 				tBytes, err := json.Marshal(tailNode)
 				if err != nil {
+					releaseLock()
+
 					blog.Errorf("clean expired events for key: %s, but marshal tail node failed, err: %v, rid: %s",
 						f.key.Namespace(), err, rid)
 					continueLoop = false
@@ -180,16 +203,16 @@ func (f *Flow) cleanExpiredEvents() {
 			// do the clean operation.
 			_, err = pipe.Exec()
 			if err != nil {
+				releaseLock()
+
 				blog.Errorf("clean expired events for key: %s, but do redis pipeline failed, err: %v, rid: %s",
 					f.key.Namespace(), err, rid)
+				time.Sleep(5 * time.Second)
 				continue
 			}
+			releaseLock()
 
-			if !continueLoop {
-				// do not loop again,
-				continueLoop = false
-				blog.Infof("clean expired events for key: %s success. rid: %s", f.key.Namespace(), rid)
-			}
+			blog.Infof("clean expired events for key: %s success. rid: %s", f.key.Namespace(), rid)
 			// sleep a while during the loop
 			time.Sleep(30 * time.Second)
 		}
