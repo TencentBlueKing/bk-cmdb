@@ -379,8 +379,8 @@ func (f *Flow) doDelete(e *types.Event) (retry bool, err error) {
 
 	byt, err := bson.MarshalExtJSON(doc.Lookup("detail"), false, false)
 	if err != nil {
-		fmt.Println(err)
-		return
+		blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v", f.Collection, e.Oid, err)
+		return false, err
 	}
 	e.DocBytes = byt
 

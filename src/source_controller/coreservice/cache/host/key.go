@@ -49,13 +49,6 @@ func (h hostKeyGenerator) HostDetailLockKey(hostID int64) string {
 	return h.namespace + ":detail:lock:" + strconv.FormatInt(hostID, 10)
 }
 
-// a hashmap, to store host id and host's _id relation
-// key: _id
-// value: bk_host_id
-func (h hostKeyGenerator) HostOidKey() string {
-	return h.namespace + ":oid"
-}
-
 // key to store the relation with ip and host id:
 // key: bk_host_innerip:bk_cloud_id
 // value: bk_host_id
