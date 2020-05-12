@@ -280,10 +280,11 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 }
 
 func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
+	name := f.key.Name(e.DocBytes)
 
 	currentCursor, err := watch.GetEventCursor(f.Collection, e)
 	if err != nil {
-		blog.Errorf("initialize head tail node, but get cursor failed, err: %v, oid: %s", err, e.Oid)
+		blog.Errorf("initialize head tail node, but get cursor failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
 		return false, err
 	}
 
@@ -298,7 +299,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 
 	nByte, err := json.Marshal(newNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal new node failed, node: %v, oid: %s", *newNode, e.Oid)
+		blog.Errorf("run flow, marshal new node failed, node: %v, name: %s, err: %v oid: %s", *newNode, name, err, e.Oid)
 		return false, err
 	}
 
@@ -308,7 +309,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 	}
 	hByte, err := json.Marshal(headNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal head node failed, node: %v, oid: %s", *headNode, e.Oid)
+		blog.Errorf("run flow, marshal head node failed, node: %v, name: %s, err: %v, oid: %s", *headNode, name, err, e.Oid)
 		return false, err
 	}
 
@@ -321,7 +322,7 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 
 	tByte, err := json.Marshal(tailNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal tail node failed, node: %v, oid: %s", *tailNode, e.Oid)
+		blog.Errorf("run flow, marshal tail node failed, node: %v, name: %s, err: %v, oid: %s", *tailNode, name, err, e.Oid)
 		return false, err
 	}
 
@@ -335,10 +336,10 @@ func (f *Flow) initializeHeadTailNode(e *types.Event) (bool, error) {
 	pipe.HMSet(f.key.MainHashKey(), val)
 	pipe.Set(f.key.DetailKey(currentCursor), string(e.DocBytes), 0)
 	if _, err := pipe.Exec(); err != nil {
-		blog.Errorf("run flow, set head and tail key failed, err: %v, oid: %s", err, e.Oid)
+		blog.Errorf("run flow, set head and tail key failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
 		return true, err
 	}
-	blog.Infof("insert watch event for %s success, cursor: %s, oid: %s", f.Collection, currentCursor, e.Oid)
+	blog.Infof("insert watch event for %s success, name: %s, cursor: %s, oid: %s", f.Collection, name, currentCursor, e.Oid)
 	return false, nil
 }
 
@@ -394,9 +395,11 @@ func (f *Flow) getStartToken() (token string, err error) {
 // if an error occurred, then the caller should check the retry is true or not, if true, then this event
 // need to be retry later.
 func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *types.Event) (retry bool, err error) {
+	name := f.key.Name(e.DocBytes)
+
 	currentCursor, err := watch.GetEventCursor(f.Collection, e)
 	if err != nil {
-		blog.Errorf("get event cursor failed, err: %v, oid: %s ", err, e.Oid)
+		blog.Errorf("get event cursor failed, name: %s err: %v, oid: %s ", name, err, e.Oid)
 		return false, err
 	}
 	prevNode.NextCursor = currentCursor
@@ -413,7 +416,7 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 
 	nBytes, err := json.Marshal(newNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal new node failed, node: %+v err: %v, oid: %s", *newNode, err, e.Oid)
+		blog.Errorf("run flow, marshal new node failed, name: %s node: %+v err: %v, oid: %s", name, *newNode, err, e.Oid)
 		return false, err
 	}
 
@@ -425,13 +428,13 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 	}
 	tBytes, err := json.Marshal(tailNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal tail node failed, node: %+v, err: %v, oid: %s", *tailNode, err, e.Oid)
+		blog.Errorf("run flow, marshal tail node failed, name: %s node: %+v, err: %v, oid: %s", name, *tailNode, err, e.Oid)
 		return false, err
 	}
 
 	pBytes, err := json.Marshal(prevNode)
 	if err != nil {
-		blog.Errorf("run flow, marshal previous node failed, node： %+v err: %v, oid: %s", *prevNode, err, e.Oid)
+		blog.Errorf("run flow, marshal previous node failed, name: %s node： %+v err: %v, oid: %s", name, *prevNode, err, e.Oid)
 		return false, err
 	}
 
@@ -444,9 +447,10 @@ func (f *Flow) insertNewNode(prevCursor string, prevNode *watch.ChainNode, e *ty
 	pipe.HMSet(f.key.MainHashKey(), values)
 	pipe.Set(f.key.DetailKey(currentCursor), string(e.DocBytes), 0)
 	if _, err := pipe.Exec(); err != nil {
-		blog.Errorf("run flow, but insert node failed, err: %v, oid: %s", err, e.Oid)
+		blog.Errorf("run flow, but insert node failed, name: %s, err: %v, oid: %s", name, err, e.Oid)
 		return true, err
 	}
-	blog.Infof("insert watch event for %s success, cursor: %s, oid: %s", f.Collection, currentCursor, e.Oid)
+	blog.Infof("insert watch event for %s success, cursor: %s, name: %s, oid: %s",
+		f.Collection, currentCursor, name, e.Oid)
 	return false, nil
 }
