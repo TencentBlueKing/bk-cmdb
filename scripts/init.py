@@ -182,16 +182,16 @@ port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-maxOpenConns = 3000
-maxIdleConns = 100
+maxOpenConns = 5
+maxIdleConns = 1
 mechanism = SCRAM-SHA-1
 rsName = $rs_name
 [redis]
 host = $redis_host:$redis_port
 pwd = $redis_pass
 database = 0
-maxOpenConns = 3000
-maxIDleConns = 1000
+maxOpenConns = 5
+maxIDleConns = 1
 [confs]
 dir = $configures_dir
 [errors]
