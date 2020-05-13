@@ -105,6 +105,8 @@ type searchHost struct {
 	cacheInfoMap searchHostInfoMapCache
 	totalHostCnt int
 
+	paged bool
+
 	searchedHostIDs []int64
 	searchCloudIDs  []int64
 
@@ -678,10 +680,14 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 
 	query := &metadata.QueryInput{
 		Condition: condition,
-		Start:     0,
+		Start:     sh.hostSearchParam.Page.Start,
 		Limit:     sh.hostSearchParam.Page.Limit,
 		Sort:      sh.hostSearchParam.Page.Sort,
 		Fields:    strings.Join(sh.conds.hostCond.Fields, ","),
+	}
+
+	if sh.paged {
+		query.Start = 0
 	}
 
 	gResult, err := sh.lgc.CoreAPI.CoreService().Host().GetHosts(sh.ctx, sh.pheader, query)
@@ -698,7 +704,7 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		sh.noData = true
 	}
 
-	if sh.totalHostCnt == 0 {
+	if !sh.paged {
 		sh.totalHostCnt = gResult.Data.Count
 	}
 
@@ -825,6 +831,8 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		}
 	}
 	hostIDArr = pagedHosts
+
+	sh.paged = true
 
 	// 合并两种涞源的根据 host_id 查询的 condition
 	// 详情见issue: https://github.com/Tencent/bk-cmdb/issues/2461
