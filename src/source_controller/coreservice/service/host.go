@@ -200,7 +200,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		dbInst.Fields(fieldArr...)
 	}
 	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
-		blog.Errorf("failed to query the host , err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
