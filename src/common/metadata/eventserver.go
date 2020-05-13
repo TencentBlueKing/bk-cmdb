@@ -66,7 +66,7 @@ type Subscription struct {
 	Operator         string      `bson:"operator" json:"operator"`
 	OwnerID          string      `bson:"bk_supplier_account" json:"bk_supplier_account"`
 	LastTime         Time        `bson:"last_time" json:"last_time"`
-	Statistics       *Statistics `bson:"-" json:"operation"`
+	Statistics       *Statistics `bson:"-" json:"statistics"`
 }
 
 // Report define sending statistic
