@@ -262,7 +262,7 @@
         },
         async created () {
             try {
-                this.unwatch = RouterQuery.watch(['ip', 'scope', 'exact', 'page', 'limit', 'condition', '_t'], ({
+                this.unwatch = RouterQuery.watch('*', ({
                     scope = '1',
                     page = 1,
                     limit = this.table.pagination.limit

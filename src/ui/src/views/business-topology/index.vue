@@ -92,7 +92,7 @@
             }
         },
         async created () {
-            this.unwatch = RouterQuery.watch('tab', value => {
+            this.unwatch = RouterQuery.watch('tab', (value = 'hostList') => {
                 this.activeTab = value
             })
             try {
