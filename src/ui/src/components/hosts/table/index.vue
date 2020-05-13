@@ -110,6 +110,7 @@
     import {
         MENU_BUSINESS,
         MENU_BUSINESS_HOST_DETAILS,
+        MENU_RESOURCE_HOST,
         MENU_RESOURCE_HOST_DETAILS,
         MENU_RESOURCE_BUSINESS_HOST_DETAILS
     } from '@/dictionary/menu-symbol'
@@ -258,20 +259,20 @@
             },
             condition () {
                 RouterQuery.set('_t', Date.now())
+            },
+            '$route.name': {
+                immediate: true,
+                handler (value) {
+                    if (value === MENU_RESOURCE_HOST) {
+                        this.setRouterQueryWatcher()
+                    } else {
+                        this.teardownRouterQueryWatcher()
+                    }
+                }
             }
         },
         async created () {
             try {
-                this.unwatch = RouterQuery.watch(['ip', 'scope', 'exact', 'page', 'limit', 'condition', '_t'], ({
-                    scope = '1',
-                    page = 1,
-                    limit = this.table.pagination.limit
-                }) => {
-                    this.scope = scope
-                    this.table.pagination.current = parseInt(page)
-                    this.table.pagination.limit = parseInt(limit)
-                    this.getHostList()
-                }, { immediate: true, throttle: 16 })
                 await Promise.all([
                     this.getProperties(),
                     this.getHostPropertyGroups()
@@ -281,13 +282,28 @@
             }
         },
         beforeDestroy () {
-            this.unwatch()
+            this.teardownRouterQueryWatcher()
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
             ...mapActions('hostSearch', ['searchHost']),
+            setRouterQueryWatcher () {
+                this.unwatch = RouterQuery.watch('*', ({
+                    scope = '1',
+                    page = 1,
+                    limit = this.table.pagination.limit
+                }) => {
+                    this.scope = scope
+                    this.table.pagination.current = parseInt(page)
+                    this.table.pagination.limit = parseInt(limit)
+                    this.getHostList()
+                }, { immediate: true, throttle: 16 })
+            },
+            teardownRouterQueryWatcher () {
+                this.unwatch && this.unwatch()
+            },
             getPropertyValue (modelId, propertyId, field) {
                 const model = this.properties[modelId]
                 if (!model) {

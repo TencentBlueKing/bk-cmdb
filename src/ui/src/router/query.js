@@ -1,7 +1,9 @@
 import router from './index'
 import throttle from 'lodash.throttle'
+import deepEqual from 'deep-equal'
 import { redirect } from './actions'
 
+// Vue.watch的options
 function createWatchOptions (key, options) {
     const watchOptions = {
         immediate: false,
@@ -18,33 +20,38 @@ function createWatchOptions (key, options) {
     return watchOptions
 }
 
+// 始终watch router.query, 根据watch的key再做变更比对，除immediate外，无变更时不触发注册的handler
 function createCallback (keys, handler, options = {}) {
+    let immediateCalled = false
     const callback = (values, oldValues = {}) => {
+        let execValue, execOldValue
         if (Array.isArray(keys)) {
-            const watchValues = {}
-            const oldWatchValues = {}
+            execValue = {}
+            execOldValue = {}
             keys.forEach(key => {
-                watchValues[key] = values[key]
-                oldWatchValues[key] = oldValues[key]
+                execValue[key] = values[key]
+                execOldValue[key] = oldValues[key]
             })
-            const hasChange = keys.some(key => String(watchValues[key]) !== String(oldWatchValues[key]))
-            hasChange && handler(watchValues, oldWatchValues)
         } else if (keys === '*') {
-            const cloneValues = { ...values }
-            const cloneOldValues = { ...oldValues }
+            execValue = { ...values }
+            execOldValue = { ...oldValues }
             if (options.hasOwnProperty('ignore')) {
                 const ignoreKeys = Array.isArray(options.ignore) ? options.ignore : [options.ignore]
                 ignoreKeys.forEach(key => {
-                    delete cloneValues[key]
-                    delete cloneOldValues[key]
+                    delete execValue[key]
+                    delete execOldValue[key]
                 })
             }
-            const hasChange = Object.keys(cloneValues).some(key => String(cloneValues[key]) !== String(cloneOldValues[key]))
-            hasChange && handler(cloneValues, cloneOldValues)
         } else {
-            const value = String(values[keys])
-            const oldValue = String(oldValues[keys])
-            value !== oldValue && handler(value, oldValue)
+            execValue = values[keys]
+            execOldValue = oldValues[keys]
+        }
+        if (options.immediate && !immediateCalled) {
+            immediateCalled = true
+            handler(execValue, execOldValue)
+        } else {
+            const hasChange = !deepEqual(execValue, execOldValue)
+            hasChange && handler(execValue, execOldValue)
         }
     }
 
