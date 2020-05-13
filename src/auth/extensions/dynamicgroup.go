@@ -34,7 +34,7 @@ func (am *AuthManager) CollectDynamicGroupByBusinessID(ctx context.Context, head
 	rid := util.ExtractRequestIDFromContext(ctx)
 	dynamicGroups := make([]DynamicGroupSimplify, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		cond := metadata.QueryCondition{
 			Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
 			Limit: metadata.SearchLimit{

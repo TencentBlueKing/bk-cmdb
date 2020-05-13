@@ -169,7 +169,7 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 	cond.Field(common.BKAppIDField).Eq(businessID)
 	hostIDs := make([]int64, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		query := &metadata.QueryCondition{
 			Fields:    []string{common.BKHostIDField},
 			Condition: cond.ToMapStr(),
@@ -263,7 +263,7 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 	hostIDs = util.IntArrayUnique(hostIDs)
 	hosts := make([]mapstr.MapStr, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		cond := metadata.QueryCondition{
 			Fields:    []string{common.BKHostIDField, common.BKHostNameField, common.BKHostInnerIPField},
 			Condition: condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs).ToMapStr(),
