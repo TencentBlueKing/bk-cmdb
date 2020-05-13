@@ -787,9 +787,9 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	wg := sync.WaitGroup{}
 	var errOccur error
 	for _, moduleHostConfig := range moduleHostConfigArr {
+		wg.Add(1)
 		go func(relation metadata.HostModuleRelationRequest) {
 			pipe <- struct{}{}
-			wg.Add(1)
 			hostIDArrItem, err := sh.lgc.GetHostIDByCond(sh.ctx, relation)
 			if err != nil {
 				<-pipe
@@ -818,21 +818,28 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	}
 	sort.Ints(allHostID)
 	sh.totalHostCnt = len(allHostID)
-	pagedHosts := make([]int, 0)
-	start := sh.hostSearchParam.Page.Start
-	limit := sh.hostSearchParam.Page.Limit
-	if len(allHostID) <= limit {
-		pagedHosts = allHostID
-	} else {
-		if sh.hostSearchParam.Page.Start <= 0 {
-			pagedHosts = allHostID[0:limit]
+	if len(sh.conds.appCond.Condition) <= 0 {
+		start := sh.hostSearchParam.Page.Start
+		limit := sh.hostSearchParam.Page.Limit
+		pagedHosts := make([]int, 0)
+		if len(allHostID) >= limit {
+			if len(allHostID) <= limit {
+				pagedHosts = allHostID
+			} else {
+				if sh.hostSearchParam.Page.Start <= 0 {
+					pagedHosts = allHostID[0:limit]
+				} else {
+					pagedHosts = allHostID[start-1 : start+limit-1]
+				}
+			}
+			hostIDArr = pagedHosts
+			sh.paged = true
 		} else {
-			pagedHosts = allHostID[start-1 : start+limit-1]
+			hostIDArr = allHostID
 		}
+	} else {
+		hostIDArr = allHostID
 	}
-	hostIDArr = pagedHosts
-
-	sh.paged = true
 
 	// 合并两种涞源的根据 host_id 查询的 condition
 	// 详情见issue: https://github.com/Tencent/bk-cmdb/issues/2461
