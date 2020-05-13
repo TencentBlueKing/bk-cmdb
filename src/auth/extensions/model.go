@@ -44,7 +44,7 @@ func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header ht
 	}
 	objects := make([]metadata.Object, 0)
 	count := int64(-1)
-	for offset := int64(0); count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := int64(0); count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		query := &metadata.QueryCondition{
 			Condition: cond,
 			Page: metadata.BasePage{

@@ -35,7 +35,7 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 	cond := map[string]interface{}{common.BKAppIDField: businessID}
 	sets := make([]SetSimplify, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		query := &metadata.QueryCondition{
 			Condition: cond,
 			Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKSetNameField},
