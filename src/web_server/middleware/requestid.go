@@ -13,11 +13,17 @@
 package middleware
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/util"
+
 	"github.com/gin-gonic/gin"
 )
 
 func RequestIDMiddleware(c *gin.Context) {
 	rdapi.HTTPHeaderRidFilter(c.Request.Header)
+	if c.Request.Header.Get(common.BKHTTPCCRequestID) == "" {
+		c.Request.Header.Set(common.BKHTTPCCRequestID, util.GetHTTPCCRequestID(c.Request.Header))
+	}
 	c.Next()
 }
