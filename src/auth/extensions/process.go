@@ -36,7 +36,7 @@ func (am *AuthManager) CollectProcessesByBusinessID(ctx context.Context, header 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	processes := make([]ProcessSimplify, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		cond := metadata.QueryCondition{
 			Fields:    []string{common.BKAppIDField, common.BKProcessIDField, common.BKProcessNameField},
 			Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
