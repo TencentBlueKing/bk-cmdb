@@ -796,6 +796,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 				wg.Done()
 				blog.Errorf("GetHostIDByCond get hosts failed, err: %v, rid: %s", err, sh.ccRid)
 				errOccur = err
+				return
 			}
 			mapLock.Lock()
 			for _, id := range hostIDArrItem {
@@ -821,8 +822,8 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	if len(sh.conds.appCond.Condition) <= 0 {
 		start := sh.hostSearchParam.Page.Start
 		limit := sh.hostSearchParam.Page.Limit
-		pagedHosts := make([]int, 0)
 		if len(allHostID) >= limit {
+			pagedHosts := make([]int, 0)
 			if len(allHostID) <= limit {
 				pagedHosts = allHostID
 			} else {
