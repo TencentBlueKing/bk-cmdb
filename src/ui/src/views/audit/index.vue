@@ -503,6 +503,7 @@
             }
             .content {
                 flex: 1;
+                width: calc(100% - 96px);
                 .bk-select {
                     width: 100%;
                 }
