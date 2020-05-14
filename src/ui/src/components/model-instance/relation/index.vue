@@ -71,12 +71,14 @@
     import cmdbRelationList from './list.vue'
     import cmdbRelationGraphics from './graphics.vue'
     import cmdbRelationCreate from './create.vue'
+    import authMixin from '../mixin-auth'
     export default {
         components: {
             cmdbRelationList,
             cmdbRelationGraphics,
             cmdbRelationCreate
         },
+        mixins: [authMixin],
         props: {
             objId: {
                 type: String,
@@ -86,8 +88,8 @@
                 type: Object,
                 required: true
             },
-            auth: {
-                type: [String, Array],
+            resourceType: {
+                type: String,
                 default: ''
             }
         },
@@ -124,10 +126,10 @@
                 }
             },
             authResources () {
-                const auth = this.auth
-                if (!auth) return {}
-                if (Array.isArray(auth) && !auth.length) return {}
-                return this.$authResources({ type: auth })
+                if (this.resourceType === 'business') {
+                    return this.INST_AUTH.U_BUSINESS
+                }
+                return this.INST_AUTH.U_INST
             }
         },
         created () {
