@@ -506,6 +506,11 @@ func (s *Service) SearchInsts(ctx *rest.Contexts) {
 // SearchInstAndAssociationDetail search the inst with association details
 func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
+	if objID == common.BKInnerObjIDApp {
+		blog.Errorf("not support biz search by this api, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField))
+		return
+	}
 	data := struct {
 		paraparse.SearchParams `json:",inline"`
 		Metadata               *metadata.Metadata `json:"metadata"`
