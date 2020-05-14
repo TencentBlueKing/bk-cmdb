@@ -53,7 +53,7 @@
     } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
-    import { getIPPayload } from '@/utils/host'
+    import { getIPPayload, injectFields } from '@/utils/host'
     export default {
         components: {
             HostListOptions,
@@ -105,8 +105,7 @@
             ]),
             ...mapGetters('hosts', ['condition']),
             customColumns () {
-                const customColumnKey = this.$route.meta.customInstanceColumn
-                return this.usercustom[customColumnKey] || []
+                return this.usercustom['business_topology_table_column_config'] || []
             },
             globalCustomColumns () {
                 return this.globalUsercustom['host_global_custom_table_columns'] || []
@@ -115,6 +114,7 @@
         watch: {
             customColumns () {
                 this.setTableHeader()
+                this.getHostList()
             },
             columnsConfigProperties () {
                 this.setTableHeader()
@@ -228,7 +228,8 @@
                         value: nodeData.bk_inst_id
                     })
                 }
-                return params
+
+                return injectFields(params, this.table.header)
             },
             handleTransfer (type) {
                 if (['idle', 'business'].includes(type)) {

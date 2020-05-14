@@ -115,7 +115,7 @@
         MENU_RESOURCE_BUSINESS_HOST_DETAILS
     } from '@/dictionary/menu-symbol'
     import RouterQuery from '@/router/query'
-    import { getIPPayload } from '@/utils/host'
+    import { getIPPayload, injectFields } from '@/utils/host'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -238,6 +238,7 @@
             },
             'table.header' (header) {
                 this.$emit('on-set-header', header)
+                RouterQuery.set('_t', Date.now())
             },
             'slider.show' (show) {
                 if (!show) {
@@ -260,14 +261,11 @@
             condition () {
                 RouterQuery.set('_t', Date.now())
             },
-            '$route.name': {
-                immediate: true,
-                handler (value) {
-                    if (value === MENU_RESOURCE_HOST) {
-                        this.setRouterQueryWatcher()
-                    } else {
-                        this.teardownRouterQueryWatcher()
-                    }
+            '$route.name' (value) {
+                if (value === MENU_RESOURCE_HOST) {
+                    this.setRouterQueryWatcher()
+                } else {
+                    this.teardownRouterQueryWatcher()
                 }
             }
         },
@@ -277,6 +275,8 @@
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
+
+                this.setRouterQueryWatcher()
             } catch (e) {
                 console.log(e)
             }
@@ -387,11 +387,11 @@
                     }).then(data => {
                         this.table.pagination.count = data.count
                         this.table.list = data.info
-    
+
                         if (event) {
                             this.table.stuff.type = 'search'
                         }
-    
+
                         return data
                     }).catch(e => {
                         this.table.checked = []
@@ -404,7 +404,7 @@
             },
             injectScope (params) {
                 if (!this.showScope) {
-                    return params
+                    return injectFields(params, this.table.header)
                 }
                 const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
                 if (this.scope === 'all') {
@@ -422,7 +422,8 @@
                         biz.condition.push(newCondition)
                     }
                 }
-                return params
+
+                return injectFields(params, this.table.header)
             },
             handlePageChange (current, event) {
                 RouterQuery.set('page', current)
