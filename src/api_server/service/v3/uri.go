@@ -94,6 +94,20 @@ func (u *V3URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.HasPrefix(string(*u), rootPath+"/find/instassociation"):
 		from, to, isHit = rootPath+"/find/instassociation", topoRoot+"/inst/association/action/search", true
 
+	case strings.HasPrefix(string(*u), rootPath+"/create/instassociation"):
+		from, to, isHit = rootPath+"/create/instassociation", topoRoot+"/inst/association/action/create", true
+
+	case strings.HasPrefix(string(*u), rootPath+"/delete/instassociation"):
+		items := strings.Split(string(*u), "/delete/instassociation/")
+		if len(items) != 2 {
+			break
+		}
+		assoID := strings.Split(items[1], "/")[0]
+		from, to, isHit = rootPath+"/delete/instassociation/"+assoID, topoRoot+"/inst/association/"+assoID+"/action/delete", true
+
+	case strings.HasPrefix(string(*u), rootPath+"/find/objectassociation"):
+		from, to, isHit = rootPath+"/find/objectassociation", topoRoot+"/object/association/action/search", true
+
 	default:
 		isHit = false
 	}
