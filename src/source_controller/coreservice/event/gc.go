@@ -87,7 +87,7 @@ func (f *Flow) cleanExpiredEvents() {
 
 			if len(nodes) == 1 {
 				// no events is occurred
-				if nodes[0].Cursor == headKey {
+				if nodes[0].NextCursor == headKey {
 					blog.Infof("clean expired events for key: %s success, * no events found *, rid: %s", f.key.Namespace(), rid)
 					continueLoop = false
 					continue

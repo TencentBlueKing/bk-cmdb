@@ -104,8 +104,8 @@ func (e *eventServer) Rebook(ctx context.Context, ownerID string, appID string, 
 	return
 }
 
-func (e *eventServer) Watch(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (resp []*watch.WatchEventResp, err error) {
-	resp = make([]*watch.WatchEventResp, 0)
+func (e *eventServer) Watch(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (resp []*watch.WatchEventDetail, err error) {
+	resp = make([]*watch.WatchEventDetail, 0)
 	err = e.client.Post().
 		WithContext(ctx).
 		Body(opts).
