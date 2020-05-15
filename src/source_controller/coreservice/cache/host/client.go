@@ -61,7 +61,7 @@ func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWith
 	// data has already expired, need to refresh from db
 	ips, cloudID, detail, err := getHostDetailsFromMongoWithHostID(c.db, opt.HostID)
 	if err != nil {
-		blog.Errorf("get host with id, and cache expired, but get from mongo failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("get host with id: %d, and cache expired, but get from mongo failed, err: %v, rid: %s", opt.HostID, err, rid)
 		return "", err
 	}
 
@@ -86,7 +86,7 @@ func (c *Client) GetHostWithInnerIP(ctx context.Context, opt *metadata.SearchHos
 
 	detail, err := c.getHostDetailWithIP(opt.InnerIP, opt.CloudID)
 	if err != nil {
-		blog.Errorf("get host with innerip failed, err：%v, rid: %s", err, rid)
+		blog.Errorf("get host with inner ip: %s failed, err：%v, rid: %s", opt.InnerIP, err, rid)
 		return "", err
 	}
 

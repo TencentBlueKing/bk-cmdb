@@ -72,29 +72,25 @@ func (h *HostSnap) Analyze(mesg string) error {
 	ips := getIPS(&val)
 	host, err := h.getHostByVal(header, cloudID, ips, &val)
 	if err != nil {
+		blog.Errorf("get host detail with ips: %v failed, err: %v, rid: %s", ips, err, rid)
 		return err
-	}
-
-	if len(host) == 0 {
-		blog.Warnf("snapshot host not found, continue, %s, rid :%s", val.String(), rid)
-		return fmt.Errorf("host not found, continue, value: %s", val.String())
 	}
 
 	elements := gjson.GetMany(host, common.BKHostIDField, common.BKHostInnerIPField, common.BKHostOuterIPField)
 	// check host id field
 	if !elements[0].Exists() {
-		blog.Errorf("snapshot analyze, but host id not exist, host: %s, rid: %s", host, rid)
+		blog.Errorf("snapshot analyze, but host id not exist, host: %s, ips: %v, rid: %s", host, ips, rid)
 		return errors.New("host id not exist")
 	}
 	hostID := elements[0].Int()
 	if hostID == 0 {
-		blog.Errorf("snapshot analyze, but host id is 0, host: %s, rid: %s", host, rid)
+		blog.Errorf("snapshot analyze, but host id is 0, host: %s, ips: %v, rid: %s", host, ips, rid)
 		return errors.New("host id can not be 0")
 	}
 
 	// check inner ip
 	if !elements[1].Exists() {
-		blog.Errorf("snapshot analyze, but host inner ip not exist, host: %s, rid: %s", host, rid)
+		blog.Errorf("snapshot analyze, but host inner ip not exist, host: %s, ips: %v, rid: %s", host, ips, rid)
 		return errors.New("host inner ip not exist")
 	}
 
@@ -401,19 +397,35 @@ func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string,
 		host, err := h.Engine.CoreAPI.CoreService().Cache().SearchHostWithInnerIP(context.Background(), header, opt)
 		if err != nil {
 			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID, err, rid)
-			return "", err
+			// do not return, continue search with next ip
+			// return "", err
 		}
+
+		if len(host) == 0 {
+			// not find host
+			continue
+		}
+
 		return host, nil
 
 	}
 
-	return "", errors.New("can not find ip in snapshot")
+	return "", errors.New("can not find ip detail from cache")
 }
 
-func getIPS(val *gjson.Result) (ips []string) {
-	if !strings.HasPrefix(val.Get("ip").String(), "127.0.0.") {
-		ips = append(ips, val.Get("ip").String())
+func getIPS(val *gjson.Result) []string {
+	ipv4 := make([]string, 0)
+	ipv6 := make([]string, 0)
+
+	rootIP := val.Get("ip").String()
+	if !strings.HasPrefix(rootIP, "127.0.0.") {
+		if strings.Contains(rootIP, ":") {
+			ipv6 = append(ipv6, rootIP)
+		} else {
+			ipv4 = append(ipv4, rootIP)
+		}
 	}
+
 	interfaces := val.Get("data.net.interface.#.addrs.#.addr").Array()
 	for _, addrs := range interfaces {
 		for _, addr := range addrs.Array() {
@@ -421,10 +433,14 @@ func getIPS(val *gjson.Result) (ips []string) {
 			if strings.HasPrefix(ip, "127.0.0.") {
 				continue
 			}
-			ips = append(ips, ip)
+			if strings.Contains(ip, ":") {
+				ipv6 = append(ipv6, ip)
+			} else {
+				ipv4 = append(ipv4, ip)
+			}
 		}
 	}
-	return ips
+	return append(ipv4, ipv6...)
 }
 
 func newHeaderWithRid() (http.Header, string) {
