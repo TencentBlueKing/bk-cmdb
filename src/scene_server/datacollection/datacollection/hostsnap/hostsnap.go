@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -66,8 +67,11 @@ func (h *HostSnap) Analyze(mesg string) error {
 	if !gjson.Get(mesg, "cloudid").Exists() {
 		data = gjson.Get(mesg, "data").String()
 	}
-	val := gjson.Parse(data)
+
 	header, rid := newHeaderWithRid()
+	blog.V(5).Infof("analyze snapshot %s, rid: %s", data, rid)
+
+	val := gjson.Parse(data)
 	cloudID := val.Get("cloudid").Int()
 	ips := getIPS(&val)
 	host, err := h.getHostByVal(header, cloudID, ips, &val)
@@ -398,7 +402,6 @@ func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string,
 		if err != nil {
 			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID, err, rid)
 			// do not return, continue search with next ip
-			// return "", err
 		}
 
 		if len(host) == 0 {
@@ -418,7 +421,7 @@ func getIPS(val *gjson.Result) []string {
 	ipv6 := make([]string, 0)
 
 	rootIP := val.Get("ip").String()
-	if !strings.HasPrefix(rootIP, "127.0.0.") {
+	if !strings.HasPrefix(rootIP, "127.0.0.") && net.ParseIP(rootIP) != nil {
 		if strings.Contains(rootIP, ":") {
 			ipv6 = append(ipv6, rootIP)
 		} else {
@@ -433,6 +436,12 @@ func getIPS(val *gjson.Result) []string {
 			if strings.HasPrefix(ip, "127.0.0.") {
 				continue
 			}
+
+			if net.ParseIP(ip) == nil {
+				// invalid ip address
+				continue
+			}
+
 			if strings.Contains(ip, ":") {
 				ipv6 = append(ipv6, ip)
 			} else {
