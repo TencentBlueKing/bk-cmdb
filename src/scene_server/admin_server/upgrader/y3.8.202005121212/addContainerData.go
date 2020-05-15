@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
@@ -40,6 +40,9 @@ func addPresetObjects(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		return err
 	}
 	if err := addObjAttDescData(ctx, db, conf); err != nil {
+		return err
+	}
+	if err := addObjUnique(ctx, db, conf); err != nil {
 		return err
 	}
 	return nil
@@ -202,47 +205,47 @@ func addObjUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 	}
 
 	var propertyIDToProperty = map[string]Attribute{}
-	var keyfunc = func(a, b string) string { return a + ":" + b}
+	var keyfunc = func(a, b string) string { return a + ":" + b }
 
 	for _, oldAttr := range oldAttributes {
 		ropertyIDToProperty[keyfunc(oldAttr.ObjectID, oldAttr.PropertyID)] = oldAttr
 	}
 
-	uniques := []metadata.ObjectUnique {
+	uniques := []metadata.ObjectUnique{
 		// pod
 		{
-			objID: common.BKInnerObjIDPod,
+			objID:     common.BKInnerObjIDPod,
 			MustCheck: true,
-			Keys: []metadata.UniqueKey {
+			Keys: []metadata.UniqueKey{
 				{
 					Kind: metadata.UniqueKeyKindProperty,
-					ID: uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodNameField)].ID),
+					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodNameField)].ID),
 				},
 				{
 					Kind: metadata.UniqueKeyKindProperty,
-					ID: uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodNamespaceField)].ID),
+					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodNamespaceField)].ID),
 				},
 				{
 					Kind: metadata.UniqueKeyKindProperty,
-					ID: uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodClusterField)].ID),
+					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodClusterField)].ID),
 				},
 			},
-			IsPre: true,
-			OwnerID: conf.OwnerID,
-			LastTime: metadata.Now()
+			IsPre:    true,
+			OwnerID:  conf.OwnerID,
+			LastTime: metadata.Now(),
 		},
 		{
-			objID: common.BKInnerObjIDPod,
+			objID:     common.BKInnerObjIDPod,
 			MustCheck: true,
-			Keys: []metadata.UniqueKey {
+			Keys: []metadata.UniqueKey{
 				{
 					Kind: metadata.UniqueKeyKindProperty,
-					ID: uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodUUIDField)].ID),
+					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodUUIDField)].ID),
 				},
 			},
-			IsPre: true,
-			OwnerID: conf.OwnerID,
-			LastTime: metadata.Now()
+			IsPre:    true,
+			OwnerID:  conf.OwnerID,
+			LastTime: metadata.Now(),
 		},
 	}
 

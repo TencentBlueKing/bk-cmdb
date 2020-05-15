@@ -313,6 +313,12 @@ const (
 	// BKPodClusterField the pod cluster field
 	BKPodClusterField = "bk_pod_cluster"
 
+	// BKPodWorkloadType type of workload than the pod belongs to
+	BKPodWorkloadType = "bk_pod_workloadtype"
+
+	// BKPodWorkloadName name of workload than the pod belongs to
+	BKPodWorkloadName = "bk_pod_workloadname"
+
 	// BKAppNameField the app name field
 	BKAppNameField = "bk_biz_name"
 
