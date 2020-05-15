@@ -58,7 +58,7 @@ export const translateAuth = async (authList = []) => {
                 resources: [[{
                     resource_type_name: RESOURCE_TYPE_NAME[resourceType],
                     resource_type: convertedAuth[index].type,
-                    resource_id: isObjectAuth ? (auth.resource_id || '') : '',
+                    resource_id: isObjectAuth ? (String(auth.resource_id) || '') : '',
                     resource_name: isObjectAuth ? (auth.resource_name || '') : ''
                 }]]
             }

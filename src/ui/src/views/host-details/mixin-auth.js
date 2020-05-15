@@ -3,7 +3,6 @@ export default {
         HOST_AUTH () {
             const params = this.$route.params
             const auth = {
-                type: this.$OPERATION.U_HOST,
                 resource_id: parseInt(params.id)
             }
             const bizId = params.bizId || params.business
