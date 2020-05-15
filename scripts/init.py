@@ -240,7 +240,7 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                     filedata = filedata.replace('rd_server_placeholder', rd_server)
 
                 extend_flag = ''
-                if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver', 'cmdb_toposerver', 'cmdb_eventserver', 'cmdb_operationserver']:
+                if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver', 'cmdb_toposerver', 'cmdb_eventserver', 'cmdb_operationserver', 'cmdb_containerserver']:
                     extend_flag += ' --enable-auth=%s ' % enable_auth
                 if register_ip != '':
                     extend_flag += ' --register-ip=%s ' % register_ip
@@ -297,7 +297,8 @@ def main(argv):
         "cmdb_webserver": 8083,
         "cmdb_synchronizeserver": 60010,
         "cmdb_operationserver": 60011,
-        "cmdb_taskserver": 60012
+        "cmdb_taskserver": 60012,
+        "cmdb_containerserver": 60014
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
