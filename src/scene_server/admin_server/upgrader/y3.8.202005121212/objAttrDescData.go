@@ -129,7 +129,7 @@ func PodRow() []*Attribute {
 			PropertyType:  common.FieldTypeSingleChar,
 			Option:        "",
 		},
-		Attribute{
+		&Attribute{
 			ObjectID:      common.BKInnerObjIDPod,
 			PropertyID:    common.BKPodWorkloadType,
 			PropertyName:  "工作负载类型",
@@ -140,7 +140,7 @@ func PodRow() []*Attribute {
 			PropertyType:  common.FieldTypeSingleChar,
 			Option:        "",
 		},
-		Attribute{
+		&Attribute{
 			ObjectID:      common.BKInnerObjIDPod,
 			PropertyID:    common.BKPodWorkloadName,
 			PropertyName:  "工作负载名称",

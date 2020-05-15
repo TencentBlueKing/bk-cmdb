@@ -204,11 +204,11 @@ func addObjUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 		return err
 	}
 
-	propertyIDToProperty := make(map[string]Attribute{})
+	propertyIDToProperty := make(map[string]Attribute)
 	var keyfunc = func(a, b string) string { return a + ":" + b }
 
 	for _, oldAttr := range oldAttributes {
-		ropertyIDToProperty[keyfunc(oldAttr.ObjectID, oldAttr.PropertyID)] = oldAttr
+		propertyIDToProperty[keyfunc(oldAttr.ObjectID, oldAttr.PropertyID)] = oldAttr
 	}
 
 	uniques := []metadata.ObjectUnique{
