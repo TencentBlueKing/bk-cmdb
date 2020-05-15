@@ -34,6 +34,7 @@ type ContainerServer struct {
 
 func (t *ContainerServer) onConfigUpdate(previous, current cc.ProcessConfig) {
 	// TODO:
+	blog.Warnf("config change previous %#v, current %#v", previous, current)
 }
 
 // Run main function

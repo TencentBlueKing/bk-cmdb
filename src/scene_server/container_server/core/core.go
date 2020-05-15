@@ -22,13 +22,12 @@ import (
 
 // PodOperation pod methods
 type PodOperation interface {
-	CreatePod(kit *rest.Kit, inputParam metadata.CreatePod) (*metadata.CreatePodResult, error)
-	CreateManyPod(kit *rest.Kit, inputParam metadata.CreateManyPod) (*metadata.CreateManyPodResult, error)
-	UpdatePod(kit *rest.Kit, podID string, inputParam metadata.UpdatePod) (*metadata.UpdatePodResult, error)
-	UpdateManyPod(kit *rest.Kit, inputParam metadata.UpdateManyPod) (*metadata.UpdateManyPodResult, error)
-	DeletePod(kit *rest.Kit, podID string) (*metadata.DeletePodResult, error)
-	DeleteManyPod(kit *rest.Kit, inputParam metadata.DeleteManyPod) (*metadata.DeleteManyPodResult, error)
-	ListPod(kit *rest.Kit, inputParam metadata.ListPod) (*metadata.ListPodResult, error)
+	CreatePod(kit *rest.Kit, inputParam metadata.CreatePod) (*metadata.CreatedOneOptionResult, error)
+	CreateManyPod(kit *rest.Kit, inputParam metadata.CreateManyPod) (*metadata.CreatedManyOptionResult, error)
+	UpdatePod(kit *rest.Kit, inputParam metadata.UpdatePod) (*metadata.UpdatedOptionResult, error)
+	DeletePod(kit *rest.Kit, inputParam metadata.DeletePod) (*metadata.DeletedOptionResult, error)
+	//DeleteManyPod(kit *rest.Kit, inputParam metadata.DeleteManyPod) (*metadata.DeleteManyPodResult, error)
+	ListPods(kit *rest.Kit, inputParam metadata.ListPods) (*metadata.ListPodsResult, error)
 }
 
 // Interface core interfaces methods

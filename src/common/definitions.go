@@ -301,6 +301,9 @@ const (
 	// BKPodIDField the pod id field
 	BKPodIDField = "bk_pod_id"
 
+	// BKPodUUIDField the pod uuid field
+	BKPodUUIDField = "bk_pod_uuid"
+
 	// BKPodNameField the pod name field
 	BKPodNameField = "bk_pod_name"
 

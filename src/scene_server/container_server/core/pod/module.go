@@ -21,10 +21,23 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (p *PodManager) checkModuleExist(kit *rest.Kit, moduleID string) (bool, error) {
+func (p *PodManager) checkModuleIDs(kit *rest.Kit, bizID int64, moduleIDs []int64) (bool, error) {
 
+	// get unique module ids
+	var uniqueModuleIDs []int64
+	moduleIDMap := make(map[int64]bool)
+	for _, moduleID := range moduleIDs {
+		if _, ok := moduleIDMap[moduleID]; !ok {
+			uniqueModuleIDs = append(uniqueModuleIDs, moduleID)
+		}
+	}
+
+	// query module ids
 	filter := map[string]interface{}{
-		common.BKModuleIDField: common.KvMap{common.BKDBIN: moduleID},
+		common.BKAppIDField: bizID,
+		common.BKModuleIDField: common.KvMap{
+			common.BKDBIN: uniqueModuleIDs,
+		},
 	}
 	query := &metadata.QueryCondition{
 		Condition: filter,
@@ -35,15 +48,16 @@ func (p *PodManager) checkModuleExist(kit *rest.Kit, moduleID string) (bool, err
 	}
 	queryResult, err := p.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query)
 	if err != nil {
-		blog.Errorf("checkModuleExist ReadInstance http do err. error: %s, input: %#v, rid: %s", err.Error(), query, kit.Rid)
-		return false, fmt.Errorf("checkModuleExist ReadInstance http do err. error: %s, input: %#v, rid: %s", err.Error(), query, kit.Rid)
+		blog.Errorf("checkModuleIDs ReadInstance http do err. error: %s, input: %#v, rid: %s", err.Error(), query, kit.Rid)
+		return false, fmt.Errorf("checkModuleIDs ReadInstance http do err. error: %s, input: %#v, rid: %s", err.Error(), query, kit.Rid)
 	}
 	if !queryResult.Result {
-		blog.Errorf("checkModuleExist ReadInstance result false, reply: %#v, input: %#v, rid: %s", queryResult, query, kit.Rid)
-		return false, fmt.Errorf("checkModuleExist ReadInstance result false, reply: %#v, input: %#v, rid: %s", queryResult, query, kit.Rid)
+		blog.Errorf("checkModuleIDs ReadInstance result false, reply: %#v, input: %#v, rid: %s", queryResult, query, kit.Rid)
+		return false, fmt.Errorf("checkModuleIDs ReadInstance result false, reply: %#v, input: %#v, rid: %s", queryResult, query, kit.Rid)
 	}
 
-	if len(queryResult.Data.Info) == 0 {
+	// return false if not all modules exists or not all modules belong to this business
+	if queryResult.Data.Count != len(uniqueModuleIDs) {
 		return false, nil
 	}
 	return true, nil

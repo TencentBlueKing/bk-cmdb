@@ -13,10 +13,12 @@
 package y3_8_202005121212
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
@@ -34,6 +36,9 @@ func addPresetObjects(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	if err := addPropertyGroupData(ctx, db, conf); err != nil {
 		return err
 	}
+	if err := addObjDesData(ctx, db, conf); err != nil {
+		return err
+	}
 	if err := addObjAttDescData(ctx, db, conf); err != nil {
 		return err
 	}
@@ -44,7 +49,10 @@ var tables = map[string][]types.Index{
 	common.BKTableNameBasePod: {
 		types.Index{Name: "", Keys: map[string]int32{
 			common.BKPodIDField: 1,
-		}, Background: true},
+		}, Unique: true, Background: true},
+		types.Index{Name: "", Keys: map[string]int32{
+			common.BKPodUUIDField: 1,
+		}, Unique: true, Background: true},
 		types.Index{Name: "", Keys: map[string]int32{
 			common.BKModuleIDField: 1,
 		}, Background: true},
@@ -56,7 +64,7 @@ var tables = map[string][]types.Index{
 			common.BKPodNameField:      1,
 			common.BKPodNamespaceField: 1,
 			common.BKPodClusterField:   1,
-		}, Background: true},
+		}, Unique: true, Background: true},
 	},
 }
 
@@ -115,6 +123,45 @@ func addPropertyGroupData(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	return nil
 }
 
+func getObjectDesData(ownerID string) []*metadata.Object {
+	dataRows := []*metadata.Object{
+		&metadata.Object{
+			ObjCls:     "bk_container_manage",
+			ObjectID:   common.BKInnerObjIDPod,
+			ObjectName: "集群",
+			IsPre:      true,
+			ObjIcon:    "",
+			Position:   ``,
+		},
+	}
+	t := metadata.Now()
+	for _, r := range dataRows {
+		r.CreateTime = &t
+		r.LastTime = &t
+		r.IsPaused = false
+		r.Creator = common.CCSystemOperatorUserName
+		r.OwnerID = ownerID
+		r.Description = ""
+		r.Modifier = ""
+	}
+
+	return dataRows
+}
+
+func addObjDesData(ctx context.Context, db dal.RDB, conf *upgrader.Conf) error {
+	tablename := common.BKTableNameObjDes
+	blog.Errorf("add data for  %s table ", tablename)
+	rows := getObjectDesData(conf.OwnerID)
+	for _, row := range rows {
+		if _, _, err := upgrader.Upsert(ctx, db, tablename, row, "id", []string{common.BKObjIDField, common.BKClassificationIDField, common.BKOwnerIDField}, []string{"id"}); err != nil {
+			blog.Errorf("add data for  %s table error  %s", tablename, err)
+			return err
+		}
+	}
+
+	return nil
+}
+
 func getObjAttDescData(ownerID string) []*Attribute {
 	predataRows := PodRow()
 	t := new(time.Time)
@@ -143,4 +190,101 @@ func addObjAttDescData(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		}
 	}
 	return nil
+}
+
+func addObjUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+
+	oldAttributes := []Attribute{}
+	err := db.Table(common.BKTableNameObjAttDes).Find(
+		mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDPod}).All(ctx, oldAttributes)
+	if err != nil {
+		return err
+	}
+
+	var propertyIDToProperty = map[string]Attribute{}
+	var keyfunc = func(a, b string) string { return a + ":" + b}
+
+	for _, oldAttr := range oldAttributes {
+		ropertyIDToProperty[keyfunc(oldAttr.ObjectID, oldAttr.PropertyID)] = oldAttr
+	}
+
+	uniques := []metadata.ObjectUnique {
+		// pod
+		{
+			objID: common.BKInnerObjIDPod,
+			MustCheck: true,
+			Keys: []metadata.UniqueKey {
+				{
+					Kind: metadata.UniqueKeyKindProperty,
+					ID: uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodNameField)].ID),
+				},
+				{
+					Kind: metadata.UniqueKeyKindProperty,
+					ID: uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodNamespaceField)].ID),
+				},
+				{
+					Kind: metadata.UniqueKeyKindProperty,
+					ID: uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodClusterField)].ID),
+				},
+			},
+			IsPre: true,
+			OwnerID: conf.OwnerID,
+			LastTime: metadata.Now()
+		},
+		{
+			objID: common.BKInnerObjIDPod,
+			MustCheck: true,
+			Keys: []metadata.UniqueKey {
+				{
+					Kind: metadata.UniqueKeyKindProperty,
+					ID: uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodUUIDField)].ID),
+				},
+			},
+			IsPre: true,
+			OwnerID: conf.OwnerID,
+			LastTime: metadata.Now()
+		},
+	}
+
+	for _, unique := range uniques {
+		exists, err := isUniqueExists(ctx, db, conf, unique)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+
+		uid, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
+		if err != nil {
+			return err
+		}
+		unique.ID = uid
+		if err := db.Table(common.BKTableNameObjUnique).Insert(ctx, unique); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, unique metadata.ObjectUnique) (bool, error) {
+	keyhash := unique.KeysHash()
+	uniqueCond := condition.CreateCondition()
+	uniqueCond.Field(common.BKObjIDField).Eq(unique.ObjID)
+	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
+	existUniques := []metadata.ObjectUnique{}
+
+	err := db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
+	if err != nil {
+		return false, err
+	}
+
+	for _, uni := range existUniques {
+		if uni.KeysHash() == keyhash {
+			return true, nil
+		}
+	}
+	return false, nil
+
 }

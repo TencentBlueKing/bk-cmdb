@@ -23,6 +23,11 @@ const (
 	PatternMultipleIP = `^(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|[1-9])\.((1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|\d)\.){2}(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|\d)(,(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|[1-9])\.((1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|\d)\.){2}(1\d{2}|2[0-4]\d|25[0-5]|[1-9]\d|\d))*$`
 	// PatternPort regular pattern for port range
 	PatternPort = `(([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))`
+
+	// PatternPodLabels regular pattern for pod labels
+	PatternPodLabels = `^\s*\{(\s*\"[\S]+\":\s*\"[\S]+\"\s*(,\s*\"[\S]+\":\s*\"[\S]+\"\s*)?)?\}\s*$`
+	// PatternPodAnnotations regular pattern for pod annotations
+	PatternPodAnnotations = PatternPodLabels
 )
 
 // PatternMultiplePortRange regular pattern for multiple port range

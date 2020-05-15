@@ -13,41 +13,100 @@
 package service
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // CreatePod create a pod
 func (s *ContainerService) CreatePod(ctx *rest.Contexts) {
-	// TODO:
+
+	bkBizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bkBizID, err := util.GetInt64ByInterface(bkBizIDStr)
+	if err != nil {
+		blog.Warnf("rid: %s, get bk_biz_id failed, invalid value %s, err %s",
+			ctx.Kit.Rid, bkBizIDStr, err.Error())
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDataFailed))
+		return
+	}
+	inputData := metadata.CreatePod{}
+	if err := ctx.DecodeInto(&inputData); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	inputData.BizID = bkBizID
+	ctx.RespEntityWithError(s.core.PodOperation().CreatePod(ctx.Kit, inputData))
 }
 
 // CreateManyPod create or update multi pods
 func (s *ContainerService) CreateManyPod(ctx *rest.Contexts) {
-	// TODO:
-	ctx.
+	bkBizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bkBizID, err := util.GetInt64ByInterface(bkBizIDStr)
+	if err != nil {
+		blog.Warnf("rid: %s, get bk_biz_id failed, invalid value %s, err %s",
+			ctx.Kit.Rid, bkBizIDStr, err.Error())
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDataFailed))
+		return
+	}
+	inputData := metadata.CreateManyPod{}
+	if err := ctx.DecodeInto(&inputData); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	inputData.BizID = bkBizID
+	if len(inputData.PodList) == 0 {
+		ctx.RespErrorCodeOnly(common.CCErrCommParamsLostField, "PodList lost")
+		return
+	}
+	ctx.RespEntityWithError(s.core.PodOperation().CreateManyPod(ctx.Kit, inputData))
 }
 
 // UpdatePod update a pod
 func (s *ContainerService) UpdatePod(ctx *rest.Contexts) {
-	// TODO:
-}
-
-// UpdateManyPod update multi pod
-func (s *ContainerService) UpdateManyPod(ctx *rest.Contexts) {
-	// TODO:
+	bkBizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bkBizID, err := util.GetInt64ByInterface(bkBizIDStr)
+	if err != nil {
+		blog.Warnf("rid: %s, get bk_biz_id failed, invalid value %s, err %s",
+			ctx.Kit.Rid, bkBizIDStr, err.Error())
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDataFailed))
+		return
+	}
+	inputData := metadata.UpdatePod{}
+	if err := ctx.DecodeInto(&inputData); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	inputData.Condition[common.BKAppIDField] = bkBizID
+	ctx.RespEntityWithError(s.core.PodOperation().UpdatePod(ctx.Kit, inputData))
 }
 
 // DeletePod delete a pod
 func (s *ContainerService) DeletePod(ctx *rest.Contexts) {
-	// TODO:
+	bkBizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bkBizID, err := util.GetInt64ByInterface(bkBizIDStr)
+	if err != nil {
+		blog.Warnf("rid: %s, get bk_biz_id failed, invalid value %s, err %s",
+			ctx.Kit.Rid, bkBizIDStr, err.Error())
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDataFailed))
+		return
+	}
+	inputData := metadata.DeletePod{}
+	if err := ctx.DecodeInto(&inputData); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	inputData.Condition[common.BKAppIDField] = bkBizID
+	ctx.RespEntityWithError(s.core.PodOperation().DeletePod(ctx.Kit, inputData))
 }
 
-// DeleteManyPod delete multi pods
-func (s *ContainerService) DeleteManyPod(ctx *rest.Contexts) {
-	// TODO:
-}
-
-// ListPod list pods
-func (s *ContainerService) ListPod(ctx *rest.Contexts) {
-	// TODO:
+// ListPods list pods
+func (s *ContainerService) ListPods(ctx *rest.Contexts) {
+	inputData := metadata.ListPods{}
+	if err := ctx.DecodeInto(&inputData); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(s.core.PodOperation().ListPods(ctx.Kit, inputData))
 }

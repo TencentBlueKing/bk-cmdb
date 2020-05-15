@@ -1,5 +1,9 @@
 {
-    "1118001": "All failed to create many pod",
-    "1118002": "Partial failed to create many pod",
-    "1118401": ""
+    "1118401": "Failed to obtain module parameters",
+    "1118402": "Query module failed",
+    "1118403": "Illegal update conditions",
+    "1118404": "Failed to update pod",
+    "1118405": "Illegal delete conditions",
+    "1118406": "Failed to create pod instance",
+    "1118407": "Container server internal error"
 }
