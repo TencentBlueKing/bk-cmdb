@@ -199,7 +199,7 @@ func addObjUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 
 	oldAttributes := []Attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(
-		mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDPod}).All(ctx, oldAttributes)
+		mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDPod}).All(ctx, &oldAttributes)
 	if err != nil {
 		return err
 	}
