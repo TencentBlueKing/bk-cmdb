@@ -209,7 +209,7 @@ func (p *chanPorter) analyzeLoop() {
 func (p *chanPorter) analyze() {
 	defer func() {
 		if sysErr := recover(); sysErr != nil {
-			blog.Errorf("[data-collection][%s] analyzeLoop panic by: %v, stack:\n %s", p.name, sysErr, debug.Stack())
+			blog.Errorf("[%s] analyzeLoop panic by: %v, stack:\n %s", p.name, sysErr, debug.Stack())
 		}
 	}()
 
@@ -219,7 +219,7 @@ func (p *chanPorter) analyze() {
 	for mesg = range p.analyzeC {
 		before := time.Now()
 		if err = p.analyzer.Analyze(mesg); err != nil {
-			blog.Errorf("[data-collection][%s] analyze message failed: %v, raw msg: %s", p.name, err, mesg)
+			blog.Errorf("[%s] analyze message failed: %v, raw msg: %s", p.name, err, mesg)
 			p.analyzeTotal.WithLabelValues("failed").Inc()
 		} else {
 			p.analyzeTotal.WithLabelValues("success").Inc()
