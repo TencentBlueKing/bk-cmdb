@@ -40,20 +40,24 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <a href="javascript:void(0)" class="option-link"
-                        v-if="tempData.includes(row[instanceIdKey])"
-                        @click="updateAssociation(row[instanceIdKey], 'remove')">
-                        {{$t('取消关联')}}
-                    </a>
-                    <a href="javascript:void(0)" class="option-link is-associated"
-                        v-else-if="isAssociated(row)">
-                        {{$t('已关联')}}
-                    </a>
-                    <a href="javascript:void(0)" class="option-link" v-else
-                        v-click-outside="handleCloseConfirm"
-                        @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
-                        {{$t('添加关联')}}
-                    </a>
+                    <cmdb-auth :auth="authResources">
+                        <template slot-scope="{ disabled }">
+                            <bk-link :disabled="disabled" href="javascript:void(0)" class="option-link" theme="primary"
+                                v-if="tempData.includes(row[instanceIdKey])"
+                                @click="updateAssociation(row[instanceIdKey], 'remove')">
+                                {{$t('取消关联')}}
+                            </bk-link>
+                            <bk-link :disabled="disabled" href="javascript:void(0)" class="option-link is-associated" theme="primary"
+                                v-else-if="isAssociated(row)">
+                                {{$t('已关联')}}
+                            </bk-link>
+                            <bk-link :disabled="disabled" href="javascript:void(0)" class="option-link" theme="primary" v-else
+                                v-click-outside="handleCloseConfirm"
+                                @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
+                                {{$t('添加关联')}}
+                            </bk-link>
+                        </template>
+                    </cmdb-auth>
                 </template>
             </bk-table-column>
             <cmdb-table-empty
@@ -76,11 +80,13 @@
     import cmdbRelationPropertyFilter from './property-filter.vue'
     import bus from '@/utils/bus.js'
     import { mapGetters, mapActions } from 'vuex'
+    import authMixin from '../mixin-auth'
     export default {
         name: 'cmdb-relation-create',
         components: {
             cmdbRelationPropertyFilter
         },
+        mixins: [authMixin],
         props: {
             objId: {
                 type: String,
@@ -211,6 +217,12 @@
                     biz: this.$OPERATION.R_BUSINESS
                 }
                 return map[this.currentAsstObj] || this.$OPERATION.R_INST
+            },
+            authResources () {
+                if (this.$route.params.bizId) {
+                    return this.INST_AUTH.U_BUSINESS
+                }
+                return this.INST_AUTH.U_INST
             }
         },
         watch: {
@@ -589,6 +601,9 @@
         &.is-associated {
             color: #979BA5;
             cursor: not-allowed;
+        }
+        /deep/ .bk-link-text {
+            font-size: 12px;
         }
     }
     .new-association-table{

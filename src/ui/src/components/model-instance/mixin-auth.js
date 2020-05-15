@@ -5,7 +5,7 @@ export default {
         ...mapGetters('objectModelClassify', ['models', 'getModelById']),
         INST_AUTH () {
             const params = this.$route.params
-            const bizId = params.bizId || params.business
+            const bizId = params.bizId
             const instId = params.instId
             const objId = params.objId
             const auth = {}
