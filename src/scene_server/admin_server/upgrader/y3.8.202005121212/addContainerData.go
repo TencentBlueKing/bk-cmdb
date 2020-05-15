@@ -131,7 +131,7 @@ func getObjectDesData(ownerID string) []*metadata.Object {
 		&metadata.Object{
 			ObjCls:     "bk_container_manage",
 			ObjectID:   common.BKInnerObjIDPod,
-			ObjectName: "集群",
+			ObjectName: "Pod",
 			IsPre:      true,
 			ObjIcon:    "",
 			Position:   ``,
@@ -151,7 +151,7 @@ func getObjectDesData(ownerID string) []*metadata.Object {
 	return dataRows
 }
 
-func addObjDesData(ctx context.Context, db dal.RDB, conf *upgrader.Conf) error {
+func addObjDesData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNameObjDes
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := getObjectDesData(conf.OwnerID)
@@ -204,7 +204,7 @@ func addObjUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 		return err
 	}
 
-	var propertyIDToProperty = map[string]Attribute{}
+	propertyIDToProperty := make(map[string]Attribute{})
 	var keyfunc = func(a, b string) string { return a + ":" + b }
 
 	for _, oldAttr := range oldAttributes {
@@ -214,7 +214,7 @@ func addObjUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 	uniques := []metadata.ObjectUnique{
 		// pod
 		{
-			objID:     common.BKInnerObjIDPod,
+			ObjID:     common.BKInnerObjIDPod,
 			MustCheck: true,
 			Keys: []metadata.UniqueKey{
 				{
@@ -230,12 +230,12 @@ func addObjUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodClusterField)].ID),
 				},
 			},
-			IsPre:    true,
+			Ispre:    true,
 			OwnerID:  conf.OwnerID,
 			LastTime: metadata.Now(),
 		},
 		{
-			objID:     common.BKInnerObjIDPod,
+			ObjID:     common.BKInnerObjIDPod,
 			MustCheck: true,
 			Keys: []metadata.UniqueKey{
 				{
@@ -243,7 +243,7 @@ func addObjUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPod, common.BKPodUUIDField)].ID),
 				},
 			},
-			IsPre:    true,
+			Ispre:    true,
 			OwnerID:  conf.OwnerID,
 			LastTime: metadata.Now(),
 		},
