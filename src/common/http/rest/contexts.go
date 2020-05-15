@@ -68,7 +68,6 @@ func (c *Contexts) RespEntity(data interface{}) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
 	c.writeAsJson(metadata.NewSuccessResp(data))
 }
 

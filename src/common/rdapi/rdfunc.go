@@ -54,7 +54,8 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 			}
 
 		}()
-		generateHttpHeaderRID(req, resp)
+
+		GenerateHttpHeaderRID(req.Request, resp.ResponseWriter)
 
 		whiteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
 		for _, url := range whiteListSuffix {
@@ -82,7 +83,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 
 func HTTPRequestIDFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		generateHttpHeaderRID(req, resp)
+		GenerateHttpHeaderRID(req.Request, resp.ResponseWriter)
 		if 1 < len(fchain.Filters) {
 			fchain.ProcessFilter(req, resp)
 			return
@@ -110,32 +111,21 @@ func createAPIRspStr(errcode int, info string) (string, error) {
 	return string(s), err
 }
 
-func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
-	isOtherReq := httpHeaderRidFilter(req.Request.Header)
-	if isOtherReq {
-		content, _ := util.PeekRequest(req.Request)
-		blog.Infof("ESB Request: uri: %v, header: %v, body: %s", req.Request.RequestURI, req.Request.Header, content)
-	}
-}
-
-func HTTPHeaderRidFilter(header http.Header) {
-	httpHeaderRidFilter(header)
-}
-
-func httpHeaderRidFilter(header http.Header) bool {
-	cid := util.GetHTTPCCRequestID(header)
+func GenerateHttpHeaderRID(req *http.Request, resp http.ResponseWriter) {
+	cid := util.GetHTTPCCRequestID(req.Header)
 	if "" == cid {
-		cid = GetHTTPOtherRequestID(header)
+		cid = GetHTTPOtherRequestID(req.Header)
 		if cid == "" {
 			cid = util.GenerateRID()
 		} else {
-			header.Set(common.BKHTTPCCRequestID, cid)
-			return true
+			content, _ := util.PeekRequest(req)
+			blog.Infof("ESB Request: uri: %v, header: %v, body: %s", req.RequestURI, req.Header, content)
 		}
-
+		req.Header.Set(common.BKHTTPCCRequestID, cid)
+		resp.Header().Set(common.BKHTTPCCRequestID, cid)
 	}
-	header.Set(common.BKHTTPCCRequestID, cid)
-	return false
+
+	return
 }
 
 func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {
