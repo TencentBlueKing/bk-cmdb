@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -26,8 +27,6 @@ import (
 
 // ContainerServiceInterface the container service method used to init
 type ContainerServiceInterface interface {
-	// SetConfig set configs for container service
-	SetConfig(config options.Config, engine *backbone.Engine, core core.Interface, ccErrIf errors.CCErrorIf, language language.CCLanguageIf)
 	// WebService return restful Container
 	WebService() *restful.Container
 }
@@ -40,6 +39,7 @@ type ContainerService struct {
 	language    language.CCLanguageIf
 	ccErrIf     errors.CCErrorIf
 	cfg         options.Config
+	authManager *extensions.AuthManager
 }
 
 // New create container service instance

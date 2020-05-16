@@ -13,6 +13,8 @@
 package pod
 
 import (
+	"gopkg.in/redis.v5"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -25,16 +27,19 @@ import (
 type PodManager struct {
 	clientSet apimachinery.ClientSetInterface
 	language  language.CCLanguageIf
+	cache     *redis.Client
 }
 
 // New create pod manager
 func New(
 	clientSet apimachinery.ClientSetInterface,
 	language language.CCLanguageIf,
+	cache *redis.Client,
 ) *PodManager {
 	return &PodManager{
 		clientSet: clientSet,
 		language:  language,
+		cache:     cache,
 	}
 }
 

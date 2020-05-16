@@ -15,6 +15,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -23,18 +24,34 @@ import (
 	"configcenter/src/scene_server/container_server/app/options"
 	"configcenter/src/scene_server/container_server/core"
 	cntsvr "configcenter/src/scene_server/container_server/service"
+	"configcenter/src/storage/dal/redis"
 )
+
+const waitSeconds = 180
 
 // ContainerServer the container server which manages container data
 type ContainerServer struct {
-	Core    *backbone.Engine
-	Config  options.Config
-	Service cntsvr.ContainerServiceInterface
+	Core        *backbone.Engine
+	Config      options.Config
+	Service     cntsvr.ContainerServiceInterface
+	configReady bool
 }
 
 func (t *ContainerServer) onConfigUpdate(previous, current cc.ProcessConfig) {
 	// TODO:
 	blog.Warnf("config change previous %#v, current %#v", previous, current)
+}
+
+func (t *ContainerServer) checkForReadiness() error {
+	for i := 1; i < waitSeconds; i++ {
+		if !t.configReady {
+			time.Sleep(time.Second)
+			continue
+		}
+		blog.Info("container server config ready.")
+		return nil
+	}
+	return fmt.Errorf("wait for container server config timeout after %ds", waitSeconds)
 }
 
 // Run main function
@@ -60,10 +77,24 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
-	coreIf := core.New(engine.CoreAPI, engine.Language)
+	if err := containerSvr.checkForReadiness(); err != nil {
+		return err
+	}
 
+	containerSvr.Config.Redis, err = engine.WithRedis()
+	if err != nil {
+		return err
+	}
+
+	cacheDB, err := redis.NewFromConfig(containerSvr.Config.Redis)
+	if err != nil {
+		blog.Errorf("new redis client failed, err %s", err.Error())
+		return fmt.Errorf("new redis client failed, err %s", err.Error())
+	}
+
+	coreIf := core.New(engine.CoreAPI, engine.Language, cacheDB)
 	svc := cntsvr.New()
-	svc.SetConfig(options.Config{}, engine, coreIf, engine.CCErr, engine.Language)
+	svc.SetConfig(containerSvr.Config, engine, coreIf, engine.CCErr, engine.Language)
 	containerSvr.Service = svc
 	containerSvr.Core = engine
 

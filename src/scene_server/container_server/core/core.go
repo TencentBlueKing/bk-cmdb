@@ -13,6 +13,8 @@
 package core
 
 import (
+	"gopkg.in/redis.v5"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
@@ -43,9 +45,10 @@ type core struct {
 func New(
 	client apimachinery.ClientSetInterface,
 	languageIf language.CCLanguageIf,
+	cache *redis.Client,
 ) Interface {
 
-	podOp := pod.New(client, languageIf)
+	podOp := pod.New(client, languageIf, cache)
 
 	return &core{
 		podOp: podOp,
