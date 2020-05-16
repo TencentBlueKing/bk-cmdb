@@ -30,7 +30,7 @@ import (
 func init() {
 	plugin := &metadata.LoginPluginInfo{
 		Name:       "open source system",
-		Version:    "opensource",
+		Version:    common.BKOpenSourceLoginPluginVersion,
 		HandleFunc: &user{},
 	}
 	manager.RegisterPlugin(plugin)

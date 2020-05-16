@@ -46,7 +46,7 @@ func (s *Service) GetUserList(c *gin.Context) {
 		params[key] = strings.Join(values, ";")
 	}
 
-	userList, err := s.Logics.GetUserList(c.Request.Context(), c.Request.Header, params)
+	userList, err := s.Logics.GetUserList(c.Request.Context(), c.Request.Header, params, s.Config)
 	if nil != err {
 		blog.Error("GetUserList failed, err: %+v, rid: %s", err, rid)
 		rspBody.Code = err.GetCode()

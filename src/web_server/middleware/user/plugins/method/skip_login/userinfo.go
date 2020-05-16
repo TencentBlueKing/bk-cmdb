@@ -27,7 +27,7 @@ import (
 func init() {
 	plugin := &metadata.LoginPluginInfo{
 		Name:       "skip login system",
-		Version:    "skip-login",
+		Version:    common.BKSkipLoginPluginVersion,
 		HandleFunc: &user{},
 	}
 	manager.RegisterPlugin(plugin)

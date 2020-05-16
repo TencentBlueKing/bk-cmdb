@@ -23,7 +23,7 @@ import (
 
 func CurrentPlugin(c *gin.Context, version string) metadata.LoginUserPluginInerface {
 	if "" == version {
-		version = common.BKDefaultLoginUserPluginVersion
+		version = common.BKBluekingLoginPluginVersion
 	}
 
 	var defaultPlugin *metadata.LoginPluginInfo
@@ -31,7 +31,7 @@ func CurrentPlugin(c *gin.Context, version string) metadata.LoginUserPluginInerf
 		if plugin.Version == version {
 			return plugin.HandleFunc
 		}
-		if common.BKDefaultLoginUserPluginVersion == plugin.Version {
+		if common.BKBluekingLoginPluginVersion == plugin.Version {
 			defaultPlugin = plugin
 		}
 	}

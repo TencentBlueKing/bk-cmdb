@@ -30,7 +30,7 @@ import (
 func init() {
 	plugin := &metadata.LoginPluginInfo{
 		Name:       "blueking login system",
-		Version:    common.BKDefaultLoginUserPluginVersion,
+		Version:    common.BKBluekingLoginPluginVersion,
 		HandleFunc: &user{},
 	}
 	manager.RegisterPlugin(plugin) // ("blueking login system", "self", "")
