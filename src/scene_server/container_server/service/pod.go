@@ -78,7 +78,7 @@ func (s *ContainerService) UpdatePod(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	inputData.Condition[common.BKAppIDField] = bkBizID
+	inputData.BizID = bkBizID
 	ctx.RespEntityWithError(s.core.PodOperation().UpdatePod(ctx.Kit, inputData))
 }
 
