@@ -117,11 +117,22 @@ func InfoJSON(format string, args ...interface{}) {
 			params = append(params, f.String())
 			continue
 		}
-		out, err := json.Marshal(arg)
-		if err != nil {
-			params = append(params, err.Error())
+		kind := reflect.TypeOf(arg).Kind()
+		if kind == reflect.Ptr {
+			kind = reflect.TypeOf(arg).Elem().Kind()
 		}
-		params = append(params, out)
+		if kind == reflect.Struct || kind == reflect.Interface ||
+			kind == reflect.Array || kind == reflect.Map || kind == reflect.Slice {
+			out, err := json.Marshal(arg)
+			if err != nil {
+				params = append(params, arg)
+			} else {
+				params = append(params, out)
+			}
+			continue
+		}
+
+		params = append(params, arg)
 	}
 	glog.InfoDepthf(1, format, params...)
 }
