@@ -158,6 +158,7 @@ var AllTables = []string{
 	BKTableNameAPITask,
 	BKTableNameSetTemplateSyncStatus,
 	BKTableNameSetTemplateSyncHistory,
+	BKTableNameBasePod,
 }
 
 // GetInstTableName returns inst data table name

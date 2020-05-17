@@ -15,6 +15,7 @@ package apimachinery
 import (
 	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/apiserver"
+	"configcenter/src/apimachinery/containerserver"
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/eventserver"
@@ -34,6 +35,7 @@ type ClientSetInterface interface {
 	AdminServer() adminserver.AdminServerClientInterface
 	ApiServer() apiserver.ApiServerClientInterface
 	EventServer() eventserver.EventServerClientInterface
+	ContainerServer() containerserver.ContainerServerClientInterface
 
 	CoreService() coreservice.CoreServiceClientInterface
 	TaskServer() taskserver.TaskServerClientInterface
@@ -167,4 +169,14 @@ func (cs *ClientSet) TaskServer() taskserver.TaskServerClientInterface {
 		Mock:     cs.Mock,
 	}
 	return taskserver.NewProcServerClientInterface(c, cs.version)
+}
+
+func (cs *ClientSet) ContainerServer() containerserver.ContainerServerClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.ContainerServer(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	return containerserver.NewContainerServerClientInterface(c, cs.version)
 }

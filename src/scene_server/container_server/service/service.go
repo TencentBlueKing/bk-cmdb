@@ -74,7 +74,7 @@ func (s *ContainerService) WebService() *restful.Container {
 		return s.ccErrIf
 	}
 
-	api.Path("/api/v3").
+	api.Path("/container/v3").
 		Filter(s.engine.Metric().RestfulMiddleWare).
 		Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
