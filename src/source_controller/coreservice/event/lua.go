@@ -44,7 +44,7 @@ local nodeJson = cjson.decode(node);
 
 local elements = {};
 
-local next = nodeJson.next_cursor
+local next = nodeJson.next_cursor;
 for i = 1,KEYS[3] do
 	local ele = redis.pcall('hget', KEYS[1], next);
 	if (ele == false) then

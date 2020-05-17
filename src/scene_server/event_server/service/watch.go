@@ -65,7 +65,8 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 			return
 		}
-		resp.WriteEntity(events)
+
+		resp.WriteEntity(s.generateResp(options.Resource, events))
 		return
 	}
 
@@ -78,7 +79,7 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 			return
 		}
 
-		resp.WriteEntity(events)
+		resp.WriteEntity(s.generateResp(options.Resource, events))
 		return
 	}
 
@@ -90,10 +91,38 @@ func (s *Service) WatchEvent(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	resp.WriteEntity([]*watch.WatchEventResp{events})
+	resp.WriteEntity(s.generateResp(options.Resource, []*watch.WatchEventDetail{events}))
 }
 
-func (s *Service) watchWithStartFrom(key event.Key, opts *watch.WatchEventOptions, rid string) ([]*watch.WatchEventResp, error) {
+func (s *Service) generateResp(rsc watch.CursorType, events []*watch.WatchEventDetail) *metadata.Response {
+	result := new(watch.WatchResp)
+	if len(events) == 0 {
+		result.Watched = false
+		result.Events = []*watch.WatchEventDetail{
+			{
+				Cursor:   watch.NoEventCursor,
+				Resource: rsc,
+			},
+		}
+	} else {
+		if events[0].Cursor == watch.NoEventCursor {
+			result.Watched = false
+			result.Events = []*watch.WatchEventDetail{
+				{
+					Cursor:   watch.NoEventCursor,
+					Resource: rsc,
+				},
+			}
+		} else {
+			result.Watched = true
+			result.Events = events
+		}
+	}
+
+	return metadata.NewSuccessResp(result)
+}
+
+func (s *Service) watchWithStartFrom(key event.Key, opts *watch.WatchEventOptions, rid string) ([]*watch.WatchEventDetail, error) {
 
 	// validate start from value is in the range or not
 	headTarget, tailTarget, err := s.getHeadTailNodeTargetNode(key)
@@ -127,7 +156,7 @@ func (s *Service) watchWithStartFrom(key event.Key, opts *watch.WatchEventOption
 			return nil, err
 		}
 
-		return []*watch.WatchEventResp{latestEvent}, nil
+		return []*watch.WatchEventDetail{latestEvent}, nil
 	}
 
 	// keep scan the cursor chain until to the tail cursor.
@@ -152,15 +181,16 @@ func (s *Service) watchWithStartFrom(key event.Key, opts *watch.WatchEventOption
 		}
 
 		if len(nodes) == 0 {
-			resp := &watch.WatchEventResp{
-				Cursor:   watch.NoEventCursor,
-				Resource: opts.Resource,
-				Detail:   nil,
+			resp := &watch.WatchEventDetail{
+				Cursor:    watch.NoEventCursor,
+				Resource:  opts.Resource,
+				EventType: "",
+				Detail:    nil,
 			}
 
 			// at least the tail node should can be scan, so something goes wrong.
 			blog.V(5).Infof("watch with start from %s, but no event found in the chain, rid: %s", opts.StartFrom, rid)
-			return []*watch.WatchEventResp{resp}, nil
+			return []*watch.WatchEventDetail{resp}, nil
 		}
 
 		hitNodes := getHitNodeWithEventType(nodes, opts.EventTypes)
@@ -189,12 +219,13 @@ func (s *Service) watchWithStartFrom(key event.Key, opts *watch.WatchEventOption
 				return nil, err
 			}
 
-			resp := &watch.WatchEventResp{
-				Cursor:   lastNode.Cursor,
-				Resource: opts.Resource,
-				Detail:   watch.JsonString(detail),
+			resp := &watch.WatchEventDetail{
+				Cursor:    lastNode.Cursor,
+				Resource:  opts.Resource,
+				EventType: lastNode.EventType,
+				Detail:    watch.JsonString(detail),
 			}
-			return []*watch.WatchEventResp{resp}, nil
+			return []*watch.WatchEventDetail{resp}, nil
 		}
 
 		// update nextCursor and do next scan round.
@@ -202,32 +233,36 @@ func (s *Service) watchWithStartFrom(key event.Key, opts *watch.WatchEventOption
 	}
 }
 
-func (s *Service) getEventsWithCursorNodes(opts *watch.WatchEventOptions, hitNodes []*watch.ChainNode, key event.Key, rid string) ([]*watch.WatchEventResp, error) {
-	results := make([]*redis.StringCmd, len(hitNodes))
+func (s *Service) getEventsWithCursorNodes(opts *watch.WatchEventOptions, hitNodes []*watch.ChainNode, key event.Key, rid string) ([]*watch.WatchEventDetail, error) {
+	results := make([]*redis.StringCmd, 0)
 	pipe := s.cache.Pipeline()
-	for idx, node := range hitNodes {
-		results[idx] = pipe.Get(key.DetailKey(node.Cursor))
+	for _, node := range hitNodes {
+		if node.Cursor == key.TailKey() {
+			continue
+		}
+		results = append(results, pipe.Get(key.DetailKey(node.Cursor)))
 	}
 	_, err := pipe.Exec()
 	if err != nil {
-		blog.Errorf("watch with start from: %d, resource: %s, hit events, but get event detail failed, err: %v, rid: %s",
-			opts.StartFrom, opts.Resource, err, rid)
+		blog.ErrorJSON("watch with start from: %d, resource: %s, hit events, but get event detail failed, hit nodes: %s, err: %v, rid: %s",
+			opts.StartFrom, opts.Resource, hitNodes, err, rid)
 		return nil, err
 	}
-	resp := make([]*watch.WatchEventResp, len(hitNodes))
+	resp := make([]*watch.WatchEventDetail, 0)
 	for idx, result := range results {
 		jsonStr := result.Val()
 		cut := json.CutJsonDataWithFields(&jsonStr, opts.Fields)
-		resp[idx] = &watch.WatchEventResp{
-			Cursor:   hitNodes[idx].Cursor,
-			Resource: opts.Resource,
-			Detail:   watch.JsonString(*cut),
-		}
+		resp = append(resp, &watch.WatchEventDetail{
+			Cursor:    hitNodes[idx].Cursor,
+			Resource:  opts.Resource,
+			EventType: hitNodes[idx].EventType,
+			Detail:    watch.JsonString(*cut),
+		})
 	}
 	return resp, nil
 }
 
-func (s *Service) watchFromNow(key event.Key, opts *watch.WatchEventOptions, rid string) (*watch.WatchEventResp, error) {
+func (s *Service) watchFromNow(key event.Key, opts *watch.WatchEventOptions, rid string) (*watch.WatchEventDetail, error) {
 	node, tailTarget, err := s.getLatestEventDetail(key)
 	if err != nil {
 		blog.Errorf("watch from now, but get latest event failed, key, err: %v, rid: %s", err, rid)
@@ -237,18 +272,20 @@ func (s *Service) watchFromNow(key event.Key, opts *watch.WatchEventOptions, rid
 	hit := getHitNodeWithEventType([]*watch.ChainNode{node}, opts.EventTypes)
 	if len(hit) == 0 {
 		// not matched, set to no event cursor with empty detail
-		return &watch.WatchEventResp{
-			Cursor:   watch.NoEventCursor,
-			Resource: opts.Resource,
-			Detail:   nil,
+		return &watch.WatchEventDetail{
+			Cursor:    watch.NoEventCursor,
+			Resource:  opts.Resource,
+			EventType: "",
+			Detail:    nil,
 		}, nil
 	}
 	cut := json.CutJsonDataWithFields(&tailTarget, opts.Fields)
 	// matched the event type.
-	return &watch.WatchEventResp{
-		Cursor:   node.Cursor,
-		Resource: opts.Resource,
-		Detail:   watch.JsonString(*cut),
+	return &watch.WatchEventDetail{
+		Cursor:    node.Cursor,
+		Resource:  opts.Resource,
+		EventType: node.EventType,
+		Detail:    watch.JsonString(*cut),
 	}, nil
 }
 
@@ -265,7 +302,7 @@ const (
 // if no events hit, then will loop the event every 200ms until timeout and return
 // with a special cursor named "NoEventCursor", then we will help the user watch
 // event from the head cursor.
-func (s *Service) watchWithCursor(key event.Key, opts *watch.WatchEventOptions, rid string) ([]*watch.WatchEventResp, error) {
+func (s *Service) watchWithCursor(key event.Key, opts *watch.WatchEventOptions, rid string) ([]*watch.WatchEventDetail, error) {
 	startCursor := opts.Cursor
 	if startCursor == watch.NoEventCursor {
 		// user got no events because of no event occurs in the system in the previous watch around,
@@ -286,15 +323,16 @@ func (s *Service) watchWithCursor(key event.Key, opts *watch.WatchEventOptions, 
 			if time.Now().Unix()-start > timeoutWatchLoopSeconds {
 				// has already looped for timeout seconds, and we still got one event.
 				// return with NoEventCursor and empty detail
-				resp := &watch.WatchEventResp{
-					Cursor:   watch.NoEventCursor,
-					Resource: opts.Resource,
-					Detail:   nil,
+				resp := &watch.WatchEventDetail{
+					Cursor:    watch.NoEventCursor,
+					Resource:  opts.Resource,
+					EventType: "",
+					Detail:    nil,
 				}
 
 				// at least the tail node should can be scan, so something goes wrong.
-				blog.V(5).Infof("watch with cursor %s, but no event found in the chain, rid: %s", opts.Cursor, rid)
-				return []*watch.WatchEventResp{resp}, nil
+				blog.V(5).Infof("watch with cursor %s, timeout and no event found in the chain, rid: %s", opts.Cursor, rid)
+				return []*watch.WatchEventDetail{resp}, nil
 			}
 
 			// we got not event one event, sleep a little, and then try to continue the loop watch
@@ -305,6 +343,20 @@ func (s *Service) watchWithCursor(key event.Key, opts *watch.WatchEventOptions, 
 
 		hitNodes := getHitNodeWithEventType(nodes, opts.EventTypes)
 		if len(hitNodes) != 0 {
+			if hitNodes[0].Cursor == key.TailKey() {
+				// to the end
+				resp := &watch.WatchEventDetail{
+					Cursor:    watch.NoEventCursor,
+					Resource:  opts.Resource,
+					EventType: "",
+					Detail:    nil,
+				}
+
+				// at least the tail node should can be scan, so something goes wrong.
+				blog.V(5).Infof("watch with cursor %s, but no events found in the chain, rid: %s", opts.Cursor, rid)
+				return []*watch.WatchEventDetail{resp}, nil
+			}
+
 			// matched event has been found, get them all.
 			blog.V(5).Infof("watch key: %s with resource: %s, hit events, return immediately. rid: %s", key.Namespace(), opts.Resource, rid)
 			return s.getEventsWithCursorNodes(opts, hitNodes, key, rid)
@@ -315,15 +367,16 @@ func (s *Service) watchWithCursor(key event.Key, opts *watch.WatchEventOptions, 
 			// because it's not what the use want, return the last cursor to help user can
 			// watch from here later for next watch round.
 			lastNode := nodes[len(nodes)-1]
-			resp := &watch.WatchEventResp{
-				Cursor:   lastNode.Cursor,
-				Resource: opts.Resource,
-				Detail:   nil,
+			resp := &watch.WatchEventDetail{
+				Cursor:    lastNode.Cursor,
+				Resource:  opts.Resource,
+				EventType: lastNode.EventType,
+				Detail:    nil,
 			}
 
 			// at least the tail node should can be scan, so something goes wrong.
 			blog.V(5).Infof("watch with cursor %s, but no event matched in the chain, rid: %s", opts.Cursor, rid)
-			return []*watch.WatchEventResp{resp}, nil
+			return []*watch.WatchEventDetail{resp}, nil
 		}
 		// not event one event is hit, sleep a little, and then try to continue the loop watch
 		time.Sleep(loopInternal)

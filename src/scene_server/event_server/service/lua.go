@@ -54,11 +54,12 @@ for i = 1,KEYS[3] do
 
 	local js = cjson.decode(ele);
 	next = js.next_cursor
-	elements[i] = ele;
-
 	if(next == KEYS[4]) then
 		break
 	end;
+
+	elements[i] = ele;
+
 end;
 
 return elements

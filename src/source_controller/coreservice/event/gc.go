@@ -87,7 +87,7 @@ func (f *Flow) cleanExpiredEvents() {
 
 			if len(nodes) == 1 {
 				// no events is occurred
-				if nodes[0].Cursor == headKey {
+				if nodes[0].NextCursor == headKey {
 					blog.Infof("clean expired events for key: %s success, * no events found *, rid: %s", f.key.Namespace(), rid)
 					continueLoop = false
 					continue
@@ -164,6 +164,7 @@ func (f *Flow) cleanExpiredEvents() {
 				}
 			}
 
+			expireCursor := make([]string, 0)
 			pipe := f.rds.Pipeline()
 			// redirect the head key.
 			pipe.HSet(mainKey, headKey, hBytes)
@@ -172,6 +173,7 @@ func (f *Flow) cleanExpiredEvents() {
 				pipe.HDel(mainKey, expire.Cursor)
 				// delete expired cursor targeted detail key
 				pipe.Del(f.key.DetailKey(expire.Cursor))
+				expireCursor = append(expireCursor, expire.Cursor)
 			}
 
 			// if last node is tail key, which means we have scan to the end.
@@ -212,7 +214,7 @@ func (f *Flow) cleanExpiredEvents() {
 			}
 			releaseLock()
 
-			blog.Infof("clean expired events for key: %s success. rid: %s", f.key.Namespace(), rid)
+			blog.Infof("clean expired events for key: %s success, expire cursor: %v. rid: %s", f.key.Namespace(), expireCursor, rid)
 			// sleep a while during the loop
 			time.Sleep(30 * time.Second)
 		}

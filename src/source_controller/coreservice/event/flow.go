@@ -268,6 +268,11 @@ func (f *Flow) do(e *types.Event) (retry bool, err error) {
 	// get previous node with previous cursor
 	prev, err := f.rds.HGet(f.key.MainHashKey(), prevCursor).Result()
 	if err != nil {
+		if err == redis.Nil {
+			blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, err, e.Oid)
+			return false, err
+		}
+
 		blog.Errorf("get previous cursor: %s node from redis failed, err: %v, oid: %s", prevCursor, err, e.Oid)
 		return true, err
 	}

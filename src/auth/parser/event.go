@@ -141,16 +141,16 @@ func (ps *parseStream) subscribe() *parseStream {
 
 	// watch resource.
 	if ps.hitRegexp(watchResourceRegexp, http.MethodPost) {
-		resource := ps.RequestCtx.Elements[6]
+		resource := ps.RequestCtx.Elements[5]
 		if len(resource) == 0 {
-			ps.err = fmt.Errorf("watch event resource, but got empty resource: %s", ps.RequestCtx.Elements[4])
+			ps.err = fmt.Errorf("watch event resource, but got empty resource: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
-					Type:   meta.EventPushing,
+					Type:   meta.EventWatch,
 					Action: meta.Action(resource),
 				},
 			},

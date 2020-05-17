@@ -56,14 +56,21 @@ func (w *WatchEventOptions) Validate() error {
 	return nil
 }
 
-type WatchEventResp struct {
-	Cursor   string     `json:"bk_cursor"`
-	Resource CursorType `json:"bk_resource"`
-	// Default instance is JsonString type
-	Detail ObjectInterface `json:"bk_detail"`
+type WatchResp struct {
+	// watched events or not
+	Watched bool                `json:"bk_watched"`
+	Events  []*WatchEventDetail `json:"bk_events"`
 }
 
-type ObjectInterface interface {
+type WatchEventDetail struct {
+	Cursor    string     `json:"bk_cursor"`
+	Resource  CursorType `json:"bk_resource"`
+	EventType EventType  `json:"bk_event_type"`
+	// Default instance is JsonString type
+	Detail DetailInterface `json:"bk_detail"`
+}
+
+type DetailInterface interface {
 	Name() string
 }
 
