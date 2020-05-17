@@ -68,19 +68,19 @@ func validateUpdateCondition(cond mapstr.MapStr, uniques []metadata.ObjectUnique
 
 	propertyIDMap := make(map[int64]string)
 	for _, attr := range attrs {
-		propertyIDMap[attr.ID] = attr.PropertyName
+		propertyIDMap[attr.ID] = attr.PropertyID
 	}
 
 	var uniKeysArr [][]string
 	for _, uni := range uniques {
 		var tmpArr []string
 		for _, key := range uni.Keys {
-			propertyName, ok := propertyIDMap[int64(key.ID)]
+			PropertyID, ok := propertyIDMap[int64(key.ID)]
 			if !ok {
 				blog.Errorf("pod unique key id is not in pod attr")
 				continue
 			}
-			tmpArr = append(tmpArr, propertyName)
+			tmpArr = append(tmpArr, PropertyID)
 		}
 		uniKeysArr = append(uniKeysArr, tmpArr)
 	}
