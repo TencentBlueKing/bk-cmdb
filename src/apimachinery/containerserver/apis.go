@@ -21,7 +21,7 @@ import (
 
 func (cs *containerServer) CreatePod(ctx context.Context, h http.Header, bizID int64, data interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
 	resp = new(metadata.CreatedOneOptionResult)
-	subPath := "/create/biz/%d/pod"
+	subPath := "/create/container/biz/%d/pod"
 
 	err = cs.client.Post().
 		WithContext(ctx).
@@ -35,7 +35,7 @@ func (cs *containerServer) CreatePod(ctx context.Context, h http.Header, bizID i
 
 func (cs *containerServer) CreateManyPod(ctx context.Context, h http.Header, bizID int64, data interface{}) (resp *metadata.CreatedManyOptionResult, err error) {
 	resp = new(metadata.CreatedManyOptionResult)
-	subPath := "/createmany/biz/%d/pod"
+	subPath := "/createmany/container/biz/%d/pod"
 
 	err = cs.client.Post().
 		WithContext(ctx).
@@ -49,7 +49,7 @@ func (cs *containerServer) CreateManyPod(ctx context.Context, h http.Header, biz
 
 func (cs *containerServer) UpdatePod(ctx context.Context, h http.Header, bizID int64, data interface{}) (resp *metadata.UpdatedOptionResult, err error) {
 	resp = new(metadata.UpdatedOptionResult)
-	subPath := "/update/biz/%d/pod"
+	subPath := "/update/container/biz/%d/pod"
 
 	err = cs.client.Put().
 		WithContext(ctx).
@@ -63,7 +63,7 @@ func (cs *containerServer) UpdatePod(ctx context.Context, h http.Header, bizID i
 
 func (cs *containerServer) DeletePod(ctx context.Context, h http.Header, bizID int64, data interface{}) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
-	subPath := "/delete/biz/%d/pod"
+	subPath := "/delete/container/biz/%d/pod"
 
 	err = cs.client.Delete().
 		WithContext(ctx).
@@ -77,7 +77,7 @@ func (cs *containerServer) DeletePod(ctx context.Context, h http.Header, bizID i
 
 func (cs *containerServer) ListPods(ctx context.Context, h http.Header, bizID int64, data interface{}) (resp *metadata.ListPodsResult, err error) {
 	resp = new(metadata.ListPodsResult)
-	subPath := "/list/pod"
+	subPath := "/list/container/pod"
 
 	err = cs.client.Delete().
 		WithContext(ctx).

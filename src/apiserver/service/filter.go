@@ -39,6 +39,7 @@ const (
 	DataCollectType RequestType = "collect"
 	OperationType   RequestType = "operation"
 	TaskType        RequestType = "task"
+	ContainerType   RequestType = "container"
 )
 
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
@@ -94,8 +95,12 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 
 	case OperationType:
 		servers, err = s.discovery.OperationServer().GetServers()
+
 	case TaskType:
 		servers, err = s.discovery.TaskServer().GetServers()
+
+	case ContainerType:
+		servers, err := s.discovery.ContainerServer().GetServers()
 	}
 
 	if err != nil {

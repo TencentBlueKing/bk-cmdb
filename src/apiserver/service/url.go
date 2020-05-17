@@ -48,6 +48,8 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		return OperationType, nil
 	case u.WithTask(req):
 		return TaskType, nil
+	case u.WithContainer(req):
+		return ContainerType, nil
 	default:
 		serverType = UnknownType
 		err = errors.New("unknown requested with backend process")
@@ -298,6 +300,7 @@ func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 }
 
 var operationUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/operation/.*$", verbs))
+
 // WithOperation transform OperationStatistic's url
 func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
 	statisticsRoot := "/operation/v3"
@@ -330,6 +333,31 @@ func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
 
 	default:
 		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
+}
+
+// WithContainer transform container server url
+func (u *URLPath) WithContainer(req *restful.Request) (isHit bool) {
+	containerRoot := "/container/v3"
+	from, to := rootPath, containerRoot
+
+	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/create/container"):
+		from, to, isHit = rootPath, containerRoot, true
+	case strings.HasPrefix(string(*u), rootPath+"/createmany/container"):
+		from, to, isHit = rootPath, containerRoot, true
+	case strings.HasPrefix(string(*u), rootPath+"/update/container"):
+		from, to, isHit = rootPath, containerRoot, true
+	case strings.HasPrefix(string(*u), rootPath+"/delete/container"):
+		from, to, isHit = rootPath, containerRoot, true
+	case strings.HasPrefix(string(*u), rootPath+"/list/container"):
+		from, to, isHit = rootPath, containerRoot, true
 	}
 
 	if isHit {

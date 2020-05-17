@@ -58,6 +58,13 @@ func (s *service) healthz(req *restful.Request, resp *restful.Response) {
 	}
 	meta.Items = append(meta.Items, procSrv)
 
+	// container server
+	containerSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CONTAINERSERVER}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CONTAINERSERVER); err != nil {
+		containerSrv.IsHealthy = false
+		containerSrv.Message = err.Error()
+	}
+
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
