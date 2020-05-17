@@ -100,7 +100,7 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 		servers, err = s.discovery.TaskServer().GetServers()
 
 	case ContainerType:
-		servers, err := s.discovery.ContainerServer().GetServers()
+		servers, err = s.discovery.ContainerServer().GetServers()
 	}
 
 	if err != nil {
