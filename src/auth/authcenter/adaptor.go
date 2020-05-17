@@ -150,7 +150,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	case meta.HostApply:
 		iamResourceType = BizHostApply
 	case meta.EventWatch:
-
+		iamResourceType = SysEventWatch
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}

@@ -164,6 +164,7 @@ func (f *Flow) cleanExpiredEvents() {
 				}
 			}
 
+			expireCursor := make([]string, 0)
 			pipe := f.rds.Pipeline()
 			// redirect the head key.
 			pipe.HSet(mainKey, headKey, hBytes)
@@ -172,6 +173,7 @@ func (f *Flow) cleanExpiredEvents() {
 				pipe.HDel(mainKey, expire.Cursor)
 				// delete expired cursor targeted detail key
 				pipe.Del(f.key.DetailKey(expire.Cursor))
+				expireCursor = append(expireCursor, expire.Cursor)
 			}
 
 			// if last node is tail key, which means we have scan to the end.
@@ -212,7 +214,7 @@ func (f *Flow) cleanExpiredEvents() {
 			}
 			releaseLock()
 
-			blog.Infof("clean expired events for key: %s success. rid: %s", f.key.Namespace(), rid)
+			blog.Infof("clean expired events for key: %s success, expire cursor: %v. rid: %s", f.key.Namespace(), expireCursor, rid)
 			// sleep a while during the loop
 			time.Sleep(30 * time.Second)
 		}
