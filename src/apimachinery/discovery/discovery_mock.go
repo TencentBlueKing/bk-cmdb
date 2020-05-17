@@ -82,6 +82,10 @@ func (d *MockDiscovery) TaskServer() Interface {
 	return &mockServer{}
 }
 
+func (d *MockDiscovery) ContainerServer() Interface {
+	return &mockServer{}
+}
+
 func (d *MockDiscovery) IsMaster() bool {
 	return true
 }
