@@ -171,6 +171,6 @@ func (p *PodManager) DeletePod(kit *rest.Kit, inputParam metadata.DeletePod) (*m
 
 // ListPods implements core PodOperation
 func (p *PodManager) ListPods(kit *rest.Kit, inputParam metadata.ListPods) (*metadata.ListPodsResult, error) {
-	lister := NewLister()
+	lister := NewLister(p.clientSet)
 	return lister.ListPod(kit, inputParam)
 }

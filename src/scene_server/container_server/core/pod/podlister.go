@@ -28,8 +28,10 @@ type Lister struct {
 }
 
 // NewLister create lister
-func NewLister() *Lister {
-	return &Lister{}
+func NewLister(clientSet apimachinery.ClientSetInterface) *Lister {
+	return &Lister{
+		clientSet: clientSet,
+	}
 }
 
 func (li *Lister) getSetModuleIDs(kit *rest.Kit, bizID int64, setIDs []int64) ([]int64, error) {
