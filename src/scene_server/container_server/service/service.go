@@ -96,7 +96,7 @@ func (s *ContainerService) Healthz(req *restful.Request, resp *restful.Response)
 
 	// zk health status
 	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.Engine.Ping(); err != nil {
+	if err := s.engine.Ping(); err != nil {
 		zkItem.IsHealthy = false
 		zkItem.Message = err.Error()
 	}
@@ -104,7 +104,7 @@ func (s *ContainerService) Healthz(req *restful.Request, resp *restful.Response)
 
 	// coreservice
 	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
 		coreSrv.IsHealthy = false
 		coreSrv.Message = err.Error()
 	}
