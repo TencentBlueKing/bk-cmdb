@@ -159,6 +159,9 @@ func WarnJSON(format string, args ...interface{}) {
 			continue
 		}
 		kind := reflect.TypeOf(arg).Kind()
+		if kind == reflect.Ptr {
+			kind = reflect.TypeOf(arg).Elem().Kind()
+		}
 		if kind == reflect.Struct || kind == reflect.Interface ||
 			kind == reflect.Array || kind == reflect.Map || kind == reflect.Slice {
 			out, err := json.Marshal(arg)
