@@ -4,6 +4,6 @@ export const processTableHeader = [
     'bk_start_param_regex',
     'bind_ip',
     'port',
-    'bk_port_enable',
+    'bk_enable_port',
     'protocol'
 ]

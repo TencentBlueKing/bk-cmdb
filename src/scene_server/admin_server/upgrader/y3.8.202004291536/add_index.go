@@ -92,7 +92,7 @@ func CreateProcessTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 	return createIndex(ctx, db, common.BKTableNameProcessTemplate, createIndexArr)
 }
 
-// CreateServiceInstanceIndex create service template table index
+// CreateServiceInstanceIndex create service instance table index
 func CreateServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	createIndexArr := []types.Index{
 		{
@@ -118,4 +118,39 @@ func CreateServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 		},
 	}
 	return createIndex(ctx, db, common.BKTableNameServiceInstance, createIndexArr)
+}
+
+// CreateProcessInstanceRelationIndex create process instance relation table index
+func CreateProcessInstanceRelationIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	createIndexArr := []types.Index{
+		{
+			Keys: map[string]int32{
+				common.BKServiceInstanceIDField: 1,
+			},
+			Name:       "idx_bkServiceInstanceID",
+			Background: true,
+		},
+		{
+			Keys: map[string]int32{
+				common.BKProcessTemplateIDField: 1,
+			},
+			Name:       "idx_bkProcessTemplateID",
+			Background: true,
+		},
+		{
+			Keys: map[string]int32{
+				common.BKAppIDField: 1,
+			},
+			Name:       "idx_bkBizID",
+			Background: true,
+		},
+		{
+			Keys: map[string]int32{
+				common.BKProcessIDField: 1,
+			},
+			Name:       "idx_bkProcessID",
+			Background: true,
+		},
+	}
+	return createIndex(ctx, db, common.BKTableNameProcessInstanceRelation, createIndexArr)
 }

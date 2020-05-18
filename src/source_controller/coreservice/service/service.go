@@ -39,10 +39,12 @@ import (
 	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
+	watchEvent "configcenter/src/source_controller/coreservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	dalredis "configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/reflector"
+	"configcenter/src/storage/stream"
 
 	"github.com/emicklei/go-restful"
 	"gopkg.in/redis.v5"
@@ -129,7 +131,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 
 	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
 	if eventErr != nil {
-		blog.Errorf("new reflector failed, err: %v", err)
+		blog.Errorf("new reflector failed, err: %v", eventErr)
 		return eventErr
 	}
 
@@ -139,6 +141,18 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		return cacheErr
 	}
 	s.cacheSet = c
+
+	watcher, watchErr := stream.NewStream(s.cfg.Mongo.GetMongoConf())
+	if watchErr != nil {
+		blog.Errorf("new watch stream failed, err: %v", watchErr)
+		return watchErr
+	}
+
+	if err := watchEvent.NewEvent(s.db, s.rds, watcher, engine.ServiceManageInterface); err != nil {
+		blog.Errorf("new watch event failed, err: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -148,7 +162,7 @@ func (s *coreService) WebService() *restful.Container {
 	container := restful.NewContainer()
 
 	api := new(restful.WebService)
-	api.Path("/api/v3").Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	api.Path("/api/v3").Filter(s.engine.Metric().RestfulMiddleWare).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 
 	// init service actions
 	s.initService(api)

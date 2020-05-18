@@ -52,4 +52,5 @@ type Config struct {
 	NetCollectRedis redis.Config
 	Esb             esbutil.EsbConfig
 	AuthConfig      authcenter.AuthConfig
+	DefaultAppName  string
 }

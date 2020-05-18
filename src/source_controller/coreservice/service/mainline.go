@@ -58,7 +58,6 @@ func (s *coreService) SearchMainlineInstanceTopo(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	blog.V(2).Infof("decode result: %+v, rid: %s", detail, ctx.Kit.Rid)
 
 	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, detail.WithDetail)
 	if err != nil {

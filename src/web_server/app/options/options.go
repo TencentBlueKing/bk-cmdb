@@ -71,6 +71,7 @@ type Config struct {
 	AgentAppUrl  string
 	LoginUrl     string
 	LoginVersion string
+	BkDesktopUrl string
 	ConfigMap    map[string]string
 	AuthCenter   AppInfo
 }

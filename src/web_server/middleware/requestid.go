@@ -14,10 +14,11 @@ package middleware
 
 import (
 	"configcenter/src/common/rdapi"
+
 	"github.com/gin-gonic/gin"
 )
 
 func RequestIDMiddleware(c *gin.Context) {
-	rdapi.HTTPHeaderRidFilter(c.Request.Header)
+	rdapi.GenerateHttpHeaderRID(c.Request, c.Writer)
 	c.Next()
 }

@@ -110,11 +110,12 @@
     import {
         MENU_BUSINESS,
         MENU_BUSINESS_HOST_DETAILS,
+        MENU_RESOURCE_HOST,
         MENU_RESOURCE_HOST_DETAILS,
         MENU_RESOURCE_BUSINESS_HOST_DETAILS
     } from '@/dictionary/menu-symbol'
     import RouterQuery from '@/router/query'
-    import { getIPPayload } from '@/utils/host'
+    import { getIPPayload, injectFields } from '@/utils/host'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -237,6 +238,7 @@
             },
             'table.header' (header) {
                 this.$emit('on-set-header', header)
+                RouterQuery.set('_t', Date.now())
             },
             'slider.show' (show) {
                 if (!show) {
@@ -258,11 +260,37 @@
             },
             condition () {
                 RouterQuery.set('_t', Date.now())
+            },
+            '$route.name' (value) {
+                if (value === MENU_RESOURCE_HOST) {
+                    this.setRouterQueryWatcher()
+                } else {
+                    this.teardownRouterQueryWatcher()
+                }
             }
         },
         async created () {
             try {
-                RouterQuery.watch(['ip', 'scope', 'exact', 'page', 'limit', 'condition', '_t'], ({
+                await Promise.all([
+                    this.getProperties(),
+                    this.getHostPropertyGroups()
+                ])
+
+                this.setRouterQueryWatcher()
+            } catch (e) {
+                console.log(e)
+            }
+        },
+        beforeDestroy () {
+            this.teardownRouterQueryWatcher()
+        },
+        methods: {
+            ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
+            ...mapActions('objectModelFieldGroup', ['searchGroup']),
+            ...mapActions('hostUpdate', ['updateHost']),
+            ...mapActions('hostSearch', ['searchHost']),
+            setRouterQueryWatcher () {
+                this.unwatch = RouterQuery.watch('*', ({
                     scope = '1',
                     page = 1,
                     limit = this.table.pagination.limit
@@ -272,19 +300,10 @@
                     this.table.pagination.limit = parseInt(limit)
                     this.getHostList()
                 }, { immediate: true, throttle: 16 })
-                await Promise.all([
-                    this.getProperties(),
-                    this.getHostPropertyGroups()
-                ])
-            } catch (e) {
-                console.log(e)
-            }
-        },
-        methods: {
-            ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
-            ...mapActions('objectModelFieldGroup', ['searchGroup']),
-            ...mapActions('hostUpdate', ['updateHost']),
-            ...mapActions('hostSearch', ['searchHost']),
+            },
+            teardownRouterQueryWatcher () {
+                this.unwatch && this.unwatch()
+            },
             getPropertyValue (modelId, propertyId, field) {
                 const model = this.properties[modelId]
                 if (!model) {
@@ -368,11 +387,11 @@
                     }).then(data => {
                         this.table.pagination.count = data.count
                         this.table.list = data.info
-    
+
                         if (event) {
                             this.table.stuff.type = 'search'
                         }
-    
+
                         return data
                     }).catch(e => {
                         this.table.checked = []
@@ -385,7 +404,7 @@
             },
             injectScope (params) {
                 if (!this.showScope) {
-                    return params
+                    return injectFields(params, this.table.header)
                 }
                 const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
                 if (this.scope === 'all') {
@@ -403,7 +422,8 @@
                         biz.condition.push(newCondition)
                     }
                 }
-                return params
+
+                return injectFields(params, this.table.header)
             },
             handlePageChange (current, event) {
                 RouterQuery.set('page', current)

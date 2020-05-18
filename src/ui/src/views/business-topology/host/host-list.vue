@@ -53,7 +53,7 @@
     } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
-    import { getIPPayload } from '@/utils/host'
+    import { getIPPayload, injectFields } from '@/utils/host'
     export default {
         components: {
             HostListOptions,
@@ -105,8 +105,7 @@
             ]),
             ...mapGetters('hosts', ['condition']),
             customColumns () {
-                const customColumnKey = this.$route.meta.customInstanceColumn
-                return this.usercustom[customColumnKey] || []
+                return this.usercustom['business_topology_table_column_config'] || []
             },
             globalCustomColumns () {
                 return this.globalUsercustom['host_global_custom_table_columns'] || []
@@ -115,13 +114,14 @@
         watch: {
             customColumns () {
                 this.setTableHeader()
+                this.getHostList()
             },
             columnsConfigProperties () {
                 this.setTableHeader()
             }
         },
         created () {
-            RouterQuery.watch(['inner', 'outer', 'exact', 'node', 'ip', 'tab', 'page', 'limit', '_t'], ({
+            this.unwatch = RouterQuery.watch('*', ({
                 tab = 'hostList',
                 node,
                 page = 1,
@@ -129,10 +129,11 @@
             }) => {
                 this.table.pagination.current = parseInt(page)
                 this.table.pagination.limit = parseInt(limit)
-                if (tab === 'hostList' && node) {
-                    this.getHostList()
-                }
-            }, { throttle: 16, immediate: true })
+                tab === 'hostList' && node && this.selectedNode && this.getHostList()
+            }, { throttle: 16, immediate: true, ignore: ['keyword'] })
+        },
+        beforeDestroy () {
+            this.unwatch()
         },
         methods: {
             setTableHeader () {
@@ -227,7 +228,8 @@
                         value: nodeData.bk_inst_id
                     })
                 }
-                return params
+
+                return injectFields(params, this.table.header)
             },
             handleTransfer (type) {
                 if (['idle', 'business'].includes(type)) {

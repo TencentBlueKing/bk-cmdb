@@ -18,7 +18,7 @@
                     <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <cmdb-auth class="menu-span" :auth="$authResources({ type: $OPERATION[menu.auth] })">
+                        <cmdb-auth class="menu-span" :auth="HOST_AUTH[menu.auth]">
                             <bk-button slot-scope="{ disabled }"
                                 class="menu-button"
                                 :text="true"

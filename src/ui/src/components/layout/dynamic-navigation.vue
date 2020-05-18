@@ -5,7 +5,7 @@
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
             :class="{ unfold: unfold, flexible: !navStick }">
-            <div class="business-wrapper" v-if="isBusinessNav">
+            <div class="business-wrapper" v-show="isBusinessNav">
                 <transition name="fade">
                     <cmdb-business-selector class="business-selector"
                         v-show="unfold"
@@ -55,6 +55,7 @@
     import MENU_DICTIONARY from '@/dictionary/menu'
     import {
         MENU_BUSINESS,
+        MENU_BUSINESS_HOST_AND_SERVICE,
         MENU_RESOURCE,
         MENU_RESOURCE_BUSINESS,
         MENU_RESOURCE_HOST,
@@ -182,6 +183,9 @@
                 }
             },
             checkExactActive () {
+                if (!this.$refs.menuLink) {
+                    return
+                }
                 this.$nextTick(() => {
                     this.hasExactActive = this.$refs.menuLink.some(link => link.$el.classList.contains('active'))
                 })
@@ -235,9 +239,12 @@
                     stick: !this.navStick
                 })
             },
-            handleToggleBusiness (id) {
+            handleToggleBusiness (id, oldValue) {
+                if (!oldValue || id === oldValue) {
+                    return false
+                }
                 this.$routerActions.redirect({
-                    ...this.$route,
+                    name: MENU_BUSINESS_HOST_AND_SERVICE,
                     params: {
                         ...this.$route.params,
                         bizId: id

@@ -211,6 +211,11 @@
                 if (this.isRequired(property)) {
                     rules.required = true
                 }
+
+                if (['bk_set_name', 'bk_module_name', 'bk_inst_name'].includes(property.bk_property_id)) {
+                    rules.businessTopoInstNames = true
+                }
+
                 return rules
             },
             handleSave () {

@@ -162,7 +162,7 @@ func (ms *moduleSet) onDelete(e *types.Event) {
 	blog.V(3).Infof("received %s delete event, oid: %s", ms.collection, e.Oid)
 	instID, err := ms.getInstIDWithOid(e.Oid)
 	if err != nil {
-		blog.Errorf("received %s delete event, but get oid: %s relation failed, err: %v", ms.collection, e.Oid)
+		blog.Errorf("received %s delete event, but get oid: %s relation failed, err: %v", ms.collection, e.Oid, err)
 		return
 	}
 

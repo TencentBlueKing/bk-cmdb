@@ -154,11 +154,11 @@
                                 :placeholder="$t('请输入唯一标识')"
                                 :disabled="groupDialog.isEdit"
                                 v-model.trim="groupDialog.data['bk_classification_id']"
-                                v-validate="'required|classifyId'">
+                                v-validate="'required|classifyId|length:128'">
                             </bk-input>
                             <p class="form-error" :title="errors.first('classifyId')">{{errors.first('classifyId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('下划线，数字，英文大小写的组合')"></i>
+                        <i class="bk-icon icon-info-circle" v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"></i>
                     </label>
                     <label>
                         <span class="label-title">
@@ -171,7 +171,7 @@
                                 name="classifyName"
                                 :placeholder="$t('请输入名称')"
                                 v-model.trim="groupDialog.data['bk_classification_name']"
-                                v-validate="'required|classifyName'">
+                                v-validate="'required|length:128'">
                             </bk-input>
                             <p class="form-error" :title="errors.first('classifyName')">{{errors.first('classifyName')}}</p>
                         </div>
@@ -194,7 +194,7 @@
             :title="$t('新建模型')"
             @confirm="saveModel">
         </the-create-model>
-        
+
         <bk-dialog
             class="bk-dialog-no-padding"
             :width="400"

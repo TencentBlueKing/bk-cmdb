@@ -36,7 +36,7 @@ func (am *AuthManager) CollectInstancesByModelID(ctx context.Context, header htt
 
 	instances := make([]InstanceSimplify, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		cond := metadata.QueryCondition{
 			Condition: map[string]interface{}{common.BKObjIDField: objectID},
 			Fields:    []string{common.BKInstIDField, common.BKInstNameField, common.BKAppIDField, common.BKObjIDField},

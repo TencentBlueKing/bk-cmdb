@@ -52,7 +52,8 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(rsp.ToMapStr())
+	retData := rsp.ToMapStr()
+	ctx.RespEntity(retData)
 }
 
 // UpdateObjectGroup update the object group information

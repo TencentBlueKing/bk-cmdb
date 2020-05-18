@@ -35,7 +35,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="updateAuthResources">
+                    <cmdb-auth :auth="HOST_AUTH.U_HOST">
                         <bk-button slot-scope="{ disabled }"
                             text
                             theme="primary"
@@ -60,9 +60,10 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
+    import authMixin from '../mixin-auth'
     export default {
         name: 'cmdb-host-association-list-table',
+        mixins: [authMixin],
         props: {
             type: {
                 type: String,
@@ -109,13 +110,6 @@
                 'sourceInstances',
                 'targetInstances'
             ]),
-            updateAuthResources () {
-                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
-                if (isResourceHost) {
-                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
-                }
-                return this.$authResources({ type: this.$OPERATION.U_HOST })
-            },
             hostId () {
                 return parseInt(this.$route.params.id)
             },

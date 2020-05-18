@@ -45,7 +45,7 @@
                             </i>
                         </template>
                         <template v-else>
-                            <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;" :auth="updateAuthResources" v-show="property !== editState.property">
+                            <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;" :auth="HOST_AUTH.U_HOST" v-show="property !== editState.property">
                                 <bk-button slot-scope="{ disabled }"
                                     text
                                     theme="primary"
@@ -100,7 +100,8 @@
 
 <script>
     import { mapGetters, mapState } from 'vuex'
-    import { MENU_RESOURCE_HOST_DETAILS, MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+    import authMixin from '../mixin-auth'
     export default {
         name: 'cmdb-host-property',
         filters: {
@@ -108,6 +109,7 @@
                 return value === '--' ? '--' : value + unit
             }
         },
+        mixins: [authMixin],
         data () {
             return {
                 editState: {
@@ -127,13 +129,6 @@
             ...mapGetters('hostDetails', ['groupedProperties']),
             host () {
                 return this.info.host || {}
-            },
-            updateAuthResources () {
-                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
-                if (isResourceHost) {
-                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
-                }
-                return this.$authResources({ type: this.$OPERATION.U_HOST })
             }
         },
         watch: {
