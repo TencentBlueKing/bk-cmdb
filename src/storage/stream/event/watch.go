@@ -30,8 +30,6 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 		return nil, err
 	}
 	pipeline, streamOptions := generateOptions(&opts.Options)
-	// TODO: add support later.
-	// streamOptions.StartAfter = opts.StartAfterToken
 
 	var stream *mongo.ChangeStream
 	var err error
@@ -67,7 +65,7 @@ func (e *Event) loopWatch(ctx context.Context,
 	for {
 		select {
 		case <-ctx.Done():
-			blog.Errorf("received stopped loop watch signal, stop list db: %s, collection: %s, err: %v", e.database,
+			blog.Warnf("received stopped loop watch signal, stop watch db: %s, collection: %s, err: %v", e.database,
 				opts.Collection, ctx.Err())
 			return
 		default:
@@ -79,7 +77,7 @@ func (e *Event) loopWatch(ctx context.Context,
 			if len(currentToken.Data) != 0 {
 				// if error occurs, then retry watch and start from the last token.
 				// so that we can continue the event from where it just broken.
-				streamOptions.StartAfter = currentToken
+				streamOptions.SetStartAfter(currentToken)
 			}
 			var err error
 			stream, err = e.client.
@@ -87,14 +85,13 @@ func (e *Event) loopWatch(ctx context.Context,
 				Collection(opts.Collection).
 				Watch(ctx, pipeline, streamOptions)
 			if err != nil {
-				blog.Infof("mongodb watch collection: %s failed with conf: %v, err: %v", opts.Collection, *opts, err)
+				blog.Warnf("mongodb watch collection: %s failed with conf: %v, err: %v", opts.Collection, *opts, err)
 				retry = true
 				continue
 			}
 		}
 
 		for stream.Next(ctx) {
-			// fmt.Println(run.SetGreen(stream.Current.String()))
 			newStruct := newEventStruct(typ)
 			if err := stream.Decode(newStruct.Addr().Interface()); err != nil {
 				blog.Errorf("watch collection %s, but decode to event struct: %s failed, err: %v", opts.Collection, reflect.TypeOf(opts.EventStruct).Name(), err)
@@ -110,6 +107,11 @@ func (e *Event) loopWatch(ctx context.Context,
 				OperationType: base.OperationType,
 				Document:      newStruct.Field(1).Addr().Interface(),
 				DocBytes:      byt,
+				ClusterTime: types.TimeStamp{
+					Sec:  base.ClusterTime.T,
+					Nano: base.ClusterTime.I,
+				},
+				Token: base.Token,
 			}
 		}
 

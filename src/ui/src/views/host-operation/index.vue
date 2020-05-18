@@ -2,103 +2,105 @@
     <div class="layout" v-bkloading="{
         isLoading: $loading(Object.values(request)) || loading
     }">
-        <cmdb-tips
-            v-if="isRetry"
-            :tips-style="{
-                background: '#ffeded',
-                border: '1px solid #ffd2d2',
-                fontSize: '12px',
-                lineHeight: '30px',
-                padding: '2px 10px',
-                margin: '0 20px 20px'
-            }"
-            :icon-style="{
-                color: '#ea3636',
-                fontSize: '16px',
-                lineHeight: '30px'
-            }">
-            <i18n path="以下N台主机转移失败">
-                <span place="N">{{resources.length}}</span>
-                <bk-link class="fail-detail-link" theme="primary" @click="handleViewFailDetail" place="link">{{$t('点击查看详情')}}</bk-link>
-            </i18n>
-        </cmdb-tips>
-        <div class="info clearfix mb20">
-            <label class="info-label fl">{{$t('已选主机')}}：</label>
-            <div class="info-content">
-                <i18n path="N台主机">
-                    <b class="info-count" place="count">{{resources.length}}</b>
+        <div v-show="!$loading(Object.values(request)) && !loading">
+            <cmdb-tips
+                v-if="isRetry"
+                :tips-style="{
+                    background: '#ffeded',
+                    border: '1px solid #ffd2d2',
+                    fontSize: '12px',
+                    lineHeight: '30px',
+                    padding: '2px 10px',
+                    margin: '0 20px 20px'
+                }"
+                :icon-style="{
+                    color: '#ea3636',
+                    fontSize: '16px',
+                    lineHeight: '30px'
+                }">
+                <i18n path="以下N台主机转移失败">
+                    <span place="N">{{resources.length}}</span>
+                    <bk-link class="fail-detail-link" theme="primary" @click="handleViewFailDetail" place="link">{{$t('点击查看详情')}}</bk-link>
                 </i18n>
-                <i class="edit-trigger icon icon-cc-edit" v-if="!isRemoveModule" @click="handleChangeHost"></i>
+            </cmdb-tips>
+            <div class="info clearfix mb20">
+                <label class="info-label fl">{{$t('已选主机')}}：</label>
+                <div class="info-content">
+                    <i18n path="N台主机">
+                        <b class="info-count" place="count">{{resources.length}}</b>
+                    </i18n>
+                    <i class="edit-trigger icon icon-cc-edit" v-if="!isRemoveModule" @click="handleChangeHost"></i>
+                </div>
             </div>
-        </div>
-        <div class="info clearfix mb10" v-if="type !== 'remove'">
-            <label class="info-label fl">{{$t('转移到')}}：</label>
-            <div class="info-content">
-                <ul class="module-list">
-                    <li class="module-item" v-for="(id, index) in targetModules"
-                        :key="index"
-                        :class="{
-                            'is-business-module': type === 'business'
-                        }"
-                        v-bk-tooltips="getModulePath(id)">
-                        <span class="module-icon" v-if="type === 'business'">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
-                        {{getModuleName(id)}}
-                        <span class="module-mask"
-                            v-if="type === 'idle'"
+            <div class="info clearfix mb10" v-if="type !== 'remove'">
+                <label class="info-label fl">{{$t('转移到')}}：</label>
+                <div class="info-content">
+                    <ul class="module-list">
+                        <li class="module-item" v-for="(id, index) in targetModules"
+                            :key="index"
+                            :class="{
+                                'is-business-module': type === 'business'
+                            }"
+                            v-bk-tooltips="getModulePath(id)">
+                            <span class="module-icon" v-if="type === 'business'">{{$i18n.locale === 'en' ? 'M' : '模'}}</span>
+                            {{getModuleName(id)}}
+                            <span class="module-mask"
+                                v-if="type === 'idle'"
+                                @click="handleChangeModule">
+                                {{$t('点击修改')}}
+                            </span>
+                        </li>
+                        <li class="module-item is-trigger"
+                            v-if="type === 'business'"
                             @click="handleChangeModule">
-                            {{$t('点击修改')}}
-                        </span>
-                    </li>
-                    <li class="module-item is-trigger"
-                        v-if="type === 'business'"
-                        @click="handleChangeModule">
-                        <i class="icon icon-cc-edit"></i>
-                    </li>
-                </ul>
-                <div class="module-grep"></div>
-            </div>
-        </div>
-        <div class="info clearfix mb10" ref="changeInfo">
-            <label class="info-label fl">{{$t('变更确认')}}：</label>
-            <div class="info-content">
-                <template v-if="availableTabList.length">
-                    <ul class="tab clearfix">
-                        <template v-for="(item, index) in availableTabList">
-                            <li class="tab-grep fl" v-if="index" :key="index"></li>
-                            <li class="tab-item fl"
-                                :class="{ active: activeTab === item }"
-                                :key="item.id"
-                                @click="handleTabClick(item)">
-                                <span class="tab-label">{{item.label}}</span>
-                                <span :class="['tab-count', { 'unconfirmed': !item.confirmed }]">
-                                    {{item.props.info.length > 999 ? '999+' : item.props.info.length}}
-                                </span>
-                            </li>
-                        </template>
+                            <i class="icon icon-cc-edit"></i>
+                        </li>
                     </ul>
-                    <component class="tab-component"
-                        v-for="item in availableTabList"
-                        v-bind="item.props"
-                        v-show="activeTab === item"
-                        :ref="item.id"
-                        :key="item.id"
-                        :is="item.component">
-                    </component>
-                </template>
-                <div class="tab-empty" v-else-if="isSameModule">
-                    {{$t('相同模块转移提示')}}
-                </div>
-                <div class="tab-empty" v-else-if="isEmptyChange">
-                    {{$t('无转移确认信息提示')}}
-                </div>
-                <div class="tab-empty" v-else>
-                    {{$t('无')}}
+                    <div class="module-grep"></div>
                 </div>
             </div>
-        </div>
-        <div class="options" :class="{ 'is-sticky': hasScrollbar }" v-show="!loading">
-            <bk-button theme="primary" :disabled="isSameModule" @click="handleConfrim">{{confirmText}}</bk-button>
-            <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+            <div class="info clearfix mb10" ref="changeInfo">
+                <label class="info-label fl">{{$t('变更确认')}}：</label>
+                <div class="info-content">
+                    <template v-if="availableTabList.length">
+                        <ul class="tab clearfix">
+                            <template v-for="(item, index) in availableTabList">
+                                <li class="tab-grep fl" v-if="index" :key="index"></li>
+                                <li class="tab-item fl"
+                                    :class="{ active: activeTab === item }"
+                                    :key="item.id"
+                                    @click="handleTabClick(item)">
+                                    <span class="tab-label">{{item.label}}</span>
+                                    <span :class="['tab-count', { 'unconfirmed': !item.confirmed }]">
+                                        {{item.props.info.length > 999 ? '999+' : item.props.info.length}}
+                                    </span>
+                                </li>
+                            </template>
+                        </ul>
+                        <component class="tab-component"
+                            v-for="item in availableTabList"
+                            v-bind="item.props"
+                            v-show="activeTab === item"
+                            :ref="item.id"
+                            :key="item.id"
+                            :is="item.component">
+                        </component>
+                    </template>
+                    <div class="tab-empty" v-else-if="isSameModule">
+                        {{$t('相同模块转移提示')}}
+                    </div>
+                    <div class="tab-empty" v-else-if="isEmptyChange">
+                        {{$t('无转移确认信息提示')}}
+                    </div>
+                    <div class="tab-empty" v-else>
+                        {{$t('无')}}
+                    </div>
+                </div>
+            </div>
+            <div class="options" :class="{ 'is-sticky': hasScrollbar }">
+                <bk-button theme="primary" :disabled="isSameModule" @click="handleConfrim">{{confirmText}}</bk-button>
+                <bk-button class="ml10" theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+            </div>
         </div>
         <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="460" :body-scroll="false">
             <component

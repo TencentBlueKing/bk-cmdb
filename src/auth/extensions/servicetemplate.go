@@ -35,7 +35,7 @@ func (am *AuthManager) CollectServiceTemplatesByBusinessIDs(ctx context.Context,
 
 	templates := make([]metadata.ServiceTemplate, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		option := &metadata.ListServiceTemplateOption{
 			BusinessID: businessID,
 			Page: metadata.BasePage{

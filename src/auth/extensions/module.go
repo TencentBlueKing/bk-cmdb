@@ -37,7 +37,7 @@ func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header ht
 	cond.Field(common.BKAppIDField).Eq(businessID)
 	moduleArr := make([]ModuleSimplify, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		query := &metadata.QueryCondition{
 			Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKModuleNameField},
 			Condition: cond.ToMapStr(),

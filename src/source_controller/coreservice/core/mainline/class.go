@@ -81,7 +81,6 @@ func (mm *ModelMainline) constructTopoTree(ctx context.Context) error {
 		}
 		parentTopoModelNode.Children = append(parentTopoModelNode.Children, topoModelNodeMap[childObjectID])
 	}
-	blog.V(2).Infof("bizTopoModelNode: %+v, rid: %s", mm.root, rid)
 	return nil
 }
 

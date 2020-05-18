@@ -57,13 +57,13 @@ func (s *coreService) Healthz(req *restful.Request, resp *restful.Response) {
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "host controller is unhealthy"
+			meta.Message = "coreservice is unhealthy"
 			break
 		}
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_HOST,
+		Module:     types.CC_MODULE_CORESERVICE,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}

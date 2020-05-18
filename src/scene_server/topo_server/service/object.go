@@ -59,13 +59,12 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	rsp, err := s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
+	resp, err := s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	ctx.RespEntity(rsp.ToMapStr())
+	ctx.RespEntity(resp.ToMapStr())
 }
 
 // SearchObject search some objects by condition
@@ -120,6 +119,7 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKFieldID))
 		return
 	}
+	//update model
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
@@ -142,7 +142,7 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
 		return
 	}
-
+	//delete model
 	md := new(MetaShell)
 	if err := ctx.DecodeInto(md); err != nil {
 		ctx.RespAutoError(err)

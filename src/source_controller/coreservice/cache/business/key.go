@@ -226,6 +226,10 @@ func (c customKeyGen) objectIDKey() string {
 	return c.namespace + ":oid"
 }
 
+func (c customKeyGen) mainlineListDoneKey() string {
+	return c.namespace + ":" + mainlineTopologyListDoneKey
+}
+
 type oidValue struct {
 	biz    int64  `json:"biz"`
 	instID int64  `json:"inst_id"`

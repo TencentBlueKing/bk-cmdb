@@ -58,7 +58,7 @@
         },
         data () {
             return {
-                selected: ''
+                selected: this.multiple ? [] : ''
             }
         },
         computed: {
@@ -80,8 +80,8 @@
         },
         methods: {
             initValue () {
-                if (this.autoSelect && !this.value) {
-                    this.selected = this.options[0] || ''
+                if (this.autoSelect && (!this.value || (this.multiple && !this.value.length))) {
+                    this.selected = this.multiple ? [this.options[0]] : (this.options[0] || '')
                 } else {
                     this.selected = this.value
                 }

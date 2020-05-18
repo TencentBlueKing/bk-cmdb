@@ -10,38 +10,44 @@
  * limitations under the License.
  */
 
-package business
+package tools
 
 import "sync"
 
-type refreshingLock struct {
+func NewRefreshingLock() RefreshingLock {
+	return RefreshingLock{
+		refreshing: make(map[string]bool),
+	}
+}
+
+type RefreshingLock struct {
 	// bool, true: is refreshing, false: not refreshing.
 	refreshing map[string]bool
-	lock sync.Mutex
+	lock       sync.Mutex
 }
 
 // canRefresh check if you can refresh the key.
-func (r *refreshingLock) canRefresh(key string) bool {
+func (r *RefreshingLock) CanRefresh(key string) bool {
 	r.lock.Lock()
 	refreshing, exist := r.refreshing[key]
 	r.lock.Unlock()
 	if !exist {
-		r.refreshing[key]=false
+		r.refreshing[key] = false
 		return true
 	}
 	return !refreshing
 }
 
 // setRefreshing set the key is refreshing
-func (r *refreshingLock) setRefreshing(key string) {
+func (r *RefreshingLock) SetRefreshing(key string) {
 	r.lock.Lock()
-	r.refreshing[key]=true
+	r.refreshing[key] = true
 	r.lock.Unlock()
 }
 
 // setUnRefreshing set the key is refreshing
-func (r *refreshingLock) setUnRefreshing(key string) {
+func (r *RefreshingLock) SetUnRefreshing(key string) {
 	r.lock.Lock()
-	r.refreshing[key]=false
+	r.refreshing[key] = false
 	r.lock.Unlock()
 }

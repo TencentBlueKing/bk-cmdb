@@ -132,9 +132,9 @@ func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *me
 	return
 }
 
-func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID string) (resp *metadata.HostInstanceResult, err error) {
+func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID int64) (resp *metadata.HostInstanceResult, err error) {
 	resp = new(metadata.HostInstanceResult)
-	subPath := "/find/host/%s"
+	subPath := "/find/host/%d"
 
 	err = h.client.Get().
 		WithContext(ctx).

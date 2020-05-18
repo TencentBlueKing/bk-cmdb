@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -57,8 +56,7 @@ func (h *HostLog) WithPrevious(ctx context.Context, hostID int64, properties []m
 		}
 	}
 
-	id := strconv.FormatInt(hostID, 10)
-	h.Content.PreData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, h.ownerID, id)
+	h.Content.PreData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, hostID)
 	if err != nil {
 		return err
 	}
@@ -79,8 +77,7 @@ func (h *HostLog) WithCurrent(ctx context.Context, hostID int64, properties []me
 		}
 	}
 
-	id := strconv.FormatInt(hostID, 10)
-	h.Content.CurData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, h.ownerID, id)
+	h.Content.CurData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, hostID)
 	if err != nil {
 		return err
 	}

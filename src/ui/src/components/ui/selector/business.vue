@@ -54,8 +54,9 @@
                 get () {
                     return this.bizId
                 },
-                set (value, oldValue) {
-                    this.$emit('select', value, oldValue)
+                set (value) {
+                    this.$emit('input', value)
+                    this.$emit('select', value, this.bizId)
                 }
             }
         },

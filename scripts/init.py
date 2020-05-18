@@ -14,7 +14,7 @@ class FileTemplate(Template):
 
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v,
-        redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, txn_enabled_v, rs_name,
+        redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip
 ):
@@ -25,7 +25,6 @@ def generate_config_file(
         mongo_host=mongo_ip_v,
         mongo_pass=mongo_pass_v,
         mongo_port=mongo_port_v,
-        txn_enabled=txn_enabled_v,
         redis_host=redis_ip_v,
         redis_pass=redis_pass_v,
         redis_port=redis_port_v,
@@ -47,6 +46,7 @@ def generate_config_file(
         auth_sync_interval_minutes=auth_sync_interval_minutes,
         full_text_search=full_text_search,
         rs_name=rs_name,
+        user_info=user_info,
     )
     if not os.path.exists(output):
         os.mkdir(output)
@@ -92,7 +92,6 @@ database = $db
 maxOpenConns = 3000
 maxIdleConns = 100
 mechanism = SCRAM-SHA-1
-txnEnabled = $txn_enabled
 rsName = $rs_name
     '''
 
@@ -131,6 +130,7 @@ version = v3
 name = cc3
 defaultlanguage = zh-cn
 multiple_owner = 0
+user_info=$user_info
 [site]
 domain_url = ${cc_url}
 bk_login_url = ${paas_url}/login/?app_id=%s&c_url=%s
@@ -140,15 +140,19 @@ bk_account_url = ${paas_url}/login/accounts/get_all_user/?bk_token=%s
 resources_path = /tmp/
 html_root = $ui_root
 full_text_search = $full_text_search
+bk_desktop_url = ${paas_url}
 [app]
 agent_app_url = ${agent_url}/console/?app=bk_agent_setup
 authscheme = $auth_scheme
 [login]
 version=$loginVersion
+
+[biz]
+default_app_name=蓝鲸
     '''
 
     template = FileTemplate(common_file_template_str)
-    loginVersion = 'skip-login'
+    loginVersion = 'opensource'
     if auth_enabled == "true":
         loginVersion = 'blueking'
     result = template.substitute(loginVersion=loginVersion, **context)
@@ -179,17 +183,16 @@ port = $mongo_port
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
-maxOpenConns = 3000
-maxIdleConns = 100
+maxOpenConns = 5
+maxIdleConns = 1
 mechanism = SCRAM-SHA-1
-txnEnabled = $txn_enabled
 rsName = $rs_name
 [redis]
 host = $redis_host:$redis_port
 pwd = $redis_pass
 database = 0
-maxOpenConns = 3000
-maxIDleConns = 1000
+maxOpenConns = 5
+maxIDleConns = 1
 [confs]
 dir = $configures_dir
 [errors]
@@ -261,7 +264,6 @@ def main(argv):
     mongo_port = 27017
     mongo_user = ''
     mongo_pass = ''
-    txn_enabled = 'false'
     cc_url = ''
     paas_url = 'http://127.0.0.1'
     auth = {
@@ -281,6 +283,7 @@ def main(argv):
     log_level = '3'
     register_ip = ''
     rs_name = 'rs0'
+    user_info = ''
 
     server_ports = {
         "cmdb_adminserver": 60004,
@@ -299,7 +302,7 @@ def main(argv):
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
         "redis_pass=", "mongo_ip=", "mongo_port=",
-        "mongo_user=", "mongo_pass=", "txn_enabled=", "blueking_cmdb_url=",
+        "mongo_user=", "mongo_pass=", "blueking_cmdb_url=", "user_info=",
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip="
@@ -316,7 +319,6 @@ def main(argv):
       --mongo_user         <mongo_user>           the mongo user name, default:cc
       --mongo_pass         <mongo_pass>           the mongo password
       --rs_name            <rs_name>              the mongo replica set name, default: rs0
-      --txn_enabled        <txn_enabled>          txn_enabled, true or false
       --blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --listen_port        <listen_port>          the cmdb_webserver listen port, should be the port as same as -c <blueking_cmdb_url> specified, default:8083
@@ -331,6 +333,7 @@ def main(argv):
       --es_pass            <es_pass>              the es password
       --log_level          <log_level>            log level to start cmdb process, default: 3
       --register_ip        <register_ip>          the ip address registered on zookeeper, it can be domain
+      --user_info          <user_info>            the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
 
 
     demo:
@@ -345,7 +348,6 @@ def main(argv):
       --mongo_user         cc \\
       --mongo_pass         cc \\
       --rs_name            rs0 \\
-      --txn_enabled        false \\
       --blueking_cmdb_url  http://127.0.0.1:8080/ \\
       --blueking_paas_url  http://paas.domain.com \\
       --listen_port        8080 \\
@@ -361,7 +363,8 @@ def main(argv):
       --es_user            cc \\
       --es_pass            cc \\
       --log_level          3 \\
-      --register_ip        cmdb.domain.com
+      --register_ip        cmdb.domain.com \\
+      --user_info          user1:password1,user2:password2
     '''
     try:
         opts, _ = getopt.getopt(argv, "hd:D:r:p:x:s:m:P:X:S:u:U:a:l:es:v", arr)
@@ -409,9 +412,6 @@ def main(argv):
         elif opt in ("--rs_name",):
             rs_name = arg
             print('rs_name:', rs_name)
-        elif opt in ("--txn_enabled",):
-            txn_enabled = arg
-            print('txn_enabled:', txn_enabled)
         elif opt in ("-u", "--blueking_cmdb_url"):
             cc_url = arg
             print('blueking_cmdb_url:', cc_url)
@@ -460,6 +460,9 @@ def main(argv):
         elif opt in("--register_ip",):
             register_ip = arg
             print('register_ip:', register_ip)
+        elif opt in("--user_info",):
+            user_info = arg
+            print('user_info:', user_info)
 
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
@@ -496,10 +499,6 @@ def main(argv):
         sys.exit()
     if not cc_url.startswith("http://"):
         print('blueking cmdb url not start with http://')
-        sys.exit()
-
-    if txn_enabled not in ["true", "false"]:
-        print('txn_enabled value invalid, can only be `true` or `false`')
         sys.exit()
 
     if full_text_search not in ["off", "on"]:
@@ -547,7 +546,6 @@ def main(argv):
         mongo_user_v=mongo_user,
         mongo_pass_v=mongo_pass,
         rs_name=rs_name,
-        txn_enabled_v=txn_enabled,
         cc_url_v=cc_url,
         paas_url_v=paas_url,
         full_text_search=full_text_search,
@@ -556,6 +554,7 @@ def main(argv):
         es_pass_v=es_pass,
         log_level=log_level,
         register_ip=register_ip,
+        user_info=user_info,
         **auth
     )
     update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip)

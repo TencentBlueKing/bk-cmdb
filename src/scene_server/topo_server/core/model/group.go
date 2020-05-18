@@ -96,7 +96,11 @@ func (g *group) IsValid(isUpdate bool, data mapstr.MapStr) error {
 	}
 
 	if !isUpdate || data.Exists(metadata.GroupFieldGroupName) {
-		if _, err := g.FieldValid.Valid(g.kit, data, metadata.GroupFieldGroupName); nil != err {
+		val, err := g.FieldValid.Valid(g.kit, data, metadata.GroupFieldGroupName)
+		if nil != err {
+			return err
+		}
+		if err = g.FieldValid.ValidName(g.kit, val); nil != err {
 			return err
 		}
 	}

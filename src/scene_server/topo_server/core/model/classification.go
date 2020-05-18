@@ -91,14 +91,21 @@ func (cli *classification) GetObjects() ([]Object, error) {
 }
 
 func (cli *classification) IsValid(isUpdate bool, data mapstr.MapStr) error {
-
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationID) {
-		if _, err := cli.FieldValid.Valid(cli.kit, data, metadata.ClassFieldClassificationID); nil != err {
+		val, err := cli.FieldValid.Valid(cli.kit, data, metadata.ClassFieldClassificationID)
+		if nil != err {
+			return err
+		}
+		if err = cli.FieldValid.ValidID(cli.kit, val); nil != err {
 			return err
 		}
 	}
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationName) {
-		if _, err := cli.FieldValid.Valid(cli.kit, data, metadata.ClassFieldClassificationName); nil != err {
+		val, err := cli.FieldValid.Valid(cli.kit, data, metadata.ClassFieldClassificationName)
+		if nil != err {
+			return err
+		}
+		if err = cli.FieldValid.ValidName(cli.kit, val); nil != err {
 			return err
 		}
 	}

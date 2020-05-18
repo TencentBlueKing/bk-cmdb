@@ -4,7 +4,7 @@
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
                 :handler-offset="3"
-                :min="300"
+                :min="310"
                 :max="480">
                 <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
             </cmdb-resize-layout>
@@ -330,7 +330,7 @@
         height: 100%;
     }
     .tree-layout {
-        width: 300px;
+        width: 310px;
         height: 100%;
         border-right: 1px solid $cmdbLayoutBorderColor;
     }

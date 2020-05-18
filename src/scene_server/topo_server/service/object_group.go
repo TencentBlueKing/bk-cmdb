@@ -42,7 +42,8 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
 		return
 	}
-	ctx.RespEntity(rsp.ToMapStr())
+	retData := rsp.ToMapStr()
+	ctx.RespEntity(retData)
 }
 
 // UpdateObjectGroup update the object group information
@@ -104,7 +105,6 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
 		return
 	}
-
 	ctx.RespEntity(nil)
 }
 

@@ -63,6 +63,7 @@
                                             :allow-clear="true"
                                             :options="getEnumOptions(property)"
                                             :disabled="disabled"
+                                            :multiple="true"
                                             v-model="property.value">
                                         </component>
                                         <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
@@ -93,6 +94,7 @@
                                             :data-vv-name="property.propertyId"
                                             :allow-clear="true"
                                             :disabled="disabled"
+                                            :multiple="true"
                                             v-model="property.value">
                                         </cmdb-cloud-selector>
                                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
@@ -102,6 +104,7 @@
                                             :data-vv-name="property.propertyId"
                                             :is="`cmdb-form-${property.propertyType}`"
                                             :disabled="disabled"
+                                            :multiple="['timezone', 'organization'].includes(property.propertyType)"
                                             v-model="property.value">
                                         </component>
                                         <i class="userapi-delete fr bk-icon icon-close"
@@ -329,25 +332,23 @@
                         param.condition.push({
                             field: property.propertyId,
                             operator: property.operator,
-                            value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
+                            value: property.value.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
+                        })
+                    } else if (Array.isArray(property.value)) {
+                        param['condition'].push({
+                            field: property.propertyId,
+                            operator: '$in',
+                            value: property.value
                         })
                     } else {
-                        let operator = property.operator
                         let value = property.value
                         // 多模块与多集群查询
-                        if (property.propertyId === 'bk_module_name' || property.propertyId === 'bk_set_name') {
-                            operator = operator === '$regex' ? '$in' : operator
-                            if (operator === '$in') {
-                                const arr = value.replace('，', ',').split(',')
-                                const isExist = arr.findIndex(val => {
-                                    return val === value
-                                }) > -1
-                                value = isExist ? arr : [...arr, value]
-                            }
+                        if (['bk_set_name', 'bk_module_name'].includes(property.propertyId)) {
+                            value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
                         }
                         param['condition'].push({
                             field: property.propertyId,
-                            operator: operator,
+                            operator: property.operator,
                             value: value
                         })
                     }
@@ -496,6 +497,16 @@
                     return property.value.join('\n')
                 }
                 return (property.value === null || property.value === undefined) ? '' : property.value
+            },
+            getUserPropertyDefaultValue (property) {
+                if (
+                    ['list', 'enum', 'timezone', 'organization'].includes(property.propertyType)
+                    || ['bk_cloud_id'].includes(property.propertyId)
+                ) {
+                    return []
+                } else {
+                    return ''
+                }
             },
             async previewUserAPI () {
                 if (!await this.$validator.validateAll()) {
@@ -680,6 +691,7 @@
                 const removePropertyList = propertySeletorElm.removePropertyList
                 this.userProperties = this.userProperties.filter(property => !removePropertyList.includes(`${property.objId}-${property.propertyId}`))
                 for (let i = 0; i < addPropertyList.length; i++) {
+                    const property = this.filterList.find(property => property.filter_id === addPropertyList[i].filter_id)
                     const {
                         'bk_property_id': propertyId,
                         'bk_property_name': propertyName,
@@ -687,7 +699,7 @@
                         'bk_asst_obj_id': asstObjId,
                         'bk_obj_id': objId,
                         unit
-                    } = this.filterList.find(property => property.filter_id === addPropertyList[i].filter_id)
+                    } = property
                     this.userProperties.push({
                         objId,
                         propertyId,
@@ -697,7 +709,7 @@
                         asstObjId,
                         unit,
                         operator: this.operatorMap.hasOwnProperty(propertyType) ? this.operatorMap[propertyType] : '',
-                        value: ''
+                        value: this.getUserPropertyDefaultValue(property)
                     })
                 }
                 this.handleHideQueryCondition()
@@ -819,7 +831,8 @@
                     height: 32px;
                     line-height: 32px;
                     text-align: center;
-                    font-size: 16px;
+                    font-size: 20px;
+                    font-weight: 700;
                     color: #C4C6CC;
                     cursor: pointer;
                     opacity: 0;

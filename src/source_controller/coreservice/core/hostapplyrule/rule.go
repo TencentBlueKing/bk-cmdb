@@ -205,7 +205,7 @@ func (p *hostApplyRule) UpdateHostApplyRule(kit *rest.Kit, bizID int64, ruleID i
 	filter := map[string]interface{}{
 		common.BKFieldID: ruleID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameSetTemplate).Update(kit.Ctx, filter, rule); err != nil {
+	if err := p.dbProxy.Table(common.BKTableNameHostApplyRule).Update(kit.Ctx, filter, rule); err != nil {
 		blog.ErrorJSON("UpdateHostApplyRule failed, db update failed, filter: %s, doc: %s, err: %s, rid: %s", filter, rule, err, kit.Rid)
 		return rule, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
@@ -481,6 +481,26 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 		if err != nil {
 			blog.ErrorJSON("BatchUpdateHostApplyRule failed, find rule failed, filter: %s, err: %s, rid: %s", ruleFilter, err.Error(), rid)
 			ccErr := kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			itemResult.SetError(ccErr)
+			batchResult.Items = append(batchResult.Items, itemResult)
+			continue
+		}
+
+		// valid host apply attribute
+		attribute, ccErr := p.getHostAttribute(kit, bizID, item.AttributeID)
+		if ccErr != nil {
+			blog.Errorf("BatchUpdateHostApplyRule failed, getHostAttribute failed, attribute: %d, err: %s, rid: %s", item.AttributeID, ccErr.Error(), rid)
+			itemResult.SetError(ccErr)
+			batchResult.Items = append(batchResult.Items, itemResult)
+			continue
+		}
+		if value, ok := item.PropertyValue.(string); ok {
+			item.PropertyValue = strings.TrimSpace(value)
+		}
+		rawError := attribute.Validate(kit.Ctx, item.PropertyValue, common.BKPropertyValueField)
+		if rawError.ErrCode != 0 {
+			ccErr := rawError.ToCCError(kit.CCError)
+			blog.ErrorJSON("BatchUpdateHostApplyRule failed, validate host attribute value failed, attribute: %s, value: %s, err: %s, rid: %s", attribute, item.PropertyValue, ccErr, kit.Rid)
 			itemResult.SetError(ccErr)
 			batchResult.Items = append(batchResult.Items, itemResult)
 			continue

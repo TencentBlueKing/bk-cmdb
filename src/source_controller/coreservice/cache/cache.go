@@ -16,29 +16,33 @@ import (
 	"fmt"
 
 	"configcenter/src/source_controller/coreservice/cache/business"
+	"configcenter/src/source_controller/coreservice/cache/host"
 	"configcenter/src/source_controller/coreservice/cache/topo_tree"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
 	"gopkg.in/redis.v5"
 )
 
-type Interface interface {
-	SearchTopologyTree(opt *topo_tree.SearchOption) ([]*topo_tree.Topology, error)
-}
-
-func NewCache(rds *redis.Client, db dal.DB, event reflector.Interface) (Interface, error) {
+func NewCache(rds *redis.Client, db dal.DB, event reflector.Interface) (*ClientSet, error) {
 	if err := business.NewCache(event, rds, db); err != nil {
 		return nil, fmt.Errorf("new business cache failed, err: %v", err)
 	}
 
-	bizClient := business.NewClient(rds, db)
+	if err := host.NewCache(event, rds, db); err != nil {
+		return nil, fmt.Errorf("new host cache failed, err: %v", err)
+	}
 
-	cache := &cache{
-		TopologyTree: topo_tree.NewTopologyTree(bizClient),
+	bizClient := business.NewClient(rds, db)
+	hostClient := host.NewClient(rds, db)
+
+	cache := &ClientSet{
+		Topology: topo_tree.NewTopologyTree(bizClient),
+		Host:     hostClient,
 	}
 	return cache, nil
 }
 
-type cache struct {
-	*topo_tree.TopologyTree
+type ClientSet struct {
+	Topology *topo_tree.TopologyTree
+	Host     *host.Client
 }

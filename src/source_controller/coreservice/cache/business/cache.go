@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"configcenter/src/common"
+	"configcenter/src/source_controller/coreservice/cache/tools"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
 	"gopkg.in/redis.v5"
@@ -37,7 +38,7 @@ func NewClient(rds *redis.Client, db dal.DB) *Client {
 		client = &Client{
 			rds:  rds,
 			db:   db,
-			lock: refreshingLock{refreshing: make(map[string]bool)},
+			lock: tools.NewRefreshingLock(),
 		}
 	})
 
@@ -69,7 +70,7 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 		rds:        rds,
 		event:      event,
 		db:         db,
-		lock:       refreshingLock{refreshing: make(map[string]bool)},
+		lock:       tools.NewRefreshingLock(),
 	}
 	if err := module.Run(); err != nil {
 		return fmt.Errorf("run module cache failed, err: %v", err)
@@ -81,7 +82,7 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 		rds:        rds,
 		event:      event,
 		db:         db,
-		lock:       refreshingLock{refreshing: make(map[string]bool)},
+		lock:       tools.NewRefreshingLock(),
 	}
 	if err := set.Run(); err != nil {
 		return fmt.Errorf("run set cache failed, err: %v", err)
@@ -92,7 +93,7 @@ func NewCache(event reflector.Interface, rds *redis.Client, db dal.DB) error {
 		rds:         rds,
 		event:       event,
 		db:          db,
-		lock:        refreshingLock{refreshing: make(map[string]bool)},
+		lock:        tools.NewRefreshingLock(),
 		customWatch: make(map[string]context.CancelFunc),
 	}
 	if err := custom.Run(); err != nil {

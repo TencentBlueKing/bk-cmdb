@@ -65,6 +65,9 @@ type Table interface {
 	DropColumn(ctx context.Context, field string) error
 	// 根据条件移除字段
 	DropColumns(ctx context.Context, filter Filter, fields []string) error
+
+	// DropDocsColumn remove a column by the name for doc use filter
+	DropDocsColumn(ctx context.Context, field string, filter Filter) error
 }
 
 // Find find operation interface

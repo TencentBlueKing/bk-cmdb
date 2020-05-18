@@ -88,6 +88,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 			return
 		}
 	}
+
 	ctx.RespEntity(attrInfo[0])
 }
 
@@ -199,7 +200,6 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
 		return
 	}
-
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -251,6 +251,7 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	err = s.Core.AttributeOperation().DeleteObjectAttribute(ctx.Kit, cond, md.Metadata)
 	if err != nil {
 		blog.Errorf("delete object attribute failed, DeleteObjectAttribute failed, params: %+v, err: %+v, rid: %s", ctx.Kit, err, ctx.Kit.Rid)

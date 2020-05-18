@@ -159,6 +159,9 @@ func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
 	c.Lock()
 	defer c.Unlock()
 	prev := c.previousExtra
+	if prev == nil {
+		prev = &ProcessConfig{}
+	}
 	c.previousExtra = now
 	if c.handler != nil {
 		if c.handler.OnExtraUpdate != nil {

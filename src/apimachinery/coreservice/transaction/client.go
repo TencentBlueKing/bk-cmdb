@@ -174,7 +174,7 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 		err := t.AbortTransaction(ctx, h)
 		if err != nil {
 			blog.ErrorfDepthf(2, "abort the transaction failed, err: %v, rid: %s", err, rid)
-			return runErr
+			return err
 		}
 		blog.V(4).InfoDepthf(2, "abort the transaction success. rid: %s", rid)
 		// return the run() original err
@@ -185,7 +185,7 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	err := t.CommitTransaction(ctx, h)
 	if err != nil {
 		blog.ErrorfDepthf(2, "commit the transaction failed, err: %v, rid: %s", err, rid)
-		return runErr
+		return err
 	}
 	blog.V(4).InfoDepthf(2, "commit the transaction success. rid: %s", rid)
 

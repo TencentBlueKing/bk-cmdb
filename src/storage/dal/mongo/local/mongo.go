@@ -23,10 +23,12 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 	dtype "configcenter/src/storage/types"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -458,10 +460,48 @@ func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 		blog.V(4).InfoDepthf(2, "mongo delete cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		if err := c.tryArchiveDeletedDoc(ctx, filter); err != nil {
+			return err
+		}
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
 		return err
 	})
 
+}
+
+func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filter) error {
+	switch c.collName {
+	case common.BKTableNameModuleHostConfig:
+	case common.BKTableNameBaseHost:
+	default:
+		// do not archive the delete docs
+		return nil
+	}
+
+	docs := make([]bsonx.Doc, 0)
+	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Find(ctx, filter, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := cursor.All(ctx, &docs); err != nil {
+		return err
+	}
+
+	if len(docs) == 0 {
+		return nil
+	}
+
+	archives := make([]interface{}, len(docs))
+	for idx, doc := range docs {
+		archives[idx] = metadata.DeleteArchive{
+			Oid:    doc.Lookup("_id").ObjectID().Hex(),
+			Detail: doc.Delete("_id"),
+		}
+	}
+
+	_, err = c.dbc.Database(c.dbname).Collection(common.BKTableNameDelArchive).InsertMany(ctx, archives)
+	return err
 }
 
 // NextSequence 获取新序列号(非事务)
@@ -583,8 +623,10 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 
 	selector := dtype.Document{column: dtype.Document{"$exists": false}}
 	datac := dtype.Document{"$set": dtype.Document{column: value}}
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, selector, datac)
-	return err
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, selector, datac)
+		return err
+	})
 }
 
 // RenameColumn rename a column for the collection
@@ -596,8 +638,10 @@ func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string
 	}()
 
 	datac := dtype.Document{"$rename": dtype.Document{oldName: newColumn}}
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
-	return err
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
+		return err
+	})
 }
 
 // DropColumn remove a column by the name
@@ -609,8 +653,10 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	}()
 
 	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
-	return err
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
+		return err
+	})
 }
 
 // DropColumns remove many columns by the name
@@ -620,8 +666,29 @@ func (c *Collection) DropColumns(ctx context.Context, filter types.Filter, field
 		unsetFields[field] = ""
 	}
 	datac := dtype.Document{"$unset": unsetFields}
-	_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
-	return err
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
+		return err
+	})
+}
+
+// DropDocsColumn remove a column by the name for doc use filter
+func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter types.Filter) error {
+	rid := ctx.Value(common.ContextRequestIDField)
+	start := time.Now()
+	defer func() {
+		blog.V(4).InfoDepthf(2, "mongo drop-docs-column cost: %sms, rid: %s", time.Since(start)/time.Millisecond, rid)
+	}()
+	// 查询条件为空时候，mongodb 不返回数据
+	if filter == nil {
+		filter = bson.M{}
+	}
+
+	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
+	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
+		return err
+	})
 }
 
 // AggregateAll aggregate all operation

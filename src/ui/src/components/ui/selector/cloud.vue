@@ -53,7 +53,7 @@
         data () {
             return {
                 data: [],
-                selected: ''
+                selected: this.multiple ? [] : ''
             }
         },
         watch: {

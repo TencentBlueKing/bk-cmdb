@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/source_controller/coreservice/cache/tools"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
@@ -34,7 +35,7 @@ type moduleSet struct {
 	event      reflector.Interface
 	db         dal.DB
 
-	lock refreshingLock
+	lock tools.RefreshingLock
 }
 
 func (ms *moduleSet) Run() error {
@@ -161,7 +162,7 @@ func (ms *moduleSet) onDelete(e *types.Event) {
 	blog.V(3).Infof("received %s delete event, oid: %s", ms.collection, e.Oid)
 	instID, err := ms.getInstIDWithOid(e.Oid)
 	if err != nil {
-		blog.Errorf("received %s delete event, but get oid: %s relation failed, err: %v", ms.collection, e.Oid)
+		blog.Errorf("received %s delete event, but get oid: %s relation failed, err: %v", ms.collection, e.Oid, err)
 		return
 	}
 

@@ -18,7 +18,7 @@
                     <li class="menu-item"
                         v-for="(menu, index) in instanceMenu"
                         :key="index">
-                        <cmdb-auth class="menu-span" :auth="$authResources({ type: $OPERATION[menu.auth] })">
+                        <cmdb-auth class="menu-span" :auth="HOST_AUTH[menu.auth]">
                             <bk-button slot-scope="{ disabled }"
                                 class="menu-button"
                                 :text="true"
@@ -84,6 +84,7 @@
         MENU_BUSINESS_HOST_AND_SERVICE,
         MENU_BUSINESS_DELETE_SERVICE
     } from '@/dictionary/menu-symbol'
+    import { processTableHeader } from '@/dictionary/table-header'
     import { mapState } from 'vuex'
     export default {
         props: {
@@ -208,18 +209,7 @@
                 }
             },
             setHeader () {
-                const display = [
-                    'bk_func_name',
-                    'bk_process_name',
-                    'bk_start_param_regex',
-                    'bind_ip',
-                    'port',
-                    'bk_port_enable',
-                    'protocol',
-                    'work_path',
-                    'user'
-                ]
-                const header = display.map(id => {
+                const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,

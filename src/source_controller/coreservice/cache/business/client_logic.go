@@ -84,16 +84,16 @@ func (c *Client) genBusinessListKeys(_ int64) ([]string, error) {
 // it's a background goroutine to check and if it's need to refresh the list cache.
 // if it's needed then refresh the list.
 func (c *Client) tryRefreshBaseList(bizID int64, ref refreshList) {
-	if !c.lock.canRefresh(ref.mainKey) {
+	if !c.lock.CanRefresh(ref.mainKey) {
 		return
 	}
 	// set refreshing status
-	c.lock.setRefreshing(ref.mainKey)
+	c.lock.SetRefreshing(ref.mainKey)
 
 	// now, we check whether we can refresh the list
 	go func() {
 		defer func() {
-			c.lock.setUnRefreshing(ref.mainKey)
+			c.lock.SetUnRefreshing(ref.mainKey)
 		}()
 
 		// get expire key
@@ -191,15 +191,15 @@ func (c *Client) tryRefreshBaseList(bizID int64, ref refreshList) {
 // it has a cache lock to avoid concurrent refresh try at local.
 // and it has a redis lock to avoid refresh by multiple instance.
 func (c *Client) tryRefreshInstanceDetail(instID int64, ref refreshInstance) {
-	if !c.lock.canRefresh(ref.mainKey) {
+	if !c.lock.CanRefresh(ref.mainKey) {
 		return
 	}
 	// set refreshing status
-	c.lock.setRefreshing(ref.mainKey)
+	c.lock.SetRefreshing(ref.mainKey)
 
 	go func() {
 		defer func() {
-			c.lock.setUnRefreshing(ref.mainKey)
+			c.lock.SetUnRefreshing(ref.mainKey)
 		}()
 
 		// get expire key

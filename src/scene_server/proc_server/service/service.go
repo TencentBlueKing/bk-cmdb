@@ -189,7 +189,7 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_HOST,
+		Module:     types.CC_MODULE_PROC,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}
