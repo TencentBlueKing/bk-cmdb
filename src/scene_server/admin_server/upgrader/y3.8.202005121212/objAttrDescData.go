@@ -241,6 +241,17 @@ func PodRow() []*Attribute {
 		},
 		&Attribute{
 			ObjectID:      common.BKInnerObjIDPod,
+			PropertyID:    "bk_pod_volumes",
+			PropertyName:  "卷数据",
+			IsRequired:    false,
+			IsOnly:        false,
+			IsEditable:    true,
+			PropertyGroup: mCommon.BaseInfo,
+			PropertyType:  common.FieldTypeLongChar,
+			Option:        "",
+		},
+		&Attribute{
+			ObjectID:      common.BKInnerObjIDPod,
 			PropertyID:    "bk_pod_status",
 			PropertyName:  "运行状态",
 			IsRequired:    false,
