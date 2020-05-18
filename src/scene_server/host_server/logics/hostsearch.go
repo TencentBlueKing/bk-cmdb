@@ -780,9 +780,9 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		moduleHostConfigArr = append(moduleHostConfigArr, moduleHostConfig)
 	}
 
-	var hostIDArr []int
+	var hostIDArr []int64
 	mapLock := sync.Mutex{}
-	hostIDMap := make(map[int]struct{})
+	hostIDMap := make(map[int64]struct{})
 	pipe := make(chan struct{}, 50)
 	wg := sync.WaitGroup{}
 	var errOccur error
@@ -800,7 +800,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 			}
 			mapLock.Lock()
 			for _, id := range hostIDArrItem {
-				hostIDMap[int(id)] = struct{}{}
+				hostIDMap[id] = struct{}{}
 			}
 			mapLock.Unlock()
 			<-pipe
@@ -813,17 +813,19 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		return errOccur
 	}
 
-	allHostID := make([]int, 0)
+	allHostID := make([]int64, 0)
 	for id := range hostIDMap {
 		allHostID = append(allHostID, id)
 	}
-	sort.Ints(allHostID)
+	sort.Slice(allHostID, func(i, j int) bool {
+		return allHostID[i] < allHostID[j]
+	})
 	sh.totalHostCnt = len(allHostID)
 	if len(sh.conds.appCond.Condition) <= 0 {
 		start := sh.hostSearchParam.Page.Start
 		limit := sh.hostSearchParam.Page.Limit
 		if len(allHostID) >= limit {
-			pagedHosts := make([]int, 0)
+			pagedHosts := make([]int64, 0)
 			if len(allHostID) <= limit {
 				pagedHosts = allHostID
 			} else {
@@ -873,6 +875,10 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 				blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v, rid: %s", cond.Value, sh.ccRid)
 				return sh.ccErr.New(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
 			}
+			hostIDMap := make(map[int64]bool)
+			for _, hostID := range hostIDArr {
+				hostIDMap[hostID] = true
+			}
 			shareIDs := make([]int64, 0)
 			for _, hostID := range value {
 				id, err := util.GetInt64ByInterface(hostID)
@@ -880,7 +886,8 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 					blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v, rid: %s", cond.Value, sh.ccRid)
 					return sh.ccErr.New(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
 				}
-				if in := util.InArray(id, hostIDArr); in == true {
+
+				if hostIDMap[id] {
 					shareIDs = append(shareIDs, id)
 				}
 			}
