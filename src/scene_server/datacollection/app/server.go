@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/auth"
 	"configcenter/src/auth/extensions"
+	"configcenter/src/common"
 	enableauth "configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -107,7 +108,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 		process.Service.SetDB(mgoCli)
 		process.Service.Logics = logics.NewLogics(ctx, service.Engine, mgoCli, esb)
-		datacollection := datacollection.NewDataCollection(ctx, process.Core, mgoCli, engine.Metric().Registry())
+		datacollection := datacollection.NewDataCollection(ctx, process.Core, mgoCli, engine.Metric().Registry(), process.Config.DefaultAppName)
 
 		blog.Infof("[data-collection][RUN]connecting to cc redis %+v", process.Config.CCRedis)
 		redisCli, err := redis.NewFromConfig(process.Config.CCRedis)
@@ -198,5 +199,9 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
 		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
 		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
+		h.Config.DefaultAppName = current.ConfigMap["biz.default_app_name"]
+		if h.Config.DefaultAppName == "" {
+			h.Config.DefaultAppName = common.BKAppName
+		}
 	}
 }

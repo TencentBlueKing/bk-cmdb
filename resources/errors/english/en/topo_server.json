@@ -122,5 +122,5 @@
 
 	"1101100": "parse url params failed",
 	"1101101": "Query model attributes failed, please refresh the page",
-    "": "" 
+    "1101102": "model not found"
 }

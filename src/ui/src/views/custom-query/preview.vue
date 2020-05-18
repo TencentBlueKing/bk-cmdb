@@ -31,6 +31,7 @@
 
 <script>
     import { mapActions } from 'vuex'
+    import { injectFields } from '@/utils/host'
     export default {
         props: {
             apiParams: {
@@ -97,7 +98,8 @@
                         sort: this.table.sort
                     }
                 }
-                return previewParams
+
+                return injectFields(previewParams, this.table.header)
             },
             unSortableProperty () {
                 return ['bk_set_name', 'bk_module_name', 'bk_cloud_id']

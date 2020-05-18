@@ -47,7 +47,7 @@ func (am *AuthManager) CollectClassificationByBusinessIDs(ctx context.Context, h
 	}
 	classifications := make([]metadata.Classification, 0)
 	count := -1
-	for offset := 0; count != -1 && offset < count; offset += common.BKMaxRecordsAtOnce {
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		query := &metadata.QueryCondition{
 			Condition: cond,
 			Page: metadata.BasePage{

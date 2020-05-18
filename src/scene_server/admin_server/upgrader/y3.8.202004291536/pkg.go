@@ -45,5 +45,11 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
+	err = CreateProcessInstanceRelationIndex(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.8.202004291536] CreateProcessInstanceRelationIndex failed, error  %s", err.Error())
+		return err
+	}
+
 	return nil
 }

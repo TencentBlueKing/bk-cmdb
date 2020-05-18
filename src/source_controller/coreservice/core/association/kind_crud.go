@@ -13,6 +13,9 @@
 package association
 
 import (
+	"regexp"
+	"unicode/utf8"
+
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -66,7 +69,9 @@ func (m *associationKind) isApplyToObject(kit *rest.Kit, cond metadata.DeleteOpt
 }
 
 func (m *associationKind) save(kit *rest.Kit, associationKind metadata.AssociationKind) (id uint64, err error) {
-
+	if err := m.isValid(kit, associationKind.AssociationKindID); err != nil {
+		return 0, err
+	}
 	id, err = m.dbProxy.NextSequence(kit.Ctx, common.BKTableNameAsstDes)
 	if err != nil {
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -85,4 +90,18 @@ func (m *associationKind) searchAssociationKind(kit *rest.Kit, inputParam metada
 	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).All(kit.Ctx, &results)
 
 	return results, err
+}
+
+func (m *associationKind) isValid(kit *rest.Kit, asstKindID string) error {
+	if common.AttributeIDMaxLength < utf8.RuneCountInString(asstKindID) {
+		return kit.CCError.CCErrorf(common.CCErrCommValExceedMaxFailed, common.AssociationKindIDField, common.AttributeIDMaxLength)
+	}
+	match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, asstKindID)
+	if nil != err {
+		return err
+	}
+	if !match {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, asstKindID)
+	}
+	return nil
 }

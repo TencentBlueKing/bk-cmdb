@@ -57,7 +57,7 @@ func (m *customLevel) Run() error {
 // to watch mainline topology change for it's cache update.
 func (m *customLevel) runMainlineTopology() error {
 
-	_, err := m.rds.Get(mainlineTopologyListDoneKey).Result()
+	_, err := m.rds.Get(m.key.mainlineListDoneKey()).Result()
 	if err != nil {
 		if err != redis.Nil {
 			blog.Errorf("get biz list done redis key failed, err: %v", err)
@@ -264,9 +264,9 @@ func (m *customLevel) onChange(_ *types.Event) {
 }
 
 func (m *customLevel) onMainlineTopologyListDone() {
-	if err := m.rds.Set(mainlineTopologyListDoneKey, "done", 0).Err(); err != nil {
+	if err := m.rds.Set(m.key.mainlineListDoneKey(), "done", 0).Err(); err != nil {
 		blog.Errorf("list business mainline topology to cache and list done, but set list done key: %s failed, err: %v",
-			mainlineTopologyListDoneKey, err)
+			m.key.mainlineListDoneKey(), err)
 		return
 	}
 	blog.Info("list business mainline topology to cache and list done")

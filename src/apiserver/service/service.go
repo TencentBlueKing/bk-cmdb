@@ -57,6 +57,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws.Path(rootPath)
 	ws.Filter(s.engine.Metric().RestfulMiddleWare)
 	ws.Filter(rdapi.AllGlobalFilter(getErrFun))
+	ws.Filter(rdapi.RequestLogFilter())
 	ws.Produces(restful.MIME_JSON)
 	if s.authorizer.Enabled() == true {
 		ws.Filter(s.authFilter(getErrFun))

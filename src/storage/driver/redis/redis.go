@@ -52,7 +52,7 @@ func Client() *redis.Client {
 func ClientInstance(prefix string) *redis.Client {
 	lock.RLock()
 	defer lock.RUnlock()
-	if db, ok := cacheMap[defaultPrefix]; ok {
+	if db, ok := cacheMap[prefix]; ok {
 		return db
 	}
 	return nil
@@ -76,10 +76,15 @@ func ParseConfig(prefix string, configMap map[string]string) (*dalRedis.Config, 
 func InitClient(prefix string, config *dalRedis.Config) errors.CCErrorCoder {
 	lock.Lock()
 	defer lock.Unlock()
+	if cacheMap[prefix] != nil {
+		// 不支持热更新
+		blog.V(5).Infof("duplicate open redis. prefix:%s, host:%s", prefix, config.Address)
+		return nil
+	}
 	lastInitErr = nil
 	db, dbErr := dalRedis.NewFromConfig(*config)
 	if dbErr != nil {
-		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
+		blog.Errorf("failed to connect the redis server, error info is %s", dbErr.Error())
 		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed, "'"+prefix+" redis' initialization failed")
 		return lastInitErr
 	}

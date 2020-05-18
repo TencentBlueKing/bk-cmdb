@@ -14,7 +14,7 @@
             <bk-tab-panel name="association" :label="$t('关联')">
                 <cmdb-relation
                     v-if="active === 'association'"
-                    :auth="$OPERATION.U_BUSINESS"
+                    resource-type="business"
                     :obj-id="objId"
                     :inst="inst">
                 </cmdb-relation>

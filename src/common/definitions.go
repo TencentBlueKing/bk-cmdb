@@ -788,6 +788,12 @@ const (
 	//FieldTypeStrictCharRegexp the single char regex expression
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
 
+	//FieldTypeServiceCategoryRegexp the service category regex expression
+	FieldTypeServiceCategoryRegexp string = `^([\w\p{Han}]|[:\-\(\)])+$`
+
+	//FieldTypeMainlineRegexp the mainline instance name regex expression
+	FieldTypeMainlineRegexp string = `^[^#/,><|]+$`
+
 	//FieldTypeSingleCharRegexp the single char regex expression
 	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
 	FieldTypeSingleCharRegexp string = `\S`
@@ -1110,6 +1116,7 @@ const (
 	AttributeUnitMaxLength        = 20
 	AttributeOptionValueMaxLength = 128
 	AttributeOptionArrayMaxLength = 200
+	ServiceCategoryMaxLength      = 128
 )
 
 const (

@@ -113,71 +113,16 @@
                     <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
                 </div>
             </div>
-            <cmdb-details class="topology-details"
-                v-if="type === 'details'"
+            <cmdb-form class="topology-form"
+                ref="form"
                 :properties="properties"
                 :property-groups="propertyGroups"
+                :disabled-properties="disabledProperties"
                 :inst="instance"
-                :show-options="modelId !== 'biz' && !isBlueking">
-                <template slot="details-options">
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_TOPO })">
-                        <template slot-scope="{ disabled }">
-                            <bk-button class="button-edit"
-                                theme="primary"
-                                :disabled="disabled"
-                                @click="handleEdit">
-                                {{$t('编辑')}}
-                            </bk-button>
-                        </template>
-                    </cmdb-auth>
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.D_TOPO })">
-                        <template slot-scope="{ disabled }">
-                            <span class="inline-block-middle" v-if="moduleFromSetTemplate"
-                                v-bk-tooltips="$t('由集群模板创建的模块无法删除')">
-                                <bk-button class="btn-delete" disabled>
-                                    {{$t('删除节点')}}
-                                </bk-button>
-                            </span>
-                            <bk-button class="btn-delete" v-else
-                                theme="default"
-                                :disabled="disabled"
-                                @click="handleDelete">
-                                {{$t('删除节点')}}
-                            </bk-button>
-                        </template>
-                    </cmdb-auth>
-                </template>
-            </cmdb-details>
-            <template v-else-if="type === 'update'">
-                <div class="service-category" v-if="!withTemplate && isModuleNode">
-                    <span class="title">{{$t('服务分类')}}</span>
-                    <div class="selector-item mt10 clearfix">
-                        <cmdb-selector class="category-selector fl"
-                            :list="firstCategories"
-                            v-model="first"
-                            @on-selected="handleChangeFirstCategory">
-                        </cmdb-selector>
-                        <cmdb-selector class="category-selector fl"
-                            :list="secondCategories"
-                            name="secondCategory"
-                            v-validate="'required'"
-                            v-model="second"
-                            @on-selected="handleChangeCategory">
-                        </cmdb-selector>
-                        <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
-                    </div>
-                </div>
-                <cmdb-form class="topology-form"
-                    ref="form"
-                    :properties="properties"
-                    :property-groups="propertyGroups"
-                    :disabled-properties="disabledProperties"
-                    :inst="instance"
-                    :type="type"
-                    @on-submit="handleSubmit"
-                    @on-cancel="handleCancel">
-                </cmdb-form>
-            </template>
+                :type="type"
+                @on-submit="handleSubmit"
+                @on-cancel="handleCancel">
+            </cmdb-form>
         </template>
     </div>
 </template>

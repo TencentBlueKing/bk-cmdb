@@ -4,7 +4,7 @@
             <div class="fl" v-show="activeView === viewName.list">
                 <cmdb-auth class="inline-block-middle mr10"
                     v-if="hasAssociation"
-                    :auth="updateAuthResources">
+                    :auth="HOST_AUTH.U_HOST">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         class="options-button"
@@ -55,11 +55,10 @@
 
 <script>
     import cmdbHostAssociationList from './association-list.vue'
-    // import cmdbHostAssociationGraphics from './association-graphics.vue'
     import cmdbHostAssociationGraphics from './association-graphics.new.vue'
     import cmdbHostAssociationCreate from './association-create.vue'
-    import { MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'
+    import authMixin from '../mixin-auth'
     export default {
         name: 'cmdb-host-association',
         components: {
@@ -67,6 +66,7 @@
             cmdbHostAssociationGraphics,
             cmdbHostAssociationCreate
         },
+        mixins: [authMixin],
         data () {
             return {
                 viewName: {
@@ -84,13 +84,6 @@
                 'sourceInstances',
                 'targetInstances'
             ]),
-            updateAuthResources () {
-                const isResourceHost = this.$route.name === MENU_RESOURCE_HOST_DETAILS
-                if (isResourceHost) {
-                    return this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
-                }
-                return this.$authResources({ type: this.$OPERATION.U_HOST })
-            },
             hasAssociation () {
                 return !!(this.source.length || this.target.length)
             },

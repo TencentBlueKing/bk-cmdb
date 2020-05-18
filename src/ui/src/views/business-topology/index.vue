@@ -92,14 +92,14 @@
             }
         },
         async created () {
-            RouterQuery.watch('tab', value => {
+            this.unwatch = RouterQuery.watch('tab', (value = 'hostList') => {
                 this.activeTab = value
             })
             try {
                 const topologyModels = await this.getTopologyModels()
                 const properties = await this.getProperties(topologyModels)
                 this.$store.commit('businessHost/setTopologyModels', topologyModels)
-                this.$store.commit('businessHost/setPropertyMap', properties)
+                this.$store.commit('businessHost/setPropertyMap', Object.freeze(properties))
                 this.$store.commit('businessHost/resolveCommonRequest')
             } catch (e) {
                 console.error(e)
@@ -107,6 +107,7 @@
         },
         beforeDestroy () {
             this.$store.commit('businessHost/clear')
+            this.unwatch()
         },
         methods: {
             handleTabToggle () {

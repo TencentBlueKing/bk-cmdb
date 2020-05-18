@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/storage/stream/types"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -78,6 +79,22 @@ func generateOptions(opts *types.Options) (mongo.Pipeline, *options.ChangeStream
 
 	if opts.MaxAwaitTime != nil {
 		streamOptions.MaxAwaitTime = opts.MaxAwaitTime
+	}
+
+	if opts.StartAfterToken != nil && opts.StartAtTime == nil {
+		streamOptions.SetStartAfter(opts.StartAfterToken)
+	}
+
+	if opts.StartAfterToken == nil && opts.StartAtTime != nil {
+		streamOptions.SetStartAtOperationTime(&primitive.Timestamp{
+			T: opts.StartAtTime.Sec,
+			I: opts.StartAtTime.Nano,
+		})
+	}
+
+	// if all set, then use token to resume after, this is accurate.
+	if opts.StartAfterToken != nil && opts.StartAtTime != nil {
+		streamOptions.SetStartAfter(opts.StartAfterToken)
 	}
 
 	return pipeline, streamOptions

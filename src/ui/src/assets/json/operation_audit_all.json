@@ -280,7 +280,7 @@
                     "id": "model-disabled",
                     "name": "停用模型"
                 }, {
-                    "id": "model_field-cteate",
+                    "id": "model_field-create",
                     "name": "新增字段"
                 }, {
                     "id": "model_field-update",

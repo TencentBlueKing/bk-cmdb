@@ -45,7 +45,6 @@ const (
 	CC_MODULE_EVENTSERVER    = "eventserver"
 	CC_MODULE_CORESERVICE    = "coreservice"
 	GSE_MODULE_PROCSERVER    = "gseprocserver"
-	CC_MODULE_TXC            = "txc"
 	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
 	CC_MODULE_SYNCHRONZESERVER = "sync"
 	CC_MODULE_OPERATION        = "operation"
@@ -64,7 +63,6 @@ var AllModule = map[string]bool{
 	CC_MODULE_APISERVER:      true,
 	CC_MODULE_WEBSERVER:      true,
 	CC_MODULE_EVENTSERVER:    true,
-	CC_MODULE_TXC:            true,
 	CC_MODULE_CORESERVICE:    true,
 	// CC_MODULE_SYNCHRONZESERVER: true,
 	CC_MODULE_OPERATION:       true,

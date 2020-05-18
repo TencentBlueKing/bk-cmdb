@@ -58,6 +58,7 @@ const (
 	BKTableNameBaseSet     = "cc_SetBase"
 	BKTableNameBaseProcess = "cc_Process"
 	BKTableNameBasePod     = "cc_PodBase"
+	BKTableNameDelArchive  = "cc_DelArchive"
 
 	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
 	BKTableNameSystem           = "cc_System"

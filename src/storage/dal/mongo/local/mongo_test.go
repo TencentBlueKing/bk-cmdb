@@ -22,8 +22,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/types"
+
 	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 
 	"github.com/stretchr/testify/require"
@@ -31,8 +31,8 @@ import (
 
 func BenchmarkLocalCUD(b *testing.B) {
 	mongoConfig := MongoConf{
-		MaxOpenConns: mongo.DefaultMaxOpenConns,
-		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		MaxOpenConns: 1000,
+		MaxIdleConns: 100,
 		URI:          "mongodb://cc:cc@localhost:27011,localhost:27012,localhost:27013,localhost:27014/cmdb",
 		RsName:       "rs0",
 	}
@@ -66,10 +66,10 @@ func BenchmarkLocalCUD(b *testing.B) {
 func dbCleint(t *testing.T) *Mongo {
 	uri := os.Getenv("MONGOURI")
 	mongoConfig := MongoConf{
-		MaxOpenConns: mongo.DefaultMaxOpenConns,
-		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		MaxOpenConns: 1000,
+		MaxIdleConns: 100,
 		URI:          uri,
-		RsName:       "rs0",
+		RsName:       os.Getenv("MONGORS"),
 	}
 	db, err := NewMgo(mongoConfig, time.Second*5)
 	require.NoError(t, err)
@@ -1282,4 +1282,50 @@ func TestNextSequence(t *testing.T) {
 	id, err = db.NextSequence(ctx, "test")
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), id)
+}
+
+func TestDropDcocsColumn(t *testing.T) {
+	ctx := context.Background()
+	tableName := "tmptest_drop_doc_column"
+
+	db := dbCleint(t)
+	// 清理数据
+	err := db.DropTable(ctx, tableName)
+	require.NoError(t, err)
+	require.NoError(t, err)
+
+	table := db.Table(tableName)
+
+	insertDataMany := []map[string]interface{}{
+		map[string]interface{}{
+			"id":           "id_not_drop_doc",
+			"delete_col":   "delete_col",
+			"filter_count": 0,
+		},
+		map[string]interface{}{
+			"id":           "id_drop_doc",
+			"delete_col":   "delete_col",
+			"filter_count": 0,
+		},
+	}
+	err = table.Insert(ctx, insertDataMany)
+	require.NoError(t, err)
+
+	err = table.DropDocsColumn(ctx, "delete_col", map[string]interface{}{"id": "id_drop_doc"})
+	require.NoError(t, err)
+
+	cnt, err := table.Find(map[string]string{"delete_col": "delete_col"}).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 1 {
+		t.Errorf("DropColumn error. name  column already exist")
+		return
+	}
+
+	cnt, err = table.Find(map[string]interface{}{"id": "id_not_drop_doc", "delete_col": "delete_col"}).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 1 {
+		t.Errorf("delete_col1 exist failure")
+		return
+	}
+
 }

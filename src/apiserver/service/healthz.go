@@ -64,6 +64,37 @@ func (s *service) healthz(req *restful.Request, resp *restful.Response) {
 		containerSrv.IsHealthy = false
 		containerSrv.Message = err.Error()
 	}
+	// event server
+	eventSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_EVENTSERVER}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_EVENTSERVER); err != nil {
+		eventSrv.IsHealthy = false
+		eventSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, eventSrv)
+
+	// data collection
+	dataCollection := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_DATACOLLECTION}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_DATACOLLECTION); err != nil {
+		dataCollection.IsHealthy = false
+		dataCollection.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, dataCollection)
+
+	// operation server
+	operationSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_OPERATION}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OPERATION); err != nil {
+		operationSrv.IsHealthy = false
+		operationSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, operationSrv)
+
+	// task server
+	taskSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_TASK}
+	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_TASK); err != nil {
+		taskSrv.IsHealthy = false
+		taskSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, taskSrv)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

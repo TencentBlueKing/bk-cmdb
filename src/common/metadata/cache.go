@@ -24,3 +24,8 @@ type SearchHostWithIDOption struct {
 	// only return these fields in hosts.
 	Fields []string `json:"fields"`
 }
+
+type DeleteArchive struct {
+	Oid    string      `json:"oid" bson:"oid"`
+	Detail interface{} `json:"detail" bson:"detail"`
+}

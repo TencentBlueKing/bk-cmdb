@@ -13,7 +13,9 @@
 package instances
 
 import (
+	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -114,6 +116,9 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 	FillLostedFieldValue(kit.Ctx, instanceData, valid.propertySlice)
+	if err := m.validMainlineInstanceName(kit, objID, instanceData); err != nil {
+		return err
+	}
 	var instMedataData metadata.Metadata
 	instMedataData.Label = make(metadata.Label)
 	for key, val := range instanceData {
@@ -254,6 +259,9 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 			return kit.CCError.CCErrorf(common.CCErrCommGetBusinessIDByHostIDFailed)
 		}
 	}
+	if err := m.validMainlineInstanceName(kit, objID, instanceData); err != nil {
+		return err
+	}
 
 	valid, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
 	if nil != err {
@@ -300,4 +308,36 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 	}
 
 	return valid.validUpdateUnique(kit, updateData, instMetaData, instID, m)
+}
+
+func (m *instanceManager) validMainlineInstanceName(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
+	mainlineCond := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
+	mainlineAsst := make([]*metadata.Association, 0)
+	if err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(mainlineCond).All(kit.Ctx, &mainlineAsst); nil != err {
+		blog.ErrorJSON("search mainline asst failed, err: %s, cond: %s, rid: %s", err.Error(), mainlineCond, kit.Rid)
+		return err
+	}
+	nameField := metadata.GetInstNameFieldName(objID)
+	for _, asst := range mainlineAsst {
+		if objID == asst.AsstObjID {
+			if nameVal, exist := instanceData[nameField]; exist {
+				name, ok := nameVal.(string)
+				if !ok {
+					return kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, nameField)
+				}
+				if common.NameFieldMaxLength < utf8.RuneCountInString(name) {
+					return kit.CCError.CCErrorf(common.CCErrCommValExceedMaxFailed, nameField, common.NameFieldMaxLength)
+				}
+				match, err := regexp.MatchString(common.FieldTypeMainlineRegexp, name)
+				if nil != err {
+					return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
+				}
+				if !match {
+					return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, nameField)
+				}
+			}
+			break
+		}
+	}
+	return nil
 }

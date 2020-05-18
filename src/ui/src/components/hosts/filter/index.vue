@@ -241,11 +241,11 @@
                     resolve()
                 }
             })
-            RouterQuery.watch(['ip', 'exact', 'inner', 'outer'], ({
+            this.unwatch = RouterQuery.watch(['ip', 'exact', 'inner', 'outer'], ({
                 ip = '',
-                exact = '1',
-                inner = '1',
-                outer = '1'
+                exact = this.ip.exact ? '1' : '0',
+                inner = this.ip.inner ? '1' : '0',
+                outer = this.ip.outer ? '1' : '0'
             }) => {
                 this.ip.text = ip.split(',').join('\n')
                 this.ip.exact = parseInt(exact) === 1
@@ -256,6 +256,7 @@
         },
         beforeDestroy () {
             Bus.$off('toggle-host-filter', this.handleToggleFilter)
+            this.unwatch()
             this.$store.commit('hosts/clearFilter')
         },
         methods: {
@@ -391,21 +392,22 @@
                 this.collectionName = ''
             },
             handleReset () {
+                this.ip = { ...this.defaultIpConfig }
                 this.filterCondition.forEach(filterItem => {
                     filterItem.value = ''
-                })
-                RouterQuery.set({
-                    ip: '',
-                    exact: 0,
-                    inner: 1,
-                    outer: 1
                 })
                 const params = this.getParams()
                 this.updateQuery(params)
             },
             getParams () {
+                const inputIPPlayload = {
+                    data: this.getIPList(),
+                    inner: this.ip.inner,
+                    outer: this.ip.outer,
+                    exact: this.ip.exact
+                }
                 const params = {
-                    ip: getIPPayload(),
+                    ip: getIPPayload(inputIPPlayload),
                     host: [],
                     module: [],
                     set: [],
@@ -427,14 +429,21 @@
                                 value: filterItem.value[1]
                             }])
                         } else {
+                            let operator = filterItem.operator
+                            let value = filterValue
+
+                            if (['category', 'organization'].includes(filterItem.bk_property_type)) {
+                                operator = '$in'
+                            }
+
+                            if (filterItem.operator === '$multilike' || ['bk_set_name', 'bk_module_name'].includes(filterItem.bk_property_id)) {
+                                value = filterValue.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
+                            }
+
                             params[modelId].push({
                                 field: filterItem.bk_property_id,
-                                operator: ['category', 'organization'].includes(filterItem.bk_property_type)
-                                    ? '$in'
-                                    : filterItem.operator,
-                                value: filterItem.operator === '$multilike'
-                                    ? filterValue.split('\n').filter(str => str.trim().length).map(str => str.trim())
-                                    : filterValue
+                                operator,
+                                value
                             })
                         }
                     }
@@ -455,6 +464,7 @@
                     exact: params.ip.exact,
                     inner: flags.includes('bk_host_innerip') ? 1 : 0,
                     outer: flags.includes('bk_host_outerip') ? 1 : 0,
+                    page: 1,
                     _t: Date.now()
                 })
             },

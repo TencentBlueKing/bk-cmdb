@@ -15,6 +15,7 @@ package operation
 import (
 	"fmt"
 	"io"
+	"regexp"
 	"strconv"
 
 	"configcenter/src/common"
@@ -147,6 +148,9 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 
 	createdInstIDs := make([]int64, len(parentInsts))
 	expectParent2Children := map[int64][]inst.Inst{}
+	// filters out special character for mainline instances
+	re, _ := regexp.Compile(`[#/,><|]`)
+	instanceName := re.ReplaceAllString(current.Object().ObjectName, "")
 	// create current object instance for each parent instance and insert the current instance to
 	for _, parent := range parentInsts {
 		id, err := parent.GetInstID()
@@ -157,7 +161,7 @@ func (assoc *association) SetMainlineInstAssociation(kit *rest.Kit, parent, curr
 
 		// we create the current object's instance for each parent instance belongs to the parent object.
 		currentInst := assoc.instFactory.CreateInst(kit, current)
-		currentInst.SetValue(current.GetInstNameFieldName(), current.Object().ObjectName)
+		currentInst.SetValue(current.GetInstNameFieldName(), instanceName)
 		currentInst.SetValue(common.BKDefaultField, common.DefaultFlagDefaultValue)
 		// set current instance's parent id to parent instance's id, so that they can be chained.
 		currentInst.SetValue(common.BKInstParentStr, id)

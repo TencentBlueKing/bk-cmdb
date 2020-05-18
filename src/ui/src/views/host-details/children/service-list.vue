@@ -8,7 +8,7 @@
                 :title="$t('全选本页')"
                 @change="handleCheckALL">
             </bk-checkbox>
-            <cmdb-auth :auth="$authResources({ type: $OPERATION.D_SERVICE_INSTANCE })">
+            <cmdb-auth :auth="HOST_AUTH.D_SERVICE_INSTANCE">
                 <bk-button slot-scope="{ disabled }"
                     class="ml10"
                     :disabled="disabled || !checked.length"

@@ -282,7 +282,7 @@
     "缩小": "Zoom Out",
     "请填写模型名": "Please fill in the model name",
     "下划线，数字，英文大小写的组合": "Underline, number, combination of letters",
-    "请填写英文开头，下划线，数字，英文小写的组合": "underline, numbers, and lowercase letter and start with a letter",
+    "请填写英文开头，下划线，数字，英文的组合": "underline, numbers, letter and start with a letter",
     "导出": "Export",
     "导入": "Import",
     "下划线/数字/字母": "Underline/Number/Lowercase Letter",
@@ -1259,5 +1259,8 @@
     "点击查看详情": "Details",
     "关闭按钮": "Close",
     "失败详情": "Fail Details",
-    "业务不存在或无权限": "Permission denied or business non-exist"
+    "业务不存在或无权限": "Permission denied or business non-exist",
+    "新增字段": "Create Attribute",
+    "修改字段": "Update Attribute",
+    "删除字段": "Delete Attribute"
 }
