@@ -1262,5 +1262,6 @@
     "业务不存在或无权限": "Permission denied or business non-exist",
     "新增字段": "Create Attribute",
     "修改字段": "Update Attribute",
-    "删除字段": "Delete Attribute"
+    "删除字段": "Delete Attribute",
+    "暂无可复制的IP": "No IP to copy"
 }
