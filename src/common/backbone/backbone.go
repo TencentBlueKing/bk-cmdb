@@ -33,6 +33,8 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/rs/xid"
 )
 
 // connect svcManager retry connect time
@@ -108,6 +110,9 @@ func validateParameter(input *BackboneParameter) error {
 	// to prevent other components which doesn't set it from failing
 	if input.SrvInfo.RegisterIP == "" {
 		input.SrvInfo.RegisterIP = input.SrvInfo.IP
+	}
+	if input.SrvInfo.UUID == "" {
+		input.SrvInfo.UUID = xid.New().String()
 	}
 	return nil
 }
