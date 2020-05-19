@@ -253,3 +253,9 @@ type ListHostWithoutAppResponse struct {
 	BaseResp `json:",inline"`
 	Data     ListHostResult `json:"data"`
 }
+
+type SearchInstBatchOption struct {
+	InstIDs []int64  `json:"inst_ids"`
+	Fields  []string `json:"fields"`
+	Page    BasePage `json:"page"`
+}

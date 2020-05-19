@@ -76,3 +76,17 @@ func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID st
 		Into(resp)
 	return
 }
+
+func (t *instanceClient) SearchSetBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := "/set/search/bk_biz_id/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

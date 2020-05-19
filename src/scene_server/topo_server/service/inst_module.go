@@ -409,6 +409,70 @@ func (s *Service) SearchModule(ctx *rest.Contexts) {
 	return
 }
 
+// SearchModuleBatch search the modules in one biz
+func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	option := metadata.SearchInstBatchOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(option.InstIDs) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "inst_ids"))
+		return
+	}
+
+	if len(option.InstIDs) > common.BKMaxRecordsAtOnce {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce, common.BKMaxRecordsAtOnce))
+		return
+	}
+
+	// set default value
+	if option.Page.Limit == 0 {
+		option.Page.Limit = common.BKDefaultLimit
+	}
+	if option.Page.IsIllegal() {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
+	if len(option.Fields) == 0 {
+		option.Fields = []string{common.BKModuleIDField, common.BKModuleNameField}
+	}
+
+	cond := mapstr.MapStr{
+		common.BKAppIDField: bizID,
+		common.BKModuleIDField: mapstr.MapStr{
+			common.BKDBIN: option.InstIDs,
+		},
+	}
+
+	qc := &metadata.QueryCondition{
+		Fields:    option.Fields,
+		Page:      option.Page,
+		Condition: cond,
+	}
+	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, qc)
+	if err != nil {
+		blog.Errorf("SearchModuleBatch failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+	if instanceResult.Code != 0 {
+		blog.ErrorJSON("SearchModuleBatch failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
+		return
+	}
+	ctx.RespEntity(instanceResult.Data)
+}
+
 func (s *Service) SearchRuleRelatedTopoNodes(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if nil != err {
