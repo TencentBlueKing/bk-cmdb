@@ -30,11 +30,12 @@ type RefreshingLock struct {
 func (r *RefreshingLock) CanRefresh(key string) bool {
 	r.lock.Lock()
 	refreshing, exist := r.refreshing[key]
-	r.lock.Unlock()
 	if !exist {
 		r.refreshing[key] = false
+		r.lock.Unlock()
 		return true
 	}
+	r.lock.Unlock()
 	return !refreshing
 }
 
