@@ -528,7 +528,7 @@
     "未分配主机": "Unassigned Hosts",
     "请勿选择已分配主机": "Please do not select assigned host",
     "快速查询": "Quick Search",
-    "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}KB",
+    "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}",
     "点击上传": "click upload",
     "下载模板": "Download Template",
     "隐藏属性": "Hidden Properties",
