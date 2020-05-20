@@ -101,9 +101,10 @@ func (zlock *ZkLock) UnLock() error {
 }
 
 type ZkClient struct {
-	ZkHost []string
-	ZkConn *zk.Conn
-	zkAcl  []zk.ACL
+	ZkHost       []string
+	ZkConn       *zk.Conn
+	zkAcl        []zk.ACL
+	zkConnClosed bool
 	sync.Mutex
 }
 
@@ -139,15 +140,16 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	}
 
 	z.ZkConn = c
+	z.zkConnClosed = false
 	return nil
 }
 
 func (z *ZkClient) Close() {
 	z.Lock()
 	defer z.Unlock()
-	if nil != z.ZkConn {
+	if nil != z.ZkConn && !z.zkConnClosed {
 		z.ZkConn.Close()
-		z.ZkConn = nil
+		z.zkConnClosed = true
 	}
 }
 
