@@ -37,6 +37,8 @@
 
 <style lang="scss" scoped>
     .breadcrumbs-layout {
+        display: flex;
+        align-items: center;
         padding: 14px 20px;
         height: 53px;
         border-bottom: 1px solid $borderColor;
@@ -59,6 +61,7 @@
             line-height: 24px;
             color: #313238;
             font-weight: normal;
+            @include ellipsis;
         }
     }
 </style>
