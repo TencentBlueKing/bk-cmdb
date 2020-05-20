@@ -19,7 +19,7 @@ const timeFormatter = (value, format = 'YYYY-MM-DD HH:mm:ss') => {
 }
 
 const numericFormatter = value => {
-    if (isNaN(value) || value === null) {
+    if (isNaN(value) || value === null || value === undefined || value === '') {
         return '--'
     }
     return value
