@@ -49,7 +49,7 @@ export function injectFields (params, tableHeaderList = []) {
     })
 
     params.condition.forEach(condition => {
-        condition.fields = Array.from(new Set([...condition.fields, ...headerFields[condition.bk_obj_id] || []]))
+        condition.fields = Array.from(new Set([...condition.fields || [], ...headerFields[condition.bk_obj_id] || []]))
     })
 
     return params

@@ -71,10 +71,6 @@
             },
             previewParams () {
                 const conditions = this.$tools.clone(this.apiParams['info']['condition'])
-                const hostCondition = conditions.find(({ bk_obj_id: objId }) => {
-                    return objId === 'host'
-                })
-                hostCondition['fields'] = this.previewFields
                 conditions.forEach(model => {
                     const modelCondition = model.condition || []
                     const newConditions = []
