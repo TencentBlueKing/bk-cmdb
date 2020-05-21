@@ -178,7 +178,8 @@
                         name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
                         query: {
                             mid: this.$route.query.mid
-                        }
+                        },
+                        history: true
                     })
                 })
             },

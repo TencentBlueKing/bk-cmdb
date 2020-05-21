@@ -270,7 +270,8 @@
                         query: {
                             batch: 1,
                             mid: this.$route.query.mid
-                        }
+                        },
+                        history: true
                     })
                 })
             },

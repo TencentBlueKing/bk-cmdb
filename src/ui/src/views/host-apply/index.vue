@@ -13,7 +13,7 @@
                     <div class="config-panel" v-show="!batchAction">
                         <div class="config-head">
                             <h2 class="config-title">
-                                <span class="module-name">{{currentModule.bk_inst_name}}</span>
+                                <span class="module-name" v-bk-overflow-tips>{{currentModule.bk_inst_name}}</span>
                                 <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}{{ruleLastEditTime}} )</small>
                             </h2>
                         </div>
@@ -374,12 +374,19 @@
         }
 
         .config-title {
+            display: flex;
+            align-items: center;
             font-size: 14px;
             color: #313238;
             font-weight: 700;
             margin-top: 20px;
 
+            .module-name {
+                @include ellipsis;
+            }
+
             .last-edit-time {
+                flex: none;
                 font-size: 12px;
                 font-weight: 400;
                 color: #979ba5;
