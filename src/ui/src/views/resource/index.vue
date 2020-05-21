@@ -174,7 +174,10 @@
                 }]
             },
             columnsConfigKey () {
-                return `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                // 资源池独占components/table，无需再判断，否则会引发资源池详情第一次点击无法跳转至业务拓扑
+                // 因为key的变化引发了header的变化，从而导致触发RouterQuery中的重定向，使第一次跳转失效
+                // return `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                return `${this.userName}_$resource_adminView_table_columns`
             },
             customColumns () {
                 return this.usercustom[this.columnsConfigKey]
