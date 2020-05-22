@@ -80,6 +80,13 @@ type CreateServiceInstanceForServiceTemplateInput struct {
 	HostApplyConflictResolvers []HostApplyConflictResolver   `json:"host_apply_conflict_resolvers"`
 }
 
+type CreateServiceInstancePreviewInput struct {
+	Metadata *Metadata `json:"metadata"`
+	BizID    int64     `json:"bk_biz_id"`
+	ModuleID int64     `json:"bk_module_id"`
+	HostIDs  []int64   `json:"bk_host_ids"`
+}
+
 type CreateRawProcessInstanceInput struct {
 	Metadata          *Metadata               `json:"metadata"`
 	BizID             int64                   `json:"bk_biz_id"`
