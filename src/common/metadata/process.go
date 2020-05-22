@@ -72,11 +72,12 @@ type DeleteServiceTemplatesInput struct {
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
-	Metadata  *Metadata                     `json:"metadata"`
-	BizID     int64                         `json:"bk_biz_id"`
-	Name      string                        `json:"name"`
-	ModuleID  int64                         `json:"bk_module_id"`
-	Instances []CreateServiceInstanceDetail `json:"instances"`
+	Metadata                   *Metadata                     `json:"metadata"`
+	BizID                      int64                         `json:"bk_biz_id"`
+	Name                       string                        `json:"name"`
+	ModuleID                   int64                         `json:"bk_module_id"`
+	Instances                  []CreateServiceInstanceDetail `json:"instances"`
+	HostApplyConflictResolvers []HostApplyConflictResolver   `json:"host_apply_conflict_resolvers"`
 }
 
 type CreateRawProcessInstanceInput struct {

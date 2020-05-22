@@ -161,6 +161,58 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
 	}
 
+	// update host by host apply rule conflict resolvers
+	attributeIDs := make([]int64, 0)
+	for _, rule := range input.HostApplyConflictResolvers {
+		attributeIDs = append(attributeIDs, rule.AttributeID)
+	}
+	attrCond := &metadata.QueryCondition{
+		Fields: []string{common.BKFieldID, common.BKPropertyIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKFieldID: map[string]interface{}{
+				common.BKDBIN: attributeIDs,
+			},
+		},
+	}
+	attrRes, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, attrCond)
+	if e != nil {
+		blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", e.Error(), attrCond, rid)
+		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if err := attrRes.CCError(); err != nil {
+		blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", err.Error(), attrCond, rid)
+		return nil, err
+	}
+	attrMap := make(map[int64]string)
+	for _, attr := range attrRes.Data.Info {
+		attrMap[attr.ID] = attr.PropertyID
+	}
+
+	hostAttrMap := make(map[int64]map[string]interface{})
+	for _, rule := range input.HostApplyConflictResolvers {
+		if hostAttrMap[rule.HostID] == nil {
+			hostAttrMap[rule.HostID] = make(map[string]interface{})
+		}
+		hostAttrMap[rule.HostID][attrMap[rule.AttributeID]] = rule.PropertyValue
+	}
+	for hostID, hostData := range hostAttrMap {
+		updateOption := &metadata.UpdateOption{
+			Data: hostData,
+			Condition: map[string]interface{}{
+				common.BKHostIDField: hostID,
+			},
+		}
+		updateResult, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDHost, updateOption)
+		if err != nil {
+			blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), rid)
+			return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if err := updateResult.CCError(); err != nil {
+			blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, rid)
+			return nil, err
+		}
+	}
 	return serviceInstanceIDs, nil
 }
 
