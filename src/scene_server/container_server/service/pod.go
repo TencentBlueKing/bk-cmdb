@@ -37,7 +37,18 @@ func (s *ContainerService) CreatePod(ctx *rest.Contexts) {
 		return
 	}
 	inputData.BizID = bkBizID
-	ctx.RespEntityWithError(s.core.PodOperation().CreatePod(ctx.Kit, inputData))
+	resp, err := s.core.PodOperation().CreatePod(ctx.Kit, inputData)
+	if err != nil {
+		blog.Warnf("rid: %s CreatePod failed, err %s", ctx.Kit.Rid, err.Error())
+		ctx.RespAutoError(err)
+		return
+	}
+	if !resp.Result {
+		blog.Warnf("rid: %s CreatePod failed, result %+v", ctx.Kit.Rid, resp)
+		ctx.RespErrorCodeOnly(resp.Code, resp.ErrMsg)
+		return
+	}
+	ctx.RespEntity(resp.Data)
 }
 
 // CreateManyPod create or update multi pods
@@ -60,7 +71,19 @@ func (s *ContainerService) CreateManyPod(ctx *rest.Contexts) {
 		ctx.RespErrorCodeOnly(common.CCErrCommParamsLostField, "PodList lost")
 		return
 	}
-	ctx.RespEntityWithError(s.core.PodOperation().CreateManyPod(ctx.Kit, inputData))
+
+	resp, err := s.core.PodOperation().CreateManyPod(ctx.Kit, inputData)
+	if err != nil {
+		blog.Warnf("rid: %s CreateManyPod failed, err %s", ctx.Kit.Rid, err.Error())
+		ctx.RespAutoError(err)
+		return
+	}
+	if !resp.Result {
+		blog.Warnf("rid: %s CreateManyPod failed, result %+v", ctx.Kit.Rid, resp)
+		ctx.RespErrorCodeOnly(resp.Code, resp.ErrMsg)
+		return
+	}
+	ctx.RespEntity(resp.Data)
 }
 
 // UpdatePod update a pod
@@ -79,7 +102,18 @@ func (s *ContainerService) UpdatePod(ctx *rest.Contexts) {
 		return
 	}
 	inputData.BizID = bkBizID
-	ctx.RespEntityWithError(s.core.PodOperation().UpdatePod(ctx.Kit, inputData))
+	resp, err := s.core.PodOperation().UpdatePod(ctx.Kit, inputData)
+	if err != nil {
+		blog.Warnf("rid: %s UpdatePod failed, err %s", ctx.Kit.Rid, err.Error())
+		ctx.RespAutoError(err)
+		return
+	}
+	if !resp.Result {
+		blog.Warnf("rid: %s UpdatePod failed, result %+v", ctx.Kit.Rid, resp)
+		ctx.RespErrorCodeOnly(resp.Code, resp.ErrMsg)
+		return
+	}
+	ctx.RespEntity(resp.Data)
 }
 
 // DeletePod delete a pod
@@ -98,7 +132,19 @@ func (s *ContainerService) DeletePod(ctx *rest.Contexts) {
 		return
 	}
 	inputData.BizID = bkBizID
-	ctx.RespEntityWithError(s.core.PodOperation().DeletePod(ctx.Kit, inputData))
+
+	resp, err := s.core.PodOperation().DeletePod(ctx.Kit, inputData)
+	if err != nil {
+		blog.Warnf("rid: %s DeletePod failed, err %s", ctx.Kit.Rid, err.Error())
+		ctx.RespAutoError(err)
+		return
+	}
+	if !resp.Result {
+		blog.Warnf("rid: %s DeletePod failed, result %+v", ctx.Kit.Rid, resp)
+		ctx.RespErrorCodeOnly(resp.Code, resp.ErrMsg)
+		return
+	}
+	ctx.RespEntity(resp.Data)
 }
 
 // ListPods list pods
@@ -108,5 +154,11 @@ func (s *ContainerService) ListPods(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.PodOperation().ListPods(ctx.Kit, inputData))
+	resp, err := s.core.PodOperation().ListPods(ctx.Kit, inputData)
+	if err != nil {
+		blog.Warnf("rid: %s DeletePod failed, err %s", ctx.Kit.Rid, err.Error())
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }
