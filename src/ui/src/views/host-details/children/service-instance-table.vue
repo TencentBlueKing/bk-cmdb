@@ -86,7 +86,9 @@
     } from '@/dictionary/menu-symbol'
     import { processTableHeader } from '@/dictionary/table-header'
     import { mapState } from 'vuex'
+    import authMixin from '../mixin-auth'
     export default {
+        mixins: [authMixin],
         props: {
             instance: {
                 type: Object,
