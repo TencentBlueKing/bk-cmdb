@@ -1,8 +1,8 @@
 <template>
     <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
-        <label class="create-label fl">{{$t('添加主机')}}</label>
-        <div class="create-hosts">
-            <div>
+        <div class="info clearfix mb20">
+            <label class="info-label fl">{{$t('已选主机')}}：</label>
+            <div class="info-content">
                 <bk-button class="select-host-button" theme="default"
                     @click="handleSelectHost">
                     <i class="bk-icon icon-plus"></i>
@@ -12,33 +12,63 @@
                     <span place="count" class="count-number">{{hosts.length}}</span>
                 </i18n>
             </div>
-            <div class="create-tables">
-                <service-instance-table class="service-instance-table"
-                    v-for="(item, index) in hosts"
-                    ref="serviceInstanceTable"
-                    deletable
-                    expanded
-                    :key="item.host.bk_host_id"
-                    :index="index"
-                    :id="item.host.bk_host_id"
-                    :name="item.host.bk_host_innerip"
-                    :source-processes="sourceProcesses"
-                    :templates="templates"
-                    :addible="!withTemplate"
-                    @delete-instance="handleDeleteInstance">
-                </service-instance-table>
+        </div>
+        <div class="info clearfix mb10" ref="changeInfo" v-show="resources.length">
+            <label class="info-label fl">{{$t('变更确认')}}：</label>
+            <div class="info-content">
+                <template v-if="availableTabList.length">
+                    <ul class="tab clearfix">
+                        <template v-for="(item, index) in availableTabList">
+                            <li class="tab-grep fl" v-if="index" :key="index"></li>
+                            <li class="tab-item fl"
+                                :class="{ active: activeTab === item }"
+                                :key="item.id"
+                                @click="handleTabClick(item)">
+                                <span class="tab-label">{{item.label}}</span>
+                                <span :class="['tab-count', { 'unconfirmed': !item.confirmed }]">
+                                    {{item.props.count > 999 ? '999+' : item.props.count}}
+                                </span>
+                            </li>
+                        </template>
+                    </ul>
+                    <div class="tab-component" v-show="activeTab.id === 'createServiceInstance'">
+                        <service-instance-table class="service-instance-table"
+                            v-for="(instance, index) in instances"
+                            ref="serviceInstanceTable"
+                            deletable
+                            expanded
+                            :key="instance.bk_host_id"
+                            :index="index"
+                            :id="instance.bk_host_id"
+                            :name="getName(instance)"
+                            :source-processes="getSourceProcesses(instance)"
+                            :templates="getServiceTemplates(instance)"
+                            :addible="!withTemplate"
+                            @delete-instance="handleDeleteInstance">
+                        </service-instance-table>
+                    </div>
+                    <div class="tab-component" v-show="activeTab.id === 'hostAttrsAutoApply'">
+                        <property-confirm-table class="mt10"
+                            ref="confirmTable"
+                            max-height="auto"
+                            :list="conflictList"
+                            :render-icon="true"
+                            :show-operation="hasConflict">
+                        </property-confirm-table>
+                    </div>
+                </template>
             </div>
-            <div class="buttons">
-                <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
-                    <bk-button slot-scope="{ disabled }"
-                        theme="primary"
-                        :disabled="!hosts.length || disabled"
-                        @click="handleConfirm">
-                        {{$t('确定')}}
-                    </bk-button>
-                </cmdb-auth>
-                <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
-            </div>
+        </div>
+        <div class="options" :class="{ 'is-sticky': hasScrollbar }">
+            <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    :disabled="!hosts.length || disabled"
+                    @click="handleConfirm">
+                    {{$t('确定')}}
+                </bk-button>
+            </cmdb-auth>
+            <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
         </div>
         <cmdb-dialog v-model="dialog.show" v-bind="dialog.props">
             <component
@@ -55,20 +85,42 @@
 <script>
     import HostSelector from '@/views/business-topology/host/host-selector.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
+    import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
     import { mapGetters } from 'vuex'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         name: 'create-service-instance',
         components: {
             [HostSelector.name]: HostSelector,
-            serviceInstanceTable
+            serviceInstanceTable,
+            propertyConfirmTable
         },
         data () {
             return {
-                seed: 0,
-                hostSelectorVisible: false,
-                moduleInstance: {},
+                hasScrollbar: false,
                 hosts: [],
-                templates: [],
+                instances: [],
+                resources: [],
+                confirmParams: {},
+                conflictList: [],
+                tab: {
+                    active: null
+                },
+                tabList: [{
+                    id: 'createServiceInstance',
+                    label: this.$t('新增服务实例'),
+                    confirmed: false,
+                    props: {
+                        count: 0
+                    }
+                }, {
+                    id: 'hostAttrsAutoApply',
+                    label: this.$t('属性自动应用'),
+                    confirmed: false,
+                    props: {
+                        count: 0
+                    }
+                }],
                 dialog: {
                     show: false,
                     props: {
@@ -80,11 +132,13 @@
                     componentProps: {}
                 },
                 request: {
+                    preview: Symbol('review'),
                     hostInfo: Symbol('hostInfo')
                 }
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', ['getDefaultSearchCondition']),
             business () {
                 return this.$store.getters['objectBiz/bizId']
@@ -96,10 +150,146 @@
                 return parseInt(this.$route.params.setId)
             },
             withTemplate () {
-                return this.moduleInstance.service_template_id
+                const instance = this.instances[0] || {}
+                if (instance.service_template && instance.service_template.service_template.id) {
+                    return true
+                }
+                return false
             },
-            sourceProcesses () {
-                return this.templates.map(template => {
+            availableTabList () {
+                return this.tabList.filter(tab => tab.props.count > 0)
+            },
+            activeTab () {
+                return this.tabList.find(tab => tab.id === this.tab.active) || this.availableTabList[0]
+            },
+            hasConflict () {
+                const conflictList = this.conflictList.filter(item => item.unresolved_conflict_count > 0)
+                return conflictList.length > 0
+            }
+        },
+        watch: {
+            activeTab (tab) {
+                if (!tab) return
+                tab.confirmed = true
+            }
+        },
+        async created () {
+            this.resolveData(this.$route)
+            if (this.resources.length) {
+                this.getSelectedHost()
+                this.getPreviewData()
+            }
+        },
+        mounted () {
+            addResizeListener(this.$refs.changeInfo, this.resizeHandler)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.changeInfo, this.resizeHandler)
+        },
+        async beforeRouteUpdate (to, from, next) {
+            this.resolveData(to)
+            if (this.resources.length) {
+                this.getSelectedHost()
+                this.getPreviewData()
+            }
+            next()
+        },
+        methods: {
+            resolveData (route) {
+                const query = route.query || {}
+                const resources = query.resources
+                if (!resources) {
+                    this.resources = []
+                } else {
+                    this.resources = String(resources).split(',').map(id => Number(id))
+                }
+                this.confirmParams = {
+                    bk_host_ids: this.resources,
+                    bk_module_id: this.moduleId
+                }
+            },
+            async getSelectedHost () {
+                try {
+                    const result = await this.getHostInfo()
+                    this.hosts = result.info || []
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            async getPreviewData () {
+                try {
+                    const data = await this.$store.dispatch('serviceInstance/createProcServiceInstancePreview', {
+                        params: this.$injectMetadata(this.confirmParams, { injectBizId: true }),
+                        config: {
+                            requestId: this.request.preview,
+                            globalPermission: false
+                        }
+                    })
+                    this.setCreateServiceInstance(data)
+                    this.setHostAttrsAutoApply(data)
+                } catch (e) {
+                    console.error(e)
+                    if (e.code === 9900403) {
+                        this.$route.meta.view = 'permission'
+                    }
+                }
+            },
+            getHostInfo () {
+                const params = {
+                    bk_biz_id: this.business,
+                    ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
+                    page: {},
+                    condition: this.getDefaultSearchCondition()
+                }
+                const hostCondition = params.condition.find(target => target.bk_obj_id === 'host')
+                hostCondition.condition.push({
+                    field: 'bk_host_id',
+                    operator: '$in',
+                    value: this.resources
+                })
+                return this.$store.dispatch('hostSearch/searchHost', {
+                    params,
+                    config: {
+                        requestId: this.request.hostInfo
+                    }
+                })
+            },
+            setCreateServiceInstance (data) {
+                const instanceInfo = []
+                data.forEach(item => {
+                    item.to_add_to_modules.forEach(moduleInfo => {
+                        instanceInfo.push({
+                            bk_host_id: item.bk_host_id,
+                            ...moduleInfo
+                        })
+                    })
+                })
+                const tab = this.tabList.find(tab => tab.id === 'createServiceInstance')
+                this.instances = instanceInfo
+                tab.props.count = this.instances.length
+            },
+            setHostAttrsAutoApply (data) {
+                const conflictInfo = (data || []).map(item => item.host_apply_plan)
+                this.conflictList = conflictInfo.filter(item => item.conflicts.length || item.update_fields.length)
+                const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
+                tab.props.count = this.conflictList.length
+            },
+            getName (instance) {
+                const data = this.hosts.find(data => data.host.bk_host_id === instance.bk_host_id)
+                if (data) {
+                    return data.host.bk_host_innerip
+                }
+                return '--'
+            },
+            getServiceTemplates (instance) {
+                if (instance.service_template) {
+                    return instance.service_template.process_templates
+                }
+                return []
+            },
+            getSourceProcesses (instance) {
+                const templates = this.getServiceTemplates(instance)
+                return templates.map(template => {
                     const value = {}
                     const ip = ['127.0.0.1', '0.0.0.0']
                     Object.keys(template.property).forEach(key => {
@@ -111,93 +301,6 @@
                     })
                     return value
                 })
-            }
-        },
-        watch: {
-            withTemplate (withTemplate) {
-                if (withTemplate) {
-                    this.getTemplate()
-                }
-            }
-        },
-        async created () {
-            await this.getModuleInstance()
-            this.initSelectedHost()
-        },
-        methods: {
-            async getModuleInstance () {
-                try {
-                    const data = await this.$store.dispatch('objectModule/searchModule', {
-                        bizId: this.business,
-                        setId: this.setId,
-                        params: {
-                            page: { start: 0, limit: 1 },
-                            fields: [],
-                            condition: {
-                                bk_module_id: this.moduleId,
-                                bk_supplier_account: this.$store.getters.supplierAccount
-                            }
-                        },
-                        config: {
-                            requestId: 'getModuleInstance'
-                        }
-                    })
-                    if (!data.count) {
-                        this.$routerActions.redirect({ name: '404' })
-                    } else {
-                        this.moduleInstance = data.info[0]
-                    }
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            async initSelectedHost () {
-                try {
-                    const resources = this.$route.query.resources
-                    if (resources) {
-                        const hostIds = resources.split(',').map(id => Number(id))
-                        const result = await this.getHostInfo(hostIds)
-                        this.hosts = result.info
-                    }
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            getHostInfo (hostIds) {
-                const params = {
-                    bk_biz_id: this.business,
-                    ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
-                    page: {},
-                    condition: this.getDefaultSearchCondition()
-                }
-                const hostCondition = params.condition.find(target => target.bk_obj_id === 'host')
-                hostCondition.condition.push({
-                    field: 'bk_host_id',
-                    operator: '$in',
-                    value: hostIds
-                })
-                return this.$store.dispatch('hostSearch/searchHost', {
-                    params,
-                    config: {
-                        requestId: this.request.hostInfo
-                    }
-                })
-            },
-            async getTemplate () {
-                try {
-                    const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-                        params: this.$injectMetadata({
-                            service_template_id: this.moduleInstance.service_template_id,
-                            page: { sort: 'id' }
-                        }, { injectBizId: true }),
-                        config: {
-                            requestId: 'getBatchProcessTemplate'
-                        }
-                    })
-                    this.templates = data.info
-                } catch (e) {
-                    console.error(e)
-                }
             },
             handleSelectHost () {
                 this.dialog.componentProps.exist = this.hosts
@@ -205,62 +308,96 @@
                 this.dialog.show = true
             },
             handleDialogConfirm (selected) {
-                this.hosts = selected
                 this.dialog.show = false
+                this.redirect({
+                    query: {
+                        ...this.$route.query,
+                        resources: selected.map(data => data.host.bk_host_id).join(',')
+                    }
+                })
             },
             handleDialogCancel () {
                 this.dialog.show = false
             },
             handleDeleteInstance (index) {
-                this.hosts.splice(index, 1)
+                this.instances.splice(index, 1)
+                this.redirect({
+                    query: {
+                        ...this.$route.query,
+                        resources: this.instances.map(data => data.bk_host_id).join(',')
+                    }
+                })
             },
             async handleConfirm () {
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
-                    if (this.withTemplate) {
-                        await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
-                            params: this.$injectMetadata({
-                                name: this.moduleInstance.bk_module_name,
-                                bk_module_id: this.moduleId,
-                                instances: serviceInstanceTables.map(table => {
-                                    return {
-                                        bk_host_id: table.id,
-                                        processes: table.processList.map((item, index) => {
-                                            return {
-                                                process_info: item,
-                                                process_template_id: table.templates[index].id
-                                            }
-                                        })
+                    const confirmTable = this.$refs.confirmTable
+                    const withTemplate = this.withTemplate
+                    const params = {
+                        bk_module_id: this.moduleId
+                    }
+                    if (serviceInstanceTables) {
+                        params.instances = serviceInstanceTables.map(table => {
+                            return {
+                                bk_host_id: table.id,
+                                processes: table.processList.map((item, index) => {
+                                    const process = { process_info: item }
+                                    if (withTemplate) {
+                                        process.process_template_id = table.templates[index].id
                                     }
+                                    return process
                                 })
-                            }, { injectBizId: true })
-                        })
-                    } else {
-                        await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
-                            params: this.$injectMetadata({
-                                name: this.moduleInstance.bk_module_name,
-                                bk_module_id: this.moduleId,
-                                instances: serviceInstanceTables.map(table => {
-                                    return {
-                                        bk_host_id: table.id,
-                                        processes: table.processList.map(item => {
-                                            return {
-                                                process_info: item
-                                            }
-                                        })
-                                    }
-                                })
-                            }, { injectBizId: true })
+                            }
                         })
                     }
+                    if (confirmTable) {
+                        params.host_apply_conflict_resolvers = this.getHostApplyConflictResolvers()
+                    }
+
+                    await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
+                        params: this.$injectMetadata(params, { injectBizId: true })
+                    })
+
                     this.$success(this.$t('添加成功'))
                     this.handleBackToModule()
                 } catch (e) {
                     console.error(e)
                 }
             },
+            getHostApplyConflictResolvers () {
+                const conflictResolveResult = this.$refs.confirmTable.conflictResolveResult
+                const conflictResolvers = []
+                Object.keys(conflictResolveResult).forEach(key => {
+                    const propertyList = conflictResolveResult[key]
+                    propertyList.forEach(property => {
+                        conflictResolvers.push({
+                            bk_host_id: Number(key),
+                            bk_attribute_id: property.id,
+                            bk_property_value: property.__extra__.value
+                        })
+                    })
+                })
+                return conflictResolvers
+            },
             handleBackToModule () {
                 this.$routerActions.back()
+            },
+            handleTabClick (tab) {
+                this.tab.active = tab.id
+            },
+            resizeHandler () {
+                this.$nextTick(() => {
+                    const scroller = this.$el.parentElement
+                    this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
+                })
+            },
+            redirect (options = {}) {
+                const config = {
+                    name: 'createServiceInstance',
+                    params: this.$route.params,
+                    query: this.$route.query
+                }
+                this.$routerActions.redirect({ ...config, ...options })
             }
         }
     }
@@ -268,26 +405,114 @@
 
 <style lang="scss" scoped>
     .create-layout {
-        padding: 15px 23px 0;
-        font-size: 14px;
-        color: #63656E;
+        padding: 15px 0 0 0;
     }
-    .create-label{
-        display: block;
-        position: relative;
-        line-height: 32px;
-        &:after {
-            content: "*";
-            margin: 0 0 0 4px;
-            color: $cmdbDangerColor;
-            @include inlineBlock;
+
+    .info {
+        .info-label {
+            width: 128px;
+            font-size: 14px;
+            font-weight: bold;
+            color: $textColor;
+            text-align: right;
+            padding-top: 8px;
+        }
+        .info-content {
+            overflow: hidden;
+            padding: 8px 20px 0 8px;
+            font-size: 14px;
+            .info-count {
+                font-weight: bold;
+            }
+            .module-grep {
+                border-top: 1px solid $borderColor;
+                margin-top: 10px;
+            }
+            .edit-trigger {
+                @include inlineBlock;
+                margin-left: 10px;
+                color: $primaryColor;
+                cursor: pointer;
+                &:hover {
+                    color: #1964E1;
+                }
+            }
         }
     }
-    .create-hosts {
-        padding-left: 10px;
-        height: 100%;
-        overflow: hidden;
+
+    .tab {
+        .tab-grep {
+            width: 2px;
+            height: 19px;
+            margin: 0 15px;
+            background-color: #C4C6CC;
+        }
+        .tab-item {
+            position: relative;
+            color: $textColor;
+            font-size: 0;
+            cursor: pointer;
+            &.active {
+                color: $primaryColor;
+            }
+            &.active:after {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 30px;
+                width: 100%;
+                height: 2px;
+                background-color: $primaryColor;
+            }
+            .tab-label {
+                display: inline-block;
+                vertical-align: middle;
+                margin-left: 10px;
+                margin-right: 4px;
+                font-size: 14px;
+            }
+            .tab-count {
+                display: inline-block;
+                vertical-align: middle;
+                height: 16px;
+                padding: 0 5px;
+                border-radius: 8px;
+                line-height: 14px;
+                font-size: 12px;
+                color: #FFF;
+                background-color: #C4C6CC;
+                text-align: center;
+                border: 1px solid #fff;
+
+                &.unconfirmed {
+                    background-color: #FF5656;
+                }
+            }
+        }
     }
+    .tab-component {
+        margin-top: 20px;
+    }
+    .tab-empty {
+        height: 60px;
+        padding: 0 28px;
+        line-height: 60px;
+        background-color: #F0F1F5;
+        color: $textColor;
+        &:before {
+            content: "!";
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            border-radius: 50%;
+            text-align: center;
+            color: #FFF;
+            font-size: 12px;
+            background-color: #C4C6CC;
+        }
+    }
+
     .select-host-button {
         height: 32px;
         line-height: 30px;
@@ -311,15 +536,21 @@
             font-weight: bold;
         }
     }
-    .create-tables {
-        max-height: calc(100% - 120px);
-        margin: 22px 0 0 0;
-        @include scrollbar-y;
-    }
-    .service-instance-table +  .service-instance-table {
+
+    .service-instance-table + .service-instance-table {
         margin-top: 12px;
     }
-    .buttons {
-        padding: 20px 0;
+
+    .options {
+        position: sticky;
+        padding: 10px 0 10px 136px;
+        font-size: 0;
+        bottom: 0;
+        left: 0;
+        &.is-sticky {
+            background-color: #FFF;
+            border-top: 1px solid $borderColor;
+            z-index: 100;
+        }
     }
 </style>
