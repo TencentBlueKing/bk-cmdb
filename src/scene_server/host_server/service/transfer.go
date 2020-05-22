@@ -143,39 +143,97 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 			hostTransferResult := HostTransferResult{
 				HostID: plan.HostID,
 			}
-			if ccErr == nil {
-				// create or update related service instance
-				for _, item := range option.Options.ServiceInstanceOptions {
-					if item.HostID != plan.HostID {
-						continue
-					}
-					if util.InArray(item.ModuleID, plan.FinalModules) == false {
-						continue
-					}
-					serviceTemplateID, exist := moduleMap[item.ModuleID]
-					if !exist {
-						blog.ErrorJSON("TransferHostWithAutoClearServiceInstance, but can not find module: %d, bizID: %s, option: %s, err: %s, rid: %s", item.ModuleID, bizID, option, err.Error(), srvData.rid)
-						ccErr = errors.New(common.CCErrCommParamsInvalid, fmt.Sprintf("module %d not exist", item.ModuleID))
-						break
-					}
-					if ccErr = s.createOrUpdateServiceInstance(srvData, bizID, plan.HostID, serviceTemplateID, item); ccErr != nil {
-						break
-					}
-				}
-			}
-
 			if ccErr != nil {
-				hostTransferResult.Code = ccErr.GetCode()
-				hostTransferResult.Message = ccErr.Error()
-				if firstErr == nil {
-					firstErr = ccErr
+				return
+			}
+			defer func() {
+				if ccErr != nil {
+					hostTransferResult.Code = ccErr.GetCode()
+					hostTransferResult.Message = ccErr.Error()
+					if firstErr == nil {
+						firstErr = ccErr
+					}
+				}
+				transferResult = append(transferResult, hostTransferResult)
+				<-pipeline
+				wg.Done()
+			}()
+
+			// create or update related service instance
+			for _, item := range option.Options.ServiceInstanceOptions {
+				if item.HostID != plan.HostID {
+					continue
+				}
+				if util.InArray(item.ModuleID, plan.FinalModules) == false {
+					continue
+				}
+				serviceTemplateID, exist := moduleMap[item.ModuleID]
+				if !exist {
+					blog.ErrorJSON("TransferHostWithAutoClearServiceInstance, but can not find module: %d, bizID: %s, option: %s, err: %s, rid: %s", item.ModuleID, bizID, option, err.Error(), srvData.rid)
+					ccErr = errors.New(common.CCErrCommParamsInvalid, fmt.Sprintf("module %d not exist", item.ModuleID))
+					return
+				}
+				if ccErr = s.createOrUpdateServiceInstance(srvData, bizID, plan.HostID, serviceTemplateID, item); ccErr != nil {
+					return
 				}
 			}
-			transferResult = append(transferResult, hostTransferResult)
-			<-pipeline
-			wg.Done()
-		}(plan)
 
+			// update host by host apply rule conflict resolvers
+			attributeIDs := make([]int64, 0)
+			for _, rule := range option.Options.HostApplyConflictResolvers {
+				attributeIDs = append(attributeIDs, rule.AttributeID)
+			}
+			attrCond := &metadata.QueryCondition{
+				Fields: []string{common.BKFieldID, common.BKPropertyIDField},
+				Page:   metadata.BasePage{Limit: common.BKNoLimit},
+				Condition: map[string]interface{}{
+					common.BKFieldID: map[string]interface{}{
+						common.BKDBIN: attributeIDs,
+					},
+				},
+			}
+			attrRes, err := s.CoreAPI.CoreService().Model().ReadModelAttr(srvData.ctx, srvData.header, common.BKInnerObjIDHost, attrCond)
+			if err != nil {
+				blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", err.Error(), attrCond, srvData.rid)
+				ccErr = srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+				return
+			}
+			if ccErr = attrRes.CCError(); ccErr != nil {
+				blog.ErrorJSON("ReadModelAttr failed, err: %s, attrCond: %s, rid: %s", ccErr.Error(), attrCond, srvData.rid)
+				return
+			}
+			attrMap := make(map[int64]string)
+			for _, attr := range attrRes.Data.Info {
+				attrMap[attr.ID] = attr.PropertyID
+			}
+
+			hostAttrMap := make(map[int64]map[string]interface{})
+			for _, rule := range option.Options.HostApplyConflictResolvers {
+				if hostAttrMap[rule.HostID] == nil {
+					hostAttrMap[rule.HostID] = make(map[string]interface{})
+				}
+				hostAttrMap[rule.HostID][attrMap[rule.AttributeID]] = rule.PropertyValue
+			}
+
+			for hostID, hostData := range hostAttrMap {
+				updateOption := &metadata.UpdateOption{
+					Data: hostData,
+					Condition: map[string]interface{}{
+						common.BKHostIDField: hostID,
+					},
+				}
+				updateResult, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, updateOption)
+				if err != nil {
+					blog.ErrorJSON("RunHostApplyRule, update host failed, option: %s, err: %s, rid: %s", updateOption, err.Error(), srvData.rid)
+					ccErr = srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+					return
+				}
+				if ccErr = updateResult.CCError(); ccErr != nil {
+					blog.ErrorJSON("RunHostApplyRule, update host response failed, option: %s, response: %s, rid: %s", updateOption, updateResult, srvData.rid)
+					return
+				}
+			}
+		}(plan)
 	}
 	wg.Wait()
 
@@ -584,7 +642,7 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, withHostA
 	}
 
 	hostApplyPlanResult, ccErr := s.CoreAPI.CoreService().HostApplyRule().GenerateApplyPlan(srvData.ctx, srvData.header, bizID, planOption)
-	if err != nil {
+	if ccErr != nil {
 		blog.ErrorJSON("TransferHostWithAutoClearServiceInstance failed, generateApplyPlan failed, core service GenerateApplyPlan failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, planOption, ccErr.Error(), rid)
 		return transferPlans, ccErr
 	}
