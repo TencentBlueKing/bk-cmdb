@@ -891,6 +891,11 @@ const (
 	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
 )
 
+// api cache keys
+const (
+	ApiCacheLimiterRulePrefix = BKCacheKeyV3Prefix + "api:limiter_rule:"
+)
+
 const (
 	// BKHTTPHeaderUser current request http request header fields name for login user
 	BKHTTPHeaderUser = "BK_User"
@@ -903,6 +908,7 @@ const (
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKHTTPSupplierID        = "bk_supplier_id"
 	BKHTTPRequestAppCode    = "Bk-App-Code"
+	BKHTTPRequestRealIP     = "X-Real-Ip"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
