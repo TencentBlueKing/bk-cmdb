@@ -58,7 +58,7 @@ type BackboneParameter struct {
 func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(svcManagerAddr, 5*time.Second)
+		client := zk.NewZkClient(svcManagerAddr, 40*time.Second)
 		if err = client.Start(); err != nil {
 			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 			time.Sleep(time.Second * 2)
