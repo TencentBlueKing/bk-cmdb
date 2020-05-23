@@ -100,6 +100,6 @@ func (option ListPods) Validate() (errKey string, err error) {
 
 // ListPodsResult response for ListPod
 type ListPodsResult struct {
-	Count int             `json:"count"`
-	Info  []mapstr.MapStr `json:"info"`
+	BaseResp
+	Data *QueryResult `json:"data"`
 }

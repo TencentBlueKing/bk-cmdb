@@ -28,8 +28,7 @@ type PodOperation interface {
 	CreateManyPod(kit *rest.Kit, inputParam metadata.CreateManyPod) (*metadata.CreatedManyOptionResult, error)
 	UpdatePod(kit *rest.Kit, inputParam metadata.UpdatePod) (*metadata.UpdatedOptionResult, error)
 	DeletePod(kit *rest.Kit, inputParam metadata.DeletePod) (*metadata.DeletedOptionResult, error)
-	//DeleteManyPod(kit *rest.Kit, inputParam metadata.DeleteManyPod) (*metadata.DeleteManyPodResult, error)
-	ListPods(kit *rest.Kit, inputParam metadata.ListPods) (*metadata.ListPodsResult, error)
+	ListPods(kit *rest.Kit, inputParam metadata.ListPods) (*metadata.QueryResult, error)
 }
 
 // Interface core interfaces methods

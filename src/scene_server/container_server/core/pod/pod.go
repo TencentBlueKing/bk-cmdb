@@ -13,6 +13,8 @@
 package pod
 
 import (
+	"fmt"
+
 	"gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery"
@@ -46,30 +48,32 @@ func New(
 // CreatePod implements core PodOperation
 func (p *PodManager) CreatePod(kit *rest.Kit, inputParam metadata.CreatePod) (*metadata.CreatedOneOptionResult, error) {
 	blog.V(3).Infof("Rid [%s] CreatePod params %#v", kit.Rid, inputParam)
+
+	retFunc := func(result bool, msg string, code int, err error) (*metadata.CreatedOneOptionResult, error) {
+		return &metadata.CreatedOneOptionResult{
+			BaseResp: metadata.BaseResp{
+				Result: result,
+				ErrMsg: msg,
+				Code:   code,
+			},
+		}, err
+	}
+
 	// get bk_module_id
 	moduleID, err := inputParam.Pod.Int64(common.BKModuleIDField)
 	if err != nil {
 		blog.Errorf("get module id failed of pod %#v, err %s", inputParam.Pod, err.Error())
 		err = kit.CCError.CCError(common.CCErrContainerGetPodModuleFail)
-		return &metadata.CreatedOneOptionResult{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				ErrMsg: err.Error(),
-				Code:   common.CCErrContainerGetPodModuleFail,
-			},
-		}, err
+		return retFunc(false, err.Error(), common.CCErrContainerGetPodModuleFail, err)
 	}
 	isExisted, err := p.checkModuleIDs(kit, inputParam.BizID, []int64{moduleID})
-	if err != nil || !isExisted {
+	if err != nil {
 		blog.Errorf("check module failed, err %s", err.Error())
-		err = kit.CCError.CCError(common.CCErrContainerQueryPodModuleFail)
-		return &metadata.CreatedOneOptionResult{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				ErrMsg: err.Error(),
-				Code:   common.CCErrContainerGetPodModuleFail,
-			},
-		}, err
+		return retFunc(false, err.Error(), common.CCErrContainerGetPodModuleFail, err)
+	}
+	if !isExisted {
+		blog.Errorf("module %d not exists", moduleID)
+		return retFunc(false, fmt.Sprintf("module %d not exists", moduleID), common.CCErrContainerGetPodModuleFail, nil)
 	}
 	// set biz id
 	inputParam.Pod[common.BKAppIDField] = inputParam.BizID
@@ -99,8 +103,12 @@ func (p *PodManager) CreateManyPod(kit *rest.Kit, inputParam metadata.CreateMany
 	}
 
 	isValid, err := p.checkModuleIDs(kit, inputParam.BizID, moduleIDArr)
-	if err != nil || !isValid {
+	if err != nil {
 		blog.Errorf("check module failed, err %s", err.Error())
+		return nil, kit.CCError.CCError(common.CCErrContainerQueryPodModuleFail)
+	}
+	if !isValid {
+		blog.Errorf("one or more module not exists", err.Error())
 		return nil, kit.CCError.CCError(common.CCErrContainerQueryPodModuleFail)
 	}
 
@@ -117,17 +125,20 @@ func (p *PodManager) UpdatePod(kit *rest.Kit, inputParam metadata.UpdatePod) (*m
 	// get pod attr
 	attrs, err := p.getPodAttrDes(kit)
 	if err != nil {
+		blog.Errorf("get pod attrs failed, err %s", err.Error())
 		return nil, kit.CCError.CCError(common.CCErrContainerInternalError)
 	}
 	// get pod unique
 	uniques, err := p.getPodUnique(kit)
 	if err != nil {
+		blog.Errorf("get pod unique failed, err %s", err.Error())
 		return nil, kit.CCError.CCError(common.CCErrContainerInternalError)
 	}
 	// validate update condition
 	// update condition should be unique attr
-	isValid := validateUpdateCondition(inputParam.Condition, uniques, attrs)
+	isValid := validateCondition(inputParam.Condition, uniques, attrs)
 	if !isValid {
+		blog.Errorf("update condition %v invalid", inputParam.Condition)
 		return nil, kit.CCError.CCError(common.CCErrContainerUpdatePodConditionValidateFail)
 	}
 
@@ -143,17 +154,20 @@ func (p *PodManager) DeletePod(kit *rest.Kit, inputParam metadata.DeletePod) (*m
 	// get pod attr
 	attrs, err := p.getPodAttrDes(kit)
 	if err != nil {
+		blog.Errorf("get pod attrs failed, err %s", err.Error())
 		return nil, kit.CCError.CCError(common.CCErrContainerInternalError)
 	}
 	// get pod unique
 	uniques, err := p.getPodUnique(kit)
 	if err != nil {
+		blog.Errorf("get pod unique failed, err %s", err.Error())
 		return nil, kit.CCError.CCError(common.CCErrContainerInternalError)
 	}
-	// validate update condition
-	// update condition should be unique attr
-	isValid := validateUpdateCondition(inputParam.Condition, uniques, attrs)
+	// validate delete condition
+	// delete condition should be unique attr
+	isValid := validateCondition(inputParam.Condition, uniques, attrs)
 	if !isValid {
+		blog.Errorf("delete condition %v invalid", inputParam.Condition)
 		return nil, kit.CCError.CCError(common.CCErrContainerUpdatePodConditionValidateFail)
 	}
 
@@ -163,14 +177,8 @@ func (p *PodManager) DeletePod(kit *rest.Kit, inputParam metadata.DeletePod) (*m
 	return p.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPod, &inputParam.DeleteOption)
 }
 
-// // DeleteManyPod implements core PodOperation
-// func (p *PodManager) DeleteManyPod(kit *rest.Kit, inputParam metadata.DeleteManyPod) (*metadata.DeleteManyPodResult, error) {
-
-// 	return nil, nil
-// }
-
 // ListPods implements core PodOperation
-func (p *PodManager) ListPods(kit *rest.Kit, inputParam metadata.ListPods) (*metadata.ListPodsResult, error) {
+func (p *PodManager) ListPods(kit *rest.Kit, inputParam metadata.ListPods) (*metadata.QueryResult, error) {
 	lister := NewLister(p.clientSet)
 	return lister.ListPod(kit, inputParam)
 }

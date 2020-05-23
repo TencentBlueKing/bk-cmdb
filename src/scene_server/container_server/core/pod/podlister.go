@@ -69,7 +69,7 @@ func (li *Lister) getSetModuleIDs(kit *rest.Kit, bizID int64, setIDs []int64) ([
 }
 
 // ListPod list pod
-func (li *Lister) ListPod(kit *rest.Kit, option metadata.ListPods) (*metadata.ListPodsResult, error) {
+func (li *Lister) ListPod(kit *rest.Kit, option metadata.ListPods) (*metadata.QueryResult, error) {
 
 	var moduleIDs []int64
 	if len(option.SetIDs) != 0 {
@@ -121,8 +121,8 @@ func (li *Lister) ListPod(kit *rest.Kit, option metadata.ListPods) (*metadata.Li
 		blog.Errorf("read pod instance return false, result %#v", queryResult)
 		return nil, fmt.Errorf("read pod instance return false, result %#v", queryResult)
 	}
-	return &metadata.ListPodsResult{
-		Count: queryResult.Data.Count,
+	return &metadata.QueryResult{
+		Count: uint64(queryResult.Data.Count),
 		Info:  queryResult.Data.Info,
 	}, nil
 }

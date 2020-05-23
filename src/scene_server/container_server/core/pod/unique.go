@@ -63,8 +63,8 @@ func (p *PodManager) getPodUnique(kit *rest.Kit) ([]metadata.ObjectUnique, error
 	return queryResult.Data.Info, nil
 }
 
-// validateUpdateCondition validate condition for update pod
-func validateUpdateCondition(cond mapstr.MapStr, uniques []metadata.ObjectUnique, attrs []metadata.Attribute) bool {
+// validateCondition validate condition for update pod
+func validateCondition(cond mapstr.MapStr, uniques []metadata.ObjectUnique, attrs []metadata.Attribute) bool {
 
 	propertyIDMap := make(map[int64]string)
 	for _, attr := range attrs {
