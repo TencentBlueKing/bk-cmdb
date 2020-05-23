@@ -75,7 +75,7 @@ func (c *Client) GetBusiness(bizID int64) (string, error) {
 		lockKey:        bizKey.detailLockKey(bizID),
 		expireKey:      bizKey.detailExpireKey(bizID),
 		expireDuration: bizKey.detailExpireDuration,
-		getDetail:      c.getModuleDetailFromMongo,
+		getDetail:      c.getBusinessFromMongo,
 	})
 
 	if exist {
@@ -179,7 +179,7 @@ func (c *Client) GetSet(setID int64) (string, error) {
 		getDetail:      c.getSetDetailFromMongo,
 	})
 
-	set, err := c.rds.Get(moduleKey.detailKey(setID)).Result()
+	set, err := c.rds.Get(setKey.detailKey(setID)).Result()
 	if err == nil && len(set) != 0 {
 		return set, nil
 	}

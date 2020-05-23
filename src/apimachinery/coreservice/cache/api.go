@@ -25,6 +25,10 @@ type Interface interface {
 	SearchTopologyTree(ctx context.Context, h http.Header, opt *topo_tree.SearchOption) ([]topo_tree.Topology, error)
 	SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (jsonString string, err error)
 	SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (jsonString string, err error)
+	SearchBusiness(ctx context.Context, h http.Header, bizID int64) (jsonString string, err error)
+	SearchSet(ctx context.Context, h http.Header, setID int64) (jsonString string, err error)
+	SearchModule(ctx context.Context, h http.Header, moduleID int64) (jsonString string, err error)
+	SearchCustomLayer(ctx context.Context, h http.Header, objID string, instID int64) (jsonString string, err error)
 }
 
 func NewCacheClient(client rest.ClientInterface) Interface {
