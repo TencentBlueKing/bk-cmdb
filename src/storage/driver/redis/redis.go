@@ -18,13 +18,15 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
+	"configcenter/src/common/types"
 	dalRedis "configcenter/src/storage/dal/redis"
 
 	redis "gopkg.in/redis.v5"
 )
 
 /*
-暂时不支持，多个mongodb实例连接， 暂时不值热更新，所以没有加锁
+ 暂时不支持，多个mongodb实例连接， 暂时不值热更新，所以没有加锁
 */
 
 var (
@@ -36,6 +38,8 @@ var (
 	// 在并发的情况下，这里存在panic的问题
 	lastInitErr   errors.CCErrorCoder
 	lastConfigErr errors.CCErrorCoder
+
+	Nil = redis.Nil
 )
 
 // Client  get default error
@@ -101,5 +105,35 @@ func Validate() errors.CCErrorCoder {
 
 func UpdateConfig(prefix string, config dalRedis.Config) {
 	// 不支持热更行
+	return
+}
+
+func Healthz() (items []metric.HealthItem) {
+	lock.RLock()
+	defer lock.RUnlock()
+
+	for prefix, db := range cacheMap {
+		item := &metric.HealthItem{
+			IsHealthy: true,
+			Name:      types.CCFunctionalityRedis + " " + prefix,
+		}
+		items = append(items, *item)
+		if db == nil {
+			item.IsHealthy = false
+			item.Message = "[" + prefix + "] not initialized"
+			continue
+		}
+		if err := db.Ping().Err(); err != nil {
+			item.IsHealthy = false
+			item.Message = "[" + prefix + "] connect error. err: " + err.Error()
+			continue
+		}
+	}
+	if len(items) == 0 {
+		items = append(items, metric.HealthItem{
+			IsHealthy: false,
+			Name:      "not found intance",
+		})
+	}
 	return
 }
