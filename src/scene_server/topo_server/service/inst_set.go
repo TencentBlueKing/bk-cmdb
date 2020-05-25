@@ -62,7 +62,6 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	}
 	batchCreateResult := make([]OneSetCreateResult, 0)
 	var firstErr error
-	var errMsg string
 	for idx, set := range batchBody.Sets {
 		if _, ok := set[common.MetadataField]; ok == false {
 			set[common.MetadataField] = batchBody.Metadata
@@ -72,21 +71,23 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		}
 		set[common.BKAppIDField] = bizID
 
-		result, err := s.createSet(ctx.Kit, bizID, obj, set, &batchBody.Metadata)
-		errMsg = ""
-		if err != nil {
-			errMsg = err.Error()
-		}
-		if err != nil && firstErr == nil {
-			firstErr = err
-		}
-		if err != nil && blog.V(3) {
-			blog.InfoJSON("batch create set at index:%d failed, data: %s, err: %s, rid: %s", idx, set, err.Error(), ctx.Kit.Rid)
-		}
+		var result interface{}
+		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+			var err error
+			result, err = s.createSet(ctx.Kit, bizID, obj, set, &batchBody.Metadata)
+			if err != nil && firstErr == nil {
+				firstErr = err
+			}
+			if err != nil && blog.V(3) {
+				blog.InfoJSON("batch create set at index:%d failed, data: %s, err: %s, rid: %s", idx, set, err.Error(), ctx.Kit.Rid)
+			}
+			return err
+		})
+
 		batchCreateResult = append(batchCreateResult, OneSetCreateResult{
 			Index:    idx,
 			Data:     result,
-			ErrorMsg: errMsg,
+			ErrorMsg: txnErr.Error(),
 		})
 	}
 	ctx.RespEntityWithError(batchCreateResult, firstErr)
@@ -113,9 +114,19 @@ func (s *Service) CreateSet(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
-	resp, err := s.createSet(ctx.Kit, bizID, obj, dataWithMetadata.Data, dataWithMetadata.Metadata)
-	if err != nil {
-		ctx.RespAutoError(err)
+
+	var resp interface{}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		resp, err = s.createSet(ctx.Kit, bizID, obj, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(resp)
@@ -209,21 +220,26 @@ func (s *Service) DeleteSets(ctx *rest.Contexts) {
 		return
 	}
 
-	// auth: deregister set
-	if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setIDs...); err != nil {
-		blog.Errorf("delete sets failed, deregister sets from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-		return
-	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		// auth: deregister set
+		if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setIDs...); err != nil {
+			blog.Errorf("delete sets failed, deregister sets from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		}
 
-	err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID, data.Metadata)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
+		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, data.Delete.InstID, data.Metadata)
+		if err != nil {
+			return err
 
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
 	}
 	ctx.RespEntity(nil)
-
 }
 
 // DeleteSet delete the set
@@ -266,17 +282,23 @@ func (s *Service) DeleteSet(ctx *rest.Contexts) {
 		return
 	}
 
-	// auth: deregister set
-	if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setID); err != nil {
-		blog.Errorf("delete set failed, deregister set from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed))
-		return
-	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		// auth: deregister set
+		if err := s.AuthManager.DeregisterSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setID); err != nil {
+			blog.Errorf("delete set failed, deregister set from iam failed, %+v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		}
 
-	err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, []int64{setID}, md.Metadata)
-	if err != nil {
-		blog.Errorf("delete sets failed, %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		err = s.Core.SetOperation().DeleteSet(ctx.Kit, obj, bizID, []int64{setID}, md.Metadata)
+		if err != nil {
+			blog.Errorf("delete sets failed, %+v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -311,17 +333,23 @@ func (s *Service) UpdateSet(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Core.SetOperation().UpdateSet(ctx.Kit, dataWithMetadata.Data, obj, bizID, setID, dataWithMetadata.Metadata)
-	if err != nil {
-		blog.Errorf("update set failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.SetOperation().UpdateSet(ctx.Kit, dataWithMetadata.Data, obj, bizID, setID, dataWithMetadata.Metadata)
+		if err != nil {
+			blog.Errorf("update set failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
 
-	// auth: update register set
-	if err := s.AuthManager.UpdateRegisteredSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setID); err != nil {
-		blog.Errorf("update set success, but update registered set failed, %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed))
+		// auth: update register set
+		if err := s.AuthManager.UpdateRegisteredSetByID(ctx.Kit.Ctx, ctx.Kit.Header, setID); err != nil {
+			blog.Errorf("update set success, but update registered set failed, %+v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)

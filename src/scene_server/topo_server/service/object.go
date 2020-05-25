@@ -19,7 +19,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
@@ -31,7 +33,22 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 		return
 	}
 	dataWithMetadata.Data.Remove(common.MetadataField)
-	ctx.RespEntityWithError(s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata))
+
+	var ret mapstr.MapStr
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(ret)
 }
 
 // SearchObjectBatch batch to search some objects
@@ -59,12 +76,22 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	resp, err := s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
-	if nil != err {
-		ctx.RespAutoError(err)
+
+	var rsp model.Object
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		rsp, err = s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		if nil != err {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(resp.ToMapStr())
+	ctx.RespEntity(rsp.ToMapStr())
 }
 
 // SearchObject search some objects by condition
@@ -125,9 +152,17 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	err = s.Core.ObjectOperation().UpdateObject(ctx.Kit, data, id)
-	if err != nil {
-		ctx.RespAutoError(err)
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.ObjectOperation().UpdateObject(ctx.Kit, data, id)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -148,9 +183,17 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true, md.Metadata)
-	if err != nil {
-		ctx.RespAutoError(err)
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true, md.Metadata)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)

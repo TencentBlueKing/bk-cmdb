@@ -49,22 +49,29 @@ func (s *Service) CreateObjectUnique(ctx *rest.Contexts) {
 		}
 	}
 
-	id, err := s.Core.UniqueOperation().Create(ctx.Kit, objectID, request, &request.Metadata)
-	if err != nil {
-		blog.Errorf("[CreateObjectUnique] create for [%s] failed: %v, raw: %#v, rid: %s", objectID, err, request, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	var id *metadata.RspID
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		id, err = s.Core.UniqueOperation().Create(ctx.Kit, objectID, request, &request.Metadata)
+		if err != nil {
+			blog.Errorf("[CreateObjectUnique] create for [%s] failed: %v, raw: %#v, rid: %s", objectID, err, request, ctx.Kit.Rid)
+			return err
+		}
+
+		uniqueID := id.ID
+
+		// auth: register model unique
+		if err := s.AuthManager.RegisterModuleUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, uniqueID); err != nil {
+			blog.Errorf("register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", uniqueID, err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	uniqueID := id.ID
-
-	// auth: register model unique
-	if err := s.AuthManager.RegisterModuleUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, uniqueID); err != nil {
-		blog.Errorf("register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", uniqueID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error()))
-		return
-	}
-
 	ctx.RespEntity(id)
 }
 
@@ -109,16 +116,22 @@ func (s *Service) UpdateObjectUnique(ctx *rest.Contexts) {
 		}
 	}
 
-	err = s.Core.UniqueOperation().Update(ctx.Kit, objectID, id, request)
-	if err != nil {
-		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v, rid: %s", objectID, id, err, request, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	// auth: update registered model unique
-	if err := s.AuthManager.UpdateRegisteredModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, int64(id)); err != nil {
-		blog.Errorf("update register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error()))
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Core.UniqueOperation().Update(ctx.Kit, objectID, id, request)
+		if err != nil {
+			blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v, rid: %s", objectID, id, err, request, ctx.Kit.Rid)
+			return err
+		}
+		// auth: update registered model unique
+		if err := s.AuthManager.UpdateRegisteredModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, int64(id)); err != nil {
+			blog.Errorf("update register model unique to iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -163,20 +176,25 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Core.UniqueOperation().Delete(ctx.Kit, objectID, id, md.Metadata)
-	if err != nil {
-		blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v, rid: %s", objectID, id, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.UniqueOperation().Delete(ctx.Kit, objectID, id, md.Metadata)
+		if err != nil {
+			blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v, rid: %s", objectID, id, err, ctx.Kit.Rid)
+			return err
+		}
+
+		// auth: delete registered model unique
+		if err := s.AuthManager.DeregisterModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, int64(id)); err != nil {
+			blog.Errorf("deregister model unique from iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	// auth: delete registered model unique
-	if err := s.AuthManager.DeregisterModelUniqueByID(ctx.Kit.Ctx, ctx.Kit.Header, int64(id)); err != nil {
-		blog.Errorf("deregister model unique from iam failed, uniqueID: %d, err: %+v, rid: %s", id, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error()))
-		return
-	}
-
 	ctx.RespEntity(nil)
 }
 

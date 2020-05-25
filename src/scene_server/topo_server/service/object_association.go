@@ -29,14 +29,22 @@ func (s *Service) CreateObjectAssociation(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
 		return
 	}
-	association, err := s.Core.AssociationOperation().CreateCommonAssociation(ctx.Kit, assoc, &assoc.Metadata)
-	if nil != err {
-		ctx.RespAutoError(err)
+
+	var association *metadata.Association
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		association, err = s.Core.AssociationOperation().CreateCommonAssociation(ctx.Kit, assoc, &assoc.Metadata)
+		if nil != err {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
 	ctx.RespEntity(association)
-
 }
 
 // SearchObjectAssociation search  object association by object id
@@ -126,9 +134,16 @@ func (s *Service) DeleteObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Core.AssociationOperation().DeleteAssociationWithPreCheck(ctx.Kit, id)
-	if err != nil {
-		ctx.RespAutoError(err)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.AssociationOperation().DeleteAssociationWithPreCheck(ctx.Kit, id)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -148,13 +163,20 @@ func (s *Service) UpdateObjectAssociation(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	err = s.Core.AssociationOperation().UpdateAssociation(ctx.Kit, dataWithMetadata.Data, id, dataWithMetadata.Metadata)
-	if err != nil {
-		ctx.RespAutoError(err)
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.AssociationOperation().UpdateAssociation(ctx.Kit, dataWithMetadata.Data, id, dataWithMetadata.Metadata)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
-
 }
 
 // ImportInstanceAssociation import instance  association
@@ -167,5 +189,19 @@ func (s *Service) ImportInstanceAssociation(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.Core.AssociationOperation().ImportInstAssociation(context.Background(), ctx.Kit, objID, request.AssociationInfoMap, s.Language))
+	var ret metadata.ResponeImportAssociationData
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().ImportInstAssociation(context.Background(), ctx.Kit, objID, request.AssociationInfoMap, s.Language)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(ret)
 }

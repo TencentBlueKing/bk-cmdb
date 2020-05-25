@@ -295,17 +295,25 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
 		return
 	}
-	ret, err := s.Core.AssociationOperation().CreateType(ctx.Kit, request)
-	if err != nil {
-		ctx.RespAutoError(err)
+
+	var ret *metadata.CreateAssociationTypeResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().CreateType(ctx.Kit, request)
+		if err != nil {
+			return err
+		}
+
+		if ret.Code != 0 {
+			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	if ret.Code != 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	}
-
 	ctx.RespEntity(ret.Data)
 }
 
@@ -322,17 +330,24 @@ func (s *Service) UpdateAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	ret, err := s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
-	if err != nil {
-		ctx.RespAutoError(err)
+	var ret *metadata.UpdateAssociationTypeResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().UpdateType(ctx.Kit, asstTypeID, request)
+		if err != nil {
+			return err
+		}
+
+		if ret.Code != 0 {
+			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	if ret.Code != 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	}
-
 	ctx.RespEntity(ret.Data)
 }
 
@@ -343,17 +358,24 @@ func (s *Service) DeleteAssociationType(ctx *rest.Contexts) {
 		return
 	}
 
-	ret, err := s.Core.AssociationOperation().DeleteType(ctx.Kit, asstTypeID)
-	if err != nil {
-		ctx.RespAutoError(err)
+	var ret *metadata.DeleteAssociationTypeResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().DeleteType(ctx.Kit, asstTypeID)
+		if err != nil {
+			return err
+		}
+
+		if ret.Code != 0 {
+			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
-
-	if ret.Code != 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	}
-
 	ctx.RespEntity(ret.Data)
 }
 
@@ -385,17 +407,25 @@ func (s *Service) CreateAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
-	ret, err := s.Core.AssociationOperation().CreateInst(ctx.Kit, request)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	} else if ret.Code != 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	} else {
-		ctx.RespEntity(ret.Data)
+	var ret *metadata.CreateAssociationInstResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().CreateInst(ctx.Kit, request)
+		if err != nil {
+			return err
+		}
+
+		if ret.Code != 0 {
+			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
+	ctx.RespEntity(ret.Data)
 }
 
 func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
@@ -410,18 +440,26 @@ func (s *Service) DeleteAssociationInst(ctx *rest.Contexts) {
 		return
 	}
 
-	ret, err := s.Core.AssociationOperation().DeleteInst(ctx.Kit, id, md.Metadata)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	} else if ret.Code != 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.New(ret.Code, ret.ErrMsg))
-		return
-	} else {
-		ctx.RespEntity(ret.Data)
-		return
+	var ret *metadata.DeleteAssociationInstResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.AssociationOperation().DeleteInst(ctx.Kit, id, md.Metadata)
+		if err != nil {
+			return err
+		}
 
+		if ret.Code != 0 {
+			return ctx.Kit.CCError.New(ret.Code, ret.ErrMsg)
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
 	}
+	ctx.RespEntity(ret.Data)
 }
 
 func (s *Service) SearchTopoPath(ctx *rest.Contexts) {
