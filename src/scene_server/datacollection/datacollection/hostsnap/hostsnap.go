@@ -223,6 +223,13 @@ func needToUpdate(src, toCompare string) bool {
 	for idx := range compareFields {
 		// compare these value with string directly to avoid empty value or null value.
 		if srcElements[idx].String() != compareElements[idx].String() {
+			// tolerate bk_cpu_mhz changes less than 100
+			if compareFields[idx] == "bk_cpu_mhz" {
+				diff := srcElements[idx].Int() - compareElements[idx].Int()
+				if -100 < diff && diff < 100 {
+					continue
+				}
+			}
 			return true
 		}
 	}

@@ -61,7 +61,7 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin},
+		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode, LabelUser, LabelRealIP},
 	)
 	register.MustRegister(srv.requestTotal)
 
@@ -70,7 +70,7 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_duration_millisecond",
 			Help: "Histogram of latencies for HTTP requests.",
 		},
-		[]string{LabelHandler},
+		[]string{LabelHandler, LabelAppCode, LabelUser, LabelRealIP},
 	)
 	register.MustRegister(srv.requestDuration)
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
@@ -89,6 +89,9 @@ const (
 	LabelOrigin      = "origin"
 	LabelProcessName = "process_name"
 	LabelHost        = "host"
+	LabelAppCode     = "app_code"
+	LabelUser        = "user"
+	LabelRealIP      = "real_ip"
 )
 
 // labels
@@ -145,11 +148,18 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		s.requestDuration.With(s.label(LabelHandler, uri)).Observe(duration)
+		s.requestDuration.With(s.label(LabelHandler, uri,
+			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
+			LabelUser, r.Header.Get(common.BKHTTPHeaderUser),
+			LabelRealIP, getUserIP(r),
+		)).Observe(duration)
 		s.requestTotal.With(s.label(
 			LabelHandler, uri,
 			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
 			LabelOrigin, getOrigin(r.Header),
+			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
+			LabelUser, r.Header.Get(common.BKHTTPHeaderUser),
+			LabelRealIP, getUserIP(r),
 		)).Inc()
 
 	})
@@ -186,4 +196,19 @@ func getOrigin(header http.Header) string {
 	}
 
 	return "Unknown"
+}
+
+func getUserIP(r *http.Request) string {
+	address := r.Header.Get("X-Real-Ip")
+	if address == "" {
+		address = r.Header.Get("X-Forwarded-For")
+	}
+	if address == "" {
+		address = r.RemoteAddr
+	}
+	index := strings.LastIndex(address, ":")
+	if index != -1 {
+		return address[:index]
+	}
+	return address
 }

@@ -493,7 +493,7 @@ func (c *Client) getCustomLevelDetail(objID string, instID int64) (string, error
 		common.BKInstIDField: instID,
 	}
 	instance := make(map[string]interface{})
-	err := c.db.Table(common.BKTableNameBaseInst).Find(filter).All(context.Background(), &instance)
+	err := c.db.Table(common.BKTableNameBaseInst).Find(filter).One(context.Background(), &instance)
 	if err != nil {
 		blog.Errorf("get custom level object: %s, inst: %d from mongodb failed, err: %v", objID, instID, err)
 		return "", err
