@@ -36,9 +36,19 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	serviceInstanceIDs, err := ps.createServiceInstances(ctx, input)
-	if err != nil {
-		ctx.RespAutoError(err)
+
+	var serviceInstanceIDs []int64
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		serviceInstanceIDs, err = ps.createServiceInstances(ctx, input)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(serviceInstanceIDs)
@@ -336,86 +346,93 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	// when a service instance is deleted, the related data should be deleted at the same time
-	for _, serviceInstanceID := range input.ServiceInstanceIDs {
-		serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed, "delete service instance failed, service instance not found, serviceInstanceIDs: %d", serviceInstanceID)
-			return
-		}
-		if serviceInstance.BizID != bizID {
-			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.MetadataField)
-			ctx.RespWithError(err, common.CCErrCommParamsInvalid, "delete service instance failed, biz id from input and service instance not equal, serviceInstanceIDs: %d", serviceInstanceID)
-			return
-		}
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		// when a service instance is deleted, the related data should be deleted at the same time
+		for _, serviceInstanceID := range input.ServiceInstanceIDs {
+			serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
+			if err != nil {
+				blog.Errorf("delete service instance failed, service instance not found, serviceInstanceIDs: %d", serviceInstanceID)
+				return ctx.Kit.CCError.CCError(common.CCErrProcGetProcessInstanceFailed)
+			}
+			if serviceInstance.BizID != bizID {
+				blog.Errorf("delete service instance failed, biz id from input and service instance not equal, serviceInstanceIDs: %d", serviceInstanceID)
+				return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.MetadataField)
+			}
 
-		// step1: delete the service instance relation.
-		option := &metadata.ListProcessInstanceRelationOption{
-			BusinessID:         bizID,
-			ServiceInstanceIDs: []int64{serviceInstanceID},
-		}
-		relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed, "delete service instance: %d, but list service instance relation failed.", serviceInstanceID)
-			return
-		}
-
-		if len(relations.Info) > 0 {
-			deleteOption := metadata.DeleteProcessInstanceRelationOption{
+			// step1: delete the service instance relation.
+			option := &metadata.ListProcessInstanceRelationOption{
+				BusinessID:         bizID,
 				ServiceInstanceIDs: []int64{serviceInstanceID},
 			}
-			err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
+			relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
 			if err != nil {
-				ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete service instance relations failed.", serviceInstanceID)
-				return
+				blog.Errorf("delete service instance: %d, but list service instance relation failed.", serviceInstanceID)
+				return ctx.Kit.CCError.CCError(common.CCErrProcGetProcessInstanceRelationFailed)
 			}
 
-			// step2: delete process instance belongs to this service instance.
-			processIDs := make([]int64, 0)
-			for _, r := range relations.Info {
-				processIDs = append(processIDs, r.ProcessID)
-			}
-			if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, processIDs); err != nil {
-				ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d, but delete process instance failed.", serviceInstanceID)
-				return
-			}
-		}
+			if len(relations.Info) > 0 {
+				deleteOption := metadata.DeleteProcessInstanceRelationOption{
+					ServiceInstanceIDs: []int64{serviceInstanceID},
+				}
+				err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
+				if err != nil {
+					blog.Errorf("delete service instance: %d, but delete service instance relations failed.", serviceInstanceID)
+					return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceInstancesFailed)
+				}
 
-		// step3: delete service instance.
-		deleteOption := &metadata.CoreDeleteServiceInstanceOption{
-			BizID:              bizID,
-			ServiceInstanceIDs: []int64{serviceInstanceID},
-		}
-		err = ps.CoreAPI.CoreService().Process().DeleteServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d failed, err: %v", serviceInstanceID, err)
-			return
-		}
+				// step2: delete process instance belongs to this service instance.
+				processIDs := make([]int64, 0)
+				for _, r := range relations.Info {
+					processIDs = append(processIDs, r.ProcessID)
+				}
+				if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, processIDs); err != nil {
+					blog.Errorf("delete service instance: %d, but delete process instance failed.", serviceInstanceID)
+					return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceInstancesFailed)
+				}
+			}
 
-		// step4: check and move host from module if no serviceInstance on it
-		filter := &metadata.ListServiceInstanceOption{
-			BusinessID: bizID,
-			HostIDs:    []int64{serviceInstance.HostID},
-			ModuleIDs:  []int64{serviceInstance.ModuleID},
+			// step3: delete service instance.
+			deleteOption := &metadata.CoreDeleteServiceInstanceOption{
+				BizID:              bizID,
+				ServiceInstanceIDs: []int64{serviceInstanceID},
+			}
+			err = ps.CoreAPI.CoreService().Process().DeleteServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
+			if err != nil {
+				blog.Errorf("delete service instance: %d failed, err: %v", serviceInstanceID, err)
+				return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceInstancesFailed)
+			}
+
+			// step4: check and move host from module if no serviceInstance on it
+			filter := &metadata.ListServiceInstanceOption{
+				BusinessID: bizID,
+				HostIDs:    []int64{serviceInstance.HostID},
+				ModuleIDs:  []int64{serviceInstance.ModuleID},
+			}
+			result, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, filter)
+			if err != nil {
+				blog.Errorf("get host related service instances failed, bizID: %d, serviceInstanceID: %d, err: %v", bizID, serviceInstance.HostID, err)
+				return ctx.Kit.CCError.CCError(common.CCErrProcGetServiceInstancesFailed)
+			}
+			if len(result.Info) != 0 {
+				continue
+			}
+			// just remove host from this module
+			removeHostFromModuleOption := metadata.RemoveHostsFromModuleOption{
+				ApplicationID: bizID,
+				HostID:        serviceInstance.HostID,
+				ModuleID:      serviceInstance.ModuleID,
+			}
+			if _, err := ps.CoreAPI.CoreService().Host().RemoveFromModule(ctx.Kit.Ctx, ctx.Kit.Header, &removeHostFromModuleOption); err != nil {
+				blog.Errorf("remove host from module failed, option: %+v, err: %v", removeHostFromModuleOption, err)
+				return ctx.Kit.CCError.CCError(common.CCErrHostMoveResourcePoolFail)
+			}
 		}
-		result, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, filter)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get host related service instances failed, bizID: %d, serviceInstanceID: %d, err: %v", bizID, serviceInstance.HostID, err)
-			return
-		}
-		if len(result.Info) != 0 {
-			continue
-		}
-		// just remove host from this module
-		removeHostFromModuleOption := metadata.RemoveHostsFromModuleOption{
-			ApplicationID: bizID,
-			HostID:        serviceInstance.HostID,
-			ModuleID:      serviceInstance.ModuleID,
-		}
-		if _, err := ps.CoreAPI.CoreService().Host().RemoveFromModule(ctx.Kit.Ctx, ctx.Kit.Header, &removeHostFromModuleOption); err != nil {
-			ctx.RespWithError(err, common.CCErrHostMoveResourcePoolFail, "remove host from module failed, option: %+v, err: %v", removeHostFromModuleOption, err)
-			return
-		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
 	}
 	ctx.RespEntity(nil)
 }
@@ -799,9 +816,24 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	err := ps.syncServiceInstanceByTemplate(ctx, syncOption)
-	if err != nil {
-		ctx.RespAutoError(err)
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		for _, moduleID := range syncOption.ModuleIDs {
+			option := metadata.SyncModuleServiceInstanceByTemplateOption{
+				Metadata: syncOption.Metadata,
+				BizID:    syncOption.BizID,
+				ModuleID: moduleID,
+			}
+
+			err := ps.syncServiceInstanceByTemplate(ctx, option)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(make(map[string]interface{}))
@@ -1199,8 +1231,17 @@ func (ps *ProcServer) ServiceInstanceAddLabels(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if err := ps.CoreAPI.CoreService().Label().AddLabel(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, option); err != nil {
-		ctx.RespWithError(err, common.CCErrCommDBUpdateFailed, "ServiceInstanceAddLabels failed, option: %+v, err: %v", option, err)
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		if err := ps.CoreAPI.CoreService().Label().AddLabel(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, option); err != nil {
+			blog.Errorf("ServiceInstanceAddLabels failed, option: %+v, err: %v", option, err)
+			return ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -1212,8 +1253,17 @@ func (ps *ProcServer) ServiceInstanceRemoveLabels(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if err := ps.CoreAPI.CoreService().Label().RemoveLabel(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, option); err != nil {
-		ctx.RespWithError(err, common.CCErrCommDBUpdateFailed, "ServiceInstanceRemoveLabels failed, option: %+v, err: %v", option, err)
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		if err := ps.CoreAPI.CoreService().Label().RemoveLabel(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, option); err != nil {
+			blog.Errorf("ServiceInstanceRemoveLabels failed, option: %+v, err: %v", option, err)
+			return ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
