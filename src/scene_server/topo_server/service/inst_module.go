@@ -424,22 +424,9 @@ func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(option.InstIDs) == 0 {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "inst_ids"))
-		return
-	}
-
-	if len(option.InstIDs) > common.BKMaxRecordsAtOnce {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce, common.BKMaxRecordsAtOnce))
-		return
-	}
-
-	// set default value
-	if option.Page.Limit == 0 {
-		option.Page.Limit = common.BKDefaultLimit
-	}
-	if option.Page.IsIllegal() {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -465,7 +452,7 @@ func (s *Service) SearchModuleBatch(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
-	if instanceResult.Code != 0 {
+	if !instanceResult.Result {
 		blog.ErrorJSON("SearchModuleBatch failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
 		return

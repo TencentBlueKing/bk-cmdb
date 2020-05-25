@@ -78,7 +78,7 @@ func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID
 
 func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := "/module/search/bk_biz_id/%s"
+	subPath := "/findmany/module/bk_biz_id/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).

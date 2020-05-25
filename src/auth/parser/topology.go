@@ -1882,7 +1882,7 @@ var (
 	updateModuleRegexp                = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
 	updateModuleHostApplyStatusRegexp = regexp.MustCompile(`^/api/v3/module/host_apply_enable_status/bk_biz_id/([0-9]+)/bk_module_id/([0-9]+)/?$`)
 	findModuleRegexp                  = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
-	findMouduleBatchRegexp            = regexp.MustCompile(`^/api/v3/module/search/bk_biz_id/[0-9]+/?$`)
+	findMouduleBatchRegexp            = regexp.MustCompile(`^/api/v3/findmany/module/bk_biz_id/[0-9]+/?$`)
 	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/(?P<bk_biz_id>[0-9]+)/service_template_id/(?P<service_template_id>[0-9]+)/?$`)
 )
 
@@ -2146,7 +2146,7 @@ var (
 	deleteManySetRegexp  = regexp.MustCompile(`^/api/v3/set/[0-9]+/batch$`)
 	updateSetRegexp      = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+/?$`)
 	findSetRegexp        = regexp.MustCompile(`^/api/v3/set/search/[^\s/]+/[0-9]+/?$`)
-	findSetBatchRegexp   = regexp.MustCompile(`^/api/v3/set/search/bk_biz_id/[0-9]+/?$`)
+	findSetBatchRegexp   = regexp.MustCompile(`^/api/v3/findmany/set/bk_biz_id/[0-9]+/?$`)
 )
 
 func (ps *parseStream) objectSet() *parseStream {

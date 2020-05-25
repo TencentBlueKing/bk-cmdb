@@ -259,3 +259,28 @@ type SearchInstBatchOption struct {
 	Fields  []string `json:"fields"`
 	Page    BasePage `json:"page"`
 }
+
+func (s *SearchInstBatchOption) Validate() (rawError errors.RawErrorInfo) {
+	if len(s.InstIDs) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"inst_ids"},
+		}
+	}
+
+	if len(s.InstIDs) > common.BKMaxPageSize {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrExceedMaxOperationRecordsAtOnce,
+			Args:    []interface{}{common.BKMaxPageSize},
+		}
+	}
+
+	if s.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
