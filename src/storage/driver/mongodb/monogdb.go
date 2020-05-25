@@ -18,13 +18,15 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
+	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
 /*
-暂时不支持，多个mongodb实例连接， 暂时不值热更新，所以没有加锁
+ 暂时不支持，多个mongodb实例连接， 暂时不值热更新，所以没有加锁
 */
 
 var (
@@ -80,5 +82,26 @@ func Validate() errors.CCErrorCoder {
 
 func UpdateConfig(prefix string, config mongo.Config) {
 	// 不支持热更行
+	return
+}
+
+func Healthz() (items []metric.HealthItem) {
+
+	item := &metric.HealthItem{
+		IsHealthy: true,
+		Name:      types.CCFunctionalityMongo,
+	}
+	items = append(items, *item)
+	if db == nil {
+		item.IsHealthy = false
+		item.Message = "not initialized"
+		return
+	}
+	if err := db.Ping(); err != nil {
+		item.IsHealthy = false
+		item.Message = "connect error. err: " + err.Error()
+		return
+	}
+
 	return
 }
