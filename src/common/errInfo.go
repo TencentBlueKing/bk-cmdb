@@ -393,6 +393,7 @@ const (
 
 	CCErrorTopoAssociationKindHasBeenUsed                     = 1101060
 	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
+	CCErrorTopoCreateMultipleInstancesForManyToOneAssociation = 1101062
 	CCErrTopoAppDeleteFailed                                  = 1101131
 	CCErrTopoAppUpdateFailed                                  = 1101132
 	CCErrTopoAppSearchFailed                                  = 1101133

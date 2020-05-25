@@ -810,6 +810,23 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 		if len(instance.Data) >= 1 {
 			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToManyAssociation)
 		}
+	case metadata.ManyToOneMapping:
+		cond = condition.CreateCondition()
+		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
+		cond.Field(common.BKAsstInstIDField).Eq(request.InstID)
+		instance, err := assoc.SearchInst(kit, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
+		if err != nil {
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
+			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !instance.Result {
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, kit.Rid)
+			return nil, kit.CCError.New(resp.Code, resp.ErrMsg)
+		}
+		if len(instance.Data) >= 1 {
+			return nil, kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForManyToOneAssociation)
+		}
 
 	default:
 		// after all the check, new association instance can be created.

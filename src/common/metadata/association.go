@@ -216,6 +216,8 @@ const (
 	OneToOneMapping AssociationMapping = "1:1"
 	// the source object can be related with multiple destination objects
 	OneToManyMapping AssociationMapping = "1:n"
+	// multiple source object can be related with only one destination objects
+	ManyToOneMapping AssociationMapping = "n:1"
 	// multiple source object can be related with multiple destination objects
 	ManyToManyMapping AssociationMapping = "n:n"
 )
