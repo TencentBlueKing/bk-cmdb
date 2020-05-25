@@ -817,17 +817,9 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	}
 
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
-		for _, moduleID := range syncOption.ModuleIDs {
-			option := metadata.SyncModuleServiceInstanceByTemplateOption{
-				Metadata: syncOption.Metadata,
-				BizID:    syncOption.BizID,
-				ModuleID: moduleID,
-			}
-
-			err := ps.syncServiceInstanceByTemplate(ctx, option)
-			if err != nil {
-				return err
-			}
+		err := ps.syncServiceInstanceByTemplate(ctx, syncOption)
+		if err != nil {
+			return err
 		}
 		return nil
 	})
