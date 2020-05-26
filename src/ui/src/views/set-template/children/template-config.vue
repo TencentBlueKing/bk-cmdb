@@ -188,7 +188,8 @@
             },
             async handleDelete () {
                 const instance = this.$bkInfo({
-                    title: this.$t('确认删除xx集群模板', { name: this.originalTemplateName }),
+                    title: this.$t('确认删除'),
+                    subTitle: this.$t('确认删除xx集群模板', { name: this.originalTemplateName }),
                     confirmFn: async () => {
                         try {
                             instance.buttonLoading = true
