@@ -91,7 +91,7 @@
                             :unit="filterItem.unit"
                             v-model="filterItem.value">
                         </component>
-                        <i class="bk-icon icon-close" @click.stop="handleDeteleFilter(filterItem)"></i>
+                        <i class="bk-icon icon-close" @click.stop="handleDeleteFilter(filterItem)"></i>
                     </div>
                 </div>
                 <div class="filter-add">
@@ -203,7 +203,7 @@
             }
         },
         computed: {
-            ...mapState('hosts', ['filterList', 'collection']),
+            ...mapState('hosts', ['filterList', 'collection', 'shouldInjectAsset']),
             ...mapGetters('hosts', ['isCollection']),
             isFilterActive () {
                 const hasIP = !!this.ip.text.replace(/\n|;|；|,|，/g, '').length
@@ -296,7 +296,7 @@
                 window.__bk_zIndex_manager.nextZIndex()
                 this.$refs.propertySelector.isShow = true
             },
-            async handleDeteleFilter (filterItem) {
+            async handleDeleteFilter (filterItem) {
                 const conditionList = this.filterCondition.filter(item => !(item.bk_obj_id === filterItem.bk_obj_id && item.bk_property_id === filterItem.bk_property_id))
                 const list = conditionList.map(condition => {
                     return {
@@ -319,6 +319,7 @@
                         [key]: userCustomList
                     })
                 }
+                this.$store.commit('hosts/setShouldInjectAsset', false)
                 this.$store.commit('hosts/setFilterList', list)
             },
             handleSearch (toggle = true) {
@@ -459,14 +460,19 @@
                     }
                 }))
                 const flags = params.ip.flag.split('|')
-                RouterQuery.set({
+                const query = {
                     ip: params.ip.data.join(','),
                     exact: params.ip.exact,
                     inner: flags.includes('bk_host_innerip') ? 1 : 0,
                     outer: flags.includes('bk_host_outerip') ? 1 : 0,
                     page: 1,
                     _t: Date.now()
+                }
+                const assetCondition = params.host.find(condition => {
+                    return condition.field === 'bk_asset_id' && condition.operator === '$in'
                 })
+                query.bk_asset_id = assetCondition ? assetCondition.value.toString() : ''
+                RouterQuery.set(query)
             },
             getIPList () {
                 const list = []
@@ -512,9 +518,35 @@
                             }
                         }
                     })
+                    this.injectAssetCondition(filterCondition)
                     this.filterCondition = filterCondition
                 } catch (e) {
                     console.error(e)
+                }
+            },
+            injectAssetCondition (filterCondition) {
+                const assetIds = RouterQuery.get('bk_asset_id', '').split(',').filter(id => !!id.length)
+                if (!this.shouldInjectAsset || !assetIds.length) {
+                    this.$store.commit('hosts/setShouldInjectAsset', true)
+                    return
+                }
+                const injectCondition = {
+                    bk_obj_id: 'host',
+                    bk_property_id: 'bk_asset_id',
+                    bk_property_type: 'singlechar',
+                    operator: '$in',
+                    option: '',
+                    value: assetIds.join('\n')
+                }
+                const assetCondition = filterCondition.find(condition => {
+                    return condition.bk_obj_id === injectCondition.bk_obj_id
+                        && condition.bk_property_id === injectCondition.bk_property_id
+                        && condition.bk_property_type === injectCondition.bk_property_type
+                })
+                if (assetCondition) {
+                    Object.assign(assetCondition, injectCondition)
+                } else {
+                    filterCondition.unshift(injectCondition)
                 }
             },
             checkIsScrolling () {

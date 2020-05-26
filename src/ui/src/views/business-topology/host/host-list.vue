@@ -53,7 +53,7 @@
     } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
-    import { getIPPayload, injectFields } from '@/utils/host'
+    import { getIPPayload, injectFields, injectAsset } from '@/utils/host'
     export default {
         components: {
             HostListOptions,
@@ -228,8 +228,9 @@
                         value: nodeData.bk_inst_id
                     })
                 }
-
-                return injectFields(params, this.table.header)
+                injectFields(params, this.table.header)
+                injectAsset(params, RouterQuery.get('bk_asset_id'))
+                return params
             },
             handleTransfer (type) {
                 if (['idle', 'business'].includes(type)) {

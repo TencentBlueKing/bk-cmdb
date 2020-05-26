@@ -12,7 +12,8 @@ const state = {
     collection: null,
     collectionList: [],
     propertyList: [],
-    condition: getDefaultCondition()
+    condition: getDefaultCondition(),
+    shouldInjectAsset: true // 控制是否注入固资编号
 }
 
 const getters = {
@@ -28,7 +29,8 @@ const getters = {
 
         return state.propertyList
     },
-    condition: state => state.condition
+    condition: state => state.condition,
+    shouldInjectAsset: state => state.shouldInjectAsset
 }
 
 const mutations = {
@@ -60,6 +62,9 @@ const mutations = {
     },
     setCondition (state, condition) {
         state.condition = condition
+    },
+    setShouldInjectAsset (state, shouldInjectAsset) {
+        state.shouldInjectAsset = !!shouldInjectAsset
     }
 }
 

@@ -1073,9 +1073,9 @@
     "主机属性自动应用功能提示": "When the host is transferred or a new module is added, it will automatically trigger the modification of host attributes according to the policy of the target module.",
     "主机搜索": "Host search",
     "全文检索": "Full Text Search",
-    "请输入IP，多个IP请使用换行分隔": "Please enter IP, please separate multiple IPs with newline",
-    "请输入完整IP进行搜索，多个IP用换行分割": "Please enter the full IP to search, multiple IPs are broken by line break",
-    "目前最多支持搜索500个IP": "Currently supports up to 500 IP searches",
+    "首页主机搜索提示语": "Please enter IP or asset number, separate multiple data with newline",
+    "不支持混合搜索": "Only IP or asset number is supported, mixed search is not supported",
+    "最多支持搜索500条数据": "Search for up to 500 pieces of data",
     "请输入关键字，点击或回车搜索": "Please enter a keyword and click or enter to search",
     "仅空闲机模块才能转移到资源池": "Only idle module's host can be transferred to the resource pool",
     "由集群模板创建的模块无法删除": "Modules created by Set templates cannot be deleted",
@@ -1263,5 +1263,6 @@
     "新增字段": "Create Attribute",
     "修改字段": "Update Attribute",
     "删除字段": "Delete Attribute",
-    "暂无可复制的IP": "No IP to copy"
+    "暂无可复制的IP": "No IP to copy",
+    "请输入IP，多个IP请使用换行分隔": "Please input IP, use newline to seperate multiple IP"
 }
