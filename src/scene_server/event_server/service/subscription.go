@@ -155,6 +155,8 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	err = NewEventAudit(s.ctx, header, s.CoreAPI).buildSnapshotForCur(*sub).SaveAuditLog(metadata.AuditCreate)
 	if err != nil {
 		blog.Errorf("Subscribe subscription_name %s success, but update to auditLog failed, err: %v", sub.SubscriptionName, err)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrAuditSaveLogFailed, err)}
+		resp.WriteError(http.StatusOK, result)
 	}
 
 	result := NewCreateSubscriptionResult(sub.SubscriptionID)
@@ -251,6 +253,8 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	err = auditLog.SaveAuditLog(metadata.AuditDelete)
 	if err != nil {
 		blog.Errorf("UnSubscribe subscription_name %s success, but update to auditLog failed, err: %v", sub.SubscriptionName, err)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrAuditSaveLogFailed, err)}
+		resp.WriteError(http.StatusOK, result)
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(nil))

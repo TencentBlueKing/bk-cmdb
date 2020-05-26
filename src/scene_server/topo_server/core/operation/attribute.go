@@ -137,11 +137,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 					return nil, kit.CCError.Error(common.CCErrTopoObjectGroupCreateFailed)
 				}
 				//audit the CreateObjectGroup action
-				err = NewObjectAttrGroupAudit(kit, a.clientSet, grp.Group().ID).buildSnapshotForPre().SaveAuditLog(metadata.AuditCreate)
-				if err != nil {
-					blog.Errorf("create object attribute group %s success, but update to auditLog failed, err: %v, rid: %s", grp.Group().GroupName, err, kit.Rid)
-					return nil, err
-				}
+				NewObjectAttrGroupAudit(kit, a.clientSet, grp.Group().ID).buildSnapshotForPre().SaveAuditLog(metadata.AuditCreate)
 			}
 			att.Attribute().PropertyGroup = common.BKBizDefault
 		} else {
@@ -157,11 +153,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, met
 	}
 
 	//package audit response
-	err = NewObjectAttrAudit(kit, a.clientSet, att.Attribute().ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
-	if err != nil {
-		blog.Errorf("create object attribute %s success, but update to auditLog failed, err: %v, rid: %s", att.Attribute().PropertyName, err, kit.Rid)
-		return nil, err
-	}
+	NewObjectAttrAudit(kit, a.clientSet, att.Attribute().ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
 
 	return att, nil
 }
@@ -202,11 +194,7 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond condition.Conditio
 			return kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 		//saveAuditLog
-		err = objAudit.SaveAuditLog(metadata.AuditDelete)
-		if err != nil {
-			blog.Errorf("Delete object attribute success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
+		objAudit.SaveAuditLog(metadata.AuditDelete)
 	}
 
 	return nil
@@ -333,11 +321,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	}
 
 	//get CurData and saveAuditLog
-	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
-	if err != nil {
-		blog.Errorf("update object attribute-id %s success, but update to auditLog failed, err: %v, rid: %s", attID, err, kit.Rid)
-		return err
-	}
+	objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
 
 	return nil
 }

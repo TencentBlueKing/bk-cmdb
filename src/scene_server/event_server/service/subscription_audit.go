@@ -13,15 +13,14 @@
 package service
 
 import (
+	"context"
+	"net/http"
+
 	"configcenter/src/apimachinery"
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"context"
-	"fmt"
-	"net/http"
 )
 
 type EventAudit struct {
@@ -59,7 +58,6 @@ func (log *EventAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCEr
 		preData = log.preData.ToMapStr()
 		curData = log.curData.ToMapStr()
 	}
-	blog.Debug("111111111111111111111111111111111111111111111", preData)
 	auditLog := metadata.AuditLog{
 		AuditType:    log.auditType,
 		ResourceType: log.resourceType,
@@ -76,11 +74,11 @@ func (log *EventAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCEr
 	auditResult, err := log.clientSet.CoreService().Audit().SaveAuditLog(log.ctx, log.header, auditLog)
 	if err != nil {
 		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %+v", auditAction, log.resourceType, err, auditResult)
-		return fmt.Errorf(string(common.CCErrAuditSaveLogFailed))
+		return err
 	}
 	if auditResult.Result != true {
 		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s", auditAction, log.resourceType, err, auditResult)
-		return fmt.Errorf(string(common.CCErrAuditSaveLogFailed))
+		return err
 	}
 	return nil
 }

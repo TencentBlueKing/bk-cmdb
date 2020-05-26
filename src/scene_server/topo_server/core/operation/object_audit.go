@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -25,7 +24,7 @@ import (
 type ObjAuditLog interface {
 	buildSnapshotForPre() ObjAuditLog
 	buildSnapshotForCur() ObjAuditLog
-	SaveAuditLog(metadata.ActionType) errors.CCError
+	SaveAuditLog(metadata.ActionType)
 }
 
 type ObjectAudit struct {
@@ -50,7 +49,7 @@ func NewObjectAudit(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, ID
 	}
 }
 
-func (log *ObjectAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCError {
+func (log *ObjectAudit) SaveAuditLog(auditAction metadata.ActionType) {
 	preData := log.preData.ToMapStr()
 	curData := log.curData.ToMapStr()
 	switch auditAction {
@@ -77,13 +76,11 @@ func (log *ObjectAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCE
 	auditResult, err := log.clientSet.CoreService().Audit().SaveAuditLog(log.kit.Ctx, log.kit.Header, auditLog)
 	if err != nil {
 		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %+v,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
-		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
 	}
 	if auditResult.Result != true {
 		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
-		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
 	}
-	return nil
+	return
 }
 
 func (log *ObjectAudit) buildSnapshotForPre() ObjAuditLog {
@@ -91,15 +88,15 @@ func (log *ObjectAudit) buildSnapshotForPre() ObjAuditLog {
 	rsp, err := log.clientSet.CoreService().Model().ReadModel(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
 		blog.Errorf("[audit] failed to build the objData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
-		return nil
+		return log
 	}
 	if rsp.Result != true {
 		blog.Errorf("[audit] failed to build the objData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
-		return nil
+		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
 		blog.Errorf("[audit] failed to build the objData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
-		return nil
+		return log
 	}
 	log.preData = rsp.Data.Info[0].Spec
 	log.bkObjID = log.preData.ObjectID
@@ -112,15 +109,15 @@ func (log *ObjectAudit) buildSnapshotForCur() ObjAuditLog {
 	rsp, err := log.clientSet.CoreService().Model().ReadModel(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
 		blog.Errorf("[audit] failed to build the objData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
-		return nil
+		return log
 	}
 	if rsp.Result != true {
 		blog.Errorf("[audit] failed to build the objData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
-		return nil
+		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
 		blog.Errorf("[audit] failed to build the objData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
-		return nil
+		return log
 	}
 	log.curData = rsp.Data.Info[0].Spec
 	log.bkObjID = log.curData.ObjectID

@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -48,7 +47,7 @@ func NewObjectAttrAudit(kit *rest.Kit, clientSet apimachinery.ClientSetInterface
 	}
 }
 
-func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCError {
+func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) {
 	preData := log.preData.ToMapStr()
 	curData := log.curData.ToMapStr()
 	switch auditAction {
@@ -60,18 +59,16 @@ func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors
 		//do nothing
 	}
 	//get objectName
-	err := log.getObjectInfo(log.kit, log.bkObjectID)
-	if err != nil {
-		blog.Errorf("[audit] failed to get the objInfo,err: %s", err)
-	}
+	log.getObjectInfo(log.kit, log.bkObjectID)
+
 	//如果目标为自定义层级下的自定义字段，则auditType需要由"model"更改为"BusinessResourceType"
 	var bizName string
+	var err error
 	if log.bizID != 0 {
 		log.auditType = metadata.BusinessResourceType
 		bizName, err = auditlog.NewAudit(log.clientSet, log.kit.Header).GetInstNameByID(log.kit.Ctx, common.BKInnerObjIDApp, log.bizID)
 		if err != nil {
 			blog.Errorf("[audit] failed to get biz name by id: %d,err: %s", log.bizID, err)
-			return err
 		}
 	}
 	//make auditLog
@@ -97,13 +94,11 @@ func (log *ObjectAttrAudit) SaveAuditLog(auditAction metadata.ActionType) errors
 	auditResult, err := log.clientSet.CoreService().Audit().SaveAuditLog(log.kit.Ctx, log.kit.Header, auditLog)
 	if err != nil {
 		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
-		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
 	}
 	if auditResult.Result != true {
 		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s,rid:%s", auditAction, log.resourceType, err, auditResult, log.kit.Rid)
-		return log.kit.CCError.Errorf(common.CCErrAuditSaveLogFailed)
 	}
-	return nil
+	return
 }
 
 func (log *ObjectAttrAudit) buildSnapshotForPre() ObjAuditLog {
@@ -112,15 +107,15 @@ func (log *ObjectAttrAudit) buildSnapshotForPre() ObjAuditLog {
 	rsp, err := log.clientSet.CoreService().Model().ReadModelAttrByCondition(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
 		blog.Errorf("[audit] failed to build the objAttrData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
-		return nil
+		return log
 	}
 	if rsp.Result != true {
 		blog.Errorf("[audit] failed to build the objAttrData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
-		return nil
+		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
 		blog.Errorf("[audit] failed to build the objAttrData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
-		return nil
+		return log
 	}
 	log.preData = rsp.Data.Info[0]
 	log.bkObjectID = log.preData.ObjectID
@@ -136,15 +131,15 @@ func (log *ObjectAttrAudit) buildSnapshotForCur() ObjAuditLog {
 	rsp, err := log.clientSet.CoreService().Model().ReadModelAttrByCondition(log.kit.Ctx, log.kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
 		blog.Errorf("[audit] failed to build the objAttrData, error info is %s, rid: %s", err.Error(), log.kit.Rid)
-		return nil
+		return log
 	}
 	if rsp.Result != true {
 		blog.Errorf("[audit] failed to build the objAttrData,rsp code is %v, err: %s", rsp.Code, rsp.ErrMsg)
-		return nil
+		return log
 	}
 	if len(rsp.Data.Info) <= 0 {
 		blog.Errorf("[audit] failed to build the objAttrData,err: %s", log.kit.CCError.CCError(common.CCErrorModelNotFound))
-		return nil
+		return log
 	}
 	log.curData = rsp.Data.Info[0]
 	log.bkObjectID = log.curData.ObjectID
@@ -154,7 +149,7 @@ func (log *ObjectAttrAudit) buildSnapshotForCur() ObjAuditLog {
 	return log
 }
 
-func (log *ObjectAttrAudit) getObjectInfo(kit *rest.Kit, bkObjectID string) errors.CCError {
+func (log *ObjectAttrAudit) getObjectInfo(kit *rest.Kit, bkObjectID string) {
 	query := make(map[string]interface{})
 	if bkObjectID == "" {
 		query = mapstr.MapStr{"bk_obj_id": log.bkObjectID}
@@ -164,14 +159,17 @@ func (log *ObjectAttrAudit) getObjectInfo(kit *rest.Kit, bkObjectID string) erro
 	//get objectName
 	resp, err := log.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{Condition: query})
 	if err != nil {
-		return err
+		blog.Errorf("[audit] failed to get object info, error info is %s, rid: %s", err.Error(), log.kit.Rid)
+		return
 	}
 	if resp.Result != true {
-		return kit.CCError.New(resp.Code, resp.ErrMsg)
+		blog.Errorf("[audit] failed to get object info, error info is %s, rid: %s", resp.ErrMsg, log.kit.Rid)
+		return
 	}
 	if len(resp.Data.Info) <= 0 {
-		return kit.CCError.CCError(common.CCErrorModelNotFound)
+		blog.Errorf("[audit] failed to get object info, error info is %s, rid: %s", resp.ErrMsg, log.kit.Rid)
+		return
 	}
 	log.bkObjectName = resp.Data.Info[0].Spec.ObjectName
-	return nil
+	return
 }

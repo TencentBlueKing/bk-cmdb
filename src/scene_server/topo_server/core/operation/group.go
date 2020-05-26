@@ -81,11 +81,7 @@ func (g *group) CreateObjectGroup(kit *rest.Kit, data mapstr.MapStr, metaData *m
 	}
 
 	//package audit response
-	err = NewObjectAttrGroupAudit(kit, g.clientSet, grp.Group().ID).buildSnapshotForPre().SaveAuditLog(metadata.AuditCreate)
-	if err != nil {
-		blog.Errorf("create object attribute group %s success, but update to auditLog failed, err: %v, rid: %s", grp.Group().GroupName, err, kit.Rid)
-		return nil, err
-	}
+	NewObjectAttrGroupAudit(kit, g.clientSet, grp.Group().ID).buildSnapshotForPre().SaveAuditLog(metadata.AuditCreate)
 
 	return grp, nil
 }
@@ -108,11 +104,8 @@ func (g *group) DeleteObjectGroup(kit *rest.Kit, groupID int64) error {
 	}
 
 	//saveAuditLog
-	err = objAudit.SaveAuditLog(metadata.AuditDelete)
-	if err != nil {
-		blog.Errorf("Delete object attribute group success, but update to auditLog failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
+	objAudit.SaveAuditLog(metadata.AuditDelete)
+
 	return nil
 }
 
@@ -250,11 +243,7 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 	}
 
 	//get CurData and saveAuditLog
-	err = objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
-	if err != nil {
-		blog.Errorf("update object attribute group %s success, but update to auditLog failed, err: %v, rid: %s", cond.Data.Name, err, kit.Rid)
-		return err
-	}
+	objAudit.buildSnapshotForCur().SaveAuditLog(metadata.AuditUpdate)
 
 	return nil
 }
