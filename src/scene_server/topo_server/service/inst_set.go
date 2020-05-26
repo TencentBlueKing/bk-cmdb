@@ -84,10 +84,14 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 			return err
 		})
 
+		errMsg := ""
+		if txnErr != nil {
+			errMsg = txnErr.Error()
+		}
 		batchCreateResult = append(batchCreateResult, OneSetCreateResult{
 			Index:    idx,
 			Data:     result,
-			ErrorMsg: txnErr.Error(),
+			ErrorMsg: errMsg,
 		})
 	}
 	ctx.RespEntityWithError(batchCreateResult, firstErr)
