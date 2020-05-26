@@ -137,6 +137,7 @@
                     await this.$store.dispatch('userCustom/saveUsercustom', {
                         [key]: selectedList
                     })
+                    this.$store.commit('hosts/setShouldInjectAsset', false)
                     this.$store.commit('hosts/setFilterList', selectedList)
                     this.isShow = false
                 } catch (e) {

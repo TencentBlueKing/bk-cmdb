@@ -4,7 +4,7 @@
             <bk-input class="search-input"
                 ref="searchInput"
                 type="textarea"
-                :placeholder="$t('请输入IP，多个IP请使用换行分隔')"
+                :placeholder="$t('首页主机搜索提示语')"
                 :rows="rows"
                 v-model="searchContent"
                 @focus="handleFocus"
@@ -46,6 +46,16 @@
             this.textareaDom = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
         },
         methods: {
+            getSearchList () {
+                const searchList = []
+                this.searchContent.split('\n').forEach(text => {
+                    const trimText = text.trim()
+                    if (trimText.length) {
+                        searchList.push(trimText)
+                    }
+                })
+                return searchList
+            },
             setRows () {
                 const rows = this.searchContent.split('\n').length || 1
                 this.rows = Math.min(10, rows)
@@ -57,7 +67,7 @@
             handleBlur () {
                 this.textareaDom && this.textareaDom.blur()
                 this.$emit('focus', false)
-                const data = this.searchContent.split('\n').map(text => text.trim()).filter(text => text)
+                const data = this.getSearchList()
                 if (data.length) {
                     this.showEllipsis = true
                     this.searchText = data.join(',')
@@ -74,19 +84,26 @@
                 this.textareaDom && this.textareaDom.focus()
             },
             async handleSearch () {
-                const searchList = this.searchContent.split('\n').map(text => text.trim()).filter(text => text)
+                const searchList = this.getSearchList()
                 if (searchList.length > 500) {
-                    this.$warn(this.$t('目前最多支持搜索500个IP'))
+                    this.$warn(this.$t('最多支持搜索500条数据'))
                 } else if (searchList.length) {
                     try {
                         const validateQueue = searchList.map(text => this.$validator.verify(text, 'ip'))
                         const results = await Promise.all(validateQueue)
-                        const isPassValidate = results.every(res => res.valid)
-                        if (!isPassValidate) {
-                            this.$warn(this.$t('请输入完整IP进行搜索，多个IP用换行分割'))
+                        const ipList = []
+                        const asstList = []
+                        results.forEach((result, index) => {
+                            (result.valid ? ipList : asstList).push(searchList[index])
+                        })
+                        if (ipList.length && asstList.length) {
+                            this.$warn(this.$t('不支持混合搜索'))
                             return
+                        } else if (ipList.length) {
+                            this.checkTargetPage(ipList, 'ip')
+                        } else {
+                            this.checkTargetPage(asstList, 'bk_asset_id')
                         }
-                        this.checkTargetPage(searchList)
                     } catch (e) {
                         console.error(e)
                     }
@@ -95,22 +112,35 @@
                     this.textareaDom && this.textareaDom.focus()
                 }
             },
-            async checkTargetPage (list) {
+            async checkTargetPage (list, type) {
                 try {
-                    const { info } = await this.$store.dispatch('hostSearch/searchHost', {
-                        params: {
-                            bk_biz_id: -1,
+                    const params = {
+                        bk_biz_id: -1,
+                        condition: [{
+                            bk_obj_id: 'biz',
+                            condition: [],
+                            fields: []
+                        }],
+                        ip: {
+                            data: [],
+                            flag: 'bk_host_innerip|bk_host_outerip',
+                            exact: 1
+                        }
+                    }
+                    if (type === 'ip') {
+                        params.ip.data = list
+                    } else {
+                        params.condition.push({
+                            bk_obj_id: 'host',
                             condition: [{
-                                bk_obj_id: 'biz',
-                                condition: [],
-                                fields: []
-                            }],
-                            ip: {
-                                data: list,
-                                flag: 'bk_host_innerip|bk_host_outerip',
-                                exact: 1
-                            }
-                        },
+                                field: 'bk_asset_id',
+                                operator: '$in',
+                                value: list
+                            }]
+                        })
+                    }
+                    const { info } = await this.$store.dispatch('hostSearch/searchHost', {
+                        params: params,
                         config: {
                             requestId: this.request.search,
                             cancelPrevious: true
@@ -130,36 +160,36 @@
                     if (bizSet.size === 1) {
                         const bizId = bizSet.values().next().value
                         if (bizId === resourceBizId) {
-                            this.navigateToResource(list, 1)
+                            this.navigateToResource(list, 1, type)
                         } else {
-                            this.navigateToBusiness(list, bizId)
+                            this.navigateToBusiness(list, bizId, type)
                         }
                     } else {
-                        this.navigateToResource(list, 'all')
+                        this.navigateToResource(list, 'all', type)
                     }
                 } catch (error) {
                     console.error(error)
                 }
             },
-            navigateToResource (list, scope) {
+            navigateToResource (list, scope, type) {
                 this.$routerActions.redirect({
                     name: MENU_RESOURCE_HOST,
                     query: {
-                        ip: list.join(','),
+                        [type]: list.join(','),
                         scope: scope,
                         exact: 1
                     },
                     history: true
                 })
             },
-            navigateToBusiness (list, bizId) {
+            navigateToBusiness (list, bizId, type) {
                 this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     params: {
                         bizId
                     },
                     query: {
-                        ip: list.join(','),
+                        [type]: list.join(','),
                         exact: 1
                     },
                     history: true

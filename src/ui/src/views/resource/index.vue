@@ -285,7 +285,10 @@
                 }).then(() => {
                     this.$success(this.$t('分配成功'))
                     this.$refs.resourceTable.table.checked = []
-                    this.$refs.resourceTable.handlePageChange(1)
+                    RouterQuery.set({
+                        _t: Date.now(),
+                        page: 1
+                    })
                 }).finally(() => {
                     this.assignBusiness = 'empty'
                     this.assignDialog.show = false
@@ -331,7 +334,10 @@
                         }).then(() => {
                             this.$success(this.$t('成功删除选中的主机'))
                             this.$refs.resourceTable.table.checked = []
-                            this.$refs.resourceTable.handlePageChange(1)
+                            RouterQuery.set({
+                                _t: Date.now(),
+                                page: 1
+                            })
                         })
                     }
                 })
