@@ -57,117 +57,133 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
-		hostIDArr := strings.Split(opt.HostID, ",")
-		var iHostIDArr []int64
-		for _, i := range hostIDArr {
-			iHostID, err := strconv.ParseInt(i, 10, 64)
-			if err != nil {
-				blog.Errorf("delete host batch, but got invalid host id, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
-				return srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, iHostID)
-			}
-			iHostIDArr = append(iHostIDArr, iHostID)
-			asstCond := map[string]interface{}{
-				common.BKDBOR: []map[string]interface{}{
-					{
-						common.BKObjIDField:  common.BKInnerObjIDHost,
-						common.BKHostIDField: iHostID,
-					},
-					{
-						common.BKAsstObjIDField:  common.BKInnerObjIDHost,
-						common.BKAsstInstIDField: iHostID,
-					},
+	hostIDArr := strings.Split(opt.HostID, ",")
+	var iHostIDArr []int64
+	delCondsArr := make([][]map[string]interface{}, 0)
+	for _, i := range hostIDArr {
+		iHostID, err := strconv.ParseInt(i, 10, 64)
+		if err != nil {
+			blog.Errorf("delete host batch, but got invalid host id, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
+			_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, iHostID)})
+			return
+		}
+		iHostIDArr = append(iHostIDArr, iHostID)
+	}
+	iHostIDArr = util.IntArrayUnique(iHostIDArr)
+
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Delete, iHostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
+		if err != auth.NoAuthorizeError {
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
+			return
+		}
+		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Delete, iHostIDArr)
+		if err != nil {
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
+			return
+		}
+		_ = resp.WriteEntity(perm)
+		return
+	}
+
+	for _, iHostID := range iHostIDArr {
+		asstCond := map[string]interface{}{
+			common.BKDBOR: []map[string]interface{}{
+				{
+					common.BKObjIDField:  common.BKInnerObjIDHost,
+					common.BKHostIDField: iHostID,
 				},
+				{
+					common.BKAsstObjIDField:  common.BKInnerObjIDHost,
+					common.BKAsstInstIDField: iHostID,
+				},
+			},
+		}
+		rsp, err := s.CoreAPI.CoreService().Association().ReadInstAssociation(srvData.ctx, srvData.header, &meta.QueryCondition{Condition: asstCond})
+		if nil != err {
+			blog.ErrorJSON("DeleteHostBatch read host association do request failed , err: %s, rid: %s", err.Error(), srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)})
+			return
+		}
+		if !rsp.Result {
+			blog.ErrorJSON("DeleteHostBatch read host association failed , err message: %s, rid: %s", rsp.ErrMsg, srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: rsp.CCError()})
+			return
+		}
+		if rsp.Data.Count <= 0 {
+			continue
+		}
+		objIDs := make([]string, 0)
+		asstInstMap := make(map[string][]int64, 0)
+		for _, asst := range rsp.Data.Info {
+			if asst.ObjectID == common.BKInnerObjIDHost && iHostID == asst.InstID {
+				objIDs = append(objIDs, asst.AsstObjectID)
+				asstInstMap[asst.AsstObjectID] = append(asstInstMap[asst.AsstObjectID], asst.AsstInstID)
+			} else if asst.AsstObjectID == common.BKInnerObjIDHost && iHostID == asst.AsstInstID {
+				objIDs = append(objIDs, asst.ObjectID)
+				asstInstMap[asst.ObjectID] = append(asstInstMap[asst.ObjectID], asst.InstID)
+			} else {
+				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(common.CCErrCommDBSelectFailed, "host is not associated in selected association")})
+				return
 			}
-			rsp, err := s.CoreAPI.CoreService().Association().ReadInstAssociation(srvData.ctx, srvData.header, &meta.QueryCondition{Condition: asstCond})
-			if nil != err {
-				blog.ErrorJSON("DeleteHostBatch read host association do request failed , err: %s, rid: %s", err.Error(), srvData.rid)
-				return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-			}
-			if !rsp.Result {
-				blog.ErrorJSON("DeleteHostBatch read host association failed , err message: %s, rid: %s", rsp.ErrMsg, srvData.rid)
-				return rsp.CCError()
-			}
-			if rsp.Data.Count <= 0 {
+		}
+		delConds := make([]map[string]interface{}, 0)
+		for objID, instIDs := range asstInstMap {
+			if len(instIDs) < 0 {
 				continue
 			}
-			objIDs := make([]string, 0)
-			asstInstMap := make(map[string][]int64, 0)
-			for _, asst := range rsp.Data.Info {
-				if asst.ObjectID == common.BKInnerObjIDHost && iHostID == asst.InstID {
-					objIDs = append(objIDs, asst.AsstObjectID)
-					asstInstMap[asst.AsstObjectID] = append(asstInstMap[asst.AsstObjectID], asst.AsstInstID)
-				} else if asst.AsstObjectID == common.BKInnerObjIDHost && iHostID == asst.AsstInstID {
-					objIDs = append(objIDs, asst.ObjectID)
-					asstInstMap[asst.ObjectID] = append(asstInstMap[asst.ObjectID], asst.InstID)
-				} else {
-					return srvData.ccErr.New(common.CCErrCommDBSelectFailed, "host is not associated in selected association")
-				}
+			instIDField := common.GetInstIDField(objID)
+			instCond := map[string]interface{}{
+				instIDField: map[string]interface{}{
+					common.BKDBIN: instIDs,
+				},
 			}
-			delConds := make([]map[string]interface{}, 0)
-			for objID, instIDs := range asstInstMap {
-				if len(instIDs) < 0 {
-					continue
-				}
-				instIDField := common.GetInstIDField(objID)
-				instCond := map[string]interface{}{
-					instIDField: map[string]interface{}{
-						common.BKDBIN: instIDs,
-					},
-				}
-				instRsp, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, objID, &meta.QueryCondition{Condition: instCond})
-				if err != nil {
-					blog.ErrorJSON("DeleteHostBatch read associated instances do request failed , err: %s, rid: %s", err.Error(), srvData.rid)
-					return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-				}
-				if !instRsp.Result {
-					blog.ErrorJSON("DeleteHostBatch read associated instances failed , err message: %s, rid: %s", instRsp.ErrMsg, srvData.rid)
-					return instRsp.CCError()
-				}
-				if len(instRsp.Data.Info) > 0 {
-					blog.ErrorJSON("DeleteHostBatch host %s has been associated, can't be deleted, rid: %s", iHostID, srvData.rid)
-					return srvData.ccErr.CCErrorf(common.CCErrTopoInstHasBeenAssociation, iHostID)
-				}
-				delConds = append(delConds, map[string]interface{}{
-					common.BKObjIDField: objID,
-					instIDField: map[string]interface{}{
-						common.BKDBIN: instIDs,
-					},
-				}, map[string]interface{}{
-					common.AssociatedObjectIDField: objID,
-					instIDField: map[string]interface{}{
-						common.BKDBIN: instIDs,
-					},
-				})
-			}
-			if len(delConds) > 0 {
-				delRsp, err := s.CoreAPI.CoreService().Association().DeleteInstAssociation(srvData.ctx, srvData.header, &meta.DeleteOption{Condition: map[string]interface{}{common.BKDBOR: delConds}})
-				if err != nil {
-					blog.ErrorJSON("DeleteHostBatch delete host redundant association do request failed , err: %s, rid: %s", err.Error(), srvData.rid)
-					return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-				}
-				if !delRsp.Result {
-					blog.ErrorJSON("DeleteHostBatch delete host redundant association failed , err message: %s, rid: %s", delRsp.ErrMsg, srvData.rid)
-					return delRsp.CCError()
-				}
-			}
-		}
-
-		iHostIDArr = util.IntArrayUnique(iHostIDArr)
-
-		// auth: check authorization
-		if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Delete, iHostIDArr...); err != nil {
-			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
-			if err != auth.NoAuthorizeError {
-				return srvData.ccErr.Error(common.CCErrHostDeleteFail)
-			}
-			perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Delete, iHostIDArr)
+			instRsp, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, objID, &meta.QueryCondition{Condition: instCond})
 			if err != nil {
-				return srvData.ccErr.Error(common.CCErrHostDeleteFail)
+				blog.ErrorJSON("DeleteHostBatch read associated instances do request failed , err: %s, rid: %s", err.Error(), srvData.rid)
+				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)})
+				return
 			}
-			return errors.New(perm.Code, perm.ErrMsg)
+			if !instRsp.Result {
+				blog.ErrorJSON("DeleteHostBatch read associated instances failed , err message: %s, rid: %s", instRsp.ErrMsg, srvData.rid)
+				_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: instRsp.CCError()})
+				return
+			}
+			if len(instRsp.Data.Info) > 0 {
+				blog.ErrorJSON("DeleteHostBatch host %s has been associated, can't be deleted, rid: %s", iHostID, srvData.rid)
+				_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.CCErrorf(common.CCErrTopoInstHasBeenAssociation, iHostID)})
+				return
+			}
+			delConds = append(delConds, map[string]interface{}{
+				common.BKObjIDField: objID,
+				instIDField: map[string]interface{}{
+					common.BKDBIN: instIDs,
+				},
+			}, map[string]interface{}{
+				common.AssociatedObjectIDField: objID,
+				instIDField: map[string]interface{}{
+					common.BKDBIN: instIDs,
+				},
+			})
 		}
+		if len(delConds) > 0 {
+			delCondsArr = append(delCondsArr, delConds)
+		}
+	}
 
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		for _, delConds := range delCondsArr {
+			delRsp, err := s.CoreAPI.CoreService().Association().DeleteInstAssociation(srvData.ctx, srvData.header, &meta.DeleteOption{Condition: map[string]interface{}{common.BKDBOR: delConds}})
+			if err != nil {
+				blog.ErrorJSON("DeleteHostBatch delete host redundant association do request failed , err: %s, rid: %s", err.Error(), srvData.rid)
+				return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+			}
+			if !delRsp.Result {
+				blog.ErrorJSON("DeleteHostBatch delete host redundant association failed , err message: %s, rid: %s", delRsp.ErrMsg, srvData.rid)
+				return delRsp.CCError()
+			}
+		}
 		appID, err := srvData.lgc.GetDefaultAppID(srvData.ctx)
 		if err != nil {
 			blog.Errorf("delete host batch, but got invalid app id, err: %v,input:%s,rid:%s", err, opt, srvData.rid)
