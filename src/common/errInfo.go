@@ -223,6 +223,9 @@ const (
 	// CCErrCommRedisOPErr operate redis error.
 	CCErrCommRedisOPErr = 1199088
 
+	// too many requests
+	CCErrTooManyRequestErr = 1199997
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
