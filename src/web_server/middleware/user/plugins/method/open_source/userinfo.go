@@ -14,10 +14,12 @@ package open_source
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
@@ -95,4 +97,32 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 		siteURL = ""
 	}
 	return fmt.Sprintf("%s/login?c_url=%s%s", siteURL, siteURL, c.Request.URL.String())
+}
+
+func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	users := make([]*metadata.LoginSystemUserInfo, 0)
+	if len(config["session.user_info"]) == 0 {
+		blog.Errorf("User name and password can't be found at session.user_info in config file common.conf, rid:%s", rid)
+		return nil, &errors.RawErrorInfo{
+			ErrCode: common.CCErrWebNoUsernamePasswd,
+		}
+	}
+	userInfos := strings.Split(config["session.user_info"], ",")
+	for _, userInfo := range userInfos {
+		userPasswd := strings.Split(userInfo, ":")
+		if len(userPasswd) != 2 {
+			blog.Errorf("The format of user name and password are wrong, please check session.user_info in config file common.conf, rid:%s", rid)
+			return nil, &errors.RawErrorInfo{
+				ErrCode: common.CCErrWebUserinfoFormatWrong,
+			}
+		}
+		user := &metadata.LoginSystemUserInfo{
+			CnName: userPasswd[0],
+			EnName: userPasswd[0],
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }

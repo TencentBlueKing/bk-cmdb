@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -25,6 +24,7 @@ import (
 	"configcenter/src/common/util"
 	webcom "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
+
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
 )
@@ -40,21 +40,19 @@ type userDataResult struct {
 func (s *Service) GetUserList(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	rspBody := metadata.LonginSystemUserListResult{}
-	query := c.Request.URL.Query()
-	params := make(map[string]string)
-	for key, values := range query {
-		params[key] = strings.Join(values, ";")
-	}
 
-	userList, err := s.Logics.GetUserList(c.Request.Context(), c.Request.Header, params, s.Config)
-	if nil != err {
-		blog.Error("GetUserList failed, err: %+v, rid: %s", err, rid)
-		rspBody.Code = err.GetCode()
-		rspBody.ErrMsg = err.Error()
+	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+	userList, rawErr := userManger.GetUserList(c)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
+	if rawErr != nil && rawErr.ErrCode != 0 {
+		blog.Error("GetUserList failed, err: %s, rid: %s", rawErr.ToCCError(defErr).Error(), rid)
+		rspBody.Code = rawErr.ErrCode
+		rspBody.ErrMsg = rawErr.ToCCError(defErr).Error()
 		rspBody.Result = false
 		c.JSON(http.StatusInternalServerError, rspBody)
 		return
 	}
+
 	rspBody.Result = true
 	rspBody.Data = userList
 
