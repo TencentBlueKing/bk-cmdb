@@ -318,12 +318,13 @@ type ResourceAction struct {
 }
 
 type RelateResourceType struct {
-	SystemID           string              `json:"system_id"`
-	ID                 ResourceTypeID      `json:"id"`
-	NameAlias          string              `json:"name_alias"`
-	NameAliasEn        string              `json:"name_alias_en"`
-	Scope              *Scope              `json:"scope"`
-	InstanceSelections []InstanceSelection `json:"instance_selections"`
+	SystemID           string                     `json:"system_id"`
+	ID                 ResourceTypeID             `json:"id"`
+	NameAlias          string                     `json:"name_alias"`
+	NameAliasEn        string                     `json:"name_alias_en"`
+	Scope              *Scope                     `json:"scope"`
+	SelectionMode      string                     `json:"selection_mode"`
+	InstanceSelections []RelatedInstanceSelection `json:"related_instances"`
 }
 
 type Scope struct {
@@ -337,10 +338,38 @@ type ScopeContent struct {
 	Value string `json:"value"`
 }
 
+type RelatedInstanceSelection struct {
+	ID       InstanceSelectionID `json:"id"`
+	SystemID string              `json:"system_id"`
+}
+
+type InstanceSelectionID string
+
+const (
+	BusinessSelection                  InstanceSelectionID = "business"
+	BizHostInstanceSelection           InstanceSelectionID = "biz_host_instance"
+	BizCustomQuerySelection            InstanceSelectionID = "biz_custom_query"
+	BizProcessServiceTemplateSelection InstanceSelectionID = "biz_process_service_template"
+	BizProcessServiceCategorySelection InstanceSelectionID = "biz_process_service_category"
+	BizProcessServiceInstanceSelection InstanceSelectionID = "biz_process_service_instance"
+	BizSetTemplateSelection            InstanceSelectionID = "biz_set_template"
+	SysHostInstanceSelection           InstanceSelectionID = "sys_host_instance"
+	SysEventPushingSelection           InstanceSelectionID = "sys_event_pushing"
+	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
+	SysModelSelection                  InstanceSelectionID = "sys_model"
+	SysInstanceSelection               InstanceSelectionID = "sys_instance"
+	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
+	SysResourcePoolDirectorySelection  InstanceSelectionID = "sys_resource_pool_directory"
+	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
+	SysCloudAccountSelection           InstanceSelectionID = "sys_cloud_account"
+	SysCloudResourceTaskSelection      InstanceSelectionID = "sys_cloud_resource_task"
+)
+
 type InstanceSelection struct {
-	Name              string          `json:"name"`
-	NameEn            string          `json:"name_en"`
-	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
+	ID                InstanceSelectionID `json:"id"`
+	Name              string              `json:"name"`
+	NameEn            string              `json:"name_en"`
+	ResourceTypeChain []ResourceChain     `json:"resource_type_chain"`
 }
 
 type ResourceChain struct {
