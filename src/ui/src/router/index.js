@@ -144,6 +144,9 @@ const setupStatus = {
 
 router.beforeEach((to, from, next) => {
     router.app.$store.commit('setTitle', '')
+    if (to.meta.view !== 'permission') {
+        Vue.set(to.meta, 'view', 'default')
+    }
     if (to.name === from.name) {
         return next()
     }
@@ -151,6 +154,7 @@ router.beforeEach((to, from, next) => {
         try {
             if (setupStatus.preload) {
                 setLoading(true)
+                setupStatus.preload = false
                 await preload(router.app)
             }
             await runBeforeHooks()
@@ -168,6 +172,7 @@ router.beforeEach((to, from, next) => {
             return next()
         } catch (e) {
             console.error(e)
+            setupStatus.preload = true
             if (e.__CANCEL__) {
                 next()
             } else if (e instanceof StatusError) {
@@ -175,13 +180,11 @@ router.beforeEach((to, from, next) => {
             } else if (e.status !== 401) {
                 console.error(e)
                 // 保留路由，将视图切换为error
-                to.meta.view = 'error'
+                Vue.set(to.meta, 'view', 'error')
                 next()
             } else {
                 next()
             }
-        } finally {
-            setupStatus.preload = false
         }
     })
 })
