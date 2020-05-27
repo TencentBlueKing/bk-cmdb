@@ -1265,5 +1265,6 @@
     "修改字段": "Update Attribute",
     "删除字段": "Delete Attribute",
     "暂无可复制的IP": "No IP to copy",
-    "请输入IP，多个IP请使用换行分隔": "Please input IP, use newline to seperate multiple IP"
+    "请输入IP，多个IP请使用换行分隔": "Please input IP, use newline to seperate multiple IP",
+    "全部模型": "All Models"
 }
