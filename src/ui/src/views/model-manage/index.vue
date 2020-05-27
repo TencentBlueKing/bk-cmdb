@@ -1,5 +1,7 @@
 <template>
-    <div class="group-wrapper" :style="{ 'padding-top': topPadding + 'px' }">
+    <div class="group-wrapper"
+        v-bkloading="{ isLoading: $loading(Object.values(request)) }"
+        :style="{ 'padding-top': topPadding + 'px' }">
         <cmdb-main-inject ref="mainInject"
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
@@ -264,6 +266,10 @@
                 modelDialog: {
                     isShow: false,
                     groupId: ''
+                },
+                request: {
+                    statistics: Symbol('statistics'),
+                    searchClassifications: Symbol('searchClassifications')
                 }
             }
         },
@@ -337,10 +343,19 @@
                 this.scrollTop = event.target.scrollTop
             }
             addMainScrollListener(this.scrollHandler)
-            this.getModelStatistics()
-            this.searchClassificationsObjects({
-                params: this.$injectMetadata()
-            })
+            try {
+                await Promise.all([
+                    this.getModelStatistics(),
+                    this.searchClassificationsObjects({
+                        params: this.$injectMetadata(),
+                        config: {
+                            requestId: this.request.searchClassifications
+                        }
+                    })
+                ])
+            } catch (e) {
+                this.$route.meta.view = 'error'
+            }
             if (this.$route.query.searchModel) {
                 const hash = window.location.hash
                 this.searchModel = this.$route.query.searchModel
@@ -408,7 +423,7 @@
                 const modelStatisticsSet = {}
                 const res = await this.getClassificationsObjectStatistics({
                     config: {
-                        requestId: 'getClassificationsObjectStatistics'
+                        requestId: this.request.statistics
                     }
                 })
                 res.forEach(item => {
