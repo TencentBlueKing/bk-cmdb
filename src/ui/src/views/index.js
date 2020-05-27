@@ -1,3 +1,5 @@
+import index from '@/views/index/router.config'
+
 import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
 import customQuery from '@/views/custom-query/router.config'
@@ -36,7 +38,7 @@ const flatternViews = views => {
     return flatterned
 }
 
-const injectStatusComponents = (views, status = ['permission', 'error']) => {
+export const injectStatusComponents = (views, status = ['permission', 'error']) => {
     views.forEach(view => {
         view.components = {
             default: view.component,
@@ -46,6 +48,8 @@ const injectStatusComponents = (views, status = ['permission', 'error']) => {
     })
     return views
 }
+
+export const indexViews = injectStatusComponents(flatternViews([index]))
 
 export const businessViews = injectStatusComponents(flatternViews([
     customQuery,
@@ -80,6 +84,7 @@ export const analysisViews = injectStatusComponents(flatternViews([
 ]))
 
 export default {
+    ...indexViews,
     ...businessViews,
     ...resourceViews,
     ...modelViews,

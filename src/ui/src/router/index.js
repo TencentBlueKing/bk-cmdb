@@ -6,8 +6,6 @@ import StatusError from './StatusError.js'
 import preload from '@/setup/preload'
 import afterload from '@/setup/afterload'
 
-import index from '@/views/index/router.config'
-
 import {
     before as businessBeforeInterceptor
 } from './business-interceptor'
@@ -21,6 +19,7 @@ import {
 } from '@/dictionary/menu-symbol'
 
 import {
+    indexViews,
     businessViews,
     resourceViews,
     modelViews,
@@ -60,7 +59,7 @@ const router = new Router({
         {
             name: MENU_ENTRY,
             component: dynamicRouterView,
-            children: [...index],
+            children: indexViews,
             path: '/',
             redirect: '/index'
         },
@@ -68,6 +67,7 @@ const router = new Router({
             name: MENU_BUSINESS,
             components: {
                 default: dynamicRouterView,
+                error: require('@/views/status/error').default,
                 permission: require('@/views/status/non-exist-business').default
             },
             children: businessViews,
@@ -144,13 +144,17 @@ const setupStatus = {
 
 router.beforeEach((to, from, next) => {
     router.app.$store.commit('setTitle', '')
+    if (to.meta.view !== 'permission') {
+        Vue.set(to.meta, 'view', 'default')
+    }
     if (to.name === from.name) {
         return next()
     }
     Vue.nextTick(async () => {
         try {
-            setLoading(true)
             if (setupStatus.preload) {
+                setLoading(true)
+                setupStatus.preload = false
                 await preload(router.app)
             }
             await runBeforeHooks()
@@ -168,18 +172,19 @@ router.beforeEach((to, from, next) => {
             return next()
         } catch (e) {
             console.error(e)
+            setupStatus.preload = true
             if (e.__CANCEL__) {
                 next()
             } else if (e instanceof StatusError) {
                 next({ name: e.name, query: e.query })
             } else if (e.status !== 401) {
                 console.error(e)
-                next({ name: 'error' })
+                // 保留路由，将视图切换为error
+                Vue.set(to.meta, 'view', 'error')
+                next()
             } else {
                 next()
             }
-        } finally {
-            setupStatus.preload = false
         }
     })
 })

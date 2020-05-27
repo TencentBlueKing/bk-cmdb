@@ -1,6 +1,6 @@
 import { getAuthorizedBusiness } from '@/router/business-interceptor.js'
 const preloadConfig = {
-    fromCache: true,
+    fromCache: false,
     cancelWhenRouteChange: false
 }
 

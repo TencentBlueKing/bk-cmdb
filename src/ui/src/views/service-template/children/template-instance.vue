@@ -34,7 +34,7 @@
                 </bk-table-column>
                 <bk-table-column :label="$t('操作')">
                     <template slot-scope="{ row }">
-                        <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="$t('已经是最新，无需同步')">{{$t('去同步')}}</span>
+                        <span class="latest-sync" v-if="isSyncDisabled(row)" v-bk-tooltips="getSyncDisabledText(row)">{{$t('去同步')}}</span>
                         <bk-button v-else text :disabled="isSyncDisabled(row)" @click="handleSync(row)">{{$t('去同步')}}</bk-button>
                     </template>
                 </bk-table-column>
@@ -157,12 +157,19 @@
                     }
                 })
             },
+            getSyncStatusDifference (row) {
+                return this.table.syncStatus.find(difference => difference.bk_module_id === row.bk_module_id)
+            },
             isSyncDisabled (row) {
-                const difference = this.table.syncStatus.find(difference => difference.bk_module_id === row.bk_module_id)
+                const difference = this.getSyncStatusDifference(row)
                 if (difference) {
                     return !difference.has_difference
                 }
                 return true
+            },
+            getSyncDisabledText (row) {
+                const difference = this.getSyncStatusDifference(row) || {}
+                return difference.unchanged && difference.unchanged.length ? this.$t('已经是最新，无需同步') : this.$t('没有主机无需同步')
             },
             handleSync (row) {
                 this.$routerActions.redirect({

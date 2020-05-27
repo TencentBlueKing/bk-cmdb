@@ -1,5 +1,5 @@
 <template>
-    <div id="app" :bk-language="$i18n.locale"
+    <div id="app" v-bkloading="{ isLoading: globalLoading }" :bk-language="$i18n.locale"
         :class="{
             'no-breadcrumb': hideBreadcrumbs,
             'main-full-screen': mainFullScreen
