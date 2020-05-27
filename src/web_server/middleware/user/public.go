@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/app/options"
@@ -108,4 +109,9 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
 	return user.GetLoginUrl(c, m.config.ConfigMap, params)
 
+}
+
+func (m *publicUser) GetUserList(c *gin.Context) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
+	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
+	return user.GetUserList(c, m.config.ConfigMap)
 }

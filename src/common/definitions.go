@@ -992,9 +992,12 @@ const (
 )
 
 const (
-	// BKDefaultLoginUserPluginVersion 默认的登录方式
-	BKDefaultLoginUserPluginVersion = "blueking"
-	HTTPCookieBKToken               = "bk_token"
+	// login type
+	BKBluekingLoginPluginVersion   = "blueking"
+	BKOpenSourceLoginPluginVersion = "opensource"
+	BKSkipLoginPluginVersion       = "skip-login"
+
+	HTTPCookieBKToken = "bk_token"
 
 	WEBSessionUinKey           = "username"
 	WEBSessionChineseNameKey   = "chName"

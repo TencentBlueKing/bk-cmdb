@@ -48,18 +48,18 @@ func (s *Service) Login(c *gin.Context) {
 // LoginUser log in user
 func (s *Service) LoginUser(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
 	userName := c.PostForm("username")
 	password := c.PostForm("password")
 	if userName == "" || password == "" {
 		c.HTML(200, "login.html", gin.H{
-			"error": "请填写用户名和密码",
+			"error": defErr.CCError(common.CCErrWebNeedFillinUsernamePasswd).Error(),
 		})
 	}
 
 	if len(s.Config.ConfigMap["session.user_info"]) == 0 {
 		c.HTML(200, "login.html", gin.H{
-			"error": "未配置用户名和密码信息，请在common.conf文件中配置session.user_info配置项",
+			"error": defErr.CCError(common.CCErrWebNoUsernamePasswd).Error(),
 		})
 		return
 	}
@@ -69,7 +69,7 @@ func (s *Service) LoginUser(c *gin.Context) {
 		if len(userWithPassword) != 2 {
 			blog.Errorf("user info config %s invalid, rid: %s", userInfo, rid)
 			c.HTML(200, "login.html", gin.H{
-				"error": "用户名和密码配置格式错误，请检查session.user_info配置项",
+				"error": defErr.CCError(common.CCErrWebUserinfoFormatWrong).Error(),
 			})
 			return
 		}
@@ -93,7 +93,7 @@ func (s *Service) LoginUser(c *gin.Context) {
 		}
 	}
 	c.HTML(200, "login.html", gin.H{
-		"error": "用户名或者密码错误，请重新输入",
+		"error": defErr.CCError(common.CCErrWebUsernamePasswdWrong).Error(),
 	})
 	return
 }

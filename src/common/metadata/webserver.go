@@ -15,6 +15,8 @@ package metadata
 import (
 	"net/http"
 
+	"configcenter/src/common/errors"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,6 +60,7 @@ type LoginUserPluginParams struct {
 type LoginUserPluginInerface interface {
 	LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *LoginUserInfo, loginSucc bool)
 	GetLoginUrl(c *gin.Context, config map[string]string, input *LogoutRequestParams) string
+	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, *errors.RawErrorInfo)
 }
 
 type LoginSystemUserInfo struct {

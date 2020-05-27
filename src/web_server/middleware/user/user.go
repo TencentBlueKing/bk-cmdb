@@ -14,6 +14,8 @@ package user
 
 import (
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/web_server/app/options"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +28,8 @@ type LoginInterface interface {
 	LoginUser(c *gin.Context) (isLogin bool)
 	// 获取登录系统的URL
 	GetLoginUrl(c *gin.Context) string
+	// 获取不同登录方式下对应的用户列表
+	GetUserList(c *gin.Context) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo)
 }
 
 // NewUser return user instance by type

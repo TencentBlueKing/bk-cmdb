@@ -13,17 +13,17 @@
 package plugins
 
 import (
-	"github.com/gin-gonic/gin"
-
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 	_ "configcenter/src/web_server/middleware/user/plugins/register"
+
+	"github.com/gin-gonic/gin"
 )
 
 func CurrentPlugin(c *gin.Context, version string) metadata.LoginUserPluginInerface {
 	if "" == version {
-		version = common.BKDefaultLoginUserPluginVersion
+		version = common.BKBluekingLoginPluginVersion
 	}
 
 	var defaultPlugin *metadata.LoginPluginInfo
@@ -31,7 +31,7 @@ func CurrentPlugin(c *gin.Context, version string) metadata.LoginUserPluginInerf
 		if plugin.Version == version {
 			return plugin.HandleFunc
 		}
-		if common.BKDefaultLoginUserPluginVersion == plugin.Version {
+		if common.BKBluekingLoginPluginVersion == plugin.Version {
 			defaultPlugin = plugin
 		}
 	}
