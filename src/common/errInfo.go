@@ -223,6 +223,9 @@ const (
 	// CCErrCommRedisOPErr operate redis error.
 	CCErrCommRedisOPErr = 1199088
 
+	// too many requests
+	CCErrTooManyRequestErr = 1199997
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
@@ -679,6 +682,11 @@ const (
 	CCErrWebGetAddNetPropertyResultFail = 1111010
 	CCErrWebGetNetDeviceFail            = 1111011
 	CCErrWebGetNetPropertyFail          = 1111012
+	CCErrWebNeedFillinUsernamePasswd    = 1111013
+	CCErrWebUsernamePasswdWrong         = 1111014
+	CCErrWebNoUsernamePasswd            = 1111015
+	CCErrWebUserinfoFormatWrong         = 1111016
+	CCErrWebUnknownLoginVersion         = 1111017
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

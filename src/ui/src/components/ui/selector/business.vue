@@ -1,6 +1,7 @@
 <template>
     <bk-select style="text-align: left;"
         v-model="localSelected"
+        ext-popover-cls="business-selector-popover"
         :searchable="true"
         :clearable="false"
         :placeholder="$t('请选择业务')"
@@ -99,6 +100,19 @@
             font-size: 18px;
             color: #979BA5;
             vertical-align: text-top;
+        }
+    }
+</style>
+
+<style lang="scss">
+    .bk-select-dropdown-content.business-selector-popover {
+        .bk-option-content-default {
+            padding: 0;
+            .bk-option-name {
+                width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
         }
     }
 </style>

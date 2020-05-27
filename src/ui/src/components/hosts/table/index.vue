@@ -115,7 +115,7 @@
         MENU_RESOURCE_BUSINESS_HOST_DETAILS
     } from '@/dictionary/menu-symbol'
     import RouterQuery from '@/router/query'
-    import { getIPPayload, injectFields } from '@/utils/host'
+    import { getIPPayload, injectFields, injectAsset } from '@/utils/host'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -369,17 +369,19 @@
             },
             getHostList (event) {
                 try {
+                    const params = this.injectScope({
+                        bk_biz_id: -1,
+                        condition: this.condition,
+                        ip: getIPPayload(),
+                        page: {
+                            start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                            limit: this.table.pagination.limit,
+                            sort: this.table.sort
+                        }
+                    })
+                    injectAsset(params, RouterQuery.get('bk_asset_id'))
                     this.searchHost({
-                        params: this.injectScope({
-                            bk_biz_id: -1,
-                            condition: this.condition,
-                            ip: getIPPayload(),
-                            page: {
-                                start: (this.table.pagination.current - 1) * this.table.pagination.limit,
-                                limit: this.table.pagination.limit,
-                                sort: this.table.sort
-                            }
-                        }),
+                        params: params,
                         config: {
                             requestId: 'searchHosts',
                             cancelPrevious: true

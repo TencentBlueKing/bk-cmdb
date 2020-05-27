@@ -24,11 +24,12 @@ import (
 
 // zk path
 const (
-	CC_SERV_BASEPATH       = "/cc/services/endpoints"
-	CC_SERVCONF_BASEPATH   = "/cc/services/config"
-	CC_SERVERROR_BASEPATH  = "/cc/services/errors"
-	CC_SERVLANG_BASEPATH   = "/cc/services/language"
-	CC_SERVNOTICE_BASEPATH = "/cc/services/notice"
+	CC_SERV_BASEPATH        = "/cc/services/endpoints"
+	CC_SERVCONF_BASEPATH    = "/cc/services/config"
+	CC_SERVERROR_BASEPATH   = "/cc/services/errors"
+	CC_SERVLANG_BASEPATH    = "/cc/services/language"
+	CC_SERVNOTICE_BASEPATH  = "/cc/services/notice"
+	CC_SERVLIMITER_BASEPATH = "/cc/services/limiter"
 
 	CC_DISCOVERY_PREFIX = "cc_"
 )

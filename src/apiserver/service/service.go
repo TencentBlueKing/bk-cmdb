@@ -13,20 +13,21 @@
 package service
 
 import (
-    "configcenter/src/apimachinery/discovery"
-    "configcenter/src/auth"
-    "configcenter/src/auth/authcenter"
-    "configcenter/src/common/backbone"
-    "configcenter/src/common/errors"
-    "configcenter/src/common/rdapi"
+	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/rdapi"
 
-    "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 // Service service methods
 type Service interface {
 	WebServices(auth authcenter.AuthConfig) []*restful.WebService
-	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
+	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize, cache *redis.Client, limiter *Limiter)
 }
 
 // NewService create a new service instance
@@ -39,13 +40,17 @@ type service struct {
 	client     HTTPClient
 	discovery  discovery.DiscoveryInterface
 	authorizer auth.Authorizer
+	cache      *redis.Client
+	limiter    *Limiter
 }
 
-func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
+func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize, cache *redis.Client, limiter *Limiter) {
 	s.engine = engine
 	s.client = httpClient
 	s.discovery = discovery
 	s.authorizer = authorize
+	s.cache = cache
+	s.limiter = limiter
 }
 
 func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService {
@@ -58,6 +63,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws.Filter(s.engine.Metric().RestfulMiddleWare)
 	ws.Filter(rdapi.AllGlobalFilter(getErrFun))
 	ws.Filter(rdapi.RequestLogFilter())
+	ws.Filter(s.LimiterFilter())
 	ws.Produces(restful.MIME_JSON)
 	if s.authorizer.Enabled() == true {
 		ws.Filter(s.authFilter(getErrFun))

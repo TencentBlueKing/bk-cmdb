@@ -15,13 +15,16 @@ package blueking
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
-	commonutil "configcenter/src/common/util"
+	"configcenter/src/common/resource/esb"
+	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +33,7 @@ import (
 func init() {
 	plugin := &metadata.LoginPluginInfo{
 		Name:       "blueking login system",
-		Version:    common.BKDefaultLoginUserPluginVersion,
+		Version:    common.BKBluekingLoginPluginVersion,
 		HandleFunc: &user{},
 	}
 	manager.RegisterPlugin(plugin) // ("blueking login system", "self", "")
@@ -58,7 +61,7 @@ type user struct {
 
 // LoginUser  user login
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSucc bool) {
-	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
 	bkToken, err := c.Cookie(common.HTTPCookieBKToken)
 	if err != nil || len(bkToken) == 0 {
@@ -144,4 +147,40 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	}
 	loginURL = fmt.Sprintf(loginURL, appCode, fmt.Sprintf("%s%s", siteURL, c.Request.URL.String()))
 	return loginURL
+}
+
+func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	query := c.Request.URL.Query()
+	params := make(map[string]string)
+	for key, values := range query {
+		params[key] = strings.Join(values, ";")
+	}
+
+	// try to use esb user list api
+	result, err := esb.EsbClient().User().ListUsers(c.Request.Context(), c.Request.Header, params)
+	if err != nil {
+		blog.Errorf("get users by esb client failed, http failed, err: %+v, rid: %s", err, rid)
+		return nil, &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPDoRequestFailed,
+		}
+	}
+
+	if !result.Result {
+		blog.Errorf("request esb, get user list failed, err: %v, rid: %s", result.Message, result.EsbRequestID)
+		return nil, &errors.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPDoRequestFailed,
+		}
+	}
+
+	users := make([]*metadata.LoginSystemUserInfo, 0)
+	for _, userInfo := range result.Data {
+		user := &metadata.LoginSystemUserInfo{
+			CnName: userInfo.DisplayName,
+			EnName: userInfo.Username,
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }

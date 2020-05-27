@@ -54,3 +54,20 @@ export function injectFields (params, tableHeaderList = []) {
 
     return params
 }
+
+export function injectAsset (params, asset = []) {
+    if (!asset.length) {
+        return params
+    }
+    const hostCondition = params.condition.find(condition => condition.bk_obj_id === 'host')
+    const hasAssetCondition = hostCondition.condition.some(condition => condition.field === 'bk_asset_id')
+    if (hasAssetCondition) { // 如果本身已经有该参数了，不再进行注入，防止冲突
+        return params
+    }
+    hostCondition.condition.push({
+        field: 'bk_asset_id',
+        operator: '$in',
+        value: asset.toString().split(',') // 兼容string/array，并统一转换为array
+    })
+    return params
+}

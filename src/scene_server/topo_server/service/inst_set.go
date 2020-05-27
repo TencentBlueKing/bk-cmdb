@@ -84,10 +84,14 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 			return err
 		})
 
+		errMsg := ""
+		if txnErr != nil {
+			errMsg = txnErr.Error()
+		}
 		batchCreateResult = append(batchCreateResult, OneSetCreateResult{
 			Index:    idx,
 			Data:     result,
-			ErrorMsg: txnErr.Error(),
+			ErrorMsg: errMsg,
 		})
 	}
 	ctx.RespEntityWithError(batchCreateResult, firstErr)
@@ -409,4 +413,55 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 	return
 
+}
+
+// SearchSetBatch search the sets in one biz
+func (s *Service) SearchSetBatch(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	option := metadata.SearchInstBatchOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if len(option.Fields) == 0 {
+		option.Fields = []string{common.BKSetIDField, common.BKSetNameField}
+	}
+
+	cond := mapstr.MapStr{
+		common.BKAppIDField: bizID,
+		common.BKSetIDField: mapstr.MapStr{
+			common.BKDBIN: option.InstIDs,
+		},
+	}
+
+	qc := &metadata.QueryCondition{
+		Fields:    option.Fields,
+		Page:      option.Page,
+		Condition: cond,
+	}
+	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, qc)
+	if err != nil {
+		blog.Errorf("SearchModuleBatch failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+	if !instanceResult.Result {
+		blog.ErrorJSON("SearchModuleBatch failed, ReadInstance failed, filter: %s, response: %s, rid: %s", qc, instanceResult, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
+		return
+	}
+	ctx.RespEntity(instanceResult.Data)
 }
