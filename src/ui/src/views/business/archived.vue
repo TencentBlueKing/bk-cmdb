@@ -193,7 +193,7 @@
                     }
                 }
                 if (this.filter.name) {
-                    params.condition.bk_biz_name = { '$regex': this.filter.name }
+                    params.condition.bk_biz_name = this.filter.name
                 }
                 return params
             },
