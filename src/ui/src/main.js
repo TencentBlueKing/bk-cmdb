@@ -21,7 +21,6 @@ import './setup/cookie'
 import './setup/permission'
 import '@icon-cool/bk-icon-cmdb'
 import './assets/scss/common.scss'
-import './assets/scss/admin-view.scss'
 
 Vue.use(cmdbUI)
 Vue.use(clipboard)
