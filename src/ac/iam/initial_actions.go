@@ -13,21 +13,15 @@
 package iam
 
 var (
-	businessChain = ResourceChain{
-		SystemID: SystemIDCMDB,
-		ID:       Business,
-	}
-
 	businessResource = RelateResourceType{
 		SystemID:    SystemIDCMDB,
 		ID:          Business,
 		NameAlias:   "",
 		NameAliasEn: "",
 		Scope:       nil,
-		InstanceSelections: []InstanceSelection{{
-			Name:              "业务",
-			NameEn:            "business",
-			ResourceTypeChain: []ResourceChain{businessChain},
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       BusinessSelection,
 		}},
 	}
 
@@ -37,13 +31,9 @@ var (
 		NameAlias:   "",
 		NameAliasEn: "",
 		Scope:       nil,
-		InstanceSelections: []InstanceSelection{{
-			Name:   "资源池目录",
-			NameEn: "Resource Pool Directory",
-			ResourceTypeChain: []ResourceChain{{
-				SystemID: SystemIDCMDB,
-				ID:       SysResourcePoolDirectory,
-			}},
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       SysResourcePoolDirectorySelection,
 		}},
 	}
 )
@@ -83,26 +73,9 @@ func GenerateActions() []ResourceAction {
 }
 
 func genBusinessHostActions() []ResourceAction {
-	hostSelection := []InstanceSelection{{
-		Name:   "业务主机",
-		NameEn: "Business's Hosts",
-		ResourceTypeChain: []ResourceChain{
-			// select the business at first.
-			businessChain,
-			{
-				SystemID: SystemIDCMDB,
-				ID:       Set,
-			},
-			{
-				SystemID: SystemIDCMDB,
-				ID:       Module,
-			},
-			// then select the host instances.
-			{
-				SystemID: SystemIDCMDB,
-				ID:       BizHostInstance,
-			},
-		},
+	hostSelection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       BizHostInstanceSelection,
 	}}
 
 	relatedResource := []RelateResourceType{{
@@ -143,19 +116,10 @@ func genBusinessHostActions() []ResourceAction {
 }
 
 func genBusinessCustomQueryActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "动态分组",
-			NameEn: "Custom Query",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizCustomQuery,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       BizCustomQuerySelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -229,19 +193,10 @@ func genBusinessCustomFieldActions() []ResourceAction {
 }
 
 func genBusinessServiceCategoryActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "服务分类",
-			NameEn: "Service Category",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizProcessServiceCategory,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       BizProcessServiceCategorySelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -289,19 +244,10 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 }
 
 func genBusinessServiceInstanceActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "服务实例",
-			NameEn: "Service Instance",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizProcessServiceInstance,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       BizProcessServiceInstanceSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -349,19 +295,10 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 }
 
 func genBusinessServiceTemplateActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "服务模板",
-			NameEn: "Service Template",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizProcessServiceTemplate,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       BizProcessServiceTemplateSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -409,19 +346,10 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 }
 
 func genBusinessSetTemplateActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "集群模板",
-			NameEn: "Set Template",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizSetTemplate,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       BizSetTemplateSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -521,19 +449,9 @@ func genBusinessHostApplyActions() []ResourceAction {
 }
 
 func genResourcePoolHostActions() []ResourceAction {
-	hostSelection := []InstanceSelection{{
-		Name:   "资源池主机",
-		NameEn: "Resource Pool Host",
-		ResourceTypeChain: []ResourceChain{
-			{
-				SystemID: SystemIDCMDB,
-				ID:       SysResourcePoolDirectory,
-			},
-			{
-				SystemID: SystemIDCMDB,
-				ID:       SysHostInstance,
-			},
-		},
+	hostSelection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysHostInstanceSelection,
 	}}
 
 	relatedResource := []RelateResourceType{{
@@ -683,18 +601,10 @@ func genBusinessActions() []ResourceAction {
 }
 
 func genCloudAreaActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "云区域",
-			NameEn: "Cloud Area",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysCloudArea,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysCloudAreaSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -742,22 +652,10 @@ func genCloudAreaActions() []ResourceAction {
 }
 
 func genInstanceActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "实例",
-			NameEn: "Instance",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysModel,
-				},
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstance,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysInstanceSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -815,18 +713,10 @@ func genInstanceActions() []ResourceAction {
 }
 
 func genEventPushingActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "事件推送",
-			NameEn: "Event Pushing",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysEventPushing,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysEventPushingSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -884,18 +774,10 @@ func genEventPushingActions() []ResourceAction {
 }
 
 func genCloudAccountActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "云账户",
-			NameEn: "Cloud Account",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysCloudAccount,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysCloudAccountSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -953,18 +835,10 @@ func genCloudAccountActions() []ResourceAction {
 }
 
 func genCloudResourceTaskActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "云资源任务",
-			NameEn: "Cloud Resource Task",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysCloudResourceTask,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysCloudResourceTaskSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -1022,18 +896,10 @@ func genCloudResourceTaskActions() []ResourceAction {
 }
 
 func genModelActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "模型",
-			NameEn: "Model",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysModel,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysModelSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -1091,18 +957,10 @@ func genModelActions() []ResourceAction {
 }
 
 func genAssociationTypeActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "关联类型",
-			NameEn: "Association Type",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysAssociationType,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysAssociationTypeSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{
@@ -1150,18 +1008,10 @@ func genAssociationTypeActions() []ResourceAction {
 }
 
 func genModelGroupActions() []ResourceAction {
-	selection := []InstanceSelection{
-		{
-			Name:   "模型分组",
-			NameEn: "Model Group",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysModelGroup,
-				},
-			},
-		},
-	}
+	selection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysModelGroupSelection,
+	}}
 
 	relatedResource := []RelateResourceType{
 		{

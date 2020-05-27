@@ -116,9 +116,10 @@ type SystemResp struct {
 }
 
 type RegisteredSystemInfo struct {
-	BaseInfo      System           `json:"base_info"`
-	ResourceTypes []ResourceType   `json:"resource_types"`
-	Actions       []ResourceAction `json:"actions"`
+	BaseInfo           System              `json:"base_info"`
+	ResourceTypes      []ResourceType      `json:"resource_types"`
+	Actions            []ResourceAction    `json:"actions"`
+	InstanceSelections []InstanceSelection `json:"instance_selections"`
 }
 
 type BaseResponse struct {
@@ -324,7 +325,7 @@ type RelateResourceType struct {
 	NameAliasEn        string                     `json:"name_alias_en"`
 	Scope              *Scope                     `json:"scope"`
 	SelectionMode      string                     `json:"selection_mode"`
-	InstanceSelections []RelatedInstanceSelection `json:"related_instances"`
+	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
 
 type Scope struct {

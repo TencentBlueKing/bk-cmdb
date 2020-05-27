@@ -129,6 +129,33 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 
+	existInstanceSelectionMap := make(map[InstanceSelectionID]bool)
+	removedInstanceSelectionMap := make(map[InstanceSelectionID]struct{})
+	for _, instanceSelection := range systemResp.Data.InstanceSelections {
+		existInstanceSelectionMap[instanceSelection.ID] = true
+		removedInstanceSelectionMap[instanceSelection.ID] = struct{}{}
+	}
+	newInstanceSelections := make([]InstanceSelection, 0)
+	for _, resourceType := range GenerateInstanceSelections() {
+		// registered instance selection exist in current instance selections, should not be removed
+		delete(removedInstanceSelectionMap, resourceType.ID)
+		// if current instance selection is registered, update it, or else register it
+		if existInstanceSelectionMap[resourceType.ID] {
+			if err = i.client.UpdateInstanceSelection(ctx, resourceType); err != nil {
+				blog.ErrorJSON("update instance selection %s failed, error: %s, input resource type: %s", resourceType.ID, err.Error(), resourceType)
+				return err
+			}
+		} else {
+			newInstanceSelections = append(newInstanceSelections, resourceType)
+		}
+	}
+	if len(newInstanceSelections) > 0 {
+		if err = i.client.CreateInstanceSelection(ctx, newInstanceSelections); err != nil {
+			blog.ErrorJSON("register instance selections failed, error: %s, resource types: %s", err.Error(), newInstanceSelections)
+			return err
+		}
+	}
+
 	existResourceActionMap := make(map[ResourceActionID]bool)
 	removedResourceActionMap := make(map[ResourceActionID]struct{})
 	for _, resourceAction := range systemResp.Data.Actions {
@@ -156,7 +183,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 
-	// remove redundant actions, then remove redundant resource types whose related actions are all deleted
+	// remove redundant actions, redundant instance selections and resource types one by one when dependencies are all deleted
 	if actionLen := len(removedResourceActionMap); actionLen > 0 {
 		removedResourceActionIDs := make([]ResourceActionID, actionLen)
 		for resourceActionID, _ := range removedResourceActionMap {
@@ -164,6 +191,16 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 		if err = i.client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
 			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
+			return err
+		}
+	}
+	if selectionLen := len(removedInstanceSelectionMap); selectionLen > 0 {
+		removedInstanceSelectionIDs := make([]InstanceSelectionID, selectionLen)
+		for resourceActionID, _ := range removedInstanceSelectionMap {
+			removedInstanceSelectionIDs = append(removedInstanceSelectionIDs, resourceActionID)
+		}
+		if err = i.client.DeleteInstanceSelection(ctx, removedInstanceSelectionIDs); err != nil {
+			blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s", err.Error(), removedInstanceSelectionIDs)
 			return err
 		}
 	}

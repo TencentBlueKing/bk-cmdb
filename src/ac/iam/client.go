@@ -65,7 +65,7 @@ func (c *iamClient) GetSystemInfo(ctx context.Context) (*SystemResp, error) {
 		SubResourcef("/api/v1/model/systems/%s/query", c.Config.SystemID).
 		WithContext(ctx).
 		WithHeaders(c.basicHeader).
-		WithParam("fields", "base_info,resource_types,actions,action_topology").
+		WithParam("fields", "base_info,resource_types,actions,action_topology,instance_selections").
 		Body(nil).Do()
 	err := result.Into(resp)
 	if err != nil {
@@ -255,6 +255,81 @@ func (c *iamClient) DeleteAction(ctx context.Context, actionIDs []ResourceAction
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
 			Reason:    fmt.Errorf("delete resource actions %v failed, code: %d, msg:%s", actionIDs, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) CreateInstanceSelection(ctx context.Context, instanceSelections []InstanceSelection) error {
+
+	resp := new(BaseResponse)
+	result := c.client.Post().
+		SubResourcef("/api/v1/model/systems/%s/instance-selections", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(instanceSelections).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("add instance selections %v failed, code: %d, msg:%s", instanceSelections, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) UpdateInstanceSelection(ctx context.Context, instanceSelection InstanceSelection) error {
+
+	resp := new(BaseResponse)
+	result := c.client.Put().
+		SubResourcef("/api/v1/model/systems/%s/instance-selections/%s", c.Config.SystemID, instanceSelection.ID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(instanceSelection).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("udpate instance selections %v failed, code: %d, msg:%s", instanceSelection, resp.Code, resp.Message),
+		}
+	}
+
+	return nil
+}
+
+func (c *iamClient) DeleteInstanceSelection(ctx context.Context, instanceSelectionIDs []InstanceSelectionID) error {
+	ids := make([]struct {
+		ID InstanceSelectionID `json:"id"`
+	}, len(instanceSelectionIDs))
+	for idx := range instanceSelectionIDs {
+		ids[idx].ID = instanceSelectionIDs[idx]
+	}
+
+	resp := new(BaseResponse)
+	result := c.client.Delete().
+		SubResourcef("/api/v1/model/systems/%s/instance-selections", c.Config.SystemID).
+		WithContext(ctx).
+		WithHeaders(c.basicHeader).
+		Body(ids).Do()
+	err := result.Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return &AuthError{
+			RequestID: result.Header.Get(IamRequestHeader),
+			Reason:    fmt.Errorf("delete instance selections %v failed, code: %d, msg:%s", instanceSelectionIDs, resp.Code, resp.Message),
 		}
 	}
 
