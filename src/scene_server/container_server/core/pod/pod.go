@@ -30,6 +30,7 @@ type PodManager struct {
 	clientSet apimachinery.ClientSetInterface
 	language  language.CCLanguageIf
 	cache     *redis.Client
+	enableTxn bool
 }
 
 // New create pod manager
@@ -42,6 +43,7 @@ func New(
 		clientSet: clientSet,
 		language:  language,
 		cache:     cache,
+		enableTxn: true,
 	}
 }
 
@@ -78,11 +80,25 @@ func (p *PodManager) CreatePod(kit *rest.Kit, inputParam metadata.CreatePod) (*m
 	// set biz id
 	inputParam.Pod[common.BKAppIDField] = inputParam.BizID
 
-	return p.clientSet.CoreService().Instance().CreateInstance(
-		kit.Ctx, kit.Header, common.BKInnerObjIDPod,
-		&metadata.CreateModelInstance{
-			Data: inputParam.Pod,
-		})
+	var ret *metadata.CreatedOneOptionResult
+	txnErr := p.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, p.enableTxn, kit.Header, func() error {
+		var err error
+		ret, err = p.clientSet.CoreService().Instance().CreateInstance(
+			kit.Ctx, kit.Header, common.BKInnerObjIDPod,
+			&metadata.CreateModelInstance{
+				Data: inputParam.Pod,
+			})
+		if err != nil {
+			blog.Errorf("create pod instance failed, err %s, rid %d", err.Error(), kit.Rid)
+			return err
+		}
+		return nil
+	})
+	if txnErr != nil {
+		return nil, txnErr
+	}
+
+	return ret, nil
 }
 
 // CreateManyPod implements core PodOperation
@@ -112,11 +128,24 @@ func (p *PodManager) CreateManyPod(kit *rest.Kit, inputParam metadata.CreateMany
 		return nil, kit.CCError.CCError(common.CCErrContainerQueryPodModuleFail)
 	}
 
-	return p.clientSet.CoreService().Instance().CreateManyInstance(
-		kit.Ctx, kit.Header, common.BKInnerObjIDPod,
-		&metadata.CreateManyModelInstance{
-			Datas: inputParam.PodList,
-		})
+	var ret *metadata.CreatedManyOptionResult
+	txnErr := p.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, p.enableTxn, kit.Header, func() error {
+		var err error
+		ret, err = p.clientSet.CoreService().Instance().CreateManyInstance(
+			kit.Ctx, kit.Header, common.BKInnerObjIDPod,
+			&metadata.CreateManyModelInstance{
+				Datas: inputParam.PodList,
+			})
+		if err != nil {
+			blog.Errorf("create many pod instance failed, err %s, rid %d", err.Error(), kit.Rid)
+			return err
+		}
+		return nil
+	})
+	if txnErr != nil {
+		return nil, txnErr
+	}
+	return ret, nil
 }
 
 // UpdatePod implements core PodOperation
@@ -145,12 +174,24 @@ func (p *PodManager) UpdatePod(kit *rest.Kit, inputParam metadata.UpdatePod) (*m
 	// set biz id
 	inputParam.Condition[common.BKAppIDField] = inputParam.BizID
 
-	return p.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPod, &inputParam.UpdateOption)
+	var ret *metadata.UpdatedOptionResult
+	txnErr := p.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, p.enableTxn, kit.Header, func() error {
+		var err error
+		ret, err = p.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPod, &inputParam.UpdateOption)
+		if err != nil {
+			blog.Errorf("update pod instance failed, err %s, rid %d", err.Error(), kit.Rid)
+			return err
+		}
+		return nil
+	})
+	if txnErr != nil {
+		return nil, txnErr
+	}
+	return ret, nil
 }
 
 // DeletePod implements core PodOperation
 func (p *PodManager) DeletePod(kit *rest.Kit, inputParam metadata.DeletePod) (*metadata.DeletedOptionResult, error) {
-	blog.V(3).Infof("Rid [%s] DeletePod params %#v", kit.Rid, inputParam)
 	// get pod attr
 	attrs, err := p.getPodAttrDes(kit)
 	if err != nil {
@@ -174,7 +215,20 @@ func (p *PodManager) DeletePod(kit *rest.Kit, inputParam metadata.DeletePod) (*m
 	// set biz id
 	inputParam.Condition[common.BKAppIDField] = inputParam.BizID
 
-	return p.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPod, &inputParam.DeleteOption)
+	var ret *metadata.DeletedOptionResult
+	txnErr := p.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, p.enableTxn, kit.Header, func() error {
+		var err error
+		ret, err = p.clientSet.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPod, &inputParam.DeleteOption)
+		if err != nil {
+			blog.Errorf("delete pod instance failed, err %s, rid %d", err.Error(), kit.Rid)
+			return err
+		}
+		return nil
+	})
+	if txnErr != nil {
+		return nil, txnErr
+	}
+	return ret, nil
 }
 
 // ListPods implements core PodOperation

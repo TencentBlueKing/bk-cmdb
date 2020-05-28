@@ -342,22 +342,18 @@ func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
 	return false
 }
 
+var containerUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/container/.*$", verbs))
+
 // WithContainer transform container server url
 func (u *URLPath) WithContainer(req *restful.Request) (isHit bool) {
 	containerRoot := "/container/v3"
 	from, to := rootPath, containerRoot
 
 	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/create/container"):
+	case containerUrlRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, containerRoot, true
-	case strings.HasPrefix(string(*u), rootPath+"/createmany/container"):
-		from, to, isHit = rootPath, containerRoot, true
-	case strings.HasPrefix(string(*u), rootPath+"/update/container"):
-		from, to, isHit = rootPath, containerRoot, true
-	case strings.HasPrefix(string(*u), rootPath+"/delete/container"):
-		from, to, isHit = rootPath, containerRoot, true
-	case strings.HasPrefix(string(*u), rootPath+"/list/container"):
-		from, to, isHit = rootPath, containerRoot, true
+	default:
+		isHit = false
 	}
 
 	if isHit {

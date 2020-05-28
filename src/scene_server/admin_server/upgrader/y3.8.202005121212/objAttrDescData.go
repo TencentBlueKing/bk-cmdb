@@ -89,7 +89,7 @@ func PodRow() []*Attribute {
 			ObjectID:      common.BKInnerObjIDPod,
 			PropertyID:    common.BKHostInnerIPField,
 			PropertyName:  "主机内网IP",
-			IsRequired:    true,
+			IsRequired:    false,
 			IsOnly:        false,
 			IsEditable:    true,
 			PropertyGroup: mCommon.BaseInfo,

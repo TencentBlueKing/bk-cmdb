@@ -39,7 +39,6 @@ func (s *ContainerService) CreatePod(ctx *rest.Contexts) {
 	inputData.BizID = bkBizID
 	resp, err := s.core.PodOperation().CreatePod(ctx.Kit, inputData)
 	if err != nil {
-		blog.Warnf("rid: %s CreatePod failed, err %s", ctx.Kit.Rid, err.Error())
 		ctx.RespAutoError(err)
 		return
 	}

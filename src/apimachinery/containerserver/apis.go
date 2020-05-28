@@ -77,7 +77,7 @@ func (cs *containerServer) DeletePod(ctx context.Context, h http.Header, bizID i
 
 func (cs *containerServer) ListPods(ctx context.Context, h http.Header, bizID int64, data interface{}) (resp *metadata.ListPodsResult, err error) {
 	resp = new(metadata.ListPodsResult)
-	subPath := "/list/container/pod"
+	subPath := "/findmany/container/pod"
 
 	err = cs.client.Delete().
 		WithContext(ctx).

@@ -54,18 +54,6 @@ type DeletePodOption struct {
 	PodID string `json:"bk_pod_id"`
 }
 
-// // DeleteManyPod request for DeleteManyPod
-// type DeleteManyPod struct {
-// 	BizID   int64
-// 	Deletes []DeletePodOption `json:"deletes"`
-// }
-
-// // DeleteManyPodResult response for DeleteManyPod
-// type DeleteManyPodResult struct {
-// 	BaseResp
-// 	DeletedCount
-// }
-
 // FindPod request for FindPod
 type FindPod struct {
 	BizID int64 `json:"bk_biz_id"`

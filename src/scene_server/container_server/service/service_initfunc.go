@@ -30,8 +30,7 @@ func (s *ContainerService) initPod(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/container/biz/{bk_biz_id}/pod", Handler: s.CreateManyPod})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/container/biz/{bk_biz_id}/pod", Handler: s.UpdatePod})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/container/biz/{bk_biz_id}/pod", Handler: s.DeletePod})
-	//utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/container/biz/{bk_biz_id}/pod", Handler: s.DeleteManyPod})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/list/container/pod", Handler: s.ListPods})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/container/pod", Handler: s.ListPods})
 
 	utility.AddToRestfulWebService(web)
 }
