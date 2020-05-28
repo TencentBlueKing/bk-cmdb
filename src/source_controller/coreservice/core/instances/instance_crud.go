@@ -19,11 +19,15 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 )
 
 func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (id uint64, err error) {
+	if objID == common.BKInnerObjIDHost {
+		inputParam = metadata.ConvertHostSpecialStringToArray(inputParam)
+	}
 	tableName := common.GetInstTableName(objID)
 	id, err = m.dbProxy.NextSequence(kit.Ctx, tableName)
 	if nil != err {
@@ -43,6 +47,9 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 }
 
 func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) error {
+	if objID == common.BKInnerObjIDHost {
+		data = metadata.ConvertHostSpecialStringToArray(data)
+	}
 	tableName := common.GetInstTableName(objID)
 	if !util.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
@@ -59,7 +66,15 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 	if !util.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
-	err = m.dbProxy.Table(tableName).Find(cond).All(kit.Ctx, &origins)
+	if objID == common.BKInnerObjIDHost {
+		hosts := make([]metadata.HostMapStr, 0)
+		err = m.dbProxy.Table(tableName).Find(cond).All(kit.Ctx, &hosts)
+		for _, host := range hosts {
+			origins = append(origins, mapstr.MapStr(host))
+		}
+	} else {
+		err = m.dbProxy.Table(tableName).Find(cond).All(kit.Ctx, &origins)
+	}
 	return origins, !m.dbProxy.IsNotFoundError(err), err
 }
 
@@ -70,7 +85,13 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID ui
 	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
 		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
-	err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &origin)
+	if objID == common.BKInnerObjIDHost {
+		host := make(metadata.HostMapStr)
+		err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &host)
+		origin = mapstr.MapStr(host)
+	} else {
+		err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &origin)
+	}
 	if nil != err {
 		return nil, err
 	}
