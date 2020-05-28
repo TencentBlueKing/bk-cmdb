@@ -113,6 +113,6 @@
         height: calc(100% - 52px);
         border-top: 1px solid $borderColor;
         margin-top: 52px;
-        min-width: 1106px;
+        min-width: 1089px;
     }
 </style>

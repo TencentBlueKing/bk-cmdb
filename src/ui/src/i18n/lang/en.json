@@ -187,8 +187,8 @@
     "主机ID": "Host ID",
     "业务ID": "Business ID",
     "最大支持搜索32个字符": "Maximum support for searching 32 characters",
-    "操作审计": "Operation Audit",
-    "运营统计": "Operational Statistics",
+    "操作审计": "Audit",
+    "运营统计": "Statistics",
     "请选择业务": "Please Select Business",
     "使用逗号分隔": "Separated By Commas",
     "使用换行分隔": "Separated by newlines",
@@ -528,7 +528,7 @@
     "未分配主机": "Unassigned Hosts",
     "请勿选择已分配主机": "Please do not select assigned host",
     "快速查询": "Quick Search",
-    "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}KB",
+    "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}",
     "点击上传": "click upload",
     "下载模板": "Download Template",
     "隐藏属性": "Hidden Properties",
@@ -1262,5 +1262,6 @@
     "业务不存在或无权限": "Permission denied or business non-exist",
     "新增字段": "Create Attribute",
     "修改字段": "Update Attribute",
-    "删除字段": "Delete Attribute"
+    "删除字段": "Delete Attribute",
+    "暂无可复制的IP": "No IP to copy"
 }

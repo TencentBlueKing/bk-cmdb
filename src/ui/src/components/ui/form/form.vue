@@ -281,9 +281,9 @@
             // flex: 0 1 auto;
             .property-name{
                 display: block;
-                margin: 6px 0 10px;
+                margin: 2px 0 6px;
                 color: $cmdbTextColor;
-                line-height: 16px;
+                line-height: 24px;
                 font-size: 0;
             }
             .property-name-text {

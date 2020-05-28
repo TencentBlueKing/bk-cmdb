@@ -191,16 +191,12 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts, withStatistics bool) ([
 	if err := ctx.DecodeInto(md); err != nil {
 		return nil, err
 	}
-	bizObj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, common.BKInnerObjIDApp, md.Metadata)
-	if nil != err {
-		return nil, err
-	}
 
 	withDefault := false
 	if len(ctx.Request.QueryParameter("with_default")) > 0 {
 		withDefault = true
 	}
-	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, bizObj, id, withStatistics, withDefault)
+	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, common.BKInnerObjIDApp, id, withStatistics, withDefault, md.Metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -245,13 +241,7 @@ func (s *Service) SearchMainLineChildInstTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, objID, md.Metadata)
-	if nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, obj, instID, false, false)
+	resp, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit, objID, instID, false, false, md.Metadata)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return

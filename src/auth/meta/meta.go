@@ -135,7 +135,7 @@ const (
 
 	// event watch
 	WatchHost         Action = "host"
-	WatchHostRelation Action = "hostRelation"
+	WatchHostRelation Action = "host_relation"
 )
 
 type InitConfig struct {

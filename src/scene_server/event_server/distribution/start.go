@@ -15,13 +15,14 @@ package distribution
 import (
 	"context"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
 
 	"gopkg.in/redis.v5"
 )
 
-func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
+func Start(ctx context.Context, cache *redis.Client, db dal.RDB, clientSet apimachinery.ClientSetInterface) error {
 	chErr := make(chan error, 1)
 
 	eh := &EventHandler{cache: cache}
@@ -34,7 +35,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
 		chErr <- dh.StartDistribute()
 	}()
 
-	ih := identifier.NewIdentifierHandler(ctx, cache, db)
+	ih := identifier.NewIdentifierHandler(ctx, cache, db, clientSet)
 	go func() {
 		chErr <- ih.Run()
 	}()

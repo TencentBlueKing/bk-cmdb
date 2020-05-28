@@ -13,6 +13,8 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -70,4 +72,45 @@ func (s *coreService) SearchHostWithHostIDInCache(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespString(host)
+}
+
+func (s *coreService) SearchBusinessInCache(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	biz, err := s.cacheSet.Business.GetBusiness(bizID)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search biz with id in cache, but get biz failed, err: %v", err)
+		return
+	}
+	ctx.RespString(biz)
+}
+
+func (s *coreService) SearchSetInCache(ctx *rest.Contexts) {
+	setID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKSetIDField), 10, 64)
+	set, err := s.cacheSet.Business.GetSet(setID)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search set with id in cache failed, err: %v", err)
+		return
+	}
+	ctx.RespString(set)
+}
+
+func (s *coreService) SearchModuleInCache(ctx *rest.Contexts) {
+	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKModuleIDField), 10, 64)
+	module, err := s.cacheSet.Business.GetModule(moduleID)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search module with id in cache failed, err: %v", err)
+		return
+	}
+	ctx.RespString(module)
+}
+
+func (s *coreService) SearchCustomLayerInCache(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	instID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKInstIDField), 10, 64)
+	inst, err := s.cacheSet.Business.GetCustomLevelDetail(objID, instID)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v", err)
+		return
+	}
+	ctx.RespString(inst)
 }

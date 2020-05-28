@@ -13,8 +13,8 @@
 package cache
 
 import (
-	"net/http"
 	"context"
+	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
@@ -88,5 +88,73 @@ func (b *baseCache) SearchHostWithHostID(ctx context.Context, h http.Header, opt
 		return "", errors.New(resp.Code, resp.ErrMsg)
 	}
 
+	return resp.Data, nil
+}
+
+func (b *baseCache) SearchBusiness(ctx context.Context, h http.Header, bizID int64) (string, error) {
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef("/find/cache/biz/%d", bizID).
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+	return resp.Data, nil
+}
+
+func (b *baseCache) SearchSet(ctx context.Context, h http.Header, setID int64) (string, error) {
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef("/find/cache/set/%d", setID).
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+	return resp.Data, nil
+}
+
+func (b *baseCache) SearchModule(ctx context.Context, h http.Header, moduleID int64) (string, error) {
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef("/find/cache/module/%d", moduleID).
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+	return resp.Data, nil
+}
+
+func (b *baseCache) SearchCustomLayer(ctx context.Context, h http.Header, objID string, instID int64) (string, error) {
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef("/find/cache/%s/%d", objID, instID).
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
 	return resp.Data, nil
 }

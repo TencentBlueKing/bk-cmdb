@@ -25,7 +25,7 @@ import (
 )
 
 type IdentifierOperationInterface interface {
-	SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierResult, error)
+	SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierData, error)
 }
 
 func NewIdentifier(client apimachinery.ClientSetInterface) IdentifierOperationInterface {
@@ -36,7 +36,7 @@ type identifier struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierResult, error) {
+func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierData, error) {
 	cond := condition.CreateCondition()
 
 	or := []mapstr.MapStr{
@@ -77,6 +77,9 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		blog.ErrorJSON("[identifier] ReadInstance query host  http reply error. result:%s, input:%s, condition:%s, rid:%s", hostRet, kit, hostQuery, kit.Rid)
 		return nil, kit.CCError.New(hostRet.Code, hostRet.ErrMsg)
 	}
+	if len(hostRet.Data.Info) == 0 {
+		return &metadata.SearchHostIdentifierData{Count: 0, Info: []metadata.HostIdentifier{}}, nil
+	}
 	var hostIDs []int64
 	for _, hostInfo := range hostRet.Data.Info {
 		hostID, err := hostInfo.Int64(common.BKHostIDField)
@@ -99,5 +102,5 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, objType string, param *meta
 		return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return rsp, nil
+	return &rsp.Data, nil
 }

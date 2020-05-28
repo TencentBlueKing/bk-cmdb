@@ -38,6 +38,7 @@ func NewCache(rds *redis.Client, db dal.DB, event reflector.Interface) (*ClientS
 	cache := &ClientSet{
 		Topology: topo_tree.NewTopologyTree(bizClient),
 		Host:     hostClient,
+		Business: bizClient,
 	}
 	return cache, nil
 }
@@ -45,4 +46,5 @@ func NewCache(rds *redis.Client, db dal.DB, event reflector.Interface) (*ClientS
 type ClientSet struct {
 	Topology *topo_tree.TopologyTree
 	Host     *host.Client
+	Business *business.Client
 }

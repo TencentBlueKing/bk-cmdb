@@ -36,7 +36,7 @@ type AssociationOperationInterface interface {
 	CreateMainlineAssociation(kit *rest.Kit, data *metadata.Association, maxTopoLevel int) (model.Object, error)
 	DeleteMainlineAssociation(kit *rest.Kit, objID string, metaData *metadata.Metadata) error
 	SearchMainlineAssociationTopo(kit *rest.Kit, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
-	SearchMainlineAssociationInstTopo(kit *rest.Kit, obj model.Object, instID int64, withStatistics bool, withDefault bool) ([]*metadata.TopoInstRst, error)
+	SearchMainlineAssociationInstTopo(kit *rest.Kit, objID string, instID int64, withStatistics bool, withDefault bool, metaData *metadata.Metadata) ([]*metadata.TopoInstRst, errors.CCError)
 	IsMainlineObject(kit *rest.Kit, objID string) (bool, error)
 
 	CreateCommonAssociation(kit *rest.Kit, data *metadata.Association, metaData *metadata.Metadata) (*metadata.Association, error)

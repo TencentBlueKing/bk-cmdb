@@ -13,7 +13,7 @@
             </template>
         </p>
         <p class="copyright">
-            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有. {{site.buildVersion}}
+            Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. {{site.buildVersion}}
         </p>
     </div>
 </template>

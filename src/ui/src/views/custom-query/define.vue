@@ -63,7 +63,7 @@
                                             :allow-clear="true"
                                             :options="getEnumOptions(property)"
                                             :disabled="disabled"
-                                            :multiple="true"
+                                            :multiple="isMultipleProperty(property)"
                                             v-model="property.value">
                                         </component>
                                         <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
@@ -94,7 +94,7 @@
                                             :data-vv-name="property.propertyId"
                                             :allow-clear="true"
                                             :disabled="disabled"
-                                            :multiple="true"
+                                            :multiple="isMultipleProperty(property)"
                                             v-model="property.value">
                                         </cmdb-cloud-selector>
                                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
@@ -104,7 +104,7 @@
                                             :data-vv-name="property.propertyId"
                                             :is="`cmdb-form-${property.propertyType}`"
                                             :disabled="disabled"
-                                            :multiple="['timezone', 'organization'].includes(property.propertyType)"
+                                            :multiple="isMultipleProperty(property)"
                                             v-model="property.value">
                                         </component>
                                         <i class="userapi-delete fr bk-icon icon-close"
@@ -328,17 +328,11 @@
                             operator: property.operator,
                             value: property.value === 'true'
                         })
-                    } else if (property.operator === '$multilike') {
+                    } else if (property.operator === '$multilike' && !Array.isArray(property.value)) {
                         param.condition.push({
                             field: property.propertyId,
                             operator: property.operator,
                             value: property.value.split(/\n|;|；|,|，/).filter(str => str.trim().length).map(str => str.trim())
-                        })
-                    } else if (Array.isArray(property.value)) {
-                        param['condition'].push({
-                            field: property.propertyId,
-                            operator: '$in',
-                            value: property.value
                         })
                     } else {
                         let value = property.value
@@ -499,14 +493,15 @@
                 return (property.value === null || property.value === undefined) ? '' : property.value
             },
             getUserPropertyDefaultValue (property) {
-                if (
-                    ['list', 'enum', 'timezone', 'organization'].includes(property.propertyType)
-                    || ['bk_cloud_id'].includes(property.propertyId)
-                ) {
+                if (this.isMultipleProperty(property)) {
                     return []
                 } else {
                     return ''
                 }
+            },
+            isMultipleProperty (property) {
+                return ['list', 'enum', 'timezone', 'organization'].includes(property.propertyType)
+                    || ['bk_cloud_id'].includes(property.propertyId)
             },
             async previewUserAPI () {
                 if (!await this.$validator.validateAll()) {
@@ -566,7 +561,7 @@
             getOperatorType (property) {
                 const propertyType = property.propertyType
                 const propertyId = property.propertyId
-                if (['bk_set_name', 'bk_module_name'].includes(propertyId)) {
+                if (['bk_set_name', 'bk_module_name'].includes(propertyId) || this.isMultipleProperty(property)) {
                     return 'name'
                 } else if (['singlechar', 'longchar', 'singleasst', 'multiasst'].includes(propertyType)) {
                     return 'char'

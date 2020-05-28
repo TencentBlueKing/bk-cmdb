@@ -113,10 +113,12 @@
     } from '@/dictionary/menu-symbol'
     import { mapState } from 'vuex'
     import serviceInstanceTable from './service-instance-table.vue'
+    import authMixin from '../mixin-auth'
     export default {
         components: {
             serviceInstanceTable
         },
+        mixins: [authMixin],
         data () {
             const serverSwitchViewTips = window.localStorage.getItem('serverSwitchViewTips')
             return {

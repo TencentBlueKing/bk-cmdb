@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -39,7 +40,7 @@ type InstOperationInterface interface {
 	DeleteInst(kit *rest.Kit, obj model.Object, cond condition.Condition, needCheckHost bool) error
 	DeleteMainlineInstWithID(kit *rest.Kit, obj model.Object, instID int64) error
 	DeleteInstByInstID(kit *rest.Kit, obj model.Object, instID []int64, needCheckHost bool) error
-	FindOriginInst(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error)
+	FindOriginInst(kit *rest.Kit, objID string, cond *metadata.QueryInput) (*metadata.InstResult, errors.CCError)
 	FindInst(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
 	FindInstByAssociationInst(kit *rest.Kit, obj model.Object, asstParamCond *AssociationParams) (cont int, results []inst.Inst, err error)
 	FindInstChildTopo(kit *rest.Kit, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
@@ -980,8 +981,8 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, obj model.Object, 
 	return c.FindInst(kit, obj, query, false)
 }
 
-func (c *commonInst) FindOriginInst(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
-	switch obj.Object().ObjectID {
+func (c *commonInst) FindOriginInst(kit *rest.Kit, objID string, cond *metadata.QueryInput) (*metadata.InstResult, errors.CCError) {
+	switch objID {
 	case common.BKInnerObjIDHost:
 		rsp, err := c.clientSet.CoreService().Host().GetHosts(kit.Ctx, kit.Header, cond)
 		if nil != err {
@@ -990,7 +991,7 @@ func (c *commonInst) FindOriginInst(kit *rest.Kit, obj model.Object, cond *metad
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, kit.Rid)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", objID, cond, rsp.ErrMsg, kit.Rid)
 			return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 
@@ -1003,14 +1004,14 @@ func (c *commonInst) FindOriginInst(kit *rest.Kit, obj model.Object, cond *metad
 		input.Page.Limit = cond.Limit
 		input.Page.Sort = cond.Sort
 		input.Fields = strings.Split(cond.Fields, ",")
-		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj.GetObjectID(), input)
+		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s, rid: %s", err.Error(), kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", obj.Object().ObjectID, cond, rsp.ErrMsg, kit.Rid)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s, rid: %s", objID, cond, rsp.ErrMsg, kit.Rid)
 			return nil, kit.CCError.New(rsp.Code, rsp.ErrMsg)
 		}
 		return &metadata.InstResult{Info: rsp.Data.Info, Count: rsp.Data.Count}, nil
@@ -1018,7 +1019,7 @@ func (c *commonInst) FindOriginInst(kit *rest.Kit, obj model.Object, cond *metad
 }
 
 func (c *commonInst) FindInst(kit *rest.Kit, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error) {
-	rsp, err := c.FindOriginInst(kit, obj, cond)
+	rsp, err := c.FindOriginInst(kit, obj.GetObjectID(), cond)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to find origin inst , err: %s, rid: %s", err.Error(), kit.Rid)
 		return 0, nil, err

@@ -13,7 +13,7 @@
             <div class="upload-file-size fr">{{fileInfo.size}}</div>
             <div class="upload-file-status" hidden>{{fileInfo.status}}</div>
             <div class="upload-file-status-icon" hidden>
-                <i :class="['bk-icon ',{ 'icon-check-circle-shape': uploaded,'icon-close-circle-shape': failed }]"></i>
+                <i :class="['bk-icon ', { 'icon-check-circle-shape': uploaded,'icon-close-circle-shape': failed }]"></i>
             </div>
         </div>
         <div class="upload-details">
@@ -131,7 +131,8 @@
                 return new RegExp(`^.*?.(${this.allowType.join('|')})$`)
             },
             maxSizeLocal () {
-                return this.maxSize.toLocaleString()
+                const maxSize = this.maxSize * 1024
+                return this.formatSize(maxSize)
             }
         },
         methods: {
@@ -149,7 +150,7 @@
                     return false
                 } else {
                     this.fileInfo.name = fileInfo.name
-                    this.fileInfo.size = `${(fileInfo.size / 1024).toFixed(2)}kb`
+                    this.fileInfo.size = this.formatSize(fileInfo.size, 2)
                     const formData = new FormData()
                     formData.append('file', files[0])
                     if (this.importPayload.hasOwnProperty('metadata')) {
@@ -210,6 +211,13 @@
                     update_error: null,
                     asst_error: null
                 }
+            },
+            formatSize (value, digits = 0) {
+                const uints = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+                const index = Math.floor(Math.log(value) / Math.log(1024))
+                let size = value / Math.pow(1024, index)
+                size = `${size.toFixed(digits)}${uints[index]}`
+                return size
             },
             async handleDownloadTemplate () {
                 try {

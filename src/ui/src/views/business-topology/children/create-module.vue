@@ -187,7 +187,11 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-                            params: this.$injectMetadata({}, { injectBizId: true }),
+                            params: this.$injectMetadata({
+                                page: {
+                                    sort: 'name'
+                                }
+                            }, { injectBizId: true }),
                             config: {
                                 requestId: this.request.serviceTemplate
                             }
