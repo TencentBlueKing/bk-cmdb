@@ -202,6 +202,12 @@ const (
 	// BKDBPull The $pull operator removes from an existing array all instances of a value or values that match a specified condition.
 	BKDBPull = "$pull"
 
+	// BKDBAll matches arrays that contain all elements specified in the query.
+	BKDBAll = "$all"
+
+	// BKDBSize selects documents if the array field is a specified size.
+	BKDBSize = "$size"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
