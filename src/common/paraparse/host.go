@@ -14,7 +14,6 @@ package params
 
 import (
 	"fmt"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
@@ -109,13 +108,6 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 	return nil
 }
 
-// 4 scenarios, such as ip "a.a.a.a", scenarios as follows:
-// a.a.a.a
-// a.a.a.a,d.d.d.d
-// b.b.b.b,a.a.a.a
-// b.b.b.b,a.a.a.a,c.c.c.c
-const exactIPRegexp = `(^IP_PLACEHOLDER$)|(^IP_PLACEHOLDER[,]{1})|([,]{1}IP_PLACEHOLDER[,]{1})|([,]{1}IP_PLACEHOLDER$)`
-
 func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) error {
 	ipArr := ipCond.Data
 	exact := ipCond.Exact
@@ -126,19 +118,16 @@ func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) er
 	if 1 == exact {
 		// exact search
 		exactOr := make([]map[string]interface{}, 0)
-		for _, ip := range ipArr {
-			exactIP := make(map[string]interface{})
-			exactIP[common.BKDBLIKE] = strings.Replace(exactIPRegexp, "IP_PLACEHOLDER", SpecialCharChange(ip), -1)
-			if INNERONLY == flag {
-				exactOr = append(exactOr, mapstr.MapStr{common.BKHostInnerIPField: exactIP})
-			} else if OUTERONLY == flag {
-				exactOr = append(exactOr, mapstr.MapStr{common.BKHostOuterIPField: exactIP})
-			} else if IOBOTH == flag {
-				exactOr = append(exactOr, mapstr.MapStr{common.BKHostInnerIPField: exactIP})
-				exactOr = append(exactOr, mapstr.MapStr{common.BKHostOuterIPField: exactIP})
-			} else {
-				return fmt.Errorf("unsupported ip.flag %s", flag)
-			}
+		exactIP := map[string]interface{}{common.BKDBIN: ipArr}
+		if INNERONLY == flag {
+			exactOr = append(exactOr, mapstr.MapStr{common.BKHostInnerIPField: exactIP})
+		} else if OUTERONLY == flag {
+			exactOr = append(exactOr, mapstr.MapStr{common.BKHostOuterIPField: exactIP})
+		} else if IOBOTH == flag {
+			exactOr = append(exactOr, mapstr.MapStr{common.BKHostInnerIPField: exactIP})
+			exactOr = append(exactOr, mapstr.MapStr{common.BKHostOuterIPField: exactIP})
+		} else {
+			return fmt.Errorf("unsupported ip.flag %s", flag)
 		}
 		output[common.BKDBOR] = exactOr
 	} else {
