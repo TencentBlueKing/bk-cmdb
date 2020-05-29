@@ -68,7 +68,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleIDs []int64, 
 
 	var errMsg, updateErrMsg, successMsg []string
 	logContents := make([]metadata.AuditLog, 0)
-	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, nil)
+	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, metadata.BizLabelNotExist)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

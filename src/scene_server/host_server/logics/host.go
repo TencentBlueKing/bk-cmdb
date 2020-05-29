@@ -24,12 +24,12 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, businessMedatadata *metadata.Metadata) ([]metadata.Property, error) {
-	searchOp := map[string]interface{}{
+func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, bizMetaOpt mapstr.MapStr) ([]metadata.Property, error) {
+	searchOp := mapstr.MapStr{
 		common.BKObjIDField: common.BKInnerObjIDHost,
 	}
-	if businessMedatadata != nil {
-		searchOp[common.MetadataField] = businessMedatadata
+	if bizMetaOpt != nil {
+		searchOp.Merge(bizMetaOpt)
 	}
 	query := &metadata.QueryCondition{
 		Condition: searchOp,
@@ -363,7 +363,7 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 		return nil, lgc.ccErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
-	hostFields, err := lgc.GetHostAttributes(ctx, lgc.ownerID, nil)
+	hostFields, err := lgc.GetHostAttributes(ctx, lgc.ownerID, metadata.BizLabelNotExist)
 	if err != nil {
 		blog.ErrorJSON("DeleteHostFromBusiness get host attribute failed, err: %s, rid:%s", err, lgc.rid)
 		return nil, err
