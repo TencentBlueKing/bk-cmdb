@@ -148,11 +148,20 @@ func (s *ContainerService) DeletePod(ctx *rest.Contexts) {
 
 // ListPods list pods
 func (s *ContainerService) ListPods(ctx *rest.Contexts) {
+	bkBizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bkBizID, err := util.GetInt64ByInterface(bkBizIDStr)
+	if err != nil {
+		blog.Warnf("rid: %s, get bk_biz_id failed, invalid value %s, err %s",
+			ctx.Kit.Rid, bkBizIDStr, err.Error())
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParseDataFailed))
+		return
+	}
 	inputData := metadata.ListPods{}
 	if err := ctx.DecodeInto(&inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+	inputData.BizID = bkBizID
 	resp, err := s.core.PodOperation().ListPods(ctx.Kit, inputData)
 	if err != nil {
 		blog.Warnf("rid: %s DeletePod failed, err %s", ctx.Kit.Rid, err.Error())
