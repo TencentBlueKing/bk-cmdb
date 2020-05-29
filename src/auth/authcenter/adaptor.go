@@ -151,6 +151,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizHostApply
 	case meta.EventWatch:
 		iamResourceType = SysEventWatch
+	case meta.Pod:
+		iamResourceType = BizPodInstance
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -192,6 +194,7 @@ const (
 	BizSetTemplate            ResourceTypeID = "biz_set_template"
 	BizHostApply              ResourceTypeID = "biz_host_apply"
 	SysEventWatch             ResourceTypeID = "event_watch"
+	BizPodInstance            ResourceTypeID = "biz_pod_instance"
 )
 
 const (
@@ -225,6 +228,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	SysOperationStatistic:     "运营统计",
 	BizHostApply:              "主机属性自动应用",
 	SysEventWatch:             "事件监听",
+	BizPodInstance:            "业务容器",
 }
 
 type ActionID string
@@ -537,5 +541,10 @@ var (
 	OperationStatistic = ResourceDetail{
 		Type:    SysOperationStatistic,
 		Actions: []ActionID{Get, Edit},
+	}
+
+	ContainerDescribe = ResourceDetail{
+		Type:    BizPodInstance,
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 )

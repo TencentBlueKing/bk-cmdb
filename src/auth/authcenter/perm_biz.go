@@ -278,4 +278,32 @@ var expectBizResourceType = []ResourceType{
 			},
 		},
 	},
+	{
+		ResourceTypeID:       BizPodInstance,
+		ResourceTypeName:     "容器Pod实例",
+		ParentResourceTypeID: "",
+		Share:                false,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
+				IsRelatedResource: false,
+			},
+		},
+	},
 }

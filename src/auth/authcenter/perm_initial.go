@@ -453,5 +453,11 @@ var bizOperatorRoleAuth = RoleWithAuthResources{
 			ResourceTypeID: BizHostApply,
 			ActionID:       Edit,
 		},
+		// pod instance related
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizPodInstance,
+			ActionID:       Get,
+		},
 	},
 }

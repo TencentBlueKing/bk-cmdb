@@ -65,6 +65,7 @@ const (
 	SetTemplate              ResourceType = "setTemplate"
 	OperationStatistic       ResourceType = "operationStatistic" // 运营统计
 	HostApply                ResourceType = "hostApply"
+	Pod                      ResourceType = "pod"
 )
 
 const (
@@ -209,6 +210,11 @@ var (
 	NetDataCollectorDescribe = ResourceDescribe{
 		Type:    NetDataCollector,
 		Actions: []Action{Find, FindMany, Update, UpdateMany, DeleteMany, Create, DeleteMany},
+	}
+
+	ContainerDescribe = ResourceDescribe{
+		Type:    Pod,
+		Actions: []Action{FindMany, Delete, Update, Create, CreateMany},
 	}
 )
 
