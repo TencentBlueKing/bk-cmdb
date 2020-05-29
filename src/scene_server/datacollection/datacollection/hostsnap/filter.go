@@ -14,6 +14,7 @@ package hostsnap
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -21,29 +22,33 @@ import (
 func newFilter() *filter {
 	f := &filter{
 		pool: make(map[string]int64),
-		// 30 minutes
-		ttlSeconds: 30 * 60,
+		// 30 minutes, with range minutes [30, 90]
+		ttlSeconds:      60 * 60,
+		ttlRangeSeconds: [2]int{-30 * 60, 30 * 60},
 	}
 	go f.gc()
 	return f
 }
 
 // filter is used to filter out the ip which is not register to cmdb,
-// but still report snapshot data to cmdb, this will forced us to search it 
+// but still report snapshot data to cmdb, this will forced us to search it
 // from mongodb again and again, because we always can not find it in the cache.
 type filter struct {
 	lock sync.Mutex
 	// key: ip:cloud_id
 	// v: unix time for key expire ttl seconds.
-	pool map[string]int64
+	pool       map[string]int64
 	ttlSeconds int64
+	// min:[0], max:[1]
+	ttlRangeSeconds [2]int
 }
 
 // only set the invalid ip which can not found in db.
-func (f *filter) Set(ip string, cloudID int64)  {
+func (f *filter) Set(ip string, cloudID int64) {
 	key := fmt.Sprintf("%s:%d", ip, cloudID)
 	f.lock.Lock()
-	f.pool[key]=time.Now().Unix()
+	// give a random ttl to avoid refresh the key concurrently.
+	f.pool[key] = f.randomTTL()
 	f.lock.Unlock()
 }
 
@@ -53,16 +58,16 @@ func (f *filter) Exist(ip string, cloudID int64) bool {
 	f.lock.Lock()
 	ttl, exist := f.pool[key]
 	f.lock.Unlock()
-	
+
 	if !exist {
 		return false
 	}
-	
-	if time.Now().Unix() - ttl > f.ttlSeconds {
+
+	if time.Now().Unix()-ttl > f.ttlSeconds {
 		// force to update the cache in the next round
 		return false
 	}
-	
+
 	return true
 }
 
@@ -71,7 +76,7 @@ func (f *filter) gc() {
 		time.Sleep(time.Duration(f.ttlSeconds) * time.Second)
 		f.lock.Lock()
 		for host, ttl := range f.pool {
-			if time.Now().Unix() - ttl > f.ttlSeconds {
+			if time.Now().Unix()-ttl > f.ttlSeconds {
 				// remove from the cache.
 				delete(f.pool, host)
 			}
@@ -80,6 +85,9 @@ func (f *filter) gc() {
 	}
 }
 
+func (f *filter) randomTTL() int64 {
+	rand.Seed(time.Now().UnixNano())
+	seconds := rand.Intn(f.ttlRangeSeconds[1]-f.ttlRangeSeconds[0]) + f.ttlRangeSeconds[0]
+	return time.Now().Unix() + int64(seconds)
 
-
-
+}
