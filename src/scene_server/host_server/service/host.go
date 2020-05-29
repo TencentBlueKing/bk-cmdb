@@ -186,7 +186,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 		return
 	}
 
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
 	if err != nil {
 		blog.Errorf("delete host batch failed, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
@@ -667,7 +667,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 	data.Remove(common.MetadataField)
 	data.Remove(common.BKHostIDField)
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
 	if err != nil {
 		blog.Errorf("update host batch, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
@@ -836,7 +836,7 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
 	if err != nil {
 		blog.Errorf("update host property batch, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
@@ -1365,7 +1365,7 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
 	if err != nil {
 		blog.Errorf("UpdateImportHosts, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
