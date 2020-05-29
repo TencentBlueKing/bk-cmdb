@@ -813,7 +813,7 @@ func (assoc *association) CreateInst(kit *rest.Kit, request *metadata.CreateAsso
 	case metadata.ManyToOneMapping:
 		cond = condition.CreateCondition()
 		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
-		cond.Field(common.BKAsstInstIDField).Eq(request.InstID)
+		cond.Field(common.BKInstIDField).Eq(request.InstID)
 		instance, err := assoc.SearchInst(kit, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
 		if err != nil {
 			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v, rid: %s", cond, err, kit.Rid)
