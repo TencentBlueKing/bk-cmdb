@@ -1265,5 +1265,8 @@
     "修改字段": "Update Attribute",
     "删除字段": "Delete Attribute",
     "暂无可复制的IP": "No IP to copy",
-    "请输入IP，多个IP请使用换行分隔": "Please input IP, use newline to seperate multiple IP"
+    "请输入IP，多个IP请使用换行分隔": "Please input IP, use newline to seperate multiple IP",
+    "普通服务实例无进程提示": "No Process，{link}.",
+    "模板服务实例无进程提示": "No template process, {link}.",
+    "跳转添加并同步": "edit and sync"
 }

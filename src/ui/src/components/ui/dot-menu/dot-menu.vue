@@ -72,6 +72,7 @@
         @include inlineBlock;
         &:hover,
         &.is-open {
+            display: inline-block !important;
             .menu-trigger:before{
                 background-color: var(--hoverColor);
                 box-shadow: 0 -5px 0 0 var(--hoverColor), 0 5px 0 0 var(--hoverColor);

@@ -26,7 +26,9 @@
                             <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
                         </div>
                     </div>
-                    <service-instance v-else ref="serviceInstance"></service-instance>
+                    <service-instance-view v-else>
+                        <service-instance ref="serviceInstance"></service-instance>
+                    </service-instance-view>
                 </bk-tab-panel>
                 <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
                     <div class="default-node-info" v-if="!showNodeInfo">
@@ -51,12 +53,14 @@
     import { mapGetters } from 'vuex'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
+    import ServiceInstanceView from './service-instance/view'
     export default {
         components: {
             TopologyTree,
             HostList,
             ServiceNodeInfo,
-            ServiceInstance
+            ServiceInstance,
+            ServiceInstanceView
         },
         data () {
             return {

@@ -1,0 +1,44 @@
+<template>
+    <div class="view">
+        <component :is="activeComponent"></component>
+    </div>
+</template>
+
+<script>
+    import ViewInstance from './instance/view'
+    import ViewProcess from './process/view'
+    import RouterQuery from '@/router/query'
+    export default {
+        components: {
+            ViewInstance,
+            ViewProcess
+        },
+        data () {
+            return {
+                activeComponent: null
+            }
+        },
+        created () {
+            this.unwatch = RouterQuery.watch('view', this.handleViewChange, { immediate: true })
+        },
+        beforeDestroy () {
+            this.unwatch()
+        },
+        methods: {
+            handleViewChange (view = 'instance') {
+                const viewMap = {
+                    'instance': ViewInstance.name,
+                    'process': ViewProcess.name
+                }
+                this.activeComponent = viewMap[view]
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped>
+    .view {
+        position: relative;
+        padding: 15px 0;
+    }
+</style>

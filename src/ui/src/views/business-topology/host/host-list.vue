@@ -10,14 +10,15 @@
             @page-limit-change="handleLimitChange"
             @sort-change="handleSortChange"
             @selection-change="handleSelectionChange">
-            <bk-table-column type="selection" width="50" align="center"></bk-table-column>
+            <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 show-overflow-tooltip
-                min-width="80"
+                min-width="120"
                 :key="column.bk_property_id"
                 :label="$tools.getHeaderPropertyName(column)"
                 :sortable="getColumnSortable(column)"
-                :prop="column.bk_property_id">
+                :prop="column.bk_property_id"
+                :fixed="column.bk_property_id === 'bk_host_id'">
                 <template slot-scope="{ row }">
                     <cmdb-property-value
                         :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
