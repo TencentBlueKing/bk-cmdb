@@ -44,6 +44,9 @@ const (
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
 
+	// BKAuditLogPageLimit the audit log page limit
+	BKAuditLogPageLimit = 200
+
 	// BKParent the parent code
 	BKParent = 1
 	// BKChild the child code
