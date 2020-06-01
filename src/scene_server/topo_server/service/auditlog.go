@@ -13,9 +13,9 @@
 package service
 
 import (
-	"configcenter/src/auth"
 	"fmt"
 
+	"configcenter/src/auth"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -33,6 +33,12 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 	if err := data.MarshalJSONInto(&query); nil != err {
 		blog.Errorf("[audit] failed to parse the input (%#v), error info is %s, rid: %s", data, err.Error(), params.ReqID)
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
+	}
+
+	rawErr := query.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.Errorf("AuditQuery Validate failed, query:%#v, error:%s, rid: %s", query, rawErr.ToCCError(params.Err).Error(), params.ReqID)
+		return nil, rawErr.ToCCError(params.Err)
 	}
 
 	queryCondition := query.Condition
@@ -55,9 +61,6 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		}
 		cond[common.BKOwnerIDField] = params.SupplierAccount
 		query.Condition = cond
-	}
-	if 0 == query.Limit {
-		query.Limit = common.BKDefaultLimit
 	}
 
 	// switch between two different control mechanism
@@ -99,6 +102,12 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
 
+	rawErr := query.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.Errorf("InstanceAuditQuery Validate failed, query:%#v, error:%s, rid: %s", query, rawErr.ToCCError(params.Err).Error(), params.ReqID)
+		return nil, rawErr.ToCCError(params.Err)
+	}
+
 	objectID := pathParams("bk_obj_id")
 	if len(objectID) == 0 {
 		blog.Errorf("InstanceAuditQuery failed, host audit query condition can't be empty, query: %+v, rid: %s", query, params.ReqID)
@@ -128,9 +137,6 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	cond[common.BKOwnerIDField] = params.SupplierAccount
 	cond[common.BKOpTargetField] = objectID
 	query.Condition = cond
-	if 0 == query.Limit {
-		query.Limit = common.BKDefaultLimit
-	}
 
 	// auth: check authorization on instance
 	var businessID int64

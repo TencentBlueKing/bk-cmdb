@@ -46,3 +46,18 @@ type CCErrorIf interface {
 
 	Load(res map[string]ErrorCode)
 }
+
+type RawErrorInfo struct {
+	ErrCode int
+	Args    []interface{}
+}
+
+func (rei *RawErrorInfo) ToCCError(ccErrorIF DefaultCCErrorIf) CCErrorCoder {
+	if rei.ErrCode == 0 {
+		return nil
+	}
+	if len(rei.Args) == 0 {
+		return ccErrorIF.CCError(rei.ErrCode)
+	}
+	return ccErrorIF.CCErrorf(rei.ErrCode, rei.Args...)
+}
