@@ -194,12 +194,6 @@ func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.L
 	var err error
 	if parameter.SetIDs != nil {
 		setIDs = parameter.SetIDs
-	} else {
-		setIDs, err = srvData.lgc.GetSetIDByCond(srvData.ctx, parameter.SetCond)
-		if err != nil {
-			blog.ErrorJSON("ListBizHosts failed, GetSetIDByCond %s failed, error: %s, rid:%s", parameter.SetCond, err.Error(), srvData.rid)
-			return result, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
 	}
 
 	option := &meta.ListHosts{
