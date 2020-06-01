@@ -15,6 +15,7 @@ package operation
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -216,6 +217,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 
 	results.SuccessCreated = createdInstanceIDs
 	results.SuccessUpdated = updatedInstanceIDs
+	sort.Strings(results.Success)
+	sort.Strings(results.Errors)
 
 	return results, nil
 }
