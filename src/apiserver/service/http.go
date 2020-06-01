@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
@@ -42,17 +43,19 @@ func (s *service) Delete(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
+
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
 	start := time.Now()
 	url := req.Request.URL.Scheme + "://" + req.Request.URL.Host + req.Request.RequestURI
 	proxyReq, err := http.NewRequest(req.Request.Method, url, req.Request.Body)
 	if err != nil {
-		blog.Errorf("new proxy request[%s] failed, err: %v", url, err)
+		blog.Errorf("new proxy request[%s] failed, err: %v, rid: %s", url, err, rid)
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("proxy request failed, %s", err.Error()),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
 		}); err != nil {
-			blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
 		}
 		return
 	}
