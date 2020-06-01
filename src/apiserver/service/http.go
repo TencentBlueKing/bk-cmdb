@@ -55,7 +55,7 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
 		}); err != nil {
-			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
+			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s, rid: %s", req.Request.RequestURI, err, rid)
 		}
 		return
 	}
@@ -68,14 +68,14 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 
 	response, err := s.client.Do(proxyReq)
 	if err != nil {
-		blog.Errorf("*failed do request[%s url: %s] , err: %v", req.Request.Method, url, err)
+		blog.Errorf("*failed do request[%s url: %s] , err: %v, rid: %s", req.Request.Method, url, err, rid)
 
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("proxy request failed, %s", err.Error()),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
 		}); err != nil {
-			blog.Errorf("response request[%s url: %s] failed, err: %v", req.Request.Method, url, err)
+			blog.Errorf("response request[%s url: %s] failed, err: %v, rid: %s", req.Request.Method, url, err, rid)
 		}
 		return
 	}
