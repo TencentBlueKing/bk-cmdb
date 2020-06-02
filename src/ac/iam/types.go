@@ -155,6 +155,7 @@ const (
 	SysCloudArea             ResourceTypeID = "sys_cloud_area"
 	SysCloudAccount          ResourceTypeID = "sys_cloud_account"
 	SysCloudResourceTask     ResourceTypeID = "sys_cloud_resource_task"
+	SysEventWatch            ResourceTypeID = "event_watch"
 )
 
 const (
@@ -301,6 +302,9 @@ const (
 	EditOperationStatistic ResourceActionID = "edit_operation_statistic"
 
 	FindAuditLog ResourceActionID = "find_audit_log"
+
+	WatchHostEvent         ResourceActionID = "watch_host_event"
+	WatchHostRelationEvent ResourceActionID = "watch_host_relation_event"
 
 	// Unknown is an action that can not be recognized
 	Unknown ResourceActionID = "unknown"

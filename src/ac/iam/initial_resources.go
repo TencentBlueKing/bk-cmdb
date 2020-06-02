@@ -352,5 +352,17 @@ func genPublicResources() []ResourceType {
 			},
 			Version: 1,
 		},
+		{
+			ID:            SysEventWatch,
+			Name:          "事件监听",
+			NameEn:        "Event Watch",
+			Description:   "事件监听",
+			DescriptionEn: "event watch",
+			Parents:       nil,
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/empty/resource",
+			},
+			Version: 1,
+		},
 	}
 }

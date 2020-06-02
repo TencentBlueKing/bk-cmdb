@@ -68,6 +68,7 @@ func GenerateActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genModelTopologyViewActions()...)
 	resourceActionList = append(resourceActionList, genOperationStatisticActions()...)
 	resourceActionList = append(resourceActionList, genAuditLogActions()...)
+	resourceActionList = append(resourceActionList, genEventWatchActions()...)
 
 	return resourceActionList
 }
@@ -1122,5 +1123,30 @@ func genAuditLogActions() []ResourceAction {
 		RelatedActions:       nil,
 		Version:              1,
 	})
+	return actions
+}
+
+func genEventWatchActions() []ResourceAction {
+	actions := make([]ResourceAction, 0)
+	actions = append(actions, ResourceAction{
+		ID:                   WatchHostEvent,
+		Name:                 "主机事件监听",
+		NameEn:               "watch host event",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   WatchHostRelationEvent,
+		Name:                 "主机关系事件监听",
+		NameEn:               "watch host relation event",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
 	return actions
 }
