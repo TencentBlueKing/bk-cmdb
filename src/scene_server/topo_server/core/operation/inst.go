@@ -15,6 +15,7 @@ package operation
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -121,6 +122,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 	}
 
 	results := &BatchResult{}
+	colIdxList := []int{}
+	sortErrResult := []string{}
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
 	}
@@ -177,12 +180,14 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), kit.Rid)
 				results.Errors = append(results.Errors, c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error()))
+				colIdxList = append(colIdxList, int(colIdx))
 				continue
 			}
 			instID, err := item.GetInstID()
 			if err != nil {
 				blog.ErrorJSON("update inst success, but get id field failed, inst: %s, err: %s, rid: %s", item.GetValues(), err.Error(), kit.Rid)
 				results.Errors = append(results.Errors, c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error()))
+				colIdxList = append(colIdxList, int(colIdx))
 				continue
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, instID)
@@ -202,6 +207,7 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), kit.Rid)
 			results.Errors = append(results.Errors, c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error()))
+			colIdxList = append(colIdxList, int(colIdx))
 			continue
 		}
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
@@ -218,7 +224,20 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 	results.SuccessCreated = createdInstanceIDs
 	results.SuccessUpdated = updatedInstanceIDs
 	sort.Strings(results.Success)
-	sort.Strings(results.Errors)
+
+	//sort error
+	sort.Ints(colIdxList)
+	for _, colIdx := range colIdxList {
+		for _, errString := range results.Errors {
+			reg := regexp.MustCompile(`[0-9]+`)
+			errColIdx := reg.FindAllString(errString, -1)
+			idx, _ := strconv.Atoi(errColIdx[0])
+			if idx == colIdx {
+				sortErrResult = append(sortErrResult, errString)
+			}
+		}
+	}
+	results.Errors = sortErrResult
 
 	return results, nil
 }
