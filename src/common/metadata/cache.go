@@ -25,6 +25,13 @@ type SearchHostWithIDOption struct {
 	Fields []string `json:"fields"`
 }
 
+type ListHostWithIDOption struct {
+	// length range is [1,500]
+	HostIDs []int64 `json:"bk_host_ids"`
+	// only return these fields in hosts.
+	Fields []string `json:"fields"`
+}
+
 type DeleteArchive struct {
 	Oid    string      `json:"oid" bson:"oid"`
 	Detail interface{} `json:"detail" bson:"detail"`
