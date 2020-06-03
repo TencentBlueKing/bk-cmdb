@@ -206,6 +206,7 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) 
 
 	queryCond := metadata.HostModuleRelationRequest{
 		HostIDArr: sh.searchedHostIDs,
+		Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	mhconfig, err := sh.lgc.GetConfigByCond(sh.ctx, queryCond)
 	if err != nil {

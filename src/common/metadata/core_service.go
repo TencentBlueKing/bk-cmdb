@@ -270,6 +270,7 @@ type HostModuleRelationRequest struct {
 	HostIDArr     []int64  `json:"bk_host_ids" bson:"bk_host_ids" field:"bk_host_ids" mapstructure:"bk_host_ids"`
 	ModuleIDArr   []int64  `json:"bk_module_ids" bson:"bk_module_ids" field:"bk_module_ids" mapstructure:"bk_module_ids"`
 	Page          BasePage `json:"page" bson:"page" field:"page" mapstructure:"page"`
+	Fields        []string `json:"field" bson:"field"  field:"field" mapstructure:"field"`
 }
 
 // Empty empty struct
@@ -471,7 +472,7 @@ type MultipleProcessInstanceRelationResult struct {
 }
 
 type MultipleHostProcessRelation struct {
-	Count uint64                 `json:"count"`
+	Count uint64                `json:"count"`
 	Info  []HostProcessRelation `json:"info"`
 }
 
