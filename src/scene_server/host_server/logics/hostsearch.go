@@ -790,28 +790,20 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		wg.Add(1)
 		go func(relation metadata.HostModuleRelationRequest) {
 			pipe <- struct{}{}
-			start := 0
-			relation.Page.Limit = 500
-			for {
-				relation.Page.Start = start
-				hostIDArrItem, err := sh.lgc.GetHostIDByCond(sh.ctx, relation)
-				if err != nil {
-					<-pipe
-					wg.Done()
-					blog.Errorf("GetHostIDByCond get hosts failed, err: %v, rid: %s", err, sh.ccRid)
-					errOccur = err
-					return
-				}
-				mapLock.Lock()
-				for _, id := range hostIDArrItem {
-					hostIDMap[id] = struct{}{}
-				}
-				mapLock.Unlock()
-				start += relation.Page.Limit
-				if len(hostIDArrItem) < relation.Page.Limit {
-					break
-				}
+
+			hostIDArrItem, err := sh.lgc.GetAllHostIDByCond(sh.ctx, relation)
+			if err != nil {
+				<-pipe
+				wg.Done()
+				blog.Errorf("GetHostIDByCond get hosts failed, err: %v, rid: %s", err, sh.ccRid)
+				errOccur = err
+				return
 			}
+			mapLock.Lock()
+			for _, id := range hostIDArrItem {
+				hostIDMap[id] = struct{}{}
+			}
+			mapLock.Unlock()
 
 			<-pipe
 			wg.Done()
