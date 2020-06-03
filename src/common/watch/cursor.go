@@ -54,6 +54,9 @@ const (
 	UnknownType        CursorType = "unknown"
 	Host               CursorType = "host"
 	ModuleHostRelation CursorType = "host_relation"
+	Biz                CursorType = "biz"
+	Set                CursorType = "set"
+	Module             CursorType = "module"
 )
 
 func (ct CursorType) ToInt() int {
@@ -64,6 +67,12 @@ func (ct CursorType) ToInt() int {
 		return 2
 	case ModuleHostRelation:
 		return 3
+	case Biz:
+		return 4
+	case Set:
+		return 5
+	case Module:
+		return 6
 	default:
 		return -1
 	}
@@ -77,6 +86,12 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = Host
 	case 3:
 		*ct = ModuleHostRelation
+	case 4:
+		*ct = Biz
+	case 5:
+		*ct = Set
+	case 6:
+		*ct = Module
 	default:
 		*ct = UnknownType
 	}
@@ -208,6 +223,12 @@ func GetEventCursor(coll string, e *types.Event) (string, error) {
 		curType = Host
 	case common.BKTableNameModuleHostConfig:
 		curType = ModuleHostRelation
+	case common.BKTableNameBaseApp:
+		curType = Biz
+	case common.BKTableNameBaseSet:
+		curType = Set
+	case common.BKTableNameBaseModule:
+		curType = Module
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.Oid)
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)

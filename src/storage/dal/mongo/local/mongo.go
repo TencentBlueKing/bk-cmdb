@@ -473,6 +473,9 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	switch c.collName {
 	case common.BKTableNameModuleHostConfig:
 	case common.BKTableNameBaseHost:
+	case common.BKTableNameBaseApp:
+	case common.BKTableNameBaseSet:
+	case common.BKTableNameBaseModule:
 	default:
 		// do not archive the delete docs
 		return nil

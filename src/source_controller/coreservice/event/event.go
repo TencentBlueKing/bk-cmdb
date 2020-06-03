@@ -41,6 +41,21 @@ func NewEvent(db dal.DB, rds *redis.Client, watch stream.Interface, isMaster dis
 		return err
 	}
 
+	if err := e.runBiz(context.Background()); err != nil {
+		blog.Errorf("run biz event flow failed, err: %v", err)
+		return err
+	}
+
+	if err := e.runSet(context.Background()); err != nil {
+		blog.Errorf("run set event flow failed, err: %v", err)
+		return err
+	}
+
+	if err := e.runModule(context.Background()); err != nil {
+		blog.Errorf("run module event flow failed, err: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -68,6 +83,45 @@ func (e *Event) runModuleHostRelation(ctx context.Context) error {
 	opts := FlowOptions{
 		Collection: common.BKTableNameModuleHostConfig,
 		key:        ModuleHostRelationKey,
+		rds:        e.rds,
+		watch:      e.watch,
+		db:         e.db,
+		isMaster:   e.isMaster,
+	}
+
+	return newFlow(ctx, opts)
+}
+
+func (e *Event) runBiz(ctx context.Context) error {
+	opts := FlowOptions{
+		Collection: common.BKTableNameBaseApp,
+		key:        BizKey,
+		rds:        e.rds,
+		watch:      e.watch,
+		db:         e.db,
+		isMaster:   e.isMaster,
+	}
+
+	return newFlow(ctx, opts)
+}
+
+func (e *Event) runSet(ctx context.Context) error {
+	opts := FlowOptions{
+		Collection: common.BKTableNameBaseSet,
+		key:        SetKey,
+		rds:        e.rds,
+		watch:      e.watch,
+		db:         e.db,
+		isMaster:   e.isMaster,
+	}
+
+	return newFlow(ctx, opts)
+}
+
+func (e *Event) runModule(ctx context.Context) error {
+	opts := FlowOptions{
+		Collection: common.BKTableNameBaseModule,
+		key:        ModuleKey,
 		rds:        e.rds,
 		watch:      e.watch,
 		db:         e.db,
