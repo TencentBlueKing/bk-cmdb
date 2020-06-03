@@ -22,9 +22,9 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/dal/types"
 
-    "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type TransferManager struct {
@@ -496,7 +496,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
-	cnt, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(kit.Ctx)
+	cnt, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(input.Fields...).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get module host config count failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
