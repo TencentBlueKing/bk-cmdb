@@ -74,6 +74,25 @@ func (s *coreService) SearchHostWithHostIDInCache(ctx *rest.Contexts) {
 	ctx.RespString(host)
 }
 
+// ListHostWithHostIDInCache list hosts info from redis with host id list.
+// if a host is not exist in cache and still can not find in mongodb,
+// then it will not be return. so the returned array may not equal to
+// the request host ids length and the sequence is also may not same.
+func (s *coreService) ListHostWithHostIDInCache(ctx *rest.Contexts) {
+	opt := new(metadata.ListHostWithIDOption)
+	if err := ctx.DecodeInto(&opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	host, err := s.cacheSet.Host.ListHostWithHostIDs(ctx.Kit.Ctx, opt)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list host with id in cache, but get host failed, err: %v", err)
+		return
+	}
+	ctx.RespStringArray(host)
+}
+
 func (s *coreService) SearchBusinessInCache(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	biz, err := s.cacheSet.Business.GetBusiness(bizID)

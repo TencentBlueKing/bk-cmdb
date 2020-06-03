@@ -93,7 +93,18 @@ func (s *Service) ListResourcePoolHosts(req *restful.Request, resp *restful.Resp
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
 		return
 	}
-	if appResult.Data.Count > 1 {
+
+	// only use biz with same supplier account if query returns multiple biz
+	bizData := appResult.Data.Info[0]
+	bizCount := 0
+	for _, biz := range appResult.Data.Info {
+		supplier, _ := biz.String(common.BkSupplierAccount)
+		if supplier == util.GetOwnerID(header) {
+			bizCount++
+			bizData = biz
+		}
+	}
+	if bizCount > 1 {
 		blog.Errorf("ListResourcePoolHosts failed, get multiple default app, result: %+v, rid: %s", appResult, rid)
 		ccErr := defErr.Error(common.CCErrCommGetMultipleObject)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
@@ -101,7 +112,6 @@ func (s *Service) ListResourcePoolHosts(req *restful.Request, resp *restful.Resp
 	}
 
 	// parse biz data
-	bizData := appResult.Data.Info[0]
 	biz := meta.BizBasicInfo{}
 	if err := mapstruct.Decode2Struct(bizData, &biz); err != nil {
 		blog.ErrorJSON("ListResourcePoolHosts failed, parse app data failed, bizData: %s, err: %s, rid: %s", bizData, err.Error(), rid)
@@ -184,12 +194,6 @@ func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.L
 	var err error
 	if parameter.SetIDs != nil {
 		setIDs = parameter.SetIDs
-	} else {
-		setIDs, err = srvData.lgc.GetSetIDByCond(srvData.ctx, parameter.SetCond)
-		if err != nil {
-			blog.ErrorJSON("ListBizHosts failed, GetSetIDByCond %s failed, error: %s, rid:%s", parameter.SetCond, err.Error(), srvData.rid)
-			return result, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
 	}
 
 	option := &meta.ListHosts{

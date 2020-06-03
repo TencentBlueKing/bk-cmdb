@@ -76,6 +76,76 @@ func (c *Client) GetHostWithID(ctx context.Context, opt *metadata.SearchHostWith
 	}
 }
 
+// ListHostWithHostIDs list hosts info from redis with host id list.
+// if a host is not exist in cache and still can not find in mongodb,
+// then it will not be return. so the returned array may not equal to
+// the request host ids length and the sequence is also may not same.
+func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListHostWithIDOption) ([]string, error) {
+	rid := ctx.Value(common.ContextRequestIDField)
+	if len(opt.HostIDs) > 500 {
+		return nil, errors.New("host id length is overflow")
+	}
+
+	if len(opt.HostIDs) == 0 {
+		return nil, errors.New("host id array is empty")
+	}
+
+	keys := make([]string, len(opt.HostIDs))
+	for i, id := range opt.HostIDs {
+		keys[i] = hostKey.HostDetailKey(id)
+	}
+
+	hosts, err := c.rds.MGet(keys...).Result()
+	if err != nil {
+		blog.Errorf("list host with ids, but get from redis failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+
+	needRefreshIdx := make([]int, 0)
+	list := make([]string, 0)
+	for idx, h := range hosts {
+		if h == nil {
+			needRefreshIdx = append(needRefreshIdx, idx)
+			continue
+		}
+		detail, ok := h.(string)
+		if !ok {
+			blog.Errorf("list host with ids, but got invalid host type, not string, host: %v, rid: %s", h, rid)
+			return nil, errors.New("invalid host detail type, not string")
+		}
+
+		if len(opt.Fields) != 0 {
+			list = append(list, *json.CutJsonDataWithFields(&detail, opt.Fields))
+		} else {
+			list = append(list, detail)
+		}
+	}
+
+	if len(needRefreshIdx) != 0 {
+		// can not found in the cache, need refresh the cache
+		ids := make([]int64, len(needRefreshIdx))
+		for i, idx := range needRefreshIdx {
+			ids[i] = opt.HostIDs[idx]
+		}
+
+		toAdd, err := listHostDetailsFromMongoWithHostID(c.db, ids)
+		if err != nil {
+			blog.Errorf("list host with ids, but get from db failed, host: %v, rid: %s", ids, rid)
+			return nil, err
+		}
+		for _, host := range toAdd {
+			c.tryRefreshHostDetail(host.id, host.ip, host.cloudID, []byte(host.detail))
+
+			if len(opt.Fields) != 0 {
+				list = append(list, *json.CutJsonDataWithFields(&host.detail, opt.Fields))
+			} else {
+				list = append(list, host.detail)
+			}
+		}
+	}
+	return list, nil
+}
+
 // GetHostWithInnerIP is to get host with the ip and cloud id it belongs.
 // the ip must be a unique one, can not be a ip string with multiple ip separated with comma.
 func (c *Client) GetHostWithInnerIP(ctx context.Context, opt *metadata.SearchHostWithInnerIPOption) (string, error) {

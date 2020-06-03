@@ -315,6 +315,7 @@ const (
 	findHostTopoRelationPattern         = "/api/v3/host/topo/relation/read"
 	updateHostCloudAreaFieldPattern     = "/api/v3/updatemany/hosts/cloudarea_field"
 	updateImportHostsPattern            = "/api/v3/hosts/update"
+	getHostModuleRelationPattern        = "/api/v3/hosts/modules/read"
 
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -858,6 +859,24 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.SystemConfig,
 					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(getHostModuleRelationPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.MainlineInstanceTopology,
+					Action: meta.Find,
 				},
 			},
 		}

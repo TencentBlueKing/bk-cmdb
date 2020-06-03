@@ -116,7 +116,7 @@ func (cli *condition) Parse(data types.MapStr) error {
 						return err
 					}
 					tmpField.fields = append(tmpField.fields, tmp)
-				case BKDBEQ, BKDBGT, BKDBGTE, BKDBIN, BKDBNIN, BKDBLIKE, BKDBLT, BKDBLTE, BKDBNE, BKDBOR:
+				case BKDBEQ, BKDBGT, BKDBGTE, BKDBIN, BKDBNIN, BKDBLIKE, BKDBLT, BKDBLTE, BKDBNE, BKDBOR, BKDBEXISTS:
 					tmpField.opeartor = key
 					if err := fieldFunc(tmpField, subVal); nil != err {
 						return err
@@ -242,6 +242,8 @@ func (cli *condition) AddConditionItem(cond ConditionItem) error {
 		cli.Field(cond.Field).NotIn(cond.Value)
 	case common.BKDBOR:
 		cli.Field(cond.Field).Or(cond.Value)
+	case common.BKDBExists:
+		cli.Field(cond.Field).Exists(cond.Value)
 	default:
 		return errors.New("invalid operator")
 	}

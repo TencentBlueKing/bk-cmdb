@@ -790,7 +790,8 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		wg.Add(1)
 		go func(relation metadata.HostModuleRelationRequest) {
 			pipe <- struct{}{}
-			hostIDArrItem, err := sh.lgc.GetHostIDByCond(sh.ctx, relation)
+
+			hostIDArrItem, err := sh.lgc.GetAllHostIDByCond(sh.ctx, relation)
 			if err != nil {
 				<-pipe
 				wg.Done()
@@ -803,6 +804,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 				hostIDMap[id] = struct{}{}
 			}
 			mapLock.Unlock()
+
 			<-pipe
 			wg.Done()
 		}(moduleHostConfig)

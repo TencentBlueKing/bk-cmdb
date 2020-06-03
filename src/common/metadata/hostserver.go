@@ -322,8 +322,9 @@ type TransferHostAcrossBusinessParameter struct {
 
 // HostModuleRelationParameter get host and module  relation parameter
 type HostModuleRelationParameter struct {
-	AppID  int64   `json:"bk_biz_id"`
-	HostID []int64 `json:"bk_host_id"`
+	AppID  int64    `json:"bk_biz_id"`
+	HostID []int64  `json:"bk_host_id"`
+	Page   BasePage `json:"page"`
 }
 
 // DeleteHostFromBizParameter delete host from business
