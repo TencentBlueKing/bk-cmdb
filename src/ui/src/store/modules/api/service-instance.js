@@ -13,6 +13,9 @@ const actions = {
     createProcServiceInstanceByTemplate (context, { params, config }) {
         return $http.post('create/proc/service_instance', params, config)
     },
+    createProcServiceInstancePreview (context, { params, config }) {
+        return $http.post('create/proc/service_instance/preview', params, config)
+    },
     deleteServiceInstance (context, { config }) {
         return $http.delete('deletemany/proc/service_instance', config)
     },

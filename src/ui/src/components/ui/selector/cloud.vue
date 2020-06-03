@@ -5,6 +5,7 @@
         :searchable="true"
         :clearable="allowClear"
         :disabled="disabled"
+        :multiple="multiple"
         :popover-options="popoverOptions"
     >
         <bk-option
@@ -21,10 +22,14 @@
         name: 'cmdb-cloud-selector',
         props: {
             value: {
-                type: [String, Number],
+                type: [Array, String, Number],
                 default: ''
             },
             disabled: {
+                type: Boolean,
+                default: false
+            },
+            multiple: {
                 type: Boolean,
                 default: false
             },
@@ -48,7 +53,7 @@
         data () {
             return {
                 data: [],
-                selected: ''
+                selected: this.multiple ? [] : ''
             }
         },
         watch: {

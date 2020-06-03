@@ -532,6 +532,8 @@
     .form-objuser {
         height: 32px;
         font-size: 14px;
+        flex: 1;
+        width: 100%;
         cursor: text;
         .objuser-layout {
             position: relative;
@@ -573,7 +575,7 @@
                     height: 34px;
                     padding: 0 0 0 15px;
                     line-height: 34px;
-                    font-size: 12px;
+                    font-size: 14px;
                     content: "";
                     border-right: 1px solid $cmdbBorderColor;
                     background: -webkit-linear-gradient(left, transparent, #fff 55%);
@@ -588,7 +590,7 @@
                     padding: 0 0 0 10px;
                     line-height: 30px;
                     content: attr(data-placeholder);
-                    font-size: 12px;
+                    font-size: 14px;
                     color: #c3cdd7;
                 }
             }

@@ -297,15 +297,17 @@ func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 	return false
 }
 
+var operationUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/operation/.*$", verbs))
 // WithOperation transform OperationStatistic's url
 func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
 	statisticsRoot := "/operation/v3"
 	from, to := rootPath, statisticsRoot
 
 	switch {
-	case strings.Contains(string(*u), "/operation/"):
+	case strings.HasPrefix(string(*u), rootPath+"/operation/"):
 		from, to, isHit = rootPath, statisticsRoot, true
-
+	case operationUrlRegexp.MatchString(string(*u)):
+		from, to, isHit = rootPath, statisticsRoot, true
 	default:
 		isHit = false
 	}
@@ -323,7 +325,7 @@ func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
 	from, to := rootPath, statisticsRoot
 
 	switch {
-	case strings.Contains(string(*u), "/task/"):
+	case strings.HasPrefix(string(*u), rootPath+"/task/"):
 		from, to, isHit = rootPath, statisticsRoot, true
 
 	default:

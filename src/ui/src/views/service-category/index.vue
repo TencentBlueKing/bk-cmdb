@@ -12,7 +12,7 @@
                             :input-ref="'categoryInput'"
                             :placeholder="$t('请输入一级分类')"
                             name="categoryName"
-                            v-validate="'required|namedCharacter|length:256'"
+                            v-validate="'required|namedCharacter|length:128'"
                             v-model="mainCategoryName"
                             @on-confirm="handleEditCategory(mainCategory, 'main', index)"
                             @on-cancel="handleCloseEditMain">
@@ -20,7 +20,7 @@
                     </div>
                     <template v-else>
                         <div class="category-name">
-                            <span>{{mainCategory['name']}}</span>
+                            <span class="category-name-text" :title="mainCategory.name">{{mainCategory.name}}</span>
                             <cmdb-auth v-if="!mainCategory['is_built_in']"
                                 :auth="$authResources({ type: $OPERATION.U_SERVICE_CATEGORY })">
                                 <bk-button slot-scope="{ disabled }"
@@ -72,7 +72,7 @@
                             :placeholder="$t('请输入二级分类')"
                             :edit-id="mainCategory['bk_root_id']"
                             name="categoryName"
-                            v-validate="'required|namedCharacter|length:256'"
+                            v-validate="'required|namedCharacter|length:128'"
                             v-model="categoryName"
                             @on-confirm="handleAddCategory"
                             @on-cancel="handleCloseAddChild">
@@ -91,7 +91,7 @@
                             :input-ref="'categoryInput'"
                             :placeholder="$t('请输入二级分类')"
                             name="categoryName"
-                            v-validate="'required|namedCharacter|length:256'"
+                            v-validate="'required|namedCharacter|length:128'"
                             v-model="childCategoryName"
                             @on-confirm="handleEditCategory(childCategory, 'child', index)"
                             @on-cancel="handleCloseEditChild">
@@ -139,7 +139,7 @@
                             :input-ref="'categoryInput'"
                             :placeholder="$t('请输入一级分类')"
                             name="categoryName"
-                            v-validate="'required|namedCharacter|length:256'"
+                            v-validate="'required|namedCharacter|length:128'"
                             v-model="categoryName"
                             @on-confirm="handleAddCategory"
                             @on-cancel="handleCloseAddBox">
@@ -454,9 +454,14 @@
                 }
             }
             .category-name {
-                @include ellipsis;
+                display: flex;
                 flex: 1;
+                width: 100%;
                 padding-right: 20px;
+                align-items: center;
+                .category-name-text {
+                    @include ellipsis;
+                }
                 .icon-cc-edit-shape {
                     font-size: 14px;
                     display: none;

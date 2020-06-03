@@ -28,19 +28,20 @@
                 </bk-input>
             </div>
         </div>
-        <bk-table class="template-table"
+        <bk-table class="template-table" v-bkloading="{ isLoading: $loading(request.getSetTemplates) }"
             :data="list"
             :row-style="{ cursor: 'pointer' }"
-            @row-click="handleRowClick">
-            <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight">
+            @row-click="handleRowClick"
+            @sort-change="handleSortChange">
+            <bk-table-column :label="$t('模板名称')" prop="name" class-name="is-highlight" sortable="custom">
                 <div slot-scope="{ row }" v-bk-overflow-tips
                     :class="['template-name', { 'need-sync': row._need_sync_ }]">
                     {{row.name}}
                 </div>
             </bk-table-column>
-            <bk-table-column :label="$t('应用数量')" prop="set_instance_count"></bk-table-column>
-            <bk-table-column :label="$t('修改人')" prop="modifier"></bk-table-column>
-            <bk-table-column :label="$t('修改时间')" prop="last_time" show-overflow-tooltip>
+            <bk-table-column :label="$t('应用数量')" prop="set_instance_count" sortable></bk-table-column>
+            <bk-table-column :label="$t('修改人')" prop="modifier" sortable="custom"></bk-table-column>
+            <bk-table-column :label="$t('修改时间')" prop="last_time" sortable="custom" show-overflow-tooltip>
                 <template slot-scope="{ row }">
                     <span>{{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm')}}</span>
                 </template>
@@ -105,7 +106,11 @@
                         payload: {
                             resource: this.$t('集群模板')
                         }
-                    }
+                    },
+                    sort: '-last_time'
+                },
+                request: {
+                    getSetTemplates: Symbol('getSetTemplates')
                 }
             }
         },
@@ -126,9 +131,13 @@
             async getSetTemplates () {
                 const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
                     bizId: this.business,
-                    params: {},
+                    params: {
+                        page: {
+                            sort: this.table.sort
+                        }
+                    },
                     config: {
-                        requestId: 'getSetTemplates'
+                        requestId: this.request.getSetTemplates
                     }
                 })
                 const list = (data.info || []).map(item => ({
@@ -160,25 +169,28 @@
                 }
             },
             handleCreate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'create'
-                    }
+                    },
+                    history: true
                 })
             },
             handleEdit (row) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'edit',
                         templateId: row.id
-                    }
+                    },
+                    history: true
                 })
             },
             async handleDelete (row) {
                 this.$bkInfo({
-                    title: this.$t('确认删除xx集群模板', { name: row.name }),
+                    title: this.$t('确认删除'),
+                    subTitle: this.$t('确认删除xx集群模板', { name: row.name }),
                     confirmFn: async () => {
                         try {
                             await this.$store.dispatch('setTemplate/deleteSetTemplate', {
@@ -214,21 +226,29 @@
                 if (!column.property) {
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'view',
                         templateId: row.id
-                    }
+                    },
+                    history: true
                 })
             },
+            handleSortChange (sort) {
+                if (sort.prop === 'set_instance_count') {
+                    return
+                }
+                this.table.sort = this.$tools.getSort(sort, '-last_time')
+                this.getSetTemplates()
+            },
             handleGoBusinessTopo () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE
                 })
             },
             handleGoServiceTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_SERVICE_TEMPLATE
                 })
             }

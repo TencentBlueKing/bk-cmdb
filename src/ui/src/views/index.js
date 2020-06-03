@@ -1,8 +1,9 @@
+import index from '@/views/index/router.config'
+
 import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
 import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
-import resourceHostDetails from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
@@ -37,7 +38,7 @@ const flatternViews = views => {
     return flatterned
 }
 
-const injectStatusComponents = (views, status = ['permission', 'error']) => {
+export const injectStatusComponents = (views, status = ['permission', 'error']) => {
     views.forEach(view => {
         view.components = {
             default: view.component,
@@ -47,6 +48,8 @@ const injectStatusComponents = (views, status = ['permission', 'error']) => {
     })
     return views
 }
+
+export const indexViews = injectStatusComponents(flatternViews([index]))
 
 export const businessViews = injectStatusComponents(flatternViews([
     customQuery,
@@ -64,7 +67,6 @@ export const businessViews = injectStatusComponents(flatternViews([
 export const resourceViews = injectStatusComponents(flatternViews([
     business,
     resource,
-    resourceHostDetails,
     generalModel,
     eventpush,
     resourceManagement
@@ -82,6 +84,7 @@ export const analysisViews = injectStatusComponents(flatternViews([
 ]))
 
 export default {
+    ...indexViews,
     ...businessViews,
     ...resourceViews,
     ...modelViews,

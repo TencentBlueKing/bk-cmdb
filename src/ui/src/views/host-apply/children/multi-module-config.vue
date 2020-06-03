@@ -231,7 +231,7 @@
                 this.leaveConfirmConfig.active = !this.isDel
                 this.$nextTick(function () {
                     // 回到入口页
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_APPLY
                     })
                 })
@@ -265,12 +265,13 @@
 
                 this.leaveConfirmConfig.active = false
                 this.$nextTick(function () {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
                         query: {
                             batch: 1,
                             mid: this.$route.query.mid
-                        }
+                        },
+                        history: true
                     })
                 })
             },

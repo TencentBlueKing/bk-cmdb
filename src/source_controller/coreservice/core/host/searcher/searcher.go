@@ -93,7 +93,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		filters = append(filters, propertyFilter)
 	}
 	finalFilter := map[string]interface{}{}
-	util.SetQueryOwner(&finalFilter, util.ExtractOwnerFromContext(ctx))
+	finalFilter = util.SetQueryOwner(finalFilter, util.ExtractOwnerFromContext(ctx))
 	if len(filters) > 0 {
 		finalFilter[common.BKDBAND] = filters
 	}
@@ -108,7 +108,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 
 	limit := uint64(option.Page.Limit)
 	start := uint64(option.Page.Start)
-	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start)
+	query := s.DbProxy.Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start).Fields(option.Fields...)
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	} else {

@@ -1,5 +1,9 @@
 import Meta from '@/router/meta'
-import { MENU_RESOURCE_INSTANCE, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
+import {
+    MENU_RESOURCE_INSTANCE,
+    MENU_RESOURCE_MANAGEMENT,
+    MENU_RESOURCE_INSTANCE_DETAILS
+} from '@/dictionary/menu-symbol'
 
 export default [{
     name: MENU_RESOURCE_INSTANCE,
@@ -14,12 +18,24 @@ export default [{
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return model && !model.bk_ispaused
         },
-        layout: {
-            previous: {
-                name: MENU_RESOURCE_MANAGEMENT
-            }
-        }
-    })
+        layout: {}
+    }),
+    children: [{
+        name: MENU_RESOURCE_INSTANCE_DETAILS,
+        path: ':instId',
+        component: () => import('./details.vue'),
+        meta: new Meta({
+            menu: {
+                relative: MENU_RESOURCE_MANAGEMENT
+            },
+            checkAvailable: (to, from, app) => {
+                const modelId = to.params.objId
+                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+                return model && !model.bk_ispaused
+            },
+            layout: {}
+        })
+    }]
 }, {
     name: 'instanceHistory',
     path: 'instance/:objId/history',
@@ -28,16 +44,7 @@ export default [{
         menu: {
             relative: MENU_RESOURCE_MANAGEMENT
         },
-        layout: {
-            previous () {
-                return {
-                    name: MENU_RESOURCE_INSTANCE,
-                    params: {
-                        objId: window.CMDB_APP.$route.params.objId
-                    }
-                }
-            }
-        },
+        layout: {},
         checkAvailable: (to, from, app) => {
             const modelId = to.params.objId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)

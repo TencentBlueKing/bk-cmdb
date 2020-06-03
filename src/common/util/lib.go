@@ -16,15 +16,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync/atomic"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
-	"configcenter/src/storage/dal"
-
 	"github.com/emicklei/go-restful"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
@@ -125,37 +122,6 @@ func GetSupplierID(header http.Header) (int64, error) {
 func IsExistSupplierID(header http.Header) bool {
 	if "" == header.Get(common.BKHTTPSupplierID) {
 		return false
-	}
-	return true
-}
-
-// GetHTTPCCTransaction return config center request id from http header
-func GetHTTPCCTransaction(header http.Header) string {
-	rid := header.Get(common.BKHTTPCCTransactionID)
-	return rid
-}
-
-// GetDBContext returns a new context that contains JoinOption
-func GetDBContext(parent context.Context, header http.Header) context.Context {
-	rid := header.Get(common.BKHTTPCCRequestID)
-	user := GetUser(header)
-	owner := GetOwnerID(header)
-	ctx := context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{
-		RequestID: rid,
-		TxnID:     header.Get(common.BKHTTPCCTransactionID),
-		TMAddr:    header.Get(common.BKHTTPCCTxnTMServerAddr),
-	})
-	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
-	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
-	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
-	return ctx
-}
-
-// IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
-func IsNil(value interface{}) bool {
-	rflValue := reflect.ValueOf(value)
-	if rflValue.IsValid() {
-		return rflValue.IsNil()
 	}
 	return true
 }

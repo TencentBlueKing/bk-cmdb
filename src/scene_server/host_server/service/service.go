@@ -111,7 +111,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/").To(s.TransferHostWithAutoClearServiceInstancePreview))
 	api.Route(api.POST("/usercustom").To(s.SaveUserCustom))
 	api.Route(api.POST("/usercustom/user/search").To(s.GetUserCustom))
-	api.Route(api.POST("/usercustom/default/search").To(s.GetDefaultCustom))
+	api.Route(api.POST("/usercustom/default/model").To(s.GetModelDefaultCustom))
+	api.Route(api.POST("/usercustom/default/model/{obj_id}").To(s.SaveModelDefaultCustom))
 	api.Route(api.POST("/hosts/search").To(s.SearchHost))
 	api.Route(api.POST("/hosts/search/asstdetail").To(s.SearchHostWithAsstDetail))
 	api.Route(api.PUT("/hosts/batch").To(s.UpdateHostBatch))
@@ -145,20 +146,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/count_by_topo_node/bk_biz_id/{bk_biz_id}").To(s.CountTopoNodeHosts))
 
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
-
-	// cloud sync
-	api.Route(api.POST("/hosts/cloud/add").To(s.AddCloudTask))
-	api.Route(api.DELETE("/hosts/cloud/delete/{taskID}").To(s.DeleteCloudTask))
-	api.Route(api.POST("/hosts/cloud/search").To(s.SearchCloudTask))
-	api.Route(api.PUT("/hosts/cloud/update").To(s.UpdateCloudTask))
-	api.Route(api.POST("/hosts/cloud/startSync").To(s.StartCloudSync))
-	api.Route(api.POST("/hosts/cloud/resourceConfirm").To(s.CreateResourceConfirm))
-	api.Route(api.POST("/hosts/cloud/searchConfirm").To(s.SearchConfirm))
-	api.Route(api.POST("/hosts/cloud/confirmHistory/add").To(s.AddConfirmHistory))
-	api.Route(api.POST("/hosts/cloud/confirmHistory/search").To(s.SearchConfirmHistory))
-	api.Route(api.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
-	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.SearchCloudSyncHistory))
-
 	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
@@ -180,6 +167,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/updatemany/host_apply_plan/bk_biz_id/{bk_biz_id}/run").To(s.RunHostApplyRule))
 	api.Route(api.POST("/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/host_related_rules").To(s.ListHostRelatedApplyRule))
 
+	api.Route(api.PUT("/hosts/update").To(s.UpdateImportHosts))
 	container.Add(api)
 
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
@@ -208,6 +196,10 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	meta.Items = append(meta.Items, coreSrv)
 
+	// redis
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.CacheDB.Ping().Err())
+	meta.Items = append(meta.Items, redisItem)
+
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
@@ -231,16 +223,4 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	resp.Header().Set("Content-Type", "application/json")
 	_ = resp.WriteEntity(answer)
-}
-
-func (s *Service) InitBackground() {
-	header := make(http.Header, 0)
-	if "" == util.GetOwnerID(header) {
-		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
-		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
-	}
-	s.CacheDB.FlushDb()
-
-	srvData := s.newSrvComm(header)
-	go srvData.lgc.TimerTriggerCheckStatus(srvData.ctx)
 }

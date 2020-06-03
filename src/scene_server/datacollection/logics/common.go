@@ -83,7 +83,7 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 	}
 
 	propertyCond := map[string]interface{}{
-		common.BKObjIDField:   netDeviceObjID}
+		common.BKObjIDField: netDeviceObjID}
 
 	if "" != propertyName {
 		propertyCond[common.BKPropertyNameField] = propertyName

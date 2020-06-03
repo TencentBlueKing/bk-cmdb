@@ -16,27 +16,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
 	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
+	"configcenter/src/common"
 	enableauth "configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/datacollection"
 	"configcenter/src/scene_server/datacollection/logics"
 	svc "configcenter/src/scene_server/datacollection/service"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
@@ -45,7 +40,7 @@ import (
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
@@ -74,12 +69,32 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		var mgoCli dal.RDB
-		if process.Config.MongoDB.Enable == "true" {
-			mgoCli, err = local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
-		} else {
-			mgoCli, err = remote.NewWithDiscover(process.Core)
+		process.Config.MongoDB, err = engine.WithMongo()
+		if err != nil {
+			return err
 		}
+		process.Config.CCRedis, err = engine.WithRedis()
+		if err != nil {
+			return err
+		}
+		process.Config.SnapRedis, err = engine.WithRedis("snap-redis")
+		if err != nil {
+			return err
+		}
+		process.Config.DiscoverRedis, err = engine.WithRedis("discover-redis")
+		if err != nil {
+			return err
+		}
+		process.Config.NetCollectRedis, err = engine.WithRedis("netcollect-redis")
+		if err != nil {
+			return err
+		}
+		process.Config.AuthConfig, err = engine.WithAuth()
+		if err != nil {
+			return err
+		}
+
+		mgoCli, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 		}
@@ -93,7 +108,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 		process.Service.SetDB(mgoCli)
 		process.Service.Logics = logics.NewLogics(ctx, service.Engine, mgoCli, esb)
-		datacollection := datacollection.NewDataCollection(ctx, process.Core, mgoCli, engine.Metric().Registry())
+		datacollection := datacollection.NewDataCollection(ctx, process.Core, mgoCli, engine.Metric().Registry(), process.Config.DefaultAppName)
 
 		blog.Infof("[data-collection][RUN]connecting to cc redis %+v", process.Config.CCRedis)
 		redisCli, err := redis.NewFromConfig(process.Config.CCRedis)
@@ -106,8 +121,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 		var snapcli, disCli, netCli *re.Client
 		if process.Config.SnapRedis.Enable != "false" {
-			blog.Infof("[data-collection][RUN]connecting to snap-redis %+v", process.Config.SnapRedis.Config)
-			snapcli, err = redis.NewFromConfig(process.Config.SnapRedis.Config)
+			blog.Infof("[data-collection][RUN]connecting to snap-redis %+v", process.Config.SnapRedis)
+			snapcli, err = redis.NewFromConfig(process.Config.SnapRedis)
 			if nil != err {
 				blog.Errorf("[data-collection][RUN] connect snap-redis failed: %v", err)
 				return err
@@ -115,23 +130,23 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			process.Service.SetSnapcli(snapcli)
 		}
 		if process.Config.DiscoverRedis.Enable != "false" {
-			blog.Infof("[data-collection][RUN]connecting to discover-redis %+v", process.Config.DiscoverRedis.Config)
-			disCli, err = redis.NewFromConfig(process.Config.DiscoverRedis.Config)
+			blog.Infof("[data-collection][RUN]connecting to discover-redis %+v", process.Config.DiscoverRedis)
+			disCli, err = redis.NewFromConfig(process.Config.DiscoverRedis)
 			if nil != err {
 				blog.Errorf("[data-collection][RUN] connect discover-redis failed: %v", err)
 				return err
 			}
-			blog.Infof("[data-collection][RUN]connected to discover-redis %+v", process.Config.DiscoverRedis.Config)
+			blog.Infof("[data-collection][RUN]connected to discover-redis %+v", process.Config.DiscoverRedis)
 			process.Service.SetDisCli(disCli)
 		}
 		if process.Config.NetCollectRedis.Enable != "false" {
-			blog.Infof("[data-collection][RUN]connecting to netcollect-redis %+v", process.Config.NetCollectRedis.Config)
-			netCli, err = redis.NewFromConfig(process.Config.NetCollectRedis.Config)
+			blog.Infof("[data-collection][RUN]connecting to netcollect-redis %+v", process.Config.NetCollectRedis)
+			netCli, err = redis.NewFromConfig(process.Config.NetCollectRedis)
 			if nil != err {
 				blog.Errorf("[data-collection][RUN] connect netcollect-redis failed: %v", err)
 				return err
 			}
-			blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", process.Config.NetCollectRedis.Config)
+			blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", process.Config.NetCollectRedis)
 			process.Service.SetNetCli(netCli)
 		}
 		if enableauth.IsAuthed() {
@@ -180,66 +195,13 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.V(3).Infof("config updated: \n%s", out)
 
-		dbPrefix := "mongodb"
-		mongoConf := mongo.ParseConfigFromKV(dbPrefix, current.ConfigMap)
-		h.Config.MongoDB = mongoConf
-
-		ccRedisPrefix := "redis"
-		redisConf := redis.ParseConfigFromKV(ccRedisPrefix, current.ConfigMap)
-		h.Config.CCRedis = redisConf
-
-		snapPrefix := "snap-redis"
-		snapRedisConf := redis.ParseConfigFromKV(snapPrefix, current.ConfigMap)
-		h.Config.SnapRedis.Config = snapRedisConf
-		h.Config.SnapRedis.Enable = current.ConfigMap[snapPrefix+".enable"]
-
-		discoverPrefix := "discover-redis"
-		discoverRedisConf := redis.ParseConfigFromKV(discoverPrefix, current.ConfigMap)
-		h.Config.DiscoverRedis.Config = discoverRedisConf
-		h.Config.SnapRedis.Enable = current.ConfigMap[discoverPrefix+".enable"]
-
-		netCollectPrefix := "netcollect-redis"
-		netCollectRedisConf := redis.ParseConfigFromKV(netCollectPrefix, current.ConfigMap)
-		h.Config.NetCollectRedis.Config = netCollectRedisConf
-		h.Config.SnapRedis.Enable = current.ConfigMap[netCollectPrefix+".enable"]
-
 		esbPrefix := "esb"
 		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
 		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
 		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
-
-		var err error
-		authPrefix := "auth"
-		h.Config.AuthConfig, err = authcenter.ParseConfigFromKV(authPrefix, current.ConfigMap)
-		if err != nil {
-			blog.Fatalf("auth config invalid, err: %+v", err)
+		h.Config.DefaultAppName = current.ConfigMap["biz.default_app_name"]
+		if h.Config.DefaultAppName == "" {
+			h.Config.DefaultAppName = common.BKAppName
 		}
 	}
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

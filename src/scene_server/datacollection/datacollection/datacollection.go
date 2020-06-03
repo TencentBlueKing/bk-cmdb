@@ -34,14 +34,15 @@ import (
 
 type DataCollection struct {
 	*backbone.Engine
-	db          dal.RDB
-	ctx         context.Context
-	registry    prometheus.Registerer
-	AuthManager extensions.AuthManager
+	db             dal.RDB
+	ctx            context.Context
+	registry       prometheus.Registerer
+	AuthManager    extensions.AuthManager
+	DefaultAppName string
 }
 
-func NewDataCollection(ctx context.Context, backbone *backbone.Engine, db dal.RDB, registry prometheus.Registerer) *DataCollection {
-	return &DataCollection{ctx: ctx, Engine: backbone, db: db, registry: registry}
+func NewDataCollection(ctx context.Context, backbone *backbone.Engine, db dal.RDB, registry prometheus.Registerer, defaultAppName string) *DataCollection {
+	return &DataCollection{ctx: ctx, Engine: backbone, db: db, registry: registry, DefaultAppName: defaultAppName}
 }
 
 func (d *DataCollection) Run(redisCli, snapCli, disCli, netCli *redis.Client) error {
@@ -101,7 +102,7 @@ func (d *DataCollection) getSnapChanName(defaultAppID string) []string {
 }
 
 func (d *DataCollection) getDefaultAppID(ctx context.Context) (defaultAppID string, err error) {
-	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
+	condition := map[string]interface{}{common.BKAppNameField: d.DefaultAppName}
 	results := make([]map[string]interface{}, 0)
 
 	if err = d.db.Table(common.BKTableNameBaseApp).Find(condition).All(ctx, &results); err != nil {

@@ -8,8 +8,11 @@
         <nav class="header-nav">
             <router-link class="header-link"
                 v-for="nav in menu"
-                :to="{ name: nav.id }"
-                :key="nav.id">
+                :to="getHeaderLink(nav)"
+                :key="nav.id"
+                :class="{
+                    active: isLinkActive(nav)
+                }">
                 {{$t(nav.i18n)}}
             </router-link>
         </nav>
@@ -56,6 +59,7 @@
 
 <script>
     import menu from '@/dictionary/menu'
+    import { MENU_BUSINESS, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'
     export default {
         data () {
@@ -64,9 +68,27 @@
             }
         },
         computed: {
-            ...mapGetters(['userName'])
+            ...mapGetters(['userName']),
+            ...mapGetters('objectBiz', ['bizId'])
         },
         methods: {
+            isLinkActive (nav) {
+                const matched = this.$route.matched
+                if (!matched.length) {
+                    return false
+                }
+                return matched[0].name === nav.id
+            },
+            getHeaderLink (nav) {
+                const link = { name: nav.id }
+                if (nav.id === MENU_BUSINESS && this.bizId) {
+                    link.name = MENU_BUSINESS_HOST_AND_SERVICE
+                    link.params = {
+                        bizId: this.bizId
+                    }
+                }
+                return link
+            },
             handleLogout () {
                 this.$http.post(`${window.API_HOST}logout`, {
                     'http_scheme': window.location.protocol.replace(':', '')
@@ -117,7 +139,8 @@
                 background-color: rgba(49, 64, 94, .5);
                 color: #fff;
             }
-            &.router-link-active {
+            &.router-link-active,
+            &.active {
                 background-color: rgba(49, 64, 94, 1);
                 color: #fff;
             }

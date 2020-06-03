@@ -75,6 +75,7 @@ func (s *Service) WebService() *restful.Container {
 
 	api.Route(api.POST("/subscribe/ping").To(s.Ping))
 	api.Route(api.POST("/subscribe/telnet").To(s.Telnet))
+	api.Route(api.POST("/watch/resource/{resource}").To(s.WatchEvent))
 
 	container.Add(api)
 

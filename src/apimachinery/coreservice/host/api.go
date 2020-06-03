@@ -132,9 +132,9 @@ func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *me
 	return
 }
 
-func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID string) (resp *metadata.HostInstanceResult, err error) {
+func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID int64) (resp *metadata.HostInstanceResult, err error) {
 	resp = new(metadata.HostInstanceResult)
-	subPath := "/find/host/%s"
+	subPath := "/find/host/%d"
 
 	err = h.client.Get().
 		WithContext(ctx).
@@ -325,14 +325,27 @@ func (h *host) GetUserCustomByUser(ctx context.Context, user string, header http
 	return
 }
 
-func (h *host) GetDefaultUserCustom(ctx context.Context, user string, header http.Header) (resp *metadata.GetUserCustomResult, err error) {
+func (h *host) GetDefaultUserCustom(ctx context.Context, header http.Header) (resp *metadata.GetUserCustomResult, err error) {
 	resp = new(metadata.GetUserCustomResult)
-	subPath := "/find/usercustom/default/search/%s"
+	subPath := "/find/usercustom/default"
 
 	err = h.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, user).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) UpdateDefaultUserCustom(ctx context.Context, header http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+
+	err = h.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef("/update/usercustom/default").
 		WithHeaders(header).
 		Do().
 		Into(resp)
@@ -422,10 +435,10 @@ func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header, dat *m
 	return
 }
 
-func (h *host) ListHosts(ctx context.Context, header http.Header, option metadata.ListHosts) (metadata.ListHostResult, error) {
+func (h *host) ListHosts(ctx context.Context, header http.Header, option *metadata.ListHosts) (*metadata.ListHostResult, error) {
 	type Result struct {
 		metadata.BaseResp `json:",inline"`
-		Data              metadata.ListHostResult `json:"data"`
+		Data              *metadata.ListHostResult `json:"data"`
 	}
 	result := Result{}
 	subPath := "/findmany/hosts/list_hosts"

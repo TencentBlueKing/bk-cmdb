@@ -149,7 +149,7 @@ namespaces里面配置要同步的mongo里的table，false代表不同步，true
         "cmdb.cc_ObjectBase": true,
         "cmdb.cc_ObjDes": true,
         "cmdb.cc_ApplicationBase": true,
-        "cmdb.cc_OperationLog": false
+        "cmdb.cc_AuditLog": false
     },
 
     "docManagers": [
@@ -276,6 +276,7 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 |--auth_app_code      | cmdb项目在蓝鲸权限中心的应用编码 | auth_enabled 为真时必填 | bk_cmdb |
 |--auth_app_secret    | cmdb项目在蓝鲸权限中心的应用密钥 | auth_enabled 为真时必填 | xxxxxxx |
 |--log_level          | 日志级别0-9, 9日志最详细 | 否 | 3  |
+|--register_ip        | 进程注册到zookeeper上的IP地址，可以是域名 |  否 | 无 |
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 
@@ -303,7 +304,8 @@ python init.py  \
   --auth_app_secret    xxxxxxx \
   --full_text_search   off \
   --es_url             http://127.0.0.1:9200 \
-  --log_level          3
+  --log_level          3 \
+  --register_ip         cmdb.domain.com
 ```
 
 

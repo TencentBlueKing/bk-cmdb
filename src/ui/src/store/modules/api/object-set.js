@@ -32,7 +32,7 @@ const actions = {
         return $http.post(`set/${bizId}`, params, config)
     },
 
-    createSetBatch ({ commit, state, dispatch }, { bizId, params, config }) {
+    createset ({ commit, state, dispatch }, { bizId, params, config }) {
         return $http.post(`set/${bizId}/batch`, params, config)
     },
 

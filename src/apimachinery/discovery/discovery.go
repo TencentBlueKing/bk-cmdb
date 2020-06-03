@@ -25,7 +25,6 @@ import (
 type ServiceManageInterface interface {
 	// 判断当前进程是否为master 进程， 服务注册节点的第一个节点
 	IsMaster() bool
-	TMServer() Interface
 }
 
 type DiscoveryInterface interface {
@@ -126,10 +125,6 @@ func (d *discover) CoreService() Interface {
 	return d.servers[types.CC_MODULE_CORESERVICE]
 }
 
-func (d *discover) TMServer() Interface {
-	return d.servers[types.CC_MODULE_TXC]
-}
-
 func (d *discover) OperationServer() Interface {
 	return d.servers[types.CC_MODULE_OPERATION]
 }
@@ -140,5 +135,5 @@ func (d *discover) TaskServer() Interface {
 
 // IsMaster check whether current is master
 func (d *discover) IsMaster() bool {
-	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().Address())
+	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().UUID)
 }

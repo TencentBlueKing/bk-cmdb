@@ -14,52 +14,63 @@ package service
 
 import (
 	"net/http"
+
+	"configcenter/src/common/http/rest"
+
+	"github.com/emicklei/go-restful"
 )
 
-func (s *coreService) initProcess() {
+func (s *coreService) initProcess(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
 	// service category
-	s.addAction(http.MethodPost, "/create/process/service_category", s.CreateServiceCategory, nil)
-	s.addAction(http.MethodGet, "/find/process/service_category/{service_category_id}", s.GetServiceCategory, nil)
-	s.addAction(http.MethodGet, "/find/process/default_service_category", s.GetDefaultServiceCategory, nil)
-	s.addAction(http.MethodPost, "/findmany/process/service_category", s.ListServiceCategories, nil)
-	s.addAction(http.MethodPut, "/update/process/service_category/{service_category_id}", s.UpdateServiceCategory, nil)
-	s.addAction(http.MethodDelete, "/delete/process/service_category/{service_category_id}", s.DeleteServiceCategory, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/process/service_category", Handler: s.CreateServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/service_category/{service_category_id}", Handler: s.GetServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/default_service_category", Handler: s.GetDefaultServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/service_category", Handler: s.ListServiceCategories})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/process/service_category/{service_category_id}", Handler: s.UpdateServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/service_category/{service_category_id}", Handler: s.DeleteServiceCategory})
 
 	// service template
-	s.addAction(http.MethodPost, "/create/process/service_template", s.CreateServiceTemplate, nil)
-	s.addAction(http.MethodGet, "/find/process/service_template/{service_template_id}", s.GetServiceTemplate, nil)
-	s.addAction(http.MethodGet, "/find/process/service_template/{service_template_id}/with_statistics", s.GetServiceTemplateWithStatistics, nil)
-	s.addAction(http.MethodPost, "/findmany/process/service_template/detail/bk_biz_id/{bk_biz_id}", s.ListServiceTemplateDetail, nil)
-	s.addAction(http.MethodPost, "/findmany/process/service_template", s.ListServiceTemplates, nil)
-	s.addAction(http.MethodPut, "/update/process/service_template/{service_template_id}", s.UpdateServiceTemplate, nil)
-	s.addAction(http.MethodDelete, "/delete/process/service_template/{service_template_id}", s.DeleteServiceTemplate, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/process/service_template", Handler: s.CreateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/service_template/{service_template_id}", Handler: s.GetServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/service_template/{service_template_id}/with_statistics", Handler: s.GetServiceTemplateWithStatistics})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/service_template/detail/bk_biz_id/{bk_biz_id}", Handler: s.ListServiceTemplateDetail})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/service_template", Handler: s.ListServiceTemplates})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/process/service_template/{service_template_id}", Handler: s.UpdateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/service_template/{service_template_id}", Handler: s.DeleteServiceTemplate})
 
 	// service instance
-	s.addAction(http.MethodPost, "/create/process/service_instance", s.CreateServiceInstance, nil)
-	s.addAction(http.MethodGet, "/find/process/service_instance/{service_instance_id}", s.GetServiceInstance, nil)
-	s.addAction(http.MethodPost, "/findmany/process/service_instance", s.ListServiceInstances, nil)
-	s.addAction(http.MethodPut, "/update/process/service_instance/{service_instance_id}", s.UpdateServiceInstance, nil)
-	s.addAction(http.MethodDelete, "/delete/process/service_instance", s.DeleteServiceInstance, nil)
-	s.addAction(http.MethodPost, "/update/process/service_instance_name/{service_instance_id}", s.ReconstructServiceInstanceName, nil)
-	s.addAction(http.MethodPost, "/findmany/process/service_instance/details", s.ListServiceInstanceDetail, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/process/service_instance", Handler: s.CreateServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/service_instance/{service_instance_id}", Handler: s.GetServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/service_instance", Handler: s.ListServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/process/service_instance/{service_instance_id}", Handler: s.UpdateServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/service_instance", Handler: s.DeleteServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/process/service_instance_name/{service_instance_id}", Handler: s.ReconstructServiceInstanceName})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/service_instance/details", Handler: s.ListServiceInstanceDetail})
 
 	// process template
-	s.addAction(http.MethodPost, "/create/process/process_template", s.CreateProcessTemplate, nil)
-	s.addAction(http.MethodGet, "/find/process/process_template/{process_template_id}", s.GetProcessTemplate, nil)
-	s.addAction(http.MethodPost, "/findmany/process/process_template", s.ListProcessTemplates, nil)
-	s.addAction(http.MethodPut, "/update/process/process_template/{process_template_id}", s.UpdateProcessTemplate, nil)
-	s.addAction(http.MethodDelete, "/delete/process/process_template/{process_template_id}", s.DeleteProcessTemplate, nil)
-	s.addAction(http.MethodPost, "/delete/process/process_template", s.BatchDeleteProcessTemplate, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/process/process_template", Handler: s.CreateProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/process_template/{process_template_id}", Handler: s.GetProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/process_template", Handler: s.ListProcessTemplates})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/process/process_template/{process_template_id}", Handler: s.UpdateProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/process_template/{process_template_id}", Handler: s.DeleteProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/delete/process/process_template", Handler: s.BatchDeleteProcessTemplate})
 
 	// process instance relation
-	s.addAction(http.MethodPost, "/create/process/process_instance_relation", s.CreateProcessInstanceRelation, nil)
-	s.addAction(http.MethodGet, "/find/process/process_instance_relation/{process_instance_id}", s.GetProcessInstanceRelation, nil)
-	s.addAction(http.MethodPost, "/findmany/process/process_instance_relation", s.ListProcessInstanceRelation, nil)
-	s.addAction(http.MethodPost, "/findmany/process/host_process_relation", s.ListHostProcessRelation, nil)
-	s.addAction(http.MethodPut, "/update/process/process_instance_relation/{process_instance_id}", s.UpdateProcessInstanceRelation, nil)
-	s.addAction(http.MethodDelete, "/delete/process/process_instance_relation", s.DeleteProcessInstanceRelation, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/process/process_instance_relation", Handler: s.CreateProcessInstanceRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/process_instance_relation/{process_instance_id}", Handler: s.GetProcessInstanceRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/process_instance_relation", Handler: s.ListProcessInstanceRelation})
+    utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/host_process_relation", Handler: s.ListHostProcessRelation})
+    utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/process/process_instance_relation/{process_instance_id}", Handler: s.UpdateProcessInstanceRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/process_instance_relation", Handler: s.DeleteProcessInstanceRelation})
 
-	s.addAction(http.MethodGet, "/find/process/business_default_set_module_info/{bk_biz_id}", s.GetBusinessDefaultSetModuleInfo, nil)
-	s.addAction(http.MethodDelete, "/delete/process/module_bound_template/{bk_module_id}", s.RemoveTemplateBindingOnModule, nil)
-	s.addAction(http.MethodPost, "/findmany/process/proc2module", s.GetProc2Module, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/business_default_set_module_info/{bk_biz_id}", Handler: s.GetBusinessDefaultSetModuleInfo})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/module_bound_template/{bk_module_id}", Handler: s.RemoveTemplateBindingOnModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/proc2module", Handler: s.GetProc2Module})
+
+	utility.AddToRestfulWebService(web)
 }

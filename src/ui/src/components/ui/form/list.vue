@@ -4,6 +4,7 @@
         :clearable="allowClear"
         :searchable="searchable"
         :disabled="disabled"
+        :multiple="multiple"
         :placeholder="placeholder"
         :font-size="fontSize"
         :popover-options="{
@@ -23,10 +24,14 @@
         name: 'cmdb-form-list',
         props: {
             value: {
-                type: String,
+                type: [Array, String],
                 default: ''
             },
             disabled: {
+                type: Boolean,
+                default: false
+            },
+            multiple: {
                 type: Boolean,
                 default: false
             },
@@ -53,7 +58,7 @@
         },
         data () {
             return {
-                selected: ''
+                selected: this.multiple ? [] : ''
             }
         },
         computed: {
@@ -75,8 +80,8 @@
         },
         methods: {
             initValue () {
-                if (this.autoSelect && !this.value) {
-                    this.selected = this.options[0] || ''
+                if (this.autoSelect && (!this.value || (this.multiple && !this.value.length))) {
+                    this.selected = this.multiple ? [this.options[0]] : (this.options[0] || '')
                 } else {
                     this.selected = this.value
                 }

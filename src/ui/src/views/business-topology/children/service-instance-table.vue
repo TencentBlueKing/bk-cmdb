@@ -41,7 +41,12 @@
                     </template>
                 </cmdb-auth>
                 <div class="label-list fl">
-                    <div class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelShowList">
+                    <div class="label-item"
+                        style="cursor: pointer;"
+                        v-for="(label, index) in labelShowList"
+                        :title="`${label.key}：${label.value}`"
+                        :key="index"
+                        @click="handleFilterByLabel(label)">
                         <span>{{label.key}}</span>
                         <span>:</span>
                         <span>{{label.value}}</span>
@@ -53,7 +58,13 @@
                         placement="bottom-end">
                         <span>...</span>
                         <div class="tips-label-list" slot="content">
-                            <span class="label-item" :title="`${label.key}：${label.value}`" :key="index" v-for="(label, index) in labelTipsList">
+                            <span
+                                class="label-item"
+                                style="cursor: pointer;"
+                                v-for="(label, index) in labelTipsList"
+                                :title="`${label.key}：${label.value}`"
+                                :key="index"
+                                @click="handleFilterByLabel(label)">
                                 <span>{{label.key}}</span>
                                 <span>:</span>
                                 <span>{{label.value}}</span>
@@ -158,6 +169,7 @@
 <script>
     import cmdbEditLabel from './edit-label.vue'
     import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
+    import { processTableHeader } from '@/dictionary/table-header'
     export default {
         components: { cmdbEditLabel },
         props: {
@@ -295,18 +307,7 @@
                 }
             },
             setHeader () {
-                const display = [
-                    'bk_func_name',
-                    'bk_process_name',
-                    'bk_start_param_regex',
-                    'bind_ip',
-                    'port',
-                    'bk_port_enable',
-                    'protocol',
-                    'work_path',
-                    'user'
-                ]
-                const header = display.map(id => {
+                const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
@@ -339,7 +340,7 @@
                 }
             },
             handleCloneInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'cloneServiceInstance',
                     params: {
                         instanceId: this.instance.id,
@@ -350,25 +351,28 @@
                     query: {
                         title: this.instance.name,
                         node: this.currentNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             handleDeleteInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_DELETE_SERVICE,
                     params: {
                         ids: this.instance.id,
                         moduleId: this.currentNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleAddProcessToTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.currentNode.data.service_template_id,
                         moduleId: this.currentNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleSyncProcessToInstance () {
@@ -449,6 +453,26 @@
             },
             handleHideDotMenu () {
                 this.$refs.dotMenu.$el.style.opacity = 0
+            },
+            handleFilterByLabel (label) {
+                this.$parent.searchSelectData = [{
+                    condition: {
+                        id: label.key,
+                        name: label.key + ' : '
+                    },
+                    disabled: false,
+                    id: 1,
+                    name: this.$t('标签值'),
+                    values: [{
+                        id: label.value,
+                        name: label.value
+                    }]
+                }]
+                this.$set(this.$parent.searchSelect[1], 'children', [{
+                    id: label.value,
+                    name: label.value
+                }])
+                this.$parent.handleSearch()
             }
         }
     }

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 )
 
 func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -88,7 +89,7 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	}
 
 	// check table exist
-	hasTable, err := db.HasTable(common.BKTableNameHostApplyRule)
+	hasTable, err := db.HasTable(ctx, common.BKTableNameHostApplyRule)
 	if err != nil {
 		blog.Errorf("InitHostPropertyApplyDataModel failed, check table exist failed, err: %s", err.Error())
 		return fmt.Errorf("check table exist failed, table: %s, err: %s", common.BKTableNameHostApplyRule, err.Error())
@@ -105,13 +106,13 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 		- bk_property_id
 		- value
 	*/
-	if err := db.CreateTable(common.BKTableNameHostApplyRule); err != nil {
+	if err := db.CreateTable(ctx, common.BKTableNameHostApplyRule); err != nil {
 		blog.Errorf("InitHostPropertyApplyDataModel failed, create tabled failed, table: %s, err: %s", common.BKTableNameHostApplyRule, err.Error())
 		return fmt.Errorf("create table failed, table: %s, err: %s", common.BKTableNameHostApplyRule, err.Error())
 	}
 
 	// add index
-	indexes := []dal.Index{
+	indexes := []types.Index{
 		{
 			Keys: map[string]int32{
 				common.BKAppIDField: 1,

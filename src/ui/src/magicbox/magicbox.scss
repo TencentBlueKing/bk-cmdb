@@ -10,6 +10,9 @@
 
 .bk-select-dropdown-content {
     white-space: nowrap;
+    .bk-options {
+        @include scrollbar;
+    }
 }
 
 .bk-sideslider {
@@ -74,7 +77,6 @@
     .bk-table-body {
         .is-highlight {
             color: #3A84FF;
-            cursor: pointer;
         }
         tr.hover-row>td {
             background-color: #f0f1f5;

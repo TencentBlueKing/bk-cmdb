@@ -15,15 +15,15 @@ package model
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
 // isExists 需要支持的情况
 // 1. 公有模型加入业务私有字段：私有字段不能与当前业务私有字段重复，且不能与公有字段重复
 // 2. 公有模型加入业务公有字段：公有字段不能与其它公有字段重复，且不能与任何业务的私有字段重复(即忽略业务参数)
-func (m *modelAttribute) isExists(ctx core.ContextParams, objID, propertyID string, meta metadata.Metadata) (oneAttribute *metadata.Attribute, exists bool, err error) {
+func (m *modelAttribute) isExists(kit *rest.Kit, objID, propertyID string, meta metadata.Metadata) (oneAttribute *metadata.Attribute, exists bool, err error) {
 	filter := map[string]interface{}{
 		metadata.AttributeFieldPropertyID: propertyID,
 		common.BKObjIDField:               objID,
@@ -31,7 +31,7 @@ func (m *modelAttribute) isExists(ctx core.ContextParams, objID, propertyID stri
 
 	bizID, err := meta.ParseBizID()
 	if err != nil {
-		blog.Errorf("request(%s): database findOne operation is failed, parse biz id failed, error info is %s", ctx.ReqID, err.Error())
+		blog.Errorf("request(%s): database findOne operation is failed, parse biz id failed, error info is %s", kit.Rid, err.Error())
 		return oneAttribute, false, err
 	}
 	if bizID != 0 {
@@ -41,12 +41,12 @@ func (m *modelAttribute) isExists(ctx core.ContextParams, objID, propertyID stri
 		}
 	}
 
-	condMap := util.SetModOwner(filter, ctx.SupplierAccount)
+	condMap := util.SetModOwner(filter, kit.SupplierAccount)
 	oneAttribute = &metadata.Attribute{}
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).One(ctx, oneAttribute)
-	blog.V(5).Infof("isExists cond:%#v, rid:%s", condMap, ctx.ReqID)
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(condMap).One(kit.Ctx, oneAttribute)
+	blog.V(5).Infof("isExists cond:%#v, rid:%s", condMap, kit.Rid)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
-		blog.Errorf("request(%s): database findOne operation is failed, error info is %s", ctx.ReqID, err.Error())
+		blog.Errorf("request(%s): database findOne operation is failed, error info is %s", kit.Rid, err.Error())
 		return oneAttribute, false, err
 	}
 	return oneAttribute, !m.dbProxy.IsNotFoundError(err), nil

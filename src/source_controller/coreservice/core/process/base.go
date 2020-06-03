@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/eventclient"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -32,8 +33,8 @@ type processOperation struct {
 
 // OperationDependence methods definition
 type OperationDependence interface {
-	CreateProcessInstance(params core.ContextParams, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder)
-	TransferHostModuleDep(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
+	CreateProcessInstance(kit *rest.Kit, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder)
+	TransferHostModuleDep(kit *rest.Kit, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
 }
 
 // New create a new model manager instance
@@ -46,51 +47,51 @@ func New(dbProxy dal.RDB, dependence OperationDependence, cache *redis.Client) c
 	return processOps
 }
 
-func (p *processOperation) validateBizID(ctx core.ContextParams, bizID int64) (int64, errors.CCErrorCoder) {
+func (p *processOperation) validateBizID(kit *rest.Kit, bizID int64) (int64, errors.CCErrorCoder) {
 	// avoid unnecessary db query
 	if bizID == 0 {
-		return 0, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+		return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
 	// check bizID valid
 	filter := map[string]interface{}{
 		common.BKAppIDField: bizID,
 	}
-	count, err := p.dbProxy.Table(common.BKTableNameBaseApp).Find(filter).Count(ctx.Context)
+	count, err := p.dbProxy.Table(common.BKTableNameBaseApp).Find(filter).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseApp, err, ctx.ReqID)
-		return 0, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+		blog.Errorf("mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseApp, err, kit.Rid)
+		return 0, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if count < 1 {
-		return 0, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+		return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
 	return bizID, nil
 }
 
-func (p *processOperation) validateModuleID(ctx core.ContextParams, moduleID int64) (*metadata.ModuleInst, errors.CCErrorCoder) {
+func (p *processOperation) validateModuleID(kit *rest.Kit, moduleID int64) (*metadata.ModuleInst, errors.CCErrorCoder) {
 	// avoid unnecessary db query
 	if moduleID == 0 {
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
 	module := &metadata.ModuleInst{}
 	filter := map[string]interface{}{
 		common.BKModuleIDField: moduleID,
 	}
-	err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(filter).One(ctx.Context, module)
+	err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(filter).One(kit.Ctx, module)
 	if nil != err {
-		blog.Errorf("validateModuleID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseModule, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+		blog.Errorf("validateModuleID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseModule, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	return module, nil
 }
 
-func (p *processOperation) validateHostID(ctx core.ContextParams, hostID int64) (string, errors.CCErrorCoder) {
+func (p *processOperation) validateHostID(kit *rest.Kit, hostID int64) (string, errors.CCErrorCoder) {
 	// avoid unnecessary db query
 	if hostID == 0 {
-		return "", ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+		return "", kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 	}
 
 	// check bizID valid
@@ -100,10 +101,10 @@ func (p *processOperation) validateHostID(ctx core.ContextParams, hostID int64) 
 	host := &struct {
 		InnerIP string `field:"bk_host_innerip" json:"bk_host_innerip,omitempty" bson:"bk_host_innerip"`
 	}{}
-	err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).One(ctx.Context, host)
+	err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(filter).One(kit.Ctx, host)
 	if nil != err {
-		blog.Errorf("validateHostID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseHost, err.Error(), ctx.ReqID)
-		return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+		blog.Errorf("validateHostID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseHost, err.Error(), kit.Rid)
+		return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	return host.InnerIP, nil

@@ -14,8 +14,8 @@
     "sync-magicbox": "node build/sync-magicbox.js"
   },
   "dependencies": {
-    "@blueking/paas-login": "0.0.3",
-    "@icon-cool/bk-icon-cmdb": "0.0.12",
+    "@blueking/paas-login": "0.0.6",
+    "@icon-cool/bk-icon-cmdb": "0.0.15",
     "axios": "0.18.0",
     "bk-magic-vue": "2.1.13-beta.1",
     "cytoscape": "3.10.0",
@@ -26,6 +26,7 @@
     "deep-equal": "1.1.0",
     "echarts": "4.1.0",
     "get-value": "^3.0.1",
+    "js-base64": "^2.5.2",
     "js-cookie": "2.2.0",
     "json-beautify": "1.0.1",
     "lodash.debounce": "4.0.8",

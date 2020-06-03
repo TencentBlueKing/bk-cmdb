@@ -2,6 +2,7 @@
     <div class="form-label">
         <span class="label-text">{{$t('正则校验')}}</span>
         <textarea
+            class="raw"
             v-model="localValue"
             :disabled="isReadOnly"
             @input="handleInput"

@@ -69,6 +69,15 @@
                         </span>
                     </cmdb-auth>
                     <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)">{{$t('导出')}}</li>
+                    <cmdb-auth tag="li" class="bk-dropdown-item with-auth"
+                        :auth="$authResources({ type: $OPERATION.U_HOST })">
+                        <span href="javascript:void(0)"
+                            slot-scope="{ disabled }"
+                            :class="{ disabled: disabled }"
+                            @click="handleExcelUpdate($event)">
+                            {{$t('导入excel更新')}}
+                        </span>
+                    </cmdb-auth>
                 </ul>
             </bk-dropdown-menu>
         </div>
@@ -117,22 +126,21 @@
             v-transfer-dom
             :is-show.sync="sideslider.show"
             :width="600"
-            :title="$t('列表显示属性配置')">
-            <cmdb-columns-config slot="content"
-                v-if="sideslider.render"
-                :properties="columnsConfigProperties"
-                :selected="columnDisplayProperties"
-                :disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']"
+            :title="sideslider.title">
+            <component slot="content"
+                :is="sideslider.component"
+                v-bind="sideslider.componentProps"
                 @on-cancel="sideslider.show = false"
                 @on-apply="handleApplyColumnsConfig"
                 @on-reset="handleResetColumnsConfig">
-            </cmdb-columns-config>
+            </component>
         </bk-sideslider>
     </div>
 </template>
 
 <script>
     import HostFilter from '@/components/hosts/filter'
+    import CmdbImport from '@/components/import/import'
     import EditMultipleHost from './edit-multiple-host.vue'
     import HostSelector from './host-selector.vue'
     import CmdbColumnsConfig from '@/components/columns-config/columns-config'
@@ -142,12 +150,14 @@
         MENU_BUSINESS_TRANSFER_HOST
     } from '@/dictionary/menu-symbol'
     import Formatter from '@/filters/formatter.js'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             HostFilter,
             EditMultipleHost,
-            CmdbColumnsConfig,
-            [HostSelector.name]: HostSelector
+            [CmdbColumnsConfig.name]: CmdbColumnsConfig,
+            [HostSelector.name]: HostSelector,
+            [CmdbImport.name]: CmdbImport
         },
         data () {
             return {
@@ -165,7 +175,9 @@
                 },
                 sideslider: {
                     show: false,
-                    render: false
+                    title: '',
+                    component: null,
+                    componentProps: {}
                 },
                 request: {
                     collection: Symbol('collection')
@@ -195,12 +207,21 @@
             filterProperties () {
                 const setProperties = this.getProperties('set')
                 const moduleProperties = this.getProperties('module')
-                const removeProperties = ['bk_host_innerip', 'bk_host_outerip']
+                const removeProperties = ['bk_host_id', 'bk_host_innerip', 'bk_host_outerip']
+                // 模块支持服务分类筛选
+                const insertProperties = [
+                    {
+                        bk_obj_id: 'module',
+                        bk_property_id: 'service_category_id',
+                        bk_property_name: this.$t('服务分类'),
+                        bk_property_type: 'category'
+                    }
+                ]
                 const hostProperties = this.hostProperties.filter(property => !removeProperties.includes(property.bk_property_id))
                 return {
                     host: hostProperties,
                     set: setProperties,
-                    module: moduleProperties
+                    module: [...moduleProperties, ...insertProperties]
                 }
             },
             hasSelection () {
@@ -260,18 +281,16 @@
                         }
                     })
                     const info = JSON.parse(collection.info)
-                    const filterIP = {
-                        text: info.ip_list.join('\n'),
-                        exact: info.exact_search,
-                        inner: info.bk_host_innerip,
-                        outer: info.bk_host_outerip
-                    }
                     this.$store.commit('hosts/setFilterList', filterList)
-                    this.$store.commit('hosts/setFilterIP', filterIP)
                     this.$store.commit('hosts/setCollection', collection)
-                    setTimeout(() => {
-                        this.$refs.hostFilter.handleSearch(false)
-                    }, 0)
+                    RouterQuery.set({
+                        ip: info.ip_list.join(','),
+                        exact: info.exact_search ? 1 : 0,
+                        inner: info.bk_host_innerip ? 1 : 0,
+                        outer: info.bk_host_outerip ? 1 : 0,
+                        page: 1,
+                        _t: Date.now()
+                    })
                 } catch (e) {
                     this.$error(this.$t('应用收藏条件失败，转换数据错误'))
                     console.error(e.message)
@@ -330,7 +349,7 @@
                     event.stopPropagation()
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
                         type: 'remove'
@@ -340,7 +359,8 @@
                         sourceId: this.selectedNode.data.bk_inst_id,
                         resources: this.$parent.table.selection.map(item => item.host.bk_host_id).join(','),
                         node: this.selectedNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             async handleExport (event) {
@@ -370,6 +390,16 @@
                     console.error(e)
                     this.$store.commit('setGlobalLoading', false)
                 }
+            },
+            handleExcelUpdate (event) {
+                this.sideslider.component = CmdbImport.name
+                this.sideslider.componentProps = {
+                    templateUrl: `${window.API_HOST}importtemplate/host`,
+                    importUrl: `${window.API_HOST}hosts/update`,
+                    templdateAvailable: false
+                }
+                this.sideslider.title = this.$t('更新主机属性')
+                this.sideslider.show = true
             },
             handleCopy (target) {
                 const copyList = this.$parent.table.selection
@@ -404,7 +434,7 @@
                 }
             },
             gotoTransferPage (selected) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'createServiceInstance',
                     params: {
                         setId: this.selectedNode.parent.data.bk_inst_id,
@@ -414,7 +444,8 @@
                         resources: selected.map(item => item.host.bk_host_id).join(','),
                         title: this.selectedNode.data.bk_inst_name,
                         node: this.selectedNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             handleDialogCancel () {
@@ -433,7 +464,13 @@
             },
             handleSetColumn () {
                 this.$refs.hostFilter.$refs.filterPopper.instance.hide()
-                this.sideslider.render = true
+                this.sideslider.component = CmdbColumnsConfig.name
+                this.sideslider.componentProps = {
+                    properties: this.columnsConfigProperties,
+                    selected: this.columnDisplayProperties,
+                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                }
+                this.sideslider.title = this.$t('列表显示属性配置')
                 this.sideslider.show = true
             }
         }

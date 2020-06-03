@@ -62,6 +62,10 @@
             action: {
                 type: String,
                 default: 'batch-edit'
+            },
+            checked: {
+                type: Array,
+                default: () => ([])
             }
         },
         data () {
@@ -160,6 +164,9 @@
                         this.$refs.tree.filter(data)
                     } else {
                         this.$refs.tree.filter()
+                    }
+                    if (this.checked.length) {
+                        this.$refs.tree.setChecked(this.checked)
                     }
                 } catch (e) {
                     console.error(e)

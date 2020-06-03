@@ -8,6 +8,7 @@
         </bk-input>
         <bk-big-tree ref="tree" class="topology-tree"
             selectable
+            display-matched-node-descendants
             :expand-on-click="false"
             :style="{
                 height: $APP.height - 160 + 'px'
@@ -52,7 +53,7 @@
                 <span :class="['node-count fr', { 'is-selected': node.selected }]">
                     {{getNodeCount(data)}}
                 </span>
-                <span class="node-name">{{node.name}}</span>
+                <span class="node-name" :title="node.name">{{node.name}}</span>
             </div>
         </bk-big-tree>
         <bk-dialog class="bk-dialog-no-padding"
@@ -96,6 +97,7 @@
     import CreateSet from './create-set.vue'
     import CreateModule from './create-module.vue'
     import Bus from '@/utils/bus'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             CreateNode,
@@ -111,7 +113,7 @@
         data () {
             return {
                 isBlueKing: false,
-                filter: '',
+                filter: RouterQuery.get('keyword', ''),
                 handleFilter: () => ({}),
                 nodeCountType: 'host_count',
                 nodeIconMap: {
@@ -142,6 +144,7 @@
         watch: {
             filter (value) {
                 this.handleFilter()
+                RouterQuery.set('keyword', value)
             },
             active (value) {
                 const map = {
@@ -161,6 +164,9 @@
             }
         },
         created () {
+            this.unwatch = RouterQuery.watch('keyword', value => {
+                this.filter = value
+            })
             Bus.$on('refresh-count', this.refreshCount)
             this.handleFilter = debounce(() => {
                 this.$refs.tree.filter(this.filter)
@@ -168,6 +174,7 @@
             this.initTopology()
         },
         beforeDestroy () {
+            this.unwatch()
             Bus.$off('refresh-count', this.refreshCount)
             clearInterval(this.timer)
         },
@@ -206,15 +213,32 @@
                 }
             },
             setDefaultState () {
-                const businessNodeId = this.$refs.tree.nodes[0].id
-                const queryNodeId = this.$route.query.node
-                let defaultNodeId = businessNodeId
+                const defaultNodeId = this.getDefaultNodeId()
+                if (defaultNodeId) {
+                    this.$refs.tree.setExpanded(defaultNodeId)
+                    this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
+                }
+            },
+            getDefaultNodeId () {
+                // 从其他页面跳转过来需要筛选节点，例如：删除集群模板中的服务模板
+                const keyword = RouterQuery.get('keyword', '')
+                if (keyword) {
+                    const [firstMatchedNode] = this.$refs.tree.filter(keyword.trim())
+                    if (firstMatchedNode) {
+                        return firstMatchedNode.id
+                    }
+                }
+                // 选中指定的节点
+                const queryNodeId = RouterQuery.get('node', '')
                 if (queryNodeId) {
                     const node = this.$refs.tree.getNodeById(queryNodeId)
-                    defaultNodeId = node ? queryNodeId : businessNodeId
+                    if (node) {
+                        return node.id
+                    }
                 }
-                this.$refs.tree.setExpanded(defaultNodeId)
-                this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
+                // 选中第一个节点
+                const [firstNode] = this.$refs.tree.nodes
+                return firstNode ? firstNode.id : null
             },
             getInstanceTopology () {
                 return this.$store.dispatch('objectMainLineModule/getInstTopoInstanceNum', {
@@ -246,7 +270,7 @@
             getNodeCount (data) {
                 const count = data[this.nodeCountType]
                 if (typeof count === 'number') {
-                    return count > 999 ? '999+' : count
+                    return count
                 }
                 return 0
             },
@@ -256,6 +280,10 @@
                 if (!node.expanded) {
                     this.$refs.tree.setExpanded(node.id)
                 }
+                RouterQuery.set({
+                    node: node.id,
+                    _t: Date.now()
+                })
             },
             showCreate (node, data) {
                 const isModule = data.bk_obj_id === 'module'
@@ -412,7 +440,7 @@
                 })
             },
             async createSet (value) {
-                const data = await this.$store.dispatch('objectSet/createSetBatch', {
+                const data = await this.$store.dispatch('objectSet/createset', {
                     bizId: this.bizId,
                     params: {
                         sets: value.map(set => {
@@ -495,7 +523,6 @@
             width: 20px;
             height: 20px;
             margin: 8px 4px 8px 0;
-            vertical-align: middle;
             border-radius: 50%;
             background-color: #C4C6CC;
             line-height: 1.666667;

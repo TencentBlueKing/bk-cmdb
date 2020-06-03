@@ -206,3 +206,31 @@
   - ```
     ./tool_ctl topo --bizId=2 --mongo-uri=mongodb://127.0.0.1:27017/cmdb
     ```
+
+### 操作api请求限流策略
+- 使用方式
+    ```
+      ./tool_ctl limiter [flags]
+      ./tool_ctl limiter [command]
+    ```
+
+- 子命令
+    ```
+      set         set api limiter rule, use with flag --rule
+      get         get api limiter rules according rule names,use with flag --rulenames
+      del         del api limiter rules, use with flag --rulenames
+      ls          list all api limiter rules
+    ```
+- 命令行参数
+    ```
+     --rule="": the api limiter rule to set, a json like '{"rulename":"rule1","appcode":"gse","user":"","ip":"","method":"POST","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'
+     --rulenames="": the api limiter rule names to get or del, multiple names is separated with ',',like 'name1,name2'
+    ```
+
+- 示例
+    ```
+      ./tool_ctl limiter set --rule='{"rulename":"rule1","appcode":"gse","user":"","ip":"","method":"POST","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'
+      ./tool_ctl limiter get --rulenames=test1,test2
+      ./tool_ctl limiter del --rulenames=test1,test2
+      ./tool_ctl limiter ls
+    ```

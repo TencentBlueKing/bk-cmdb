@@ -11,8 +11,9 @@
             ])
         }"
     >
+        <cmdb-permission v-if="permission" class="permission-tips" :permission="permission"></cmdb-permission>
         <cmdb-details class="topology-details"
-            v-if="type === 'details'"
+            v-else-if="type === 'details'"
             :class="{ pt10: !isSetNode && !isModuleNode }"
             :properties="properties"
             :property-groups="propertyGroups"
@@ -94,6 +95,24 @@
             </template>
         </cmdb-details>
         <template v-else-if="type === 'update'">
+            <div class="service-category" v-if="!withTemplate && isModuleNode">
+                <span class="title">{{$t('服务分类')}}</span>
+                <div class="selector-item mt10 clearfix">
+                    <cmdb-selector class="category-selector fl"
+                        :list="firstCategories"
+                        v-model="first"
+                        @on-selected="handleChangeFirstCategory">
+                    </cmdb-selector>
+                    <cmdb-selector class="category-selector fl"
+                        :list="secondCategories"
+                        name="secondCategory"
+                        v-validate="'required'"
+                        v-model="second"
+                        @on-selected="handleChangeCategory">
+                    </cmdb-selector>
+                    <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
+                </div>
+            </div>
             <cmdb-form class="topology-form"
                 ref="form"
                 :properties="properties"
@@ -103,24 +122,6 @@
                 :type="type"
                 @on-submit="handleSubmit"
                 @on-cancel="handleCancel">
-                <div class="service-category" v-if="!withTemplate && isModuleNode" slot="prepend">
-                    <span class="title">{{$t('服务分类')}}</span>
-                    <div class="selector-item mt10 clearfix">
-                        <cmdb-selector class="category-selector fl"
-                            :list="firstCategories"
-                            v-model="first"
-                            @on-selected="handleChangeFirstCategory">
-                        </cmdb-selector>
-                        <cmdb-selector class="category-selector fl"
-                            :list="secondCategories"
-                            name="secondCategory"
-                            v-validate="'required'"
-                            v-model="second"
-                            @on-selected="handleChangeCategory">
-                        </cmdb-selector>
-                        <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
-                    </div>
-                </div>
             </cmdb-form>
         </template>
     </div>
@@ -147,7 +148,8 @@
                     serviceCategory: '',
                     setTemplateName: this.$t('无')
                 },
-                refresh: null
+                refresh: null,
+                permission: null
             }
         },
         computed: {
@@ -325,20 +327,26 @@
                 }
             },
             async getBizInstance () {
-                const data = await this.$store.dispatch('objectBiz/searchBusiness', {
-                    params: {
-                        page: { start: 0, limit: 1 },
-                        fields: [],
-                        condition: {
-                            bk_biz_id: { $eq: this.selectedNode.data.bk_inst_id }
+                try {
+                    const data = await this.$store.dispatch('objectBiz/searchBusiness', {
+                        params: {
+                            page: { start: 0, limit: 1 },
+                            fields: [],
+                            condition: {
+                                bk_biz_id: { $eq: this.selectedNode.data.bk_inst_id }
+                            }
+                        },
+                        config: {
+                            requestId: 'getNodeInstance',
+                            cancelPrevious: true,
+                            globalPermission: false
                         }
-                    },
-                    config: {
-                        requestId: 'getNodeInstance',
-                        cancelPrevious: true
-                    }
-                })
-                return data.info[0]
+                    })
+                    return data.info[0]
+                } catch ({ permission }) {
+                    this.permission = permission
+                    return {}
+                }
             },
             async getSetInstance () {
                 const data = await this.$store.dispatch('objectSet/searchSet', {
@@ -646,16 +654,17 @@
                     id: `${this.business}_${this.instance.set_template_id}`,
                     instancesId: [this.instance.bk_set_id]
                 })
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setSync',
                     params: {
                         setTemplateId: this.instance.set_template_id,
                         moduleId: this.selectedNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             goServiceTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.instance.service_template_id,
@@ -664,11 +673,12 @@
                     query: {
                         node: this.selectedNode.id,
                         tab: 'nodeInfo'
-                    }
+                    },
+                    history: true
                 })
             },
             goSetTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'setTemplateConfig',
                     params: {
                         mode: 'view',
@@ -678,7 +688,8 @@
                     query: {
                         node: this.selectedNode.id,
                         tab: 'nodeInfo'
-                    }
+                    },
+                    history: true
                 })
             },
             async getSelectedNodeHostCount () {
@@ -734,6 +745,12 @@
 </script>
 
 <style lang="scss" scoped>
+    .permission-tips {
+        position: absolute;
+        top: 35%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
     .node-info {
         height: 100%;
         margin: 0 -20px;

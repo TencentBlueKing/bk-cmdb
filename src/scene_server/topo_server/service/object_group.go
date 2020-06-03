@@ -13,142 +13,187 @@
 package service
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // CreateObjectGroup create a new object group
 
-func (s *Service) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	rsp, err := s.Core.GroupOperation().CreateObjectGroup(params, data)
-	if nil != err {
-		return nil, err
+func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
+	dataWithMetadata := MapStrWithMetadata{}
+	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	// auth: register attribute group
-	if err := s.AuthManager.RegisterModelAttributeGroup(params.Context, params.Header, rsp.Group()); err != nil {
-		blog.Errorf("create object group success, but register attribute group to iam failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
+	var rsp model.GroupInterface
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		rsp, err = s.Core.GroupOperation().CreateObjectGroup(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		if nil != err {
+			return err
+		}
+
+		// auth: register attribute group
+		if err := s.AuthManager.RegisterModelAttributeGroup(ctx.Kit.Ctx, ctx.Kit.Header, rsp.Group()); err != nil {
+			blog.Errorf("create object group success, but register attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
 	}
-	return rsp.ToMapStr()
+	retData := rsp.ToMapStr()
+	ctx.RespEntity(retData)
 }
 
 // UpdateObjectGroup update the object group information
-func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 	cond := &metadata.UpdateGroupCondition{}
-
-	err := data.MarshalJSONInto(cond)
+	err := ctx.DecodeInto(cond)
 	if nil != err {
-		return nil, err
-	}
-	data.Remove(metadata.BKMetadata)
-
-	err = s.Core.GroupOperation().UpdateObjectGroup(params, cond)
-	if nil != err {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 
-	// query attribute groups with given condition, so that update them to iam after updated
-	searchCondition := condition.CreateCondition()
-	if cond.Condition.ID != 0 {
-		searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
-	}
-	result, err := s.Core.GroupOperation().FindObjectGroup(params, searchCondition)
-	if err != nil {
-		blog.Errorf("search attribute group by condition failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
-	}
-	attributeGroups := make([]metadata.Group, 0)
-	for _, item := range result {
-		attributeGroups = append(attributeGroups, item.Group())
-	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Core.GroupOperation().UpdateObjectGroup(ctx.Kit, cond)
+		if nil != err {
+			return err
+		}
 
-	// auth: register attribute group
-	if err := s.AuthManager.UpdateRegisteredModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
-		blog.Errorf("update object group success, but update attribute group to iam failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
+		// query attribute groups with given condition, so that update them to iam after updated
+		searchCondition := condition.CreateCondition()
+		if cond.Condition.ID != 0 {
+			searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
+		}
+		result, err := s.Core.GroupOperation().FindObjectGroup(ctx.Kit, searchCondition, cond.Metadata)
+		if err != nil {
+			blog.Errorf("search attribute group by condition failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+		attributeGroups := make([]metadata.Group, 0)
+		for _, item := range result {
+			attributeGroups = append(attributeGroups, item.Group())
+		}
+
+		// auth: register attribute group
+		if err := s.AuthManager.UpdateRegisteredModelAttributeGroup(ctx.Kit.Ctx, ctx.Kit.Header, attributeGroups...); err != nil {
+			blog.Errorf("update object group success, but update attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
 // DeleteObjectGroup delete the object group
-func (s *Service) DeleteObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	gid, err := strconv.ParseInt(pathParams("id"), 10, 64)
+func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
+	gid, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if nil != err {
-		return nil, err
+		ctx.RespAutoError(err)
+		return
 	}
 
-	data.Remove(metadata.BKMetadata)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Core.GroupOperation().DeleteObjectGroup(ctx.Kit, gid)
+		if nil != err {
+			return err
+		}
+		// auth: deregister attribute group
+		if err := s.AuthManager.DeregisterModelAttributeGroupByID(ctx.Kit.Ctx, ctx.Kit.Header, gid); err != nil {
+			blog.Errorf("delete object group failed, deregister attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		}
 
-	err = s.Core.GroupOperation().DeleteObjectGroup(params, gid)
-	if nil != err {
-		return nil, err
-	}
-	// auth: deregister attribute group
-	if err := s.AuthManager.DeregisterModelAttributeGroupByID(params.Context, params.Header, gid); err != nil {
-		blog.Errorf("delete object group failed, deregister attribute group to iam failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
-	}
+		return nil
+	})
 
-	return nil, nil
-}
-
-func (s *Service) ParseUpdateObjectAttributeGroupPropertyInput(data []byte) (mapstr.MapStr, error) {
-	requestBody := struct {
-		Data []metadata.PropertyGroupObjectAtt `json:"data" field:"json"`
-	}{}
-	err := json.Unmarshal(data, &requestBody)
-	if nil != err {
-		return nil, err
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
 	}
-	result := mapstr.MapStr{}
-	result.Set("origin", requestBody.Data)
-	return result, nil
+	ctx.RespEntity(nil)
 }
 
 // UpdateObjectAttributeGroupProperty update the object attribute belongs to group information
-func (s *Service) UpdateObjectAttributeGroupProperty(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	val, exists := data.Get("origin")
-	if !exists {
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
+func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
+	requestBody := struct {
+		Data               []metadata.PropertyGroupObjectAtt `json:"data" field:"json"`
+		*metadata.Metadata `json:"metadata"`
+	}{}
+	if err := ctx.DecodeInto(&requestBody); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	objectAtt, ok := val.([]metadata.PropertyGroupObjectAtt)
-	if ok == false {
-		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "unexpected parameter type")
+	objectAtt := requestBody.Data
+	if objectAtt == nil {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, "param not set"))
+		return
 	}
 
-	err := s.Core.GroupOperation().UpdateObjectAttributeGroup(params, objectAtt)
-	if nil != err {
-		return nil, err
-	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Core.GroupOperation().UpdateObjectAttributeGroup(ctx.Kit, objectAtt, requestBody.Metadata)
+		if nil != err {
+			return err
+		}
+		return nil
+	})
 
-	return nil, nil
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
 
-func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	err := s.Core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
-	if nil != err {
-		return nil, err
+func (s *Service) DeleteObjectAttributeGroup(ctx *rest.Contexts) {
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Core.GroupOperation().DeleteObjectAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_object_id"), ctx.Request.PathParameter("property_id"), ctx.Request.PathParameter("group_id"))
+		if nil != err {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
 // SearchGroupByObject search the groups by the object
-func (s *Service) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (s *Service) SearchGroupByObject(ctx *rest.Contexts) {
 	cond := condition.CreateCondition()
 
-	return s.Core.GroupOperation().FindGroupByObject(params, pathParams("bk_obj_id"), cond)
+	md := new(MetaShell)
+	if err := ctx.DecodeInto(md); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	resp, err := s.Core.GroupOperation().FindGroupByObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), cond, md.Metadata)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
+
 }

@@ -42,11 +42,11 @@
                                 name="modelId"
                                 :placeholder="$t('请输入唯一标识')"
                                 v-model.trim="modelDialog.data['bk_obj_id']"
-                                v-validate="'required|modelId'">
+                                v-validate="'required|modelId|length:115'">
                             </bk-input>
                             <p class="form-error" :title="errors.first('modelId')">{{errors.first('modelId')}}</p>
                         </div>
-                        <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文小写的组合')"></i>
+                        <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"></i>
                     </label>
                     <label>
                         <span class="label-title">{{$t('名称')}}</span>
@@ -55,7 +55,7 @@
                             <bk-input type="text" class="cmdb-form-input"
                                 name="modelName"
                                 :placeholder="$t('请输入名称')"
-                                v-validate="'required|singlechar|length:256'"
+                                v-validate="'required|singlechar|length:128'"
                                 v-model.trim="modelDialog.data['bk_obj_name']">
                             </bk-input>
                             <p class="form-error" :title="errors.first('modelName')">{{errors.first('modelName')}}</p>

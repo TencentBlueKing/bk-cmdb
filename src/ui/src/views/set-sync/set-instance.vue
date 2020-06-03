@@ -152,7 +152,7 @@
                 this.$emit('close', this.instance.bk_set_id)
             },
             handleViewModule (moduleId) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query: {
                         node: `module-${moduleId}`

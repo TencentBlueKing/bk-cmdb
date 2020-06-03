@@ -3,56 +3,61 @@
         <div class="up-file upload-file" v-bkloading="{ isLoading: isLoading }">
             <img src="../../assets/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile" />
-            <i18n path="导入提示" tag="p" :places="{ allowType: allowType.join(','), maxSize: maxSize }">
+            <i18n path="导入提示" tag="p" :places="{ allowType: allowType.join(','), maxSize: maxSizeLocal }">
                 <b place="clickUpload">{{$t('点击上传')}}</b>
                 <br place="breakRow">
             </i18n>
         </div>
         <div :class="['upload-file-info', { 'uploading': isLoading }, { 'fail': failed }, { 'uploaded': !isLoading }]">
-            <div class="upload-file-name">{{fileInfo.name}}</div>
+            <div class="upload-file-name" :title="fileInfo.name">{{fileInfo.name}}</div>
             <div class="upload-file-size fr">{{fileInfo.size}}</div>
             <div class="upload-file-status" hidden>{{fileInfo.status}}</div>
             <div class="upload-file-status-icon" hidden>
-                <i :class="['bk-icon ',{ 'icon-check-circle-shape': uploaded,'icon-close-circle-shape': failed }]"></i>
+                <i :class="['bk-icon ', { 'icon-check-circle-shape': uploaded,'icon-close-circle-shape': failed }]"></i>
             </div>
         </div>
-        <div class="upload-details" v-if="hasUploadError()">
-            <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
-                <i class="bk-icon icon-check-circle-shape"></i>
-                <span>{{$t('成功上传N条数据', { N: uploadResult.success.length })}}</span>
-            </div>
-            <!-- 上传失败列表  -->
-            <div class="upload-details-fail" v-if="uploadResult.error && uploadResult.error.length">
-                <div class="upload-details-fail-title">
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                    <span>{{$t('上传失败列表')}}({{uploadResult.error.length}})</span>
+        <div class="upload-details">
+            <template v-if="$slots.uploadResult">
+                <slot name="uploadResult"></slot>
+            </template>
+            <div v-else-if="hasUploadError()">
+                <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
+                    <i class="bk-icon icon-check-circle-shape"></i>
+                    <span>{{$t('成功上传N条数据', { N: uploadResult.success.length })}}</span>
                 </div>
-                <ul ref="failList" class="upload-details-fail-list">
-                    <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg" :key="index">{{errorMsg}}</li>
-                </ul>
-            </div>
-            <div class="upload-details-fail" v-if="uploadResult.update_error && uploadResult.update_error.length">
-                <div class="upload-details-fail-title">
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                    <span>{{$t('更新失败列表')}}({{uploadResult.update_error.length}})</span>
+                <!-- 上传失败列表  -->
+                <div class="upload-details-fail" v-if="uploadResult.error && uploadResult.error.length">
+                    <div class="upload-details-fail-title">
+                        <i class="bk-icon icon-close-circle-shape"></i>
+                        <span>{{$t('上传失败列表')}}({{uploadResult.error.length}})</span>
+                    </div>
+                    <ul ref="failList" class="upload-details-fail-list">
+                        <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg" :key="index">{{errorMsg}}</li>
+                    </ul>
                 </div>
-                <ul ref="failList" class="upload-details-fail-list">
-                    <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
-                </ul>
-            </div>
-            <div class="upload-details-fail" v-if="uploadResult.asst_error && uploadResult.asst_error.length">
-                <div class="upload-details-fail-title">
-                    <i class="bk-icon icon-close-circle-shape"></i>
-                    <span>关联关系导入失败列表({{uploadResult.asst_error.length}})</span>
+                <div class="upload-details-fail" v-if="uploadResult.update_error && uploadResult.update_error.length">
+                    <div class="upload-details-fail-title">
+                        <i class="bk-icon icon-close-circle-shape"></i>
+                        <span>{{$t('更新失败列表')}}({{uploadResult.update_error.length}})</span>
+                    </div>
+                    <ul ref="failList" class="upload-details-fail-list">
+                        <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
+                    </ul>
                 </div>
-                <ul ref="failList" class="upload-details-fail-list">
-                    <li v-for="(errorMsg, index) in uploadResult.asst_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
-                </ul>
+                <div class="upload-details-fail" v-if="uploadResult.asst_error && uploadResult.asst_error.length">
+                    <div class="upload-details-fail-title">
+                        <i class="bk-icon icon-close-circle-shape"></i>
+                        <span>关联关系导入失败列表({{uploadResult.asst_error.length}})</span>
+                    </div>
+                    <ul ref="failList" class="upload-details-fail-list">
+                        <li v-for="(errorMsg, index) in uploadResult.asst_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
+                    </ul>
+                </div>
             </div>
         </div>
-        <div class="clearfix down-model-content">
+        <div class="clearfix down-model-content" v-if="templdateAvailable">
             <slot name="download-desc"></slot>
-            <a href="javascript:void(0);" style="text-decoration: none;" @click="handleDownloadTemplate">
+            <a href="javascript:void(0);" style="text-decoration: none;" v-if="templateUrl" @click="handleDownloadTemplate">
                 <img src="../../assets/images/icon/down_model_icon.png">
                 <span class="submit-btn">{{$t('下载模板')}}</span>
             </a>
@@ -62,6 +67,7 @@
 
 <script type="text/javascript">
     export default {
+        name: 'cmdb-import',
         props: {
             templateUrl: {
                 type: String,
@@ -91,7 +97,15 @@
             },
             maxSize: {
                 type: Number,
-                default: 500 // kb
+                default: 20 * 1024 // kb
+            },
+            uploadDone: {
+                type: Function,
+                default: null
+            },
+            templdateAvailable: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
@@ -115,6 +129,10 @@
         computed: {
             allowTypeRegExp () {
                 return new RegExp(`^.*?.(${this.allowType.join('|')})$`)
+            },
+            maxSizeLocal () {
+                const maxSize = this.maxSize * 1024
+                return this.formatSize(maxSize)
             }
         },
         methods: {
@@ -128,11 +146,11 @@
                     return false
                 } else if (fileInfo.size / 1024 > this.maxSize) {
                     this.$refs.fileInput.value = ''
-                    this.$error(this.$t('文件大小溢出', { maxSize: this.maxSize }))
+                    this.$error(this.$t('文件大小溢出', { maxSize: this.maxSizeLocal }))
                     return false
                 } else {
                     this.fileInfo.name = fileInfo.name
-                    this.fileInfo.size = `${(fileInfo.size / 1024).toFixed(2)}kb`
+                    this.fileInfo.size = this.formatSize(fileInfo.size, 2)
                     const formData = new FormData()
                     formData.append('file', files[0])
                     if (this.importPayload.hasOwnProperty('metadata')) {
@@ -163,6 +181,8 @@
                         }
                         this.$refs.fileInput.value = ''
                         this.isLoading = false
+
+                        this.$emit('upload-done', res)
                     }).catch(error => {
                         this.reset()
                         this.isLoading = false
@@ -191,6 +211,13 @@
                     update_error: null,
                     asst_error: null
                 }
+            },
+            formatSize (value, digits = 0) {
+                const uints = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+                const index = Math.floor(Math.log(value) / Math.log(1024))
+                let size = value / Math.pow(1024, index)
+                size = `${size.toFixed(digits)}${uints[index]}`
+                return size
             },
             async handleDownloadTemplate () {
                 try {

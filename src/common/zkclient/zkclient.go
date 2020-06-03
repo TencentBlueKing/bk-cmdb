@@ -14,6 +14,8 @@ package zkclient
 
 import (
 	"errors"
+	"sync"
+
 	//"bcs/bcs-common/common/blog"
 	"encoding/json"
 	"fmt"
@@ -99,9 +101,11 @@ func (zlock *ZkLock) UnLock() error {
 }
 
 type ZkClient struct {
-	ZkHost []string
-	ZkConn *zk.Conn
-	zkAcl  []zk.ACL
+	ZkHost       []string
+	ZkConn       *zk.Conn
+	zkAcl        []zk.ACL
+	zkConnClosed bool
+	sync.Mutex
 }
 
 func NewZkClient(host []string) *ZkClient {
@@ -136,13 +140,16 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	}
 
 	z.ZkConn = c
+	z.zkConnClosed = false
 	return nil
 }
 
 func (z *ZkClient) Close() {
-	if nil != z.ZkConn {
+	z.Lock()
+	defer z.Unlock()
+	if nil != z.ZkConn && !z.zkConnClosed {
 		z.ZkConn.Close()
-		z.ZkConn = nil
+		z.zkConnClosed = true
 	}
 }
 

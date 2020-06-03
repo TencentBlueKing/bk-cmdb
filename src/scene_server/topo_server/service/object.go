@@ -18,85 +18,194 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/operation"
 )
 
 // CreateObjectBatch batch to create some objects
-func (s *Service) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	data.Remove(metadata.BKMetadata)
-	return s.Core.ObjectOperation().CreateObjectBatch(params, data)
+func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
+	dataWithMetadata := MapStrWithMetadata{}
+	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	dataWithMetadata.Data.Remove(common.MetadataField)
+
+	var ret mapstr.MapStr
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		ret, err = s.Core.ObjectOperation().CreateObjectBatch(ctx.Kit, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(ret)
 }
 
 // SearchObjectBatch batch to search some objects
-func (s *Service) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	data.Remove(metadata.BKMetadata)
-	return s.Core.ObjectOperation().FindObjectBatch(params, data)
+func (s *Service) SearchObjectBatch(ctx *rest.Contexts) {
+	data := struct {
+		operation.ExportObjectCondition `json:",inline"`
+		Metadata                        *metadata.Metadata `json:"metadata"`
+	}{}
+	if err := ctx.DecodeInto(&data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	resp, err := s.Core.ObjectOperation().FindObjectBatch(ctx.Kit, data.ObjIDS, data.Metadata)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }
 
 // CreateObject create a new object
-func (s *Service) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	rsp, err := s.Core.ObjectOperation().CreateObject(params, false, data)
-	if nil != err {
-		return nil, err
+func (s *Service) CreateObject(ctx *rest.Contexts) {
+	dataWithMetadata := MapStrWithMetadata{}
+	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return rsp.ToMapStr()
+	var rsp model.Object
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		rsp, err = s.Core.ObjectOperation().CreateObject(ctx.Kit, false, dataWithMetadata.Data, dataWithMetadata.Metadata)
+		if nil != err {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(rsp.ToMapStr())
 }
 
 // SearchObject search some objects by condition
-func (s *Service) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObject(ctx *rest.Contexts) {
+	dataWithMetadata := MapStrWithMetadata{}
+	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 	cond := condition.CreateCondition()
-	if err := cond.Parse(data); nil != err {
-		return nil, err
+	if err := cond.Parse(dataWithMetadata.Data); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return s.Core.ObjectOperation().FindObject(params, cond)
+	resp, err := s.Core.ObjectOperation().FindObject(ctx.Kit, cond, dataWithMetadata.Metadata)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }
 
 // SearchObjectTopo search the object topo
-func (s *Service) SearchObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObjectTopo(ctx *rest.Contexts) {
+	dataWithMetadata := MapStrWithMetadata{}
+	if err := ctx.DecodeInto(&dataWithMetadata); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 	cond := condition.CreateCondition()
-	err := cond.Parse(data)
+	err := cond.Parse(dataWithMetadata.Data)
 	if nil != err {
-		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, err.Error())
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrTopoObjectSelectFailed, err.Error()))
+		return
 	}
 
-	return s.Core.ObjectOperation().FindObjectTopo(params, cond)
+	resp, err := s.Core.ObjectOperation().FindObjectTopo(ctx.Kit, cond, dataWithMetadata.Metadata)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
 }
 
 // UpdateObject update the object
-func (s *Service) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	idStr := pathParams(common.BKFieldID)
+func (s *Service) UpdateObject(ctx *rest.Contexts) {
+	idStr := ctx.Request.PathParameter(common.BKFieldID)
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), params.ReqID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKFieldID)
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKFieldID))
+		return
 	}
-	err = s.Core.ObjectOperation().UpdateObject(params, data, id)
-	return nil, err
+	//update model
+	data := make(map[string]interface{})
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.ObjectOperation().UpdateObject(ctx.Kit, data, id)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // DeleteObject delete the object
-func (s *Service) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	idStr := pathParams(common.BKFieldID)
+func (s *Service) DeleteObject(ctx *rest.Contexts) {
+	idStr := ctx.Request.PathParameter(common.BKFieldID)
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if nil != err {
-		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), params.ReqID)
-		return nil, params.Err.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID)
+		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s , rid: %s", idStr, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
+		return
+	}
+	//delete model
+	md := new(MetaShell)
+	if err := ctx.DecodeInto(md); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	err = s.Core.ObjectOperation().DeleteObject(params, id, true)
-	return nil, err
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err = s.Core.ObjectOperation().DeleteObject(ctx.Kit, id, true, md.Metadata)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
 
 // GetModelStatistics 用于统计各个模型的实例数(Web页面展示需要)
-func (s *Service) GetModelStatistics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	result, err := s.Engine.CoreAPI.CoreService().Model().GetModelStatistics(params.Context, params.Header)
+func (s *Service) GetModelStatistics(ctx *rest.Contexts) {
+	result, err := s.Engine.CoreAPI.CoreService().Model().GetModelStatistics(ctx.Kit.Ctx, ctx.Kit.Header)
 	if err != nil {
-		blog.Errorf("GetModelStatistics failed, err: %s, rid: %s", err.Error(), params.ReqID)
-		return nil, err
+		blog.Errorf("GetModelStatistics failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return result.Data, err
+	ctx.RespEntity(result.Data)
 }
