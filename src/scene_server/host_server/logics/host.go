@@ -271,6 +271,41 @@ func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond metadata.HostModule
 	return hostIDs, nil
 }
 
+// GetAllHostIDByCond 专用结构， page start 和limit 无效， 获取条件所有满足条件的主机
+func (lgc *Logics) GetAllHostIDByCond(ctx context.Context, cond metadata.HostModuleRelationRequest) ([]int64, errors.CCError) {
+	hostIDs := make([]int64, 0)
+	cond.Page.Limit = 2000
+	start := 0
+	cnt := 0
+	for {
+		cond.Page.Start = start
+		result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
+		if err != nil {
+			blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(), cond, lgc.rid)
+			return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !result.Result {
+			blog.Errorf("GetHostIDByCond GetModulesHostConfig http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, cond, lgc.rid)
+			return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
+		}
+
+		for _, val := range result.Data.Info {
+			hostIDs = append(hostIDs, val.HostID)
+		}
+		// 当总数大于现在的总数，使用当前返回值的总是为新的总数值
+		if cnt < int(result.Data.Count) {
+			// 获取条件的数据总数
+			cnt = int(result.Data.Count)
+		}
+		start += cond.Page.Limit
+		if start >= cnt {
+			break
+		}
+	}
+
+	return hostIDs, nil
+}
+
 // DeleteHostBusinessAttributes delete host business private property
 func (lgc *Logics) DeleteHostBusinessAttributes(ctx context.Context, hostIDArr []int64, businessMedatadata *metadata.Metadata) error {
 
