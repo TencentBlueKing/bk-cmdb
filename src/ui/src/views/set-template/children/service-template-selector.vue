@@ -13,7 +13,7 @@
             </bk-input>
             <span class="to-template" @click="handleLinkClick">
                 <i class="icon-cc-share"></i>
-                {{$t('跳转服务模版')}}
+                {{$t('跳转服务模板')}}
             </span>
             <span class="select-all fr" v-if="$parent.$parent.mode !== 'edit'">
                 <bk-checkbox :value="isSelectAll" @change="handleSelectAll">全选</bk-checkbox>

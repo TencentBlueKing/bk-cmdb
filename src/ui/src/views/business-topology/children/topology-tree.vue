@@ -9,10 +9,7 @@
         <bk-big-tree ref="tree" class="topology-tree"
             selectable
             display-matched-node-descendants
-            :expand-on-click="false"
-            :style="{
-                height: $APP.height - 160 + 'px'
-            }"
+            :height="$APP.height - 160"
             :options="{
                 idKey: getNodeId,
                 nameKey: 'bk_inst_name',
@@ -98,6 +95,7 @@
     import CreateModule from './create-module.vue'
     import Bus from '@/utils/bus'
     import RouterQuery from '@/router/query'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         components: {
             CreateNode,
@@ -173,10 +171,14 @@
             }, 300)
             this.initTopology()
         },
+        mounted () {
+            addResizeListener(this.$el, this.handleResize)
+        },
         beforeDestroy () {
             this.unwatch()
             Bus.$off('refresh-count', this.refreshCount)
             clearInterval(this.timer)
+            removeResizeListener(this.$el, this.handleResize)
         },
         methods: {
             async initTopology () {
@@ -277,11 +279,9 @@
             handleSelectChange (node) {
                 this.$store.commit('businessHost/setSelectedNode', node)
                 Bus.$emit('toggle-host-filter', false)
-                if (!node.expanded) {
-                    this.$refs.tree.setExpanded(node.id)
-                }
                 RouterQuery.set({
                     node: node.id,
+                    page: 1,
                     _t: Date.now()
                 })
             },
@@ -500,6 +500,9 @@
                         })
                     }
                 }
+            },
+            handleResize () {
+                this.$refs.tree.resize()
             }
         }
     }
@@ -516,7 +519,6 @@
     }
     .topology-tree {
         padding: 10px 0;
-        margin-right: 4px;
         @include scrollbar-y(6px);
         .node-icon {
             display: block;
