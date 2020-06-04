@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+
 	"github.com/tidwall/gjson"
 )
 
@@ -47,6 +48,63 @@ var ModuleHostRelationKey = Key{
 	instName: func(doc []byte) string {
 		fields := gjson.GetManyBytes(doc, "bk_module_id", "bk_host_id")
 		return fmt.Sprintf("module id: %s, host id: %s", fields[0].String(), fields[1].String())
+	},
+}
+
+var bizFields = []string{common.BKAppIDField, common.BKAppNameField}
+var BizKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDApp,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, bizFields...)
+		for idx := range bizFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", bizFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		fields := gjson.GetManyBytes(doc, bizFields...)
+		return fields[1].String()
+	},
+}
+
+var setFields = []string{common.BKSetIDField, common.BKSetNameField}
+var SetKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDSet,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, setFields...)
+		for idx := range setFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", setFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		fields := gjson.GetManyBytes(doc, setFields...)
+		return fields[1].String()
+	},
+}
+
+var moduleFields = []string{common.BKModuleIDField, common.BKModuleNameField}
+var ModuleKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDModule,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, moduleFields...)
+		for idx := range moduleFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", moduleFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		fields := gjson.GetManyBytes(doc, moduleFields...)
+		return fields[1].String()
 	},
 }
 
