@@ -265,6 +265,17 @@ func (f *Find) Limit(limit uint64) types.Find {
 
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
+	// host query must use specified type so that ip and operator field can be transformed to string
+	if f.collName == common.BKTableNameBaseHost {
+		switch result.(type) {
+		case *[]metadata.HostMapStr:
+		case *[]metadata.HostIdentifier:
+		case *[]metadata.ModuleHost:
+		default:
+			blog.Errorf("host query result type(%v) not match specified type", reflect.TypeOf(result))
+			return fmt.Errorf("host query result type invalid")
+		}
+	}
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -300,6 +311,17 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 // One 查询一个
 func (f *Find) One(ctx context.Context, result interface{}) error {
+	// host query must use specified type so that ip and operator field can be transformed to string
+	if f.collName == common.BKTableNameBaseHost {
+		switch result.(type) {
+		case *metadata.HostMapStr:
+		case *metadata.HostIdentifier:
+		case *metadata.ModuleHost:
+		default:
+			blog.Errorf("host query result type(%v) not match *metadata.HostMapStr type", reflect.TypeOf(result))
+			return fmt.Errorf("host query result type invalid")
+		}
+	}
 	start := time.Now()
 	rid := ctx.Value(common.ContextRequestIDField)
 	defer func() {

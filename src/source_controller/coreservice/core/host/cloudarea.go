@@ -13,6 +13,8 @@
 package host
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -49,18 +51,12 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 	}
 
 	// step2. validate bk_host_ids
-	type HostSimplify struct {
-		HostID  int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
-		InnerIP string `field:"bk_host_innerip" json:"bk_host_innerip" bson:"bk_host_innerip"`
-		CloudID int64  `field:"bk_cloud_id" json:"bk_cloud_id" bson:"bk_cloud_id"`
-	}
-
 	hostFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
 			common.BKDBIN: input.HostIDs,
 		},
 	}
-	hostSimplify := make([]HostSimplify, 0)
+	hostSimplify := make([]metadata.HostMapStr, 0)
 	fields := []string{common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostIDField}
 	if err := hm.DbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).All(context, &hostSimplify); err != nil {
 		blog.ErrorJSON("UpdateHostCloudAreaField failed, db select failed, table: %s, option: %s, err: %s, rid: %s", common.BKTableNameBaseHost, hostFilter, err.Error(), rid)
@@ -72,27 +68,34 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 	}
 
 	// step3. validate unique of bk_cloud_id + bk_host_innerip in input parameters
-	hostIDs := make([]int64, 0)
 	innerIPs := make([]string, 0)
 	for _, item := range hostSimplify {
-		hostIDs = append(hostIDs, item.HostID)
-		innerIPs = append(innerIPs, item.InnerIP)
+		innerIPs = append(innerIPs, item[common.BKHostInnerIPField].(string))
 	}
-	if len(hostIDs) != len(innerIPs) {
+	innerIPs = util.StrArrayUnique(innerIPs)
+	if len(input.HostIDs) != len(innerIPs) {
 		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPField)
 	}
 
 	// step4. validate unique of bk_cloud_id + bk_inner_ip in database
+	ipCond := make([]map[string]interface{}, len(innerIPs))
+	for index, innerIP := range innerIPs {
+		innerIPArr := strings.Split(innerIP, ",")
+		ipCond[index] = map[string]interface{}{
+			common.BKHostInnerIPField: map[string]interface{}{
+				common.BKDBAll:  innerIPArr,
+				common.BKDBSize: len(innerIPArr),
+			},
+		}
+	}
 	dbHostFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
 			common.BKDBNIN: input.HostIDs,
 		},
 		common.BKCloudIDField: input.CloudID,
-		common.BKHostInnerIPField: map[string]interface{}{
-			common.BKDBIN: innerIPs,
-		},
+		common.BKDBOR:         ipCond,
 	}
-	duplicatedHosts := make([]HostSimplify, 0)
+	duplicatedHosts := make([]metadata.HostMapStr, 0)
 	if err := hm.DbProxy.Table(common.BKTableNameBaseHost).Find(dbHostFilter).Fields(fields...).All(context, &duplicatedHosts); err != nil {
 		blog.ErrorJSON("UpdateHostCloudAreaField failed, db select failed, table: %s, option: %s, err: %s, rid: %s", common.BKTableNameBaseHost, dbHostFilter, err.Error(), rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)

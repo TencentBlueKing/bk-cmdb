@@ -23,11 +23,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
-	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
+
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/bsonx"
@@ -127,13 +128,13 @@ func (h *hostCache) onDelete(e *types.Event) {
 
 	elements := gjson.GetManyBytes(byt, common.BKCloudIDField, common.BKHostInnerIPField, common.BKHostIDField)
 	cloudID := elements[0].Int()
-	ips := elements[1].String()
+	ips := elements[1].Array()
 	hostID := elements[2].Int()
 
 	pipe := h.rds.Pipeline()
 	// delete cloud id and ip pair
-	for _, ip := range strings.Split(ips, ",") {
-		pipe.Del(h.key.IPCloudIDKey(ip, cloudID))
+	for _, ip := range ips {
+		pipe.Del(h.key.IPCloudIDKey(ip.String(), cloudID))
 	}
 
 	// delete host details
@@ -197,7 +198,7 @@ func getHostDetailsFromMongoWithHostID(db dal.DB, hostID int64) (ips string, clo
 	filter := mapstr.MapStr{
 		common.BKHostIDField: hostID,
 	}
-	host := make(map[string]interface{})
+	host := make(metadata.HostMapStr)
 	err = db.Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)
 	if err != nil {
 		blog.Errorf("get host data from mongodb for cache failed, err: %v", err)
@@ -234,7 +235,7 @@ func listHostDetailsFromMongoWithHostID(db dal.DB, hostID []int64) (list []*host
 			common.BKDBIN: hostID,
 		},
 	}
-	host := make([]map[string]interface{}, 0)
+	host := make([]metadata.HostMapStr, 0)
 	err = db.Table(common.BKTableNameBaseHost).Find(filter).All(context.Background(), &host)
 	if err != nil {
 		blog.Errorf("get host data from mongodb for cache failed, err: %v", err)
@@ -275,16 +276,12 @@ func listHostDetailsFromMongoWithHostID(db dal.DB, hostID []int64) (list []*host
 	return list, nil
 }
 
-const exactIPRegexp = `(^IP_PLACEHOLDER$)|(^IP_PLACEHOLDER[,]{1})|([,]{1}IP_PLACEHOLDER[,]{1})|([,]{1}IP_PLACEHOLDER$)`
-
 func getHostDetailsFromMongoWithIP(db dal.DB, innerIP string, cloudID int64) (hostID int64, detail []byte, err error) {
 	filter := mapstr.MapStr{
-		common.BKHostInnerIPField: mapstr.MapStr{
-			common.BKDBLIKE: strings.Replace(exactIPRegexp, "IP_PLACEHOLDER", params.SpecialCharChange(innerIP), -1),
-		},
-		common.BKCloudIDField: cloudID,
+		common.BKHostInnerIPField: innerIP,
+		common.BKCloudIDField:     cloudID,
 	}
-	host := make(map[string]interface{})
+	host := make(metadata.HostMapStr)
 	err = db.Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)
 	if err != nil {
 		blog.Errorf("get host data from mongodb with ip: %s, cloud: %d for cache failed, err: %v", innerIP, cloudID, err)
@@ -294,7 +291,7 @@ func getHostDetailsFromMongoWithIP(db dal.DB, innerIP string, cloudID int64) (ho
 	id, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 	if err != nil {
 		return 0, nil, fmt.Errorf("get host data from mongodb ip: %s, cloud: %d for cache, but got invalid host id: %v, err: %v",
-			innerIP, hostID, host, err)
+			innerIP, cloudID, host[common.BKHostIDField], err)
 	}
 
 	js, _ := json.Marshal(host)
