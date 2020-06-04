@@ -10,6 +10,7 @@
             selectable
             display-matched-node-descendants
             :height="$APP.height - 160"
+            :node-height="36"
             :options="{
                 idKey: getNodeId,
                 nameKey: 'bk_inst_name',

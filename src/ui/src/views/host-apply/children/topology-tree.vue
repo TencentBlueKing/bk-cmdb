@@ -12,6 +12,7 @@
                 childrenKey: 'child'
             }"
             :height="$APP.height - 160"
+            :node-height="36"
             :check-on-click="true"
             :before-select="beforeSelect"
             :filter-method="filterMethod"

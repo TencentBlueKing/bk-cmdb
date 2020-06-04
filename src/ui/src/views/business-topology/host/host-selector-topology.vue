@@ -16,6 +16,7 @@
                     'min-width': `calc(100% + ${deepestExpandedLevel * 60}px)`
                 }"
                 :height="270"
+                :node-height="36"
                 :filter-method="filterMethod"
                 :before-check="beforeCheck"
                 @node-click="handleNodeClick"

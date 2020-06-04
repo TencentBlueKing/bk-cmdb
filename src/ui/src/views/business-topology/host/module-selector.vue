@@ -15,6 +15,7 @@
                         childrenKey: 'child'
                     }"
                     :height="290"
+                    :node-height="36"
                     :show-checkbox="isShowCheckbox"
                     @node-click="handleNodeClick"
                     @check-change="handleNodeCheck">
@@ -361,7 +362,6 @@
             width: 20px;
             height: 20px;
             margin: 8px 4px 8px 0;
-            vertical-align: middle;
             border-radius: 50%;
             background-color: #C4C6CC;
             line-height: 1.666667;
