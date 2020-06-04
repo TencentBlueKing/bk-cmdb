@@ -151,15 +151,20 @@ func (s *StringArrayToString) UnmarshalBSONValue(typo bsontype.Type, raw []byte)
 func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]interface{} {
 	specialFields := []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField, common.BKBakOperatorField}
 	for _, field := range specialFields {
-		switch value := host[field].(type) {
+		value, ok := host[field]
+		if !ok {
+			continue
+		}
+		switch v := value.(type) {
 		case string:
-			if len(value) == 0 {
+			if len(v) == 0 {
 				host[field] = make([]string, 0)
 			} else {
-				host[field] = strings.Split(value, ",")
+				host[field] = strings.Split(v, ",")
 			}
 		case []string:
 		case nil:
+			host[field] = make([]string, 0)
 		default:
 			blog.Errorf("host %s type invalid, value %v", field, host[field])
 		}

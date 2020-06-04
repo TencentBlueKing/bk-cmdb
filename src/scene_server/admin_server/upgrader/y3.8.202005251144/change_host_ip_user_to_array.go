@@ -44,6 +44,10 @@ func changeHostIPAndUserToArray(ctx context.Context, db dal.RDB, conf *upgrader.
 			}
 			doc := make(map[string]interface{})
 			for _, field := range needChangeFields {
+				if host[field] == nil {
+					doc[field] = make([]string, 0)
+					continue
+				}
 				if value, ok := host[field].(string); ok {
 					if len(value) == 0 {
 						doc[field] = make([]string, 0)
