@@ -44,7 +44,7 @@ export const before = async function (app, to, from, next) {
         toTopRoute.meta.view = 'default'
         window.localStorage.setItem('selectedBusiness', id)
         app.$store.commit('objectBiz/setBizId', id)
-        
+
         if (!isSubRoute) { // 如果是一级路由，则重定向到带业务id的二级路由首页(业务拓扑)
             next({
                 path: `/business/${id}/index`,

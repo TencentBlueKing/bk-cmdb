@@ -32,6 +32,12 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 		return
 	}
 
+	rawErr := query.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
 	var businessID int64
 
 	queryCondition := query.Condition
@@ -212,9 +218,6 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 		}
 		query.Condition = cond
 	}
-	if 0 == query.Limit {
-		query.Limit = common.BKDefaultLimit
-	}
 
 	// switch between two different control mechanism
 	// TODO use global authorization for now, need more specific auth control
@@ -268,6 +271,12 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	query := metadata.QueryInput{}
 	if err := ctx.DecodeInto(&query); nil != err {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := query.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -369,10 +378,6 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 		})
 	}
 	andCond = append(andCond, map[string]interface{}{common.BKDBOR: orCond})
-
-	if 0 == query.Limit {
-		query.Limit = common.BKDefaultLimit
-	}
 
 	cond[common.BKDBAND] = andCond
 	query.Condition = cond

@@ -44,6 +44,9 @@ const (
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
 
+	// BKAuditLogPageLimit the audit log page limit
+	BKAuditLogPageLimit = 200
+
 	// BKParent the parent code
 	BKParent = 1
 	// BKChild the child code
@@ -473,6 +476,18 @@ const (
 
 	// BKProcPortEnable whether enable port,  enable port use for monitor app. default value
 	BKProcPortEnable = "bk_enable_port"
+
+	// BKProcGatewayIP the process gateway ip
+	BKProcGatewayIP = "bk_gateway_ip"
+
+	// BKProcGatewayPort the process gateway port
+	BKProcGatewayPort = "bk_gateway_port"
+
+	// BKProcGatewayProtocol the process gateway protocol
+	BKProcGatewayProtocol = "bk_gateway_protocol"
+
+	// BKProcGatewayCity the process gateway city
+	BKProcGatewayCity = "bk_gateway_city"
 
 	// BKUser the user
 	BKUser = "user"

@@ -49,7 +49,7 @@ func (h *HostLog) WithPrevious(ctx context.Context, hostID int64, properties []m
 		if properties != nil && len(properties) != 0 {
 			h.Content.Properties = properties
 		} else {
-			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, nil)
+			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, metadata.BizLabelNotExist)
 			if err != nil {
 				return err
 			}
@@ -70,7 +70,7 @@ func (h *HostLog) WithCurrent(ctx context.Context, hostID int64, properties []me
 		if properties != nil && len(properties) != 0 {
 			h.Content.Properties = properties
 		} else {
-			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, nil)
+			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, metadata.BizLabelNotExist)
 			if err != nil {
 				return err
 			}

@@ -14,6 +14,7 @@ package host
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -219,6 +220,60 @@ func getHostDetailsFromMongoWithHostID(db dal.DB, hostID int64) (ips string, clo
 		return "", 0, nil, fmt.Errorf("host %d cloud id not exist", hostID)
 	}
 	return ips, ele.Int(), js, nil
+}
+
+type hostBase struct {
+	id      int64
+	ip      string
+	cloudID int64
+	detail  string
+}
+
+func listHostDetailsFromMongoWithHostID(db dal.DB, hostID []int64) (list []*hostBase, err error) {
+	filter := mapstr.MapStr{
+		common.BKHostIDField: mapstr.MapStr{
+			common.BKDBIN: hostID,
+		},
+	}
+	host := make([]metadata.HostMapStr, 0)
+	err = db.Table(common.BKTableNameBaseHost).Find(filter).All(context.Background(), &host)
+	if err != nil {
+		blog.Errorf("get host data from mongodb for cache failed, err: %v", err)
+		return nil, err
+	}
+
+	for _, h := range host {
+		ips, ok := h[common.BKHostInnerIPField].(string)
+		if !ok {
+			blog.Errorf("get host: %v data from mongodb for cache, but got invalid ip, host: %v", hostID, h)
+			return nil, errors.New("invalid host innerip")
+		}
+
+		js, _ := json.Marshal(h)
+		ele := gjson.GetManyBytes(js, common.BKCloudIDField, common.BKHostIDField)
+		if !ele[0].Exists() {
+			blog.Errorf("get host from mongodb for cache, but cloud id not exist, host: %v", h)
+			return nil, errors.New("host cloud id not exist")
+		}
+		if !ele[1].Exists() {
+			blog.Errorf("get host from mongodb for cache, but host id not exist, host: %v", h)
+			return nil, errors.New("host id not exist")
+		}
+
+		id := ele[1].Int()
+		if id == 0 {
+			blog.Errorf("get host from mongodb for cache, but host id is 0, host: %v", h)
+			return nil, errors.New("host id is 0")
+		}
+
+		list = append(list, &hostBase{
+			id:      id,
+			ip:      ips,
+			cloudID: ele[0].Int(),
+			detail:  string(js),
+		})
+	}
+	return list, nil
 }
 
 func getHostDetailsFromMongoWithIP(db dal.DB, innerIP string, cloudID int64) (hostID int64, detail []byte, err error) {

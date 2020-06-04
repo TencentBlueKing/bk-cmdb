@@ -189,7 +189,8 @@
             },
             async handleDelete (row) {
                 this.$bkInfo({
-                    title: this.$t('确认删除xx集群模板', { name: row.name }),
+                    title: this.$t('确认删除'),
+                    subTitle: this.$t('确认删除xx集群模板', { name: row.name }),
                     confirmFn: async () => {
                         try {
                             await this.$store.dispatch('setTemplate/deleteSetTemplate', {

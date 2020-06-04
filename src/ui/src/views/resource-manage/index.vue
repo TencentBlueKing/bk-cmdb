@@ -1,5 +1,5 @@
 <template>
-    <div class="classify-layout clearfix">
+    <div class="classify-layout clearfix" v-bkloading="{ isLoading: $loading('getObjectCommonInstanceCount') }">
         <div class="classify-filter">
             <bk-input class="filter-input"
                 clearable
@@ -21,7 +21,7 @@
                 </cmdb-classify-panel>
             </div>
         </div>
-        <div v-show="isEmpty" class="no-data">
+        <div v-show="isEmpty && !globalLoading" class="no-data">
             <img src="../../assets/images/full-text-search.png" alt="no-data">
             <p>{{$t('搜不到相关资源')}}</p>
         </div>
@@ -50,6 +50,7 @@
             }
         },
         computed: {
+            ...mapGetters(['globalLoading']),
             ...mapGetters('objectModelClassify', ['classifications', 'models']),
             ...mapGetters('userCustom', ['usercustom']),
             collection () {
@@ -126,10 +127,16 @@
             },
             async getInstanceCount () {
                 try {
-                    this.instanceCount = await this.$store.dispatch('objectCommonInst/getInstanceCount')
+                    this.instanceCount = await this.$store.dispatch('objectCommonInst/getInstanceCount', {
+                        config: {
+                            requestId: 'getObjectCommonInstanceCount',
+                            globalError: false
+                        }
+                    })
                 } catch (e) {
                     console.error(e)
                     this.instanceCount = []
+                    this.$route.meta.view = 'error'
                 }
             },
             calcWaterfallHeight (classify) {

@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"configcenter/src/auth/extensions"
@@ -28,6 +27,7 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -42,9 +42,9 @@ type HostSnap struct {
 	authManager extensions.AuthManager
 	*backbone.Engine
 
-	cachelock sync.RWMutex
-	ctx       context.Context
-	db        dal.RDB
+	filter *filter
+	ctx    context.Context
+	db     dal.RDB
 }
 
 func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager extensions.AuthManager) *HostSnap {
@@ -54,6 +54,7 @@ func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine
 		db:          db,
 		authManager: authManager,
 		Engine:      engine,
+		filter:      newFilter(),
 	}
 	return h
 }
@@ -399,6 +400,11 @@ func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string,
 	}
 
 	for _, ip := range ips {
+		if h.filter.Exist(ip, cloudID) {
+			// skip the cached invalid ip which may not exist.
+			continue
+		}
+
 		opt := &metadata.SearchHostWithInnerIPOption{
 			InnerIP: ip,
 			CloudID: cloudID,
@@ -408,6 +414,11 @@ func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string,
 		host, err := h.Engine.CoreAPI.CoreService().Cache().SearchHostWithInnerIP(context.Background(), header, opt)
 		if err != nil {
 			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID, err, rid)
+			if ccErr, ok := err.(ccErr.CCErrorCoder); ok {
+				if ccErr.GetCode() == common.CCErrCommDBSelectFailed {
+					h.filter.Set(ip, cloudID)
+				}
+			}
 			// do not return, continue search with next ip
 		}
 
@@ -430,7 +441,8 @@ func getIPS(val *gjson.Result) []string {
 	rootIP := val.Get("ip").String()
 	if !strings.HasPrefix(rootIP, "127.0.0.") && net.ParseIP(rootIP) != nil {
 		if strings.Contains(rootIP, ":") {
-			ipv6 = append(ipv6, rootIP)
+			// not support ipv6 for now.
+			// ipv6 = append(ipv6, rootIP)
 		} else {
 			ipv4 = append(ipv4, rootIP)
 		}
@@ -450,7 +462,8 @@ func getIPS(val *gjson.Result) []string {
 			}
 
 			if strings.Contains(ip, ":") {
-				ipv6 = append(ipv6, ip)
+				// not support ipv6 for now.
+				// ipv6 = append(ipv6, ip)
 			} else {
 				ipv4 = append(ipv4, ip)
 			}

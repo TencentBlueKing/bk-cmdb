@@ -143,9 +143,6 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 			hostTransferResult := HostTransferResult{
 				HostID: plan.HostID,
 			}
-			if ccErr != nil {
-				return
-			}
 			defer func() {
 				if ccErr != nil {
 					hostTransferResult.Code = ccErr.GetCode()
@@ -158,6 +155,9 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(req *restful.Request,
 				<-pipeline
 				wg.Done()
 			}()
+			if ccErr != nil {
+				return
+			}
 
 			// create or update related service instance
 			for _, item := range option.Options.ServiceInstanceOptions {
@@ -454,7 +454,7 @@ func (s *Service) removeServiceInstanceRelatedResource(srvData *srvComm, transfe
 					},
 				},
 			}
-			deleteProcessResult, err := s.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, processDeleteOption)
+			deleteProcessResult, err := s.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, processDeleteOption)
 			if err != nil {
 				blog.ErrorJSON("runTransferPlans failed, DeleteInstance of process failed, option: %s, err: %s, rid: %s", processDeleteOption, err.Error(), rid)
 				return srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
