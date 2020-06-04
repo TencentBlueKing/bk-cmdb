@@ -279,6 +279,7 @@
 <style lang="scss" scoped>
     .topology-tree {
         padding: 10px 0;
+        margin-right: 2px;
         .node-info {
             .node-icon {
                 width: 22px;

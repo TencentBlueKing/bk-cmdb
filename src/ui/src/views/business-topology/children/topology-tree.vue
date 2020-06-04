@@ -519,6 +519,7 @@
     }
     .topology-tree {
         padding: 10px 0;
+        margin-right: 2px;
         @include scrollbar-y(6px);
         .node-icon {
             display: block;
