@@ -57,8 +57,7 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 	case rsc.Type == meta.ModelAssociation && IsReadAction(rsc.Action):
 		return true
 
-	// all the model instance association related operation is all authorized for now.
-	case rsc.Type == meta.ModelInstanceAssociation && IsReadAction(rsc.Action):
+	case rsc.Type == meta.ModelInstanceAssociation:
 		return true
 
 	// case rsc.Type == meta.ModelInstance && (rsc.Action == meta.Find || rsc.Action == meta.FindMany):
@@ -101,7 +100,7 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 	case rsc.Type == meta.ModelInstance && IsReadAction(rsc.Action):
 		return true
 	case rsc.Type == meta.SystemConfig:
-    return true
+		return true
 	case rsc.Type == meta.Plat && IsReadAction(rsc.Action):
 		return true
 	default:
