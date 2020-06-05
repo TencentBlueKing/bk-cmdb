@@ -15,10 +15,8 @@ package logics
 import (
 	"context"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -741,7 +739,7 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 }
 
 func (sh *searchHost) appendHostTopoConds() errors.CCError {
-	var moduleHostConfig metadata.HostModuleRelationRequest
+	var moduleHostConfig metadata.DistinctHostIDByTopoRelationRequest
 	isAddHostID := false
 
 	if len(sh.idArr.moduleHostConfig.setIDArr) > 0 {
@@ -757,92 +755,49 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		isAddHostID = true
 	}
 
-	var appIDArr []int64
-	if len(sh.idArr.moduleHostConfig.appIDArr) > 0 {
+	if len(sh.conds.appCond.Condition) > 0 {
 		// already sorted by app id.
-		appIDArr = sh.idArr.moduleHostConfig.appIDArr
+		moduleHostConfig.ApplicationIDArr = sh.idArr.moduleHostConfig.appIDArr
 		isAddHostID = true
 	}
 	if !isAddHostID {
 		return nil
 	}
 
-	var moduleHostConfigArr []metadata.HostModuleRelationRequest
-	if len(appIDArr) > 0 {
-		//
-		for _, appID := range appIDArr {
-			newModuleHostConfig := *(&moduleHostConfig)
-			newModuleHostConfig.ApplicationID = appID
-			moduleHostConfigArr = append(moduleHostConfigArr, newModuleHostConfig)
-		}
-	} else {
-		moduleHostConfigArr = append(moduleHostConfigArr, moduleHostConfig)
-	}
-
 	var hostIDArr []int64
-	mapLock := sync.Mutex{}
-	hostIDMap := make(map[int64]struct{})
-	pipe := make(chan struct{}, 50)
-	wg := sync.WaitGroup{}
-	var errOccur error
-	for _, moduleHostConfig := range moduleHostConfigArr {
-		wg.Add(1)
-		go func(relation metadata.HostModuleRelationRequest) {
-			pipe <- struct{}{}
 
-			hostIDArrItem, err := sh.lgc.GetAllHostIDByCond(sh.ctx, relation)
-			if err != nil {
-				<-pipe
-				wg.Done()
-				blog.Errorf("GetHostIDByCond get hosts failed, err: %v, rid: %s", err, sh.ccRid)
-				errOccur = err
-				return
-			}
-			mapLock.Lock()
-			for _, id := range hostIDArrItem {
-				hostIDMap[id] = struct{}{}
-			}
-			mapLock.Unlock()
-
-			<-pipe
-			wg.Done()
-		}(moduleHostConfig)
+	respHostIDInfo, err := sh.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(sh.ctx, sh.lgc.header, &moduleHostConfig)
+	if err != nil {
+		blog.Errorf("get hosts failed, err: %v, rid: %s", err, sh.ccRid)
+		return sh.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	wg.Wait()
-
-	if errOccur != nil {
-		return errOccur
+	if err := respHostIDInfo.CCError(); err != nil {
+		blog.Errorf("get host id by topology relation failed, error code:%d, error message:%s, cond: %s, rid: %s", respHostIDInfo.Code, respHostIDInfo.ErrMsg, moduleHostConfig, sh.ccRid)
+		return err
 	}
 
-	allHostID := make([]int64, 0)
-	for id := range hostIDMap {
-		allHostID = append(allHostID, id)
-	}
-	sort.Slice(allHostID, func(i, j int) bool {
-		return allHostID[i] < allHostID[j]
-	})
-	sh.totalHostCnt = len(allHostID)
-	if len(appIDArr) <= 0 {
+	sh.totalHostCnt = len(respHostIDInfo.Data.IDArr)
+	if len(sh.conds.hostCond.Condition) <= 0 {
 		start := sh.hostSearchParam.Page.Start
 		limit := sh.hostSearchParam.Page.Limit
-		if len(allHostID) >= limit {
+		if len(respHostIDInfo.Data.IDArr) >= limit {
 			pagedHosts := make([]int64, 0)
-			if len(allHostID) <= limit {
-				pagedHosts = allHostID
+			if len(respHostIDInfo.Data.IDArr) <= limit {
+				pagedHosts = respHostIDInfo.Data.IDArr
 			} else {
 				if sh.hostSearchParam.Page.Start <= 0 {
-					pagedHosts = allHostID[0:limit]
+					pagedHosts = respHostIDInfo.Data.IDArr[0:limit]
 				} else {
-					pagedHosts = allHostID[start-1 : start+limit-1]
+					pagedHosts = respHostIDInfo.Data.IDArr[start-1 : start+limit-1]
 				}
 			}
 			hostIDArr = pagedHosts
 			sh.paged = true
 		} else {
-			hostIDArr = allHostID
+			hostIDArr = respHostIDInfo.Data.IDArr
 		}
 	} else {
-		hostIDArr = allHostID
+		hostIDArr = respHostIDInfo.Data.IDArr
 	}
 
 	// 合并两种涞源的根据 host_id 查询的 condition
