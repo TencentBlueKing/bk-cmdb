@@ -24,6 +24,13 @@ import (
 	"configcenter/src/common/util"
 )
 
+var hostSpecialFieldMap = map[string]bool{
+	common.BKHostInnerIPField: true,
+	common.BKHostOuterIPField: true,
+	common.BKOperatorField:    true,
+	common.BKBakOperatorField: true,
+}
+
 // validCreateUnique  valid create inst data unique
 func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.MapStr, instMedataData metadata.Metadata, instanceManager *instanceManager) error {
 	uniqueAttr, err := valid.dependent.SearchUnique(kit, valid.objID)
@@ -37,12 +44,6 @@ func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.Map
 		return nil
 	}
 
-	hostSpecialFieldMap := map[string]bool{
-		common.BKHostInnerIPField: true,
-		common.BKHostOuterIPField: true,
-		common.BKOperatorField:    true,
-		common.BKBakOperatorField: true,
-	}
 	for _, unique := range uniqueAttr {
 		// retrieve unique value
 		uniqueKeys := make([]string, 0)
@@ -137,12 +138,6 @@ func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapSt
 		return nil
 	}
 
-	hostSpecialFieldMap := map[string]bool{
-		common.BKHostInnerIPField: true,
-		common.BKHostOuterIPField: true,
-		common.BKOperatorField:    true,
-		common.BKBakOperatorField: true,
-	}
 	for _, unique := range uniqueAttr {
 		// retrieve unique value
 		uniqueKeys := make([]string, 0)
@@ -200,7 +195,6 @@ func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapSt
 			lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 		}
 
-		blog.ErrorJSON("xxxxxx cond: %s, updateData: %s", cond, updateData)
 		result, err := instanceManager.countInstance(kit, valid.objID, cond.ToMapStr())
 		if nil != err {
 			blog.Errorf("[validUpdateUnique] count [%s] inst error %v, condition: %#v, rid: %s", valid.objID, err, cond.ToMapStr(), kit.Rid)

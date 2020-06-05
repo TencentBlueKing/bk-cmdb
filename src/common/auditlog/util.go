@@ -63,12 +63,7 @@ func (a *auditLog) GetInstNameByID(ctx context.Context, objID string, instID int
 			blog.ErrorfDepthf(1, "GetInstNameByID %d GetHosts find %d insts, rid: %s", instID, rsp.Data.Count, a.rid)
 			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
 		}
-		ip, err := rsp.Data.Info[0].String(common.BKHostInnerIPField)
-		if err != nil {
-			blog.ErrorfDepthf(1, "GetInstNameByID %d GetHosts parse ip failed, data: %+v, rid: %s", instID, rsp.Data.Info[0], a.rid)
-			return "", a.ccErr.CCError(common.CCErrAuditTakeSnapshotFailed)
-		}
-		return ip, nil
+		return util.GetStrByInterface(rsp.Data.Info[0][common.BKHostInnerIPField]), nil
 	default:
 		rsp, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, a.header, objID, &metadata.QueryCondition{
 			Fields: []string{common.GetInstNameField(objID)},

@@ -51,25 +51,25 @@ func (h *HostMapStr) UnmarshalBSON(b []byte) error {
 			if err != nil {
 				return err
 			}
-			(*h)[common.BKHostInnerIPField] = innerIP
+			(*h)[common.BKHostInnerIPField] = string(innerIP)
 		case common.BKHostOuterIPField:
 			outerIP, err := parseBsonStringArrayValueToString(rawValue)
 			if err != nil {
 				return err
 			}
-			(*h)[common.BKHostOuterIPField] = outerIP
+			(*h)[common.BKHostOuterIPField] = string(outerIP)
 		case common.BKOperatorField:
 			operator, err := parseBsonStringArrayValueToString(rawValue)
 			if err != nil {
 				return err
 			}
-			(*h)[common.BKOperatorField] = operator
+			(*h)[common.BKOperatorField] = string(operator)
 		case common.BKBakOperatorField:
 			bakOperator, err := parseBsonStringArrayValueToString(rawValue)
 			if err != nil {
 				return err
 			}
-			(*h)[common.BKBakOperatorField] = bakOperator
+			(*h)[common.BKBakOperatorField] = string(bakOperator)
 		default:
 			dc := bsoncodec.DecodeContext{Registry: bson.DefaultRegistry}
 			vr := bsonrw.NewBSONValueReader(rawValue.Type, rawValue.Data)
@@ -88,43 +88,37 @@ func (h *HostMapStr) UnmarshalBSON(b []byte) error {
 	return nil
 }
 
-func parseBsonStringArrayValueToString(value bsoncore.Value) (string, error) {
+func parseBsonStringArrayValueToString(value bsoncore.Value) ([]byte, error) {
 	switch value.Type {
 	case bsontype.Array:
 		rawArray, rem, ok := bsoncore.ReadArray(value.Data)
 		if !ok {
-			return "", bsoncore.NewInsufficientBytesError(value.Data, rem)
+			return nil, bsoncore.NewInsufficientBytesError(value.Data, rem)
 		}
 		array, err := rawArray.Values()
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		var buf bytes.Buffer
 		arrayLen := len(array)
 		for index, arrayValue := range array {
 			if arrayValue.Type != bsontype.String {
-				return "", fmt.Errorf("invalid BSON type %v", arrayValue.Type)
+				return nil, fmt.Errorf("invalid BSON type %v", arrayValue.Type)
 			}
 			str, rem, ok := bsoncore.ReadString(arrayValue.Data)
 			if !ok {
-				return "", bsoncore.NewInsufficientBytesError(arrayValue.Data, rem)
+				return nil, bsoncore.NewInsufficientBytesError(arrayValue.Data, rem)
 			}
 			buf.WriteString(str)
 			if index != arrayLen-1 {
 				buf.WriteByte(',')
 			}
 		}
-		return buf.String(), nil
-	case bsontype.String:
-		str, rem, ok := bsoncore.ReadString(value.Data)
-		if !ok {
-			return "", bsoncore.NewInsufficientBytesError(value.Data, rem)
-		}
-		return str, nil
+		return buf.Bytes(), nil
 	case bsontype.Null:
-		return "", nil
+		return []byte{}, nil
 	default:
-		return "", fmt.Errorf("invalid BSON type %v", value.Type)
+		return nil, fmt.Errorf("invalid BSON type %v", value.Type)
 	}
 }
 
@@ -147,9 +141,10 @@ func (s *StringArrayToString) UnmarshalBSONValue(typo bsontype.Type, raw []byte)
 	return err
 }
 
+var specialFields = []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField, common.BKBakOperatorField}
+
 // convert host ip and operator fields value from string to array
 func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]interface{} {
-	specialFields := []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField, common.BKBakOperatorField}
 	for _, field := range specialFields {
 		value, ok := host[field]
 		if !ok {
@@ -157,6 +152,7 @@ func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]int
 		}
 		switch v := value.(type) {
 		case string:
+			v = strings.TrimSpace(v)
 			if len(v) == 0 {
 				host[field] = make([]string, 0)
 			} else {

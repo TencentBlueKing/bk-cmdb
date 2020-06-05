@@ -45,7 +45,7 @@ type hostCache struct {
 func (h *hostCache) Run() error {
 
 	opts := types.Options{
-		EventStruct: new(map[string]interface{}),
+		EventStruct: new(metadata.HostMapStr),
 		Collection:  common.BKTableNameBaseHost,
 	}
 
@@ -277,9 +277,13 @@ func listHostDetailsFromMongoWithHostID(db dal.DB, hostID []int64) (list []*host
 }
 
 func getHostDetailsFromMongoWithIP(db dal.DB, innerIP string, cloudID int64) (hostID int64, detail []byte, err error) {
+	innerIPArr := strings.Split(innerIP, ",")
 	filter := mapstr.MapStr{
-		common.BKHostInnerIPField: innerIP,
-		common.BKCloudIDField:     cloudID,
+		common.BKHostInnerIPField: map[string]interface{}{
+			common.BKDBAll:  innerIPArr,
+			common.BKDBSize: len(innerIPArr),
+		},
+		common.BKCloudIDField: cloudID,
 	}
 	host := make(metadata.HostMapStr)
 	err = db.Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)

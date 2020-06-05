@@ -263,19 +263,59 @@ func (f *Find) Limit(limit uint64) types.Find {
 	return f
 }
 
+var hostSpecialFieldMap = map[string]bool{
+	common.BKHostInnerIPField: true,
+	common.BKHostOuterIPField: true,
+	common.BKOperatorField:    true,
+	common.BKBakOperatorField: true,
+}
+
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
 	// host query must use specified type so that ip and operator field can be transformed to string
 	if f.collName == common.BKTableNameBaseHost {
-		switch result.(type) {
-		case *[]metadata.HostMapStr:
-		case *[]metadata.HostIdentifier:
-		case *[]metadata.ModuleHost:
-		default:
-			blog.Errorf("host query result type(%v) not match specified type", reflect.TypeOf(result))
-			return fmt.Errorf("host query result type invalid")
+		needCheck := false
+		if len(f.projection) != 0 {
+			for field := range f.projection {
+				if hostSpecialFieldMap[field] {
+					needCheck = true
+					break
+				}
+			}
+		} else {
+			needCheck = true
+		}
+		if needCheck {
+			resType := reflect.TypeOf(result)
+			if resType.Kind() != reflect.Ptr || resType.Elem().Kind() != reflect.Slice {
+				blog.Errorf("host query result type(%v) not slice pointer type", resType)
+				return fmt.Errorf("host query result type invalid")
+			}
+			resArrElem := resType.Elem().Elem()
+			if resArrElem.ConvertibleTo(reflect.TypeOf(map[string]interface{}{})) {
+				if resArrElem != reflect.TypeOf(metadata.HostMapStr{}) {
+					blog.Errorf("host query result type(%v) not match *[]metadata.HostMapStr type", resType)
+					return fmt.Errorf("host query result type invalid")
+				}
+			} else {
+				elem := resArrElem.Elem()
+				if elem.Kind() != reflect.Struct {
+					blog.Errorf("host query result type(%v) not struct pointer type or map type", resType)
+					return fmt.Errorf("host query result type invalid")
+				}
+				numField := elem.NumField()
+				validType := reflect.TypeOf(metadata.StringArrayToString(""))
+				for i := 0; i < numField; i++ {
+					field := elem.Field(i)
+					if hostSpecialFieldMap[field.Tag.Get("bson")] && field.Type != validType {
+						blog.Errorf("host query result field type(%v) not match *metadata.StringArrayToString type", field.Type)
+						return fmt.Errorf("host query result type invalid")
+					}
+				}
+			}
 		}
 	}
+
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -313,15 +353,47 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 func (f *Find) One(ctx context.Context, result interface{}) error {
 	// host query must use specified type so that ip and operator field can be transformed to string
 	if f.collName == common.BKTableNameBaseHost {
-		switch result.(type) {
-		case *metadata.HostMapStr:
-		case *metadata.HostIdentifier:
-		case *metadata.ModuleHost:
-		default:
-			blog.Errorf("host query result type(%v) not match *metadata.HostMapStr type", reflect.TypeOf(result))
-			return fmt.Errorf("host query result type invalid")
+		needCheck := false
+		if len(f.projection) != 0 {
+			for field := range f.projection {
+				if hostSpecialFieldMap[field] {
+					needCheck = true
+					break
+				}
+			}
+		} else {
+			needCheck = true
+		}
+		if needCheck {
+			resType := reflect.TypeOf(result)
+			if resType.Kind() != reflect.Ptr {
+				blog.Errorf("host query result type(%v) not pointer type", resType)
+				return fmt.Errorf("host query result type invalid")
+			}
+			if resType.ConvertibleTo(reflect.TypeOf(&map[string]interface{}{})) {
+				if resType != reflect.TypeOf(&metadata.HostMapStr{}) {
+					blog.Errorf("host query result type(%v) not match *metadata.HostMapStr type", resType)
+					return fmt.Errorf("host query result type invalid")
+				}
+			} else {
+				resElem := resType.Elem()
+				if resElem.Kind() != reflect.Struct {
+					blog.Errorf("host query result type(%v) not struct pointer type or map type", resType)
+					return fmt.Errorf("host query result type invalid")
+				}
+				numField := resElem.NumField()
+				validType := reflect.TypeOf(metadata.StringArrayToString(""))
+				for i := 0; i < numField; i++ {
+					field := resElem.Field(i)
+					if hostSpecialFieldMap[field.Tag.Get("bson")] && field.Type != validType {
+						blog.Errorf("host query result field type(%v) not match *metadata.StringArrayToString type", field.Type)
+						return fmt.Errorf("host query result type invalid")
+					}
+				}
+			}
 		}
 	}
+
 	start := time.Now()
 	rid := ctx.Value(common.ContextRequestIDField)
 	defer func() {
