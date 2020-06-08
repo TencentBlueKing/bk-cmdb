@@ -16,10 +16,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strconv"
 	"sync"
 	"time"
 
 	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	enableauth "configcenter/src/common/auth"
@@ -28,180 +31,462 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/datacollection/app/options"
-	"configcenter/src/scene_server/datacollection/datacollection"
-	"configcenter/src/scene_server/datacollection/logics"
+	"configcenter/src/scene_server/datacollection/collections"
+	"configcenter/src/scene_server/datacollection/collections/hostsnap"
+	"configcenter/src/scene_server/datacollection/collections/middleware"
+	"configcenter/src/scene_server/datacollection/collections/netcollect"
 	svc "configcenter/src/scene_server/datacollection/service"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/redis"
+	dalredis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
-	re "gopkg.in/redis.v5"
+	"github.com/prometheus/client_golang/prometheus"
+	"gopkg.in/redis.v5"
 )
 
-func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+const (
+	// ESBPrefix is prefix of configs variable for ESB.
+	ESBPrefix = "esb"
+
+	// snapPorterName is name of snap porter.
+	snapPorterName = "hostsnap"
+
+	// middlewarePorterName is name of middleware porter.
+	middlewarePorterName = "middleware"
+
+	// netCollectPorterName is name of netcollect porter.
+	netCollectPorterName = "netcollect"
+
+	// defaultInitWaitDuration is default duration for new DataCollection init.
+	defaultInitWaitDuration = time.Second
+
+	// defaultDBConnectTimeout is default connect timeout of cc db.
+	defaultDBConnectTimeout = 5 * time.Second
+
+	// defaultAppInitWaitDuration is default wait duration for app db init.
+	defaultAppInitWaitDuration = 10 * time.Second
+)
+
+// DataCollectionConfig is configs for DataCollection app.
+type DataCollectionConfig struct {
+	// MongoDB mongodb configs.
+	MongoDB mongo.Config
+
+	// CCRedis CC main redis configs.
+	CCRedis dalredis.Config
+
+	// SnapRedis snap redis configs.
+	SnapRedis dalredis.Config
+
+	// DiscoverRedis discover redis configs.
+	DiscoverRedis dalredis.Config
+
+	// NetCollectRedis net collection redis configs.
+	NetCollectRedis dalredis.Config
+
+	// ESB blueking ESB configs.
+	Esb esbutil.EsbConfig
+
+	// AuthConfig auth configs.
+	AuthConfig authcenter.AuthConfig
+
+	// DefaultAppName default name of this app.
+	DefaultAppName string
+}
+
+// DataCollection is data collection server.
+type DataCollection struct {
+	ctx    context.Context
+	engine *backbone.Engine
+
+	defaultAppID   string
+	defaultAppName string
+
+	// config for this DataCollection app.
+	config *DataCollectionConfig
+
+	// service main service instance.
+	service *svc.Service
+
+	// make host configs update action safe.
+	hostConfigUpdateMu sync.Mutex
+
+	// db is cc main database.
+	db dal.RDB
+
+	// redisCli is cc main cache redis client.
+	redisCli *redis.Client
+
+	// snapCli is snap redis client.
+	snapCli *redis.Client
+
+	// disCli is discover redis client.
+	disCli *redis.Client
+
+	// netCli is net collect redis client.
+	netCli *redis.Client
+
+	// authManager is auth manager.
+	authManager *extensions.AuthManager
+
+	// porterManager is porters manager.
+	porterManager *collections.PorterManager
+
+	// registry is prometheus registry.
+	registry prometheus.Registerer
+
+	// hash collections hash object, that updates target nodes in dynamic mode,
+	// and calculates node base on hash key of data.
+	hash *collections.Hash
+}
+
+// NewDataCollection creates a new DataCollection object.
+func NewDataCollection(ctx context.Context, op *options.ServerOption) (*DataCollection, error) {
+	// build server info.
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
-		return fmt.Errorf("wrap server info failed, err: %v", err)
+		return nil, fmt.Errorf("build server info, %+v", err)
 	}
 
-	service := new(svc.Service)
-	process := new(DCServer)
+	// new DataCollection instance.
+	newDataCollection := &DataCollection{ctx: ctx}
 
-	input := &backbone.BackboneParameter{
-		ConfigUpdate: process.onHostConfigUpdate,
+	engine, err := backbone.NewBackbone(ctx, &backbone.BackboneParameter{
+		ConfigUpdate: newDataCollection.OnHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     op.ServConf.RegDiscover,
 		SrvInfo:      svrInfo,
-	}
-	engine, err := backbone.NewBackbone(ctx, input)
+	})
 	if err != nil {
-		return fmt.Errorf("new backbone failed, err: %v", err)
+		return nil, fmt.Errorf("build backbone, %+v", err)
 	}
 
-	service.Engine = engine
-	process.Core = engine
-	process.Service = service
+	// set hash.
+	newDataCollection.hash = collections.NewHash(svrInfo.RegisterIP, svrInfo.Port, engine.Discovery())
+
+	// set backbone engine.
+	newDataCollection.engine = engine
+	newDataCollection.service = svc.NewService(ctx, engine)
+	newDataCollection.registry = engine.Metric().Registry()
+
+	return newDataCollection, nil
+}
+
+// Engine returns engine of the DataCollection instance.
+func (c *DataCollection) Engine() *backbone.Engine {
+	return c.engine
+}
+
+// Service returns main service of the DataCollection instance.
+func (c *DataCollection) Service() *svc.Service {
+	return c.service
+}
+
+// OnHostConfigUpdate is callback for updating configs.
+func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
+	c.hostConfigUpdateMu.Lock()
+	defer c.hostConfigUpdateMu.Unlock()
+
+	if len(curr.ConfigMap) > 0 {
+		// NOTE: allow to update configs with empty values?
+		// NOTE: what is prev used for? build a compare logic here?
+
+		if c.config == nil {
+			c.config = &DataCollectionConfig{}
+		}
+
+		if data, err := json.MarshalIndent(curr.ConfigMap, "", "  "); err == nil {
+			blog.V(3).Infof("DataCollection| on host config update event: \n%s", data)
+		}
+
+		// ESB configs.
+		c.config.Esb.Addrs = curr.ConfigMap["esb.addr"]
+		c.config.Esb.AppCode = curr.ConfigMap["esb.appCode"]
+		c.config.Esb.AppSecret = curr.ConfigMap["esb.appSecret"]
+
+		// default app name.
+		c.config.DefaultAppName = curr.ConfigMap["biz.default_app_name"]
+		if len(c.config.DefaultAppName) == 0 {
+			c.config.DefaultAppName = common.BKAppName
+		}
+		c.defaultAppName = c.config.DefaultAppName
+	}
+}
+
+// initConfigs inits configs for new DataCollection server.
+func (c *DataCollection) initConfigs() error {
 	for {
-		if process.Config == nil {
-			time.Sleep(time.Second * 2)
-			blog.Info("config not found, retry 2s later")
+		// wait and parse configs that async updated by backbone engine.
+		c.hostConfigUpdateMu.Lock()
+		if c.config == nil {
+			c.hostConfigUpdateMu.Unlock()
+
+			blog.Info("DataCollection| can't find configs to run the new datacollection server, try again later!")
+			time.Sleep(defaultInitWaitDuration)
 			continue
 		}
 
-		process.Config.MongoDB, err = engine.WithMongo()
-		if err != nil {
-			return err
-		}
-		process.Config.CCRedis, err = engine.WithRedis()
-		if err != nil {
-			return err
-		}
-		process.Config.SnapRedis, err = engine.WithRedis("snap-redis")
-		if err != nil {
-			return err
-		}
-		process.Config.DiscoverRedis, err = engine.WithRedis("discover-redis")
-		if err != nil {
-			return err
-		}
-		process.Config.NetCollectRedis, err = engine.WithRedis("netcollect-redis")
-		if err != nil {
-			return err
-		}
-		process.Config.AuthConfig, err = engine.WithAuth()
-		if err != nil {
-			return err
-		}
-
-		mgoCli, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
-		if err != nil {
-			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
-		}
-
-		esbChan := make(chan esbutil.EsbConfig, 1)
-		esbChan <- process.Config.Esb
-		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan, nil, engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("new esb client failed, err: %s", err.Error())
-		}
-
-		process.Service.SetDB(mgoCli)
-		process.Service.Logics = logics.NewLogics(ctx, service.Engine, mgoCli, esb)
-		datacollection := datacollection.NewDataCollection(ctx, process.Core, mgoCli, engine.Metric().Registry(), process.Config.DefaultAppName)
-
-		blog.Infof("[data-collection][RUN]connecting to cc redis %+v", process.Config.CCRedis)
-		redisCli, err := redis.NewFromConfig(process.Config.CCRedis)
-		if nil != err {
-			blog.Errorf("[data-collection][RUN] connect cc redis failed: %v", err)
-			return err
-		}
-		blog.Infof("[data-collection][RUN]connected to cc redis %+v", process.Config.CCRedis)
-		process.Service.SetCache(redisCli)
-
-		var snapcli, disCli, netCli *re.Client
-		if process.Config.SnapRedis.Enable != "false" {
-			blog.Infof("[data-collection][RUN]connecting to snap-redis %+v", process.Config.SnapRedis)
-			snapcli, err = redis.NewFromConfig(process.Config.SnapRedis)
-			if nil != err {
-				blog.Errorf("[data-collection][RUN] connect snap-redis failed: %v", err)
-				return err
-			}
-			process.Service.SetSnapcli(snapcli)
-		}
-		if process.Config.DiscoverRedis.Enable != "false" {
-			blog.Infof("[data-collection][RUN]connecting to discover-redis %+v", process.Config.DiscoverRedis)
-			disCli, err = redis.NewFromConfig(process.Config.DiscoverRedis)
-			if nil != err {
-				blog.Errorf("[data-collection][RUN] connect discover-redis failed: %v", err)
-				return err
-			}
-			blog.Infof("[data-collection][RUN]connected to discover-redis %+v", process.Config.DiscoverRedis)
-			process.Service.SetDisCli(disCli)
-		}
-		if process.Config.NetCollectRedis.Enable != "false" {
-			blog.Infof("[data-collection][RUN]connecting to netcollect-redis %+v", process.Config.NetCollectRedis)
-			netCli, err = redis.NewFromConfig(process.Config.NetCollectRedis)
-			if nil != err {
-				blog.Errorf("[data-collection][RUN] connect netcollect-redis failed: %v", err)
-				return err
-			}
-			blog.Infof("[data-collection][RUN]connected to netcollect-redis %+v", process.Config.NetCollectRedis)
-			process.Service.SetNetCli(netCli)
-		}
-		if enableauth.IsAuthed() {
-			blog.Info("[data-collection] auth enabled")
-			authorize, err := auth.NewAuthorize(nil, process.Config.AuthConfig, engine.Metric().Registry())
-			if err != nil {
-				return fmt.Errorf("[data-collection] new authorize failed, err: %v", err)
-			}
-			datacollection.AuthManager = *extensions.NewAuthManager(engine.CoreAPI, authorize)
-		}
-
-		err = datacollection.Run(redisCli, snapcli, disCli, netCli)
-		if err != nil {
-			return fmt.Errorf("run datacollection routine failed %s", err.Error())
-		}
+		// ready to init new datacollection instance.
+		c.hostConfigUpdateMu.Unlock()
 		break
 	}
 
-	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
+	var err error
+
+	// mongodb.
+	c.config.MongoDB, err = c.engine.WithMongo()
 	if err != nil {
-		return err
+		return fmt.Errorf("init mongodb configs, %+v", err)
 	}
-	select {
-	case <-ctx.Done():
+
+	// cc main redis.
+	c.config.CCRedis, err = c.engine.WithRedis()
+	if err != nil {
+		return fmt.Errorf("init cc redis configs, %+v", err)
 	}
-	blog.V(0).Info("process stopped")
+
+	// snap redis.
+	c.config.SnapRedis, err = c.engine.WithRedis("snap-redis")
+	if err != nil {
+		return fmt.Errorf("init snap redis configs, %+v", err)
+	}
+
+	// discover redis.
+	c.config.DiscoverRedis, err = c.engine.WithRedis("discover-redis")
+	if err != nil {
+		return fmt.Errorf("init discover redis configs, %+v", err)
+	}
+
+	// netcollect redis.
+	c.config.NetCollectRedis, err = c.engine.WithRedis("netcollect-redis")
+	if err != nil {
+		return fmt.Errorf("init netcollect redis configs, %+v", err)
+	}
+
+	// authorization.
+	c.config.AuthConfig, err = c.engine.WithAuth()
+	if err != nil {
+		return fmt.Errorf("init authorization configs, %+v", err)
+	}
+
 	return nil
 }
 
-type DCServer struct {
-	Core    *backbone.Engine
-	Config  *options.Config
-	Service *svc.Service
+// initModules inits modules for new DataCollection server.
+func (c *DataCollection) initModules() error {
+	// create mongodb client.
+	mgoCli, err := local.NewMgo(c.config.MongoDB.GetMongoConf(), defaultDBConnectTimeout)
+	if err != nil {
+		return fmt.Errorf("create new mongodb client, %+v", err)
+	}
+	c.db = mgoCli
+	c.service.SetDB(mgoCli)
+
+	// create blueking ESB client.
+	esb, err := esbserver.NewEsb(c.engine.ApiMachineryConfig(), nil, /* you can update it by a chan here */
+		&c.config.Esb, c.engine.Metric().Registry())
+	if err != nil {
+		return fmt.Errorf("create ESB client, %+v", err)
+	}
+
+	// build logics comm.
+	c.service.SetLogics(mgoCli, esb)
+
+	// connect to cc main redis.
+	redisCli, err := dalredis.NewFromConfig(c.config.CCRedis)
+	if err != nil {
+		return fmt.Errorf("connect to cc main redis, %+v", err)
+	}
+	blog.Infof("DataCollection| connected to cc main redis, %+v", c.config.CCRedis)
+	c.redisCli = redisCli
+	c.service.SetCache(redisCli)
+
+	// connect to snap redis.
+	if c.config.SnapRedis.Enable != "false" {
+		snapCli, err := dalredis.NewFromConfig(c.config.SnapRedis)
+		if err != nil {
+			return fmt.Errorf("connect to snap redis, %+v", err)
+		}
+		c.snapCli = snapCli
+		c.service.SetSnapCli(snapCli)
+	}
+
+	// connect to discover redis.
+	if c.config.DiscoverRedis.Enable != "false" {
+		disCli, err := dalredis.NewFromConfig(c.config.DiscoverRedis)
+		if nil != err {
+			return fmt.Errorf("connect to discover redis, %+v", err)
+		}
+		blog.Infof("DataCollection| connected to discover redis, %+v", c.config.DiscoverRedis)
+		c.disCli = disCli
+		c.service.SetDiscoverCli(disCli)
+	}
+
+	// connect to net collect redis.
+	if c.config.NetCollectRedis.Enable != "false" {
+		netCli, err := dalredis.NewFromConfig(c.config.NetCollectRedis)
+		if nil != err {
+			return fmt.Errorf("connect to netcollect redis, %+v", err)
+		}
+		blog.Infof("DataCollection| connected to netcollect redis, %+v", c.config.NetCollectRedis)
+		c.netCli = netCli
+		c.service.SetNetCollectCli(netCli)
+	}
+
+	// handle authorize.
+	if enableauth.IsAuthed() {
+		authorize, err := auth.NewAuthorize(nil, c.config.AuthConfig, c.engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("create new authorize failed, %+v", err)
+		}
+		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, authorize)
+	}
+
+	return nil
 }
 
-var configLock sync.Mutex
+// getDefaultAppID returns default appid of this DataCollection server.
+func (c *DataCollection) getDefaultAppID() (string, error) {
+	// query condition.
+	condition := map[string]interface{}{common.BKAppNameField: c.defaultAppName}
 
-func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	configLock.Lock()
-	defer configLock.Unlock()
-	if len(current.ConfigMap) > 0 {
-		if h.Config == nil {
-			h.Config = new(options.Config)
-		}
-		// ignore err, cause ConfigMap is map[string]string
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
-		blog.V(3).Infof("config updated: \n%s", out)
+	// query results.
+	results := []map[string]interface{}{}
 
-		esbPrefix := "esb"
-		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
-		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
-		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
-		h.Config.DefaultAppName = current.ConfigMap["biz.default_app_name"]
-		if h.Config.DefaultAppName == "" {
-			h.Config.DefaultAppName = common.BKAppName
-		}
+	// query appid from cc db.
+	if err := c.db.Table(common.BKTableNameBaseApp).Find(condition).All(c.ctx, &results); err != nil {
+		return "", err
 	}
+	if len(results) <= 0 {
+		return "", fmt.Errorf("target app not found")
+	}
+
+	defaultAppID := ""
+
+	switch id := results[0][common.BKAppIDField].(type) {
+	case int:
+		defaultAppID = strconv.Itoa(id)
+
+	case int64:
+		defaultAppID = strconv.FormatInt(id, 10)
+
+	default:
+		return "", fmt.Errorf("can't query default appid, unkonw id type, %+v", reflect.TypeOf(results[0][common.BKAppIDField]))
+	}
+
+	return defaultAppID, nil
+}
+
+func (c *DataCollection) snapMessageTopic(defaultAppID string) []string {
+	return []string{
+		// current snap topic name.
+		fmt.Sprintf("snapshot%s", defaultAppID),
+
+		// old snap topic name, just for compatibility.
+		fmt.Sprintf("%s_snapshot", defaultAppID),
+	}
+}
+
+func (c *DataCollection) discoverMessageTopic(defaultAppID string) []string {
+	return []string{
+		// current discover topic name.
+		fmt.Sprintf("discover%s", defaultAppID),
+	}
+}
+
+func (c *DataCollection) netcollectMessageTopic(defaultAppID string) []string {
+	return []string{
+		// current netcollect topic name.
+		fmt.Sprintf("netdevice2"),
+	}
+}
+
+// runCollectPorters runs porters for collections.
+func (c *DataCollection) runCollectPorters() {
+	// create porters manager.
+	c.porterManager = collections.NewPorterManager()
+	go c.porterManager.Run()
+
+	// default appid.
+	for {
+		defaultAppID, err := c.getDefaultAppID()
+		if err == nil {
+			// success.
+			c.defaultAppID = defaultAppID
+			break
+		}
+
+		blog.Errorf("DataCollection| get default appid failed: %+v, init database first and it would try again in %+v seconds later",
+			err, defaultAppInitWaitDuration)
+		time.Sleep(defaultAppInitWaitDuration)
+	}
+
+	// create and add new porters.
+	if c.snapCli != nil {
+		topic := c.snapMessageTopic(c.defaultAppID)
+		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.db, c.engine, *c.authManager)
+
+		porter := collections.NewSimplePorter(snapPorterName, c.engine, c.hash, analyzer, c.snapCli, topic, c.registry)
+		c.porterManager.AddPorter(porter)
+	}
+
+	if c.disCli != nil {
+		topic := c.discoverMessageTopic(c.defaultAppID)
+		analyzer := middleware.NewDiscover(c.ctx, c.redisCli, c.engine, *c.authManager)
+
+		porter := collections.NewSimplePorter(middlewarePorterName, c.engine, c.hash, analyzer, c.disCli, topic, c.registry)
+		c.porterManager.AddPorter(porter)
+	}
+
+	if c.netCli != nil {
+		topic := c.netcollectMessageTopic(c.defaultAppID)
+		analyzer := netcollect.NewNetCollect(c.ctx, c.db, *c.authManager)
+
+		porter := collections.NewSimplePorter(netCollectPorterName, c.engine, c.hash, analyzer, c.netCli, topic, c.registry)
+		c.porterManager.AddPorter(porter)
+	}
+}
+
+// Run runs a new datacollection server.
+func (c *DataCollection) Run() error {
+	// init configs.
+	if err := c.initConfigs(); err != nil {
+		return err
+	}
+
+	// ready to setup comms for new server instance now.
+	if err := c.initModules(); err != nil {
+		return err
+	}
+
+	// run collection porters for new datacollection instance.
+	c.runCollectPorters()
+
+	return nil
+}
+
+// Run setups a new datacollection app with a context and options and runs it as server instance.
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+	// create datacollection server.
+	dataCollection, err := NewDataCollection(ctx, op)
+	if err != nil {
+		return fmt.Errorf("create new datacollection server, %+v", err)
+	}
+
+	if err := dataCollection.Run(); err != nil {
+		return err
+	}
+
+	// all modules is inited success, start the new server now.
+	if err := backbone.StartServer(ctx, cancel, dataCollection.Engine(),
+		dataCollection.Service().WebService(), true); err != nil {
+		return err
+	}
+
+	<-ctx.Done()
+	blog.Info("DataCollection stopping now!")
+	return nil
 }

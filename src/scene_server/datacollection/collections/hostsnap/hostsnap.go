@@ -63,6 +63,29 @@ var compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk",
 	"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
 	common.HostFieldDockerClientVersion, common.HostFieldDockerServerVersion}
 
+// Hash returns hash value base on message.
+func (h *HostSnap) Hash(msg string) (string, error) {
+	/*
+		// pre.
+		data := msg
+		if !gjson.Get(msg, "cloudid").Exists() {
+			data = gjson.Get(msg, "data").String()
+		}
+
+		val := gjson.Parse(data)
+		cloudID := val.Get("cloudid").Int()
+		ips := getIPS(&val)
+	*/
+
+	// TODO
+	return "", nil
+}
+
+// Mock returns local mock message for testing.
+func (h *HostSnap) Mock() string {
+	return MockMessage
+}
+
 func (h *HostSnap) Analyze(mesg string) error {
 	var data = mesg
 	if !gjson.Get(mesg, "cloudid").Exists() {

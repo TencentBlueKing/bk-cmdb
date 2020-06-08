@@ -50,6 +50,17 @@ func NewDiscover(ctx context.Context, redisCli *redis.Client, backbone *backbone
 	return discover
 }
 
+// Hash returns hash value base on message.
+func (d *Discover) Hash(msg string) (string, error) {
+	// TODO
+	return "", nil
+}
+
+// Mock returns local mock message for testing.
+func (d *Discover) Mock() string {
+	return MockMessage
+}
+
 func (d *Discover) Analyze(msg string) error {
 	err := d.UpdateOrCreateInst(msg)
 	if err != nil {

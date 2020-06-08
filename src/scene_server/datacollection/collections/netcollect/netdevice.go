@@ -42,6 +42,17 @@ func NewNetCollect(ctx context.Context, db dal.RDB, authManager extensions.AuthM
 	return h
 }
 
+// Hash returns hash value base on message.
+func (h *NetCollect) Hash(msg string) (string, error) {
+	// TODO
+	return "", nil
+}
+
+// Mock returns local mock message for testing.
+func (h *NetCollect) Mock() string {
+	return MockMessage
+}
+
 // Analyze implements the Analyzer interface
 func (h *NetCollect) Analyze(raw string) error {
 	blog.V(4).Infof("[data-collection][netcollect] received message: %s", raw)
