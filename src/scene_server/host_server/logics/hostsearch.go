@@ -778,7 +778,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	}
 
 	sh.totalHostCnt = len(respHostIDInfo.Data.IDArr)
-	if len(sh.conds.hostCond.Condition) <= 0 {
+	if len(sh.conds.hostCond.Condition) <= 0 && sh.hostSearchParam.Page.Limit > 0 {
 		start := sh.hostSearchParam.Page.Start
 		limit := start + sh.hostSearchParam.Page.Limit
 
