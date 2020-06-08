@@ -755,11 +755,12 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		isAddHostID = true
 	}
 
-	if len(sh.conds.appCond.Condition) > 0 {
+	if len(sh.idArr.moduleHostConfig.appIDArr) > 0 {
 		// already sorted by app id.
 		moduleHostConfig.ApplicationIDArr = sh.idArr.moduleHostConfig.appIDArr
 		isAddHostID = true
 	}
+
 	if !isAddHostID {
 		return nil
 	}
