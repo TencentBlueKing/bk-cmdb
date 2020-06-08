@@ -139,4 +139,7 @@
             align-items: center;
         }
     }
+    .options-search {
+        width: 300px;
+    }
 </style>

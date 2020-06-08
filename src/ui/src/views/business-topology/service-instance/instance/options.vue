@@ -160,6 +160,7 @@
                     }]
                 })
                 this.$nextTick(() => {
+                    // list.vue注册的监听晚于派发，因此nextTick再触发
                     Bus.$emit('filter-change', this.searchValue)
                 })
             },

@@ -19,10 +19,12 @@
             }
         },
         created () {
-            this.unwatch = RouterQuery.watch('view', this.handleViewChange, { immediate: true })
+            this.unwatchView = RouterQuery.watch('view', this.handleViewChange, { immediate: true })
+            this.unwatchTab = RouterQuery.watch('tab', this.handleTabChange)
         },
         beforeDestroy () {
-            this.unwatch()
+            this.unwatchView()
+            this.unwatchTab()
         },
         methods: {
             handleViewChange (view = 'instance') {
@@ -31,6 +33,13 @@
                     'process': ViewProcess.name
                 }
                 this.activeComponent = viewMap[view]
+            },
+            handleTabChange (tab) {
+                if (tab !== 'serviceInstance') {
+                    this.activeComponent = null
+                } else {
+                    this.activeComponent = ViewInstance.name
+                }
             }
         }
     }
