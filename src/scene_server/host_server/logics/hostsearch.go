@@ -780,23 +780,23 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	sh.totalHostCnt = len(respHostIDInfo.Data.IDArr)
 	if len(sh.conds.hostCond.Condition) <= 0 {
 		start := sh.hostSearchParam.Page.Start
-		limit := sh.hostSearchParam.Page.Limit
-		if len(respHostIDInfo.Data.IDArr) >= limit {
-			pagedHosts := make([]int64, 0)
-			if len(respHostIDInfo.Data.IDArr) <= limit {
-				pagedHosts = respHostIDInfo.Data.IDArr
-			} else {
-				if sh.hostSearchParam.Page.Start <= 0 {
-					pagedHosts = respHostIDInfo.Data.IDArr[0:limit]
-				} else {
-					pagedHosts = respHostIDInfo.Data.IDArr[start-1 : start+limit-1]
-				}
-			}
-			hostIDArr = pagedHosts
-			sh.paged = true
-		} else {
-			hostIDArr = respHostIDInfo.Data.IDArr
+		limit := start + sh.hostSearchParam.Page.Limit
+
+		uniqHostIDCnt := len(respHostIDInfo.Data.IDArr)
+		// 如果用户start 设置小于0， 将start 设置为默认值
+		if start < 0 {
+			start = 0
 		}
+		if start >= uniqHostIDCnt {
+			sh.noData = true
+			return nil
+		}
+		if uniqHostIDCnt <= limit {
+			hostIDArr = respHostIDInfo.Data.IDArr[start:uniqHostIDCnt]
+		} else {
+			hostIDArr = respHostIDInfo.Data.IDArr[start:limit]
+		}
+		sh.paged = true
 	} else {
 		hostIDArr = respHostIDInfo.Data.IDArr
 	}
