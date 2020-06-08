@@ -486,8 +486,11 @@
                     property.operator === '$in'
                     && ['bk_module_name', 'bk_set_name'].includes(originalProperty['bk_property_id'])
                 ) {
-                    return property.value[property.value.length - 1]
-                } else if (property.operator === '$multilike' && Array.isArray(property.value)) {
+                    return property.value.join('\n')
+                } else if (property.operator === '$multilike'
+                    && Array.isArray(property.value)
+                    && ['singlechar', 'longchar', 'singleasst', 'multiasst'].includes(originalProperty['bk_property_type'])
+                ) {
                     return property.value.join('\n')
                 }
                 return (property.value === null || property.value === undefined) ? '' : property.value
@@ -561,7 +564,9 @@
             getOperatorType (property) {
                 const propertyType = property.propertyType
                 const propertyId = property.propertyId
-                if (['bk_set_name', 'bk_module_name'].includes(propertyId) || this.isMultipleProperty(property)) {
+                if (['bk_cloud_id'].includes(propertyId)) {
+                    return 'enum'
+                } else if (['bk_set_name', 'bk_module_name'].includes(propertyId) || this.isMultipleProperty(property)) {
                     return 'name'
                 } else if (['singlechar', 'longchar', 'singleasst', 'multiasst'].includes(propertyType)) {
                     return 'char'
