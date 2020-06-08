@@ -39,9 +39,6 @@ func changeHostIPAndUserToArray(ctx context.Context, db dal.RDB, conf *upgrader.
 			return err
 		}
 		for _, host := range hosts {
-			filter := map[string]interface{}{
-				common.BKHostIDField: host[common.BKHostIDField],
-			}
 			doc := make(map[string]interface{})
 			for _, field := range needChangeFields {
 				if host[field] == nil {
@@ -58,6 +55,9 @@ func changeHostIPAndUserToArray(ctx context.Context, db dal.RDB, conf *upgrader.
 			}
 			if len(doc) == 0 {
 				continue
+			}
+			filter := map[string]interface{}{
+				common.BKHostIDField: host[common.BKHostIDField],
 			}
 			if err := db.Table(common.BKTableNameBaseHost).Update(ctx, filter, doc); err != nil {
 				blog.ErrorJSON("update host ip to array failed, filter: %s, doc: %s, err: %s", filter, doc, err)
