@@ -667,7 +667,6 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 	if err != nil {
 		return err
 	}
-	sh.conds.hostCond.Condition = nil
 
 	err = hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition)
 	if err != nil {
@@ -779,7 +778,12 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	}
 
 	sh.totalHostCnt = len(respHostIDInfo.Data.IDArr)
-	if len(sh.conds.hostCond.Condition) <= 0 && sh.hostSearchParam.Page.Limit > 0 {
+	// 当有根据主机实例内容查询的时候的时候，无法在程序中完成分页
+	hasHostCond := false
+	if len(sh.hostSearchParam.Ip.Data) > 0 || len(sh.conds.hostCond.Condition) > 0 {
+		hasHostCond = true
+	}
+	if !hasHostCond && sh.hostSearchParam.Page.Limit > 0 {
 		start := sh.hostSearchParam.Page.Start
 		limit := start + sh.hostSearchParam.Page.Limit
 
