@@ -15,6 +15,7 @@ package logics
 import (
 	"context"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -791,10 +792,12 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 			sh.noData = true
 			return nil
 		}
+		allHostIDsArr := respHostIDInfo.Data.IDArr
+		sort.Slice(allHostIDsArr, func(i, j int) bool { return allHostIDsArr[i] < allHostIDsArr[j] })
 		if uniqHostIDCnt <= limit {
-			hostIDArr = respHostIDInfo.Data.IDArr[start:uniqHostIDCnt]
+			hostIDArr = allHostIDsArr[start:]
 		} else {
-			hostIDArr = respHostIDInfo.Data.IDArr[start:limit]
+			hostIDArr = allHostIDsArr[start:limit]
 		}
 		sh.paged = true
 	} else {
