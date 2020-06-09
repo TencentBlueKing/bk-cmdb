@@ -145,6 +145,14 @@ func (option ListHostsParameter) Validate() (string, error) {
 		}
 	}
 
+	if len(option.SetIDs) > 200 {
+		return "bk_set_ids", fmt.Errorf("exceed max length: 200")
+	}
+
+	if len(option.ModuleIDs) > 500 {
+		return "bk_module_ids", fmt.Errorf("exceed max length: 500")
+	}
+
 	return "", nil
 }
 
