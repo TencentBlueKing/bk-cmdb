@@ -979,7 +979,8 @@
                 color: $modelHighlightColor;
             }
             .group-name {
-                flex: 500px 0 0;
+                flex: none;
+                max-width: 500px;
                 font-size: 16px;
                 font-weight: normal;
                 @include ellipsis;
@@ -996,7 +997,7 @@
                 color: #c3cdd7;
             }
             .title-icon-btn {
-                flex: 200px 0 0;
+                flex: none;
             }
             .icon-btn {
                 @include inlineBlock;
