@@ -93,6 +93,8 @@
                 const refresh = (this.$refs[tab] || {}).refresh
                 typeof refresh === 'function' && refresh(1)
                 RouterQuery.set('tab', tab)
+                RouterQuery.delete('page')
+                RouterQuery.delete('limit')
             }
         },
         async created () {
