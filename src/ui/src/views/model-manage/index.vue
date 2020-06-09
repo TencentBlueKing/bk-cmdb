@@ -324,11 +324,12 @@
                 const searchResult = []
                 const currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
                 const classifications = this.$tools.clone(currentClassifications)
+                const lowerCaseValue = value.toLowerCase()
                 for (let i = 0; i < classifications.length; i++) {
                     classifications[i].bk_objects = classifications[i].bk_objects.filter(model => {
-                        const modelName = model.bk_obj_name
-                        const modelId = model.bk_obj_id
-                        return (modelName && modelName.indexOf(value) !== -1) || (modelId && modelId.indexOf(value) !== -1)
+                        const modelName = model.bk_obj_name.toLowerCase()
+                        const modelId = model.bk_obj_id.toLowerCase()
+                        return (modelName && modelName.indexOf(lowerCaseValue) !== -1) || (modelId && modelId.indexOf(lowerCaseValue) !== -1)
                     })
                     searchResult.push(classifications[i])
                 }
