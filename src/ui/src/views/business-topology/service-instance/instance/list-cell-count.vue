@@ -5,6 +5,7 @@
         <i18n class="tips-content" path="模板服务实例无进程提示">
             <cmdb-auth class="tips-link" place="link"
                 :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
+                @click.native.stop
                 @click="redirectToTemplate">
                 {{$t('跳转添加并同步')}}
             </cmdb-auth>
@@ -15,6 +16,7 @@
         <i18n class="tips-content" path="普通服务实例无进程提示">
             <cmdb-auth class="tips-link" place="link"
                 :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
+                @click.native.stop
                 @click="handleAddProcess">
                 {{$t('立即添加')}}
             </cmdb-auth>

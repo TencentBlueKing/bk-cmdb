@@ -85,6 +85,7 @@
         .menu-trigger {
             @include inlineBlock;
             width: 100%;
+            cursor: pointer;
             &:before {
                 @include inlineBlock;
                 content: "";

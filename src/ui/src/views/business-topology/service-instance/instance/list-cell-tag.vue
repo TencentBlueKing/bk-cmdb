@@ -13,6 +13,7 @@
         <cmdb-auth tag="i" class="tag-edit icon-cc-edit"
             ref="editTrigger"
             :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
+            @click.native.stop
             @click="handleEditLabel">
         </cmdb-auth>
     </div>
@@ -22,7 +23,7 @@
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { mapGetters } from 'vuex'
     import throttle from 'lodash.throttle'
-    import LabelDialog from './label-dialog.js'
+    import LabelDialog from './dialog/label-dialog.js'
     export default {
         name: 'list-cell-tag',
         props: {

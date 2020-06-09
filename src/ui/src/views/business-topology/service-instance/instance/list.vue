@@ -8,7 +8,8 @@
         @page-change="handlePageChange"
         @page-limit-change="handlePageLimitChange"
         @expand-change="handleExpandChange"
-        @selection-change="handleSelectionChange">
+        @selection-change="handleSelectionChange"
+        @row-click="handleRowClick">
         <bk-table-column type="selection" prop="id"></bk-table-column>
         <bk-table-column type="expand" prop="expand" width="15" :before-expand-change="beforeExpandChange">
             <div slot-scope="{ row }" v-bkloading="{ isLoading: row.pending }">
@@ -39,6 +40,7 @@
     import Vue from 'vue'
     import store from '@/store'
     import i18n from '@/i18n'
+    import LabelBatchDialog from './dialog/label-batch-dialog.js'
     export default {
         components: {
             ListCellName,
@@ -49,6 +51,7 @@
         data () {
             return {
                 list: [],
+                selection: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
                 filters: [],
                 request: {
@@ -106,12 +109,14 @@
             }, { immediate: true, throttle: true })
             Bus.$on('expand-all-change', this.handleExpandAllChange)
             Bus.$on('filter-change', this.handleFilterChange)
+            Bus.$on('batch-edit-labels', this.handleBatchEditLabels)
         },
         beforeDestroy () {
             Bus.$off('expand-all-change', this.handleExpandAllChange)
             Bus.$off('filter-change', this.handleFilterChange)
+            Bus.$off('batch-edit-labels', this.handleBatchEditLabels)
             this.unwatch()
-            this.removeIntersectionObserver()
+            // this.removeIntersectionObserver()
         },
         methods: {
             handleFilterChange (filters) {
@@ -123,8 +128,8 @@
             },
             async getList () {
                 try {
-                    this.removeIntersectionObserver()
-                    this.removeStickyRow()
+                    // this.removeIntersectionObserver()
+                    // this.removeStickyRow()
                     const { count, info } = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: {
                             bk_biz_id: this.bizId,
@@ -147,8 +152,8 @@
                     console.error(error)
                 } finally {
                     this.$nextTick(() => {
-                        this.initIntersectionObserver()
-                        this.injectStickyRow()
+                        // this.initIntersectionObserver()
+                        // this.injectStickyRow()
                     })
                 }
             },
@@ -263,7 +268,11 @@
                 row.pending = expandedRows.includes(row)
             },
             handleSelectionChange (selection) {
+                this.selection = selection
                 Bus.$emit('instance-selection-change', selection)
+            },
+            handleRowClick (row) {
+                this.$refs.instanceTable.toggleRowExpansion(row)
             },
             handleExpandResolved (row, list) {
                 row.pending = false
@@ -277,6 +286,17 @@
             },
             handleUpdateLabels (row, labels) {
                 row.labels = labels
+            },
+            handleBatchEditLabels () {
+                LabelBatchDialog.show({
+                    serviceInstances: this.selection,
+                    updateCallback: (removedKeys, newLabels) => {
+                        this.selection.forEach(instance => {
+                            instance.labels && removedKeys.forEach(key => delete instance.labels[key])
+                            instance.labels = Object.assign({}, instance.labels, newLabels)
+                        })
+                    }
+                })
             }
         }
     }
@@ -305,6 +325,7 @@
             }
             &.disabled {
                 .bk-table-expand-icon {
+                    display: none;
                     cursor: not-allowed;
                 }
             }

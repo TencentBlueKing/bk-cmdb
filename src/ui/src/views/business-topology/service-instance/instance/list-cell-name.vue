@@ -1,7 +1,7 @@
 <template>
     <div :class="{ 'instance-name': true, disabled }">
         <span class="name-text" :title="row.name">{{row.name}}</span>
-        <cmdb-dot-menu class="instance-dot-menu">
+        <cmdb-dot-menu class="instance-dot-menu" trigger="click" @click.native.stop>
             <ul class="menu-list">
                 <cmdb-auth tag="li" class="menu-item"
                     v-if="!row.service_template_id"

@@ -4,7 +4,7 @@
         :width="580"
         :mask-close="false"
         :esc-close="false"
-        @after-leave="handleCancel">
+        @after-leave="handleHidden">
         <div slot="header">
             {{$t('编辑标签')}}
         </div>
@@ -13,7 +13,7 @@
         </label-dialog-content>
         <div class="edit-label-dialog-footer" slot="footer">
             <bk-button theme="primary" @click.stop="handleSubmit">{{$t('确定')}}</bk-button>
-            <bk-button theme="default" class="ml5" @click.stop="handleCancel">{{$t('取消')}}</bk-button>
+            <bk-button theme="default" class="ml5" @click.stop="close">{{$t('取消')}}</bk-button>
         </div>
     </bk-dialog>
 </template>
@@ -50,6 +50,9 @@
         methods: {
             show () {
                 this.isShow = true
+            },
+            close () {
+                this.isShow = false
             },
             async handleSubmit () {
                 try {
@@ -103,7 +106,7 @@
                     console.error(error)
                 }
             },
-            handleCancel () {
+            handleHidden () {
                 this.$emit('close')
             }
         }

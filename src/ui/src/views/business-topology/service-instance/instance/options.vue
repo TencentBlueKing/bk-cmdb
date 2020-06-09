@@ -301,7 +301,12 @@
             handleExpandAll (expanded) {
                 Bus.$emit('expand-all-change', expanded)
             },
-            handleBatchEditLabels () {}
+            handleBatchEditLabels (disabled) {
+                if (disabled) {
+                    return false
+                }
+                Bus.$emit('batch-edit-labels')
+            }
         }
     }
 </script>
