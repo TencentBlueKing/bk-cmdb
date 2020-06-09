@@ -526,6 +526,12 @@ func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	if body.Page.IsIllegal() {
+		blog.ErrorJSON("page is illegal, page: %s, rid: %s", body.Page, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.CCError(common.CCErrCommPageLimitIsExceeded)})
+		return
+	}
+
 	host, err := srvData.lgc.SearchHost(srvData.ctx, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, srvData.rid)

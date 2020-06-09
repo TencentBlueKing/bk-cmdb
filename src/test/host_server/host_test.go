@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package host_server_test
 
 import (
@@ -119,7 +131,9 @@ var _ = Describe("host test", func() {
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -161,7 +175,9 @@ var _ = Describe("host test", func() {
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -189,7 +205,9 @@ var _ = Describe("host test", func() {
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -268,7 +286,9 @@ var _ = Describe("host test", func() {
 					},
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -301,7 +321,9 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -330,7 +352,9 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -360,7 +384,9 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -423,7 +449,9 @@ var _ = Describe("host test", func() {
 					},
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -495,6 +523,11 @@ var _ = Describe("host test", func() {
 						Fields: []string{},
 					},
 				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
+				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -533,6 +566,11 @@ var _ = Describe("host test", func() {
 						},
 						Fields: []string{},
 					},
+				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -575,6 +613,11 @@ var _ = Describe("host test", func() {
 						Fields: []string{},
 					},
 				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
+				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -612,6 +655,11 @@ var _ = Describe("host test", func() {
 						Fields: []string{},
 					},
 				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
+				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -637,6 +685,11 @@ var _ = Describe("host test", func() {
 						},
 						Fields: []string{},
 					},
+				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -679,6 +732,11 @@ var _ = Describe("host test", func() {
 						Fields: []string{},
 					},
 				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
+				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -719,7 +777,9 @@ var _ = Describe("host test", func() {
 					},
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -748,6 +808,11 @@ var _ = Describe("host test", func() {
 						Fields: []string{},
 					},
 				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
+				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -773,7 +838,9 @@ var _ = Describe("host test", func() {
 					},
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -813,7 +880,9 @@ var _ = Describe("host test", func() {
 					},
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -871,6 +940,11 @@ var _ = Describe("host test", func() {
 						Fields: []string{},
 					},
 				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
+				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -916,7 +990,9 @@ var _ = Describe("host test", func() {
 					},
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -980,6 +1056,11 @@ var _ = Describe("host test", func() {
 						Fields: []string{},
 					},
 				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
+				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1005,7 +1086,9 @@ var _ = Describe("host test", func() {
 					},
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -1047,6 +1130,11 @@ var _ = Describe("host test", func() {
 						Fields: []string{},
 					},
 				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
+				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1070,6 +1158,11 @@ var _ = Describe("host test", func() {
 						},
 						Fields: []string{},
 					},
+				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -1105,6 +1198,11 @@ var _ = Describe("host test", func() {
 						},
 						Fields: []string{},
 					},
+				},
+				Page: params.PageInfo{
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -1146,7 +1244,9 @@ var _ = Describe("host test", func() {
 					},
 				},
 				Page: params.PageInfo{
-					Sort: "bk_host_id",
+					Sort:  "bk_host_id",
+					Limit: common.BKDefaultLimit,
+					Start: 0,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
@@ -1242,7 +1342,9 @@ var _ = Describe("list_hosts_topo test", func() {
 		searchInput := &params.HostCommonSearch{
 			AppID: int(bizId),
 			Page: params.PageInfo{
-				Sort: common.BKHostIDField,
+				Sort:  common.BKHostIDField,
+				Limit: common.BKDefaultLimit,
+				Start: 0,
 			},
 		}
 		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
@@ -1309,7 +1411,9 @@ var _ = Describe("batch_update_host test", func() {
 		By("search hosts")
 		searchInput := &params.HostCommonSearch{
 			Page: params.PageInfo{
-				Sort: common.BKHostIDField,
+				Sort:  common.BKHostIDField,
+				Limit: common.BKDefaultLimit,
+				Start: 0,
 			},
 		}
 		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)

@@ -38,6 +38,12 @@ func (s *Service) FindModuleHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	if body.Page.IsIllegal() {
+		blog.ErrorJSON("page is illegal, page: %s, rid: %s", body.Page, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCError(common.CCErrCommPageLimitIsExceeded)})
+		return
+	}
+
 	if len(body.ModuleIDS) > common.BKMaxPageSize {
 		blog.Errorf("module length %d exceeds 1000, rid:%s", len(body.ModuleIDS), srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce, common.BKMaxPageSize)})
