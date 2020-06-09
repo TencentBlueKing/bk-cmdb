@@ -11,11 +11,11 @@ const data = [{
     en_name: 'BlueKing Official',
     href: 'https://bk.tencent.com/index/'
 }]
-if (window.Site.bkDesktop) {
+if (window.CMDB_CONFIG.site.bkDesktop) {
     data.push({
         name: '蓝鲸桌面',
         en_name: 'Blueking Desktop',
-        href: window.Site.bkDesktop
+        href: window.CMDB_CONFIG.site.bkDesktop
     })
 }
 export default Object.freeze(data)

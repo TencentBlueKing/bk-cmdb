@@ -18,7 +18,7 @@
         addResizeListener,
         removeResizeListener
     } from '@/utils/resize-events'
-    import { MENU_ENTRY } from '@/dictionary/menu-symbol'
+    import { MENU_ENTRY, MENU_ADMIN } from '@/dictionary/menu-symbol'
     import throttle from 'lodash.throttle'
     export default {
         components: {
@@ -40,7 +40,7 @@
             },
             isEntry () {
                 const [topRoute] = this.$route.matched
-                return topRoute && topRoute.name === MENU_ENTRY
+                return topRoute && [MENU_ENTRY, MENU_ADMIN].includes(topRoute.name)
             },
             showBreadcrumbs () {
                 return this.$route.meta.layout && this.$route.meta.layout.breadcrumbs

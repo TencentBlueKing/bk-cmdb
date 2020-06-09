@@ -1,4 +1,5 @@
 import index from '@/views/index/router.config'
+import admin from '@/views/admin/router.config'
 
 import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
@@ -51,6 +52,8 @@ export const injectStatusComponents = (views, status = ['permission', 'error']) 
 
 export const indexViews = injectStatusComponents(flatternViews([index]))
 
+export const adminViews = injectStatusComponents(flatternViews([admin]))
+
 export const businessViews = injectStatusComponents(flatternViews([
     customQuery,
     businessTopology,
@@ -85,6 +88,7 @@ export const analysisViews = injectStatusComponents(flatternViews([
 
 export default {
     ...indexViews,
+    ...adminViews,
     ...businessViews,
     ...resourceViews,
     ...modelViews,

@@ -200,7 +200,7 @@
                 })
             },
             openAgentApp () {
-                const agentAppUrl = window.Site.agent
+                const agentAppUrl = window.CMDB_CONFIG.site.agent
                 if (agentAppUrl) {
                     if (agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
                         window.top.postMessage(JSON.stringify({ action: 'open_other_app', app_code: 'bk_nodeman' }), '*')

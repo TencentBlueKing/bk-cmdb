@@ -343,7 +343,7 @@
                 })
             },
             openAgentApp () {
-                const agent = window.Site.agent
+                const agent = window.CMDB_CONFIG.site.agent
                 if (agent) {
                     const topWindow = window.top
                     const isPaasConsole = topWindow !== window

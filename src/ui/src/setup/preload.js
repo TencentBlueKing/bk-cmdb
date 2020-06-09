@@ -36,7 +36,22 @@ export function getGlobalUsercustom (app) {
     })
 }
 
+export async function getConfig (app) {
+    return app.$store.dispatch('getConfig', {
+        config: {
+            ...preloadConfig,
+            fromCache: false,
+            globalError: false
+        }
+    }).then(data => {
+        app.$store.commit('setConfig', data)
+    }).catch(() => {
+        return {}
+    })
+}
+
 export default async function (app) {
+    getConfig(app)
     getAuthorizedBusiness(app)
     return Promise.all([
         getClassifications(app),
