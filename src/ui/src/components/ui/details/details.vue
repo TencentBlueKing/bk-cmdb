@@ -103,11 +103,11 @@
                 default: true
             },
             editAuth: {
-                type: [String, Array],
+                type: [String, Array, Object],
                 default: ''
             },
             deleteAuth: {
-                type: [String, Array],
+                type: [String, Array, Object],
                 default: ''
             }
         },
@@ -136,6 +136,7 @@
             authResources (auth) {
                 if (!auth) return {}
                 if (Array.isArray(auth) && !auth.length) return {}
+                if (typeof auth === 'object') return auth
                 return this.$authResources({ type: auth })
             },
             checkScrollbar () {

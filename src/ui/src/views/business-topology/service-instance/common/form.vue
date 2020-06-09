@@ -1,32 +1,42 @@
 <template>
     <bk-sideslider
         :width="800"
-        :title="title"
+        :title="internalTitle"
         :is-show.sync="isShow"
         :before-close="beforeClose"
         @hidden="handleHidden">
-        <cmdb-form slot="content"
-            ref="form"
-            v-bkloading="{ isLoading: pending }"
-            :type="type"
-            :inst="instance"
-            :properties="properties"
-            :property-groups="propertyGroups"
-            :disabled-properties="bindedProperties"
-            :render-tips="renderTips"
-            @on-submit="handleSaveProcess"
-            @on-cancel="beforeClose">
-            <template slot="bind_ip">
-                <cmdb-input-select
-                    name="bindIP"
-                    :disabled="isBindIPDisabled"
-                    :placeholder="$t('请选择或输入IP')"
-                    :options="bindIPList"
-                    :validate="bindIPRules"
-                    v-model="bindIP">
-                </cmdb-input-select>
-            </template>
-        </cmdb-form>
+        <template slot="content">
+            <cmdb-details v-if="internalType === 'view'"
+                :properties="properties"
+                :property-groups="propertyGroups"
+                :inst="instance"
+                :show-delete="false"
+                :edit-auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }"
+                @on-edit="handleChangeInternalType">
+            </cmdb-details>
+            <cmdb-form v-else
+                ref="form"
+                v-bkloading="{ isLoading: pending }"
+                :type="internalType"
+                :inst="instance"
+                :properties="properties"
+                :property-groups="propertyGroups"
+                :disabled-properties="bindedProperties"
+                :render-tips="renderTips"
+                @on-submit="handleSaveProcess"
+                @on-cancel="handleCancel">
+                <template slot="bind_ip">
+                    <cmdb-input-select
+                        name="bindIP"
+                        :disabled="isBindIPDisabled"
+                        :placeholder="$t('请选择或输入IP')"
+                        :options="bindIPList"
+                        :validate="bindIPRules"
+                        v-model="bindIP">
+                    </cmdb-input-select>
+                </template>
+            </cmdb-form>
+        </template>
     </bk-sideslider>
 </template>
 
@@ -50,6 +60,8 @@
         data () {
             return {
                 isShow: false,
+                internalType: this.type,
+                internalTitle: this.title,
                 properties: [],
                 propertyGroups: [],
                 bindedProperties: [],
@@ -188,7 +200,20 @@
                     this.pending = false
                 }
             },
+            async handleCancel () {
+                const userConfirm = await this.beforeClose()
+                if (!userConfirm) {
+                    return false
+                }
+                if (this.type === 'view') {
+                    this.internalType = this.type
+                    this.internalTitle = this.title
+                } else {
+                    this.isShow = false
+                }
+            },
             beforeClose () {
+                if (this.internalType === 'view') return Promise.resolve(true)
                 const formChanged = !!Object.values(this.$refs.form.changedValues).length
                 if (formChanged) {
                     return new Promise((resolve, reject) => {
@@ -197,14 +222,12 @@
                             subTitle: this.$t('退出会导致未保存信息丢失'),
                             extCls: 'bk-dialog-sub-header-center',
                             confirmFn: () => {
-                                this.isShow = false
                                 resolve(true)
                             },
                             cancelFn: () => resolve(false)
                         })
                     })
                 }
-                this.isShow = false
                 return Promise.resolve(true)
             },
             renderTips (h, { property, type }) {
@@ -212,6 +235,10 @@
                     return RenderTips(h, { serviceTemplateId: this.serviceTemplateId })
                 }
                 return ''
+            },
+            handleChangeInternalType () {
+                this.internalType = 'update'
+                this.internalTitle = this.$t('编辑进程')
             }
         }
     }

@@ -9,7 +9,7 @@
         <bk-table-column type="selection" fixed></bk-table-column>
         <bk-table-column :label="$t('所属实例')" prop="service_instance_name" min-width="150" fixed>
             <template slot-scope="{ row }">
-                <span class="instance-name" v-bk-overflow-tips>{{row.service_instance_name}}</span>
+                <span class="instance-name" v-bk-overflow-tips @click.stop="handleView(row)">{{row.service_instance_name}}</span>
             </template>
         </bk-table-column>
         <bk-table-column v-for="property in header"
@@ -34,7 +34,7 @@
          
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }" v-if="!serviceTemplateId">
+                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }" v-if="!row.relation.process_template_id">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary" text
                         :disabled="disabled"
@@ -174,6 +174,17 @@
                 }
                 Bus.$emit('update-reserve-selection', this.process, selection)
             },
+            handleView (row) {
+                Form.show({
+                    type: 'view',
+                    title: this.$t('查看进程'),
+                    instance: row.property,
+                    serviceTemplateId: this.selectedNode.data.service_template_id,
+                    processTemplateId: row.relation.process_template_id,
+                    hostId: row.relation.bk_host_id,
+                    submitHandler: this.editSubmitHandler
+                })
+            },
             handleEdit (row) {
                 Form.show({
                     type: 'update',
@@ -250,6 +261,7 @@
 
 <style lang="scss" scoped>
     .instance-name {
+        cursor: pointer;
         color: $primaryColor;
     }
 </style>

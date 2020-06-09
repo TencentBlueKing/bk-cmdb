@@ -42,8 +42,10 @@
                 <bk-button slot-scope="{ disabled: authDisabled }"
                     :disabled="authDisabled || !hasDifference"
                     @click="handleSyncTemplate">
-                    <i class="bk-icon icon-refresh"></i>
-                    {{$t('同步模板')}}
+                    <span class="sync-wrapper">
+                        <i class="bk-icon icon-refresh"></i>
+                        {{$t('同步模板')}}
+                    </span>
                     <span class="topo-status" v-show="hasDifference"></span>
                 </bk-button>
             </cmdb-auth>
@@ -351,10 +353,13 @@
             height: 20px;
             background-color: #dcdee5;
         }
+        .sync-wrapper {
+            display: flex;
+            align-items: center;
+        }
         .icon-refresh {
             font-size: 12px;
-            vertical-align: middle;
-            line-height: 18px;
+            margin-right: 4px;
         }
         .topo-status {
             position: absolute;

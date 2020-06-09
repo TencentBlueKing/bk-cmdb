@@ -2,7 +2,8 @@
     <bk-table v-if="!serviceInstance.pending"
         :data="list"
         :outer-border="false"
-        :header-cell-style="{ backgroundColor: '#fff' }">
+        :header-cell-style="{ backgroundColor: '#fff' }"
+        v-bkloading="{ isLoading: $loading(request.list) }">
         <bk-table-column v-for="property in header"
             :key="property.bk_property_id"
             :label="property.bk_property_name"
@@ -12,7 +13,8 @@
                 :value="row.property[property.bk_property_id] | formatter(property)"
                 :show-unit="false"
                 :show-title="true"
-                :property="property">
+                :property="property"
+                @click.native="handleView(row)">
             </cmdb-property-value>
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
@@ -25,7 +27,7 @@
                         {{$t('编辑')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }" v-if="!row.relation.service_template_id">
+                <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }" v-if="!row.relation.process_template_id">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary" text
                         :disabled="disabled"
@@ -123,6 +125,17 @@
                 } finally {
                     this.$emit('update-list', this.list)
                 }
+            },
+            handleView (row) {
+                Form.show({
+                    type: 'view',
+                    title: this.$t('查看进程'),
+                    instance: row.property,
+                    hostId: row.relation.bk_host_id,
+                    serviceTemplateId: this.serviceInstance.service_template_id,
+                    processTemplateId: row.relation.process_template_id,
+                    submitHandler: this.editSubmitHandler
+                })
             },
             handleEdit (row) {
                 Form.show({

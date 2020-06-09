@@ -15,7 +15,11 @@
         },
         data () {
             return {
-                activeComponent: null
+                activeComponent: null,
+                viewMap: Object.freeze({
+                    'instance': ViewInstance.name,
+                    'process': ViewProcess.name
+                })
             }
         },
         created () {
@@ -28,17 +32,15 @@
         },
         methods: {
             handleViewChange (view = 'instance') {
-                const viewMap = {
-                    'instance': ViewInstance.name,
-                    'process': ViewProcess.name
-                }
-                this.activeComponent = viewMap[view]
+                this.activeComponent = this.viewMap[view]
             },
             handleTabChange (tab) {
                 if (tab !== 'serviceInstance') {
                     this.activeComponent = null
                 } else {
-                    this.activeComponent = ViewInstance.name
+                    const view = RouterQuery.get('view', 'instance')
+                    RouterQuery.set({ view })
+                    this.activeComponent = this.viewMap[view]
                 }
             }
         }
