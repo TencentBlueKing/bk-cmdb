@@ -21,13 +21,13 @@
             "operations": [
                 {
                     "id": "set_template-create",
-                    "name": "新增集群模版"
+                    "name": "新增集群模板"
                 }, {
                     "id": "set_template-update",
-                    "name": "修改集群模版"
+                    "name": "修改集群模板"
                 }, {
                     "id": "set_template-delete",
-                    "name": "删除集群模版"
+                    "name": "删除集群模板"
                 }
             ]
         }, {

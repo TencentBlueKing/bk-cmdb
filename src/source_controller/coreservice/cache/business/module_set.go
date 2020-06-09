@@ -111,6 +111,7 @@ func (ms *moduleSet) onUpsert(e *types.Event) {
 	bizID := info[2].Int()
 	if bizID == 0 {
 		blog.Errorf("received %s upsert event, got biz id is 0, oid: %s", ms.collection, e.Oid)
+		return
 	}
 
 	// save the oid relation immediately.

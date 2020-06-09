@@ -91,6 +91,27 @@ func (b *baseCache) SearchHostWithHostID(ctx context.Context, h http.Header, opt
 	return resp.Data, nil
 }
 
+func (b *baseCache) ListHostWithHostID(ctx context.Context, h http.Header, opt *metadata.ListHostWithIDOption) (jsonString string, err error) {
+
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/findmany/cache/host/with_host_id").
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+
+	if err != nil {
+		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data, nil
+}
+
 func (b *baseCache) SearchBusiness(ctx context.Context, h http.Header, bizID int64) (string, error) {
 	resp, err := b.client.Post().
 		WithContext(ctx).

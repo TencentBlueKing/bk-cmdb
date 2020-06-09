@@ -7,7 +7,6 @@ const magicboxLanguageMap = {
     zh_CN: magicbox.locale.lang.zhCN,
     en: magicbox.locale.lang.enUS
 }
-
 i18n.mergeLocaleMessage(i18n.locale, magicboxLanguageMap[i18n.locale])
 magicbox.locale.use(magicboxLanguageMap[i18n.locale])
 Vue.use(magicbox, {

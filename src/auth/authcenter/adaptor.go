@@ -257,6 +257,9 @@ const (
 
 	WatchHost         ActionID = "host"
 	WatchHostRelation ActionID = "host_relation"
+	WatchBiz          ActionID = "biz"
+	WatchSet          ActionID = "set"
+	WatchModule       ActionID = "module"
 )
 
 var ActionIDNameMap = map[ActionID]string{
@@ -269,6 +272,9 @@ var ActionIDNameMap = map[ActionID]string{
 	ModelTopologyOperation: "编辑业务层级",
 	WatchHost:              "主机",
 	WatchHostRelation:      "主机关系",
+	WatchBiz:               "业务",
+	WatchSet:               "集群",
+	WatchModule:            "模块",
 }
 
 func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
@@ -380,6 +386,12 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		return WatchHost, nil
 	case meta.WatchHostRelation:
 		return WatchHostRelation, nil
+	case meta.WatchBiz:
+		return WatchBiz, nil
+	case meta.WatchSet:
+		return WatchSet, nil
+	case meta.WatchModule:
+		return WatchModule, nil
 	}
 
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)

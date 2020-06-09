@@ -46,7 +46,7 @@
                             </bk-input>
                             <p class="form-error" :title="errors.first('modelId')">{{errors.first('modelId')}}</p>
                         </div>
-                        <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"></i>
+                        <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('模型唯一标识提示语')"></i>
                     </label>
                     <label>
                         <span class="label-title">{{$t('名称')}}</span>

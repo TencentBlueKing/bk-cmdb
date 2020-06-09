@@ -283,6 +283,7 @@
     "请填写模型名": "Please fill in the model name",
     "下划线，数字，英文大小写的组合": "Underline, number, combination of letters",
     "请填写英文开头，下划线，数字，英文的组合": "underline, numbers, letter and start with a letter",
+    "模型唯一标识提示语": "Combine with letters, numbers or underline, must start with a letter",
     "导出": "Export",
     "导入": "Import",
     "下划线/数字/字母": "Underline/Number/Lowercase Letter",
@@ -1168,10 +1169,8 @@
     "属性冲突N台": "Attribute conflict{num}stations",
     "总检测N台": "Total check{num}stations",
     "保存并应用": "Save and apply",
-    "是否放弃": "Whether to leave?",
-    "启用步骤未完成，是否放弃当前配置": "The enabling step is not completed, whether to discard the current configuration",
-    "留在当前页": "Stay on page",
-    "确认放弃": "Abandon",
+    "是否退出配置": "Confirm to leave?",
+    "启用步骤未完成，退出将会丢失当前配置": "The enabling step is not completed, whether to discard the current configuration",
     "批量应用属性": "Batch Apply Attribute",
     "应用属性": "Apply Attribute",
     "确认应用": "Confirm Apply",
@@ -1220,7 +1219,6 @@
     "节点名称": "Node name:",
     "非业务模块，无服务实例，请选择业务模块查看": "Non-business module, no service instance, please select the business module to view",
     "模型中需包含枚举字段才可以作为维度统计": "Models need to include enumerated fields for dimensional statistics",
-    "跳转服务模版": "To Service Template",
     "模板没配置进程": "Template has no processes",
     "表格排序设置": "Table sorting settings",
     "实例表格字段排序设置": "Instance table field sorting settings",
@@ -1269,5 +1267,6 @@
     "普通服务实例无进程提示": "No Process，{link}.",
     "模板服务实例无进程提示": "No template process, {link}.",
     "跳转添加并同步": "edit and sync",
-    "切换进程视角提示语": "Toggle view for batch update process"
+    "切换进程视角提示语": "Toggle view for batch update process",
+    "全部模型": "All Models"
 }

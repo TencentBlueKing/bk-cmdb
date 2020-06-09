@@ -13,7 +13,7 @@
             <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 show-overflow-tooltip
-                min-width="120"
+                :min-width="column.bk_property_id === 'bk_host_id' ? 80 : 120"
                 :key="column.bk_property_id"
                 :label="$tools.getHeaderPropertyName(column)"
                 :sortable="getColumnSortable(column)"

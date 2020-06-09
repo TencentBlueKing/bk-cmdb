@@ -14,6 +14,7 @@ package watch
 
 import (
 	"errors"
+	"fmt"
 )
 
 type WatchEventOptions struct {
@@ -40,8 +41,11 @@ func (w *WatchEventOptions) Validate() error {
 		}
 	}
 
-	if w.Resource == Host && len(w.Fields) == 0 {
-		return errors.New("host event must have fields")
+	switch w.Resource {
+	case Host, Biz, Set, Module:
+		if len(w.Fields) == 0 {
+			return fmt.Errorf("%s event must have fields", w.Resource)
+		}
 	}
 
 	// use either StartFrom or Cursor.

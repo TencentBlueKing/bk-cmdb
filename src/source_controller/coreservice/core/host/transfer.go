@@ -49,3 +49,8 @@ func (hm *hostManager) RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHos
 func (hm *hostManager) GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
 	return hm.hostTransfer.GetHostModuleRelation(kit, input)
 }
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (hm *hostManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
+	return hm.hostTransfer.GetDistinctHostIDsByTopoRelation(kit, input)
+}

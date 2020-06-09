@@ -95,24 +95,6 @@
             </template>
         </cmdb-details>
         <template v-else-if="type === 'update'">
-            <div class="service-category" v-if="!withTemplate && isModuleNode">
-                <span class="title">{{$t('服务分类')}}</span>
-                <div class="selector-item mt10 clearfix">
-                    <cmdb-selector class="category-selector fl"
-                        :list="firstCategories"
-                        v-model="first"
-                        @on-selected="handleChangeFirstCategory">
-                    </cmdb-selector>
-                    <cmdb-selector class="category-selector fl"
-                        :list="secondCategories"
-                        name="secondCategory"
-                        v-validate="'required'"
-                        v-model="second"
-                        @on-selected="handleChangeCategory">
-                    </cmdb-selector>
-                    <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
-                </div>
-            </div>
             <cmdb-form class="topology-form"
                 ref="form"
                 :properties="properties"
@@ -122,6 +104,24 @@
                 :type="type"
                 @on-submit="handleSubmit"
                 @on-cancel="handleCancel">
+                <div class="service-category" v-if="!withTemplate && isModuleNode" slot="prepend">
+                    <span class="title">{{$t('服务分类')}}</span>
+                    <div class="selector-item mt10 clearfix">
+                        <cmdb-selector class="category-selector fl"
+                            :list="firstCategories"
+                            v-model="first"
+                            @on-selected="handleChangeFirstCategory">
+                        </cmdb-selector>
+                        <cmdb-selector class="category-selector fl"
+                            :list="secondCategories"
+                            name="secondCategory"
+                            v-validate="'required'"
+                            v-model="second"
+                            @on-selected="handleChangeCategory">
+                        </cmdb-selector>
+                        <span class="second-category-errors" v-if="errors.has('secondCategory')">{{errors.first('secondCategory')}}</span>
+                    </div>
+                </div>
             </cmdb-form>
         </template>
     </div>

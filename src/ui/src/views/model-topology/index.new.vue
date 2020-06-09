@@ -45,7 +45,7 @@
         <ul class="topo-nav">
             <li class="group-item">
                 <div :class="['group-info', 'group-total', { 'selected': topoNav.selectedGroupId === -1 }]" @click="handleSelectGroup()">
-                    <span class="group-name">全部模型</span>
+                    <span class="group-name">{{$t('全部模型')}}</span>
                     <span class="model-count">{{localTopoModelList.length > 1000 ? '999+' : localTopoModelList.length}}</span>
                 </div>
             </li>
@@ -59,7 +59,7 @@
                     }"
                     @click="handleSelectGroup(group)"
                 >
-                    <span class="toggle-arrow" @click.stop="handleSlideGroup(group)"><i class="bk-icon icon-angle-down"></i></span>
+                    <span class="toggle-arrow" @click.stop="handleSlideGroup(group)"><i class="bk-icon icon-angle-right"></i></span>
                     <span class="group-name" :title="group.bk_classification_name">{{group['bk_classification_name']}}</span>
                     <span class="model-count">{{group['bk_objects'].length}}</span>
                     <i
