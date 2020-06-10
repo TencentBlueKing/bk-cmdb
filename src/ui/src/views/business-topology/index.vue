@@ -26,7 +26,7 @@
                             <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
                         </div>
                     </div>
-                    <service-instance-view v-else></service-instance-view>
+                    <service-instance-view v-else-if="activeTab === 'serviceInstance'"></service-instance-view>
                 </bk-tab-panel>
                 <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
                     <div class="default-node-info" v-if="!showNodeInfo">
