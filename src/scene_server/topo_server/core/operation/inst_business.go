@@ -71,6 +71,8 @@ func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInt
 func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
 	option := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
+		Fields:        []string{common.BKHostIDField},
+		Page:          metadata.BasePage{Limit: 1},
 	}
 	rsp, err := b.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, option)
 	if nil != err {

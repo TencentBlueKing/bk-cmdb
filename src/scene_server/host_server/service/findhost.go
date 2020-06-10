@@ -325,6 +325,7 @@ func (s *Service) ListBizHostsTopo(req *restful.Request, resp *restful.Response)
 	relationCond := meta.HostModuleRelationRequest{
 		ApplicationID: bizID,
 		HostIDArr:     hostIDs,
+		Fields:        []string{common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	relations, err := srvData.lgc.GetConfigByCond(srvData.ctx, relationCond)
 	if nil != err {
@@ -508,6 +509,7 @@ func (s *Service) countTopoNodeHosts(srvData *srvComm, bizID int64, option meta.
 		Page: meta.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
 	relationResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, &relationOption)
 	if err != nil {

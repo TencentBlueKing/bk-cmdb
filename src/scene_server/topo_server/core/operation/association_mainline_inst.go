@@ -410,6 +410,7 @@ func (assoc *association) fillStatistics(kit *rest.Kit, bizID int64, moduleIDs [
 	// get host count
 	listHostOption := &metadata.HostModuleRelationRequest{
 		ApplicationID: bizID,
+		Fields:        []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	hostModules, e := assoc.clientSet.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, listHostOption)
 	if e != nil {
