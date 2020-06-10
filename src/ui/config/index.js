@@ -6,7 +6,7 @@ const path = require('path')
 const fs = require('fs')
 
 const config = {
-    'BUILD_TITLE': '配置平台 | 蓝鲸智云企业版',
+    'BUILD_TITLE': '',
     'BUILD_OUTPUT': '../bin/enterprise/cmdb'
 }
 

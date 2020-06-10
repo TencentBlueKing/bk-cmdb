@@ -26,10 +26,9 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import { Base64 } from 'js-base64'
     import { updateValidator } from '@/setup/validate'
     export default {
-        components: {
-        },
         data () {
             return {
                 configValue: '',
@@ -65,8 +64,13 @@
             async handleSave () {
                 this.loading = true
                 try {
+                    const configData = JSON.parse(this.configValue)
+                    const { validationRules } = configData
+                    for (const rule of Object.values(validationRules)) {
+                        rule.value = Base64.encode(rule.value)
+                    }
                     await this.$store.dispatch('updateConfig', {
-                        params: JSON.parse(this.configValue),
+                        params: configData,
                         config: { requestId: this.request.update }
                     })
 

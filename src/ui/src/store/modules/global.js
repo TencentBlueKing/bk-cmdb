@@ -1,5 +1,6 @@
 import { language } from '@/i18n'
 import $http from '@/api'
+import { Base64 } from 'js-base64'
 
 const state = {
     config: {
@@ -130,6 +131,11 @@ const mutations = {
         Object.assign(state.scrollerState, scrollerState)
     },
     setConfig (state, config) {
+        // 按照数据格式约定验证规则的正则需要baes64解码
+        const { validationRules } = config
+        for (const rule of Object.values(validationRules)) {
+            rule.value = Base64.decode(rule.value)
+        }
         state.config = { ...config }
         window.CMDB_CONFIG = config
         window.CMDB_CONFIG.site = { ...window.Site, ...config.site }
