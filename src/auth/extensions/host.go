@@ -143,7 +143,7 @@ func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHe
 	query := &metadata.QueryCondition{
 		Fields:    []string{common.BKHostInnerIPField, common.BKHostIDField},
 		Condition: cond.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	hosts, err := coreService.Instance().ReadInstance(ctx, rHeader, common.BKInnerObjIDHost, query)
 	if err != nil {
@@ -165,22 +165,46 @@ func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHe
 func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]HostSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	query := &metadata.HostModuleRelationRequest{
-		ApplicationID: businessID,
-	}
-	hosts, err := am.clientSet.CoreService().Host().GetHostModuleRelation(ctx, header, query)
-	if err != nil {
-		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
-		return nil, fmt.Errorf("get host by businessID:%d failed, err: %+v", businessID, err)
-	}
-	if len(hosts.Data.Info) == 0 {
-		return make([]HostSimplify, 0), nil
-	}
-
-	// extract hostID
+	cond := condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(businessID)
 	hostIDs := make([]int64, 0)
-	for _, host := range hosts.Data.Info {
-		hostIDs = append(hostIDs, host.HostID)
+	count := -1
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
+		query := &metadata.QueryCondition{
+			Fields:    []string{common.BKHostIDField},
+			Condition: cond.ToMapStr(),
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
+			},
+		}
+		hosts, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameModuleHostConfig, query)
+		if err != nil {
+			blog.Errorf("get host:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
+			return nil, fmt.Errorf("get host by businessID:%d failed, err: %+v", businessID, err)
+		}
+		if len(hosts.Data.Info) == 0 {
+			break
+		}
+
+		// extract hostID
+		for _, host := range hosts.Data.Info {
+			hostIDVal, exist := host[common.BKHostIDField]
+			if exist == false {
+				continue
+			}
+			hostID, err := util.GetInt64ByInterface(hostIDVal)
+			if err != nil {
+				blog.V(2).Infof("synchronize task skip host:%+v, as parse hostID field failed, err: %+v, rid: %s", host, err, rid)
+				continue
+			}
+			hostIDs = append(hostIDs, hostID)
+		}
+		count = hosts.Data.Count
+	}
+	if len(hostIDs) == 0 {
+		return make([]HostSimplify, 0), nil
 	}
 
 	return am.collectHostByHostIDs(ctx, header, hostIDs...)
@@ -241,17 +265,27 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	hostIDs = util.IntArrayUnique(hostIDs)
-
-	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs).ToMapStr(),
+	hosts := make([]mapstr.MapStr, 0)
+	count := -1
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
+		cond := metadata.QueryCondition{
+			Fields:    []string{common.BKHostIDField, common.BKHostNameField, common.BKHostInnerIPField},
+			Condition: condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs).ToMapStr(),
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
+			},
+		}
+		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDHost, &cond)
+		if err != nil {
+			blog.V(3).Infof("get hosts by id failed, err: %+v, rid: %s", err, rid)
+			return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
+		}
+		hosts = append(hosts, result.Data.Info...)
+		count = result.Data.Count
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDHost, &cond)
-	if err != nil {
-		blog.V(3).Infof("get hosts by id failed, err: %+v, rid: %s", err, rid)
-		return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
-	}
-
-	return am.constructHostFromSearchResult(ctx, header, result.Data.Info)
+	return am.constructHostFromSearchResult(ctx, header, hosts)
 }
 
 func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) ([]meta.ResourceAttribute, error) {

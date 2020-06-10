@@ -15,8 +15,10 @@ package logics
 import (
 	"context"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -102,6 +104,11 @@ type searchHost struct {
 	hostInfoArr  []hostInfoStruct // int64 is hostID
 	cacheInfoMap searchHostInfoMapCache
 	totalHostCnt int
+
+	paged bool
+
+	searchedHostIDs []int64
+	searchCloudIDs  []int64
 
 	ccErr errors.DefaultCCErrorIf
 	ccRid string
@@ -197,12 +204,8 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) 
 		return nil, 0, nil
 	}
 
-	hostIDArr := make([]int64, 0)
-	for _, hostInfoItem := range sh.hostInfoArr {
-		hostIDArr = append(hostIDArr, hostInfoItem.hostID)
-	}
 	queryCond := metadata.HostModuleRelationRequest{
-		HostIDArr: hostIDArr,
+		HostIDArr: sh.searchedHostIDs,
 	}
 	mhconfig, err := sh.lgc.GetConfigByCond(sh.ctx, queryCond)
 	if err != nil {
@@ -305,24 +308,11 @@ func (sh *searchHost) fillHostCloudInfo(hostInfo, searchHostItem mapstr.MapStr) 
 }
 
 func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, errors.CCError) {
-	cloudIDMap := make(map[int64]bool, 0)
-	for _, hostInfoItem := range sh.hostInfoArr {
 
-		cloudID, err := hostInfoItem.hostInfo.Int64(common.BKCloudIDField)
-		if err != nil {
-			blog.Warnf("hostSearch not found  cloud id in hsot, hostInfo:%d, rid:%s", hostInfoItem.hostInfo, sh.ccRid)
-			continue
-		}
-		cloudIDMap[cloudID] = true
-	}
-	var cloudIDArr []int64
-	for cloudID := range cloudIDMap {
-		cloudIDArr = append(cloudIDArr, cloudID)
-	}
 	queryInput := &metadata.QueryCondition{}
 	queryInput.Condition = mapstr.MapStr{
 		common.BKCloudIDField: mapstr.MapStr{
-			common.BKDBIN: cloudIDArr,
+			common.BKDBIN: sh.searchCloudIDs,
 		},
 	}
 	result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.ctx, sh.pheader, common.BKInnerObjIDPlat, queryInput)
@@ -696,6 +686,10 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		Fields:    strings.Join(sh.conds.hostCond.Fields, ","),
 	}
 
+	if sh.paged {
+		query.Start = 0
+	}
+
 	gResult, err := sh.lgc.CoreAPI.CoreService().Host().GetHosts(sh.ctx, sh.pheader, query)
 	if err != nil {
 		blog.Errorf("get hosts failed, err: %v, rid: %s", err, sh.ccRid)
@@ -710,17 +704,40 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		sh.noData = true
 	}
 
-	sh.totalHostCnt = gResult.Data.Count
+	if !sh.paged {
+		sh.totalHostCnt = gResult.Data.Count
+	}
+
+	if sh.searchedHostIDs == nil {
+		sh.searchedHostIDs = make([]int64, 0)
+	}
+	if sh.searchCloudIDs == nil {
+		sh.searchCloudIDs = make([]int64, 0)
+	}
+
 	for _, host := range gResult.Data.Info {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			return err
 		}
+
+		cloudID, err := host.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.Warnf("hostSearch not found  cloud id in hsot, hostInfo:%d, rid:%s", host, sh.ccRid)
+			continue
+		}
+		sh.searchedHostIDs = append(sh.searchedHostIDs, hostID)
+		sh.searchCloudIDs = append(sh.searchCloudIDs, cloudID)
+
 		sh.hostInfoArr = append(sh.hostInfoArr, hostInfoStruct{
 			hostID:   hostID,
 			hostInfo: host,
 		})
 	}
+
+	sh.searchedHostIDs = util.IntArrayUnique(sh.searchedHostIDs)
+	sh.searchCloudIDs = util.IntArrayUnique(sh.searchCloudIDs)
+
 	return nil
 }
 
@@ -743,31 +760,90 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 
 	var appIDArr []int64
 	if len(sh.conds.appCond.Condition) > 0 {
+		// already sorted by app id.
 		appIDArr = sh.idArr.moduleHostConfig.appIDArr
 		isAddHostID = true
 	}
 	if !isAddHostID {
 		return nil
 	}
+
 	var moduleHostConfigArr []metadata.HostModuleRelationRequest
 	if len(appIDArr) > 0 {
 		//
 		for _, appID := range appIDArr {
 			newModuleHostConfig := *(&moduleHostConfig)
-			newModuleHostConfig.ApplicationID = appID
+			newModuleHostConfig.ApplicationID = int64(appID)
 			moduleHostConfigArr = append(moduleHostConfigArr, newModuleHostConfig)
 		}
 	} else {
 		moduleHostConfigArr = append(moduleHostConfigArr, moduleHostConfig)
 	}
-	hostIDArr := make([]int64, 0)
+
+	var hostIDArr []int64
+	mapLock := sync.Mutex{}
+	hostIDMap := make(map[int64]struct{})
+	pipe := make(chan struct{}, 50)
+	wg := sync.WaitGroup{}
+	var errOccur error
 	for _, moduleHostConfig := range moduleHostConfigArr {
-		hostIDArrItem, err := sh.lgc.GetHostIDByCond(sh.ctx, moduleHostConfig)
-		if err != nil {
-			blog.Errorf("GetHostIDByCond get hosts failed, err: %v, rid: %s", err, sh.ccRid)
-			return err
+		wg.Add(1)
+		go func(relation metadata.HostModuleRelationRequest) {
+			pipe <- struct{}{}
+
+			hostIDArrItem, err := sh.lgc.GetAllHostIDByCond(sh.ctx, relation)
+			if err != nil {
+				<-pipe
+				wg.Done()
+				blog.Errorf("GetHostIDByCond get hosts failed, err: %v, rid: %s", err, sh.ccRid)
+				errOccur = err
+				return
+			}
+			mapLock.Lock()
+			for _, id := range hostIDArrItem {
+				hostIDMap[id] = struct{}{}
+			}
+			mapLock.Unlock()
+
+			<-pipe
+			wg.Done()
+		}(moduleHostConfig)
+	}
+	wg.Wait()
+
+	if errOccur != nil {
+		return errOccur
+	}
+
+	allHostID := make([]int64, 0)
+	for id := range hostIDMap {
+		allHostID = append(allHostID, id)
+	}
+	sort.Slice(allHostID, func(i, j int) bool {
+		return allHostID[i] < allHostID[j]
+	})
+	sh.totalHostCnt = len(allHostID)
+	if len(sh.conds.appCond.Condition) <= 0 {
+		start := sh.hostSearchParam.Page.Start
+		limit := sh.hostSearchParam.Page.Limit
+		if len(allHostID) >= limit {
+			pagedHosts := make([]int64, 0)
+			if len(allHostID) <= limit {
+				pagedHosts = allHostID
+			} else {
+				if sh.hostSearchParam.Page.Start <= 0 {
+					pagedHosts = allHostID[0:limit]
+				} else {
+					pagedHosts = allHostID[start-1 : start+limit-1]
+				}
+			}
+			hostIDArr = pagedHosts
+			sh.paged = true
+		} else {
+			hostIDArr = allHostID
 		}
-		hostIDArr = append(hostIDArr, hostIDArrItem...)
+	} else {
+		hostIDArr = allHostID
 	}
 
 	// 合并两种涞源的根据 host_id 查询的 condition
@@ -801,6 +877,10 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 				blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v, rid: %s", cond.Value, sh.ccRid)
 				return sh.ccErr.New(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
 			}
+			hostIDMap := make(map[int64]bool)
+			for _, hostID := range hostIDArr {
+				hostIDMap[hostID] = true
+			}
 			shareIDs := make([]int64, 0)
 			for _, hostID := range value {
 				id, err := util.GetInt64ByInterface(hostID)
@@ -808,7 +888,8 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 					blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v, rid: %s", cond.Value, sh.ccRid)
 					return sh.ccErr.New(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
 				}
-				if in := util.InArray(id, hostIDArr); in == true {
+
+				if hostIDMap[id] {
 					shareIDs = append(shareIDs, id)
 				}
 			}

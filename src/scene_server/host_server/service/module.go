@@ -96,7 +96,7 @@ func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	if err := audit.SaveAudit(srvData.ctx, config.ApplicationID, srvData.user, ""); err != nil {
+	if err := audit.SaveAudit(srvData.ctx); err != nil {
 		blog.Errorf("host module relation, save audit log failed, err: %v,input:%+v,rid:%s", err, config, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
@@ -371,10 +371,21 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 	if data.AppID != 0 {
 		cond.ApplicationID = data.AppID
 	}
+	pageSize := 500
 	if len(data.HostID) > 0 {
+		if len(data.HostID) > pageSize {
+			blog.Errorf("GetHostModuleRelation host id length %d exceeds 500, rid: %s", len(data.HostID), srvData.rid)
+			_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommXXExceedLimit, common.BKHostIDField, pageSize)})
+		}
 		cond.HostIDArr = data.HostID
 	}
-	cond.Page.Limit = common.BKNoLimit
+	if data.Page.Limit == 0 {
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "page.limit")})
+	}
+	if data.Page.Limit > pageSize {
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommPageLimitIsExceeded)})
+	}
+	cond.Page = data.Page
 
 	moduleHostConfig, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)
 	if err != nil {
@@ -443,23 +454,19 @@ func (s *Service) moveHostToDefaultModule(req *restful.Request, resp *restful.Re
 	bizID := conf.ApplicationID
 
 	moduleFilter := make(map[string]interface{})
-	var moduleNameLogKey string
 	var action authmeta.Action
 	if defaultModuleFlag == common.DefaultResModuleFlag {
 		// 空闲机
-		moduleNameLogKey = "idle"
 		action = authmeta.MoveHostToBizIdleModule
 		moduleFilter[common.BKDefaultField] = common.DefaultResModuleFlag
 		moduleFilter[common.BKModuleNameField] = common.DefaultResModuleName
 	} else if defaultModuleFlag == common.DefaultFaultModuleFlag {
 		// 故障机器
-		moduleNameLogKey = "fault"
 		action = authmeta.MoveHostToBizFaultModule
 		moduleFilter[common.BKDefaultField] = common.DefaultFaultModuleFlag
 		moduleFilter[common.BKModuleNameField] = common.DefaultFaultModuleName
 	} else if defaultModuleFlag == common.DefaultRecycleModuleFlag {
 		// 待回收
-		moduleNameLogKey = "recycle"
 		action = authmeta.MoveHostToBizRecycleModule
 		moduleFilter[common.BKDefaultField] = common.DefaultRecycleModuleFlag
 		moduleFilter[common.BKModuleNameField] = common.DefaultRecycleModuleName
@@ -529,7 +536,7 @@ func (s *Service) moveHostToDefaultModule(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	if err := audit.SaveAudit(srvData.ctx, conf.ApplicationID, srvData.user, "host to "+moduleNameLogKey+" module"); err != nil {
+	if err := audit.SaveAudit(srvData.ctx); err != nil {
 		blog.ErrorJSON("move host to default module failed, save audit log failed, input:%s, err:%s, rid:%s", conf, err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return

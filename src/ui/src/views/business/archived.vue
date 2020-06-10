@@ -42,6 +42,34 @@
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
+
+        <bk-dialog
+            class="recovery-dialog"
+            :draggable="false"
+            :mask-close="false"
+            :title="$t('恢复业务')"
+            header-position="left"
+            v-model="recovery.show">
+            <div class="recovery-dialog-content">
+                <span class="label-title">
+                    {{$t('业务名')}}
+                    <font color="red">*</font>
+                </span>
+                <div class="cmdb-form-item" :class="{ 'is-error': errors.has('bizName') }">
+                    <cmdb-form-singlechar
+                        v-model="recovery.name"
+                        v-validate="'required|singlechar|length:256'"
+                        name="bizName"
+                        :placeholder="$t('请输入xx', { name: $t('业务名') })">
+                    </cmdb-form-singlechar>
+                    <p class="form-error">{{errors.first('bizName')}}</p>
+                </div>
+            </div>
+            <div class="revocer-foolter" slot="footer">
+                <bk-button class="mr10" theme="primary" @click="recoveryBiz">{{$t('确定')}}</bk-button>
+                <bk-button @click="recovery.show = false">{{$t('取消')}}</bk-button>
+            </div>
+        </bk-dialog>
     </div>
 </template>
 
@@ -69,6 +97,11 @@
                             emptyText: this.$t('bk.table.emptyText')
                         }
                     }
+                },
+                recovery: {
+                    show: false,
+                    biz: {},
+                    name: ''
                 }
             }
         },
@@ -103,9 +136,6 @@
         methods: {
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('objectBiz', ['searchBusiness', 'recoveryBusiness']),
-            back () {
-                this.$router.go(-1)
-            },
             setTableHeader () {
                 const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, ['bk_biz_name'])
                 this.header = headerProperties.map(property => {
@@ -163,28 +193,27 @@
                     }
                 }
                 if (this.filter.name) {
-                    params.condition.bk_biz_name = { '$regex': this.filter.name }
+                    params.condition.bk_biz_name = this.filter.name
                 }
                 return params
             },
             handleRecovery (biz) {
-                this.$bkInfo({
-                    title: this.$t('是否确认恢复业务？'),
-                    subTitle: this.$t('恢复业务提示', { bizName: biz['bk_biz_name'] }),
-                    confirmFn: () => {
-                        this.recoveryBiz(biz)
-                    }
-                })
+                this.recovery.show = true
+                this.recovery.name = biz.bk_biz_name
+                this.recovery.bizId = biz.bk_biz_id
             },
-            recoveryBiz (biz) {
+            async recoveryBiz () {
+                if (!await this.$validator.validateAll()) return
                 this.recoveryBusiness({
+                    bizId: this.recovery.bizId,
                     params: {
-                        'bk_biz_id': biz['bk_biz_id']
+                        'bk_biz_name': this.recovery.name
                     },
                     config: {
                         cancelWhenRouteChange: false
                     }
                 }).then(() => {
+                    this.recovery.show = false
                     this.$http.cancel('post_searchBusiness_$ne_disabled')
                     this.$success(this.$t('恢复业务成功'))
                     this.getTableData()
@@ -212,6 +241,18 @@
             width: 220px;
             margin-right: 5px;
             @include inlineBlock;
+        }
+    }
+    .recovery-dialog {
+        /deep/ .bk-dialog-header {
+            padding-bottom: 14px;
+        }
+        .label-title {
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .revocer-foolter {
+            font-size: 0;
         }
     }
 </style>

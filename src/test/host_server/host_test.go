@@ -1277,7 +1277,12 @@ var _ = Describe("list_hosts_topo test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data)
-		Expect(j).To(MatchRegexp(fmt.Sprintf(`\{"count":2,"info":\[\{"host":\{.*"bk_host_id":%d.*\},"topo":\[\{"bk_set_id":%d,"bk_set_name":"cc_set","module":\[\{"bk_module_id":%d,"bk_module_name":"cc_module"\},\{"bk_module_id":%d,"bk_module_name":"cc_module1"\}\]\}\]\},\{"host":\{.*"bk_host_id":%d.*\}\]\}`, hostId1, setId, moduleId1, moduleId2, hostId2)))
+		Expect(j).To(MatchRegexp(`.*"count":2.*`))
+		Expect(j).To(MatchRegexp(fmt.Sprintf(`.*"bk_host_id":%d.*`, hostId1)))
+		Expect(j).To(MatchRegexp(fmt.Sprintf(`.*"bk_host_id":%d.*`, hostId2)))
+		Expect(j).To(MatchRegexp(fmt.Sprintf(`.*"bk_set_id":%d.*`, setId)))
+		Expect(j).To(MatchRegexp(fmt.Sprintf(`.*"bk_module_id":%d.*`, moduleId1)))
+		Expect(j).To(MatchRegexp(fmt.Sprintf(`.*"bk_module_id":%d.*`, moduleId2)))
 	})
 })
 

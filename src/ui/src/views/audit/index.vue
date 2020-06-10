@@ -1,9 +1,20 @@
 <template>
-    <div class="audit-wrapper">
-        <div class="title-content">
-            <div class="group-content" v-if="isAdminView">
-                <span class="title-name" :title="$t('业务')">{{$t('业务')}}</span>
-                <div class="selector-content">
+    <div class="audit-layout">
+        <bk-tab
+            class="audit-tab"
+            type="unborder-card"
+            :active.sync="active"
+            @tab-change="handleTabChange">
+            <bk-tab-panel
+                v-for="panel in tabPanels"
+                v-bind="panel"
+                :key="panel.id">
+            </bk-tab-panel>
+        </bk-tab>
+        <div class="filter">
+            <div class="option" v-if="active === 'business'">
+                <span class="name" :title="$t('业务')">{{$t('业务')}}</span>
+                <div class="content">
                     <bk-select v-model="filter.bizId" searchable font-size="medium">
                         <bk-option v-for="business in authorizedBusiness"
                             :key="business.bk_biz_id"
@@ -13,111 +24,128 @@
                     </bk-select>
                 </div>
             </div>
-            <div class="group-content">
-                <span class="title-name" title="IP">IP</span>
-                <div class="selector-content">
-                    <bk-input class="cmdb-form-input" type="text"
+            <div class="option action">
+                <span class="name" :title="$t('功能板块动作')">{{$t('功能板块动作')}}</span>
+                <div class="content">
+                    <bk-select
+                        searchable
+                        multiple
+                        v-model="filter.action"
                         font-size="medium"
-                        :placeholder="$t('使用逗号分隔')"
-                        v-model.trim="filter.bkIP">
-                    </bk-input>
-                </div>
-            </div>
-            <div class="group-content">
-                <span class="title-name" :title="$t('模型')">{{$t('模型')}}</span>
-                <div class="selector-content">
-                    <bk-select v-model="filter.classify" searchable font-size="medium">
-                        <bk-option-group v-for="group in filterClassifications"
-                            :key="group.id"
-                            :name="group.name">
-                            <bk-option v-for="classify in group.children"
-                                :key="classify.id"
-                                :id="classify.id"
-                                :name="classify.name">
+                        :popover-min-width="160">
+                        <bk-option-group
+                            v-for="module in actionList"
+                            :key="module.id"
+                            :id="module.id"
+                            :name="$t(module.name)">
+                            <bk-option
+                                v-for="option in module.operations"
+                                :key="option.id"
+                                :id="option.id"
+                                :name="$t(option.name)">
                             </bk-option>
                         </bk-option-group>
                     </bk-select>
                 </div>
             </div>
-            <div class="group-content">
-                <span class="title-name" :title="$t('类型')">{{$t('类型')}}</span>
-                <div class="selector-content">
-                    <bk-select
-                        font-size="medium"
-                        v-model="filter.bkOpType"
-                        :clearable="false">
-                        <bk-option v-for="option in operateTypeList"
-                            :key="option.id"
-                            :id="option.id"
-                            :name="option.name">
-                        </bk-option>
-                    </bk-select>
+            <div class="option resource">
+                <span class="name" :title="$t('操作对象')">{{$t('操作对象')}}</span>
+                <div class="content">
+                    <bk-input v-model="filter.resourceName" clearable></bk-input>
                 </div>
             </div>
-            <div class="group-content">
-                <span class="title-name" :title="$t('时间')">{{$t('时间')}}</span>
-                <div class="selector-content date-range-content">
+            <div class="option">
+                <span class="name" :title="$t('时间')">{{$t('时间')}}</span>
+                <div class="content">
                     <cmdb-form-date-range
                         class="date-range"
                         :clearable="false"
                         font-size="medium"
-                        v-model="filter.bkCreateTime">
+                        v-model="filter.time">
                     </cmdb-form-date-range>
                 </div>
             </div>
-            <div class="group-content button-group">
+            <div class="option operator">
+                <span class="name" :title="$t('操作账号')">{{$t('操作账号')}}</span>
+                <div class="content">
+                    <cmdb-form-objuser
+                        v-model="filter.operator"
+                        :exclude="false"
+                        :multiple="false"
+                        :palceholder="$t('操作账号')">
+                    </cmdb-form-objuser>
+                </div>
+            </div>
+            <div class="option instance">
+                <span class="name" :title="$t('实例ID')">{{$t('实例ID')}}</span>
+                <div class="content">
+                    <bk-select
+                        searchable
+                        v-model="filter.module"
+                        font-size="medium"
+                        :popover-min-width="120">
+                        <bk-option v-for="module in operationTypes"
+                            :key="module.id"
+                            :id="module.id"
+                            :name="module.name">
+                        </bk-option>
+                    </bk-select>
+                    <bk-input v-model="filter.resourceId" :placeholder="$t('请输入xx', { name: 'ID' })" :clearable="true"></bk-input>
+                </div>
+            </div>
+            <div class="option option-btn">
                 <bk-button theme="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1, $event)">{{$t('查询')}}</bk-button>
+                <bk-button @click="handleClearFilter">{{$t('清空')}}</bk-button>
             </div>
         </div>
         <bk-table
             v-bkloading="{ isLoading: $loading('getOperationLog') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 200"
+            :max-height="$APP.height - 310"
             :row-style="{ cursor: 'pointer' }"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
             <bk-table-column
-                sortable="custom"
-                prop="operator"
+                prop="resource_type"
                 class-name="is-highlight"
-                :label="$t('操作账号')">
+                :label="$t('功能板块')"
+                :formatter="getResourceType">
             </bk-table-column>
             <bk-table-column
-                sortable="custom"
-                prop="op_target"
-                :label="$t('对象')">
+                prop="action"
+                :label="$t('动作')"
+                :formatter="getResourceAction">
             </bk-table-column>
             <bk-table-column
-                sortable="custom"
-                prop="op_desc"
-                :label="$t('描述')"
-                show-overflow-tooltip>
+                v-if="active === 'business'"
+                prop="bk_biz_name"
+                :label="$t('所属业务')">
+                <template slot-scope="{ row }">{{getBusinessName(row)}}</template>
             </bk-table-column>
             <bk-table-column
-                sortable="custom"
-                prop="bk_biz_id"
-                :label="$t('所属业务')"
-                show-overflow-tooltip>
-                <template slot-scope="{ row }">{{row.bk_biz_name}}</template>
+                prop="resource_name"
+                :label="$t('操作实例')"
+                :formatter="getResourceName">
             </bk-table-column>
             <bk-table-column
-                sortable="custom"
-                prop="ext_key"
-                label="IP">
+                :label="$t('操作描述')">
+                <template slot-scope="{ row }">
+                    {{`${getResourceAction(row)}"${getTargetName(row)}"`}}
+                </template>
             </bk-table-column>
             <bk-table-column
+                width="160"
                 sortable="custom"
-                prop="op_type"
-                :label="$t('类型')">
-                <template slot-scope="{ row }">{{row.op_type_name}}</template>
-            </bk-table-column>
-            <bk-table-column
-                sortable="custom"
-                prop="op_time"
+                prop="operation_time"
                 :label="$t('操作时间')">
+                <template slot-scope="{ row }">{{$tools.formatTime(row.operation_time)}}</template>
+            </bk-table-column>
+            <bk-table-column
+                prop="user"
+                :label="$t('操作账号')">
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
         </bk-table>
@@ -127,53 +155,68 @@
             :is-show.sync="details.isShow"
             :width="800"
             :title="$t('操作详情')">
-            <v-details :details="details.data" slot="content" v-if="details.isShow"></v-details>
+            <template slot="content" v-if="details.isShow">
+                <v-details
+                    v-if="details.showDetailsList.includes(details.data.audit_type)"
+                    :show-business="active === 'business'"
+                    :details="details.data">
+                </v-details>
+                <v-json-details v-else :details="details.data"></v-json-details>
+            </template>
         </bk-sideslider>
     </div>
 </template>
 
 <script>
-    import vDetails from '@/components/audit-history/details'
-    import { mapActions, mapGetters } from 'vuex'
+    import { mapGetters, mapState } from 'vuex'
     import moment from 'moment'
+    import vDetails from '@/components/audit-history/details'
+    import vJsonDetails from '@/components/audit-history/details-json'
     export default {
         components: {
-            vDetails
+            vDetails,
+            vJsonDetails
         },
         data () {
+            // 受审计日志性能影响，限制最多显示100条
+            const paginationConfig = this.$tools.getDefaultPaginationConfig()
+            paginationConfig['limit-list'] = paginationConfig['limit-list'].filter(limit => limit !== 500)
             return {
-                filter: { // 查询筛选参数
+                active: 'business',
+                tabPanels: [
+                    {
+                        name: 'business',
+                        label: this.$t('业务')
+                    }, {
+                        name: 'resource',
+                        label: this.$t('资源')
+                    }, {
+                        name: 'other',
+                        label: this.$t('其他'),
+                        visible: false
+                    }
+                ],
+                filter: {
                     bizId: '',
-                    bkIP: '',
-                    classify: '',
-                    bkOpType: 0,
-                    bkCreateTime: []
+                    action: [],
+                    resourceName: '',
+                    operator: '',
+                    instanceId: '',
+                    module: '',
+                    time: [
+                        this.$tools.formatTime(moment().subtract(1, 'days'), 'YYYY-MM-DD'),
+                        this.$tools.formatTime(moment(), 'YYYY-MM-DD')
+                    ]
                 },
-                operateTypeList: [{
-                    id: 0,
-                    name: this.$t('全部')
-                }, {
-                    id: 1,
-                    name: this.$t('新增')
-                }, {
-                    id: 2,
-                    name: this.$t('修改')
-                }, {
-                    id: 3,
-                    name: this.$t('删除')
-                }, {
-                    id: 100,
-                    name: this.$t('关系变更')
-                }],
                 table: {
                     list: [],
                     pagination: {
                         current: 1,
                         count: 0,
-                        ...this.$tools.getDefaultPaginationConfig()
+                        ...paginationConfig
                     },
-                    defaultSort: '-op_time',
-                    sort: '-op_time',
+                    defaultSort: '-operation_time',
+                    sort: '-operation_time',
                     stuff: {
                         // 如果初始化时有查询参数，则认为处在查询模式
                         type: Object.keys(this.$route.query).length ? 'search' : 'default',
@@ -184,119 +227,154 @@
                 },
                 details: {
                     isShow: false,
-                    data: null
+                    data: null,
+                    showDetailsList: ['host', 'model_instance', 'business', 'cloud_area']
                 }
             }
         },
         computed: {
-            ...mapGetters(['isAdminView']),
-            ...mapGetters('objectBiz', [
-                'authorizedBusiness',
-                'bizId'
-            ]),
-            ...mapGetters('objectModelClassify', ['classifications']),
-            filterClassifications () {
-                const classifications = []
-                this.classifications.map(classify => {
-                    if (classify['bk_classification_id'] === 'bk_biz_topo') {
-                        classifications.push({
-                            name: classify['bk_classification_name'],
-                            children: [{
-                                id: 'set',
-                                name: this.$t('集群')
-                            }, {
-                                id: 'module',
-                                name: this.$t('模块')
-                            }]
-                        })
-                    } else if (classify['bk_classification_id'] !== 'bk_host_manage') {
-                        if (classify['bk_objects'].length) {
-                            const children = []
-                            classify['bk_objects'].map(({ bk_obj_id: bkObjId, bk_obj_name: bkObjName }) => {
-                                children.push({
-                                    id: bkObjId,
-                                    name: bkObjName
-                                })
-                            })
-                            classifications.push({
-                                name: classify['bk_classification_name'],
-                                children
-                            })
-                        }
+            ...mapState('operationAudit', ['funcActions']),
+            ...mapGetters('objectBiz', ['authorizedBusiness']),
+            actionList () {
+                return this.funcActions[this.active] || []
+            },
+            operationTypes () {
+                const list = []
+                const topoOperation = [{
+                    id: 'module',
+                    name: '模块'
+                }, {
+                    id: 'set',
+                    name: '集群'
+                }]
+                this.actionList.forEach(item => {
+                    if (item.id === 'biz_topology') {
+                        list.push(...topoOperation)
+                    } else {
+                        list.push(item)
                     }
                 })
-                return classifications
+                return list.map(item => ({
+                    id: item.id,
+                    name: this.$t(item.name)
+                }))
+            },
+            funcModules () {
+                const modules = {}
+                this.actionList.forEach(item => {
+                    modules[item.id] = this.$t(item.name)
+                })
+                return modules
+            },
+            actionSet () {
+                const actionSet = {}
+                const operations = this.actionList.reduce((acc, item) => acc.concat(item.operations), [])
+                operations.forEach(action => {
+                    actionSet[action.id] = this.$t(action.name)
+                })
+                return actionSet
             },
             params () {
-                let opTime = []
-                if (this.filter.bkCreateTime.length) {
-                    opTime = [
-                        this.filter.bkCreateTime[0] ? this.filter.bkCreateTime[0] + ' 00:00:00' : '',
-                        this.filter.bkCreateTime[1] ? this.filter.bkCreateTime[1] + ' 23:59:59' : ''
+                let time = []
+                if (this.filter.time.length) {
+                    time = [
+                        this.filter.time[0] ? this.filter.time[0] + ' 00:00:00' : '',
+                        this.filter.time[1] ? this.filter.time[1] + ' 23:59:59' : ''
                     ]
                 }
                 const params = {
                     condition: {
-                        op_time: opTime
+                        operation_time: time,
+                        bk_biz_id: this.filter.bizId ? Number(this.filter.bizId) : null,
+                        user: this.filter.operator,
+                        resource_name: this.filter.resourceName,
+                        resource_id: this.filter.resourceId ? Number(this.filter.resourceId) : null,
+                        category: this.active
                     },
                     start: (this.table.pagination.current - 1) * this.table.pagination.limit,
                     limit: this.table.pagination.limit,
                     sort: this.table.sort
                 }
-                this.setParams(params.condition, 'bk_biz_id', this.isAdminView ? this.filter.bizId : this.bizId)
-                this.setParams(params.condition, 'op_type', this.filter.bkOpType)
-                this.setParams(params.condition, 'op_target', this.filter.classify)
-                if (this.filter.bkIP) { // 将IP分隔成查询数组
-                    const ipArray = []
-                    this.filter.bkIP.split(',').map((ip, index) => {
-                        if (ip) {
-                            ipArray.push(ip.trim())
+                const operations = this.filter.action
+                const moduleName = this.filter.module
+                if (operations.length) {
+                    const types = []
+                    const action = []
+                    const label = []
+                    operations.forEach(item => {
+                        const resource = item.split('-')
+                        types.push(resource[0])
+                        action.push(resource[1])
+                        if (resource[2] && !label.includes(resource[2])) {
+                            label.push(resource[2])
                         }
                     })
-                    this.setParams(params.condition, 'ext_key', { $in: ipArray })
+                    if (moduleName && this.filter.resourceId && !types.includes(moduleName)) {
+                        types.push(moduleName)
+                    }
+                    params.condition.resource_type = types
+                    params.condition.action = action
+                    label.length && (params.condition.label = label)
+                } else if (moduleName && this.filter.resourceId) {
+                    params.condition.resource_type = [moduleName]
                 }
                 return params
-            },
-            /* 业务ID与Name的mapping */
-            applicationMap () {
-                const applicationMap = {}
-                this.authorizedBusiness.forEach((application, index) => {
-                    applicationMap[application['bk_biz_id']] = application['bk_biz_name']
-                })
-                return applicationMap
-            },
-            /* 操作类型map */
-            operateTypeMap () {
-                const operateTypeMap = {}
-                this.operateTypeList.forEach((operateType, index) => {
-                    operateTypeMap[operateType['id']] = operateType['name']
-                })
-                return operateTypeMap
             }
         },
-        created () {
-            this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name')
-        },
-        mounted () {
-            this.initDate()
+        async created () {
+            this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+            await this.getTableData()
         },
         methods: {
-            ...mapActions('operationAudit', ['getOperationLog']),
-            setParams (obj, key, value) {
-                if (value) {
-                    obj[key] = value
+            getResourceType (row) {
+                if (row.label === null) {
+                    const type = row.resource_type
+                    if (type === 'model_instance') {
+                        const objId = row.operation_detail.bk_obj_id
+                        const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
+                        return model.bk_obj_name || '--'
+                    }
+                    return this.funcModules[type] || '--'
                 }
+                const key = Object.keys(row.label)
+                return this.funcModules[key[0]] || '--'
             },
-            initDate () {
-                this.filter.bkCreateTime = [
-                    this.$tools.formatTime(moment().subtract(1, 'days'), 'YYYY-MM-DD'),
-                    this.$tools.formatTime(moment(), 'YYYY-MM-DD')
-                ]
-                this.getTableData()
+            getResourceName (row) {
+                // 转移主机类的操作实例
+                if (['assign_host', 'unassign_host', 'transfer_host_module'].includes(row.action)) {
+                    return row.bk_host_innerip || row.operation_detail.bk_host_innerip || '--'
+                }
+                // 关联关系的操作实例
+                if (['instance_association'].includes(row.resource_type)) {
+                    return row.operation_detail.src_instance_name || '--'
+                }
+                // 自定义字段的操作实例
+                if (['model_attribute'].includes(row.resource_type)) {
+                    return `${row.operation_detail.bk_obj_name}/${row.operation_detail.resource_name}`
+                }
+                return this.$tools.getValue(row, 'operation_detail.resource_name') || '--'
+            },
+            getTargetName (row) {
+                if (row.resource_type === 'instance_association') {
+                    return row.operation_detail.target_instance_name
+                }
+                return this.getResourceName(row)
+            },
+            getResourceAction (row) {
+                if (row.label) {
+                    const label = Object.keys(row.label)[0]
+                    return this.actionSet[`${row.resource_type}-${row.action}-${label}`]
+                }
+                return this.actionSet[`${row.resource_type}-${row.action}`]
+            },
+            getBusinessName (row) {
+                return row.bk_biz_name
+                    || this.$tools.getValue(row, 'operation_detail.bk_biz_name')
+                    || '--'
             },
             async getTableData (event) {
                 try {
-                    const res = await this.getOperationLog({
+                    const res = await this.$store.dispatch('operationAudit/getOperationLog', {
                         params: this.params,
                         config: {
                             globalPermission: false,
@@ -304,7 +382,7 @@
                             requestId: 'getOperationLog'
                         }
                     })
-                    this.initTableList(res.info)
+                    this.table.list = res.info
                     this.table.pagination.count = res.count
                     // 有传入event参数时认为来自用户搜索
                     if (event) {
@@ -321,15 +399,22 @@
                     }
                 }
             },
-            initTableList (list) {
-                if (list) {
-                    list.map(item => {
-                        item['bk_biz_name'] = this.applicationMap[item['bk_biz_id']]
-                        item['op_type_name'] = this.operateTypeMap[item['op_type']]
-                        item['op_time'] = this.$tools.formatTime(moment(item['op_time']))
-                    })
-                    this.table.list = list
-                }
+            handleResetFilter () {
+                this.filter.bizId = ''
+                this.filter.action = []
+                this.filter.resourceName = ''
+                this.filter.operator = ''
+                this.filter.resourceId = ''
+                this.filter.module = ''
+                this.filter.time = [
+                    this.$tools.formatTime(moment().subtract(1, 'days'), 'YYYY-MM-DD'),
+                    this.$tools.formatTime(moment(), 'YYYY-MM-DD')
+                ]
+            },
+            handleTabChange (tab) {
+                this.table.list = []
+                this.handleResetFilter()
+                this.handlePageChange(1)
             },
             handlePageChange (current, event) {
                 this.table.pagination.current = current
@@ -346,59 +431,109 @@
             handleRowClick (item) {
                 this.details.data = item
                 this.details.isShow = true
+            },
+            handleClearFilter () {
+                this.handleResetFilter()
+                this.handlePageChange(1)
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .audit-wrapper {
-        padding: 15px 20px 0;
-    }
-    .title-content{
-        padding: 0 0 14px 0;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        .group-content{
-            flex: 1 1;
-            margin: 0 1.5% 0 0;
-            white-space: nowrap;
-            font-size: 0;
-            &.button-group {
-                text-align: right;
-                flex: 0 0 90px;
-                margin: 0;
+    .audit-layout{
+        padding: 0 20px;
+        .audit-tab {
+            height: auto;
+            /deep/ .bk-tab-header {
+                padding: 0;
             }
-            .selector-content {
-                display: inline-block;
-                vertical-align: middle;
-                width: calc(100% - 40px);
+        }
+        .filter {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-direction: row;
+            flex-wrap: wrap;
+            padding: 22px 0 10px 0;
+            .option {
+                flex: none;
+                width: 27%;
+                margin: 0 1.5% 12px 0;
+                white-space: nowrap;
+                font-size: 0;
+                display: flex;
+                align-items: center;
+                &.instance {
+                    .bk-select {
+                        width: 40%;
+                        margin-right: 5px;
+                    }
+                    .bk-form-control {
+                        width: calc(60% - 5px);
+                    }
+                }
+
+                &.action,
+                &.operator {
+                    .name {
+                        width: 96px;
+                        text-align: right;
+                    }
+                }
+
+                &.resource,
+                &.instance {
+                    .name {
+                        width: 70px;
+                        text-align: right;
+                    }
+                }
+            }
+            .option-btn {
+                width: auto;
+                .bk-button + .bk-button {
+                    margin-left: 8px;
+                }
+            }
+            .name {
+                font-size: 14px;
+                padding-right: 10px;
+                @include ellipsis;
+            }
+            .content {
+                flex: 1;
+                width: calc(100% - 96px);
                 .bk-select {
                     width: 100%;
                 }
             }
-            .search-btn{
-                padding: 0 19px;
-                height: 36px;
-                line-height: 34px;
-                font-size: 14px;
+        }
+
+    }
+
+    [bk-language="en"] {
+        .filter {
+            .name {
+                min-width: 70px;
+                text-align: right;
             }
-            .title-name{
-                display: inline-block;
-                vertical-align: middle;
-                min-width: 40px;
-                max-width: 48px;
-                font-size: 14px;
-                padding-right: 5px;
-                @include ellipsis;
-            }
-            .date-range-content {
-                width: calc(100% - 10px);
-                .date-range {
-                    width: 100%;
+
+            .option {
+                &.action,
+                &.operator {
+                    .name {
+                        width: 146px;
+                        text-align: right;
+                    }
+                }
+
+                &.resource,
+                &.instance {
+                    .name {
+                        width: 130px;
+                        text-align: right;
+                    }
                 }
             }
         }

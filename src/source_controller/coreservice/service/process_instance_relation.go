@@ -18,156 +18,167 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateProcessInstanceRelation(ctx *rest.Contexts) {
 	relation := &metadata.ProcessInstanceRelation{}
-	if err := mapstr.DecodeFromMapStr(relation, data); err != nil {
-		blog.Errorf("CreateProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
-		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(relation); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	result, err := s.core.ProcessOperation().CreateProcessInstanceRelation(params, relation)
+	result, err := s.core.ProcessOperation().CreateProcessInstanceRelation(ctx.Kit, relation)
 	if err != nil {
-		blog.Errorf("CreateProcessInstanceRelation failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("CreateProcessInstanceRelation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) GetProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	processInstanceIDStr := pathParams(common.BKProcIDField)
+func (s *coreService) GetProcessInstanceRelation(ctx *rest.Contexts) {
+	processInstanceIDStr := ctx.Request.PathParameter(common.BKProcIDField)
 	if len(processInstanceIDStr) == 0 {
-		blog.Errorf("GetProcessInstanceRelation failed, path parameter `%s` empty, rid: %s", common.BKProcIDField, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKProcIDField)
+		blog.Errorf("GetProcessInstanceRelation failed, path parameter `%s` empty, rid: %s", common.BKProcIDField, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcIDField))
+		return
 	}
 
 	serviceTemplateID, err := strconv.ParseInt(processInstanceIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("GetProcessInstanceRelation failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKProcIDField, processInstanceIDStr, err, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKProcIDField)
+		blog.Errorf("GetProcessInstanceRelation failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKProcIDField, processInstanceIDStr, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcIDField))
+		return
 	}
 
-	result, err := s.core.ProcessOperation().GetProcessInstanceRelation(params, serviceTemplateID)
+	result, err := s.core.ProcessOperation().GetProcessInstanceRelation(ctx.Kit, serviceTemplateID)
 	if err != nil {
-		blog.Errorf("GetProcessInstanceRelation failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("GetProcessInstanceRelation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) ListProcessInstanceRelation(ctx *rest.Contexts) {
 	// filter parameter
 	fp := metadata.ListProcessInstanceRelationOption{}
 
-	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
-		blog.Errorf("ListProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommHTTPReadBodyFailed)
+	if err := ctx.DecodeInto(&fp); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	if fp.BusinessID == 0 {
-		blog.Errorf("ListProcessInstanceRelation failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+		blog.Errorf("ListProcessInstanceRelation failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
 	}
 
 	blog.Debug("fp: %v", fp.ServiceInstanceIDs)
-	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, fp)
+	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(ctx.Kit, fp)
 	if err != nil {
-		blog.Errorf("ListProcessInstanceRelation failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("ListProcessInstanceRelation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) ListHostProcessRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) ListHostProcessRelation(ctx *rest.Contexts) {
 	// filter parameter
 	input := new(metadata.ListProcessInstancesWithHostOption)
-	if err := data.MarshalJSONInto(input); err != nil {
-		blog.Errorf("ListHostProcessRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
-		return nil, err
-	}
-
+    if err := ctx.DecodeInto(input); err != nil {
+        blog.Errorf("ListHostProcessRelation failed, decode request body failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+        ctx.RespAutoError(err)
+        return
+    }
+    
 	if input.BizID == 0 {
-		blog.Errorf("ListHostProcessRelation failed, business id can't be empty, bk_biz_id: %d, rid: %s", input.BizID, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+		ctx.RespErrorCodeF(common.CCErrCommParamsNeedSet, "biz id is empty", common.BKAppIDField)
+        return
 	}
 
 	if input.Page.IsIllegal() {
-		blog.Errorf("ListHostProcessRelation failed, business id can't be empty, bk_biz_id: %d, rid: %s", input.BizID, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "page")
+		blog.Errorf("ListHostProcessRelation failed, business id can't be empty, bk_biz_id: %d, rid: %s", input.BizID, ctx.Kit.Rid)
+		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid,"illegal request page", "page")
 	}
 
-	result, err := s.core.ProcessOperation().ListHostProcessRelation(params, input)
+	result, err := s.core.ProcessOperation().ListHostProcessRelation(ctx.Kit, input)
 	if err != nil {
-		blog.Errorf("ListHostProcessRelation failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("ListHostProcessRelation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 	}
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) UpdateProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	processInstanceIDStr := pathParams(common.BKProcIDField)
+func (s *coreService) UpdateProcessInstanceRelation(ctx *rest.Contexts) {
+	processInstanceIDStr := ctx.Request.PathParameter(common.BKProcIDField)
 	if len(processInstanceIDStr) == 0 {
-		blog.Errorf("UpdateProcessInstanceRelation failed, path parameter `%s` empty, rid: %s", common.BKProcIDField, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKProcIDField)
+		blog.Errorf("UpdateProcessInstanceRelation failed, path parameter `%s` empty, rid: %s", common.BKProcIDField, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcIDField))
+		return
 	}
 
 	processInstanceID, err := strconv.ParseInt(processInstanceIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("UpdateProcessInstanceRelation failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKProcIDField, processInstanceIDStr, err, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKProcIDField)
+		blog.Errorf("UpdateProcessInstanceRelation failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKProcIDField, processInstanceIDStr, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcIDField))
+		return
 	}
 
 	relation := metadata.ProcessInstanceRelation{}
-	if err := mapstr.DecodeFromMapStr(&relation, data); err != nil {
-		blog.Errorf("UpdateProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
-		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(&relation); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	result, err := s.core.ProcessOperation().UpdateProcessInstanceRelation(params, processInstanceID, relation)
+	result, err := s.core.ProcessOperation().UpdateProcessInstanceRelation(ctx.Kit, processInstanceID, relation)
 	if err != nil {
-		blog.Errorf("UpdateProcessInstanceRelation failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+		blog.Errorf("UpdateProcessInstanceRelation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return result, nil
+	ctx.RespEntity(result)
 }
 
-func (s *coreService) DeleteProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) DeleteProcessInstanceRelation(ctx *rest.Contexts) {
 	option := metadata.DeleteProcessInstanceRelationOption{}
-	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
-		blog.Errorf("DeleteProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
-		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	if err := s.core.ProcessOperation().DeleteProcessInstanceRelation(params, option); err != nil {
-		blog.Errorf("DeleteProcessInstanceRelation failed, err: %+v, rid: %s", err, params.ReqID)
-		return nil, err
+	if err := s.core.ProcessOperation().DeleteProcessInstanceRelation(ctx.Kit, option); err != nil {
+		blog.Errorf("DeleteProcessInstanceRelation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) CreateProcessInstance(params core.ContextParams, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder) {
+func (s *coreService) CreateProcessInstance(kit *rest.Kit, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder) {
 	processBytes, err := json.Marshal(process)
 	if err != nil {
-		return nil, params.Error.CCError(common.CCErrCommJsonEncode)
+		return nil, kit.CCError.CCError(common.CCErrCommJsonEncode)
 	}
 	mData := mapstr.MapStr{}
 	if err := json.Unmarshal(processBytes, &mData); nil != err && 0 != len(processBytes) {
-		return nil, params.Error.CCError(common.CCErrCommJsonDecode)
+		return nil, kit.CCError.CCError(common.CCErrCommJsonDecode)
 	}
 	inputParam := metadata.CreateModelInstance{
 		Data: mData,
 	}
-	result, err := s.core.InstanceOperation().CreateModelInstance(params, common.BKProcessObjectName, inputParam)
+	result, err := s.core.InstanceOperation().CreateModelInstance(kit, common.BKProcessObjectName, inputParam)
 	if err != nil {
-		blog.Errorf("CreateProcessInstance failed, CreateModelInstance failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, params.ReqID)
-		return nil, params.Error.CCError(common.CCErrProcCreateProcessFailed)
+		blog.Errorf("CreateProcessInstance failed, CreateModelInstance failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
 	}
 	process.ProcessID = int64(result.Created.ID)
 	return process, nil

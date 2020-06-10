@@ -2,6 +2,7 @@ import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
 import cloudSelector from './selector/cloud.vue'
+import serviceCategorySelector from './selector/service-category.vue'
 import details from './details/details.vue'
 import form from './form/form.vue'
 import formMultiple from './form/form-multiple.vue'
@@ -32,6 +33,12 @@ import tableEmpty from './table-empty/table-empty.vue'
 import list from './form/list.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
 import user from './user/user.vue'
+import textButton from './button/link-button.vue'
+import stickyLayout from './other/sticky-layout.vue'
+import permission from './permission/embed-permission.vue'
+import routerSubview from './other/router-subview.vue'
+import organization from './form/organization.vue'
+import propertyValue from './other/property-value.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -63,11 +70,18 @@ const install = (Vue, opts = {}) => {
         tips,
         dialog,
         cloudSelector,
+        serviceCategorySelector,
         auth,
         tableEmpty,
         list,
         leaveConfirm,
-        user
+        user,
+        textButton,
+        stickyLayout,
+        permission,
+        routerSubview,
+        organization,
+        propertyValue
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -104,8 +118,15 @@ export default {
     tips,
     dialog,
     cloudSelector,
+    serviceCategorySelector,
     auth,
     tableEmpty,
     list,
-    leaveConfirm
+    leaveConfirm,
+    textButton,
+    stickyLayout,
+    permission,
+    routerSubview,
+    organization,
+    propertyValue
 }

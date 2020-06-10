@@ -14,99 +14,159 @@ package service
 
 import (
 	"net/http"
+
+	"configcenter/src/common/http/rest"
+
+	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) initBusinessObject() {
+func (s *Service) initBusinessObject(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
 
-	s.addAction(http.MethodPost, "/createmany/object", s.CreateObjectBatch, nil)
-	s.addAction(http.MethodPost, "/findmany/object", s.SearchObjectBatch, nil)
-	s.addAction(http.MethodPost, "/create/object", s.CreateObject, nil)
-	s.addAction(http.MethodPost, "/find/object", s.SearchObject, nil)
-	s.addAction(http.MethodPut, "/update/object/{id}", s.UpdateObject, nil)
-	s.addAction(http.MethodDelete, "/delete/object/{id}", s.DeleteObject, nil)
-	s.addAction(http.MethodPut, "/find/objecttopology", s.SearchObjectTopo, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/object", Handler: s.CreateObjectBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object", Handler: s.SearchObjectBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/object", Handler: s.CreateObject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/object", Handler: s.SearchObject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/object/{id}", Handler: s.UpdateObject})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/object/{id}", Handler: s.DeleteObject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objecttopology", Handler: s.SearchObjectTopo})
+
+	utility.AddToRestfulWebService(web)
 }
 
-func (s *Service) initBusinessClassification() {
-	s.addAction(http.MethodPost, "/create/objectclassification", s.CreateClassification, nil)
-	s.addAction(http.MethodPost, "/find/classificationobject", s.SearchClassificationWithObjects, nil)
-	s.addAction(http.MethodPost, "/find/objectclassification", s.SearchClassification, nil)
-	s.addAction(http.MethodPut, "/update/objectclassification/{id}", s.UpdateClassification, nil)
-	s.addAction(http.MethodDelete, "/delete/objectclassification/{id}", s.DeleteClassification, nil)
+func (s *Service) initBusinessClassification(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectclassification", Handler: s.CreateClassification})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/classificationobject", Handler: s.SearchClassificationWithObjects})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectclassification", Handler: s.SearchClassification})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectclassification/{id}", Handler: s.UpdateClassification})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectclassification/{id}", Handler: s.DeleteClassification})
+
+	utility.AddToRestfulWebService(web)
 }
 
-func (s *Service) initBusinessObjectAttribute() {
-	s.addAction(http.MethodPost, "/create/objectattr", s.CreateObjectAttribute, nil)
-	s.addAction(http.MethodPost, "/find/objectattr", s.SearchObjectAttribute, nil)
-	s.addAction(http.MethodPost, "/find/objectattr/host", s.ListHostModelAttribute, nil)
-	s.addAction(http.MethodPut, "/update/objectattr/{id}", s.UpdateObjectAttribute, nil)
-	s.addAction(http.MethodDelete, "/delete/objectattr/{id}", s.DeleteObjectAttribute, nil)
+func (s *Service) initBusinessObjectAttribute(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectattr", Handler: s.CreateObjectAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectattr/biz/{bk_biz_id}", Handler: s.CreateObjectAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattr", Handler: s.SearchObjectAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattr/host", Handler: s.ListHostModelAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattr/{id}", Handler: s.UpdateObjectAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattr/biz/{bk_biz_id}/id/{id}", Handler: s.UpdateObjectAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectattr/{id}", Handler: s.DeleteObjectAttribute})
+
+	utility.AddToRestfulWebService(web)
 }
 
-func (s *Service) initBusinessObjectUnique() {
-	s.addAction(http.MethodPost, "/create/objectunique/object/{bk_obj_id}", s.CreateObjectUnique, nil)
-	s.addAction(http.MethodPut, "/update/objectunique/object/{bk_obj_id}/unique/{id}", s.UpdateObjectUnique, nil)
-	s.addAction(http.MethodPost, "/delete/objectunique/object/{bk_obj_id}/unique/{id}", s.DeleteObjectUnique, nil)
-	s.addAction(http.MethodPost, "/find/objectunique/object/{bk_obj_id}", s.SearchObjectUnique, nil)
+func (s *Service) initBusinessObjectUnique(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectunique/object/{bk_obj_id}", Handler: s.CreateObjectUnique})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectunique/object/{bk_obj_id}/unique/{id}", Handler: s.UpdateObjectUnique})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/delete/objectunique/object/{bk_obj_id}/unique/{id}", Handler: s.DeleteObjectUnique})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectunique/object/{bk_obj_id}", Handler: s.SearchObjectUnique})
+
+	utility.AddToRestfulWebService(web)
 }
 
-func (s *Service) initBusinessObjectAttrGroup() {
-	s.addAction(http.MethodPost, "/create/objectattgroup", s.CreateObjectGroup, nil)
-	s.addAction(http.MethodPut, "/update/objectattgroup", s.UpdateObjectGroup, nil)
-	s.addAction(http.MethodDelete, "/delete/objectattgroup/{id}", s.DeleteObjectGroup, nil)
-	s.addAction(http.MethodPut, "/update/objectattgroupproperty", s.UpdateObjectAttributeGroupProperty, s.ParseUpdateObjectAttributeGroupPropertyInput)
-	s.addAction(http.MethodPost, "/find/objectattgroup/object/{bk_obj_id}", s.SearchGroupByObject, nil)
+func (s *Service) initBusinessObjectAttrGroup(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectattgroup", Handler: s.CreateObjectGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroup", Handler: s.UpdateObjectGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectattgroup/{id}", Handler: s.DeleteObjectGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattgroupproperty", Handler: s.UpdateObjectAttributeGroupProperty})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}", Handler: s.SearchGroupByObject})
+
+	utility.AddToRestfulWebService(web)
 }
 
-func (s *Service) initBusinessGraphics() {
-	s.addAction(http.MethodPost, "/find/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", s.SelectObjectTopoGraphics, nil)
-	s.addAction(http.MethodPost, "/update/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", s.UpdateObjectTopoGraphicsNew, nil)
+func (s *Service) initBusinessGraphics(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", Handler: s.SelectObjectTopoGraphics})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", Handler: s.UpdateObjectTopoGraphicsNew})
+
+	utility.AddToRestfulWebService(web)
 }
 
-func (s *Service) initBusinessAssociation() {
+func (s *Service) initBusinessAssociation(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
 
 	// mainline topo methods
-	s.addAction(http.MethodPost, "/create/topomodelmainline", s.CreateMainLineObject, nil)
-	s.addAction(http.MethodDelete, "/delete/topomodelmainline/object/{bk_obj_id}", s.DeleteMainLineObject, nil)
-	s.addAction(http.MethodPost, "/find/topomodelmainline", s.SearchMainLineObjectTopo, nil)
-	s.addAction(http.MethodPost, "/find/topoinst/biz/{bk_biz_id}", s.SearchBusinessTopo, nil)
-	s.addAction(http.MethodPost, "/find/topoinst_with_statistics/biz/{bk_biz_id}", s.SearchBusinessTopoWithStatistics, nil)
-	s.addAction(http.MethodPost, "/find/topoinst/bk_biz_id/{bk_biz_id}/host_apply_rule_related", s.SearchRuleRelatedTopoNodes, nil)
-	s.addAction(http.MethodPost, "/find/topopath/biz/{bk_biz_id}", s.SearchTopoPath, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/topomodelmainline", Handler: s.CreateMainLineObject})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/topomodelmainline/object/{bk_obj_id}", Handler: s.DeleteMainLineObject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topomodelmainline", Handler: s.SearchMainLineObjectTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoinst/biz/{bk_biz_id}", Handler: s.SearchBusinessTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoinst_with_statistics/biz/{bk_biz_id}", Handler: s.SearchBusinessTopoWithStatistics})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoinst/bk_biz_id/{bk_biz_id}/host_apply_rule_related", Handler: s.SearchRuleRelatedTopoNodes})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topopath/biz/{bk_biz_id}", Handler: s.SearchTopoPath})
 
 	// association type methods ,NOT SUPPORT BUSINESS
-	s.addAction(http.MethodPost, "/find/topoassociationtype", s.SearchObjectAssocWithAssocKindList, nil)
-	s.addAction(http.MethodPost, "/find/associationtype", s.SearchAssociationType, nil)
-	s.addAction(http.MethodPost, "/create/associationtype", s.CreateAssociationType, nil)
-	s.addAction(http.MethodPut, "/update/associationtype/{id}", s.UpdateAssociationType, nil)
-	s.addAction(http.MethodDelete, "/delete/associationtype/{id}", s.DeleteAssociationType, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topoassociationtype", Handler: s.SearchObjectAssocWithAssocKindList})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/associationtype", Handler: s.SearchAssociationType})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/associationtype", Handler: s.CreateAssociationType})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/associationtype/{id}", Handler: s.UpdateAssociationType})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/associationtype/{id}", Handler: s.DeleteAssociationType})
 
 	// object association methods
-	s.addAction(http.MethodPost, "/find/objectassociation", s.SearchObjectAssociation, nil)
-	s.addAction(http.MethodPost, "/create/objectassociation", s.CreateObjectAssociation, nil)
-	s.addAction(http.MethodPut, "/update/objectassociation/{id}", s.UpdateObjectAssociation, nil)
-	s.addAction(http.MethodDelete, "/delete/objectassociation/{id}", s.DeleteObjectAssociation, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectassociation", Handler: s.SearchObjectAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectassociation", Handler: s.CreateObjectAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectassociation/{id}", Handler: s.UpdateObjectAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectassociation/{id}", Handler: s.DeleteObjectAssociation})
 
 	// inst association methods
-	s.addAction(http.MethodPost, "/find/instassociation", s.SearchAssociationInst, nil)
-	s.addAction(http.MethodPost, "/create/instassociation", s.CreateAssociationInst, nil)
-	s.addAction(http.MethodDelete, "/delete/instassociation/{association_id}", s.DeleteAssociationInst, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation", Handler: s.SearchAssociationInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instassociation", Handler: s.CreateAssociationInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instassociation/{association_id}", Handler: s.DeleteAssociationInst})
 
 	// topo search methods
-	s.addAction(http.MethodPost, "/find/instassociation/object/{bk_obj_id}", s.SearchInstByAssociation, nil)
-	s.addAction(http.MethodPost, "/find/instassttopo/object/{bk_obj_id}/inst/{inst_id}", s.SearchInstTopo, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}", Handler: s.SearchInstByAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassttopo/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstTopo})
 
 	// ATTENTION: the following methods is not recommended
-	s.addAction(http.MethodPost, "/find/insttopo/object/{bk_obj_id}/inst/{inst_id}", s.SearchInstChildTopo, nil)
-	s.addAction(http.MethodPost, "/import/instassociation/{bk_obj_id}", s.ImportInstanceAssociation, nil)
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/insttopo/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstChildTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/import/instassociation/{bk_obj_id}", Handler: s.ImportInstanceAssociation})
+
+	utility.AddToRestfulWebService(web)
 }
 
-func (s *Service) initBusinessInst() {
-	s.addAction(http.MethodPost, "/create/instance/object/{bk_obj_id}", s.CreateInst, nil)
-	s.addAction(http.MethodDelete, "/delete/instance/object/{bk_obj_id}/inst/{inst_id}", s.DeleteInst, nil)
-	s.addAction(http.MethodDelete, "/deletemany/instance/object/{bk_obj_id}", s.DeleteInsts, nil)
-	s.addAction(http.MethodPut, "/update/instance/object/{bk_obj_id}/inst/{inst_id}", s.UpdateInst, nil)
-	s.addAction(http.MethodPut, "/updatemany/instance/object/{bk_obj_id}", s.UpdateInsts, nil)
-	s.addAction(http.MethodPost, "/find/instance/object/{bk_obj_id}", s.SearchInstAndAssociationDetail, nil)
-	s.addAction(http.MethodPost, "/find/instdetail/object/{bk_obj_id}/inst/{inst_id}", s.SearchInstByInstID, nil)
+func (s *Service) initBusinessInst(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instance/object/{bk_obj_id}", Handler: s.CreateInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instance/object/{bk_obj_id}/inst/{inst_id}", Handler: s.DeleteInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/instance/object/{bk_obj_id}", Handler: s.DeleteInsts})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/instance/object/{bk_obj_id}/inst/{inst_id}", Handler: s.UpdateInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/instance/object/{bk_obj_id}", Handler: s.UpdateInsts})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instance/object/{bk_obj_id}", Handler: s.SearchInstAndAssociationDetail})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instdetail/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstByInstID})
+
+	utility.AddToRestfulWebService(web)
 }

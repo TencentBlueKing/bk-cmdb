@@ -31,6 +31,7 @@
                 <bk-select style="width: 100%;"
                     :clearable="false"
                     :searchable="templateList.length > 7"
+                    :loading="$loading(request.serviceTemplate)"
                     v-model="template"
                     v-validate="'required'"
                     data-vv-name="template"
@@ -58,7 +59,7 @@
                 </label>
                 <cmdb-form-singlechar
                     v-model="moduleName"
-                    v-validate="'required|singlechar|length:256'"
+                    v-validate="'required|singlechar|businessTopoInstNames|length:256'"
                     data-vv-name="moduleName"
                     key="moduleName"
                     :placeholder="$t('请输入xx', { name: $t('模块名称') })"
@@ -75,6 +76,7 @@
                     key="firstClass"
                     :auto-select="false"
                     :list="firstClassList"
+                    :loading="$loading(request.serviceCategory)"
                     @on-selected="updateCategory">
                 </cmdb-selector>
                 <cmdb-selector class="service-class fr"
@@ -82,7 +84,8 @@
                     v-validate="'required'"
                     data-vv-name="secondClass"
                     key="secondClass"
-                    :list="secondClassList">
+                    :list="secondClassList"
+                    :loading="$loading(request.serviceCategory)">
                 </cmdb-selector>
                 <span class="form-error" v-if="errors.has('firstClass')">{{errors.first('firstClass')}}</span>
                 <span class="form-error second-class" v-if="errors.has('secondClass')">{{errors.first('secondClass')}}</span>
@@ -124,7 +127,11 @@
                 firstClass: '',
                 firstClassList: [],
                 secondClass: '',
-                values: {}
+                values: {},
+                request: {
+                    serviceTemplate: Symbol('serviceTemplate'),
+                    serviceCategory: Symbol('serviceCategory')
+                }
             }
         },
         computed: {
@@ -180,7 +187,14 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-                            params: this.$injectMetadata({}, { injectBizId: true })
+                            params: this.$injectMetadata({
+                                page: {
+                                    sort: 'name'
+                                }
+                            }, { injectBizId: true }),
+                            config: {
+                                requestId: this.request.serviceTemplate
+                            }
                         })
                         const templates = data.info.map(item => item.service_template)
                         this.templateList = templates
@@ -201,7 +215,10 @@
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
-                            params: this.$injectMetadata({}, { injectBizId: true })
+                            params: this.$injectMetadata({}, { injectBizId: true }),
+                            config: {
+                                requestId: this.request.serviceCategory
+                            }
                         })
                         const categories = this.collectServiceCategories(data.info)
                         this.firstClassList = categories
@@ -251,7 +268,12 @@
                 this.$emit('cancel')
             },
             jumpServiceTemplate () {
-                this.$router.push({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
+                this.$routerActions.redirect({
+                    name: MENU_BUSINESS_SERVICE_TEMPLATE,
+                    params: {
+                        bizId: this.business
+                    }
+                })
             }
         }
     }

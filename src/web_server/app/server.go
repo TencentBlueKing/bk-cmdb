@@ -16,16 +16,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"plugin"
 	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
@@ -40,7 +38,10 @@ type WebServer struct {
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 
-	svrInfo, err := newServerInfo(op)
+	// init esb client
+	esb.InitEsbClient(nil)
+
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
@@ -73,34 +74,26 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return errors.New("configuration item not found")
 	}
 
-	redisAddress := webSvr.Config.Session.Host
-	redisSecret := strings.TrimSpace(webSvr.Config.Session.Secret)
-
-	if !strings.Contains(redisAddress, ":") && len(webSvr.Config.Session.Port) > 0 {
-		redisAddress = webSvr.Config.Session.Host + ":" + webSvr.Config.Session.Port
+	webSvr.Config.Redis, err = engine.WithRedis()
+	if err != nil {
+		return err
 	}
-
 	var redisErr error
-	if 0 == len(webSvr.Config.Session.Address) {
-		// address 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
-		service.Session, redisErr = sessions.NewRedisStore(10, "tcp", redisAddress, webSvr.Config.Session.Secret, []byte("secret"))
+	if webSvr.Config.Redis.MasterName == "" {
+		// MasterName 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
+		service.Session, redisErr = sessions.NewRedisStore(10, "tcp", webSvr.Config.Redis.Address, webSvr.Config.Redis.Password, []byte("secret"))
 		if redisErr != nil {
 			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
 		}
 	} else {
-		// address 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
-		address := strings.Split(webSvr.Config.Session.Address, ";")
-		service.Session, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Session.MasterName, "tcp", webSvr.Config.Session.Secret, []byte("secret"))
+		// MasterName 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
+		address := strings.Split(webSvr.Config.Redis.Address, ";")
+		service.Session, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName, "tcp", webSvr.Config.Redis.Password, []byte("secret"))
 		if redisErr != nil {
 			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
 		}
 	}
-	cacheCli, err := redis.NewFromConfig(redis.Config{
-		Address:    redisAddress,
-		Password:   redisSecret,
-		MasterName: webSvr.Config.Session.MasterName,
-		Database:   "0",
-	})
+	cacheCli, err := redis.NewFromConfig(webSvr.Config.Redis)
 
 	if nil != err {
 		return err
@@ -110,14 +103,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.CacheCli = cacheCli
 	service.Logics = &logics.Logics{Engine: engine}
 	service.Config = &webSvr.Config
-
-	if webSvr.Config.LoginVersion != common.BKDefaultLoginUserPluginVersion && webSvr.Config.LoginVersion != "" {
-		service.VersionPlg, err = plugin.Open("login.so")
-		if nil != err {
-			service.VersionPlg = nil
-			return fmt.Errorf("load login so err: %v", err)
-		}
-	}
 
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
 	if err != nil {
@@ -149,14 +134,9 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
 	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
 	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
+	w.Config.BkDesktopUrl = current.ConfigMap["site.bk_desktop_url"]
 
 	w.Config.Session.Name = current.ConfigMap["session.name"]
-	w.Config.Session.Skip = current.ConfigMap["session.skip"]
-	w.Config.Session.Host = current.ConfigMap["session.host"]
-	w.Config.Session.Port = current.ConfigMap["session.port"]
-	w.Config.Session.Address = current.ConfigMap["session.address"]
-	w.Config.Session.MasterName = current.ConfigMap["session.mastername"]
-	w.Config.Session.Secret = strings.TrimSpace(current.ConfigMap["session.secret"])
 	w.Config.Session.MultipleOwner = current.ConfigMap["session.multiple_owner"]
 	w.Config.Session.DefaultLanguage = current.ConfigMap["session.defaultlanguage"]
 	w.Config.LoginVersion = current.ConfigMap["login.version"]
@@ -171,36 +151,13 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
 	w.Config.ConfigMap = current.ConfigMap
 
+	if esbConfig, err := esb.ParseEsbConfig(current.ConfigMap); err == nil {
+		esb.UpdateEsbConfig(*esbConfig)
+	}
+
 }
 
 //Stop the ccapi server
 func (ccWeb *WebServer) Stop() error {
 	return nil
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

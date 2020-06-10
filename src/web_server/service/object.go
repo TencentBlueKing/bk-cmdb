@@ -351,7 +351,7 @@ func (s *Service) SearchBusiness(c *gin.Context) {
 			query.Condition[k] = mapstr.MapStr{
 				common.BKDBLIKE: params.SpecialCharChange(field),
 				// insensitive with the character case.
-				"$options": "i",
+				common.BKDBOPTIONS: "i",
 			}
 		}
 	}
@@ -369,13 +369,13 @@ func (s *Service) SearchBusiness(c *gin.Context) {
 	}
 
 	if !biz.Result {
-	    if biz.Code == common.CCNoPermission {
-	        c.JSON(http.StatusOK, biz)
-            return
-        } else {
-            c.JSON(http.StatusBadRequest, biz)
-            return
-        }
+		if biz.Code == common.CCNoPermission {
+			c.JSON(http.StatusOK, biz)
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, biz)
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, biz)

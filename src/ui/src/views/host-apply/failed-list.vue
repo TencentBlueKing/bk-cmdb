@@ -129,7 +129,7 @@
         },
         created () {
             if (!Object.keys(this.propertyConfig).length) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY
                 })
             } else {
@@ -219,7 +219,7 @@
             },
             goBack () {
                 this.$store.commit('hostApply/clearRuleDraft')
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY
                 })
             },
@@ -277,13 +277,13 @@
                 if (!this.isBatch && this.moduleId) {
                     query.node = `module-${this.moduleId}`
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_AND_SERVICE,
                     query
                 })
             },
             handleViewFailed () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_FAILED,
                     query: this.$route.query
                 })

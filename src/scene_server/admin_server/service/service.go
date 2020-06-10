@@ -27,11 +27,13 @@ import (
 	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*backbone.Engine
 	db           dal.RDB
+	cache        *redis.Client
 	ccApiSrvAddr string
 	ctx          context.Context
 	Config       options.Config
@@ -46,6 +48,10 @@ func NewService(ctx context.Context) *Service {
 
 func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
+}
+
+func (s *Service) SetCache(cache *redis.Client) {
+	s.cache = cache
 }
 
 func (s *Service) SetAuthCenter(authCenter *authcenter.AuthCenter) {
@@ -97,6 +103,10 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	// mongodb
 	healthItem := metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping())
 	meta.Items = append(meta.Items, healthItem)
+
+	// redis
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping().Err())
+	meta.Items = append(meta.Items, redisItem)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

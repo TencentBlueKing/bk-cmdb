@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -47,7 +48,6 @@ type Service struct {
 	registry        prometheus.Registerer
 	requestTotal    *prometheus.CounterVec
 	requestDuration *prometheus.HistogramVec
-	requestInflight *Gauge
 }
 
 // NewService returns new metrics service
@@ -61,7 +61,7 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin},
+		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode, LabelUser, LabelRealIP},
 	)
 	register.MustRegister(srv.requestTotal)
 
@@ -70,18 +70,9 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_duration_millisecond",
 			Help: "Histogram of latencies for HTTP requests.",
 		},
-		[]string{LabelHandler},
+		[]string{LabelHandler, LabelAppCode, LabelUser, LabelRealIP},
 	)
 	register.MustRegister(srv.requestDuration)
-
-	srv.requestInflight = NewGauge(
-		prometheus.GaugeOpts{
-			Name: ns + "http_request_in_flight",
-			Help: "current number of request being served.",
-		},
-	)
-	register.MustRegister(srv.requestInflight)
-
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	register.MustRegister(prometheus.NewGoCollector())
 
@@ -98,6 +89,9 @@ const (
 	LabelOrigin      = "origin"
 	LabelProcessName = "process_name"
 	LabelHost        = "host"
+	LabelAppCode     = "app_code"
+	LabelUser        = "user"
+	LabelRealIP      = "real_ip"
 )
 
 // labels
@@ -129,8 +123,6 @@ func (s *Service) RestfulWebService() *restful.WebService {
 // HTTPMiddleware is the http middleware for go-restful framework
 func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.requestInflight.Inc()
-		defer s.requestInflight.Dec()
 
 		if r.RequestURI == "/metrics" || r.RequestURI == "/metrics/" {
 			s.ServeHTTP(w, r)
@@ -151,11 +143,23 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 		}
 		duration := util.ToMillisecond(time.Since(before))
 
-		s.requestDuration.With(s.label(LabelHandler, uri)).Observe(duration)
+		if !utf8.ValidString(uri) {
+			blog.Errorf("uri: %s not utf-8", uri)
+			return
+		}
+
+		s.requestDuration.With(s.label(LabelHandler, uri,
+			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
+			LabelUser, r.Header.Get(common.BKHTTPHeaderUser),
+			LabelRealIP, getUserIP(r),
+		)).Observe(duration)
 		s.requestTotal.With(s.label(
 			LabelHandler, uri,
 			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
 			LabelOrigin, getOrigin(r.Header),
+			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
+			LabelUser, r.Header.Get(common.BKHTTPHeaderUser),
+			LabelRealIP, getUserIP(r),
 		)).Inc()
 
 	})
@@ -192,4 +196,19 @@ func getOrigin(header http.Header) string {
 	}
 
 	return "Unknown"
+}
+
+func getUserIP(r *http.Request) string {
+	address := r.Header.Get("X-Real-Ip")
+	if address == "" {
+		address = r.Header.Get("X-Forwarded-For")
+	}
+	if address == "" {
+		address = r.RemoteAddr
+	}
+	index := strings.LastIndex(address, ":")
+	if index != -1 {
+		return address[:index]
+	}
+	return address
 }

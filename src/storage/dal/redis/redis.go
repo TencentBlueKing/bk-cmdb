@@ -22,20 +22,25 @@ import (
 // Config define redis config
 type Config struct {
 	Address    string
-	Port       string
 	Password   string
 	Database   string
 	MasterName string
+	// for datacollection, notify if the snapshot redis is in use
+	Enable       string
+	MaxOpenConns int
 }
 
 // ParseConfigFromKV returns new config
 func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
+	poolSize, _ := strconv.Atoi(prefix + ".maxOpenConns")
+
 	return Config{
-		Address:    conifgmap[prefix+".host"],
-		Port:       conifgmap[prefix+".port"],
-		Password:   conifgmap[prefix+".pwd"],
-		Database:   conifgmap[prefix+".database"],
-		MasterName: conifgmap[prefix+".mastername"],
+		Address:      conifgmap[prefix+".host"],
+		Password:     conifgmap[prefix+".pwd"],
+		Database:     conifgmap[prefix+".database"],
+		MasterName:   conifgmap[prefix+".masterName"],
+		Enable:       conifgmap[prefix+".enable"],
+		MaxOpenConns: poolSize,
 	}
 }
 
@@ -45,9 +50,8 @@ func NewFromConfig(cfg Config) (*redis.Client, error) {
 	if nil != err {
 		return nil, err
 	}
-
-	if !strings.Contains(cfg.Address, ":") && len(cfg.Port) > 0 {
-		cfg.Address = cfg.Address + ":" + cfg.Port
+	if cfg.MaxOpenConns == 0 {
+		cfg.MaxOpenConns = 3000
 	}
 
 	var client *redis.Client
@@ -56,7 +60,7 @@ func NewFromConfig(cfg Config) (*redis.Client, error) {
 			Addr:     cfg.Address,
 			Password: cfg.Password,
 			DB:       dbNum,
-			PoolSize: 100,
+			PoolSize: cfg.MaxOpenConns,
 		}
 		client = redis.NewClient(option)
 	} else {
@@ -66,7 +70,7 @@ func NewFromConfig(cfg Config) (*redis.Client, error) {
 			SentinelAddrs: hosts,
 			Password:      cfg.Password,
 			DB:            dbNum,
-			PoolSize:      100,
+			PoolSize:      cfg.MaxOpenConns,
 		}
 		client = redis.NewFailoverClient(option)
 	}

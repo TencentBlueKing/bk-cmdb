@@ -17,25 +17,25 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
 // CreateClassification create object's classification
-func (s *coreService) SearchTopoGraphics(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 	selector := meta.TopoGraphics{}
-	if jsErr := data.MarshalJSONInto(&selector); nil != jsErr {
-		blog.Errorf("search topo graphics, but failed to unmarshal the data, data: %+v, err: %s, rid: %s", data, jsErr.Error(), params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	if jsErr := ctx.DecodeInto(&selector); nil != jsErr {
+		ctx.RespAutoError(jsErr)
+		return
 	}
 
 	cond := mapstr.MapStr{
-		"scope_type":          selector.ScopeType,
-		"scope_id":            selector.ScopeID,
+		"scope_type": selector.ScopeType,
+		"scope_id":   selector.ScopeID,
 	}
-	cond = util.SetQueryOwner(cond, params.SupplierAccount)
+	cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 	_, err := selector.Metadata.Label.GetBusinessID()
 	if nil == err {
 		cond.Merge(meta.PublicAndBizCondition(selector.Metadata))
@@ -44,52 +44,55 @@ func (s *coreService) SearchTopoGraphics(params core.ContextParams, pathParams, 
 	}
 
 	results := make([]meta.TopoGraphics, 0)
-	if selErr := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).All(params.Context, &results); nil != selErr {
-		blog.Errorf("search topo graphics, but select data failed, error information is %s, rid: %s", selErr.Error(), params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+	if selErr := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx.Kit.Ctx, &results); nil != selErr {
+		blog.Errorf("search topo graphics, but select data failed, error information is %s, rid: %s", selErr.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
 	}
-
-	return results, nil
+	ctx.RespEntity(results)
 }
 
-func (s *coreService) UpdateTopoGraphics(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) UpdateTopoGraphics(ctx *rest.Contexts) {
 	inputBody := struct {
 		Data []meta.TopoGraphics `json:"data" field:"data" bson:"data"`
 	}{}
-	if jsErr := data.MarshalJSONInto(&inputBody); nil != jsErr {
-		blog.Errorf("update topo graphics, but failed to unmarshal the data, data: %+v, err: %s, rid: %s", data, jsErr.Error(), params.ReqID)
-		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	if jsErr := ctx.DecodeInto(&inputBody); nil != jsErr {
+		ctx.RespAutoError(jsErr)
+		return
 	}
 
 	for index := range inputBody.Data {
-		inputBody.Data[index].SetSupplierAccount(params.SupplierAccount)
+		inputBody.Data[index].SetSupplierAccount(ctx.Kit.SupplierAccount)
 		cond := mapstr.MapStr{
-			"scope_type":          inputBody.Data[index].ScopeType,
-			"scope_id":            inputBody.Data[index].ScopeID,
-			"node_type":           inputBody.Data[index].NodeType,
-			"bk_obj_id":           inputBody.Data[index].ObjID,
-			"bk_inst_id":          inputBody.Data[index].InstID,
+			"scope_type": inputBody.Data[index].ScopeType,
+			"scope_id":   inputBody.Data[index].ScopeID,
+			"node_type":  inputBody.Data[index].NodeType,
+			"bk_obj_id":  inputBody.Data[index].ObjID,
+			"bk_inst_id": inputBody.Data[index].InstID,
 		}
-		cond = util.SetQueryOwner(cond, params.SupplierAccount)
+		cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 
-		cnt, err := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).Count(params.Context)
+		cnt, err := s.db.Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx.Kit.Ctx)
 		if nil != err {
-			blog.Errorf("update topo graphics, search data failed, data: %+v, err: %s, rid: %s", data, err.Error(), params.ReqID)
-			return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+			blog.Errorf("update topo graphics, search data failed, data: %+v, err: %s, rid: %s", inputBody, err.Error(), ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+			return
 		}
 		if 0 == cnt {
-			err = s.db.Table(common.BKTableNameTopoGraphics).Insert(params.Context, inputBody.Data[index])
+			err = s.db.Table(common.BKTableNameTopoGraphics).Insert(ctx.Kit.Ctx, inputBody.Data[index])
 			if nil != err {
-				blog.Errorf("update topo graphics, but insert data failed, err:%s, rid: %s", err.Error(), params.ReqID)
-				return nil, params.Error.CCError(common.CCErrCommDBInsertFailed)
+				blog.Errorf("update topo graphics, but insert data failed, err:%s, rid: %s", err.Error(), ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+				return
 			}
 		} else {
 			if err = s.db.Table(common.BKTableNameTopoGraphics).Update(context.Background(), cond, inputBody.Data[index]); err != nil {
-				blog.Errorf("update topo graphics, but update failed, err: %s, rid: %s", err.Error(), params.ReqID)
-				return nil, params.Error.CCError(common.CCErrCommDBUpdateFailed)
+				blog.Errorf("update topo graphics, but update failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+				return
 			}
 		}
 	}
 
-	return nil, nil
+	ctx.RespEntity(nil)
 }

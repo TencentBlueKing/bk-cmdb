@@ -16,9 +16,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
 // EventClient save event data to cache temporarily and push to event server at calling push
@@ -66,49 +66,49 @@ func (eh *EventClient) SetCurData(eventID int64, data interface{}) {
 }
 
 // SetCurDataAndPush get current instance info and push data
-func (eh *EventClient) SetCurDataAndPush(ctx core.ContextParams, objID, eventAction string, cond mapstr.MapStr) error {
+func (eh *EventClient) SetCurDataAndPush(kit *rest.Kit, objID, eventAction string, cond mapstr.MapStr) error {
 	instIDFieldName := common.GetInstIDField(objID)
 
-	insts, _, err := eh.instanceManager.getInsts(ctx, objID, cond)
+	insts, _, err := eh.instanceManager.getInsts(kit, objID, cond)
 	if nil != err {
-		blog.ErrorJSON("EventHandle SetCurDataAndPush find objID(%s) error. error: %s, condition:%s, rid: %s", objID, cond, ctx.ReqID)
+		blog.ErrorJSON("EventHandle SetCurDataAndPush find objID(%s) error. error: %s, condition:%s, rid: %s", objID, cond, kit.Rid)
 		return err
 	}
 	for _, inst := range insts {
 		id, err := inst.Int64(instIDFieldName)
 		if err != nil {
-			blog.ErrorJSON("EventHandle SetCurDataAndPush objID(%s) field(%s) convert to int64 error. err:%s, inst:%s, rid:%s", objID, instIDFieldName, err.Error(), inst, ctx.ReqID)
+			blog.ErrorJSON("EventHandle SetCurDataAndPush objID(%s) field(%s) convert to int64 error. err:%s, inst:%s, rid:%s", objID, instIDFieldName, err.Error(), inst, kit.Rid)
 			// convert %s  field %s to %s error %s
-			return ctx.Error.Errorf(common.CCErrCommInstFieldConvertFail, objID, instIDFieldName, "integer", err.Error())
+			return kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, objID, instIDFieldName, "integer", err.Error())
 		}
 		eh.SetCurData(id, inst)
 	}
-	err = eh.Push(ctx, objID, eventAction)
+	err = eh.Push(kit, objID, eventAction)
 	if err != nil {
-		blog.ErrorJSON("EventHandle SetCurDataAndPush objID(%s) Push event error. event action:%s, condition:%s, rid:%s", objID, eventAction, cond, ctx.ReqID)
+		blog.ErrorJSON("EventHandle SetCurDataAndPush objID(%s) Push event error. event action:%s, condition:%s, rid:%s", objID, eventAction, cond, kit.Rid)
 		return err
 	}
 	return nil
 }
 
 // Push push event to event server
-func (eh *EventClient) Push(ctx core.ContextParams, objType, eventAction string) error {
+func (eh *EventClient) Push(kit *rest.Kit, objType, eventAction string) error {
 	if eh.cache == nil {
 		return nil
 	}
 	var eventInstArr []*metadata.EventInst
 	for _, item := range eh.cache {
-		srcEvent := eventclient.NewEventWithHeader(ctx.Header)
+		srcEvent := eventclient.NewEventWithHeader(kit.Header)
 		srcEvent.EventType = metadata.EventTypeInstData
 		srcEvent.ObjType = objType
 		srcEvent.Action = eventAction
 		srcEvent.Data = []metadata.EventData{item}
 		eventInstArr = append(eventInstArr, srcEvent)
 	}
-	err := eh.eventCli.Push(ctx, eventInstArr...)
+	err := eh.eventCli.Push(kit.Ctx, eventInstArr...)
 	if err != nil {
-		blog.ErrorJSON("Push objType(%s) change to event server error. data:%s, rid:%s", objType, eventInstArr, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrEventPushEventFailed)
+		blog.ErrorJSON("Push objType(%s) change to event server error. data:%s, rid:%s", objType, eventInstArr, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrEventPushEventFailed)
 	}
 	return nil
 }

@@ -246,4 +246,22 @@ var expectSystemResourceType = []ResourceType{
 			},
 		},
 	},
+	{
+		ResourceTypeID:       SysEventWatch,
+		ResourceTypeName:     "事件监听",
+		ParentResourceTypeID: "",
+		Share:                false,
+		Actions: []Action{
+			{
+				ActionID:          WatchHost,
+				ActionName:        "主机",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          WatchHostRelation,
+				ActionName:        "主机关系",
+				IsRelatedResource: false,
+			},
+		},
+	},
 }

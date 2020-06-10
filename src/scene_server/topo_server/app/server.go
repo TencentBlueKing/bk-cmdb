@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -27,14 +26,9 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/service"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
 	"configcenter/src/thirdpartyclient/elasticsearch"
 )
 
@@ -58,16 +52,11 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 	}
-	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
 	var err error
-	t.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
-	}
-
 	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", current.ConfigMap)
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
@@ -76,12 +65,13 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 
 // Run main function
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
 	blog.Infof("srv conf: %+v", svrInfo)
+	blog.Infof("enableTxn is %t", op.EnableTxn)
 
 	server := new(TopoServer)
 	server.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
@@ -103,14 +93,12 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	var txn dal.Transcation
-	if server.Config.Mongo.Enable == "true" {
-		txn, err = local.NewMgo(server.Config.Mongo.BuildURI(), time.Second*5)
-	} else {
-		txn, err = remote.NewWithDiscover(engine)
-	}
+	server.Config.Redis, err = engine.WithRedis()
 	if err != nil {
-		blog.Errorf("failed to connect the txc server, error info is %v", err)
+		return err
+	}
+	server.Config.Auth, err = engine.WithAuth()
+	if err != nil {
 		return err
 	}
 
@@ -136,9 +124,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		Engine:      engine,
 		AuthManager: authManager,
 		Es:          essrv,
-		Core:        core.New(engine.CoreAPI, authManager),
+		Core:        core.New(engine.CoreAPI, authManager, engine.Language),
 		Error:       engine.CCErr,
-		Txn:         txn,
+		EnableTxn:   op.EnableTxn,
 		Config:      server.Config,
 	}
 
@@ -165,31 +153,4 @@ func (t *TopoServer) CheckForReadiness() error {
 		return nil
 	}
 	return errors.New("wait for topology server configuration timeout")
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

@@ -19,7 +19,7 @@
                 class-name="table-cell-change-value"
                 :render-header="(h, data) => renderTableHeader(h, data, $t('红色为属性冲突值'), { placement: 'right' })">
                 <template slot-scope="{ row }">
-                    <div class="cell-change-value" v-html="getChangeValue(row)"></div>
+                    <div class="cell-change-value"><vnodes :vnode="getChangeValue(row)"></vnodes></div>
                 </template>
             </bk-table-column>
             <bk-table-column
@@ -75,7 +75,11 @@
     import conflictResolve from './conflict-resolve.vue'
     export default {
         components: {
-            conflictResolve
+            conflictResolve,
+            vnodes: {
+                functional: true,
+                render: (h, ctx) => ctx.props.vnode
+            }
         },
         props: {
             list: {
@@ -169,28 +173,29 @@
             },
             getChangeValue (row) {
                 const { conflicts, update_fields: updateFields, unresolved_conflict_count: conflictCount } = row
-                const valueMap = {}
-                const fieldList = [...conflicts, ...updateFields]
-                fieldList.forEach(item => {
-                    valueMap[item['bk_property_id']] = item.bk_property_value
-                })
 
                 const resultConflicts = conflicts.map(item => {
                     const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
-                    let content = `${property.bk_property_name}：${this.$tools.getPropertyText(property, valueMap)}`
+                    let content = <span>{property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} /></span>
                     const conflictExist = conflicts.find(conflictItem => conflictItem.bk_attribute_id === item.bk_attribute_id && conflictItem.unresolved_conflict_exist)
                     if (conflictExist) {
-                        content = `<span class="conflict-item">${content}</span>`
+                        content = <span class="conflict-item">{content}</span>
                     }
                     return content
                 })
                 const resultUpdates = updateFields.map(item => {
                     const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
-                    return `${property.bk_property_name}：${this.$tools.getPropertyText(property, valueMap)}`
+                    return <span>{property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} /></span>
                 })
-                const conflictSeparator = `<span class="conflict-separator${!conflictCount ? ' resolved' : ''}">；</span>`
+                const conflictSeparator = <span class={`conflict-separator${!conflictCount ? ' resolved' : ''}`}>；</span>
 
-                return `${resultConflicts.join(conflictSeparator)}${(resultConflicts.length && resultUpdates.length) ? conflictSeparator : ''}${resultUpdates.join('；')}`
+                return (
+                    <div>
+                        { resultConflicts.reduce((acc, x) => acc === null ? [x] : [acc, conflictSeparator, x], null) }
+                        { (resultConflicts.length && resultUpdates.length) ? conflictSeparator : '' }
+                        { resultUpdates.reduce((acc, x) => acc === null ? [x] : [acc, '；', x], null) }
+                    </div>
+                )
             },
             getPropertyGroups () {
                 const modelId = 'host'

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
@@ -42,17 +43,19 @@ func (s *service) Delete(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
+
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
 	start := time.Now()
-	url := fmt.Sprintf("%s://%s%s", req.Request.URL.Scheme, req.Request.URL.Host, req.Request.RequestURI)
+	url := req.Request.URL.Scheme + "://" + req.Request.URL.Host + req.Request.RequestURI
 	proxyReq, err := http.NewRequest(req.Request.Method, url, req.Request.Body)
 	if err != nil {
-		blog.Errorf("new proxy request[%s] failed, err: %v", url, err)
+		blog.Errorf("new proxy request[%s] failed, err: %v, rid: %s", url, err, rid)
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("proxy request failed, %s", err.Error()),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
 		}); err != nil {
-			blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s, rid: %s", req.Request.RequestURI, err, rid)
 		}
 		return
 	}
@@ -65,20 +68,17 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 
 	response, err := s.client.Do(proxyReq)
 	if err != nil {
-		blog.Errorf("*failed do request[%s url: %s] , err: %v", req.Request.Method, url, err)
+		blog.Errorf("*failed do request[%s url: %s] , err: %v, rid: %s", req.Request.Method, url, err, rid)
 
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("proxy request failed, %s", err.Error()),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
 		}); err != nil {
-			blog.Errorf("response request[%s url: %s] failed, err: %v", req.Request.Method, url, err)
+			blog.Errorf("response request[%s url: %s] failed, err: %v, rid: %s", req.Request.Method, url, err, rid)
 		}
 		return
 	}
-	blog.V(5).Infof("success [%s] do request[%s url: %s]  ", response.Status, req.Request.Method, url)
-
-	defer response.Body.Close()
 
 	for k, v := range response.Header {
 		if len(v) > 0 {
@@ -89,14 +89,17 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 	resp.ResponseWriter.WriteHeader(response.StatusCode)
 
 	if _, err := io.Copy(resp, response.Body); err != nil {
+		response.Body.Close()
 		blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
 		return
 	}
-	blog.V(4).Infof("request id: %s, cost: %dms, action: %s, status code: %d, url: %s, user: %s, app code: %s",
-		req.Request.Header.Get(common.BKHTTPCCRequestID),
+	response.Body.Close()
+	blog.V(4).Infof("cost: %dms, action: %s, status code: %d, user: %s, app code: %s, url: %s, rid: %s",
 		time.Since(start).Nanoseconds()/int64(time.Millisecond),
-		req.Request.Method, response.StatusCode, url,
+		req.Request.Method, response.StatusCode,
 		req.Request.Header.Get(common.BKHTTPHeaderUser),
-		req.Request.Header.Get(common.BKHTTPRequestAppCode))
+		req.Request.Header.Get(common.BKHTTPRequestAppCode), url,
+		req.Request.Header.Get(common.BKHTTPCCRequestID),
+	)
 	return
 }

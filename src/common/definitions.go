@@ -12,7 +12,10 @@
 
 package common
 
-import "math"
+import (
+	"math"
+	"time"
+)
 
 const (
 	// HTTPCreate create method
@@ -40,6 +43,9 @@ const (
 
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
+
+	// BKAuditLogPageLimit the audit log page limit
+	BKAuditLogPageLimit = 200
 
 	// BKParent the parent code
 	BKParent = 1
@@ -143,6 +149,10 @@ const (
 
 	// BKDBLIKE the db operator
 	BKDBLIKE = "$regex"
+
+	// BKDBOPTIONS the db operator,used with $regex
+	// detail to see https://docs.mongodb.com/manual/reference/operator/query/regex/#op._S_options
+	BKDBOPTIONS = "$options"
 
 	// BKDBEQ the db operator
 	BKDBEQ = "$eq"
@@ -419,23 +429,29 @@ const (
 	// BKOptionField the option field
 	BKOptionField = "option"
 
-	// BKContentField the content field
-	BKContentField = "content"
+	// BKAuditTypeField the audit type field
+	BKAuditTypeField = "audit_type"
 
-	// BKExtKeyField the ext key field
-	BKExtKeyField = "ext_key"
+	// BKResourceTypeField the audit resource type field
+	BKResourceTypeField = "resource_type"
 
-	// BKOpDescField the op desc field
-	BKOpDescField = "op_desc"
+	// BKOperateFromField the platform where operation from field
+	BKOperateFromField = "operate_from"
 
-	// BKOpTypeField the op type field
-	BKOpTypeField = "op_type"
+	// BKOperationDetailField the audit operation detail field
+	BKOperationDetailField = "operation_detail"
 
-	// BKOpTargetField the op target field
-	BKOpTargetField = "op_target"
+	// BKOperationTimeField the audit operation time field
+	BKOperationTimeField = "operation_time"
 
-	// BKOpTimeField the op time field
-	BKOpTimeField = "op_time"
+	// BKResourceIDField the audit resource ID field
+	BKResourceIDField = "resource_id"
+
+	// BKResourceNameField the audit resource name field
+	BKResourceNameField = "resource_name"
+
+	// BKLabelField the audit resource name field
+	BKLabelField = "label"
 
 	// BKSetEnvField the set env field
 	BKSetEnvField = "bk_set_env"
@@ -669,8 +685,6 @@ const DefaultInstName string = "实例名"
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 
-const BKMainLine = "mainline"
-
 // bk_classification_id value
 const BKNetwork = "bk_network"
 
@@ -735,20 +749,34 @@ const (
 	// FieldTypeList the lis type
 	FieldTypeList string = "list"
 
+	// FieldTypeOrganization the organization field type
+	FieldTypeOrganization string = "organization"
+
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 15000
+	FieldTypeLongLenChar int = 2000
+
+	// FieldTypeUserLenChar the user char length limit
+	FieldTypeUserLenChar int = 2000
 
 	//FieldTypeStrictCharRegexp the single char regex expression
 	FieldTypeStrictCharRegexp string = `^[a-zA-Z]\w*$`
 
-	//FieldTypeSingleCharRegexp the single char regex expression
-	FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	//FieldTypeServiceCategoryRegexp the service category regex expression
+	FieldTypeServiceCategoryRegexp string = `^([\w\p{Han}]|[:\-\(\)])+$`
 
-	//FieldTypeLongCharRegexp the single char regex expression
-	FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[=，。？！～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	//FieldTypeMainlineRegexp the mainline instance name regex expression
+	FieldTypeMainlineRegexp string = `^[^#/,><|]+$`
+
+	//FieldTypeSingleCharRegexp the single char regex expression
+	//FieldTypeSingleCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	FieldTypeSingleCharRegexp string = `\S`
+
+	//FieldTypeLongCharRegexp the long char regex expression\
+	//FieldTypeLongCharRegexp string = `^([\w\p{Han}]|[，。？！={}|?<>~～、：＃；％＊——……＆·＄（）‘’“”\[\]『』〔〕｛｝【】￥￡♀‖〖〗《》「」:,;\."'\/\\\+\-\s#@\(\)])+$`
+	FieldTypeLongCharRegexp string = `\S`
 )
 
 const (
@@ -786,6 +814,10 @@ const (
 	ExcelHeaderOtherRowFontColor = "FF000000"
 	// ExcelCellDefaultBorderColor black color
 	ExcelCellDefaultBorderColor = "FFD4D4D4"
+	// ExcelHeaderFirstColumnColor light gray
+	ExcelHeaderFirstColumnColor = "fee9da"
+	// ExcelFirstColumnCellColor dark gray
+	ExcelFirstColumnCellColor = "fabf8f"
 
 	// ExcelAsstPrimaryKeySplitChar split char
 	ExcelAsstPrimaryKeySplitChar = ","
@@ -802,6 +834,12 @@ const (
 
 	// ExcelCommentSheetCotentLangPrefixKey excel comment sheet centent language prefixe key
 	ExcelCommentSheetCotentLangPrefixKey = "import_comment"
+
+	// ExcelFirstColumnFieldName export excel first column for tips
+	ExcelFirstColumnFieldName = "field_name"
+	ExcelFirstColumnFieldType = "field_type"
+	ExcelFirstColumnFieldID   = "field_id"
+	ExcelFirstColumnInstData  = "inst_data"
 )
 
 const (
@@ -848,23 +886,17 @@ const (
 
 // event cache keys
 const (
-	EventCacheEventIDKey          = BKCacheKeyV3Prefix + "event:inst_id"
-	EventCacheEventQueueKey       = BKCacheKeyV3Prefix + "event:inst_queue"
-	EventCacheEventTxnQueuePrefix = BKCacheKeyV3Prefix + "event:inst_txn_queue:"
-	EventCacheEventTxnSet         = BKCacheKeyV3Prefix + "event:txn_set"
-	RedisSnapKeyPrefix            = BKCacheKeyV3Prefix + "snapshot:"
+	EventCacheEventIDKey             = BKCacheKeyV3Prefix + "event:inst_id"
+	EventCacheEventQueueKey          = BKCacheKeyV3Prefix + "event:inst_queue"
+	EventCacheEventTxnQueuePrefix    = BKCacheKeyV3Prefix + "event:inst_txn_queue:"
+	EventCacheEventTxnCommitQueueKey = BKCacheKeyV3Prefix + "event:inst_txn_commit_queue"
+	EventCacheEventTxnAbortQueueKey  = BKCacheKeyV3Prefix + "event:inst_txn_abort_queue"
+	RedisSnapKeyPrefix               = BKCacheKeyV3Prefix + "snapshot:"
 )
 
+// api cache keys
 const (
-	BKSTRIDPrefix = "cc"
-)
-
-const (
-	// LocalHostName the local host name definition
-	LocalHostName = "localhost"
-
-	// LocalHostIP the local host ip definition
-	LocalHostIP = "127.0.0.1"
+	ApiCacheLimiterRulePrefix = BKCacheKeyV3Prefix + "api:limiter_rule:"
 )
 
 const (
@@ -875,26 +907,25 @@ const (
 	// BKHTTPOwnerID the owner
 	BKHTTPOwner = "HTTP_BK_SUPPLIER_ACCOUNT"
 	// BKHTTPOwnerID the owner id
-	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
-	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
+	BKHTTPOwnerID           = "HTTP_BLUEKING_SUPPLIER_ID"
 	BKHTTPCookieLanugageKey = "blueking_language"
-	//BKSessionLanugageKey = "language"
-	BKHTTPSupplierID     = "bk_supplier_id"
-	BKHTTPRequestAppCode = "Bk-App-Code"
+	BKHTTPSupplierID        = "bk_supplier_id"
+	BKHTTPRequestAppCode    = "Bk-App-Code"
+	BKHTTPRequestRealIP     = "X-Real-Ip"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID    = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime     = "Cc_Request_Time"
-	BKHTTPCCTransactionID   = "Cc_Txn_Id"
-	BKHTTPCCTxnTMServerAddr = "Cc_Txn_Tm_addr-Ip"
+	BKHTTPOtherRequestID = "X-Bkapi-Request-Id"
 )
 
-type CCContextKey string
-
+// transaction related
 const (
-	CCContextKeyJoinOption = CCContextKey("cc_context_joinoption")
+	TransactionIdHeader      = "cc_transaction_id_string"
+	TransactionTimeoutHeader = "cc_transaction_timeout"
+
+	// mongodb default transaction timeout is 1 minute.
+	TransactionDefaultTimeout = 2 * time.Minute
 )
 
 const (
@@ -964,8 +995,12 @@ const (
 )
 
 const (
-	BKDefaultLoginUserPluginVersion = "self"
-	HTTPCookieBKToken               = "bk_token"
+	// login type
+	BKBluekingLoginPluginVersion   = "blueking"
+	BKOpenSourceLoginPluginVersion = "opensource"
+	BKSkipLoginPluginVersion       = "skip-login"
+
+	HTTPCookieBKToken = "bk_token"
 
 	WEBSessionUinKey           = "username"
 	WEBSessionChineseNameKey   = "chName"
@@ -976,8 +1011,7 @@ const (
 	WEBSessionOwnerUinListeKey = "owner_uin_list"
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
-	//WEBSessionLanguageKey      = "language"
-	WEBSessionSupplierID = "supplier_id"
+	WEBSessionSupplierID       = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
@@ -992,38 +1026,11 @@ const (
 	HostFieldDockerServerVersion = "docker_server_version"
 )
 
-const TemplateStatusField = "status"
 const BKStatusField = "status"
-
-const (
-	TemplateStatusDraft   = "draft"
-	TemplateStatusOnline  = "online"
-	TemplateStatusHistory = "history"
-)
 
 const (
 	BKProcInstanceOpUser             = "proc instance user"
 	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
-)
-
-const (
-	GSEProcOPStop           = 1
-	GSEProcOPQueryStatus    = 2
-	GSEProcOPRegister       = 3
-	GSEProcOPUnregister     = 4
-	GSEProcOPRegisterStart  = 5
-	GSEProcOPUnregisterStop = 6
-	GSEProcOPRestart        = 7
-	GSEProcOPReload         = 8
-	GSEProcOPKill           = 9
-)
-const (
-	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
-	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
-	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
-	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
-	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
-	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
 )
 
 // association fields
@@ -1087,13 +1094,14 @@ const (
 )
 
 const (
-	AttributePlaceHolderMaxLength = 300
-	AttributeOptionMaxLength      = 1000
-	AttributeIDMaxLength          = 20
-	AttributeNameMaxLength        = 20
+	AttributePlaceHolderMaxLength = 2000
+	AttributeOptionMaxLength      = 2000
+	AttributeIDMaxLength          = 128
+	AttributeNameMaxLength        = 128
 	AttributeUnitMaxLength        = 20
 	AttributeOptionValueMaxLength = 128
 	AttributeOptionArrayMaxLength = 200
+	ServiceCategoryMaxLength      = 128
 )
 
 const (
@@ -1137,11 +1145,10 @@ const (
 	BKHostState = "bk_state"
 )
 
-// 云同步
+// multiple language support
+type LanguageType string
+
 const (
-	CloudSyncTaskID            = "bk_task_id"
-	CloudSyncTaskName          = "bk_task_name"
-	CloudSyncResourceConfirmID = "bk_resource_id"
-	CloudSyncConfirmTime       = "confirm_time"
-	CloudSyncConfirmHistoryID  = "confirm_history_id"
+	Chinese LanguageType = "zh-cn"
+	English LanguageType = "en"
 )

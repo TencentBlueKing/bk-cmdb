@@ -15,7 +15,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"configcenter/src/common"
@@ -23,24 +22,21 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
-	"configcenter/src/common/version"
 	"configcenter/src/source_controller/coreservice/app/options"
 	coresvr "configcenter/src/source_controller/coreservice/service"
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 )
 
 // CoreServer the core server
 type CoreServer struct {
 	Core    *backbone.Engine
-	Config  options.Config
+	Config  *options.Config
 	Service coresvr.CoreServiceInterface
 }
 
 func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfig) {
-
-	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
+	if t.Config == nil {
+		t.Config = new(options.Config)
+	}
 
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
@@ -48,7 +44,7 @@ func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfi
 
 // Run main function
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
+	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
@@ -71,8 +67,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	var configReady bool
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		// redis not found
-		if "" == coreSvr.Config.Redis.Address {
+		if nil == coreSvr.Config {
 			time.Sleep(time.Second)
 			continue
 		}
@@ -86,8 +81,17 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("configuration item not found")
 	}
 
+	coreSvr.Config.Mongo, err = engine.WithMongo()
+	if err != nil {
+		return err
+	}
+	coreSvr.Config.Redis, err = engine.WithRedis()
+	if err != nil {
+		return err
+	}
+
 	coreSvr.Core = engine
-	err = coreService.SetConfig(coreSvr.Config, engine, engine.CCErr, engine.Language)
+	err = coreService.SetConfig(*coreSvr.Config, engine, engine.CCErr, engine.Language)
 	if err != nil {
 		return err
 	}
@@ -99,31 +103,4 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	case <-ctx.Done():
 	}
 	return nil
-}
-
-func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
 }

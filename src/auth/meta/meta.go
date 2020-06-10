@@ -132,6 +132,10 @@ const (
 	ModelTopologyView      Action = "modelTopologyView"
 	ModelTopologyOperation Action = "modelTopologyOperation"
 	AdminEntrance          Action = "adminEntrance"
+
+	// event watch
+	WatchHost         Action = "host"
+	WatchHostRelation Action = "host_relation"
 )
 
 type InitConfig struct {

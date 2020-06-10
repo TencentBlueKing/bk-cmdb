@@ -5,25 +5,28 @@
             v-bkloading="{ isLoading: $loading(Object.values(request)) || !commonRequestFinished }"
             :data="table.data"
             :pagination="table.pagination"
-            :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 250"
-            @page-change="refresh"
+            @page-change="handlePageChange"
             @page-limit-change="handleLimitChange"
             @sort-change="handleSortChange"
-            @row-click="handleRowClick"
             @selection-change="handleSelectionChange">
             <bk-table-column type="selection" width="50" align="center"></bk-table-column>
             <bk-table-column v-for="column in table.header"
                 show-overflow-tooltip
+                min-width="80"
                 :key="column.bk_property_id"
                 :label="$tools.getHeaderPropertyName(column)"
                 :sortable="getColumnSortable(column)"
-                :prop="column.bk_property_id"
-                :width="column.bk_property_id === 'bk_host_innerip' ? 130 : 'auto'"
-                :fixed="column.bk_property_id === 'bk_host_innerip'"
-                :class-name="column.bk_property_id === 'bk_host_innerip' ? 'is-highlight' : ''">
+                :prop="column.bk_property_id">
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.bk_obj_id, column.bk_property_id) | formatter(column) }}
+                    <cmdb-property-value
+                        :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
+                        :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
+                        :show-unit="false"
+                        :show-title="true"
+                        :property="column"
+                        @click.native.stop="handleValueClick(row, column)">
+                    </cmdb-property-value>
                 </template>
             </bk-table-column>
         </bk-table>
@@ -43,13 +46,14 @@
     import ModuleSelector from './module-selector.vue'
     import MoveToResourceConfirm from './move-to-resource-confirm.vue'
     import hostValueFilter from '@/filters/host'
-    import debounce from 'lodash.debounce'
     import { mapGetters, mapState } from 'vuex'
     import {
         MENU_BUSINESS_HOST_DETAILS,
         MENU_BUSINESS_TRANSFER_HOST
     } from '@/dictionary/menu-symbol'
     import Bus from '@/utils/bus.js'
+    import RouterQuery from '@/router/query'
+    import { getIPPayload, injectFields, injectAsset } from '@/utils/host'
     export default {
         components: {
             HostListOptions,
@@ -74,7 +78,7 @@
                 },
                 columnsConfig: {
                     selected: [],
-                    fixedColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    fixedColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
                 dialog: {
                     width: 720,
@@ -87,53 +91,56 @@
                     table: Symbol('table'),
                     moveToResource: Symbol('moveToResource'),
                     moveToIdleModule: Symbol('moveToIdleModule')
-                },
-                refresh: null
+                }
             }
         },
         computed: {
+            ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('businessHost', [
                 'columnsConfigProperties',
                 'selectedNode',
-                'getDefaultSearchCondition',
                 'commonRequest'
             ]),
-            ...mapState('hosts', ['filterParams']),
+            ...mapGetters('hosts', ['condition']),
             customColumns () {
-                const customColumnKey = this.$route.meta.customInstanceColumn
-                return this.usercustom[customColumnKey] || []
+                return this.usercustom['business_topology_table_column_config'] || []
+            },
+            globalCustomColumns () {
+                return this.globalUsercustom['host_global_custom_table_columns'] || []
             }
         },
         watch: {
             customColumns () {
                 this.setTableHeader()
+                this.getHostList()
             },
             columnsConfigProperties () {
                 this.setTableHeader()
-            },
-            selectedNode (node) {
-                node && this.active && this.refresh(1)
-            },
-            filterParams () {
-                this.selectedNode && this.refresh(1)
             }
         },
         created () {
-            this.refresh = debounce(current => {
-                this.handlePageChange(current)
-            }, 10)
-            Bus.$on('refresh-list', this.handlePageChange)
+            this.unwatch = RouterQuery.watch('*', ({
+                tab = 'hostList',
+                node,
+                page = 1,
+                limit = this.table.pagination.limit
+            }) => {
+                this.table.pagination.current = parseInt(page)
+                this.table.pagination.limit = parseInt(limit)
+                tab === 'hostList' && node && this.selectedNode && this.getHostList()
+            }, { throttle: 16, immediate: true, ignore: ['keyword'] })
         },
         beforeDestroy () {
-            Bus.$off('refresh-list', this.handlePageChange)
+            this.unwatch()
         },
         methods: {
             setTableHeader () {
+                const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
                 const properties = this.$tools.getHeaderProperties(
                     this.columnsConfigProperties,
-                    this.customColumns,
+                    customColumns,
                     this.columnsConfig.fixedColumns
                 )
                 this.table.header = properties
@@ -144,31 +151,29 @@
                 return (isHostProperty && !isForeignKey) ? 'custom' : false
             },
             handlePageChange (current) {
-                this.table.pagination.current = current
-                this.getHostList()
+                RouterQuery.set('page', current)
             },
             handleLimitChange (limit) {
-                this.table.pagination.limit = limit
-                this.refresh(1)
+                RouterQuery.set({
+                    limit: limit,
+                    page: 1
+                })
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)
-                this.refresh(1)
+                RouterQuery.set('_t', Date.now())
             },
-            handleRowClick (row, event, column) {
-                if (column.type === 'selection') {
-                    return false
+            handleValueClick (row, column) {
+                if (column.bk_obj_id !== 'host' || column.bk_property_id !== 'bk_host_id') {
+                    return
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_DETAILS,
                     params: {
-                        business: this.bizId,
+                        bizId: this.bizId,
                         id: row.host.bk_host_id
                     },
-                    query: {
-                        from: 'business',
-                        node: this.selectedNode.id
-                    }
+                    history: true
                 })
             },
             handleSelectionChange (selection) {
@@ -195,16 +200,13 @@
             getParams () {
                 const params = {
                     bk_biz_id: this.bizId,
-                    ip: this.filterParams.ip,
+                    ip: getIPPayload(),
                     page: {
                         ...this.$tools.getPageParams(this.table.pagination),
                         sort: this.table.sort
                     },
-                    condition: this.getDefaultSearchCondition()
+                    condition: this.$tools.clone(this.condition)
                 }
-                params.condition.forEach(modleCondition => {
-                    modleCondition.condition = this.filterParams[modleCondition.bk_obj_id] || []
-                })
                 const idMap = {
                     host: 'bk_host_id',
                     set: 'bk_set_id',
@@ -215,11 +217,19 @@
                 const nodeData = this.selectedNode.data
                 const conditionObjectId = Object.keys(idMap).includes(nodeData.bk_obj_id) ? nodeData.bk_obj_id : 'object'
                 const selectedNodeCondition = params.condition.find(target => target.bk_obj_id === conditionObjectId)
-                selectedNodeCondition.condition.push({
-                    field: idMap[conditionObjectId],
-                    operator: '$eq',
-                    value: nodeData.bk_inst_id
-                })
+                const existCondition = selectedNodeCondition.condition.find(({ field }) => field === idMap[conditionObjectId])
+                if (existCondition) {
+                    existCondition.operator = '$eq'
+                    existCondition.value = nodeData.bk_inst_id
+                } else {
+                    selectedNodeCondition.condition.push({
+                        field: idMap[conditionObjectId],
+                        operator: '$eq',
+                        value: nodeData.bk_inst_id
+                    })
+                }
+                injectFields(params, this.table.header)
+                injectAsset(params, RouterQuery.get('bk_asset_id'))
                 return params
             },
             handleTransfer (type) {
@@ -300,15 +310,18 @@
                         hosts: [...this.table.selection],
                         target: internalModule
                     })
-                    this.refresh(1)
                     this.table.selection = []
                     this.$success('转移成功')
+                    RouterQuery.set({
+                        _t: Date.now(),
+                        page: 1
+                    })
                 } catch (e) {
                     console.error(e)
                 }
             },
             gotoTransferPage (modules) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
                         type: this.dialog.props.moduleType
@@ -319,7 +332,8 @@
                         targetModules: modules.map(node => node.data.bk_inst_id).join(','),
                         resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
                         node: this.selectedNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             async moveHostToResource () {
@@ -338,8 +352,11 @@
                         hosts: [...this.table.selection]
                     })
                     this.table.selection = []
-                    this.refresh(1)
                     this.$success('转移成功')
+                    RouterQuery.set({
+                        _t: Date.now(),
+                        page: 1
+                    })
                 } catch (e) {
                     console.error(e)
                 }

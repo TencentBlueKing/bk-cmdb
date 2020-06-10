@@ -1,5 +1,6 @@
+import { getAuthorizedBusiness } from '@/router/business-interceptor.js'
 const preloadConfig = {
-    fromCache: true,
+    fromCache: false,
     cancelWhenRouteChange: false
 }
 
@@ -23,9 +24,23 @@ export function getUserCustom (app) {
     })
 }
 
+export function getGlobalUsercustom (app) {
+    return app.$store.dispatch('userCustom/getGlobalUsercustom', {
+        config: {
+            ...preloadConfig,
+            fromCache: false,
+            globalError: false
+        }
+    }).catch(() => {
+        return {}
+    })
+}
+
 export default async function (app) {
+    getAuthorizedBusiness(app)
     return Promise.all([
         getClassifications(app),
-        getUserCustom(app)
+        getUserCustom(app),
+        getGlobalUsercustom(app)
     ])
 }

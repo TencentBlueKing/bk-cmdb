@@ -24,6 +24,7 @@ import (
 	"configcenter/src/auth/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // this variable is used to accelerate the way to check if a business is resource pool
@@ -40,10 +41,9 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 	}
 	// get resource pool business id now.
 	query := &metadata.QueryCondition{
-		Fields: []string{common.BKAppIDField},
+		Fields: []string{common.BKAppIDField, common.BkSupplierAccount},
 		Condition: map[string]interface{}{
-			"bk_biz_name": common.DefaultAppName,
-			"default":     1,
+			"default": 1,
 		},
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, query)
@@ -55,24 +55,24 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 		return 0, errors.New(result.ErrMsg)
 	}
 
-	if len(result.Data.Info) != 1 {
-		// normally, this can not be happen.
-		return 0, errors.New("get resource pool business id, but got multiple or not found")
-	}
+	supplier := util.GetOwnerID(header)
+	for idx, biz := range result.Data.Info {
+		if supplier == biz[common.BkSupplierAccount].(string) {
+			if !result.Data.Info[idx].Exists(common.BKAppIDField) {
+				// this can not be happen normally.
+				return 0, fmt.Errorf("can not find resource pool business id")
+			}
+			bizID, err := result.Data.Info[idx].Int64(common.BKAppIDField)
+			if err != nil {
+				return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
+			}
+			// update resource pool business id immediately
+			atomic.StoreInt64(&resourcePoolBusinessID, bizID)
 
-	// set resource pool as global
-	if !result.Data.Info[0].Exists(common.BKAppIDField) {
-		// this can not be happen normally.
-		return 0, fmt.Errorf("can not find resource pool business id")
+			return bizID, nil
+		}
 	}
-	bizID, err := result.Data.Info[0].Int64(common.BKAppIDField)
-	if err != nil {
-		return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
-	}
-	// update resource pool business id immediately
-	atomic.StoreInt64(&resourcePoolBusinessID, bizID)
-
-	return bizID, nil
+	return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
 
 }
 

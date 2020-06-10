@@ -43,10 +43,23 @@ export default [{
         },
         customInstanceColumn: 'business_topology_table_column_config',
         customFilterProperty: 'business_topology_filter_property_config'
-    })
+    }),
+    children: [{
+        name: MENU_BUSINESS_HOST_DETAILS,
+        path: 'host/:id',
+        component: () => import('@/views/host-details/index'),
+        meta: new Meta({
+            owner: MENU_BUSINESS,
+            menu: {
+                i18n: '主机详情',
+                relative: MENU_BUSINESS_HOST_AND_SERVICE
+            },
+            layout: {}
+        })
+    }]
 }, {
     name: MENU_BUSINESS_TRANSFER_HOST,
-    path: 'host/transfer/:type',
+    path: 'host/transfer/:type/:module?',
     component: () => import('@/views/host-operation/index.vue'),
     meta: new Meta({
         owner: MENU_BUSINESS,
@@ -58,17 +71,7 @@ export default [{
                 U_HOST
             }
         },
-        layout: {
-            previous: (view) => {
-                if (view.$route.query.from) {
-                    return { path: view.$route.query.from }
-                }
-                return {
-                    name: MENU_BUSINESS_HOST_AND_SERVICE,
-                    query: { node: view.$route.query.node }
-                }
-            }
-        }
+        layout: {}
     })
 }, {
     name: MENU_BUSINESS_DELETE_SERVICE,
@@ -80,44 +83,6 @@ export default [{
             i18n: '删除服务实例',
             relative: MENU_BUSINESS_HOST_AND_SERVICE
         },
-        layout: {
-            previous () {
-                const $route = window.CMDB_APP.$route
-                if ($route.query.from) {
-                    return {
-                        path: $route.query.from,
-                        query: $route.query.query
-                    }
-                } else {
-                    return {
-                        name: MENU_BUSINESS_HOST_AND_SERVICE,
-                        query: {
-                            tab: 'serviceInstance',
-                            node: `module-${$route.params.moduleId}`
-                        }
-                    }
-                }
-            }
-        }
-    })
-}, {
-    name: MENU_BUSINESS_HOST_DETAILS,
-    path: ':business/host/:id',
-    component: () => import('@/views/host-details/index'),
-    meta: new Meta({
-        owner: MENU_BUSINESS,
-        menu: {
-            i18n: '主机详情',
-            relative: MENU_BUSINESS_HOST_AND_SERVICE
-        },
-        layout: {
-            previous: (view) => ({
-                name: MENU_BUSINESS_HOST_AND_SERVICE,
-                query: view.$route.query
-            })
-        },
-        checkAvailable: (to, from, app) => {
-            return parseInt(to.params.business) === app.$store.getters['objectBiz/bizId']
-        }
+        layout: {}
     })
 }]

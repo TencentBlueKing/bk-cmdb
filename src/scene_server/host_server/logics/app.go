@@ -28,7 +28,7 @@ import (
 )
 
 func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, errors.CCError) {
-    cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
+	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
 		return -1, err
@@ -58,11 +58,9 @@ func (lgc *Logics) GetDefaultAppID(ctx context.Context) (int64, errors.CCError) 
 }
 
 func (lgc *Logics) GetAppDetails(ctx context.Context, fields string, condition map[string]interface{}) (types.MapStr, errors.CCError) {
-
+	fields = fields + "," + common.BkSupplierAccount
 	input := &metadata.QueryCondition{
 		Condition: condition,
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
 		Fields:    strings.Split(fields, ","),
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, input)
@@ -75,11 +73,14 @@ func (lgc *Logics) GetAppDetails(ctx context.Context, fields string, condition m
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	if len(result.Data.Info) == 0 {
-		return make(map[string]interface{}), nil
+	supplier := util.GetOwnerID(lgc.header)
+	for idx, biz := range result.Data.Info {
+		if supplier == biz[common.BkSupplierAccount].(string) {
+			return result.Data.Info[idx], nil
+		}
 	}
 
-	return result.Data.Info[0], nil
+	return nil, errors.New(common.CCErrCommBizNotFoundError, "find resource pool biz failed")
 }
 
 func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (bool, errors.CCErrorCoder) {
@@ -146,8 +147,7 @@ func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr
 	cond.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 	query := &metadata.QueryCondition{
 		Condition: cond,
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
+		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKAppIDField},
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, query)
 
@@ -176,8 +176,7 @@ func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.Condition
 
 	query := &metadata.QueryCondition{
 		Condition: condMap,
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKAppIDField},
 		Fields:    []string{common.BKAppIDField},
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, query)
@@ -211,8 +210,7 @@ func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields []string, cond ma
 	cond.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 	query := &metadata.QueryCondition{
 		Condition: cond,
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKAppIDField},
 		Fields:    fields,
 	}
 

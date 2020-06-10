@@ -170,6 +170,7 @@
     import cmdbEditLabel from './edit-label.vue'
     import ProcessFormTipsRender from './process-form-tips-render.js'
     import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
+    import { Validator } from 'vee-validate'
     export default {
         components: {
             serviceInstanceTable,
@@ -191,7 +192,7 @@
                         id: 0
                     },
                     {
-                        name: `${this.$t('标签')}(value)`,
+                        name: this.$t('标签值'),
                         id: 1,
                         children: [{
                             id: '',
@@ -200,7 +201,7 @@
                         conditions: []
                     },
                     {
-                        name: `${this.$t('标签')}(key)`,
+                        name: this.$t('标签键'),
                         id: 2,
                         children: [{
                             id: '',
@@ -729,7 +730,7 @@
                 this.handleCloseProcessForm()
             },
             handleCreateServiceInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'createServiceInstance',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
@@ -739,7 +740,8 @@
                         title: this.currentNode.data.bk_inst_name,
                         node: this.currentNode.id,
                         tab: 'serviceInstance'
-                    }
+                    },
+                    history: true
                 })
             },
             handleCheckALL (checked) {
@@ -763,28 +765,48 @@
                 if (disabled) {
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_DELETE_SERVICE,
                     params: {
                         ids: this.checked.map(instance => instance.id).join('/'),
                         moduleId: this.currentNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
-            copyIp () {
-                this.$copyText(this.checked.map(instance => instance.name.split('_')[0]).join('\n')).then(() => {
-                    this.$success(this.$t('复制成功'))
-                }, () => {
+            async copyIp () {
+                try {
+                    const validator = new Validator()
+                    const validPromise = []
+                    this.checked.forEach(instance => {
+                        const ip = instance.name.split('_')[0]
+                        validPromise.push(new Promise(async resolve => {
+                            const { valid } = await validator.verify(ip, 'ip')
+                            resolve({ valid, ip })
+                        }))
+                    })
+                    const results = await Promise.all(validPromise)
+                    const validResult = results.filter(result => result.valid).map(result => result.ip)
+                    const unique = [...new Set(validResult)]
+                    if (unique.length) {
+                        await this.$copyText(unique.join('\n'))
+                        this.$success(this.$t('复制成功'))
+                    } else {
+                        this.$warn(this.$t('暂无可复制的IP'))
+                    }
+                } catch (e) {
+                    console.error(e)
                     this.$error(this.$t('复制失败'))
-                })
+                }
             },
             handleSyncTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'syncServiceFromModule',
                     params: {
                         modules: String(this.currentNode.data.bk_inst_id),
                         template: this.currentNode.data.service_template_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleShowBatchLabel (disabled) {

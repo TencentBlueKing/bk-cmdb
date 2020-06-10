@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 )
 
 func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -28,7 +29,7 @@ func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	}
 
 	for _, tableName := range tables {
-		exists, err := db.HasTable(tableName)
+		exists, err := db.HasTable(ctx, tableName)
 		if err != nil {
 			return err
 		}
@@ -37,7 +38,7 @@ func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Con
 		}
 
 		// add table
-		if err = db.CreateTable(tableName); err != nil && !db.IsDuplicatedError(err) {
+		if err = db.CreateTable(ctx, tableName); err != nil && !db.IsDuplicatedError(err) {
 			return err
 		}
 	}
@@ -56,7 +57,7 @@ func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	// check index exist and add
 	idxName := "idx_id"
 	if _, ok := idxMap[idxName]; ok == false {
-		index := dal.Index{
+		index := types.Index{
 			Keys:       map[string]int32{common.BKFieldID: 1},
 			Name:       idxName,
 			Unique:     true,

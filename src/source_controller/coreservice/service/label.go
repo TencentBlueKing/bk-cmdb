@@ -13,35 +13,35 @@
 package service
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/selector"
-	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) AddLabels(ctx core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) AddLabels(ctx *rest.Contexts) {
 	inputData := selector.LabelAddRequest{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		blog.InfoJSON("RemoveLabels failed, MarshalJSONInto failed, data: %s, err: %s, rid: %s", data, err, ctx.ReqID)
-		return nil, ctx.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	if err := s.core.LabelOperation().AddLabel(ctx, inputData.TableName, inputData.Option); err != nil {
-		blog.Errorf("AddLabels failed, table: %s, option: %+v, err: %s, rid: %s", inputData.TableName, inputData.Option, err.Error(), ctx.ReqID)
-		return nil, err
+	if err := s.core.LabelOperation().AddLabel(ctx.Kit, inputData.TableName, inputData.Option); err != nil {
+		blog.Errorf("AddLabels failed, table: %s, option: %+v, err: %s, rid: %s", inputData.TableName, inputData.Option, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *coreService) RemoveLabels(ctx core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) RemoveLabels(ctx *rest.Contexts) {
 	inputData := selector.LabelRemoveRequest{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		blog.InfoJSON("RemoveLabels failed, MarshalJSONInto failed, data: %s, err: %s, rid: %s", data, err, ctx.ReqID)
-		return nil, ctx.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
 	}
-	if err := s.core.LabelOperation().RemoveLabel(ctx, inputData.TableName, inputData.Option); err != nil {
-		blog.Errorf("RemoveLabels failed, table: %s, option: %+v, err: %s, rid: %s", inputData.TableName, inputData.Option, err.Error(), ctx.ReqID)
-		return nil, err
+	if err := s.core.LabelOperation().RemoveLabel(ctx.Kit, inputData.TableName, inputData.Option); err != nil {
+		blog.Errorf("RemoveLabels failed, table: %s, option: %+v, err: %s, rid: %s", inputData.TableName, inputData.Option, err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
-	return nil, nil
+	ctx.RespEntity(nil)
 }

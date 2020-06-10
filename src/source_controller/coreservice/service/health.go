@@ -26,7 +26,7 @@ func (s *coreService) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// zk health status
 	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.engin.Ping(); err != nil {
+	if err := s.engine.Ping(); err != nil {
 		zkItem.IsHealthy = false
 		zkItem.Message = err.Error()
 	}
@@ -45,10 +45,10 @@ func (s *coreService) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// redis status
 	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
-	if s.cache == nil {
+	if s.rds == nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = "not connected"
-	} else if err := s.cache.Ping().Err(); err != nil {
+	} else if err := s.rds.Ping().Err(); err != nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = err.Error()
 	}
@@ -57,13 +57,13 @@ func (s *coreService) Healthz(req *restful.Request, resp *restful.Response) {
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
-			meta.Message = "host controller is unhealthy"
+			meta.Message = "coreservice is unhealthy"
 			break
 		}
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_HOST,
+		Module:     types.CC_MODULE_CORESERVICE,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}

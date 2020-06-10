@@ -13,7 +13,7 @@
 package service
 
 import (
-	"plugin"
+	"os"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -30,7 +30,6 @@ import (
 )
 
 type Service struct {
-	VersionPlg *plugin.Plugin
 	*options.ServerOption
 	Engine   *backbone.Engine
 	CacheCli *redis.Client
@@ -40,6 +39,7 @@ type Service struct {
 }
 
 func (s *Service) WebService() *gin.Engine {
+	setGinMode()
 	ws := gin.Default()
 
 	ws.Use(middleware.RequestIDMiddleware)
@@ -48,18 +48,28 @@ func (s *Service) WebService() *gin.Engine {
 	middleware.Engine = s.Engine
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
-	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot + "/index.html")
+	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot + "/index.html", s.Config.Site.HtmlRoot + "/login.html")
 
 	ws.POST("/hosts/import", s.ImportHost)
 	ws.POST("/hosts/export", s.ExportHost)
+	ws.POST("/hosts/update", s.UpdateHosts)
 	ws.GET("/hosts/:bk_host_id/listen_ip_options", s.ListenIPOptions)
 	ws.POST("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportInst)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportInst)
 	ws.POST("/logout", s.LogOutUser)
+	ws.GET("/login", s.Login)
+	ws.POST("/login", s.LoginUser)
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportObject)
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportObject)
 	ws.GET("/user/list", s.GetUserList)
+	// suggest move to  Organization
+	ws.GET("/user/department", s.GetDepartment)
+	ws.GET("/user/departmentprofile", s.GetDepartmentProfile)
+
+	ws.GET("/organization/department", s.GetDepartment)
+	ws.GET("/organization/departmentprofile", s.GetDepartmentProfile)
+
 	ws.GET("/user/language/:language", s.UpdateUserLanguage)
 	// get current login user info
 	ws.GET("/userinfo", s.UserInfo)
@@ -77,6 +87,15 @@ func (s *Service) WebService() *gin.Engine {
 	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
 
 	return ws
+}
+
+func setGinMode() {
+	mode := os.Getenv("GIN_MODE")
+	if mode == "" {
+		gin.SetMode(gin.ReleaseMode)
+		return
+	}
+	gin.SetMode(mode)
 }
 
 func (s *Service) Healthz(c *gin.Context) {

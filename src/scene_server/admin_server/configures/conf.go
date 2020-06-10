@@ -19,7 +19,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
@@ -132,48 +131,23 @@ func (cc *ConfCenter) writeLanguageRes2Center(languageres string) error {
 	return cc.confRegDiscv.Write(key, data)
 }
 
-// WriteConfs2Center save configurs into center.
-// parameter[confRootPath] define the configurs root path, the specification name of the configure \
-// file is [modulename].conf \
+// WriteConfs2Center save configures into center.
+// parameter[confRootPath] define the configure's root path, the configure files are
+// redis.conf, mongodb.conf，common.conf，extra.conf
 func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
-	modules := make([]string, 0)
+	configs := []string{
+		types.CCConfigureRedis,
+		types.CCConfigureMongo,
+		types.CCConfigureCommon,
+		types.CCConfigureExtra,
+	}
 	confFileSuffix := ".conf"
 
-	modules = append(modules, types.CC_MODULE_APISERVER)
-	modules = append(modules, types.CC_MODULE_DATACOLLECTION)
-	modules = append(modules, types.CC_MODULE_HOST)
-	// modules = append(modules, types.CC_MODULE_MIGRATE)
-	modules = append(modules, types.CC_MODULE_PROC)
-	modules = append(modules, types.CC_MODULE_TOPO)
-	modules = append(modules, types.CC_MODULE_WEBSERVER)
-	modules = append(modules, types.CC_MODULE_EVENTSERVER)
-	modules = append(modules, types.CC_MODULE_TXC)
-	modules = append(modules, types.CC_MODULE_CORESERVICE)
-	modules = append(modules, types.CC_MODULE_SYNCHRONZESERVER)
-	modules = append(modules, types.CC_MODULE_OPERATION)
-	modules = append(modules, types.CC_MODULE_TASK)
-
-	dirSubList, err := ioutil.ReadDir(confRootPath)
-	if err != nil {
-		blog.Errorf("get configure directory file error. err:%s", confRootPath)
-		return err
-	}
-	for _, item := range dirSubList {
-		if item.IsDir() {
-			continue
-		}
-
-		if strings.HasPrefix(item.Name(), types.CC_DISCOVERY_PREFIX) && strings.HasSuffix(item.Name(), confFileSuffix) {
-			modules = append(modules, strings.Replace(item.Name(), ".conf", "", 1))
-		}
-	}
-
-	for _, moduleName := range modules {
-
-		filePath := filepath.Join(confRootPath, moduleName+confFileSuffix)
-		key := types.CC_SERVCONF_BASEPATH + "/" + moduleName
+	for _, configName := range configs {
+		filePath := filepath.Join(confRootPath, configName+confFileSuffix)
+		key := types.CC_SERVCONF_BASEPATH + "/" + configName
 		if err := cc.writeConfigure(filePath, key); err != nil {
-			blog.Warnf("fail to write configure of module(%s) into center", moduleName)
+			blog.Warnf("fail to write configure of %s into center", configName)
 			continue
 		} else {
 			blog.Infof("write configure to center %s success", key)

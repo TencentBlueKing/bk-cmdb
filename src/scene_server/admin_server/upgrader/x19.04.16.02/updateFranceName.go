@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+    "configcenter/src/storage/dal/types"
 )
 
 func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -31,7 +32,7 @@ func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &state)
 	if err != nil {
 		// bk_state_name already delete
-		if err == dal.ErrDocumentNotFound {
+		if err == types.ErrDocumentNotFound {
 			return nil
 		}
 		return err

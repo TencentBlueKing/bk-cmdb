@@ -17,14 +17,14 @@ const (
 	// BKTableNameProcModule the table name of the process module
 	BKTableNameProcModule = "cc_Proc2Module"
 
-	// BKTableNameProcTempalte the table name of the process template config
+	// BKTableNameProcTemplate the table name of the process template config
 	BKTableNameProcTemplate = "cc_Proc2Template"
 
 	// BKTableNameProcInstanceModel the table name of the process instance
 	BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
 
-	// BKTableNameProcInstaceDetail  the table name of the process instance detail
-	BKTableNameProcInstaceDetail = "cc_ProcInstanceDetail"
+	// BKTableNameProcInstanceDetail  the table name of the process instance detail
+	BKTableNameProcInstanceDetail = "cc_ProcInstanceDetail"
 
 	// BKTableNameProcOperateTask  the table name of the process instance operater task info
 	BKTableNameProcOperateTask = "cc_ProcOpTask"
@@ -44,8 +44,8 @@ const (
 	// BKTableNameObjAttDes the table name of the object attribute
 	BKTableNameObjAttDes = "cc_ObjAttDes"
 
-	// BKTableNameObjClassifiction the table name of the object classification
-	BKTableNameObjClassifiction = "cc_ObjClassification"
+	// BKTableNameObjClassification the table name of the object classification
+	BKTableNameObjClassification = "cc_ObjClassification"
 
 	// BKTableNameInstAsst the table name of the inst association
 	BKTableNameInstAsst = "cc_InstAsst"
@@ -57,12 +57,13 @@ const (
 	BKTableNameBasePlat    = "cc_PlatBase"
 	BKTableNameBaseSet     = "cc_SetBase"
 	BKTableNameBaseProcess = "cc_Process"
+	BKTableNameDelArchive  = "cc_DelArchive"
 
 	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
 	BKTableNameSystem           = "cc_System"
 	BKTableNameHistory          = "cc_History"
 	BKTableNameHostFavorite     = "cc_HostFavourite"
-	BKTableNameOperationLog     = "cc_OperationLog"
+	BKTableNameAuditLog         = "cc_AuditLog"
 	BKTableNameSubscription     = "cc_Subscription"
 	BKTableNameUserAPI          = "cc_UserAPI"
 	BKTableNameUserCustom       = "cc_UserCustom"
@@ -79,12 +80,6 @@ const (
 	BKTableNameNetcollectHistory = "cc_NetcollectHistory"
 
 	BKTableNameHostLock = "cc_HostLock"
-
-	// Cloud sync tables
-	BKTableNameCloudTask              = "cc_CloudTask"
-	BKTableNameCloudSyncHistory       = "cc_CloudSyncHistory"
-	BKTableNameCloudResourceConfirm   = "cc_CloudResourceConfirm"
-	BKTableNameResourceConfirmHistory = "cc_ResourceConfirmHistory"
 
 	// Operation tables
 	BKTableNameChartConfig   = "cc_ChartConfig"
@@ -113,12 +108,14 @@ var AllTables = []string{
 	BKTableNameProcModule,
 	BKTableNameProcTemplate,
 	BKTableNameProcInstanceModel,
-	BKTableNameProcInstaceDetail,
+	BKTableNameProcInstanceDetail,
 	BKTableNameProcOperateTask,
 	BKTableNamePropertyGroup,
+	BKTableNameAsstDes,
 	BKTableNameObjDes,
+	BKTableNameObjUnique,
 	BKTableNameObjAttDes,
-	BKTableNameObjClassifiction,
+	BKTableNameObjClassification,
 	BKTableNameInstAsst,
 	BKTableNameBaseApp,
 	BKTableNameBaseHost,
@@ -131,7 +128,7 @@ var AllTables = []string{
 	BKTableNameSystem,
 	BKTableNameHistory,
 	BKTableNameHostFavorite,
-	BKTableNameOperationLog,
+	BKTableNameAuditLog,
 	BKTableNameSubscription,
 	BKTableNameUserAPI,
 	BKTableNameUserCustom,
@@ -145,10 +142,6 @@ var AllTables = []string{
 	BKTableNameTransaction,
 	BKTableNameIDgenerator,
 	BKTableNameHostLock,
-	BKTableNameCloudTask,
-	BKTableNameCloudSyncHistory,
-	BKTableNameCloudResourceConfirm,
-	BKTableNameResourceConfirmHistory,
 	BKTableNameObjUnique,
 	BKTableNameAsstDes,
 	BKTableNameServiceCategory,
@@ -162,6 +155,9 @@ var AllTables = []string{
 	BKTableNameChartPosition,
 	BKTableNameChartData,
 	BKTableNameHostApplyRule,
+	BKTableNameAPITask,
+	BKTableNameSetTemplateSyncStatus,
+	BKTableNameSetTemplateSyncHistory,
 }
 
 // GetInstTableName returns inst data table name

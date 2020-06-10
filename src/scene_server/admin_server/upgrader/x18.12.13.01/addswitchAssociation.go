@@ -44,23 +44,23 @@ func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config
 }
 
 func changeNetDeviceTableName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	err := db.DropTable("cc_Netcollect_Device")
+	err := db.DropTable(ctx, "cc_Netcollect_Device")
 	if err != nil && !strings.Contains(err.Error(), "ns not found") {
 		return err
 	}
-	err = db.DropTable("cc_Netcollect_Property")
+	err = db.DropTable(ctx, "cc_Netcollect_Property")
 	if err != nil && !strings.Contains(err.Error(), "ns not found") {
 		return err
 	}
 
 	tablenames := []string{"cc_NetcollectDevice", "cc_NetcollectProperty"}
 	for _, tablename := range tablenames {
-		exists, err := db.HasTable(tablename)
+		exists, err := db.HasTable(ctx, tablename)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err = db.CreateTable(tablename); err != nil && !db.IsDuplicatedError(err) {
+			if err = db.CreateTable(ctx, tablename); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}

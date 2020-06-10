@@ -25,7 +25,7 @@ import (
 	"configcenter/src/scene_server/admin_server/authsynchronizer/utils"
 )
 
-// HandleModuleSync do sync all plat
+// HandlePlatSync do sync all plat
 func (ih *IAMHandler) HandlePlatSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)

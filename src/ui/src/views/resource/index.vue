@@ -3,7 +3,7 @@
         <cmdb-hosts-table class="resource-main" ref="resourceTable"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
-            :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
+            :columns-config-disabled-columns="['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
             :edit-auth="$OPERATION.U_RESOURCE_HOST"
             :delete-auth="$OPERATION.D_RESOURCE_HOST"
             :save-auth="$OPERATION.U_RESOURCE_HOST"
@@ -62,8 +62,8 @@
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
                         :template-url="importInst.templateUrl"
                         :import-url="importInst.importUrl"
-                        @success="getHostList(true)"
-                        @partialSuccess="getHostList(true)">
+                        @success="refreshList(true)"
+                        @partialSuccess="refreshList(true)">
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
                             {{$t('说明：内网IP为必填列')}}
                         </span>
@@ -102,14 +102,16 @@
                 <bk-button @click="cancelAssignHosts">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
+        <router-subview></router-subview>
     </div>
 </template>
 
 <script>
-    import { mapGetters, mapActions, mapState } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
     import cmdbButtonGroup from '@/components/ui/other/button-group'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             cmdbHostsTable,
@@ -150,7 +152,6 @@
             ...mapGetters(['userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapState('hosts', ['filterParams']),
             buttons () {
                 return [{
                     id: 'edit',
@@ -173,7 +174,10 @@
                 }]
             },
             columnsConfigKey () {
-                return `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                // 资源池独占components/table，无需再判断，否则会引发资源池详情第一次点击无法跳转至业务拓扑
+                // 因为key的变化引发了header的变化，从而导致触发RouterQuery中的重定向，使第一次跳转失效
+                // return `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                return `${this.userName}_$resource_adminView_table_columns`
             },
             customColumns () {
                 return this.usercustom[this.columnsConfigKey]
@@ -194,18 +198,14 @@
                 if (!show) {
                     this.importInst.active = 'import'
                 }
-            },
-            filterParams () {
-                if (this.ready) {
-                    this.getHostList(false, true)
-                }
             }
         },
         async created () {
             try {
-                await this.getFullAmountBusiness()
-                await this.getProperties()
-                this.getHostList()
+                await Promise.all([
+                    this.getFullAmountBusiness(),
+                    this.getProperties()
+                ])
                 this.ready = true
             } catch (e) {
                 console.error(e)
@@ -231,6 +231,7 @@
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
+                    injectId: 'host',
                     params: this.$injectMetadata({
                         bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
@@ -245,25 +246,6 @@
                     })
                     return result
                 })
-            },
-            getHostList (resetPage = false, event = false) {
-                const params = this.getParams()
-                this.$refs.resourceTable.search(-1, params, resetPage, event)
-            },
-            getParams () {
-                const defaultModel = ['biz', 'set', 'module', 'host']
-                const params = {
-                    bk_biz_id: -1,
-                    ip: this.filterParams.ip,
-                    condition: defaultModel.map(model => {
-                        return {
-                            bk_obj_id: model,
-                            condition: this.filterParams[model] || [],
-                            fields: []
-                        }
-                    })
-                }
-                return params
             },
             handleAssignHosts (businessId, option) {
                 const business = {
@@ -303,10 +285,19 @@
                 }).then(() => {
                     this.$success(this.$t('分配成功'))
                     this.$refs.resourceTable.table.checked = []
-                    this.$refs.resourceTable.handlePageChange(1)
+                    RouterQuery.set({
+                        _t: Date.now(),
+                        page: 1
+                    })
                 }).finally(() => {
                     this.assignBusiness = 'empty'
                     this.assignDialog.show = false
+                })
+            },
+            refreshList () {
+                RouterQuery.set({
+                    _t: Date.now(),
+                    ip: ''
                 })
             },
             handleChecked (checked) {
@@ -343,7 +334,10 @@
                         }).then(() => {
                             this.$success(this.$t('成功删除选中的主机'))
                             this.$refs.resourceTable.table.checked = []
-                            this.$refs.resourceTable.handlePageChange(1)
+                            RouterQuery.set({
+                                _t: Date.now(),
+                                page: 1
+                            })
                         })
                     }
                 })
