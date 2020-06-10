@@ -48,6 +48,8 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		return OperationType, nil
 	case u.WithTask(req):
 		return TaskType, nil
+	case u.WithAdmin(req):
+		return AdminType, nil
 	default:
 		serverType = UnknownType
 		err = errors.New("unknown requested with backend process")
@@ -327,6 +329,26 @@ func (u *URLPath) WithTask(req *restful.Request) (isHit bool) {
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/task/"):
 		from, to, isHit = rootPath, statisticsRoot, true
+
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
+}
+
+// WithAdmin transform admin server url
+func (u *URLPath) WithAdmin(req *restful.Request) (isHit bool) {
+	adminRoot := "/migrate/v3"
+	from, to := rootPath, adminRoot
+
+	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/admin/"):
+		from, to, isHit = rootPath+"/admin", adminRoot, true
 
 	default:
 		isHit = false

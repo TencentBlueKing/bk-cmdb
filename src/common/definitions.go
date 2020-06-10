@@ -973,6 +973,12 @@ const (
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
 
+// config admin
+const (
+	ConfigAdminID         = "configadmin"
+	ConfigAdminValueField = "config"
+)
+
 const (
 	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
 	APPConfigWaitTime = 15

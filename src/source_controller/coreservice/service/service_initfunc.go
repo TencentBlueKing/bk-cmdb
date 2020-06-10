@@ -282,6 +282,8 @@ func (s *coreService) ccSystem(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/system/user_config", Handler: s.GetSystemUserConfig})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/system/config_admin", Handler: s.SearchConfigAdmin})
+
 	utility.AddToRestfulWebService(web)
 }
 
