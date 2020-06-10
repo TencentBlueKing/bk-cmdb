@@ -1271,5 +1271,7 @@
     "全部模型": "All Models",
     "实例名称": "Instance Name",
     "实例操作": "Instance Operation",
-    "所属实例": "Instance"
+    "所属实例": "Instance",
+    "确定删除N个进程": "Confirm to delete {count} selected process?",
+    "确定删除该进程": "Confirm to delete this process?"
 }

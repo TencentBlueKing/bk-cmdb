@@ -7,7 +7,8 @@
         :max-height="$APP.height - 250"
         @page-change="handlePageChange"
         @page-limit-change="handlePageLimitChange"
-        @expand-change="handleExpandChange">
+        @expand-change="handleExpandChange"
+        @row-click="handleRowClick">
         <bk-table-column type="expand" width="30">
             <div slot-scope="{ row }" v-bkloading="{ isLoading: row.pending }">
                 <expand-list
@@ -124,6 +125,9 @@
                 this.list.forEach(row => {
                     this.$refs.processTable.toggleRowExpansion(row, expand)
                 })
+            },
+            handleRowClick (row) {
+                this.$refs.processTable.toggleRowExpansion(row)
             },
             handleReserveSelectionChange (process, selection) {
                 this.list.forEach(row => {

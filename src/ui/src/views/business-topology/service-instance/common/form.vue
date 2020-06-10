@@ -94,6 +94,9 @@
         watch: {
             bindIP (ip) {
                 this.$refs.form.values.bind_ip = ip
+            },
+            internalType (type) {
+                this.updateFormWatcher()
             }
         },
         async created () {
@@ -115,9 +118,28 @@
                 this.pending = false
             }
         },
+        mounted () {
+            this.updateFormWatcher()
+        },
         methods: {
             show () {
                 this.isShow = true
+            },
+            updateFormWatcher () {
+                if (this.internalType === 'view') {
+                    this.unwatchForm && this.unwatchForm()
+                } else {
+                    this.$nextTick(() => {
+                        const form = this.$refs.form
+                        this.unwatchForm = this.$watch(() => {
+                            return form.values.bk_func_name
+                        }, (newVal, oldValue) => {
+                            if (form.values.bk_process_name === oldValue) {
+                                form.values.bk_process_name = newVal
+                            }
+                        })
+                    })
+                }
             },
             async getProperties () {
                 try {

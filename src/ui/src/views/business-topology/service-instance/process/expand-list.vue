@@ -209,17 +209,22 @@
                     console.error(error)
                 }
             },
-            async handleDelete (row) {
-                try {
-                    await this.dispatchDelete([row.process_id])
-                    if (this.list.length === 1) {
-                        this.refreshParentList()
-                    } else {
-                        this.getList()
+            handleDelete (row) {
+                this.$bkInfo({
+                    title: this.$t('确定删除该进程'),
+                    confirmFn: async () => {
+                        try {
+                            await this.dispatchDelete([row.process_id])
+                            if (this.list.length === 1) {
+                                this.refreshParentList()
+                            } else {
+                                this.getList()
+                            }
+                        } catch (error) {
+                            console.error(error)
+                        }
                     }
-                } catch (error) {
-                    console.error(error)
-                }
+                })
             },
             async handeBatchDelete (name) {
                 if (name !== this.process.bk_process_name) {

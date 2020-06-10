@@ -161,25 +161,30 @@
                     console.error(error)
                 }
             },
-            async handleDelete (row) {
-                try {
-                    await this.$store.dispatch('processInstance/deleteServiceInstanceProcess', {
-                        config: {
-                            data: {
-                                bk_biz_id: this.bizId,
-                                process_instance_ids: [row.property.bk_process_id]
-                            },
-                            requestId: this.request.delete
+            handleDelete (row) {
+                this.$bkInfo({
+                    title: this.$t('确定删除该进程'),
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('processInstance/deleteServiceInstanceProcess', {
+                                config: {
+                                    data: {
+                                        bk_biz_id: this.bizId,
+                                        process_instance_ids: [row.property.bk_process_id]
+                                    },
+                                    requestId: this.request.delete
+                                }
+                            })
+                            if (this.list.length === 1) {
+                                this.$emit('update-list', [])
+                            } else {
+                                this.getList()
+                            }
+                        } catch (error) {
+                            console.error(error)
                         }
-                    })
-                    if (this.list.length === 1) {
-                        this.$emit('update-list', [])
-                    } else {
-                        this.getList()
                     }
-                } catch (error) {
-                    console.error(error)
-                }
+                })
             }
         }
     }

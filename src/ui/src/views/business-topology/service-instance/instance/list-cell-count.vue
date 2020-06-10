@@ -37,7 +37,17 @@
             ...mapGetters('objectBiz', ['bizId'])
         },
         methods: {
-            redirectToTemplate () {}
+            redirectToTemplate () {
+                this.$routerActions.redirect({
+                    name: 'operationalTemplate',
+                    params: {
+                        bizId: this.bizId,
+                        templateId: this.row.service_template_id,
+                        moduleId: this.row.bk_module_id
+                    },
+                    history: true
+                })
+            }
         }
     }
 </script>

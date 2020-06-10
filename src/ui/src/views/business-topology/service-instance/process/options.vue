@@ -100,7 +100,12 @@
                 }
             },
             handleBatchtDelete () {
-                Bus.$emit('batch-delete', this.selection.name)
+                this.$bkInfo({
+                    title: this.$t('确定删除N个进程', { count: this.selection.value.length }),
+                    confirmFn: () => {
+                        Bus.$emit('batch-delete', this.selection.name)
+                    }
+                })
             },
             handleProcessSelectionChange (process, selection, requestId) {
                 if (selection.length) {
