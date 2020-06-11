@@ -262,6 +262,21 @@ var expectSystemResourceType = []ResourceType{
 				ActionName:        "主机关系",
 				IsRelatedResource: false,
 			},
+			{
+				ActionID:          WatchBiz,
+				ActionName:        "业务",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          WatchSet,
+				ActionName:        "集群",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          WatchModule,
+				ActionName:        "模块",
+				IsRelatedResource: false,
+			},
 		},
 	},
 }

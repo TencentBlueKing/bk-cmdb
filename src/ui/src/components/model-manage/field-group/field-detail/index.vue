@@ -16,7 +16,7 @@
                     </bk-input>
                     <p class="form-error" :title="errors.first('fieldId')">{{errors.first('fieldId')}}</p>
                 </div>
-                <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"></i>
+                <i class="icon-cc-exclamation-tips" tabindex="-1" v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"></i>
             </label>
             <label class="form-label">
                 <span class="label-text">
@@ -33,7 +33,7 @@
                     </bk-input>
                     <p class="form-error">{{errors.first('fieldName')}}</p>
                 </div>
-                <i class="icon-cc-exclamation-tips" v-if="isSystemCreate" v-bk-tooltips="$t('国际化配置翻译，不可修改')"></i>
+                <i class="icon-cc-exclamation-tips" v-if="isSystemCreate" tabindex="-1" v-bk-tooltips="$t('国际化配置翻译，不可修改')"></i>
             </label>
             <div class="form-label">
                 <span class="label-text">
@@ -46,7 +46,10 @@
                         searchable
                         :clearable="false"
                         v-model="fieldInfo.bk_property_type"
-                        :disabled="isEditField">
+                        :disabled="isEditField"
+                        :popover-options="{
+                            a11y: false
+                        }">
                         <bk-option v-for="(option, index) in fieldTypeList"
                             :key="index"
                             :id="option.id"

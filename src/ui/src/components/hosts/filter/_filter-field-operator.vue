@@ -49,6 +49,13 @@
                     }, {
                         id: '$nin',
                         name: this.$t('不等于')
+                    }],
+                    'enum': [{
+                        id: '$in',
+                        name: this.$t('等于')
+                    }, {
+                        id: '$nin',
+                        name: this.$t('不等于')
                     }]
                 },
                 localSelected: ''

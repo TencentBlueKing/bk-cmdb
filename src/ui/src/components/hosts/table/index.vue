@@ -46,12 +46,13 @@
             @page-limit-change="handleSizeChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
-                min-width="80"
+                :min-width="column.id === 'bk_host_id' ? 80 : 120"
                 :key="column.id"
                 :label="column.name"
                 :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
-                show-overflow-tooltip>
+                show-overflow-tooltip
+                :fixed="column.id === 'bk_host_id'">
                 <template slot-scope="{ row }">
                     <cmdb-property-value
                         :theme="column.id === 'bk_host_id' ? 'primary' : 'default'"

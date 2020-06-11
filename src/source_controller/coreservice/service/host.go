@@ -232,3 +232,19 @@ func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 		Data: result,
 	})
 }
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (s *coreService) GetDistinctHostIDsByTopoRelation(ctx *rest.Contexts) {
+	inputData := &metadata.DistinctHostIDByTopoRelationRequest{}
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	hostIDArr, err := s.core.HostOperation().GetDistinctHostIDsByTopoRelation(ctx.Kit, inputData)
+	if err != nil {
+		blog.ErrorJSON("GetDistinctHostIDsByTopoRelation  error. err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(metadata.DistinctID{IDArr: hostIDArr})
+}

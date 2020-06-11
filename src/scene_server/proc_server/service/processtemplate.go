@@ -40,6 +40,12 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 		}
 	}
 
+	if len(input.Processes) == 0 {
+		ctx.RespEntity([]int64{})
+		blog.Infof("no process to create, return")
+		return
+	}
+
 	// authorize
 	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, input.ServiceTemplateID); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed, "authorize by service template id failed, id: %d, err: %+v", input.ServiceTemplateID, err)

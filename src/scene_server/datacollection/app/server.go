@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/collections"
@@ -163,6 +164,9 @@ func NewDataCollection(ctx context.Context, op *options.ServerOption) (*DataColl
 	if err != nil {
 		return nil, fmt.Errorf("build backbone, %+v", err)
 	}
+
+	// set global cc errors.
+	errors.SetGlobalCCError(engine.CCErr)
 
 	// set hash.
 	newDataCollection.hash = collections.NewHash(svrInfo.RegisterIP, svrInfo.Port, engine.Discovery())

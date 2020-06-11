@@ -113,6 +113,13 @@
     .bk-big-tree-node.has-link-line.is-leaf {
         padding-left: 12px;
     }
+    .bk-scroll-home {
+        .bk-min-nav-slide.bk-nav-show {
+            width: 6px;
+            background-color: #dcdee5;
+            border-radius: 3px;
+        }
+    }
 }
 
 .bk-tab {

@@ -29,7 +29,7 @@ func (s *coreService) CommitTransaction(ctx *rest.Contexts) {
 
 	err := s.db.CommitTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommCommitTransactionFailed, "commit transaction: %s failed, err: %v", cap.SessionID, err)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
 		if err := s.AbortEvent(cap.SessionID); err != nil {
 			blog.Errorf("AbortEvent failed, err:%v", err)
 		}
@@ -57,7 +57,7 @@ func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 
 	err := s.db.AbortTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommCommitTransactionFailed, "commit transaction: %s failed, err: %v", cap.SessionID, err)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
 		return
 	}
 
