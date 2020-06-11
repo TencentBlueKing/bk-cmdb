@@ -1337,7 +1337,7 @@ var _ = Describe("batch_update_host test", func() {
 					common.BKHostIDField: hostId2,
 					"properties": map[string]interface{}{
 						"bk_bak_operator": "admin",
-						"bk_host_outerip": "127.0.0.1",
+						"bk_host_outerip": "127.2.3.4",
 					},
 				},
 			},
@@ -1357,6 +1357,6 @@ var _ = Describe("batch_update_host test", func() {
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_comment"].(string)).To(Equal("test"))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_isp_name"].(string)).To(Equal("1"))
 		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_bak_operator"].(string)).To(Equal("admin"))
-		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_outerip"].(string)).To(Equal("127.0.0.1"))
+		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_outerip"].(string)).To(Equal("127.2.3.4"))
 	})
 })
