@@ -22,6 +22,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+
+	"github.com/axgle/mahonia"
 )
 
 // CreateMainLineObject create a new model in the main line topo
@@ -169,9 +171,22 @@ func (s *Service) searchBusinessTopo(params types.ContextParams, pathParams, que
 }
 
 func SortTopoInst(instData []*metadata.TopoInstRst) {
+	enc := mahonia.NewEncoder("gbk")
+	dec := mahonia.NewDecoder("gbk")
+	for _, data := range instData {
+		gbkData := enc.ConvertString(data.InstName)
+		data.InstName = gbkData
+	}
+
 	sort.Slice(instData, func(i, j int) bool {
 		return instData[i].InstName < instData[j].InstName
 	})
+
+	for _, data := range instData {
+		utfData := dec.ConvertString(data.InstName)
+		data.InstName = utfData
+	}
+
 	for idx := range instData {
 		SortTopoInst(instData[idx].Child)
 	}
