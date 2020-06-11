@@ -5,6 +5,7 @@
         :data="list"
         :outer-border="false"
         :header-cell-style="{ backgroundColor: '#fff' }"
+        v-bind="dynamicProps"
         @selection-change="handleSelectionChange">
         <bk-table-column type="selection" fixed></bk-table-column>
         <bk-table-column :label="$t('所属实例')" prop="service_instance_name" min-width="150" fixed>
@@ -17,7 +18,7 @@
             :label="property.bk_property_name"
             :prop="property.bk_property_id">
             <cmdb-property-value slot-scope="{ row }"
-                :value="row.property[property.bk_property_id] | formatter(property)"
+                :value="row.property[property.bk_property_id]"
                 :show-unit="false"
                 :show-title="true"
                 :property="property">
@@ -77,6 +78,15 @@
             ...mapGetters('objectBiz', ['bizId']),
             serviceTemplateId () {
                 return this.selectedNode && this.selectedNode.data.service_template_id
+            },
+            dynamicProps () {
+                const dynamicProps = {}
+                const paddingHeight = 43
+                const rowHeight = 42
+                if (this.list.length && this.list.length < 3) {
+                    dynamicProps.height = paddingHeight + rowHeight * (this.list.length + 1)
+                }
+                return dynamicProps
             }
         },
         created () {

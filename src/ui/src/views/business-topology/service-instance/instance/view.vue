@@ -19,11 +19,3 @@
         }
     }
 </script>
-
-<style lang="scss" scoped>
-    .view-instance {
-        .instance-list {
-            margin-top: 15px;
-        }
-    }
-</style>

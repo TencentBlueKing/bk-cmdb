@@ -303,31 +303,36 @@
 </script>
 
 <style lang="scss" scoped>
-    /deep/ {
-        .instance-table-row {
-            &:hover,
-            &.expanded {
-                background-color: #f0f1f5;
-                .tag-item {
-                    background-color: #dcdee5;
+    .instance-table {
+        /deep/ {
+            .instance-table-row {
+                &:hover,
+                &.expanded {
+                    background-color: #f0f1f5;
+                    .tag-item {
+                        background-color: #dcdee5;
+                    }
+                }
+                &:hover {
+                    .instance-dot-menu {
+                        display: inline-block;
+                    }
+                    .tag-edit {
+                        visibility: visible;
+                    }
+                    .tag-empty {
+                        display: none;
+                    }
+                }
+                &.disabled {
+                    .bk-table-expand-icon {
+                        display: none;
+                        cursor: not-allowed;
+                    }
                 }
             }
-            &:hover {
-                .instance-dot-menu {
-                    display: inline-block;
-                }
-                .tag-edit {
-                    visibility: visible;
-                }
-                .tag-empty {
-                    display: none;
-                }
-            }
-            &.disabled {
-                .bk-table-expand-icon {
-                    display: none;
-                    cursor: not-allowed;
-                }
+            .bk-table-expanded-cell {
+                padding-left: 80px !important;
             }
         }
     }

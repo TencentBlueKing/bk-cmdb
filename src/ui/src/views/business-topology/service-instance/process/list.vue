@@ -9,7 +9,7 @@
         @page-limit-change="handlePageLimitChange"
         @expand-change="handleExpandChange"
         @row-click="handleRowClick">
-        <bk-table-column type="expand" width="30">
+        <bk-table-column type="expand" width="28">
             <div slot-scope="{ row }" v-bkloading="{ isLoading: row.pending }">
                 <expand-list
                     :process="row"
@@ -153,6 +153,14 @@
             &:hover,
             &.expanded {
                 background-color: #f0f1f5;
+            }
+        }
+        .bk-table-expand-icon {
+            text-align: right !important;
+            justify-content: flex-end !important;
+            .bk-icon {
+                position: static;
+                margin: 0;
             }
         }
     }

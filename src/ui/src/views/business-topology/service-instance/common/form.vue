@@ -77,7 +77,7 @@
                 return this.properties.find(property => property.bk_property_id === 'bind_ip')
             },
             isBindIPDisabled () {
-                return false
+                return this.bindedProperties.includes('bind_ip')
             },
             bindIPRules () {
                 if (!this.bindIPProperty) {

@@ -19,9 +19,3 @@
         }
     }
 </script>
-
-<style lang="scss" scoped>
-    .process-list {
-        margin-top: 15px;
-    }
-</style>

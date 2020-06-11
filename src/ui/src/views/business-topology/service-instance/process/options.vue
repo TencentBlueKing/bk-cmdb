@@ -1,6 +1,6 @@
 <template>
-    <div class="options clearfix">
-        <div class="left fl">
+    <div class="options">
+        <div class="left">
             <cmdb-auth :auth="$authResources({ type: $OPERATION.U_SERVICE_INSTANCE })">
                 <bk-button slot-scope="{ disabled }" theme="primary"
                     :disabled="disabled || !selection.value.length"
@@ -18,7 +18,7 @@
                 </bk-button>
             </cmdb-auth>
         </div>
-        <div class="right fr">
+        <div class="right">
             <bk-checkbox class="options-expand-all" v-model="expandAll" @change="handleExpandAllChange">{{$t('全部展开')}}</bk-checkbox>
             <bk-input class="options-search ml10"
                 ref="searchSelect"
@@ -138,10 +138,14 @@
 
 <style lang="scss" scoped>
     .options {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
         .left,
         .right {
             display: flex;
             align-items: center;
+            margin-bottom: 15px;
         }
     }
     .options-search {
