@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/apimachinery"
@@ -77,8 +78,9 @@ func (log *EventAudit) SaveAuditLog(auditAction metadata.ActionType) errors.CCEr
 		return err
 	}
 	if auditResult.Result != true {
-		blog.ErrorJSON("SaveAuditLog %s %s audit log failed, err: %s, result: %s", auditAction, log.resourceType, err, auditResult)
-		return err
+		errStr := fmt.Sprintf("SaveAuditLog %s %s audit log failed, err: %s, result: %+v", auditAction, log.resourceType, "result false", auditResult)
+		blog.ErrorJSON(errStr)
+		return fmt.Errorf(errStr)
 	}
 	return nil
 }
