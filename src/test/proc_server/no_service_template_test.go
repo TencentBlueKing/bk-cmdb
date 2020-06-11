@@ -841,11 +841,11 @@ var _ = Describe("list_biz_host_process test", func() {
 			"bk_biz_id": bizId,
 			"host_info": map[string]interface{}{
 				"1": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.3",
+					"bk_host_innerip": "127.0.0.3",
 					"bk_cloud_id":     0,
 				},
 				"2": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.4",
+					"bk_host_innerip": "127.0.0.4",
 					"bk_cloud_id":     0,
 				},
 			},
@@ -859,7 +859,7 @@ var _ = Describe("list_biz_host_process test", func() {
 		input1 := &params.HostCommonSearch{
 			AppID: int(bizId),
 			Ip: params.IPInfo{
-				Data:  []string{"1.0.0.3", "1.0.0.4"},
+				Data:  []string{"127.0.0.3", "127.0.0.4"},
 				Exact: 1,
 				Flag:  "bk_host_innerip|bk_host_outerip",
 			},
