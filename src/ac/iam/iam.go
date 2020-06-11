@@ -186,8 +186,10 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	// remove redundant actions, redundant instance selections and resource types one by one when dependencies are all deleted
 	if actionLen := len(removedResourceActionMap); actionLen > 0 {
 		removedResourceActionIDs := make([]ResourceActionID, actionLen)
+		idx := 0
 		for resourceActionID, _ := range removedResourceActionMap {
-			removedResourceActionIDs = append(removedResourceActionIDs, resourceActionID)
+			removedResourceActionIDs[idx] = resourceActionID
+			idx++
 		}
 		if err = i.client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
 			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
@@ -196,8 +198,10 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	}
 	if selectionLen := len(removedInstanceSelectionMap); selectionLen > 0 {
 		removedInstanceSelectionIDs := make([]InstanceSelectionID, selectionLen)
+		idx := 0
 		for resourceActionID, _ := range removedInstanceSelectionMap {
-			removedInstanceSelectionIDs = append(removedInstanceSelectionIDs, resourceActionID)
+			removedInstanceSelectionIDs[idx] = resourceActionID
+			idx++
 		}
 		if err = i.client.DeleteInstanceSelection(ctx, removedInstanceSelectionIDs); err != nil {
 			blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s", err.Error(), removedInstanceSelectionIDs)
@@ -206,8 +210,10 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	}
 	if typeLen := len(removedResourceTypeMap); typeLen > 0 {
 		removedResourceTypeIDs := make([]ResourceTypeID, len(removedResourceTypeMap))
+		idx := 0
 		for resourceType, _ := range removedResourceTypeMap {
-			removedResourceTypeIDs = append(removedResourceTypeIDs, resourceType)
+			removedResourceTypeIDs[idx] = resourceType
+			idx++
 		}
 		if err = i.client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
 			blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s", err.Error(), removedResourceTypeIDs)

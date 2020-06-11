@@ -184,13 +184,13 @@ func getValueType(value interface{}) string {
 // get resource id's actual field
 func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 	switch resourceType {
-	case iam.SysHostInstance, iam.BizHostInstance:
+	case iam.Host:
 		return common.BKHostIDField
 	case iam.SysEventPushing:
 		return common.BKSubscriptionIDField
-	case iam.SysModelGroup:
+	case iam.SysModelGroup, iam.SysInstanceModelGroup:
 		return common.BKClassificationIDField
-	case iam.SysModel:
+	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKObjIDField
 	case iam.SysInstance:
 		return common.BKInstIDField
@@ -220,13 +220,13 @@ func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 // get resource display name's actual field
 func GetResourceNameField(resourceType iam.ResourceTypeID) string {
 	switch resourceType {
-	case iam.SysHostInstance, iam.BizHostInstance:
+	case iam.Host:
 		return common.BKHostInnerIPField
 	case iam.SysEventPushing:
 		return common.BKSubscriptionNameField
-	case iam.SysModelGroup:
+	case iam.SysModelGroup, iam.SysInstanceModelGroup:
 		return common.BKClassificationNameField
-	case iam.SysModel:
+	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKObjNameField
 	case iam.SysInstance:
 		return common.BKInstNameField

@@ -24,14 +24,14 @@ func GenerateInstanceSelections() []InstanceSelection {
 	return []InstanceSelection{
 		{
 			ID:                BusinessSelection,
-			Name:              "业务",
-			NameEn:            "business",
+			Name:              "业务列表",
+			NameEn:            "Business List",
 			ResourceTypeChain: []ResourceChain{businessChain},
 		},
 		{
 			ID:     SysResourcePoolDirectorySelection,
-			Name:   "资源池目录",
-			NameEn: "Resource Pool Directory",
+			Name:   "主机池目录列表",
+			NameEn: "Host Pool Directory List",
 			ResourceTypeChain: []ResourceChain{{
 				SystemID: SystemIDCMDB,
 				ID:       SysResourcePoolDirectory,
@@ -39,8 +39,8 @@ func GenerateInstanceSelections() []InstanceSelection {
 		},
 		{
 			ID:     BizHostInstanceSelection,
-			Name:   "业务主机",
-			NameEn: "Business's Hosts",
+			Name:   "业务主机列表",
+			NameEn: "Business Host List",
 			ResourceTypeChain: []ResourceChain{
 				// select the business at first.
 				businessChain,
@@ -55,14 +55,14 @@ func GenerateInstanceSelections() []InstanceSelection {
 				// then select the host instances.
 				{
 					SystemID: SystemIDCMDB,
-					ID:       BizHostInstance,
+					ID:       Host,
 				},
 			},
 		},
 		{
 			ID:     BizCustomQuerySelection,
-			Name:   "动态分组",
-			NameEn: "Custom Query",
+			Name:   "业务动态分组列表",
+			NameEn: "Business Dynamic Grouping List",
 			ResourceTypeChain: []ResourceChain{
 				businessChain,
 				{
@@ -72,33 +72,9 @@ func GenerateInstanceSelections() []InstanceSelection {
 			},
 		},
 		{
-			ID:     BizProcessServiceCategorySelection,
-			Name:   "服务分类",
-			NameEn: "Service Category",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizProcessServiceCategory,
-				},
-			},
-		},
-		{
-			ID:     BizProcessServiceInstanceSelection,
-			Name:   "服务实例",
-			NameEn: "Service Instance",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizProcessServiceInstance,
-				},
-			},
-		},
-		{
 			ID:     BizProcessServiceTemplateSelection,
-			Name:   "服务模板",
-			NameEn: "Service Template",
+			Name:   "服务模版列表",
+			NameEn: "Service Template List",
 			ResourceTypeChain: []ResourceChain{
 				businessChain,
 				{
@@ -109,8 +85,8 @@ func GenerateInstanceSelections() []InstanceSelection {
 		},
 		{
 			ID:     BizSetTemplateSelection,
-			Name:   "集群模板",
-			NameEn: "Set Template",
+			Name:   "集群模板列表",
+			NameEn: "Set Template List",
 			ResourceTypeChain: []ResourceChain{
 				businessChain,
 				{
@@ -121,8 +97,8 @@ func GenerateInstanceSelections() []InstanceSelection {
 		},
 		{
 			ID:     SysHostInstanceSelection,
-			Name:   "资源池主机",
-			NameEn: "Resource Pool Host",
+			Name:   "主机池主机列表",
+			NameEn: "Host Pool List",
 			ResourceTypeChain: []ResourceChain{
 				{
 					SystemID: SystemIDCMDB,
@@ -130,14 +106,14 @@ func GenerateInstanceSelections() []InstanceSelection {
 				},
 				{
 					SystemID: SystemIDCMDB,
-					ID:       SysHostInstance,
+					ID:       Host,
 				},
 			},
 		},
 		{
 			ID:     SysCloudAreaSelection,
-			Name:   "云区域",
-			NameEn: "Cloud Area",
+			Name:   "云区域列表",
+			NameEn: "Cloud Area List",
 			ResourceTypeChain: []ResourceChain{
 				{
 					SystemID: SystemIDCMDB,
@@ -147,12 +123,16 @@ func GenerateInstanceSelections() []InstanceSelection {
 		},
 		{
 			ID:     SysInstanceSelection,
-			Name:   "实例",
-			NameEn: "Instance",
+			Name:   "实例列表",
+			NameEn: "Instance List",
 			ResourceTypeChain: []ResourceChain{
 				{
 					SystemID: SystemIDCMDB,
-					ID:       SysModel,
+					ID:       SysInstanceModelGroup,
+				},
+				{
+					SystemID: SystemIDCMDB,
+					ID:       SysInstanceModel,
 				},
 				{
 					SystemID: SystemIDCMDB,
@@ -161,9 +141,24 @@ func GenerateInstanceSelections() []InstanceSelection {
 			},
 		},
 		{
+			ID:     SysInstanceModelSelection,
+			Name:   "实例模型列表",
+			NameEn: "Instance Model List",
+			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       SysInstanceModelGroup,
+				},
+				{
+					SystemID: SystemIDCMDB,
+					ID:       SysInstanceModel,
+				},
+			},
+		},
+		{
 			ID:     SysEventPushingSelection,
-			Name:   "事件推送",
-			NameEn: "Event Pushing",
+			Name:   "事件订阅列表",
+			NameEn: "Event Subscription List",
 			ResourceTypeChain: []ResourceChain{
 				{
 					SystemID: SystemIDCMDB,
@@ -173,8 +168,8 @@ func GenerateInstanceSelections() []InstanceSelection {
 		},
 		{
 			ID:     SysCloudAccountSelection,
-			Name:   "云账户",
-			NameEn: "Cloud Account",
+			Name:   "云账户列表",
+			NameEn: "Cloud Account List",
 			ResourceTypeChain: []ResourceChain{
 				{
 					SystemID: SystemIDCMDB,
@@ -184,8 +179,8 @@ func GenerateInstanceSelections() []InstanceSelection {
 		},
 		{
 			ID:     SysCloudResourceTaskSelection,
-			Name:   "云资源任务",
-			NameEn: "Cloud Resource Task",
+			Name:   "云资源任务列表",
+			NameEn: "Cloud Resource Task List",
 			ResourceTypeChain: []ResourceChain{
 				{
 					SystemID: SystemIDCMDB,
@@ -195,9 +190,13 @@ func GenerateInstanceSelections() []InstanceSelection {
 		},
 		{
 			ID:     SysModelSelection,
-			Name:   "模型",
-			NameEn: "Model",
+			Name:   "模型列表",
+			NameEn: "Model List",
 			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       SysModelGroup,
+				},
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysModel,

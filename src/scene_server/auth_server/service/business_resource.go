@@ -33,8 +33,7 @@ func (s *AuthService) PullBusinessResource(ctx *rest.Contexts) {
 	}
 
 	switch query.Type {
-	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory,
-		iam.BizProcessServiceInstance, iam.BizSetTemplate, iam.Set, iam.Module:
+	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizSetTemplate, iam.Set, iam.Module:
 	default:
 		ctx.RespHTTPBody(types.BaseResp{
 			Code:    types.NotFoundErrorCode,

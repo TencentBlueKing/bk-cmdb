@@ -142,10 +142,12 @@ func (a *AuthError) Error() string {
 type ResourceTypeID string
 
 const (
-	SysSystemBase            ResourceTypeID = "sys_system_base"
-	SysHostInstance          ResourceTypeID = "sys_host_instance"
-	SysEventPushing          ResourceTypeID = "sys_event_pushing"
-	SysModelGroup            ResourceTypeID = "sys_model_group"
+	SysSystemBase   ResourceTypeID = "sys_system_base"
+	SysEventPushing ResourceTypeID = "sys_event_pushing"
+	SysModelGroup   ResourceTypeID = "sys_model_group"
+	// special model group and model resource for selection of instance, not including biz topology and host model group
+	SysInstanceModelGroup    ResourceTypeID = "sys_instance_model_group"
+	SysInstanceModel         ResourceTypeID = "sys_instance_model"
 	SysModel                 ResourceTypeID = "sys_model"
 	SysInstance              ResourceTypeID = "sys_instance"
 	SysAssociationType       ResourceTypeID = "sys_association_type"
@@ -156,13 +158,13 @@ const (
 	SysCloudAccount          ResourceTypeID = "sys_cloud_account"
 	SysCloudResourceTask     ResourceTypeID = "sys_cloud_resource_task"
 	SysEventWatch            ResourceTypeID = "event_watch"
+	Host                     ResourceTypeID = "host"
 )
 
 const (
 	Business                  ResourceTypeID = "business"
 	Set                       ResourceTypeID = "set"
 	Module                    ResourceTypeID = "module"
-	BizHostInstance           ResourceTypeID = "biz_host_instance"
 	BizCustomQuery            ResourceTypeID = "biz_custom_query"
 	BizTopology               ResourceTypeID = "biz_topology"
 	BizCustomField            ResourceTypeID = "biz_custom_field"
@@ -252,10 +254,11 @@ const (
 	EditResourcePoolDirectory   ResourceActionID = "edit_resource_pool_directory"
 	DeleteResourcePoolDirectory ResourceActionID = "delete_resource_pool_directory"
 
-	CreateBusiness  ResourceActionID = "create_business"
-	EditBusiness    ResourceActionID = "edit_business"
-	ArchiveBusiness ResourceActionID = "archive_business"
-	FindBusiness    ResourceActionID = "find_business"
+	CreateBusiness       ResourceActionID = "create_business"
+	EditBusiness         ResourceActionID = "edit_business"
+	ArchiveBusiness      ResourceActionID = "archive_business"
+	FindBusiness         ResourceActionID = "find_business"
+	ViewBusinessResource ResourceActionID = "find_business_resource"
 
 	CreateCloudArea ResourceActionID = "create_cloud_area"
 	EditCloudArea   ResourceActionID = "edit_cloud_area"
@@ -305,6 +308,9 @@ const (
 
 	WatchHostEvent         ResourceActionID = "watch_host_event"
 	WatchHostRelationEvent ResourceActionID = "watch_host_relation_event"
+	WatchBizEvent          ResourceActionID = "watch_biz_event"
+	WatchSetEvent          ResourceActionID = "watch_set_event"
+	WatchModuleEvent       ResourceActionID = "watch_module_event"
 
 	// Unknown is an action that can not be recognized
 	Unknown ResourceActionID = "unknown"
@@ -355,14 +361,13 @@ const (
 	BizHostInstanceSelection           InstanceSelectionID = "biz_host_instance"
 	BizCustomQuerySelection            InstanceSelectionID = "biz_custom_query"
 	BizProcessServiceTemplateSelection InstanceSelectionID = "biz_process_service_template"
-	BizProcessServiceCategorySelection InstanceSelectionID = "biz_process_service_category"
-	BizProcessServiceInstanceSelection InstanceSelectionID = "biz_process_service_instance"
 	BizSetTemplateSelection            InstanceSelectionID = "biz_set_template"
 	SysHostInstanceSelection           InstanceSelectionID = "sys_host_instance"
 	SysEventPushingSelection           InstanceSelectionID = "sys_event_pushing"
 	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
 	SysModelSelection                  InstanceSelectionID = "sys_model"
 	SysInstanceSelection               InstanceSelectionID = "sys_instance"
+	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
 	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
 	SysResourcePoolDirectorySelection  InstanceSelectionID = "sys_resource_pool_directory"
 	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"

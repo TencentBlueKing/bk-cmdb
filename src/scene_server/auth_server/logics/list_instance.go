@@ -338,11 +338,15 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
 	}
 
+	expectParentType := iam.SysInstanceModel
+	expectParentIDField := common.BKObjIDField
+	expectParentNameField := common.BKObjNameField
+
 	if filter.Parent != nil {
-		if filter.Parent.Type != iam.SysModel {
+		if filter.Parent.Type != expectParentType {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
-		cond[common.BKObjIDField] = filter.Parent.ID
+		cond[expectParentIDField] = filter.Parent.ID
 		return lgc.ListInstance(kit, cond, req.Type, req.Page)
 	}
 
@@ -362,18 +366,19 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 			continue
 		}
 
-		if resourceType != iam.SysModel {
+		if resourceType != expectParentType {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 
-		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
-			Fields: []string{common.BKObjIDField, common.BKObjNameField},
+		queryCond := &metadata.QueryCondition{
+			Fields: []string{expectParentIDField, expectParentNameField},
 			Page:   metadata.BasePage{Limit: common.BKNoLimit},
 			Condition: map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{common.BKObjIDField: keywordCond},
-				{common.BKObjNameField: keywordCond},
+				{expectParentIDField: keywordCond},
+				{expectParentNameField: keywordCond},
 			}},
-		})
+		}
+		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryCond)
 		if err != nil {
 			blog.Errorf("get model failed, error: %s, rid: %s", err.Error(), kit.Rid)
 			return nil, err
@@ -386,7 +391,7 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 		if len(objIDs) == 0 {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
-		cond[common.BKObjIDField] = map[string]interface{}{
+		cond[expectParentIDField] = map[string]interface{}{
 			common.BKDBIN: objIDs,
 		}
 	}
@@ -409,20 +414,20 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 
 	// get all instances' model if no model is filtered
 	for _, ancestor := range filter.ResourceTypeChain {
-		if ancestor.ID != iam.SysModel {
+		if ancestor.ID != expectParentType {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 	}
 	modelIDs := make([]string, 0)
 	for _, inst := range data.Info {
-		modelID := util.GetStrByInterface(inst[common.BKObjIDField])
+		modelID := util.GetStrByInterface(inst[expectParentIDField])
 		modelIDs = append(modelIDs, modelID)
 	}
 	if len(modelMap) == 0 {
 		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
-			Fields:    []string{common.BKObjIDField, common.BKObjNameField},
+			Fields:    []string{expectParentIDField, expectParentNameField},
 			Page:      metadata.BasePage{Limit: common.BKNoLimit},
-			Condition: map[string]interface{}{common.BKObjIDField: map[string]interface{}{common.BKDBIN: modelIDs}},
+			Condition: map[string]interface{}{expectParentIDField: map[string]interface{}{common.BKDBIN: modelIDs}},
 		})
 		if err != nil {
 			blog.Errorf("get model failed, error: %s, rid: %s", err.Error(), kit.Rid)
@@ -439,11 +444,153 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, req types.PullResourceReq) (
 			ID:          util.GetStrByInterface(inst[idField]),
 			DisplayName: util.GetStrByInterface(inst[nameField]),
 		}
-		ancestorID := util.GetStrByInterface(inst[common.BKObjIDField])
+		ancestorID := util.GetStrByInterface(inst[expectParentIDField])
 		instance.Path = append(instance.Path, types.InstancePath{
-			Type:        iam.SysModel,
+			Type:        expectParentType,
 			ID:          ancestorID,
 			DisplayName: modelMap[ancestorID],
+		})
+		instances = append(instances, instance)
+	}
+	return &types.ListInstanceResult{
+		Count:   data.Count,
+		Results: instances,
+	}, nil
+}
+
+// list models, parent is model group
+func (lgc *Logics) ListModel(kit *rest.Kit, req types.PullResourceReq) (*types.ListInstanceResult, error) {
+	if req.Page.IsIllegal() {
+		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
+	}
+	cond := make(map[string]interface{})
+	if req.Filter == nil {
+		return lgc.ListInstance(kit, cond, req.Type, req.Page)
+	}
+	filter, ok := req.Filter.(types.ListInstanceFilter)
+	if !ok {
+		blog.ErrorJSON("request filter %s is not the right type for list_instance method, rid: %s", req.Filter, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
+	}
+
+	var expectParentType iam.ResourceTypeID
+	if req.Type == iam.SysModel {
+		expectParentType = iam.SysModelGroup
+	} else if req.Type == iam.SysInstanceModel {
+		expectParentType = iam.SysInstanceModelGroup
+	}
+	expectParentIDField := common.BKClassificationIDField
+	expectParentNameField := common.BKClassificationNameField
+
+	if filter.Parent != nil {
+		if filter.Parent.Type != expectParentType {
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+		}
+		expectParentType = filter.Parent.Type
+		cond[expectParentIDField] = filter.Parent.ID
+		return lgc.ListInstance(kit, cond, req.Type, req.Page)
+	}
+
+	// stores model group mapping, modelGroupMap[model group id] = model group display_name
+	modelGroupMap := make(map[string]string)
+	idField := types.GetResourceIDField(req.Type)
+	nameField := types.GetResourceNameField(req.Type)
+	for resourceType, keywords := range filter.Search {
+		keywordCond := map[string]interface{}{
+			common.BKDBLIKE: strings.Join(keywords, "|"),
+		}
+		if resourceType == req.Type {
+			cond[common.BKDBOR] = []map[string]interface{}{
+				{idField: keywordCond},
+				{nameField: keywordCond},
+			}
+			continue
+		}
+
+		if resourceType != iam.SysModelGroup && resourceType != iam.SysInstanceModelGroup {
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+		}
+
+		queryCond := &metadata.QueryCondition{
+			Fields: []string{expectParentIDField, expectParentNameField},
+			Page:   metadata.BasePage{Limit: common.BKNoLimit},
+			Condition: map[string]interface{}{common.BKDBOR: []map[string]interface{}{
+				{expectParentIDField: keywordCond},
+				{expectParentNameField: keywordCond},
+			}},
+		}
+		modelGroupRes, err := lgc.CoreAPI.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, queryCond)
+		if err != nil {
+			blog.Errorf("get model failed, error: %s, rid: %s", err.Error(), kit.Rid)
+			return nil, err
+		}
+		groupIDs := make([]string, 0)
+		for _, group := range modelGroupRes.Data.Info {
+			modelGroupMap[group.ClassificationID] = group.ClassificationName
+			groupIDs = append(groupIDs, group.ClassificationID)
+		}
+		if len(groupIDs) == 0 {
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+		}
+		cond[expectParentIDField] = map[string]interface{}{
+			common.BKDBIN: groupIDs,
+		}
+	}
+
+	if len(filter.ResourceTypeChain) == 0 {
+		return lgc.ListInstance(kit, cond, req.Type, req.Page)
+	}
+
+	// get models with path info
+	param := metadata.PullResourceParam{
+		Condition: cond,
+		Limit:     req.Page.Limit,
+		Offset:    req.Page.Offset,
+	}
+	data, err := lgc.searchAuthResource(kit, param, req.Type)
+	if err != nil {
+		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
+		return nil, err
+	}
+
+	// get all model' group if no group is filtered
+	for _, ancestor := range filter.ResourceTypeChain {
+		if ancestor.ID != expectParentType {
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+		}
+	}
+	groupIDs := make([]string, 0)
+	for _, inst := range data.Info {
+		modelID := util.GetStrByInterface(inst[expectParentIDField])
+		groupIDs = append(groupIDs, modelID)
+	}
+	if len(modelGroupMap) == 0 {
+		modelRes, err := lgc.CoreAPI.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, &metadata.QueryCondition{
+			Fields:    []string{expectParentIDField, expectParentNameField},
+			Page:      metadata.BasePage{Limit: common.BKNoLimit},
+			Condition: map[string]interface{}{expectParentIDField: map[string]interface{}{common.BKDBIN: groupIDs}},
+		})
+		if err != nil {
+			blog.Errorf("get model failed, error: %s, rid: %s", err.Error(), kit.Rid)
+			return nil, err
+		}
+		for _, model := range modelRes.Data.Info {
+			modelGroupMap[model.ClassificationID] = model.ClassificationName
+		}
+	}
+
+	instances := make([]types.InstanceResource, 0)
+	for _, inst := range data.Info {
+		instance := types.InstanceResource{
+			ID:          util.GetStrByInterface(inst[idField]),
+			DisplayName: util.GetStrByInterface(inst[nameField]),
+		}
+		ancestorID := util.GetStrByInterface(inst[expectParentIDField])
+		instance.Path = append(instance.Path, types.InstancePath{
+			Type:        expectParentType,
+			ID:          ancestorID,
+			DisplayName: modelGroupMap[ancestorID],
 		})
 		instances = append(instances, instance)
 	}
@@ -519,15 +666,10 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, req types.PullResourceReq) (*
 			blog.ErrorJSON("parse parent id %s to int64 failed, error: %s, rid: %s", filter.Parent.ID, err.Error(), kit.Rid)
 			return nil, err
 		}
-		if req.Type == iam.SysHostInstance {
-			if filter.Parent.Type != iam.SysResourcePoolDirectory {
-				return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
-			}
-		} else if req.Type == iam.BizHostInstance {
-			if filter.Parent.Type != iam.Module {
-				return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
-			}
-		} else {
+		if req.Type != iam.Host {
+			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+		}
+		if filter.Parent.Type != iam.SysResourcePoolDirectory && filter.Parent.Type != iam.Module {
 			return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 		}
 		relationReq = &metadata.HostModuleRelationRequest{ModuleIDArr: []int64{parentID}}

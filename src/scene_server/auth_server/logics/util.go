@@ -24,13 +24,13 @@ import (
 // get resource database table name
 func getResourceTableName(resourceType iam.ResourceTypeID) string {
 	switch resourceType {
-	case iam.SysHostInstance, iam.BizHostInstance:
+	case iam.Host:
 		return common.BKTableNameBaseHost
 	case iam.SysEventPushing:
 		return common.BKTableNameSubscription
-	case iam.SysModelGroup:
+	case iam.SysModelGroup, iam.SysInstanceModelGroup:
 		return common.BKTableNameObjClassification
-	case iam.SysModel:
+	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKTableNameObjDes
 	case iam.SysInstance:
 		return common.BKTableNameBaseInst
@@ -67,7 +67,7 @@ func getResourceTableName(resourceType iam.ResourceTypeID) string {
 
 func isResourceIDStringType(resourceType iam.ResourceTypeID) bool {
 	switch resourceType {
-	case iam.SysModelGroup, iam.SysModel, iam.SysAssociationType:
+	case iam.SysModelGroup, iam.SysInstanceModelGroup, iam.SysModel, iam.SysInstanceModel, iam.SysAssociationType:
 		return true
 	}
 	return false
@@ -76,7 +76,7 @@ func isResourceIDStringType(resourceType iam.ResourceTypeID) bool {
 // get model instance resource's model id
 func GetInstanceResourceObjID(resourceType iam.ResourceTypeID) string {
 	switch resourceType {
-	case iam.SysHostInstance, iam.BizHostInstance:
+	case iam.Host:
 		return common.BKInnerObjIDHost
 	case iam.SysCloudArea:
 		return common.BKInnerObjIDPlat
@@ -107,7 +107,7 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Reso
 
 	// model not include mainline model
 	// process and cloud area are temporarily excluded TODO remove this restriction when they are available for user
-	if resourceType == iam.SysModel {
+	if resourceType == iam.SysModel || resourceType == iam.SysInstanceModel {
 		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
 		cond := &metadata.QueryCondition{
 			Condition: map[string]interface{}{
@@ -124,13 +124,25 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Reso
 		for _, mainline := range asst.Data.Info {
 			excludedObjIDs = append(excludedObjIDs, mainline.AsstObjID)
 		}
+		if resourceType == iam.SysInstanceModel {
+			excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost)
+		}
 		condition[common.BKObjIDField] = map[string]interface{}{
 			common.BKDBNIN: excludedObjIDs,
 		}
 		return condition, nil
 	}
 
-	if resourceType != iam.BizHostInstance && resourceType != iam.SysHostInstance && resourceType != iam.SysResourcePoolDirectory {
+	// model group for instance selection not include biz topology and host
+	if resourceType == iam.SysInstanceModelGroup {
+		excludedGroupIDs := []string{"bk_host_manage", "bk_biz_topo", "bk_organization"}
+		condition[common.BKClassificationIDField] = map[string]interface{}{
+			common.BKDBNIN: excludedGroupIDs,
+		}
+		return condition, nil
+	}
+
+	if resourceType != iam.SysResourcePoolDirectory {
 		return condition, nil
 	}
 
@@ -173,74 +185,7 @@ func (lgc *Logics) generateSpecialCondition(kit *rest.Kit, resourceType iam.Reso
 		blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s", defaultBizIDVal, err.Error(), kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 	}
-
-	if resourceType == iam.SysResourcePoolDirectory {
-		condition[common.BKAppIDField] = defaultBizID
-		return condition, nil
-	}
-
-	// TODO use cache
-	// get resource pool host IDs from cache
-	hostIDs := make([]int64, 0)
-	//relations, err := cache.GetCacheItemsByKeyRegex(common.BKCacheKeyV3Prefix+"host_module:*", lgc.cache)
-	//if err == nil {
-	//	for _, relation := range relations {
-	//		if relation[common.BKAppIDField] == strconv.FormatInt(defaultBizID, 10) {
-	//			hostID, err := strconv.ParseInt(relation[common.BKHostIDField], 10, 64)
-	//			if err != nil {
-	//				blog.ErrorJSON("parse cached relation host id %s failed, err: %s, rid: %s", relation[common.BKHostIDField], err.Error(), kit.Rid)
-	//				break
-	//			}
-	//			hostIDs = append(hostIDs, hostID)
-	//		}
-	//	}
-	//} else {
-	// get host module relation from db if get it from cache encounters error
-	//blog.Errorf("get host module relation from cache failed, try to get from db, error: %s", err.Error())
-	hostRsp, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, &metadata.HostModuleRelationRequest{ApplicationID: defaultBizID})
-	if err != nil {
-		blog.Errorf("get resource pool host ids failed, err: %s, rid: %s", err.Error(), kit.Rid)
-		return nil, err
-	}
-	if !hostRsp.Result {
-		blog.Errorf("get resource pool host ids failed, err code: %d, err msg: %s, rid: %s", hostRsp.Code, hostRsp.ErrMsg, kit.Rid)
-		return nil, hostRsp.Error()
-	}
-	for _, relation := range hostRsp.Data.Info {
-		hostIDs = append(hostIDs, relation.HostID)
-	}
-	//}
-
-	var hostCond map[string]interface{}
-	switch resourceType {
-	case iam.BizHostInstance:
-		hostCond = map[string]interface{}{
-			common.BKDBNIN: hostIDs,
-		}
-	case iam.SysHostInstance:
-		hostCond = map[string]interface{}{
-			common.BKDBIN: hostIDs,
-		}
-	}
-	if condition[common.BKHostIDField] == nil {
-		condition[common.BKHostIDField] = hostCond
-		return condition, nil
-	}
-	if andCond := condition[common.BKDBAND]; andCond != nil {
-		switch andCondArr := andCond.(type) {
-		case []interface{}:
-			andCondArr = append(andCondArr, map[string]interface{}{common.BKHostIDField: hostCond})
-			condition[common.BKDBAND] = andCondArr
-		case []map[string]interface{}:
-			andCondArr = append(andCondArr, map[string]interface{}{common.BKHostIDField: hostCond})
-			condition[common.BKDBAND] = andCondArr
-		default:
-			blog.Errorf("and condition is not slice type, rid: %s", kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "condition.$and")
-		}
-		return condition, nil
-	}
-	condition[common.BKDBAND] = []map[string]interface{}{{common.BKHostIDField: hostCond}}
+	condition[common.BKAppIDField] = defaultBizID
 	return condition, nil
 }
 
