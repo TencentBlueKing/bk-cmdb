@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstruct"
 	meta "configcenter/src/common/metadata"
+	parse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -196,12 +197,49 @@ func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.L
 		return result, defErr.CCErrorf(common.CCErrCommParamsInvalid, "bk_set_ids and set_cond can't both be set")
 	}
 
+	setIDList := make([]int64, 0)
+	if parameter.SetCond != nil {
+		setCond := make(map[string]interface{})
+		if err := parse.ParseCommonParams(parameter.SetCond, setCond); err != nil {
+			blog.Errorf("parse set cond failed, err: %+v, rid: %s", err, rid)
+			return nil, errors.New(common.CCErrCommParamsInvalid, "set_cond")
+		}
+
+		query := meta.QueryCondition{
+			Fields:    []string{common.BKSetIDField},
+			Condition: setCond,
+		}
+
+		setList, setErr := s.CoreAPI.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, &query)
+		if setErr != nil {
+			blog.Errorf("get set with cond: %v failed, err: %+v, rid: %s", setCond, setErr, rid)
+			return nil, errors.New(common.CCErrCommParamsInvalid, "set_cond")
+		}
+
+		if !setList.Result {
+			blog.Errorf("get set with cond: %v failed, err: %+v, rid: %s", setCond, setErr, rid)
+			return nil, errors.New(setList.Code, setList.ErrMsg)
+		}
+		
+		for _, set := range setList.Data.Info {
+			id, err:= util.GetInt64ByInterface(set[common.BKSetIDField])
+			if err != nil {
+				if err != nil {
+					blog.Errorf("get set id: %v failed, err: %+v, rid: %s", set[common.BKSetIDField], err, rid)
+					return nil, errors.New(common.CCErrCommParamsInvalid, "bk_set_id")
+				}
+			}
+			setIDList = append(setIDList, id)
+		}
+	}
+	
+
 	var setIDs []int64
 	var err error
 	if parameter.SetIDs != nil {
 		setIDs = parameter.SetIDs
 	}
-
+	setIDs = append(setIDs, setIDList...)
 	option := &meta.ListHosts{
 		BizID:              bizID,
 		SetIDs:             setIDs,
