@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/datacollection"
@@ -58,6 +59,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+
+	// set global cc errors.
+	errors.SetGlobalCCError(engine.CCErr)
 
 	service.Engine = engine
 	process.Core = engine
