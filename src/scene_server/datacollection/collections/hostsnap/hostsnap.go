@@ -65,20 +65,19 @@ var compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk",
 
 // Hash returns hash value base on message.
 func (h *HostSnap) Hash(msg string) (string, error) {
-	/*
-		// pre.
-		data := msg
-		if !gjson.Get(msg, "cloudid").Exists() {
-			data = gjson.Get(msg, "data").String()
-		}
+	cloudid := gjson.Get(msg, "cloudid").String()
+	if len(cloudid) == 0 {
+		return "", fmt.Errorf("can't make hash from invalid message format, cloudid empty")
+	}
 
-		val := gjson.Parse(data)
-		cloudID := val.Get("cloudid").Int()
-		ips := getIPS(&val)
-	*/
+	ip := gjson.Get(msg, "ip").String()
+	if len(ip) == 0 {
+		return "", fmt.Errorf("can't make hash from invalid message format, ip empty")
+	}
 
-	// TODO
-	return "", nil
+	hash := fmt.Sprintf("%s:%s", cloudid, ip)
+
+	return hash, nil
 }
 
 // Mock returns local mock message for testing.

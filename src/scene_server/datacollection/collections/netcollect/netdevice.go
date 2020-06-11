@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
+
+	"github.com/tidwall/gjson"
 )
 
 // NetCollect collect the net information
@@ -44,8 +46,19 @@ func NewNetCollect(ctx context.Context, db dal.RDB, authManager extensions.AuthM
 
 // Hash returns hash value base on message.
 func (h *NetCollect) Hash(msg string) (string, error) {
-	// TODO
-	return "", nil
+	cloudid := gjson.Get(msg, "cloudid").String()
+	if len(cloudid) == 0 {
+		return "", fmt.Errorf("can't make hash from invalid message format, cloudid empty")
+	}
+
+	ip := gjson.Get(msg, "ip").String()
+	if len(ip) == 0 {
+		return "", fmt.Errorf("can't make hash from invalid message format, ip empty")
+	}
+
+	hash := fmt.Sprintf("%s:%s", cloudid, ip)
+
+	return hash, nil
 }
 
 // Mock returns local mock message for testing.
