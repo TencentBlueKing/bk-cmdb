@@ -659,10 +659,6 @@
         padding: 10px!important;
         background:rgba(250,251,253,1);
     }
-    *{
-        margin: 0;
-        padding: 0
-    }
     .title-block{
         display: none;
         position: absolute;
@@ -712,7 +708,6 @@
     }
     .operate-menus{
         padding: 0 10px;
-        height: 105px;
         display: flex;
         width: 100%;
         .menu-items-blue{
@@ -730,8 +725,9 @@
         .menu-items{
             display: flex;
             align-items: center;
+            justify-content: space-between;
             width: 25%;
-            height: 100%;
+            height: 105px;
             margin: 10px;
             float: left;
             cursor: pointer;
@@ -739,34 +735,32 @@
             border-radius: 4px;
             position: relative;
             .item-left{
-                width: 60px;
                 height: 45px;
-                float: left;
                 margin-left: 26px;
                 line-height: 45px;
                 span{
                     display: block;
                     text-align: left;
                     &:first-child{
-                         width: 29px;
-                         height: 29px;
-                         font-size: 24px;
-                         font-weight: bold;
-                         color: rgba(255,255,255,1);
-                         line-height: 29px;
+                        width: 29px;
+                        height: 29px;
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: rgba(255,255,255,1);
+                        line-height: 29px;
                     }
                     &:last-child{
-                         height: 16px;
-                         width: 90px;
-                         font-size: 12px;
-                         font-weight: bold;
-                         color: rgba(255,255,255,1);
-                         line-height: 16px;
-                         i{
-                             display: inline-block;
-                             font-size: 16px;
-                             margin-left: 5px;
-                         }
+                        max-width: 125px;
+                        height: 16px;
+                        font-size: 12px;
+                        font-weight: bold;
+                        color: rgba(255,255,255,1);
+                        line-height: 16px;
+                        i{
+                            display: inline-block;
+                            font-size: 16px;
+                            margin-left: 5px;
+                        }
                     }
                     .operate-pop{
                         vertical-align: bottom;
@@ -781,12 +775,11 @@
             }
             .item-right{
                  display: flex;
+                 flex: 60px 0 0;
                  justify-content: center;
                  align-items: center;
+                 margin-right: 35px;
                  height: 60px;
-                 width: 60px;
-                 position: absolute;
-                 right: 35px;
                  border-radius: 50%;
                i{
                    color: white;

@@ -27,7 +27,8 @@
             cancelText: {
                 type: String,
                 default: ''
-            }
+            },
+            reverse: Boolean
         },
         data () {
             return {
@@ -59,10 +60,10 @@
                         cancelText: this.cancelText || this.$t('取消'),
                         closeIcon: false,
                         confirmFn: () => {
-                            this.confirmResolve(false)
+                            this.confirmResolve(this.reverse)
                         },
                         cancelFn: () => {
-                            this.confirmResolve(true)
+                            this.confirmResolve(!this.reverse)
                         }
                     })
                 } else {

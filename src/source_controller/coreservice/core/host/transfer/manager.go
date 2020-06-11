@@ -22,9 +22,9 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-    "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/dal/types"
 
-    "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type TransferManager struct {
@@ -496,7 +496,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
-	cnt, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(kit.Ctx)
+	cnt, err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(input.Fields...).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get module host config count failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -573,4 +573,39 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID 
 		result[item.HostID] = append(result[item.HostID], item)
 	}
 	return result, nil
+}
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
+	if input.Empty() {
+		blog.Errorf("GetHostModuleRelation input empty. input:%#v, rid:%s", input, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+	}
+	moduleHostCond := condition.CreateCondition()
+	if len(input.ApplicationIDArr) > 0 {
+		moduleHostCond.Field(common.BKAppIDField).In(input.ApplicationIDArr)
+	}
+	if len(input.HostIDArr) > 0 {
+		moduleHostCond.Field(common.BKHostIDField).In(input.HostIDArr)
+	}
+	if len(input.ModuleIDArr) > 0 {
+		moduleHostCond.Field(common.BKModuleIDField).In(input.ModuleIDArr)
+	}
+	if len(input.SetIDArr) > 0 {
+		moduleHostCond.Field(common.BKSetIDField).In(input.SetIDArr)
+	}
+	cond := moduleHostCond.ToMapStr()
+	if len(cond) == 0 {
+		return nil, nil
+	}
+	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
+
+	hostIDArr := make([]int64, 0)
+	err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond, &hostIDArr)
+	if err != nil {
+		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return hostIDArr, nil
 }

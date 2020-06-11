@@ -301,7 +301,7 @@ def main(argv):
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
-        "redis_pass=", "mongo_ip=", "mongo_port=",
+        "redis_pass=", "mongo_ip=", "mongo_port=", "rs_name=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=", "user_info=",
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",

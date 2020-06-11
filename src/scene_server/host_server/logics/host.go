@@ -277,6 +277,7 @@ func (lgc *Logics) GetAllHostIDByCond(ctx context.Context, cond metadata.HostMod
 	cond.Page.Limit = 2000
 	start := 0
 	cnt := 0
+	cond.Fields = []string{common.BKHostIDField}
 	for {
 		cond.Page.Start = start
 		result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
