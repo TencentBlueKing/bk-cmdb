@@ -8,7 +8,8 @@
         <bk-table-column v-for="property in header"
             :key="property.bk_property_id"
             :label="property.bk_property_name"
-            :prop="property.bk_property_id">
+            :prop="property.bk_property_id"
+            show-overflow-tooltip>
             <cmdb-property-value slot-scope="{ row }"
                 :theme="property.bk_property_id === 'bk_func_name' ? 'primary' : 'default'"
                 :value="row.property[property.bk_property_id]"
@@ -18,8 +19,8 @@
                 @click.native="handleView(row)">
             </cmdb-property-value>
         </bk-table-column>
-        <bk-table-column :label="$t('操作')">
-            <template slot-scope="{ row }">
+        <bk-table-column width="150" :resizable="false">
+            <div class="options-wrapper" slot-scope="{ row }">
                 <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary" text
@@ -36,7 +37,7 @@
                         {{$t('删除')}}
                     </bk-button>
                 </cmdb-auth>
-            </template>
+            </div>
         </bk-table-column>
     </bk-table>
 </template>
@@ -199,3 +200,16 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .options-wrapper {
+        display: none;
+    }
+    /deep/ {
+        .bk-table-row:hover {
+            .options-wrapper {
+                display: block;
+            }
+        }
+    }
+</style>

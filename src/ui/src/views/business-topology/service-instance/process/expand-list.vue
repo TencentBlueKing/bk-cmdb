@@ -8,15 +8,16 @@
         v-bind="dynamicProps"
         @selection-change="handleSelectionChange">
         <bk-table-column type="selection" fixed></bk-table-column>
-        <bk-table-column :label="$t('所属实例')" prop="service_instance_name" min-width="150" fixed>
+        <bk-table-column :label="$t('所属实例')" prop="service_instance_name" min-width="150" fixed show-overflow-tooltip>
             <template slot-scope="{ row }">
-                <span class="instance-name" v-bk-overflow-tips @click.stop="handleView(row)">{{row.service_instance_name}}</span>
+                <span class="instance-name" @click.stop="handleView(row)">{{row.service_instance_name}}</span>
             </template>
         </bk-table-column>
         <bk-table-column v-for="property in header"
             :key="property.bk_property_id"
             :label="property.bk_property_name"
-            :prop="property.bk_property_id">
+            :prop="property.bk_property_id"
+            show-overflow-tooltip>
             <cmdb-property-value slot-scope="{ row }"
                 :value="row.property[property.bk_property_id]"
                 :show-unit="false"
@@ -24,7 +25,7 @@
                 :property="property">
             </cmdb-property-value>
         </bk-table-column>
-        <bk-table-column :label="$t('操作')" min-width="100" fixed="right">
+        <bk-table-column :label="$t('操作')" width="150" fixed="right" :resizable="false">
             <template slot-scope="{ row }">
                 <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, bk_biz_id: bizId }">
                     <bk-button slot-scope="{ disabled }"

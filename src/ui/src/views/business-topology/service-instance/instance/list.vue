@@ -19,11 +19,14 @@
         <bk-table-column :label="$t('实例名称')" prop="name" width="280">
             <list-cell-name slot-scope="{ row }" :row="row" @refresh-count="handleRefreshCount"></list-cell-name>
         </bk-table-column>
-        <bk-table-column :label="$t('进程数量')" prop="process_count" width="240">
+        <bk-table-column :label="$t('进程数量')" prop="process_count" width="240" :resizable="false">
             <list-cell-count slot-scope="{ row }" :row="row" @refresh-count="handleRefreshCount"></list-cell-count>
         </bk-table-column>
-        <bk-table-column :label="$t('标签')" prop="tag">
+        <bk-table-column :label="$t('标签')" prop="tag" min-width="150">
             <list-cell-tag slot-scope="{ row }" :row="row" @update-labels="handleUpdateLabels(row, ...arguments)"></list-cell-tag>
+        </bk-table-column>
+        <bk-table-column :label="$t('操作')" :min-width="$i18n.locale === 'en' ? 200 : 150">
+            <list-cell-operation slot-scope="{ row }" :row="row"></list-cell-operation>
         </bk-table-column>
     </bk-table>
 </template>
@@ -34,6 +37,7 @@
     import ListCellCount from './list-cell-count'
     import ListCellTag from './list-cell-tag'
     import ListStickyRow from './list-sticky-row'
+    import ListCellOperation from './list-cell-operation'
     import ExpandList from './expand-list'
     import RouterQuery from '@/router/query'
     import Bus from '../common/bus'
@@ -46,6 +50,7 @@
             ListCellName,
             ListCellCount,
             ListCellTag,
+            ListCellOperation,
             ExpandList
         },
         data () {
@@ -308,15 +313,18 @@
             .instance-table-row {
                 &:hover,
                 &.expanded {
-                    background-color: #f0f1f5;
+                    td {
+                        background-color: #f0f1f5;
+                    }
                     .tag-item {
                         background-color: #dcdee5;
                     }
                 }
                 &:hover {
-                    .instance-dot-menu {
-                        display: inline-block;
-                    }
+                    // 试用操作列替代聚合菜单
+                    // .instance-dot-menu {
+                    //     display: inline-block;
+                    // }
                     .tag-edit {
                         visibility: visible;
                     }
@@ -329,6 +337,12 @@
                         display: none;
                         cursor: not-allowed;
                     }
+                }
+                td {
+                    position: sticky;
+                    top: 0;
+                    z-index: 1;
+                    background-color: #fff;
                 }
             }
             .bk-table-expanded-cell {

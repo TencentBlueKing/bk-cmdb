@@ -7,7 +7,7 @@
                 :title="tag">
                 {{tag}}
             </li>
-            <li class="tag-item ellipsis" ref="ellipsis" v-show="tags.length">...</li>
+            <li class="tag-item ellipsis" ref="ellipsis" v-show="tags.length" @click.stop>...</li>
         </ul>
         <span class="tag-empty" v-else>--</span>
         <cmdb-auth tag="i" class="tag-edit icon-cc-edit"

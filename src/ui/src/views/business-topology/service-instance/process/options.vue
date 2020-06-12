@@ -26,7 +26,7 @@
                 right-icon="bk-icon icon-search"
                 clearable
                 :max-width="200"
-                :placeholder="$t('进程名称')"
+                :placeholder="$t('进程别名')"
                 @enter="handleSearch"
                 @clear="handleSearch">
             </bk-input>

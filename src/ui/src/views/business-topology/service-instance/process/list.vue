@@ -17,8 +17,8 @@
                 </expand-list>
             </div>
         </bk-table-column>
-        <bk-table-column :label="$t('进程名称')" prop="bk_process_name" width="300">
-            <span class="process-name" slot-scope="{ row }" v-bk-overflow-tips>{{row.bk_process_name}}</span>
+        <bk-table-column :label="$t('进程别名')" prop="bk_process_name" width="300" show-overflow-tooltip>
+            <span class="process-name" slot-scope="{ row }">{{row.bk_process_name}}</span>
         </bk-table-column>
         <bk-table-column :label="$t('实例数量')">
             <template slot-scope="{ row }">{{row.process_ids.length}}</template>
@@ -152,7 +152,15 @@
         .process-table-row {
             &:hover,
             &.expanded {
-                background-color: #f0f1f5;
+                td {
+                    background-color: #f0f1f5;
+                }
+            }
+            td {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                background-color: #fff;
             }
         }
         .bk-table-expand-icon {
