@@ -378,6 +378,81 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(responseData)
 }
 
+// HostSnapInfoBatch get the host snapshot in batch
+func (s *Service) HostSnapInfoBatch(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+
+	option := meta.SearchInstBatchOption{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&option); err != nil {
+		blog.Errorf("HostSnapInfoBatch failed, decode body err: %v, rid:%s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: rawErr.ToCCError(srvData.ccErr)})
+		return
+	}
+
+	hostIDs := util.IntArrayUnique(option.IDs)
+
+	// check authorization
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Find, hostIDs...); err != nil {
+		blog.Errorf("check host authorization failed, hostIDs: %#v, err: %v, rid: %s", hostIDs, err, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		return
+	}
+
+	input := meta.HostSnapBatchInput{HostIDs: hostIDs}
+	// get snapshot
+	result, err := s.CoreAPI.CoreService().Host().GetHostSnapBatch(srvData.ctx, srvData.header, input)
+	if err != nil {
+		blog.Errorf("HostSnapInfoBatch failed, http do error, err: %v ,input:%#v, rid:%s", err, input, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPReadBodyFailed)})
+		return
+	}
+	if !result.Result {
+		blog.Errorf("HostSnapInfoBatch failed, http response error, err code:%d, err msg:%s, input:%#v, rid:%s", result.Code, result.ErrMsg, input, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+		return
+	}
+
+	fields := option.Fields
+	if len(fields) == 0 {
+		fields = []string{"bk_host_id", "bk_all_ips"}
+	}
+	ret := make([]map[string]interface{}, 0)
+	for hostID, snapData := range result.Data {
+		if snapData == "" {
+			blog.Infof("snapData is empty, hostID:%v, rid:%s", hostID, srvData.rid)
+			ret = append(ret, map[string]interface{}{"bk_host_id": hostID})
+			continue
+		}
+		snap, err := logics.ParseHostSnap(snapData)
+		if err != nil {
+			blog.Errorf("HostSnapInfoBatch failed, ParseHostSnap err: %v, hostID:%v, rid:%s", err, hostID, srvData.rid)
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+			return
+		}
+		snapFields := make(map[string]interface{})
+		for _, field := range fields {
+			if _, ok := snap[field]; ok {
+				snapFields[field] = snap[field]
+			}
+		}
+		snapFields["bk_host_id"] = hostID
+		ret = append(ret, snapFields)
+	}
+
+	responseData := meta.HostSnapBatchResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     ret,
+	}
+	_ = resp.WriteEntity(responseData)
+}
+
 // add host to host resource pool
 func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)

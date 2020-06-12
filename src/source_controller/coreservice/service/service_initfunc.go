@@ -184,6 +184,7 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host/{bk_host_id}", Handler: s.GetHostByID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/search", Handler: s.GetHosts})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host/snapshot/{bk_host_id}", Handler: s.GetHostSnap})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/snapshot/batch", Handler: s.GetHostSnapBatch})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/lock", Handler: s.LockHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/host/lock", Handler: s.UnlockHost})
