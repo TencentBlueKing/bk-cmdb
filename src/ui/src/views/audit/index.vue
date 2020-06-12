@@ -102,31 +102,28 @@
             v-bkloading="{ isLoading: $loading('getOperationLog') }"
             :data="table.list"
             :pagination="table.pagination"
-            :max-height="$APP.height - 230"
+            :max-height="$APP.height - 310"
             :row-style="{ cursor: 'pointer' }"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange"
             @sort-change="handleSortChange"
             @row-click="handleRowClick">
             <bk-table-column
-                sortable="custom"
                 prop="resource_type"
                 class-name="is-highlight"
                 :label="$t('功能板块')"
                 :formatter="getResourceType">
             </bk-table-column>
             <bk-table-column
-                sortable="custom"
                 prop="action"
                 :label="$t('动作')"
                 :formatter="getResourceAction">
             </bk-table-column>
             <bk-table-column
                 v-if="active === 'business'"
-                sortable="custom"
                 prop="bk_biz_name"
                 :label="$t('所属业务')">
-                <template slot-scope="{ row }">{{row.bk_biz_name || (row.basic_detail && row.basic_detail.bk_biz_name)}}</template>
+                <template slot-scope="{ row }">{{getBusinessName(row)}}</template>
             </bk-table-column>
             <bk-table-column
                 prop="resource_name"
@@ -136,7 +133,7 @@
             <bk-table-column
                 :label="$t('操作描述')">
                 <template slot-scope="{ row }">
-                    {{`${getResourceAction(row)}"${getResourceName(row)}"`}}
+                    {{`${getResourceAction(row)}"${getTargetName(row)}"`}}
                 </template>
             </bk-table-column>
             <bk-table-column
@@ -147,7 +144,6 @@
                 <template slot-scope="{ row }">{{$tools.formatTime(row.operation_time)}}</template>
             </bk-table-column>
             <bk-table-column
-                sortable="custom"
                 prop="user"
                 :label="$t('操作账号')">
             </bk-table-column>
@@ -182,6 +178,9 @@
             vJsonDetails
         },
         data () {
+            // 受审计日志性能影响，限制最多显示100条
+            const paginationConfig = this.$tools.getDefaultPaginationConfig()
+            paginationConfig['limit-list'] = paginationConfig['limit-list'].filter(limit => limit !== 500)
             return {
                 active: 'business',
                 tabPanels: [
@@ -214,7 +213,7 @@
                     pagination: {
                         current: 1,
                         count: 0,
-                        ...this.$tools.getDefaultPaginationConfig()
+                        ...paginationConfig
                     },
                     defaultSort: '-operation_time',
                     sort: '-operation_time',
@@ -323,7 +322,7 @@
             }
         },
         async created () {
-            this.$store.dispatch('objectBiz/getAuthorizedBusiness', 'bk_biz_name')
+            this.$store.dispatch('objectBiz/getAuthorizedBusiness')
             await this.getTableData()
         },
         methods: {
@@ -331,7 +330,8 @@
                 if (row.label === null) {
                     const type = row.resource_type
                     if (type === 'model_instance') {
-                        const model = this.$store.getters['objectModelClassify/getModelById'](row.bk_obj_id) || {}
+                        const objId = row.operation_detail.bk_obj_id
+                        const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
                         return model.bk_obj_name || '--'
                     }
                     return this.funcModules[type] || '--'
@@ -340,13 +340,25 @@
                 return this.funcModules[key[0]] || '--'
             },
             getResourceName (row) {
+                // 转移主机类的操作实例
                 if (['assign_host', 'unassign_host', 'transfer_host_module'].includes(row.action)) {
-                    return row.bk_host_innerip || '--'
+                    return row.bk_host_innerip || row.operation_detail.bk_host_innerip || '--'
                 }
+                // 关联关系的操作实例
                 if (['instance_association'].includes(row.resource_type)) {
-                    return row.target_instance_name || '--'
+                    return row.operation_detail.src_instance_name || '--'
                 }
-                return (row.basic_detail && row.basic_detail.resource_name) || '--'
+                // 自定义字段的操作实例
+                if (['model_attribute'].includes(row.resource_type)) {
+                    return `${row.operation_detail.bk_obj_name}/${row.operation_detail.resource_name}`
+                }
+                return this.$tools.getValue(row, 'operation_detail.resource_name') || '--'
+            },
+            getTargetName (row) {
+                if (row.resource_type === 'instance_association') {
+                    return row.operation_detail.target_instance_name
+                }
+                return this.getResourceName(row)
             },
             getResourceAction (row) {
                 if (row.label) {
@@ -354,6 +366,11 @@
                     return this.actionSet[`${row.resource_type}-${row.action}-${label}`]
                 }
                 return this.actionSet[`${row.resource_type}-${row.action}`]
+            },
+            getBusinessName (row) {
+                return row.bk_biz_name
+                    || this.$tools.getValue(row, 'operation_detail.bk_biz_name')
+                    || '--'
             },
             async getTableData (event) {
                 try {
@@ -365,7 +382,7 @@
                             requestId: 'getOperationLog'
                         }
                     })
-                    this.table.list = res.info.map(item => ({ ...item, ...item.operation_detail }))
+                    this.table.list = res.info
                     this.table.pagination.count = res.count
                     // 有传入event参数时认为来自用户搜索
                     if (event) {
@@ -486,6 +503,7 @@
             }
             .content {
                 flex: 1;
+                width: calc(100% - 96px);
                 .bk-select {
                     width: 100%;
                 }

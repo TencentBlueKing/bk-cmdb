@@ -200,6 +200,10 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	meta.Items = append(meta.Items, coreSrv)
 
+	// redis
+	redisItem := metric.NewHealthItem(types.CCFunctionalityRedis, s.CacheDB.Ping().Err())
+	meta.Items = append(meta.Items, redisItem)
+
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false

@@ -164,11 +164,15 @@ func cleanExpiredEvents(redisCli *redis.Client) {
 		keys = append(keys, types.EventCacheEventDoneKey)
 
 		for _, key := range keys {
+			hashKey := "distribution_id"
+			if key == types.EventCacheEventDoneKey {
+				hashKey = "event_id"
+			}
 			iter := redisCli.HScan(key, 0, "*", 10).Iterator()
 			for iter.Next() {
 				if strings.HasPrefix(iter.Val(), "{") {
 					if time.Now().Sub(gjson.Get(iter.Val(), "action_time").Time()) > timeout {
-						if err = redisCli.HDel(key, gjson.Get(iter.Val(), "event_id").String()).Err(); err != nil {
+						if err = redisCli.HDel(key, gjson.Get(iter.Val(), hashKey).String()).Err(); err != nil {
 							blog.Errorf("remove expired event %s failed: %v", iter.Val(), err)
 						}
 					}

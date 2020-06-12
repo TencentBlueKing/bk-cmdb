@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -50,15 +49,14 @@ func (h *HostLog) WithPrevious(ctx context.Context, hostID int64, properties []m
 		if properties != nil && len(properties) != 0 {
 			h.Content.Properties = properties
 		} else {
-			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, nil)
+			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, metadata.BizLabelNotExist)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	id := strconv.FormatInt(hostID, 10)
-	h.Content.PreData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, h.ownerID, id)
+	h.Content.PreData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, hostID)
 	if err != nil {
 		return err
 	}
@@ -72,15 +70,14 @@ func (h *HostLog) WithCurrent(ctx context.Context, hostID int64, properties []me
 		if properties != nil && len(properties) != 0 {
 			h.Content.Properties = properties
 		} else {
-			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, nil)
+			h.Content.Properties, err = h.logic.GetHostAttributes(ctx, h.ownerID, metadata.BizLabelNotExist)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	id := strconv.FormatInt(hostID, 10)
-	h.Content.CurData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, h.ownerID, id)
+	h.Content.CurData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, hostID)
 	if err != nil {
 		return err
 	}
@@ -341,6 +338,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.ModuleHost, errors.CCError) {
 	conds := &metadata.HostModuleRelationRequest{
 		HostIDArr: h.hostIDArr,
+		Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	result, err := h.logic.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, h.header, conds)
 	if err != nil {

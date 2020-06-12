@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -186,21 +187,15 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 		return
 	}
 
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
 	if err != nil {
 		blog.Errorf("delete host batch failed, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
-	// auth: unregister hosts
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, iHostIDArr...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
-		_ = resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
-		return
-	}
-
 	logContentMap := make(map[int64]meta.AuditLog, 0)
+	hosts := make([]extensions.HostSimplify, 0)
 	for _, hostID := range iHostIDArr {
 		logger := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
 		if err := logger.WithPrevious(srvData.ctx, hostID, hostFields); err != nil {
@@ -215,6 +210,20 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
+
+		detail, ok := logContentMap[hostID].OperationDetail.(*meta.InstanceOpDetail)
+		if !ok {
+			blog.Errorf("delete host batch, but got invalid operation detail, rid:%s", srvData.rid)
+			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: errors.New(common.CCErrCommParamsValueInvalidError, "")})
+			return
+		}
+
+		hosts = append(hosts, extensions.HostSimplify{
+			BKAppIDField:       0,
+			BKHostIDField:      hostID,
+			BKHostInnerIPField: detail.ResourceName,
+		})
+
 	}
 
 	input := &meta.DeleteHostRequest{
@@ -234,8 +243,8 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 	}
 
 	// auth: unregister hosts
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, iHostIDArr...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
+	if err := s.AuthManager.DeregisterHosts(srvData.ctx, srvData.header, hosts...); err != nil {
+		blog.ErrorJSON("deregister host from iam failed, hosts: %s, err: %s, rid: %s", hosts, err, srvData.rid)
 		_ = resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
@@ -276,7 +285,7 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 		return
 	}
 
-	details, _, err := srvData.lgc.GetHostInstanceDetails(srvData.ctx, srvData.ownerID, hostID)
+	details, _, err := srvData.lgc.GetHostInstanceDetails(srvData.ctx, hostIDInt64)
 	if err != nil {
 		blog.Errorf("get host details failed, err: %v,host:%s,rid:%s", err, hostID, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
@@ -700,7 +709,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 	data.Remove(common.MetadataField)
 	data.Remove(common.BKHostIDField)
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
 	if err != nil {
 		blog.Errorf("update host batch, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
@@ -807,7 +816,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		}
 	}
 
-	hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: hostIDArr})
+	hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: hostIDArr, Fields: []string{common.BKAppIDField, common.BKHostIDField}})
 	if err != nil {
 		blog.Errorf("update host batch GetConfigByCond failed, hostIDArr[%v], err: %v,input:%+v,rid:%s", hostIDArr, err, data, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
@@ -869,7 +878,7 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
 	if err != nil {
 		blog.Errorf("update host property batch, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
@@ -940,7 +949,7 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 			return
 		}
 
-		hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: []int64{update.HostID}})
+		hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: []int64{update.HostID}, Fields: []string{common.BKAppIDField}})
 		if err != nil {
 			blog.Errorf("update host property batch GetConfigByCond failed, hostID[%v], err: %v,rid:%s", update.HostID, err, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
@@ -1107,8 +1116,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	}
 
 	// get host in set
-	var condition meta.HostModuleRelationRequest
-	hostIDArr := make([]int64, 0)
+	condition := &meta.DistinctHostIDByTopoRelationRequest{}
 
 	if 0 != data.SetID {
 		condition.SetIDArr = []int64{data.SetID}
@@ -1117,21 +1125,24 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		condition.ModuleIDArr = []int64{data.ModuleID}
 	}
 
-	condition.ApplicationID = data.ApplicationID
-	hostResult, err := srvData.lgc.GetConfigByCond(srvData.ctx, condition)
-	if nil != err {
-		blog.Errorf("read host from application  error:%v,input:%+v,rid:%s", err, data, srvData.rid)
+	condition.ApplicationIDArr = []int64{data.ApplicationID}
+	hostResult, err := srvData.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(srvData.ctx, header, condition)
+	if err != nil {
+		blog.Errorf("get host ids failed, err: %v, rid: %s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if err := hostResult.CCError(); err != nil {
+		blog.ErrorJSON("get host id by topology relation failed, error code: %s, error message: %s, cond: %s, rid: %s", hostResult.Code, hostResult.ErrMsg, condition, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
-	if 0 == len(hostResult) {
+	hostIDArr := hostResult.Data.IDArr
+	if 0 == len(hostIDArr) {
 		blog.Warnf("no host in set,rid:%s", srvData.rid)
 		_ = resp.WriteEntity(meta.NewSuccessResp(nil))
 		return
-	}
-	for _, cell := range hostResult {
-		hostIDArr = append(hostIDArr, cell.HostID)
 	}
 	moduleCond := []meta.ConditionItem{
 		{
@@ -1153,7 +1164,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		return
 	}
 	if len(moduleIDArr) == 0 {
-		blog.Errorf("MoveSetHost2IdleModule GetModuleIDByCond error. err:%s, input:%#v, param:%#v, rid:%s", err.Error(), data, moduleCond, srvData.rid)
+		blog.Errorf("MoveSetHost2IdleModule GetModuleIDByCond idle module not exist, input:%#v, param:%#v, rid:%s", data, moduleCond, srvData.rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleNotExist, "idle module")})
 		return
 	}
@@ -1183,6 +1194,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	hmInput := &meta.HostModuleRelationRequest{
 		ApplicationID: data.ApplicationID,
 		HostIDArr:     hostIDArr,
+		Fields:        []string{common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	configResult, err := srvData.lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, hmInput)
 	if nil != err {
@@ -1398,7 +1410,7 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, meta.BizLabelNotExist)
 	if err != nil {
 		blog.Errorf("UpdateImportHosts, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
@@ -1529,7 +1541,7 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 			return
 		}
-		hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: []int64{hostID}})
+		hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}})
 		if err != nil {
 			blog.Errorf("UpdateImportHosts GetConfigByCond failed, id[%v], err: %v,input:%+v,rid:%s", hostID, err, hostList.HostInfo, srvData.rid)
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})

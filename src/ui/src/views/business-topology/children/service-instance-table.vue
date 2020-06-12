@@ -169,6 +169,7 @@
 <script>
     import cmdbEditLabel from './edit-label.vue'
     import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
+    import { processTableHeader } from '@/dictionary/table-header'
     export default {
         components: { cmdbEditLabel },
         props: {
@@ -306,18 +307,7 @@
                 }
             },
             setHeader () {
-                const display = [
-                    'bk_func_name',
-                    'bk_process_name',
-                    'bk_start_param_regex',
-                    'bind_ip',
-                    'port',
-                    'bk_port_enable',
-                    'protocol',
-                    'work_path',
-                    'user'
-                ]
-                const header = display.map(id => {
+                const header = processTableHeader.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
                     return {
                         id: property.bk_property_id,
@@ -350,7 +340,7 @@
                 }
             },
             handleCloneInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'cloneServiceInstance',
                     params: {
                         instanceId: this.instance.id,
@@ -361,25 +351,28 @@
                     query: {
                         title: this.instance.name,
                         node: this.currentNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             handleDeleteInstance () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_DELETE_SERVICE,
                     params: {
                         ids: this.instance.id,
                         moduleId: this.currentNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleAddProcessToTemplate () {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.currentNode.data.service_template_id,
                         moduleId: this.currentNode.data.bk_inst_id
-                    }
+                    },
+                    history: true
                 })
             },
             handleSyncProcessToInstance () {
@@ -469,7 +462,7 @@
                     },
                     disabled: false,
                     id: 1,
-                    name: `${this.$t('标签')}(value)`,
+                    name: this.$t('标签值'),
                     values: [{
                         id: label.value,
                         name: label.value

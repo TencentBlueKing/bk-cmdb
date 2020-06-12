@@ -22,16 +22,18 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/types"
+	"configcenter/src/storage/driver/mongodb"
+
+	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkLocalCUD(b *testing.B) {
 	mongoConfig := MongoConf{
-		MaxOpenConns: mongo.DefaultMaxOpenConns,
-		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		MaxOpenConns: 1000,
+		MaxIdleConns: 100,
 		URI:          "mongodb://cc:cc@localhost:27011,localhost:27012,localhost:27013,localhost:27014/cmdb",
 		RsName:       "rs0",
 	}
@@ -40,8 +42,9 @@ func BenchmarkLocalCUD(b *testing.B) {
 
 	header := http.Header{}
 	header.Set(common.BKHTTPCCRequestID, "xxxxx")
-	ctx := context.WithValue(context.Background(), common.CCContextKeyJoinOption, types.JoinOption{
-	})
+	sessionID, _ := uuid.New()
+	ctx := context.WithValue(context.Background(), common.TransactionTimeoutHeader, sessionID[:])
+	ctx = context.WithValue(ctx, common.TransactionTimeoutHeader, time.Second)
 	tablename := "tmptest"
 	err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "m"})
 	require.NoError(b, err)
@@ -64,10 +67,10 @@ func BenchmarkLocalCUD(b *testing.B) {
 func dbCleint(t *testing.T) *Mongo {
 	uri := os.Getenv("MONGOURI")
 	mongoConfig := MongoConf{
-		MaxOpenConns: mongo.DefaultMaxOpenConns,
-		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
+		MaxOpenConns: 1000,
+		MaxIdleConns: 100,
 		URI:          uri,
-		RsName:       "rs0",
+		RsName:       os.Getenv("MONGORS"),
 	}
 	db, err := NewMgo(mongoConfig, time.Second*5)
 	require.NoError(t, err)
@@ -883,49 +886,6 @@ func TestUpdateModifyCount(t *testing.T) {
 	err = table.Insert(ctx, insertDataMany)
 	require.NoError(t, err)
 
-	// update one
-	filter := map[string]string{"ext": "ext"}
-	update := map[string]string{"change_version": "2"}
-	var modifyCount int64 = 0
-	modifyCount, err = table.UpdateModifyCount(ctx, filter, update)
-	require.NoError(t, err)
-	require.NotEqual(t, 1, modifyCount)
-
-	filter = map[string]string{"change_version": "2"}
-	cnt, err := table.Find(filter).Count(ctx)
-	require.NoError(t, err)
-	if cnt != 2 {
-		t.Errorf("update error.")
-		return
-	}
-
-	//  update may
-	filterMay := map[string]string{}
-	update = map[string]string{"change_modify_count_many": "4"}
-	modifyCount, err = table.UpdateModifyCount(ctx, filterMay, update)
-	require.NoError(t, err)
-	require.NotEqual(t, 0, modifyCount)
-	filter = map[string]string{"change_modify_count_many": "4"}
-	cnt, err = table.Find(filter).Count(ctx)
-	require.NoError(t, err)
-	if cnt != 2 {
-		t.Errorf("update error.")
-		return
-	}
-
-	// not row update
-	filterNotFound := map[string]string{"ext_not_found": "ext"}
-	update = map[string]string{"change_modify_count_not_found": "4"}
-	modifyCount, err = table.UpdateModifyCount(ctx, filterNotFound, update)
-	require.NoError(t, err)
-	require.NotEqual(t, 0, modifyCount)
-	filter = map[string]string{"change_modify_count_not_found": "4"}
-	cnt, err = table.Find(filter).Count(ctx)
-	require.NoError(t, err)
-	if cnt != 0 {
-		t.Errorf("update error.")
-		return
-	}
 }
 
 func TestConvInterface(t *testing.T) {
@@ -1323,4 +1283,142 @@ func TestNextSequence(t *testing.T) {
 	id, err = db.NextSequence(ctx, "test")
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), id)
+}
+
+func TestDropDcocsColumn(t *testing.T) {
+	ctx := context.Background()
+	tableName := "tmptest_drop_doc_column"
+
+	db := dbCleint(t)
+	// 清理数据
+	err := db.DropTable(ctx, tableName)
+	require.NoError(t, err)
+	require.NoError(t, err)
+
+	table := db.Table(tableName)
+
+	insertDataMany := []map[string]interface{}{
+		map[string]interface{}{
+			"id":           "id_not_drop_doc",
+			"delete_col":   "delete_col",
+			"filter_count": 0,
+		},
+		map[string]interface{}{
+			"id":           "id_drop_doc",
+			"delete_col":   "delete_col",
+			"filter_count": 0,
+		},
+	}
+	err = table.Insert(ctx, insertDataMany)
+	require.NoError(t, err)
+
+	err = table.DropDocsColumn(ctx, "delete_col", map[string]interface{}{"id": "id_drop_doc"})
+	require.NoError(t, err)
+
+	cnt, err := table.Find(map[string]string{"delete_col": "delete_col"}).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 1 {
+		t.Errorf("DropColumn error. name  column already exist")
+		return
+	}
+
+	cnt, err = table.Find(map[string]interface{}{"id": "id_not_drop_doc", "delete_col": "delete_col"}).Count(ctx)
+	require.NoError(t, err)
+	if cnt != 1 {
+		t.Errorf("delete_col1 exist failure")
+		return
+	}
+
+}
+
+func TestDistinct(t *testing.T) {
+	ctx := context.Background()
+	tableName := "tmp_test_distinct"
+
+	db := dbCleint(t)
+	// 清理数据
+	err := db.DropTable(ctx, tableName)
+	require.NoError(t, err)
+	require.NoError(t, err)
+
+	table := db.Table(tableName)
+
+	insertRows := []map[string]interface{}{
+		map[string]interface{}{
+			"int64":  int64(64),
+			"int32":  int32(32),
+			"int16":  int16(16),
+			"int8":   int8(108),
+			"int":    int(0),
+			"uint64": uint64(64),
+			"uint32": uint32(32),
+			"uint16": uint16(16),
+			"uint8":  uint8(108),
+			"uint":   int(0),
+			"type":   "int",
+		},
+		map[string]interface{}{
+			"int64":  int64(164),
+			"int32":  int32(132),
+			"int16":  int16(116),
+			"int8":   int8(108),
+			"int":    int(100),
+			"uint64": uint64(164),
+			"uint32": uint32(132),
+			"uint16": uint16(116),
+			"uint8":  uint8(108),
+			"uint":   int(100),
+			"type":   "int",
+		},
+		map[string]interface{}{
+			"str":  "aa",
+			"type": "str",
+		},
+		map[string]interface{}{
+			"str":  "bb",
+			"type": "str",
+		},
+	}
+
+	dbErr := mongodb.Client().DropTable(context.TODO(), tableName)
+	require.NoError(t, dbErr, "insert row to  mongodb error")
+
+	dbErr = mongodb.Client().Table(tableName).Insert(context.TODO(), insertRows)
+	require.NoError(t, dbErr, "insert row to  mongodb error")
+
+	// distinct int64 字段， db 数据和返回的结构都是int64
+	rowInt64Arr := make([]int64, 0)
+	dbErr = table.Distinct(context.TODO(), "int64", map[string]string{"type": "int"}, &rowInt64Arr)
+	require.NoError(t, err, "find distinct int64 error")
+	require.Equal(t, []int64{64, 164}, rowInt64Arr)
+
+	// distinct int 字段， db 数据和返回的结构都是int
+	rowIntArr := make([]int, 0)
+	dbErr = table.Distinct(context.TODO(), "int", map[string]string{"type": "int"}, &rowIntArr)
+	require.NoError(t, dbErr, "find distinct int error")
+	require.Equal(t, []int{0, 100}, rowIntArr)
+
+	// distinct int64 字段， db 数据是int, 返回的结构都是int64
+	rowInt64Arr = make([]int64, 0)
+	dbErr = table.Distinct(context.TODO(), "int", map[string]string{"type": "int"}, &rowInt64Arr)
+	require.NoError(t, dbErr, "find distinct db int into int64 result error")
+	require.Equal(t, []int64{0, 100}, rowInt64Arr)
+
+	// distinct uint64 字段， db 数据和返回的结构都是uint64
+	rowUint64Arr := make([]uint64, 0)
+	dbErr = table.Distinct(context.TODO(), "uint64", map[string]string{"type": "int"}, &rowUint64Arr)
+	require.NoError(t, dbErr, "find distinct uint64 error")
+	require.Equal(t, []uint64{64, 164}, rowUint64Arr)
+
+	// distinct uint 字段， db 数据和返回的结构都是uint
+	rowUintArr := make([]uint, 0)
+	dbErr = table.Distinct(context.TODO(), "uint", map[string]string{"type": "int"}, &rowUintArr)
+	require.NoError(t, dbErr, "find distinct uint error")
+	require.Equal(t, []uint{0, 100}, rowUintArr)
+
+	// distinct uint64 字段， db 数据是uint, 返回的结构都是int64
+	rowUint64Arr = make([]uint64, 0)
+	dbErr = table.Distinct(context.TODO(), "uint", map[string]string{"type": "int"}, &rowUint64Arr)
+	require.NoError(t, dbErr, "find distinct db uint into uint64 result error")
+	require.Equal(t, []uint64{0, 100}, rowUint64Arr)
 }

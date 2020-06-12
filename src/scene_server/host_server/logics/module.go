@@ -32,8 +32,7 @@ import (
 
 func (lgc *Logics) GetResourcePoolModuleID(ctx context.Context, condition mapstr.MapStr) (int64, errors.CCError) {
 	query := &metadata.QueryCondition{
-		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKModuleIDField},
-		Fields:    []string{common.BKModuleIDField},
+		Fields:    []string{common.BKModuleIDField, common.BkSupplierAccount},
 		Condition: condition,
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
@@ -42,16 +41,24 @@ func (lgc *Logics) GetResourcePoolModuleID(ctx context.Context, condition mapstr
 		return -1, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetResourcePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
 		return -1, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	if len(result.Data.Info) == 0 {
-		blog.Errorf("GetResourcePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		blog.Errorf("GetResourcePoolModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
 		return -1, lgc.ccErr.Error(common.CCErrTopoGetAppFailed)
 	}
 
-	return result.Data.Info[0].Int64(common.BKModuleIDField)
+	supplier := util.GetOwnerID(lgc.header)
+	for idx, mod := range result.Data.Info {
+		if supplier == mod[common.BkSupplierAccount].(string) {
+			return result.Data.Info[idx].Int64(common.BKModuleIDField)
+		}
+	}
+
+	blog.Errorf("can not get resource pool module id rid:%s", lgc.rid)
+	return -1, lgc.ccErr.Error(common.CCErrTopoGetAppFailed)
 }
 
 func (lgc *Logics) GetNormalModuleByModuleID(ctx context.Context, appID, moduleID int64) ([]mapstr.MapStr, errors.CCError) {
@@ -251,24 +258,24 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 // notExistAppModuleHost get hostID in the module that does not exist
 // 获取不在moduleID中的hostID
 func (lgc *Logics) notExistAppModuleHost(ctx context.Context, appID, moduleID int64, hostIDArr []int64) ([]int64, error) {
-	hostModuleInput := &metadata.HostModuleRelationRequest{
-		ApplicationID: appID,
-		ModuleIDArr:   []int64{moduleID},
-		HostIDArr:     hostIDArr,
+	hostModuleInput := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{appID},
+		ModuleIDArr:      []int64{moduleID},
+		HostIDArr:        hostIDArr,
 	}
 
-	hmResult, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, hostModuleInput)
+	hmResult, err := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx, lgc.header, hostModuleInput)
 	if err != nil {
-		blog.Errorf("existAppModule, GetHostModuleRelation http do error, err: %v, input:%+v,rid:%v", err, hostModuleInput, lgc.rid)
+		blog.ErrorJSON("existAppModule, GetDistinctHostIDByTopology http do error, err: %s, input:%s,rid:%s", err, hostModuleInput, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hmResult.Result {
-		blog.Errorf("existAppModule, GetHostModuleRelation http reply error, result: %#v, input:%+v,rid:%v", hmResult, hostModuleInput, lgc.rid)
+		blog.ErrorJSON("existAppModule, GetDistinctHostIDByTopology http reply error, result: %s, input:%s,rid:%s", hmResult, hostModuleInput, lgc.rid)
 		return nil, lgc.ccErr.New(hmResult.Code, hmResult.ErrMsg)
 	}
 	hostIDMap := make(map[int64]bool, 0)
-	for _, row := range hmResult.Data.Info {
-		hostIDMap[row.HostID] = true
+	for _, id := range hmResult.Data.IDArr {
+		hostIDMap[id] = true
 	}
 	var errHostIDArr []int64
 	for _, hostID := range hostIDArr {

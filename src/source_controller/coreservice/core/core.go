@@ -157,6 +157,9 @@ type HostOperation interface {
 	// host search
 	ListHosts(kit *rest.Kit, input metadata.ListHosts) (*metadata.ListHostResult, error)
 
+	// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+	GetDistinctHostIDsByTopoRelation(kit *rest.Kit, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error)
+
 	TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
 }
 

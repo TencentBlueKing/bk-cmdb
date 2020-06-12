@@ -83,7 +83,7 @@ const actions = {
         return $http.post(`${window.API_HOST}collector/netproperty/export`, config)
     },
     /**
-     * 获取导入属性模版
+     * 获取导入属性模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander

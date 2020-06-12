@@ -392,7 +392,7 @@ func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.Stati
 			common.BKDBGroup: M{
 				"_id": M{
 					common.BKResourceTypeField: "$" + common.BKOperationDetailField + "." + common.BKObjIDField,
-					common.BKInstIDField:       "$" + common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceIDField,
+					common.BKInstIDField:       "$" + common.BKOperationDetailField + "." + common.BKResourceIDField,
 				},
 				"count": M{
 					common.BKDBSum: 1,

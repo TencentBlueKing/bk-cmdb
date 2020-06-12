@@ -66,6 +66,16 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		}
 	}
 
+	exist, err := m.checkUniqueRuleExist(kit, objID, 0, inputParam.Data.Keys)
+	if err != nil {
+		blog.Errorf("[CreateObjectUnique] checkUniqueRuleExist error: %#v, rid: %s", err, kit.Rid)
+		return 0, err
+	}
+	if exist {
+		blog.Errorf("[CreateObjectUnique] same unique check rule has been exist: %#v, rid: %s", err, kit.Rid)
+		return 0, kit.CCError.Error(common.CCERrrCoreServiceSameUniqueCheckRuleExist)
+	}
+
 	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
 	if nil != err {
 		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, inputParam, err, kit.Rid)
@@ -134,6 +144,16 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 			blog.Errorf("[UpdateObjectUnique] model could not have multiple must check unique, rid: %s", kit.Rid)
 			return kit.CCError.Error(common.CCErrTopoObjectUniqueCanNotHasMultipleMustCheck)
 		}
+	}
+
+	exist, err := m.checkUniqueRuleExist(kit, objID, id, unique.Keys)
+	if err != nil {
+		blog.Errorf("[UpdateObjectUnique] checkUniqueRuleExist error: %#v, rid: %s", err, kit.Rid)
+		return err
+	}
+	if exist {
+		blog.Errorf("[UpdateObjectUnique] same unique check rule has been exist: %#v, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCERrrCoreServiceSameUniqueCheckRuleExist)
 	}
 
 	properties, err := m.getUniqueProperties(kit, objID, unique.Keys, unique.MustCheck, unique.Metadata)
@@ -351,6 +371,41 @@ func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, i
 	}
 	if cnt > 0 {
 		return true, nil
+	}
+
+	return false, nil
+}
+
+// checkUniqueRuleExist check if same unique rule has already existed
+// if ruleID is 0,then it's create operation, otherwise it's update operation
+func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, ruleID uint64, keys []metadata.UniqueKey) (bool, error) {
+	// get all exist uniques
+	uniqueCond := condition.CreateCondition()
+	uniqueCond.Field(common.BKObjIDField).Eq(objID)
+	cond := util.SetQueryOwner(uniqueCond.ToMapStr(), kit.SupplierAccount)
+	existUniques := make([]metadata.ObjectUnique, 0)
+	err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond).All(kit.Ctx, &existUniques)
+	if err != nil {
+		return false, kit.CCError.Error(common.CCErrObjectDBOpErrno)
+	}
+
+	// compare to see if the input keys has already existed
+	keysMap := make(map[uint64]bool)
+	for _, key := range keys {
+		keysMap[key.ID] = true
+	}
+	for _, u := range existUniques {
+		if len(keysMap) == len(u.Keys) {
+			cnt := 0
+			for _, key := range u.Keys {
+				if keysMap[key.ID] {
+					cnt++
+				}
+			}
+			if cnt == len(keysMap) && ruleID != u.ID {
+				return true, nil
+			}
+		}
 	}
 
 	return false, nil

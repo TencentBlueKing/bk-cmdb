@@ -1,4 +1,4 @@
-import Bus from '@/utils/bus.js'
+import RouterQuery from '@/router/query'
 export default {
     props: {
         properties: {
@@ -46,7 +46,10 @@ export default {
                     }
                 })
                 this.slider.show = false
-                Bus.$emit('refresh-list', 1)
+                RouterQuery.set({
+                    _t: Date.now(),
+                    page: 1
+                })
             } catch (e) {
                 console.error(e)
             }

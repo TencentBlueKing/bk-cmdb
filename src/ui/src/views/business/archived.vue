@@ -136,9 +136,6 @@
         methods: {
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('objectBiz', ['searchBusiness', 'recoveryBusiness']),
-            back () {
-                this.$router.go(-1)
-            },
             setTableHeader () {
                 const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, ['bk_biz_name'])
                 this.header = headerProperties.map(property => {
@@ -196,7 +193,7 @@
                     }
                 }
                 if (this.filter.name) {
-                    params.condition.bk_biz_name = { '$regex': this.filter.name }
+                    params.condition.bk_biz_name = this.filter.name
                 }
                 return params
             },

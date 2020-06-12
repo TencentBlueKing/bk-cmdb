@@ -58,10 +58,9 @@ func (lgc *Logics) GetDefaultAppID(ctx context.Context) (int64, errors.CCError) 
 }
 
 func (lgc *Logics) GetAppDetails(ctx context.Context, fields string, condition map[string]interface{}) (types.MapStr, errors.CCError) {
-
+	fields = fields + "," + common.BkSupplierAccount
 	input := &metadata.QueryCondition{
 		Condition: condition,
-		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKAppIDField},
 		Fields:    strings.Split(fields, ","),
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, input)
@@ -74,11 +73,14 @@ func (lgc *Logics) GetAppDetails(ctx context.Context, fields string, condition m
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	if len(result.Data.Info) == 0 {
-		return make(map[string]interface{}), nil
+	supplier := util.GetOwnerID(lgc.header)
+	for idx, biz := range result.Data.Info {
+		if supplier == biz[common.BkSupplierAccount].(string) {
+			return result.Data.Info[idx], nil
+		}
 	}
 
-	return result.Data.Info[0], nil
+	return nil, errors.New(common.CCErrCommBizNotFoundError, "find resource pool biz failed")
 }
 
 func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (bool, errors.CCErrorCoder) {
@@ -112,23 +114,22 @@ func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (b
 func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArray []int64) ([]int64, error) {
 	defErr := lgc.ccErr
 
-	conf := &metadata.HostModuleRelationRequest{
-		ApplicationID: appID,
-		HostIDArr:     hostIDArray,
+	conf := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{appID},
+		HostIDArr:        hostIDArray,
 	}
-
-	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, conf)
+	result, err := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx, lgc.header, conf)
 	if err != nil {
 		blog.Errorf("ExistHostIDSInApp http do error. err:%s, input:%#v,rid:%s", err.Error(), conf, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
+	if err := result.CCError(); err != nil {
 		blog.Errorf("ExistHostIDSInApp http reply error. err code:%d,err msg:%s, input:%#v,rid:%s", result.Code, result.ErrMsg, conf, lgc.rid)
-		return nil, defErr.New(result.Code, result.ErrMsg)
+		return nil, err
 	}
 	hostIDMap := make(map[int64]bool, 0)
-	for _, row := range result.Data.Info {
-		hostIDMap[row.HostID] = true
+	for _, id := range result.Data.IDArr {
+		hostIDMap[id] = true
 	}
 	var notExistHOstID []int64
 	for _, hostID := range hostIDArray {

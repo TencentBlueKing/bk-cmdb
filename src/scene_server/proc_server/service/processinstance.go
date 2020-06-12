@@ -35,14 +35,24 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	processIDs, err := ps.createProcessInstances(ctx, input)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcCreateProcessFailed, "create process instance failed, serviceInstanceID: %d, input: %+v, err: %+v", input.ServiceInstanceID, input, err)
-		return
-	}
+	var processIDs []int64
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		processIDs, err = ps.createProcessInstances(ctx, input)
+		if err != nil {
+			blog.Errorf("create process instance failed, serviceInstanceID: %d, input: %+v, err: %+v", input.ServiceInstanceID, input, err)
+			return ctx.Kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
+		}
 
-	if err := ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceInstanceID); err != nil {
-		ctx.RespWithError(err, common.CCErrProcReconstructServiceInstanceNameFailed, "create process instance failed, reconstruct service instance name failed, instanceID: %d, err: %s", input.ServiceInstanceID, err.Error())
+		if err := ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceInstanceID); err != nil {
+			blog.Errorf("create process instance failed, reconstruct service instance name failed, instanceID: %d, err: %s", input.ServiceInstanceID, err.Error())
+			return ctx.Kit.CCError.CCError(common.CCErrProcReconstructServiceInstanceNameFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(processIDs)
@@ -117,9 +127,19 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	result, err := ps.updateProcessInstances(ctx, input)
-	if err != nil {
-		ctx.RespAutoError(err)
+
+	var result []int64
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		result, err = ps.updateProcessInstances(ctx, input)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(result)
@@ -279,11 +299,11 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 	for _, hostID := range hostIDs {
 		hostIDHit[hostID] = false
 	}
-	hostConfigFilter := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		HostIDArr:     hostIDs,
+	hostConfigFilter := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{bizID},
+		HostIDArr:        hostIDs,
 	}
-	result, err := ps.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, hostConfigFilter)
+	result, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostConfigFilter)
 	if err != nil {
 		blog.ErrorJSON("CheckHostInBusiness failed, GetHostModuleRelation failed, filter: %s, err: %s, rid: %s", hostConfigFilter, err.Error(), ctx.Kit.Rid)
 		e, ok := err.(errors.CCErrorCoder)
@@ -293,8 +313,8 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 			return ctx.Kit.CCError.CCError(common.CCErrWebGetHostFail)
 		}
 	}
-	for _, item := range result.Data.Info {
-		hostIDHit[item.HostID] = true
+	for _, id := range result.Data.IDArr {
+		hostIDHit[id] = true
 	}
 	invalidHost := make([]int64, 0)
 	for hostID, hit := range hostIDHit {
@@ -347,6 +367,32 @@ func (ps *ProcServer) getOneModule(ctx *rest.Contexts, filter map[string]interfa
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
 	return moduleInst, nil
+}
+
+func (ps *ProcServer) getModules(ctx *rest.Contexts, moduleIDs []int64) ([]*metadata.ModuleInst, errors.CCErrorCoder) {
+	moduleFilter := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBIN: moduleIDs,
+			},
+		},
+	}
+	modules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleFilter)
+	if err != nil {
+		blog.Errorf("getModules failed, moduleIDs: %+v, err: %s, rid: %s", moduleIDs, err.Error(), ctx.Kit.Rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err)
+	}
+	moduleInsts := make([]*metadata.ModuleInst, 0)
+	for _, module := range modules.Data.Info {
+		moduleInst := new(metadata.ModuleInst)
+		if err := module.ToStructByTag(moduleInst, "field"); err != nil {
+			blog.Errorf("getModules failed, unmarshal json failed, module: %+v, err: %+v, rid: %s", module, err, ctx.Kit.Rid)
+			return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
+		}
+		moduleInsts = append(moduleInsts, moduleInst)
+
+	}
+	return moduleInsts, nil
 }
 
 func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstanceID int64, processData map[string]interface{}) errors.CCErrorCoder {
@@ -499,28 +545,35 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	// delete process relation at the same time.
-	deleteOption := metadata.DeleteProcessInstanceRelationOption{}
-	deleteOption.ProcessIDs = input.ProcessInstanceIDs
-	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
-		return
-	}
-
-	if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, input.ProcessInstanceIDs); err != nil {
-		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance:%v failed, err: %v", input.ProcessInstanceIDs, err)
-		return
-	}
-
-	serviceInstanceIDs = util.IntArrayUnique(serviceInstanceIDs)
-	for _, svcInstanceID := range serviceInstanceIDs {
-		if err := ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, svcInstanceID); err != nil {
-			ctx.RespWithError(err, common.CCErrProcReconstructServiceInstanceNameFailed, "delete instance failed, reconstruct service instance name failed, serviceInstanceID: %d, err: %s", svcInstanceID, err.Error())
-			return
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		// delete process relation at the same time.
+		deleteOption := metadata.DeleteProcessInstanceRelationOption{}
+		deleteOption.ProcessIDs = input.ProcessInstanceIDs
+		err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
+		if err != nil {
+			blog.Errorf("delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
+			return ctx.Kit.CCError.CCError(common.CCErrProcDeleteProcessFailed)
 		}
-	}
 
+		if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, input.ProcessInstanceIDs); err != nil {
+			blog.Errorf("delete process instance:%v failed, err: %v", input.ProcessInstanceIDs, err)
+			return ctx.Kit.CCError.CCError(common.CCErrProcDeleteProcessFailed)
+		}
+
+		serviceInstanceIDs = util.IntArrayUnique(serviceInstanceIDs)
+		for _, svcInstanceID := range serviceInstanceIDs {
+			if err := ps.CoreAPI.CoreService().Process().ReconstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, svcInstanceID); err != nil {
+				blog.Errorf("delete instance failed, reconstruct service instance name failed, serviceInstanceID: %d, err: %s", svcInstanceID, err.Error())
+				return ctx.Kit.CCError.CCError(common.CCErrProcReconstructServiceInstanceNameFailed)
+			}
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
 	ctx.RespEntity(nil)
 }
 
@@ -707,9 +760,19 @@ func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 		return
 	}
 
-	response, err := ps.CoreAPI.CoreService().Process().RemoveTemplateBindingOnModule(ctx.Kit.Ctx, ctx.Kit.Header, input.ModuleID)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcRemoveTemplateBindingOnModule, "remove template binding on module failed, parse business id failed, err: %+v", err)
+	var response *metadata.RemoveTemplateBoundOnModuleResult
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
+		var err error
+		response, err = ps.CoreAPI.CoreService().Process().RemoveTemplateBindingOnModule(ctx.Kit.Ctx, ctx.Kit.Header, input.ModuleID)
+		if err != nil {
+			blog.Errorf("remove template binding on module failed, parse business id failed, err: %+v", err)
+			return ctx.Kit.CCError.CCError(common.CCErrProcRemoveTemplateBindingOnModule)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		blog.Errorf("RemoveTemplateBindingOnModule failed, err: %v, rid: %s", txnErr, ctx.Kit.Rid)
 		return
 	}
 	ctx.RespEntity(response)

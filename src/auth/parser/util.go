@@ -208,7 +208,7 @@ func (ps *parseStream) getInstanceTypeByObject(objID string) (meta.ResourceType,
 
 func (ps *parseStream) getBizIDByHostID(hostID int64) (int64, error) {
 	result, err := ps.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(context.Background(), ps.RequestCtx.Header,
-		&metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}})
+		&metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}})
 	if err != nil {
 		return 0, err
 	}

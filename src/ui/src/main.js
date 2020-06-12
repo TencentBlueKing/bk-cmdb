@@ -10,6 +10,7 @@ import cmdbAppMixin from './mixins/app.js'
 import cmdbFormatter from './filters/formatter.js'
 import cmdbUnitFilter from './filters/unit.js'
 import cmdbUI from './components/ui'
+import routerActions from './router/actions'
 import tools from './utils/tools'
 import clipboard from 'vue-clipboard2'
 import './magicbox'
@@ -20,7 +21,6 @@ import './setup/cookie'
 import './setup/permission'
 import '@icon-cool/bk-icon-cmdb'
 import './assets/scss/common.scss'
-import './assets/scss/admin-view.scss'
 
 Vue.use(cmdbUI)
 Vue.use(clipboard)
@@ -32,6 +32,7 @@ Vue.filter('formatter', cmdbFormatter)
 Vue.filter('unit', cmdbUnitFilter)
 Vue.prototype.$http = api
 Vue.prototype.$tools = tools
+Vue.prototype.$routerActions = routerActions
 /* eslint-disable no-new */
 window.CMDB_APP = new Vue({
     el: '#app',

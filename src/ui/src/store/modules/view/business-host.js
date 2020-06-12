@@ -18,7 +18,8 @@ const state = {
     selectedNodeInstance: null,
     hostSelectorVisible: false,
     selectedHost: [],
-    blueKingEditable: false
+    blueKingEditable: false,
+    failHostList: []
 }
 
 const getters = {
@@ -41,7 +42,8 @@ const getters = {
             fields: []
         }))
     },
-    commonRequest: state => state.commonRequest
+    commonRequest: state => state.commonRequest,
+    failHostList: state => state.failHostList
 }
 
 const mutations = {
@@ -86,6 +88,12 @@ const mutations = {
     },
     setSelectedHost (state, selectedHost) {
         state.selectedHost = selectedHost
+    },
+    setFailHostList (state, failHostList) {
+        state.failHostList = failHostList
+    },
+    clearFailHostList (state) {
+        state.failHostList = []
     },
     setInstanceIp (state, { hostId, res }) {
         Vue.set(state.instanceIpMap, hostId, res)

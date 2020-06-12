@@ -32,28 +32,36 @@ import (
 func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]SetSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(businessID)
-	query := &metadata.QueryCondition{
-		Condition: cond.ToMapStr(),
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
-	}
-	instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, query)
-	if err != nil {
-		blog.Errorf("get set:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
-		return nil, fmt.Errorf("get set by businessID:%d failed, err: %+v", businessID, err)
-	}
-
-	// extract sets
+	cond := map[string]interface{}{common.BKAppIDField: businessID}
 	sets := make([]SetSimplify, 0)
-	for _, instance := range instances.Data.Info {
-		setSimplify := SetSimplify{}
-		_, err := setSimplify.Parse(instance)
-		if err != nil {
-			blog.Errorf("parse set %+v simplify information failed, err: %+v, rid: %s", setSimplify, err, rid)
-			return nil, fmt.Errorf("parse set %+v simplify information failed, err: %+v", setSimplify, err)
+	count := -1
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
+		query := &metadata.QueryCondition{
+			Condition: cond,
+			Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKSetNameField},
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
+			},
 		}
-		sets = append(sets, setSimplify)
+		instances, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, query)
+		if err != nil {
+			blog.Errorf("get set:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
+			return nil, fmt.Errorf("get set by businessID:%d failed, err: %+v", businessID, err)
+		}
+
+		// extract sets
+		for _, instance := range instances.Data.Info {
+			setSimplify := SetSimplify{}
+			_, err := setSimplify.Parse(instance)
+			if err != nil {
+				blog.Errorf("parse set %+v simplify information failed, err: %+v, rid: %s", setSimplify, err, rid)
+				return nil, fmt.Errorf("parse set %+v simplify information failed, err: %+v", setSimplify, err)
+			}
+			sets = append(sets, setSimplify)
+		}
+		count = instances.Data.Count
 	}
 
 	blog.V(4).Infof("list sets by business:%d result: %+v, rid: %s", businessID, sets, rid)

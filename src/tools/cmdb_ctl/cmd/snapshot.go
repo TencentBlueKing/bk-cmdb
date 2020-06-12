@@ -111,7 +111,7 @@ func (s *snapshotCheckService) checkConf() error {
 		}
 	}
 
-	path := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CC_MODULE_DATACOLLECTION)
+	path := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, types.CCConfigureRedis)
 	strConf, err := s.service.ZkCli.Get(path)
 	if err != nil {
 		return fmt.Errorf("get path [%s] from zk [%v] failed: %v", path, s.service.ZkCli.ZkHost, err)

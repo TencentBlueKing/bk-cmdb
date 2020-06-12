@@ -149,6 +149,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysOperationStatistic
 	case meta.HostApply:
 		iamResourceType = BizHostApply
+	case meta.EventWatch:
+		iamResourceType = SysEventWatch
 	case meta.CloudAccount:
 		iamResourceType = SysCloudAccount
 	case meta.CloudResourceTask:
@@ -195,6 +197,7 @@ const (
 	BizProcessServiceInstance ResourceTypeID = "biz_process_service_instance"
 	BizSetTemplate            ResourceTypeID = "biz_set_template"
 	BizHostApply              ResourceTypeID = "biz_host_apply"
+	SysEventWatch             ResourceTypeID = "event_watch"
 )
 
 const (
@@ -227,6 +230,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizSetTemplate:            "集群模板",
 	SysOperationStatistic:     "运营统计",
 	BizHostApply:              "主机属性自动应用",
+	SysEventWatch:             "事件监听",
 }
 
 type ActionID string
@@ -253,8 +257,15 @@ const (
 	// assign host(s) to a business
 	// located system/host/assignHostsToBusiness in auth center.
 	AssignHostsToBusiness ActionID = "assign_hosts_to_business"
+	HostTransferAcrossBiz ActionID = "host_transfer_across_biz"
 	BindModule            ActionID = "bind_module"
 	AdminEntrance         ActionID = "admin_entrance"
+
+	WatchHost         ActionID = "host"
+	WatchHostRelation ActionID = "host_relation"
+	WatchBiz          ActionID = "biz"
+	WatchSet          ActionID = "set"
+	WatchModule       ActionID = "module"
 )
 
 var ActionIDNameMap = map[ActionID]string{
@@ -265,6 +276,11 @@ var ActionIDNameMap = map[ActionID]string{
 	Delete:                 "删除",
 	Archive:                "归档",
 	ModelTopologyOperation: "编辑业务层级",
+	WatchHost:              "主机",
+	WatchHostRelation:      "主机关系",
+	WatchBiz:               "业务",
+	WatchSet:               "集群",
+	WatchModule:            "模块",
 }
 
 func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
@@ -353,11 +369,13 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	case meta.MoveHostToBizFaultModule,
 		meta.MoveHostToBizIdleModule,
 		meta.MoveHostToBizRecycleModule,
-		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
 		meta.MoveBizHostToModule:
 		return Edit, nil
+
+	case meta.MoveHostToAnotherBizModule:
+		return HostTransferAcrossBiz, nil
 
 	case meta.MoveHostFromModuleToResPool:
 		return Delete, nil
@@ -370,6 +388,16 @@ func AdaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		return ModelTopologyOperation, nil
 	case meta.AdminEntrance:
 		return AdminEntrance, nil
+	case meta.WatchHost:
+		return WatchHost, nil
+	case meta.WatchHostRelation:
+		return WatchHostRelation, nil
+	case meta.WatchBiz:
+		return WatchBiz, nil
+	case meta.WatchSet:
+		return WatchSet, nil
+	case meta.WatchModule:
+		return WatchModule, nil
 	}
 
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)

@@ -6,14 +6,13 @@
             v-bkloading="{
                 isLoading: $loading(['getTopologyData', 'getMainLine'])
             }"
-            :style="{
-                height: treeHeight
-            }"
             :options="{
                 idKey: idGenerator,
                 nameKey: 'bk_inst_name',
                 childrenKey: 'child'
             }"
+            :height="$APP.height - 160"
+            :node-height="36"
             :check-on-click="true"
             :before-select="beforeSelect"
             :filter-method="filterMethod"
@@ -62,6 +61,10 @@
             action: {
                 type: String,
                 default: 'batch-edit'
+            },
+            checked: {
+                type: Array,
+                default: () => ([])
             }
         },
         data () {
@@ -108,9 +111,6 @@
             },
             isDel () {
                 return this.action === 'batch-del'
-            },
-            treeHeight () {
-                return this.$APP.height - 160 + 'px'
             }
         },
         watch: {
@@ -160,6 +160,9 @@
                         this.$refs.tree.filter(data)
                     } else {
                         this.$refs.tree.filter()
+                    }
+                    if (this.checked.length) {
+                        this.$refs.tree.setChecked(this.checked)
                     }
                 } catch (e) {
                     console.error(e)
@@ -277,9 +280,7 @@
 <style lang="scss" scoped>
     .topology-tree {
         padding: 10px 0;
-        margin-right: 4px;
-        @include scrollbar-y(6px);
-
+        margin-right: 2px;
         .node-info {
             .node-icon {
                 width: 22px;

@@ -34,23 +34,34 @@ import (
 func (am *AuthManager) CollectInstancesByModelID(ctx context.Context, header http.Header, objectID string) ([]InstanceSimplify, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKObjIDField).Eq(objectID).ToMapStr(),
-	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, objectID, &cond)
-	if err != nil {
-		blog.V(3).Infof("get instances by model id %s failed, err: %+v, rid: %s", objectID, err, rid)
-		return nil, fmt.Errorf("get instances by model id %s failed, err: %+v", objectID, err)
-	}
 	instances := make([]InstanceSimplify, 0)
-	for _, cls := range result.Data.Info {
-		instance := InstanceSimplify{}
-		_, err = instance.Parse(cls)
-		if err != nil {
-			return nil, fmt.Errorf("get instances by object failed, err: %+v", err)
+	count := -1
+	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
+		cond := metadata.QueryCondition{
+			Condition: map[string]interface{}{common.BKObjIDField: objectID},
+			Fields:    []string{common.BKInstIDField, common.BKInstNameField, common.BKAppIDField, common.BKObjIDField},
+			Page: metadata.BasePage{
+				Sort:  "",
+				Limit: common.BKMaxRecordsAtOnce,
+				Start: offset,
+			},
 		}
-		instances = append(instances, instance)
+		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, objectID, &cond)
+		if err != nil {
+			blog.V(3).Infof("get instances by model id %s failed, err: %+v, rid: %s", objectID, err, rid)
+			return nil, fmt.Errorf("get instances by model id %s failed, err: %+v", objectID, err)
+		}
+		for _, cls := range result.Data.Info {
+			instance := InstanceSimplify{}
+			_, err = instance.Parse(cls)
+			if err != nil {
+				return nil, fmt.Errorf("get instances by object failed, err: %+v", err)
+			}
+			instances = append(instances, instance)
+		}
+		count = result.Data.Count
 	}
+
 	return instances, nil
 }
 
@@ -214,7 +225,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 
 		resourceType := meta.ModelInstance
 		for _, mainline := range mainlineAsst.Data.Info {
-			if mainline.ObjectID == mainline.ObjectID {
+			if object.ObjectID == mainline.ObjectID {
 				resourceType = meta.MainlineInstance
 			}
 		}

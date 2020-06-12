@@ -150,6 +150,7 @@
         MENU_BUSINESS_TRANSFER_HOST
     } from '@/dictionary/menu-symbol'
     import Formatter from '@/filters/formatter.js'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             HostFilter,
@@ -206,12 +207,21 @@
             filterProperties () {
                 const setProperties = this.getProperties('set')
                 const moduleProperties = this.getProperties('module')
-                const removeProperties = ['bk_host_innerip', 'bk_host_outerip']
+                const removeProperties = ['bk_host_id', 'bk_host_innerip', 'bk_host_outerip']
+                // 模块支持服务分类筛选
+                const insertProperties = [
+                    {
+                        bk_obj_id: 'module',
+                        bk_property_id: 'service_category_id',
+                        bk_property_name: this.$t('服务分类'),
+                        bk_property_type: 'category'
+                    }
+                ]
                 const hostProperties = this.hostProperties.filter(property => !removeProperties.includes(property.bk_property_id))
                 return {
                     host: hostProperties,
                     set: setProperties,
-                    module: moduleProperties
+                    module: [...moduleProperties, ...insertProperties]
                 }
             },
             hasSelection () {
@@ -271,18 +281,16 @@
                         }
                     })
                     const info = JSON.parse(collection.info)
-                    const filterIP = {
-                        text: info.ip_list.join('\n'),
-                        exact: info.exact_search,
-                        inner: info.bk_host_innerip,
-                        outer: info.bk_host_outerip
-                    }
                     this.$store.commit('hosts/setFilterList', filterList)
-                    this.$store.commit('hosts/setFilterIP', filterIP)
                     this.$store.commit('hosts/setCollection', collection)
-                    setTimeout(() => {
-                        this.$refs.hostFilter.handleSearch(false)
-                    }, 0)
+                    RouterQuery.set({
+                        ip: info.ip_list.join(','),
+                        exact: info.exact_search ? 1 : 0,
+                        inner: info.bk_host_innerip ? 1 : 0,
+                        outer: info.bk_host_outerip ? 1 : 0,
+                        page: 1,
+                        _t: Date.now()
+                    })
                 } catch (e) {
                     this.$error(this.$t('应用收藏条件失败，转换数据错误'))
                     console.error(e.message)
@@ -341,7 +349,7 @@
                     event.stopPropagation()
                     return false
                 }
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_TRANSFER_HOST,
                     params: {
                         type: 'remove'
@@ -351,7 +359,8 @@
                         sourceId: this.selectedNode.data.bk_inst_id,
                         resources: this.$parent.table.selection.map(item => item.host.bk_host_id).join(','),
                         node: this.selectedNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             async handleExport (event) {
@@ -425,7 +434,7 @@
                 }
             },
             gotoTransferPage (selected) {
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: 'createServiceInstance',
                     params: {
                         setId: this.selectedNode.parent.data.bk_inst_id,
@@ -435,7 +444,8 @@
                         resources: selected.map(item => item.host.bk_host_id).join(','),
                         title: this.selectedNode.data.bk_inst_name,
                         node: this.selectedNode.id
-                    }
+                    },
+                    history: true
                 })
             },
             handleDialogCancel () {
@@ -458,7 +468,7 @@
                 this.sideslider.componentProps = {
                     properties: this.columnsConfigProperties,
                     selected: this.columnDisplayProperties,
-                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 }
                 this.sideslider.title = this.$t('列表显示属性配置')
                 this.sideslider.show = true

@@ -9,27 +9,23 @@
  */
 
 import $http from '@/api'
-// import jsCookie from 'js-cookie'
 
 const state = {
     business: [],
     bizId: null,
-    authorizedBusiness: []
+    authorizedBusiness: null
 }
 
 const getters = {
     business: state => state.business,
     bizId: state => state.bizId,
     currentBusiness: state => state.authorizedBusiness.find(business => business.bk_biz_id === state.bizId),
-    authorizedBusiness: state => state.authorizedBusiness
+    authorizedBusiness: state => state.authorizedBusiness || []
 }
 
 const actions = {
-    getAuthorizedBusiness ({ commit }, sort, config = {}) {
-        return $http.get(`biz/with_reduced${sort ? '?sort=' + sort : ''}`, config).then(data => {
-            commit('setAuthorizedBusiness', data.info)
-            return data.info
-        })
+    getAuthorizedBusiness ({ commit, state }, config = {}) {
+        return $http.get('biz/with_reduced?sort=bk_biz_name', config)
     },
     /**
      * 添加业务

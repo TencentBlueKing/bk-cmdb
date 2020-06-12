@@ -5,6 +5,7 @@
         :searchable="searchable"
         :clearable="allowClear"
         :disabled="disabled"
+        :loading="loading"
         :font-size="fontSize">
         <bk-option-group v-for="(group, index) in list"
             :key="index"
@@ -22,6 +23,7 @@
         :searchable="searchable"
         :clearable="allowClear"
         :disabled="disabled"
+        :loading="loading"
         :font-size="fontSize">
         <bk-option
             v-for="option in list"
@@ -85,7 +87,8 @@
             searchable: {
                 type: Boolean,
                 default: false
-            }
+            },
+            loading: Boolean
         },
         data () {
             return {

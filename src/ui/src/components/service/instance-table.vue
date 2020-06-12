@@ -76,6 +76,7 @@
 </template>
 
 <script>
+    import { processTableHeader } from '@/dictionary/table-header'
     export default {
         props: {
             deletable: Boolean,
@@ -136,19 +137,8 @@
         },
         computed: {
             header () {
-                const display = [
-                    'bk_func_name',
-                    'bk_process_name',
-                    'bk_start_param_regex',
-                    'bind_ip',
-                    'port',
-                    'bk_port_enable',
-                    'protocol',
-                    'work_path',
-                    'user'
-                ]
                 const header = []
-                display.forEach(id => {
+                processTableHeader.forEach(id => {
                     const property = this.processProperties.find(property => property.bk_property_id === id)
                     if (property) {
                         header.push({

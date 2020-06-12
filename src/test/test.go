@@ -24,7 +24,6 @@ import (
 
 var clientSet apimachinery.ClientSetInterface
 var tConfig TestConfig
-var header http.Header
 var reportUrl string
 var reportDir string
 var db *local.Mongo
@@ -69,6 +68,7 @@ func init() {
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
+	client := zk.NewZkClient(tConfig.ZkAddr, 40*time.Second)
 	var err error
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
@@ -77,7 +77,6 @@ func init() {
 	}
 	db, err = local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())
-	client := zk.NewZkClient(tConfig.ZkAddr, 5*time.Second)
 	Expect(client.Start()).Should(BeNil())
 	Expect(client.Ping()).Should(BeNil())
 	disc, err := discovery.NewServiceDiscovery(client)
@@ -103,7 +102,7 @@ func GetTestConfig() TestConfig {
 }
 
 func GetHeader() http.Header {
-	header = make(http.Header)
+	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
 	header.Add(common.BKSupplierIDField, "0")
 	header.Add(common.BKHTTPHeaderUser, "admin")
@@ -125,8 +124,8 @@ func ClearDatabase() {
 	for _, tableName := range common.AllTables {
 		db.DropTable(context.Background(), tableName)
 	}
-	resp, err := clientSet.AdminServer().Migrate(context.Background(), "0", "community", header)
-	fmt.Printf("******resp:%v, err:%v\n", resp, err)
+	db.Close()
+	clientSet.AdminServer().Migrate(context.Background(), "0", "community", GetHeader())
 }
 
 func GetReportUrl() string {

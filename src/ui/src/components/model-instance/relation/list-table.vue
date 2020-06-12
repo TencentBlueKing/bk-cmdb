@@ -34,7 +34,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('操作')">
                 <template slot-scope="{ row }">
-                    <cmdb-auth :auth="$authResources({ type: $OPERATION.U_INST })">
+                    <cmdb-auth :auth="authResources">
                         <bk-button slot-scope="{ disabled }"
                             text
                             theme="primary"
@@ -60,8 +60,10 @@
 <script>
     import bus from '@/utils/bus.js'
     import { mapGetters } from 'vuex'
+    import authMixin from '../mixin-auth'
     export default {
         name: 'cmdb-relation-list-table',
+        mixins: [authMixin],
         props: {
             type: {
                 type: String,
@@ -181,6 +183,15 @@
             },
             hasInstance () {
                 return this.instances.length > 0
+            },
+            resourceType () {
+                return this.$parent.resourceType
+            },
+            authResources () {
+                if (this.resourceType === 'business') {
+                    return this.INST_AUTH.U_BUSINESS
+                }
+                return this.INST_AUTH.U_INST
             }
         },
         watch: {

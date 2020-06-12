@@ -6,9 +6,13 @@
                     <search-select-mix></search-select-mix>
                 </div>
                 <div class="action-menu" v-show="!actionMode">
-                    <bk-dropdown-menu>
+                    <bk-dropdown-menu
+                        @show="showBatchDropdown = true"
+                        @hide="showBatchDropdown = false"
+                        font-size="medium">
                         <div :class="['dropdown-trigger', { selected: actionMode }]" slot="dropdown-trigger">
-                            <i class="bk-cc-icon icon-cc-menu"></i>
+                            <span>{{$t('批量操作')}}</span>
+                            <i :class="['bk-icon icon-angle-down', { 'icon-flip': showBatchDropdown }]"></i>
                         </div>
                         <ul class="bk-dropdown-list" slot="dropdown-content">
                             <li>
@@ -43,6 +47,7 @@
                 ref="topologyTree"
                 :tree-options="treeOptions"
                 :action="actionMode"
+                :checked="checkedNodes"
                 @selected="handleTreeSelected"
                 @checked="handleTreeChecked"
             ></topology-tree>
@@ -94,16 +99,25 @@
                 treeOptions: {
                     showCheckbox: false,
                     selectable: true,
-                    checkOnClick: false
+                    checkOnClick: false,
+                    checkOnlyAvailableStrictly: false,
+                    displayMatchedNodeDescendants: true
                 },
                 actionMode: '',
                 showCheckedPanel: false,
-                checkedList: []
+                checkedList: [],
+                showBatchDropdown: false
             }
         },
         computed: {
             topologyTree () {
                 return this.$refs.topologyTree
+            },
+            checkedNodes () {
+                if (this.actionMode === 'batch-edit') {
+                    return this.checkedList.map(data => this.topologyTree.idGenerator(data))
+                }
+                return []
             }
         },
         watch: {
@@ -125,6 +139,7 @@
                 this.treeOptions.showCheckbox = true
                 this.treeOptions.selectable = false
                 this.treeOptions.checkOnClick = true
+                this.treeOptions.checkOnlyAvailableStrictly = true
             },
             handleTreeSelected (node) {
                 this.$emit('module-selected', node.data)
@@ -158,7 +173,7 @@
             },
             handleGoEdit () {
                 const checkedIds = this.checkedList.map(item => item.bk_inst_id)
-                this.$router.push({
+                this.$routerActions.redirect({
                     name: MENU_BUSINESS_HOST_APPLY_EDIT,
                     query: {
                         mid: checkedIds.join(','),
@@ -172,6 +187,7 @@
                 this.treeOptions.selectable = true
                 this.treeOptions.checkOnClick = false
                 this.showCheckedPanel = false
+                this.treeOptions.checkOnlyAvailableStrictly = false
                 this.actionMode = ''
                 this.removeChecked()
             }
@@ -198,12 +214,12 @@
         }
         .action-menu {
             flex: none;
-            margin-left: 12px;
+            margin-left: 8px;
 
             .dropdown-trigger {
                 border: 1px solid #c4c6cc;
                 border-radius: 2px;
-                width: 32px;
+                padding: 0 8px;
                 height: 32px;
                 text-align: center;
                 line-height: 32px;
@@ -216,17 +232,10 @@
                     border-color: #3a84ff;
                     color: #3a84ff;
                 }
-                .icon-cc-menu {
-                    color: #979ba5;
-                    font-size: 20px;
-                    vertical-align: unset;
-                }
 
-                &.selected {
-                    border: 1px solid #3a84ff;
-                    .icon-cc-menu {
-                        color: #3a84ff;
-                    }
+                .icon-angle-down {
+                    font-size: 22px;
+                    margin: -3px -5px 0 -4px
                 }
             }
         }
@@ -339,23 +348,29 @@
         }
     }
 
-    .bk-dropdown-list > li a {
-        display: block;
-        height: 32px;
-        line-height: 33px;
-        padding: 0 16px;
-        color: #63656e;
-        font-size: 12px;
-        text-decoration: none;
-        white-space: nowrap;
-
-        &:hover {
-            background-color: #eaf3ff;
-            color: #3a84ff;
+    .bk-dropdown-list {
+        .auth-box {
+            width: 100%;
         }
 
-        &.disabled {
-            color: #c4c6cc;
+        > li a {
+            display: block;
+            height: 32px;
+            line-height: 33px;
+            padding: 0 16px;
+            color: #63656e;
+            font-size: 14px;
+            text-decoration: none;
+            white-space: nowrap;
+
+            &:hover {
+                background-color: #eaf3ff;
+                color: #3a84ff;
+            }
+
+            &.disabled {
+                color: #c4c6cc;
+            }
         }
     }
 </style>

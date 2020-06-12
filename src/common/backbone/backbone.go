@@ -33,6 +33,8 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/rs/xid"
 )
 
 // connect svcManager retry connect time
@@ -56,7 +58,7 @@ type BackboneParameter struct {
 func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(svcManagerAddr, 5*time.Second)
+		client := zk.NewZkClient(svcManagerAddr, 40*time.Second)
 		if err = client.Start(); err != nil {
 			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 			time.Sleep(time.Second * 2)
@@ -108,6 +110,9 @@ func validateParameter(input *BackboneParameter) error {
 	// to prevent other components which doesn't set it from failing
 	if input.SrvInfo.RegisterIP == "" {
 		input.SrvInfo.RegisterIP = input.SrvInfo.IP
+	}
+	if input.SrvInfo.UUID == "" {
+		input.SrvInfo.UUID = xid.New().String()
 	}
 	return nil
 }

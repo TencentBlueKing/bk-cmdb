@@ -247,6 +247,39 @@ var expectSystemResourceType = []ResourceType{
 		},
 	},
 	{
+		ResourceTypeID:       SysEventWatch,
+		ResourceTypeName:     "事件监听",
+		ParentResourceTypeID: "",
+		Share:                false,
+		Actions: []Action{
+			{
+				ActionID:          WatchHost,
+				ActionName:        "主机",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          WatchHostRelation,
+				ActionName:        "主机关系",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          WatchBiz,
+				ActionName:        "业务",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          WatchSet,
+				ActionName:        "集群",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          WatchModule,
+				ActionName:        "模块",
+				IsRelatedResource: false,
+			},
+		},
+	},
+	{
 		ResourceTypeID:       SysCloudAccount,
 		ResourceTypeName:     "云账户",
 		ParentResourceTypeID: "",

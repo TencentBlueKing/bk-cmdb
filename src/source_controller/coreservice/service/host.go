@@ -201,7 +201,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		dbInst.Fields(fieldArr...)
 	}
 	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
-		blog.Errorf("failed to query the host , err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -222,7 +222,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	hostID := ctx.Request.PathParameter(common.BKHostIDField)
 	key := common.RedisSnapKeyPrefix + hostID
-	result, err := s.cache.Get(key).Result()
+	result, err := s.rds.Get(key).Result()
 	if nil != err && err != redis.Nil {
 		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
@@ -232,6 +232,22 @@ func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.HostSnap{
 		Data: result,
 	})
+}
+
+// GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
+func (s *coreService) GetDistinctHostIDsByTopoRelation(ctx *rest.Contexts) {
+	inputData := &metadata.DistinctHostIDByTopoRelationRequest{}
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	hostIDArr, err := s.core.HostOperation().GetDistinctHostIDsByTopoRelation(ctx.Kit, inputData)
+	if err != nil {
+		blog.ErrorJSON("GetDistinctHostIDsByTopoRelation  error. err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(metadata.DistinctID{IDArr: hostIDArr})
 }
 
 func (s *coreService) TransferHostResourceDirectory(ctx *rest.Contexts) {

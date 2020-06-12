@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
@@ -27,7 +28,7 @@ import (
 func init() {
 	plugin := &metadata.LoginPluginInfo{
 		Name:       "skip login system",
-		Version:    "skip-login",
+		Version:    common.BKSkipLoginPluginVersion,
 		HandleFunc: &user{},
 	}
 	manager.RegisterPlugin(plugin)
@@ -91,4 +92,13 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	}
 	loginURL = fmt.Sprintf(loginURL, appCode, fmt.Sprintf("%s%s", siteURL, c.Request.URL.String()))
 	return loginURL
+}
+
+func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
+	return []*metadata.LoginSystemUserInfo{
+		{
+			CnName: "admin",
+			EnName: "admin",
+		},
+	}, nil
 }

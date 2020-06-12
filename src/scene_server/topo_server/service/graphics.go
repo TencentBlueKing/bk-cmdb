@@ -42,9 +42,16 @@ func (s *Service) UpdateObjectTopoGraphics(ctx *rest.Contexts) {
 		return
 	}
 
-	err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), requestBody.Data, nil)
-	if err != nil {
-		ctx.RespAutoError(err)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), requestBody.Data, nil)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
@@ -58,9 +65,16 @@ func (s *Service) UpdateObjectTopoGraphicsNew(ctx *rest.Contexts) {
 		return
 	}
 
-	err = s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), input.Origin, input.Metadata)
-	if err != nil {
-		ctx.RespAutoError(err)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(ctx.Kit, ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"), input.Origin, input.Metadata)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)

@@ -132,9 +132,9 @@ func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *me
 	return
 }
 
-func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID string) (resp *metadata.HostInstanceResult, err error) {
+func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID int64) (resp *metadata.HostInstanceResult, err error) {
 	resp = new(metadata.HostInstanceResult)
-	subPath := "/find/host/%s"
+	subPath := "/find/host/%d"
 
 	err = h.client.Get().
 		WithContext(ctx).
@@ -435,10 +435,10 @@ func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header, dat *m
 	return
 }
 
-func (h *host) ListHosts(ctx context.Context, header http.Header, option metadata.ListHosts) (metadata.ListHostResult, error) {
+func (h *host) ListHosts(ctx context.Context, header http.Header, option *metadata.ListHosts) (*metadata.ListHostResult, error) {
 	type Result struct {
 		metadata.BaseResp `json:",inline"`
-		Data              metadata.ListHostResult `json:"data"`
+		Data              *metadata.ListHostResult `json:"data"`
 	}
 	result := Result{}
 	subPath := "/findmany/hosts/list_hosts"
@@ -504,4 +504,19 @@ func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.He
 	}
 
 	return nil
+}
+
+// GetDistinctHostIDByTopology get distion host id by topology relation
+func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Header, input *metadata.DistinctHostIDByTopoRelationRequest) (resp *metadata.DistinctIDResponse, err error) {
+	resp = new(metadata.DistinctIDResponse)
+	subPath := "/read/distinct/host_id/topology/relation"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
 }

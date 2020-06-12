@@ -15,10 +15,6 @@ package types
 import (
 	"context"
 	"errors"
-	"net/http"
-	"time"
-
-	ccErr "configcenter/src/common/errors"
 )
 
 // Errors defines
@@ -50,8 +46,6 @@ type Table interface {
 	Upsert(ctx context.Context, filter Filter, doc interface{}) error
 	// UpdateMultiModel  data based on operators.
 	UpdateMultiModel(ctx context.Context, filter Filter, updateModel ...ModeUpdate) error
-	// UpdateModifyCount 更新数据,返回更新的条数
-	UpdateModifyCount(ctx context.Context, filter Filter, doc interface{}) (int64, error)
 
 	// Delete 删除数据
 	Delete(ctx context.Context, filter Filter) error
@@ -71,6 +65,15 @@ type Table interface {
 	DropColumn(ctx context.Context, field string) error
 	// 根据条件移除字段
 	DropColumns(ctx context.Context, filter Filter, fields []string) error
+
+	// DropDocsColumn remove a column by the name for doc use filter
+	DropDocsColumn(ctx context.Context, field string, filter Filter) error
+
+	// Distinct Finds the distinct values for a specified field across a single collection or view and returns the results in an
+	// field the field for which to return distinct values.
+	// filter query that specifies the documents from which to retrieve the distinct values.
+	// result execute query result.  result must be ptr, ptr raw type is must be array,  array item type can integer(int8,int16,int31,int64,int,uint8,uint16,uint31,uint64,uint),string
+	Distinct(ctx context.Context, field string, filter Filter, results interface{}) error
 }
 
 // Find find operation interface
@@ -103,24 +106,4 @@ type Index struct {
 	Name       string           `json:"name" bson:"name"`
 	Unique     bool             `json:"unique" bson:"unique"`
 	Background bool             `json:"background" bson:"background"`
-}
-
-type TxnWrapperOption struct {
-	Header http.Header
-	CCErr  ccErr.DefaultCCErrorIf
-}
-
-// JoinOption defind join transaction options
-type JoinOption struct {
-	SessionID    string // 会话ID
-	SessionState string // 会话状态
-	TxnNumber    string // 事务Number
-
-}
-
-type TxnOption struct {
-	// transaction timeout time
-	// min value: 5 * time.Second
-	// default: 5min
-	Timeout time.Duration
 }

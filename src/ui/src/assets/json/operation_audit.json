@@ -22,20 +22,51 @@
                 }, {
                     "id": "set-delete-biz_topology",
                     "name": "删除集群"
+                }, {
+                    "id": "mainline_instance-delete-biz_topology",
+                    "name": "删除拓扑节点"
+                }, {
+                    "id": "mainline_instance-create-biz_topology",
+                    "name": "新增拓扑节点"
+                }, {
+                    "id": "mainline_instance-update-biz_topology",
+                    "name": "修改拓扑节点"
                 }
             ]
         }, {
             "id": "host",
             "name": "主机",
             "operations": [
-                {
+               {
                     "id": "host-unassign_host",
                     "name": "归还主机"
                 }, {
                     "id": "host-update",
                     "name": "修改"
+                }, {
+                    "id": "host-delete",
+                    "name": "删除"
+                }, {
+                    "id": "host-create",
+                    "name": "新增"
+                }, {
+                    "id": "host-transfer_host_module",
+                    "name": "转移模块"
                 }
             ]
+        }, {
+            "id": "model_attribute",
+            "name": "自定义字段",
+            "operations": [{
+                "id": "model_attribute-create",
+                "name": "新增字段"
+            }, {
+                "id": "model_attribute-update",
+                "name": "修改字段"
+            }, {
+                "id": "model_attribute-delete",
+                "name": "删除字段"
+            }]
         }
     ],
     "resource": [

@@ -1,4 +1,4 @@
-/*
+  /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
-	"configcenter/src/storage/dal"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
@@ -58,7 +57,7 @@ type ProcServer struct {
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
 	Logic              *logics.Logic
-	TransactionClient  dal.Transaction
+	EnableTxn          bool
 }
 
 func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
@@ -136,6 +135,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 
 	// service instance
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance", Handler: ps.CreateServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/preview", Handler: ps.CreateServiceInstancesPreview})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance", Handler: ps.SearchServiceInstancesInModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance", Handler: ps.SearchServiceInstancesInModuleWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/with_host", Handler: ps.ListServiceInstancesWithHost})
@@ -190,7 +190,7 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 
 	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_HOST,
+		Module:     types.CC_MODULE_PROC,
 		HealthMeta: meta,
 		AtTime:     metadata.Now(),
 	}

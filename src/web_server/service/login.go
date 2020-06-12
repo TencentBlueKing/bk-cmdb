@@ -13,7 +13,13 @@
 package service
 
 import (
+	"strings"
+	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-gonic/gin"
@@ -31,5 +37,63 @@ func (s *Service) LogOutUser(c *gin.Context) {
 	ret.BaseResp.Result = true
 	ret.Data.LogoutURL = loginURL
 	c.JSON(200, ret)
+	return
+}
+
+// Login html file
+func (s *Service) Login(c *gin.Context) {
+	c.HTML(200, "login.html", gin.H{})
+}
+
+// LoginUser log in user
+func (s *Service) LoginUser(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
+	userName := c.PostForm("username")
+	password := c.PostForm("password")
+	if userName == "" || password == "" {
+		c.HTML(200, "login.html", gin.H{
+			"error": defErr.CCError(common.CCErrWebNeedFillinUsernamePasswd).Error(),
+		})
+	}
+
+	if len(s.Config.ConfigMap["session.user_info"]) == 0 {
+		c.HTML(200, "login.html", gin.H{
+			"error": defErr.CCError(common.CCErrWebNoUsernamePasswd).Error(),
+		})
+		return
+	}
+	userInfos := strings.Split(s.Config.ConfigMap["session.user_info"], ",")
+	for _, userInfo := range userInfos {
+		userWithPassword := strings.Split(userInfo, ":")
+		if len(userWithPassword) != 2 {
+			blog.Errorf("user info config %s invalid, rid: %s", userInfo, rid)
+			c.HTML(200, "login.html", gin.H{
+				"error": defErr.CCError(common.CCErrWebUserinfoFormatWrong).Error(),
+			})
+			return
+		}
+		if userWithPassword[0] == userName && userWithPassword[1] == password {
+			c.SetCookie(common.BKUser, userName, 24*60*60, "/", "", false, false)
+			session := sessions.Default(c)
+			session.Set(userName, time.Now().Unix())
+			if err := session.Save(); err != nil {
+				blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
+			}
+			userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+			userManger.LoginUser(c)
+			var redirectURL string
+			if c.Param("c_url") != "" {
+				redirectURL = c.Param("c_url")
+			} else {
+				redirectURL = s.Config.Site.DomainUrl
+			}
+			c.Redirect(302, redirectURL)
+			return
+		}
+	}
+	c.HTML(200, "login.html", gin.H{
+		"error": defErr.CCError(common.CCErrWebUsernamePasswdWrong).Error(),
+	})
 	return
 }

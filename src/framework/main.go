@@ -79,7 +79,7 @@ func main() {
 	}
 
 	if "" != opt.Regdiscv {
-		disClient := zk.NewZkClient(opt.Regdiscv, 5*time.Second)
+		disClient := zk.NewZkClient(opt.Regdiscv, 40*time.Second)
 		if err := disClient.Start(); err != nil {
 			log.Errorf("connect regdiscv [%s] failed: %v", opt.Regdiscv, err)
 			return

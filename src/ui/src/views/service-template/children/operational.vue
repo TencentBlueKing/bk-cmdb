@@ -1,5 +1,5 @@
 <template>
-    <div class="create-template-wrapper" v-bkloading="{ isLoading: $loading('getSingleServiceTemplate') }">
+    <div class="create-template-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="info-group">
             <h3>{{$t('基本属性')}}</h3>
 
@@ -164,6 +164,7 @@
                     :inst="attribute.inst.edit"
                     :type="attribute.type"
                     :is-created-service="isCreateMode"
+                    :data-index="attribute.dataIndex"
                     :save-disabled="false"
                     :has-used="hasUsed"
                     @on-submit="handleSaveProcess"
@@ -216,6 +217,7 @@
                 emptyText: this.$t('请选择一级分类'),
                 attribute: {
                     type: null,
+                    dataIndex: null,
                     inst: {
                         details: {},
                         edit: {}
@@ -239,7 +241,14 @@
                 isEditName: false,
                 isEditNameLoading: false,
                 deletable: false,
-                showUpdateInfo: false
+                showUpdateInfo: false,
+                request: {
+                    template: Symbol('template'),
+                    category: Symbol('category'),
+                    properties: Symbol('properties'),
+                    propertyGroups: Symbol('propertiyGroups'),
+                    processList: Symbol('processList')
+                }
             }
         },
         computed: {
@@ -288,7 +297,8 @@
             ...mapActions('serviceTemplate', [
                 'createServiceTemplate',
                 'updateServiceTemplate',
-                'findServiceTemplate'
+                'findServiceTemplate',
+                'deleteServiceTemplate'
             ]),
             ...mapActions('processTemplate', [
                 'createProcessTemplate',
@@ -304,9 +314,6 @@
             async refresh () {
                 try {
                     await this.reload()
-                    if (!this.isCreateMode) {
-                        this.initEdit()
-                    }
                     if (this.setActive) {
                         Bus.$emit('active-change', 'instance')
                         this.$route.params.active = null
@@ -326,90 +333,100 @@
                     this.$store.commit('setTitle', this.$t('模板详情'))
                 }
             },
-            initEdit () {
-                this.formData.templateId = this.originTemplateValues['id']
-                this.formData.templateName = this.originTemplateValues['name']
-                this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']
-                this.formData.secondaryClassification = this.originTemplateValues['service_category_id']
-                // 备份，用于取消编辑
-                this.formData.originMainClassification = this.formData.mainClassification
-                this.formData.originSecondaryClassification = this.formData.secondaryClassification
-
-                this.hasUsed = this.isCreateMode ? false : Boolean(this.originTemplateValues['service_instance_count'])
-                this.getProcessList()
-            },
             async reload () {
-                if (!this.isCreateMode) {
-                    this.getSingleServiceTemplate()
+                try {
+                    const request = [
+                        this.getProperties(),
+                        this.getPropertyGroups(),
+                        this.getServiceClassification()
+                    ]
+                    if (!this.isCreateMode) {
+                        request.push(this.getSingleServiceTemplate())
+                        request.push(this.getProcessList())
+                    }
+                    const [properties, groups, { info: categories }, templateResponse] = await Promise.all(request)
+                    this.properties = properties
+                    this.propertyGroups = groups
+                    const categoryList = categories.map(item => item.category)
+                    this.mainList = categoryList.filter(classification => !classification.bk_parent_id)
+                    this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
+                    if (!this.isCreateMode) {
+                        const { result, data } = templateResponse
+                        if (!result) {
+                            this.$router.replace({ name: '404' })
+                            return
+                        }
+                        // 原始数据
+                        this.originTemplateValues = {
+                            service_instance_count: data.service_instance_count,
+                            process_instance_count: data.process_instance_count,
+                            ...data.template
+                        }
+                        // 表单数据
+                        const secondCategoryId = data.template.service_category_id
+                        const secondCategory = this.allSecondaryList.find(category => category.id === secondCategoryId) || {}
+                        this.formData.templateId = data.template.id
+                        this.formData.templateName = data.template.name
+                        this.formData.mainClassification = secondCategory.bk_parent_id
+                        this.formData.secondaryClassification = secondCategoryId
+                        // 备份，用于取消编辑
+                        this.formData.originMainClassification = secondCategory.bk_parent_id
+                        this.formData.originSecondaryClassification = secondCategoryId
+                        this.hasUsed = data.service_instance_count > 0
+                    }
+                } catch (e) {
+                    console.error(e)
                 }
-                this.properties = await this.searchObjectAttribute({
+            },
+            getProperties () {
+                return this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: 'process',
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
-                        requestId: `searchObjectAttribute_templateProcess`,
-                        fromCache: false
+                        requestId: this.request.properties,
+                        fromCache: true
                     }
                 })
-                await this.getServiceClassification()
-                this.getPropertyGroups()
             },
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'process',
                     params: this.$injectMetadata(),
                     config: {
-                        fromCache: true,
-                        requestId: 'post_searchGroup_process'
+                        requestId: this.request.propertyGroups,
+                        fromCache: true
                     }
-                }).then(groups => {
-                    this.propertyGroups = groups
-                    return groups
                 })
             },
-            async getSingleServiceTemplate () {
-                try {
-                    this.originTemplateValues = await this.findServiceTemplate({
-                        id: this.templateId,
-                        config: {
-                            requestId: 'getSingleServiceTemplate',
-                            globalError: false,
-                            transformData: false
-                        }
-                    }).then(res => {
-                        if (!res.result) {
-                            this.$router.replace({ name: '404' })
-                        } else {
-                            return {
-                                service_instance_count: res.data.service_instance_count,
-                                process_instance_count: res.data.process_instance_count,
-                                ...res.data.template
-                            }
-                        }
-                    })
-                } catch (e) {
-                    console.error(e)
-                    this.$router.replace({ name: '404' })
-                }
+            getSingleServiceTemplate () {
+                return this.findServiceTemplate({
+                    id: this.templateId,
+                    config: {
+                        requestId: this.request.template,
+                        globalError: false,
+                        transformData: false
+                    }
+                })
             },
-            async getServiceClassification () {
-                const result = await this.searchServiceCategory({
+            getServiceClassification () {
+                return this.searchServiceCategory({
                     params: this.$injectMetadata({}, { injectBizId: true }),
                     config: {
-                        requestId: 'get_proc_services_categories'
+                        requestId: this.request.category
                     }
                 })
-                const categoryList = result.info.map(item => item['category'])
-                this.mainList = categoryList.filter(classification => !classification['bk_parent_id'])
-                this.allSecondaryList = categoryList.filter(classification => classification['bk_parent_id'])
             },
             getProcessList () {
                 this.processLoading = true
                 this.getBatchProcessTemplate({
                     params: this.$injectMetadata({
-                        service_template_id: this.originTemplateValues['id']
-                    }, { injectBizId: true })
+                        service_template_id: Number(this.templateId)
+                    }, { injectBizId: true }),
+                    config: {
+                        requestId: this.request.processList
+                    }
                 }).then(data => {
                     this.processList = data.info.map(template => {
                         return {
@@ -480,22 +497,23 @@
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
             },
-            handleUpdateProcess (template) {
+            handleUpdateProcess (template, index) {
                 try {
                     this.slider.show = true
                     this.slider.title = template['bk_func_name']['value']
                     this.attribute.type = 'update'
                     this.attribute.inst.edit = template
+                    this.attribute.dataIndex = index
                 } catch (e) {
                     console.error(e)
                 }
             },
-            handleDeleteProcess (template) {
+            handleDeleteProcess (template, index) {
                 this.$bkInfo({
                     title: this.$t('确认删除模板进程'),
                     confirmFn: () => {
                         if (this.isCreateMode) {
-                            this.deleteLocalProcessTemplate(template)
+                            this.deleteLocalProcessTemplate({ process: template, index })
                             this.processList = this.localProcessTemplate
                         } else {
                             this.deleteProcessTemplate({
@@ -526,6 +544,18 @@
                 }).then(() => {
                     this.$success(this.$t('创建成功'))
                     this.handleCancelOperation()
+                }).catch(async e => {
+                    // 新建进程失败静默删除服务模板
+                    await this.deleteServiceTemplate({
+                        params: {
+                            data: this.$injectMetadata({
+                                service_template_id: this.formData.templateId
+                            }, {
+                                injectBizId: true
+                            })
+                        }
+                    })
+                    this.formData.templateId = ''
                 })
             },
             async handleSubmit () {
@@ -582,7 +612,7 @@
                 }
                 const moduleId = this.$route.params['moduleId']
                 if (moduleId) {
-                    this.$router.replace({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_AND_SERVICE,
                         query: {
                             node: 'module-' + this.$route.params.moduleId
@@ -594,10 +624,10 @@
             },
             handleCancelOperation () {
                 this.showUpdateInfo = false
-                this.$router.replace({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
+                this.$routerActions.redirect({ name: MENU_BUSINESS_SERVICE_TEMPLATE })
             },
             handleSliderBeforeClose () {
-                const hasChanged = this.$refs.processForm.hasChange()
+                const hasChanged = this.$refs.processForm && this.$refs.processForm.hasChange()
                 if (hasChanged) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
@@ -618,7 +648,7 @@
             getServiceCategory () {
                 const first = this.mainList.find(first => first.id === this.formData.mainClassification) || {}
                 const second = this.allSecondaryList.find(second => second.id === this.formData.secondaryClassification) || {}
-                return `${first.name} / ${second.name}`
+                return `${first.name || '--'} / ${second.name || '--'}`
             },
             getButtonText () {
                 if (this.isCreateMode) {

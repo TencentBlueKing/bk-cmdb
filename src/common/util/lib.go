@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -123,21 +122,6 @@ func GetSupplierID(header http.Header) (int64, error) {
 func IsExistSupplierID(header http.Header) bool {
 	if "" == header.Get(common.BKHTTPSupplierID) {
 		return false
-	}
-	return true
-}
-
-// GetHTTPCCTransaction return config center request id from http header
-func GetHTTPCCTransaction(header http.Header) string {
-	rid := header.Get(common.BKHTTPCCTransactionID)
-	return rid
-}
-
-// IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
-func IsNil(value interface{}) bool {
-	rflValue := reflect.ValueOf(value)
-	if rflValue.IsValid() {
-		return rflValue.IsNil()
 	}
 	return true
 }

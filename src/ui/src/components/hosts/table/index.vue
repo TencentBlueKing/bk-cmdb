@@ -2,82 +2,21 @@
     <div class="hosts-table-layout">
         <div class="hosts-options">
             <div class="options-left">
-                <slot name="options-left">
-                    <bk-button class="options-button mr10" theme="primary"
-                        :disabled="!table.checked.length"
-                        @click="handleMultipleEdit">
-                        {{$t('编辑')}}
-                    </bk-button>
-                    <cmdb-auth class="inline-block-middle mr10" :auth="transferAuthResources">
-                        <bk-button slot-scope="{ disabled }"
-                            class="options-button"
-                            theme="default"
-                            :disabled="!table.checked.length || disabled"
-                            @click="transfer.show = true">
-                            {{$t('转移')}}
-                        </bk-button>
-                    </cmdb-auth>
-                    <bk-button class="options-button mr10"
-                        theme="default"
-                        type="submit"
-                        form="exportForm"
-                        :disabled="!table.checked.length">
-                        {{$t('导出')}}
-                    </bk-button>
-                    <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
-                        <input type="hidden" name="bk_host_id" :value="table.checked">
-                        <input type="hidden" name="export_custom_fields"
-                            v-if="usercustom[columnsConfigKey]"
-                            :value="usercustom[columnsConfigKey]">
-                        <input type="hidden" name="bk_biz_id" value="-1">
-                        <input type="hidden" name="metadata"
-                            v-if="$route.name !== 'resource'"
-                            :value="JSON.stringify($injectMetadata().metadata)">
-                    </form>
-                    <cmdb-clipboard-selector class="options-button"
-                        :list="clipboardList"
-                        :disabled="!table.checked.length"
-                        @on-copy="handleCopy">
-                    </cmdb-clipboard-selector>
-                </slot>
+                <slot name="options-left"></slot>
             </div>
             <div class="options-right clearfix">
                 <div class="fl" v-if="showScope">
                     <i class="options-split"></i>
-                    <bk-select class="options-collection"
+                    <bk-select style="width: 280px;"
                         v-model="scope"
                         font-size="medium"
                         :clearable="false">
                         <bk-option id="all" :name="$t('全部主机')"></bk-option>
-                        <bk-option :id="0" :name="$t('已分配主机')"></bk-option>
-                        <bk-option :id="1" :name="$t('未分配主机')"></bk-option>
+                        <bk-option id="0" :name="$t('已分配主机')"></bk-option>
+                        <bk-option id="1" :name="$t('未分配主机')"></bk-option>
                     </bk-select>
                 </div>
                 <div class="fr">
-                    <bk-select class="options-collection bgc-white"
-                        v-if="showCollection"
-                        ref="collectionSelector"
-                        v-model="selectedCollection"
-                        font-size="medium"
-                        :loading="$loading('searchCollection')"
-                        :placeholder="$t('请选择收藏条件')"
-                        @selected="handleCollectionSelect"
-                        @clear="handleCollectionClear"
-                        @toggle="handleCollectionToggle">
-                        <bk-option v-for="collection in collectionList"
-                            :key="collection.id"
-                            :id="collection.id"
-                            :name="collection.name">
-                            <span class="collection-name" :title="collection.name">{{collection.name}}</span>
-                            <i class="bk-icon icon-close" @click.stop="handleDeleteCollection(collection)"></i>
-                        </bk-option>
-                        <div slot="extension">
-                            <a href="javascript:void(0)" class="collection-create" @click="handleCreateCollection">
-                                <i class="bk-icon icon-plus-circle"></i>
-                                {{$t('新增条件')}}
-                            </a>
-                        </div>
-                    </bk-select>
                     <cmdb-host-filter class="ml10"
                         ref="hostFilter"
                         :properties="filterProperties"
@@ -100,24 +39,29 @@
             v-bkloading="{ isLoading: $loading(['searchHosts', 'batchSearchProperties', 'post_searchGroup_host']) }"
             :data="table.list"
             :pagination="table.pagination"
-            :row-style="{ cursor: 'pointer' }"
             :max-height="$APP.height - 190"
             @selection-change="handleSelectionChange"
-            @row-click="handleRowClick"
             @sort-change="handleSortChange"
             @page-change="handlePageChange"
             @page-limit-change="handleSizeChange">
             <bk-table-column type="selection" width="60" align="center" fixed class-name="bk-table-selection"></bk-table-column>
             <bk-table-column v-for="column in table.header"
+                :min-width="column.id === 'bk_host_id' ? 80 : 120"
                 :key="column.id"
                 :label="column.name"
                 :sortable="column.sortable ? 'custom' : false"
                 :prop="column.id"
-                :fixed="column.id === 'bk_host_innerip'"
-                :class-name="column.id === 'bk_host_innerip' ? 'is-highlight' : ''"
-                show-overflow-tooltip>
+                show-overflow-tooltip
+                :fixed="column.id === 'bk_host_id'">
                 <template slot-scope="{ row }">
-                    {{ row | hostValueFilter(column.objId, column.id) | formatter(column.type, getPropertyValue(column.objId, column.id, 'option'))}}
+                    <cmdb-property-value
+                        :theme="column.id === 'bk_host_id' ? 'primary' : 'default'"
+                        :value="row | hostValueFilter(column.objId, column.id, column)"
+                        :show-unit="false"
+                        :property="column.type"
+                        :options="getPropertyValue(column.objId, column.id, 'option')"
+                        @click.native.stop="handleValueClick(row, column)">
+                    </cmdb-property-value>
                 </template>
             </bk-table-column>
             <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
@@ -156,46 +100,26 @@
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
         </bk-sideslider>
-        <bk-dialog class="bk-dialog-no-padding"
-            v-model="transfer.show"
-            draggable
-            :close-icon="false"
-            :show-footer="false"
-            :show-header="false"
-            :width="720">
-            <div class="transfer-title" slot="tools">
-                <i class="icon icon-cc-shift mr5"></i>
-                <span>{{$t('主机转移')}}</span>
-                <span v-if="selectedHosts.length === 1">{{selectedHosts[0]['host']['bk_host_innerip']}}</span>
-            </div>
-            <div class="transfer-content">
-                <cmdb-transfer-host v-if="transfer.show"
-                    :transfer-resource-auth="transferResourceAuth"
-                    :selected-hosts="selectedHosts"
-                    @on-success="handleTransferSuccess"
-                    @on-cancel="transfer.show = false">
-                </cmdb-transfer-host>
-            </div>
-        </bk-dialog>
     </div>
 </template>
 
 <script>
     import { mapGetters, mapActions, mapState } from 'vuex'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
-    import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
     import hostValueFilter from '@/filters/host'
     import {
         MENU_BUSINESS,
         MENU_BUSINESS_HOST_DETAILS,
+        MENU_RESOURCE_HOST,
         MENU_RESOURCE_HOST_DETAILS,
         MENU_RESOURCE_BUSINESS_HOST_DETAILS
     } from '@/dictionary/menu-symbol'
+    import RouterQuery from '@/router/query'
+    import { getIPPayload, injectFields, injectAsset } from '@/utils/host'
     export default {
         components: {
             cmdbColumnsConfig,
-            cmdbTransferHost,
             cmdbHostFilter
         },
         filters: {
@@ -213,7 +137,7 @@
             columnsConfigDisabledColumns: {
                 type: Array,
                 default () {
-                    return ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
+                    return ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
                 }
             },
             saveAuth: {
@@ -228,15 +152,6 @@
                 type: [String, Array],
                 default: ''
             },
-            transferAuth: {
-                type: [String, Array],
-                default: ''
-            },
-            transferResourceAuth: {
-                type: [String, Array],
-                default: ''
-            },
-            showCollection: Boolean,
             showHistory: Boolean,
             showScope: Boolean
         },
@@ -259,7 +174,6 @@
                         count: 0,
                         ...this.$tools.getDefaultPaginationConfig()
                     },
-                    defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
                     exportUrl: `${window.API_HOST}hosts/export`,
                     stuff: {
@@ -268,10 +182,6 @@
                             emptyText: this.$t('bk.table.emptyText')
                         }
                     }
-                },
-                filter: {
-                    business: '',
-                    condition: {}
                 },
                 slider: {
                     show: false,
@@ -291,26 +201,16 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
-                transfer: {
-                    show: false
-                },
-                selectedCollection: '',
-                scope: 1
+                scope: RouterQuery.get('scope', '1')
             }
         },
         computed: {
             ...mapState('userCustom', ['globalUsercustom']),
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapState('hosts', ['collectionList', 'isHostSearch']),
-            transferAuthResources () {
-                const auth = this.transferAuth
-                if (!auth) return {}
-                if (Array.isArray(auth) && !auth.length) return {}
-                return this.$authResources({ type: auth })
-            },
+            ...mapState('hosts', ['condition']),
             customColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
@@ -325,7 +225,7 @@
             },
             filterProperties () {
                 const { module, set, host } = this.properties
-                const filterProperty = ['bk_host_innerip', 'bk_host_outerip']
+                const filterProperty = ['bk_host_id', 'bk_host_innerip', 'bk_host_outerip']
                 return {
                     host: host.filter(property => !filterProperty.includes(property.bk_property_id)),
                     module,
@@ -339,6 +239,7 @@
             },
             'table.header' (header) {
                 this.$emit('on-set-header', header)
+                RouterQuery.set('_t', Date.now())
             },
             'slider.show' (show) {
                 if (!show) {
@@ -351,9 +252,22 @@
             columnsConfigProperties () {
                 this.setTableHeader()
             },
-            scope () {
-                if (this.isHostSearch) return
-                this.handlePageChange(1, true)
+            scope (value) {
+                RouterQuery.set({
+                    scope: value,
+                    ip: '',
+                    page: 1
+                })
+            },
+            condition () {
+                RouterQuery.set('_t', Date.now())
+            },
+            '$route.name' (value) {
+                if (value === MENU_RESOURCE_HOST) {
+                    this.setRouterQueryWatcher()
+                } else {
+                    this.teardownRouterQueryWatcher()
+                }
             }
         },
         async created () {
@@ -362,22 +276,35 @@
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
-                if (this.showCollection) {
-                    this.getCollectionList()
-                }
-                if (this.isHostSearch) {
-                    this.scope = 'all'
-                    this.$store.commit('hosts/setIsHostSearch', false)
-                }
+
+                this.setRouterQueryWatcher()
             } catch (e) {
                 console.log(e)
             }
+        },
+        beforeDestroy () {
+            this.teardownRouterQueryWatcher()
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
-            ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
+            ...mapActions('hostSearch', ['searchHost']),
+            setRouterQueryWatcher () {
+                this.unwatch = RouterQuery.watch('*', ({
+                    scope = '1',
+                    page = 1,
+                    limit = this.table.pagination.limit
+                }) => {
+                    this.scope = scope
+                    this.table.pagination.current = parseInt(page)
+                    this.table.pagination.limit = parseInt(limit)
+                    this.getHostList()
+                }, { immediate: true, throttle: 16 })
+            },
+            teardownRouterQueryWatcher () {
+                this.unwatch && this.unwatch()
+            },
             getPropertyValue (modelId, propertyId, field) {
                 const model = this.properties[modelId]
                 if (!model) {
@@ -388,6 +315,7 @@
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
+                    injectId: 'host',
                     params: this.$injectMetadata({
                         bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
@@ -413,87 +341,6 @@
                     this.propertyGroups = groups
                     return groups
                 })
-            },
-            async getCollectionList () {
-                try {
-                    const data = await this.$store.dispatch('hostFavorites/searchFavorites', {
-                        params: {
-                            condition: {
-                                bk_biz_id: this.$store.getters['objectBiz/bizId']
-                            }
-                        },
-                        config: {
-                            requestId: 'searchCollection'
-                        }
-                    })
-                    this.$store.commit('hosts/setCollectionList', data.info)
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            handleCollectionToggle (isOpen) {
-                if (isOpen) {
-                    this.$refs.hostFilter.$refs.filterPopper.instance.hide()
-                }
-            },
-            async handleDeleteCollection (collection) {
-                try {
-                    await this.$store.dispatch('hostFavorites/deleteFavorites', {
-                        id: collection.id,
-                        config: {
-                            requestId: 'deleteFavorites'
-                        }
-                    })
-                    this.$success(this.$t('删除成功'))
-                    this.selectedCollection = ''
-                    this.$store.commit('hosts/deleteCollection', collection.id)
-                    this.handleCollectionClear()
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            handleCollectionSelect (value) {
-                const collection = this.collectionList.find(collection => collection.id === value)
-                try {
-                    const filterList = JSON.parse(collection.query_params).map(condition => {
-                        return {
-                            bk_obj_id: condition.bk_obj_id,
-                            bk_property_id: condition.field,
-                            operator: condition.operator,
-                            value: condition.value
-                        }
-                    })
-                    const info = JSON.parse(collection.info)
-                    const filterIP = {
-                        text: info.ip_list.join('\n'),
-                        exact: info.exact_search,
-                        inner: info.bk_host_innerip,
-                        outer: info.bk_host_outerip
-                    }
-                    this.$store.commit('hosts/setFilterList', filterList)
-                    this.$store.commit('hosts/setFilterIP', filterIP)
-                    this.$store.commit('hosts/setCollection', collection)
-                    setTimeout(() => {
-                        this.$refs.hostFilter.handleSearch(false)
-                    }, 0)
-                } catch (e) {
-                    this.$error(this.$t('应用收藏条件失败，转换数据错误'))
-                    console.error(e.message)
-                }
-            },
-            handleCollectionClear () {
-                this.$store.commit('hosts/clearFilter')
-                this.$refs.hostFilter.handleReset()
-                this.$refs.hostFilter.$refs.filterPopper.instance.hide()
-                const key = this.$route.meta.filterPropertyKey
-                const customData = this.$store.getters['userCustom/getCustomData'](key, [])
-                this.$store.commit('hosts/setFilterList', customData)
-            },
-            handleCreateCollection () {
-                this.$store.commit('hosts/clearFilter')
-                this.selectedCollection = ''
-                this.$refs.collectionSelector.close()
-                this.$refs.hostFilter.handleToggleFilter()
             },
             setTableHeader () {
                 const customColumns = this.customColumns.length ? this.customColumns : this.globalCustomColumns
@@ -522,38 +369,45 @@
                 return text.join(',') || '--'
             },
             getHostList (event) {
-                this.searchHost({
-                    params: this.injectScope({
-                        ...this.filter.condition,
-                        'bk_biz_id': this.filter.business,
+                try {
+                    const params = this.injectScope({
+                        bk_biz_id: -1,
+                        condition: this.condition,
+                        ip: getIPPayload(),
                         page: {
                             start: (this.table.pagination.current - 1) * this.table.pagination.limit,
                             limit: this.table.pagination.limit,
                             sort: this.table.sort
                         }
-                    }),
-                    config: {
-                        requestId: 'searchHosts',
-                        cancelPrevious: true
-                    }
-                }).then(data => {
-                    this.table.pagination.count = data.count
-                    this.table.list = data.info
+                    })
+                    injectAsset(params, RouterQuery.get('bk_asset_id'))
+                    this.searchHost({
+                        params: params,
+                        config: {
+                            requestId: 'searchHosts',
+                            cancelPrevious: true
+                        }
+                    }).then(data => {
+                        this.table.pagination.count = data.count
+                        this.table.list = data.info
 
-                    if (event) {
-                        this.table.stuff.type = 'search'
-                    }
+                        if (event) {
+                            this.table.stuff.type = 'search'
+                        }
 
-                    return data
-                }).catch(e => {
-                    this.table.checked = []
-                    this.table.list = []
-                    this.table.pagination.count = 0
-                })
+                        return data
+                    }).catch(e => {
+                        this.table.checked = []
+                        this.table.list = []
+                        this.table.pagination.count = 0
+                    })
+                } catch (e) {
+                    console.error(e)
+                }
             },
             injectScope (params) {
                 if (!this.showScope) {
-                    return params
+                    return injectFields(params, this.table.header)
                 }
                 const biz = params.condition.find(condition => condition.bk_obj_id === 'biz')
                 if (this.scope === 'all') {
@@ -562,7 +416,7 @@
                     const newCondition = {
                         field: 'default',
                         operator: '$eq',
-                        value: this.scope
+                        value: parseInt(this.scope)
                     }
                     const existCondition = biz.condition.find(condition => condition.field === 'default')
                     if (existCondition) {
@@ -571,23 +425,14 @@
                         biz.condition.push(newCondition)
                     }
                 }
-                return params
-            },
-            search (business, condition, resetPage = false, event = false) {
-                this.filter.business = business
-                this.filter.condition = condition
-                if (resetPage) {
-                    this.table.pagination.current = 1
-                }
-                this.getHostList(event)
+
+                return injectFields(params, this.table.header)
             },
             handlePageChange (current, event) {
-                this.table.pagination.current = current
-                this.getHostList(event)
+                RouterQuery.set('page', current)
             },
             handleSizeChange (limit) {
-                this.table.pagination.limit = limit
-                this.handlePageChange(1)
+                RouterQuery.set('limit', limit)
             },
             handleSortChange (sort) {
                 this.table.sort = this.$tools.getSort(sort)
@@ -617,39 +462,38 @@
             handleSelectionChange (selection) {
                 this.table.checked = selection.map(item => item.host.bk_host_id)
             },
-            handleRowClick (item) {
+            handleValueClick (item, column) {
+                if (column.objId !== 'host' || column.id !== 'bk_host_id') {
+                    return false
+                }
                 const business = item.biz[0]
                 if (this.$route.meta.owner === MENU_BUSINESS) {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_BUSINESS_HOST_DETAILS,
                         params: {
+                            bizId: business.bk_biz_id,
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id
                         },
-                        query: {
-                            from: 'business'
-                        }
+                        history: true
                     })
                 } else if (business.default) {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_HOST_DETAILS,
                         params: {
                             id: item.host.bk_host_id
                         },
-                        query: {
-                            from: 'resource'
-                        }
+                        history: true
                     })
                 } else {
-                    this.$router.push({
+                    this.$routerActions.redirect({
                         name: MENU_RESOURCE_BUSINESS_HOST_DETAILS,
                         params: {
+                            bizId: business.bk_biz_id,
                             business: business.bk_biz_id,
                             id: item.host.bk_host_id
                         },
-                        query: {
-                            from: 'resource'
-                        }
+                        history: true
                     })
                 }
             },
@@ -692,12 +536,6 @@
                     [this.columnsConfigKey]: []
                 })
             },
-            handleTransferSuccess () {
-                this.$emit('update-host-count')
-                this.table.checked = []
-                this.transfer.show = false
-                this.getHostList()
-            },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.tab.attribute.type !== 'details') {
                     const $form = this.tab.attribute.type === 'update' ? this.$refs.form : this.$refs.multipleForm
@@ -725,7 +563,7 @@
                 this.$emit('on-quick-search', property, value, operator)
             },
             routeToHistory () {
-                this.$router.push({ name: 'hostHistory' })
+                this.$routerActions.redirect({ name: 'hostHistory', history: true })
             },
             handleColumnConfigClick () {
                 this.$refs.hostFilter.$refs.filterPopper.instance.hide()
@@ -768,61 +606,5 @@
     }
     .hosts-table {
         margin-top: 14px;
-    }
-    .transfer-title {
-        height: 50px;
-        line-height: 50px;
-        background-color: #f9f9f9;
-        color: #333948;
-        font-weight: bold;
-        font-size: 14px;
-        padding: 0 30px;
-        border-bottom: 1px solid $cmdbBorderColor;
-    }
-    .transfer-content {
-        height: 540px;
-    }
-    .options-collection {
-        width: 280px;
-    }
-    /deep/ .bk-option-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        .collection-name {
-            @include ellipsis;
-            flex: 1;
-        }
-        &:hover {
-            .icon-close {
-                display: inline-block;
-            }
-        }
-        .icon-close {
-            font-size: 14px;
-            font-weight: bold;
-            margin-top: 1px;
-            color: #979BA5;
-            display: none;
-            &:hover {
-                color: #3a84ff;
-            }
-        }
-    }
-    .collection-create {
-        display: inline-block;
-        width: 60%;
-        font-size: 12px;
-        color: #63656E;
-        line-height: 32px;
-        cursor: pointer;
-        &:hover {
-            color: #3a84ff;
-        }
-        .bk-icon {
-            font-size: 14px;
-            display: inline-block;
-            vertical-align: -2px;
-        }
     }
 </style>

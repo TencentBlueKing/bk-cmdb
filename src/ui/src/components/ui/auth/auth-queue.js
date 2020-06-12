@@ -11,6 +11,8 @@ function transformAuthMetas (data) {
     return authTypes.map(authType => GET_AUTH_META(authType, data))
 }
 
+const validCompareKey = ['resource_type', 'action', 'bk_biz_id', 'parent_layers', 'resource_id']
+
 export default new Vue({
     data () {
         return {
@@ -50,11 +52,15 @@ export default new Vue({
                 const authResults = []
                 authMetas.forEach(meta => {
                     const result = authData.find(result => {
-                        const compareResult = {}
-                        Object.keys(meta).forEach(key => {
-                            compareResult[key] = result[key]
+                        const source = {}
+                        const target = {}
+                        validCompareKey.forEach(key => {
+                            if (meta.hasOwnProperty(key)) {
+                                source[key] = meta[key]
+                                target[key] = result[key]
+                            }
                         })
-                        return equal(meta, compareResult)
+                        return equal(source, target)
                     })
                     if (result) {
                         authResults.push(result)

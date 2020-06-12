@@ -223,6 +223,9 @@ const (
 	// CCErrCommRedisOPErr operate redis error.
 	CCErrCommRedisOPErr = 1199088
 
+	// too many requests
+	CCErrTooManyRequestErr = 1199997
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
@@ -463,6 +466,8 @@ const (
 	CCErrorTopoResourceDirIdleModuleCanNotRemove   = 1101104
 	CCErrorTopoResourceDirUsedInCloudSync          = 1101105
 
+
+	CCErrorModelNotFound = 1101102
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -686,6 +691,11 @@ const (
 	CCErrWebGetAddNetPropertyResultFail = 1111010
 	CCErrWebGetNetDeviceFail            = 1111011
 	CCErrWebGetNetPropertyFail          = 1111012
+	CCErrWebNeedFillinUsernamePasswd    = 1111013
+	CCErrWebUsernamePasswdWrong         = 1111014
+	CCErrWebNoUsernamePasswd            = 1111015
+	CCErrWebUserinfoFormatWrong         = 1111016
+	CCErrWebUnknownLoginVersion         = 1111017
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000
@@ -764,6 +774,11 @@ const (
 	// CCErrCoreServiceModelHasAssociationErr 模型与其他模型有关联关系
 	CCErrCoreServiceModelHasAssociationErr           = 1113031
 	CCErrCoreServiceOnlyNodeServiceCategoryAvailable = 1113032
+	// SearchTopoTreeScanTooManyData means hit too many data, we return directly.
+	SearchTopoTreeScanTooManyData = 1113033
+
+	// CCERrrCoreServiceUniqueRuleExist 模型唯一校验规则已经存在
+	CCERrrCoreServiceSameUniqueCheckRuleExist = 1113050
 	// CCErrCoreServiceResourceDirectoryNotExistErr 资源池目录不存在
 	CCErrCoreServiceResourceDirectoryNotExistErr = 1113033
 	// CCErrCoreServiceHostNotUnderAnyResourceDirectory 主机不在任意资源池目录下
@@ -771,7 +786,7 @@ const (
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
-	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
+	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %s does not exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
 
 	// synchronize_server 1114xxx

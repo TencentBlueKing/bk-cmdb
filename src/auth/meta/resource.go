@@ -54,6 +54,7 @@ const (
 	NetDataCollector         ResourceType = "netDataCollector"
 	DynamicGrouping          ResourceType = "dynamicGrouping" // 动态分组
 	EventPushing             ResourceType = "eventPushing"
+	EventWatch               ResourceType = "eventWatch"
 	Plat                     ResourceType = "plat"
 	AuditLog                 ResourceType = "auditlog"     // 操作审计
 	ResourceSync             ResourceType = "resourceSync" // 云资源发现

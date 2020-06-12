@@ -59,12 +59,12 @@ var _ = BeforeSuite(func() {
 				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{
 					"1": map[string]interface{}{
-						"bk_host_innerip": "1.0.0.1",
+						"bk_host_innerip": "127.0.0.1",
 						"bk_asset_id":     "addhost_api_asset_1",
 						"bk_cloud_id":     0,
 					},
 					"2": map[string]interface{}{
-						"bk_host_innerip": "1.0.0.2",
+						"bk_host_innerip": "127.0.0.2",
 						"bk_asset_id":     "addhost_api_asset_2",
 						"bk_cloud_id":     0,
 					},

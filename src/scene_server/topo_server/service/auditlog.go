@@ -32,6 +32,12 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 		return
 	}
 
+	rawErr := query.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
 	var businessID int64
 
 	queryCondition := query.Condition
@@ -86,16 +92,12 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 		// add auth filter condition
 		if condition.BizID != 0 {
 			businessID = condition.BizID
-			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: businessID},
-				{common.BKOperationDetailField + "." + common.BKAppIDField: businessID},
-			}})
+			andCond = append(andCond, map[string]interface{}{common.BKOperationDetailField + "." + common.BKAppIDField: businessID})
 		}
 
 		if condition.ResourceID != 0 {
 			resourceID := condition.ResourceID
 			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceIDField: resourceID},
 				{common.BKOperationDetailField + "." + common.BKResourceIDField: resourceID},
 				{common.BKOperationDetailField + "." + common.BKHostIDField: resourceID},
 				{common.BKOperationDetailField + ".src_instance_id": resourceID},
@@ -108,7 +110,6 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 				common.BKDBLIKE: condition.ResourceName,
 			}
 			andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-				{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceNameField: resourceNameCond},
 				{common.BKOperationDetailField + "." + common.BKResourceNameField: resourceNameCond},
 				{common.BKOperationDetailField + "." + common.BKHostInnerIPField: resourceNameCond},
 				{common.BKOperationDetailField + ".src_instance_name": resourceNameCond},
@@ -164,7 +165,7 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 					{
 						common.BKAuditTypeField: metadata.HostType,
 						common.BKActionField:    map[string]interface{}{common.BKDBNE: metadata.AuditAssignHost},
-						common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBNE: defaultBizID},
+						common.BKOperationDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBNE: defaultBizID},
 					},
 				}})
 			case "resource":
@@ -175,8 +176,8 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 						common.BKActionField:    map[string]interface{}{common.BKDBEQ: metadata.AuditAssignHost},
 					},
 					{
-						common.BKAuditTypeField: metadata.HostType,
-						common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBEQ: defaultBizID},
+						common.BKAuditTypeField:                                   metadata.HostType,
+						common.BKOperationDetailField + "." + common.BKAppIDField: map[string]interface{}{common.BKDBEQ: defaultBizID},
 					},
 				}})
 			default:
@@ -216,9 +217,6 @@ func (s *Service) AuditQuery(ctx *rest.Contexts) {
 			cond[common.BKDBAND] = andCond
 		}
 		query.Condition = cond
-	}
-	if 0 == query.Limit {
-		query.Limit = common.BKDefaultLimit
 	}
 
 	// switch between two different control mechanism
@@ -273,6 +271,12 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	query := metadata.QueryInput{}
 	if err := ctx.DecodeInto(&query); nil != err {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := query.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -334,10 +338,7 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	var businessID int64
 	if condition.BizID != 0 {
 		businessID = condition.BizID
-		andCond = append(andCond, map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-			{common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKAppIDField: businessID},
-			{common.BKOperationDetailField + "." + common.BKAppIDField: businessID},
-		}})
+		andCond = append(andCond, map[string]interface{}{common.BKOperationDetailField + "." + common.BKAppIDField: businessID})
 	}
 
 	if condition.ResourceID == 0 {
@@ -358,8 +359,8 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 	}
 	orCond := []map[string]interface{}{
 		{
-			common.BKOperationDetailField + "." + common.BKBasicDetailField + "." + common.BKResourceIDField: instanceID,
-			common.BKResourceTypeField: metadata.GetResourceTypeByObjID(objectID, isMainline),
+			common.BKOperationDetailField + "." + common.BKResourceIDField: instanceID,
+			common.BKResourceTypeField:                                     metadata.GetResourceTypeByObjID(objectID, isMainline),
 		},
 		{
 			common.BKOperationDetailField + ".src_instance_id": instanceID,
@@ -377,10 +378,6 @@ func (s *Service) InstanceAuditQuery(ctx *rest.Contexts) {
 		})
 	}
 	andCond = append(andCond, map[string]interface{}{common.BKDBOR: orCond})
-
-	if 0 == query.Limit {
-		query.Limit = common.BKDefaultLimit
-	}
 
 	cond[common.BKDBAND] = andCond
 	query.Condition = cond

@@ -13,9 +13,9 @@
                 :key="index">
                 <cmdb-collapse
                     :collapse.sync="groupState[group.info['bk_group_id']]">
-                    <div class="group-header clearfix" slot="title">
-                        <div class="header-title fl">
-                            <div class="group-name">
+                    <div class="group-header" slot="title">
+                        <div class="header-title">
+                            <div class="group-name" :title="group.info.bk_group_name">
                                 {{group.info['bk_group_name']}}
                                 <span v-if="!isAdminView && isBuiltInGroup(group.info)">（{{$t('全局配置不可以在业务内调整')}}）</span>
                             </div>
@@ -182,7 +182,7 @@
                         <bk-input v-model.trim="groupForm.groupName"
                             :placeholder="$t('请输入xx', { name: $t('分组名称') })"
                             name="groupName"
-                            v-validate="'required'">
+                            v-validate="'required|length:128'">
                         </bk-input>
                         <p class="form-error">{{errors.first('groupName')}}</p>
                     </div>
@@ -195,8 +195,18 @@
                 </div>
             </div>
             <div class="group-dialog-footer" slot="footer">
-                <bk-button theme="primary" @click="handleCreateGroup" v-if="groupDialog.type === 'create'">{{$t('提交')}}</bk-button>
-                <bk-button theme="primary" @click="handleUpdateGroup" v-else>{{$t('保存')}}</bk-button>
+                <bk-button theme="primary"
+                    v-if="groupDialog.type === 'create'"
+                    :disabled="errors.has('groupName')"
+                    @click="handleCreateGroup">
+                    {{$t('提交')}}
+                </bk-button>
+                <bk-button theme="primary"
+                    v-else
+                    :disabled="errors.has('groupName')"
+                    @click="handleUpdateGroup">
+                    {{$t('保存')}}
+                </bk-button>
                 <bk-button @click="groupDialog.isShow = false">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
@@ -227,6 +237,7 @@
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 :group="slider.curGroup"
+                :custom-obj-id="customObjId"
                 @save="handleFieldSave"
                 @cancel="handleSliderBeforeClose">
             </the-field-detail>
@@ -301,7 +312,8 @@
                     'objuser': this.$t('用户'),
                     'timezone': this.$t('时区'),
                     'bool': 'bool',
-                    'list': this.$t('列表')
+                    'list': this.$t('列表'),
+                    'organization': this.$t('组织')
                 },
                 dialog: {
                     isShow: false,
@@ -333,10 +345,6 @@
                     index: null,
                     fieldIndex: null,
                     backView: ''
-                },
-                preview: {
-                    properties: [],
-                    groups: []
                 },
                 configProperty: {
                     show: false,
@@ -427,8 +435,8 @@
                 }
                 return false
             },
-            isFieldEditable (item) {
-                if (item.ispre || this.isReadOnly) {
+            isFieldEditable (item, checkIspre = true) {
+                if ((checkIspre && item.ispre) || this.isReadOnly || !this.updateAuth) {
                     return false
                 }
                 if (!this.isAdminView) {
@@ -634,6 +642,10 @@
                 this.groupForm.groupName = group.info['bk_group_name']
             },
             async handleUpdateGroup () {
+                const valid = await this.$validator.validate('groupName')
+                if (!valid) {
+                    return
+                }
                 const curGroup = this.groupDialog.group
                 const isExist = this.groupedProperties.some(originalGroup => originalGroup !== curGroup && originalGroup.info['bk_group_name'] === this.groupForm.groupName)
                 if (isExist) {
@@ -674,12 +686,14 @@
                 this.groupDialog.isShow = false
             },
             async handleCreateGroup () {
+                const valid = await this.$validator.validate('groupName')
+                if (!valid) {
+                    return
+                }
                 const groupedProperties = this.groupedProperties
                 const isExist = groupedProperties.some(group => group.info['bk_group_name'] === this.groupForm.groupName)
                 if (isExist) {
                     this.$error(this.$t('该名字已经存在'))
-                    return
-                } else if (!await this.$validator.validateAll()) {
                     return
                 }
                 const groupId = Date.now().toString()
@@ -787,7 +801,7 @@
                     }
                 })
                 const properties = await this.getProperties()
-                this.init(properties, this.preview.groups)
+                this.init(properties, this.groups)
             },
             handleAddField (group) {
                 this.slider.isEditField = false
@@ -941,6 +955,8 @@
     }
     .group-header {
         .header-title {
+            display: flex;
+            align-items: center;
             height: 21px;
             padding: 0 21px 0 0;
             line-height: 21px;
@@ -963,10 +979,11 @@
                 color: $modelHighlightColor;
             }
             .group-name {
+                flex: none;
+                max-width: 500px;
                 font-size: 16px;
                 font-weight: normal;
-                display: inline-block;
-                vertical-align: middle;
+                @include ellipsis;
                 span {
                     @include inlineBlock;
                     font-size: 12px;
@@ -980,7 +997,7 @@
                 color: #c3cdd7;
             }
             .title-icon-btn {
-                @include inlineBlock;
+                flex: none;
             }
             .icon-btn {
                 @include inlineBlock;

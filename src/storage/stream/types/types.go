@@ -52,6 +52,49 @@ const (
 	ListDone OperType = "listerDone"
 )
 
+type ListOptions struct {
+	// Filter helps you filter out which kind of data's change event you want
+	// to receive, such as the filter :
+	// {"bk_obj_id":"biz"} means you can only receives the data that has this kv.
+	// Note: the filter's key must be a exist document key filed in the collection's
+	// document
+	Filter map[string]interface{}
+
+	// list the documents only with these fields.
+	Fields []string
+
+	// EventStruct is the point data struct that the event decoded into.
+	// Note: must be a point value.
+	EventStruct interface{}
+
+	// Collection defines which collection you want you watch.
+	Collection string
+
+	// Step defines the list step when the client try to list all the data defines in the
+	// namespace. default value is `DefaultListStep`, value range [200,2000]
+	PageSize *int
+}
+
+func (opts *ListOptions) CheckSetDefault() error {
+	if reflect.ValueOf(opts.EventStruct).Kind() != reflect.Ptr ||
+		reflect.ValueOf(opts.EventStruct).IsNil() {
+		return fmt.Errorf("invalid EventStruct field, must be a pointer and not nil")
+	}
+
+	if opts.PageSize != nil {
+		if *opts.PageSize < 0 || *opts.PageSize > 2000 {
+			return fmt.Errorf("invalid page size, range is [200,2000]")
+		}
+	} else {
+		opts.PageSize = &defaultListPageSize
+	}
+
+	if len(opts.Collection) == 0 {
+		return errors.New("invalid Namespace field, database and collection can not be empty")
+	}
+	return nil
+}
+
 type Options struct {
 	// reference doc:
 	// https://docs.mongodb.com/manual/reference/method/db.collection.watch/#change-stream-with-full-document-update-lookup
@@ -82,6 +125,14 @@ type Options struct {
 
 	// Collection defines which collection you want you watch.
 	Collection string
+
+	// StartAfterToken describe where you want to watch the event.
+	// Note: the returned event does'nt contains the token represented,
+	// and will returns event just after this token.
+	StartAfterToken *EventToken
+
+	// Ensures that this watch will provide events that occurred after this timestamp.
+	StartAtTime *TimeStamp
 }
 
 var defaultMaxAwaitTime = time.Second
@@ -108,12 +159,15 @@ func (opts *Options) CheckSetDefault() error {
 	return nil
 }
 
+type TimeStamp struct {
+	// the most significant 32 bits are a time_t value (seconds since the Unix epoch)
+	Sec uint32 `json:"sec"`
+	// the least significant 32 bits are an incrementing ordinal for operations within a given second.
+	Nano uint32 `json:"nano"`
+}
+
 type WatchOptions struct {
 	Options
-	// StartAfterToken describe where you want to watch the event.
-	// Note: the returned event doesn't contains the token represented,
-	// and will returns event just after this token.
-	StartAfterToken *EventToken
 }
 
 var defaultListPageSize = 1000
@@ -154,6 +208,16 @@ type Event struct {
 	Document      interface{}
 	DocBytes      []byte
 	OperationType OperType
+
+	// The timestamp from the oplog entry associated with the event.
+	ClusterTime TimeStamp
+
+	// event token for resume after.
+	Token EventToken
+}
+
+func (e *Event) String() string {
+	return fmt.Sprintf("event detail, oper: %s, oid: %s, doc: %s", e.OperationType, e.Oid, e.DocBytes)
 }
 
 // mongodb change stream token, which represent a event's identity.

@@ -24,7 +24,7 @@ import (
 // GetDepartment get department info
 func (s *Service) GetDepartment(c *gin.Context) {
 	rspBody := metadata.DepartmentResult{}
-	data, err := s.Logics.GetDepartment(c)
+	data, err := s.Logics.GetDepartment(c, s.Config)
 	if err != nil {
 		blog.ErrorJSON("get department error. err:%s", err)
 		rspBody.Result = false
@@ -36,7 +36,7 @@ func (s *Service) GetDepartment(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, rspBody)
 	return
 }
 
@@ -44,7 +44,7 @@ func (s *Service) GetDepartment(c *gin.Context) {
 func (s *Service) GetDepartmentProfile(c *gin.Context) {
 	rspBody := metadata.DepartmentProfileResult{}
 
-	data, err := s.Logics.GetDepartmentProfile(c)
+	data, err := s.Logics.GetDepartmentProfile(c, s.Config)
 	if err != nil {
 		rspBody.Result = false
 		rspBody.Code = err.GetCode()
@@ -55,5 +55,6 @@ func (s *Service) GetDepartmentProfile(c *gin.Context) {
 
 	}
 
+	c.JSON(http.StatusOK, rspBody)
 	return
 }

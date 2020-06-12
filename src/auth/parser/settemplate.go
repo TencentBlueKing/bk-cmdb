@@ -198,6 +198,6 @@ var SetTemplateAuthConfigs = []AuthConfig{
 	},
 }
 
-func (ps *parseStream) SetTemplate() *parseStream {
+func (ps *parseStream) setTemplate() *parseStream {
 	return ParseStreamWithFramework(ps, SetTemplateAuthConfigs)
 }
