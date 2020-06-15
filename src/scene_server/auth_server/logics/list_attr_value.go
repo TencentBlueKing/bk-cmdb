@@ -13,6 +13,9 @@
 package logics
 
 import (
+	"strings"
+
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -39,35 +42,96 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, req types.PullResourceReq) (*typ
 
 	// get attributes' enumeration options from cache
 	objID := GetInstanceResourceObjID(req.Type)
-	if objID == "" {
+	if objID == "" && req.Type != iam.SysInstance {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
-	attribute, err := lgc.cache.HGetAll(common.BKCacheKeyV3Prefix + "attribute:object" + objID + "id:" + filter.Attr).Result()
-	if attribute[common.BKPropertyTypeField] != common.FieldTypeEnum {
+	var attrType string
+	var marshaledOptions []byte
+	// TODO use cache
+	//attribute, err := lgc.cache.HGetAll(common.BKCacheKeyV3Prefix + "attribute:object" + objID + "id:" + filter.Attr).Result()
+	//if err != nil {
+	// get attribute from db if get it from cache encounters error
+	//blog.Errorf("get attribute from cache failed, try to get from db, error: %s, object ID: %s, attribute ID: %s", err.Error(), objID, filter.Attr)
+	param := metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKPropertyIDField:   filter.Attr,
+			common.BKPropertyTypeField: common.FieldTypeEnum,
+		},
+		Fields: []string{common.BKPropertyTypeField, common.BKOptionField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	var res *metadata.ReadModelAttrResult
+	var err error
+	// read all non-inner model attributes for SysInstance resource, add object id to distinguish
+	if req.Type == iam.SysInstance {
+		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, &param)
+	} else {
+		res, err = lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
+	}
+	if err != nil {
+		blog.ErrorJSON("read model attribute failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
+		return nil, err
+	}
+	if !res.Result {
+		blog.ErrorJSON("read model attribute failed, error code: %s, error message: %s, param: %s, rid: %s", res.Code, res.ErrMsg, param, kit.Rid)
+		return nil, res.Error()
+	}
+	if len(res.Data.Info) == 0 {
+		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
+	}
+	attr := res.Data.Info[0]
+	attrType = attr.PropertyType
+	marshaledOptions, err = json.Marshal(attr.Option)
+	if err != nil {
+		blog.ErrorJSON("marshal model attribute option failed, error: %s, option: %v, rid: %s", err.Error(), attr.Option, kit.Rid)
+		return nil, err
+	}
+	//} else {
+	//	attrType = attribute[common.BKPropertyTypeField]
+	//	marshaledOptions = []byte(attribute[common.BKOptionField])
+	//}
+
+	if attrType != common.FieldTypeEnum {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
 	options := metadata.AttributesOptions{}
-	err = json.Unmarshal([]byte(attribute[common.BKOptionField]), &options)
+	err = json.Unmarshal(marshaledOptions, &options)
 	if err != nil {
-		blog.Errorf("attribute option %s is invalid, rid: %s", attribute[common.BKOptionField], kit.Rid)
+		blog.Errorf("attribute option %s is invalid, rid: %s", marshaledOptions, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "option")
 	}
+
+	// filter options by keyword and ids and pagination
 	values := make([]types.AttrValueResource, 0)
-	count := int64(len(options))
 	start := req.Page.Offset
-	if start >= count {
+	if start >= int64(len(options)) {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
-	end := req.Page.Offset + req.Page.Limit
-	if end > count {
-		end = count
+	var count int64 = 0
+	var idMap map[interface{}]bool
+	if idLen := len(filter.IDs); idLen > 0 {
+		idMap = make(map[interface{}]bool, idLen)
+		for _, id := range filter.IDs {
+			idMap[id] = true
+		}
 	}
-	for _, option := range options[start:end] {
+	for _, option := range options[start:] {
+		if count == req.Page.Limit {
+			break
+		}
+		if idMap != nil && !idMap[option.ID] {
+			continue
+		}
+		if filter.Keyword != "" {
+			if !strings.Contains(option.ID, filter.Keyword) && !strings.Contains(option.Name, filter.Keyword) {
+				continue
+			}
+		}
 		values = append(values, types.AttrValueResource{
 			ID:          option.ID,
 			DisplayName: option.Name,
 		})
+		count++
 	}
-
-	return &types.ListAttrValueResult{Count: count, Results: values}, nil
+	return &types.ListAttrValueResult{Count: int64(len(options)), Results: values}, nil
 }

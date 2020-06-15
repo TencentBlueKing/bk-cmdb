@@ -68,12 +68,12 @@ func NewIam(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer
 
 func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 	systemResp, err := i.client.GetSystemInfo(ctx)
-	if err != nil {
+	if err != nil && err != ErrNotFound {
 		blog.Errorf("get system info failed, error: %s", err.Error())
 		return err
 	}
 	// if iam cmdb system has not been registered, register system
-	if systemResp.Data.BaseInfo.ID == "" {
+	if err == ErrNotFound {
 		sys := System{
 			ID:          SystemIDCMDB,
 			Name:        SystemNameCMDB,
@@ -129,6 +129,33 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 
+	existInstanceSelectionMap := make(map[InstanceSelectionID]bool)
+	removedInstanceSelectionMap := make(map[InstanceSelectionID]struct{})
+	for _, instanceSelection := range systemResp.Data.InstanceSelections {
+		existInstanceSelectionMap[instanceSelection.ID] = true
+		removedInstanceSelectionMap[instanceSelection.ID] = struct{}{}
+	}
+	newInstanceSelections := make([]InstanceSelection, 0)
+	for _, resourceType := range GenerateInstanceSelections() {
+		// registered instance selection exist in current instance selections, should not be removed
+		delete(removedInstanceSelectionMap, resourceType.ID)
+		// if current instance selection is registered, update it, or else register it
+		if existInstanceSelectionMap[resourceType.ID] {
+			if err = i.client.UpdateInstanceSelection(ctx, resourceType); err != nil {
+				blog.ErrorJSON("update instance selection %s failed, error: %s, input resource type: %s", resourceType.ID, err.Error(), resourceType)
+				return err
+			}
+		} else {
+			newInstanceSelections = append(newInstanceSelections, resourceType)
+		}
+	}
+	if len(newInstanceSelections) > 0 {
+		if err = i.client.CreateInstanceSelection(ctx, newInstanceSelections); err != nil {
+			blog.ErrorJSON("register instance selections failed, error: %s, resource types: %s", err.Error(), newInstanceSelections)
+			return err
+		}
+	}
+
 	existResourceActionMap := make(map[ResourceActionID]bool)
 	removedResourceActionMap := make(map[ResourceActionID]struct{})
 	for _, resourceAction := range systemResp.Data.Actions {
@@ -156,22 +183,42 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 		}
 	}
 
-	// remove redundant actions, then remove redundant resource types whose related actions are all deleted
-	removedResourceActionIDs := make([]ResourceActionID, len(removedResourceActionMap))
-	for resourceActionID, _ := range removedResourceActionMap {
-		removedResourceActionIDs = append(removedResourceActionIDs, resourceActionID)
+	// remove redundant actions, redundant instance selections and resource types one by one when dependencies are all deleted
+	if actionLen := len(removedResourceActionMap); actionLen > 0 {
+		removedResourceActionIDs := make([]ResourceActionID, actionLen)
+		idx := 0
+		for resourceActionID, _ := range removedResourceActionMap {
+			removedResourceActionIDs[idx] = resourceActionID
+			idx++
+		}
+		if err = i.client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
+			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
+			return err
+		}
 	}
-	if err = i.client.DeleteAction(ctx, removedResourceActionIDs); err != nil {
-		blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(), removedResourceActionIDs)
-		return err
+	if selectionLen := len(removedInstanceSelectionMap); selectionLen > 0 {
+		removedInstanceSelectionIDs := make([]InstanceSelectionID, selectionLen)
+		idx := 0
+		for resourceActionID, _ := range removedInstanceSelectionMap {
+			removedInstanceSelectionIDs[idx] = resourceActionID
+			idx++
+		}
+		if err = i.client.DeleteInstanceSelection(ctx, removedInstanceSelectionIDs); err != nil {
+			blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s", err.Error(), removedInstanceSelectionIDs)
+			return err
+		}
 	}
-	removedResourceTypeIDs := make([]ResourceTypeID, len(removedResourceTypeMap))
-	for resourceType, _ := range removedResourceTypeMap {
-		removedResourceTypeIDs = append(removedResourceTypeIDs, resourceType)
-	}
-	if err = i.client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
-		blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s", err.Error(), removedResourceTypeIDs)
-		return err
+	if typeLen := len(removedResourceTypeMap); typeLen > 0 {
+		removedResourceTypeIDs := make([]ResourceTypeID, len(removedResourceTypeMap))
+		idx := 0
+		for resourceType, _ := range removedResourceTypeMap {
+			removedResourceTypeIDs[idx] = resourceType
+			idx++
+		}
+		if err = i.client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
+			blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s", err.Error(), removedResourceTypeIDs)
+			return err
+		}
 	}
 	return nil
 }

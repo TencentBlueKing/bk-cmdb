@@ -74,6 +74,7 @@ func init() {
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 		URI:          tConfig.MongoURI,
+		RsName:       tConfig.MongoRsName,
 	}
 	db, err = local.NewMgo(mongoConfig, time.Minute)
 	Expect(err).Should(BeNil())

@@ -22,11 +22,9 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/cache"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/auth_server/app/options"
 	"configcenter/src/scene_server/auth_server/service"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 )
 
@@ -63,26 +61,37 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return err
 		}
 
-		redisCli, err := redis.NewFromConfig(authServer.Config.Redis)
+		redisConf, err := engine.WithRedis()
+		if nil != err {
+			blog.Errorf("get redis conf failed: %s", err.Error())
+			return err
+		}
+		redisCli, err := redis.NewFromConfig(redisConf)
 		if nil != err {
 			blog.Errorf("new redis client failed: %s", err.Error())
 			return err
 		}
 
-		listDone := make(chan bool, 1)
-		errChan := make(chan error, 1)
-		go func() {
-			cache.SyncDatabaseToRedis(ctx, authServer.Config.Mongo.GetMongoConf(), redisCli, listDone, errChan)
-		}()
-		select {
-		case err = <-errChan:
-			if nil != err {
-				blog.Errorf("sync database to redis failed: %s", err.Error())
-				return err
-			}
-		case <-listDone:
-			blog.V(5).Info("cache current mongo database into redis done")
-		}
+		// TODO use unified cache
+		//listDone := make(chan bool, 1)
+		//errChan := make(chan error, 1)
+		//mongoConf, err := engine.WithMongo()
+		//if nil != err {
+		//	blog.Errorf("get mongo conf failed: %s", err.Error())
+		//	return err
+		//}
+		//go func() {
+		//	cache.SyncDatabaseToRedis(ctx, mongoConf.GetMongoConf(), redisCli, listDone, errChan)
+		//}()
+		//select {
+		//case err = <-errChan:
+		//	if nil != err {
+		//		blog.Errorf("sync database to redis failed: %s", err.Error())
+		//		return err
+		//	}
+		//case <-listDone:
+		//	blog.V(5).Info("cache current mongo database into redis done")
+		//}
 
 		authServer.Service = service.NewAuthService(engine, iamCli, redisCli)
 		break
@@ -122,8 +131,5 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current configcenter.ProcessCo
 		if err != nil {
 			blog.Warnf("parse auth center config failed: %v", err)
 		}
-
-		a.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
-		a.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 	}
 }

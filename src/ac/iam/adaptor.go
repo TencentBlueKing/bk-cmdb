@@ -82,13 +82,9 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	case meta.Plat:
 		iamResourceType = SysCloudArea
 	case meta.HostInstance:
-		if businessID <= 0 {
-			iamResourceType = SysHostInstance
-		} else {
-			iamResourceType = BizHostInstance
-		}
+		iamResourceType = Host
 	case meta.HostFavorite:
-		iamResourceType = BizHostInstance
+		iamResourceType = Host
 	case meta.Process:
 		iamResourceType = BizProcessServiceInstance
 	case meta.EventPushing:

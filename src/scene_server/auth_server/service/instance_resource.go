@@ -33,7 +33,7 @@ func (s *AuthService) PullInstanceResource(ctx *rest.Contexts) {
 	}
 
 	switch query.Type {
-	case iam.SysHostInstance, iam.BizHostInstance, iam.Business, iam.SysCloudArea, iam.SysInstance:
+	case iam.Host, iam.Business, iam.SysCloudArea, iam.SysInstance:
 	default:
 		ctx.RespHTTPBody(types.BaseResp{
 			Code:    types.NotFoundErrorCode,
@@ -75,7 +75,7 @@ func (s *AuthService) PullInstanceResource(ctx *rest.Contexts) {
 		var res *types.ListInstanceResult
 		var err error
 		switch query.Type {
-		case iam.SysHostInstance, iam.BizHostInstance:
+		case iam.Host:
 			res, err = s.lgc.ListHostInstance(ctx.Kit, query)
 		case iam.Business, iam.SysCloudArea, iam.SysResourcePoolDirectory:
 			res, err = s.lgc.ListSystemInstance(ctx.Kit, query)
