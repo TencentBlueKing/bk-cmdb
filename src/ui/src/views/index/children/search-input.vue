@@ -58,10 +58,10 @@
                         <ul class="lenovo-result">
                             <template v-for="(item, index) in lenovoList">
                                 <li :key="index" v-if="item.type === 'host'"
-                                    :title="item.source.bk_host_innerip"
+                                    :title="item.source.bk_host_innerip | implode"
                                     :class="{ 'selected': selectIndex === index }"
                                     @click="handleGoResource(item.source)">
-                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_host_innerip}}</span>
+                                    <span class="lenovo-name" ref="lenovoItem">{{item.source.bk_host_innerip | implode}}</span>
                                     <span>({{$t('主机')}})</span>
                                 </li>
                                 <li :key="index" v-else-if="item.type === 'object'"
@@ -153,7 +153,11 @@
         MENU_RESOURCE_HOST_DETAILS,
         MENU_RESOURCE_BUSINESS_HISTORY
     } from '@/dictionary/menu-symbol'
+    import { implode } from '@/filters/formatter'
     export default {
+        filters: {
+            implode
+        },
         components: {
             searchResult,
             hostSearch
