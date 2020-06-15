@@ -15,11 +15,13 @@ package service
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
 	meta "configcenter/src/common/metadata"
 	parse "configcenter/src/common/paraparse"
@@ -56,6 +58,184 @@ func (s *Service) FindModuleHost(req *restful.Request, resp *restful.Response) {
 		BaseResp: meta.SuccessBaseResp,
 		Data:     *host,
 	})
+}
+
+// FindHostsByServiceTemplates find hosts by service templates
+func (s *Service) FindHostsByServiceTemplates(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
+
+	option := new(meta.FindHostsBySrvTplOpt)
+	if err := json.NewDecoder(req.Request.Body).Decode(option); err != nil {
+		blog.Errorf("FindHostsByServiceTemplates failed, decode body err: %v, rid:%s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	result, err := s.findHostsByServiceTemplates(req.Request.Header, option)
+	if err != nil {
+		blog.Errorf("FindHostsByServiceTemplates failed, findHostsByServiceTemplates err: %s, option:%#v, rid:%s", err.Error(), *option, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+		return
+	}
+	_ = resp.WriteEntity(result)
+}
+
+func (s *Service) findHostsByServiceTemplates(header http.Header, option *meta.FindHostsBySrvTplOpt) (*meta.SearchHostResult, error) {
+	srvData := s.newSrvComm(header)
+	defErr := srvData.ccErr
+
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.Errorf("findHostsByServiceTemplates failed, Validate err: %v, option:%#v, rid:%s", rawErr.ToCCError(defErr).Error(), *option, srvData.rid)
+		return nil, rawErr.ToCCError(defErr)
+	}
+
+	srvInstOpt := meta.ListServiceInstanceOption{
+		BusinessID:         option.BusinessID,
+		ServiceTemplateIDs: option.ServiceTemplateIDs,
+		ModuleIDs:          option.ModuleIDs,
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	instances, err := s.CoreAPI.CoreService().Process().ListServiceInstance(srvData.ctx, srvData.header, &srvInstOpt)
+	if err != nil {
+		blog.Errorf("findHostsByServiceTemplates failed, ListServiceInstance err:%v, option:%#v, rid: %s", err, srvInstOpt, srvData.rid)
+		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	hostIDs := make([]int64, 0)
+	for _, inst := range instances.Info {
+		hostIDs = append(hostIDs, inst.HostID)
+	}
+	hostIDs = util.IntArrayUnique(hostIDs)
+
+	queryInput := &meta.QueryInput{
+		Condition: map[string]interface{}{
+			common.BKHostIDField: map[string]interface{}{
+				common.BKDBIN: hostIDs,
+			},
+		},
+		Fields: strings.Join(option.Fields, ","),
+		Start:  option.Page.Start,
+		Limit:  option.Page.Limit,
+		Sort:   option.Page.Sort,
+	}
+
+	rsp, hostErr := s.CoreAPI.CoreService().Host().GetHosts(srvData.ctx, srvData.header, queryInput)
+	if hostErr != nil {
+		blog.Errorf("findHostsByServiceTemplates failed, GetHosts error: %v, input:%#v, rid: %s", hostErr, *queryInput, srvData.rid)
+		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
+		blog.Errorf("findHostsByServiceTemplates failed, GetHosts error: %v, input:%#v, rid: %s", rsp.ErrMsg, *queryInput, srvData.rid)
+		return nil, rsp.CCError()
+	}
+
+	return &meta.SearchHostResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data: meta.SearchHost{
+			Count: rsp.Data.Count,
+			Info:  rsp.Data.Info,
+		},
+	}, nil
+}
+
+// FindHostsBySetTemplates find hosts by set templates
+func (s *Service) FindHostsBySetTemplates(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
+
+	option := new(meta.FindHostsBySetTplOpt)
+	if err := json.NewDecoder(req.Request.Body).Decode(option); err != nil {
+		blog.Errorf("FindHostsBySetTemplates failed, decode body err: %v, rid:%s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.Errorf("FindHostsBySetTemplates failed, Validate err: %v, option:%#v, rid:%s", rawErr.ToCCError(defErr).Error(), *option, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: rawErr.ToCCError(defErr)})
+		return
+	}
+
+	condition := mapstr.MapStr{
+		common.BKSetTemplateIDField: mapstr.MapStr{
+			common.BKDBIN: option.SetTemplateIDs,
+		},
+	}
+	if len(option.SetIDs) > 0 {
+		condition[common.BKSetIDField] = mapstr.MapStr{
+			common.BKDBIN: option.SetIDs,
+		}
+	}
+
+	qc := &meta.QueryCondition{
+		Fields: []string{common.BKModuleIDField, common.BKServiceTemplateIDField},
+		Page: meta.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Condition: condition,
+	}
+	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, qc)
+	if err != nil {
+		blog.Errorf("FindHostsBySetTemplates failed, ReadInstance error: %v, input:%#v, rid: %s", err, *qc, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: defErr.CCError(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+
+	if !res.Result {
+		blog.Errorf("FindHostsBySetTemplates failed, ReadInstance error: %v, input:%#v, rid: %s", res.ErrMsg, *qc, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: res.CCError()})
+		return
+	}
+
+	moduleIDs := make([]int64, 0)
+	serviceTemplateIDs := make([]int64, 0)
+	for _, info := range res.Data.Info {
+		moduleID, err := info.Int64(common.BKModuleIDField)
+		if err != nil {
+			blog.Errorf("FindHostsBySetTemplates failed, get moduleID error: %v, input:%#v, rid: %s", err, info, srvData.rid)
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsIsInvalid, err.Error())})
+			return
+		}
+		moduleIDs = append(moduleIDs, moduleID)
+
+		srvTplID, err := info.Int64(common.BKServiceTemplateIDField)
+		if err != nil {
+			blog.Errorf("FindHostsBySetTemplates failed, get srvTplID error: %v, input:%#v, rid: %s", err, info, srvData.rid)
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsIsInvalid, err.Error())})
+			return
+		}
+		serviceTemplateIDs = append(serviceTemplateIDs, srvTplID)
+	}
+	moduleIDs = util.IntArrayUnique(moduleIDs)
+	serviceTemplateIDs = util.IntArrayUnique(serviceTemplateIDs)
+	if len(serviceTemplateIDs) == 0 {
+		_ = resp.WriteEntity(&meta.SearchHostResult{
+			BaseResp: meta.SuccessBaseResp,
+			Data: meta.SearchHost{},
+		})
+		return
+	}
+
+	opt := &meta.FindHostsBySrvTplOpt{
+		BusinessID:         option.BusinessID,
+		ServiceTemplateIDs: serviceTemplateIDs,
+		ModuleIDs:          moduleIDs,
+		Fields:             option.Fields,
+		Page:               option.Page,
+	}
+
+	result, err := s.findHostsByServiceTemplates(req.Request.Header, opt)
+	if err != nil {
+		blog.Errorf("FindHostsByServiceTemplates failed, findHostsByServiceTemplates err: %s, option:%#v, rid:%s", err.Error(), *opt, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+		return
+	}
+	_ = resp.WriteEntity(result)
 }
 
 func (s *Service) ListResourcePoolHosts(req *restful.Request, resp *restful.Response) {

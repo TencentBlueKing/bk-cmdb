@@ -361,8 +361,10 @@ type MultipleServiceTemplate struct {
 }
 
 type ListServiceInstanceOption struct {
-	BusinessID         int64              `json:"bk_biz_id"`
+	BusinessID int64 `json:"bk_biz_id"`
+	// Keep the parameter ServiceTemplateID, compatible with existing interfaces
 	ServiceTemplateID  int64              `json:"service_template_id"`
+	ServiceTemplateIDs []int64            `json:"service_template_ids"`
 	HostIDs            []int64            `json:"bk_host_ids"`
 	ModuleIDs          []int64            `json:"bk_module_ids"`
 	SearchKey          *string            `json:"search_key"`

@@ -321,14 +321,16 @@ const (
 	queryHostLockPattern                = "/api/v3/host/lock/search"
 
 	// used in sync framework.
-	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
-	findHostsWithConditionPattern     = "/api/v3/hosts/search"
-	findBizHostsWithoutAppPattern     = "/api/v3/hosts/list_hosts_without_app"
-	findResourcePoolHostsPattern      = "/api/v3/hosts/list_resource_pool_hosts"
-	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
-	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
-	updateHostPropertyBatchPattern    = "/api/v3/hosts/property/batch"
-	findHostsWithModulesPattern       = "/api/v3/findmany/modulehost"
+	moveHostToBusinessOrModulePattern  = "/api/v3/hosts/sync/new/host"
+	findHostsWithConditionPattern      = "/api/v3/hosts/search"
+	findBizHostsWithoutAppPattern      = "/api/v3/hosts/list_hosts_without_app"
+	findResourcePoolHostsPattern       = "/api/v3/hosts/list_resource_pool_hosts"
+	findHostsDetailsPattern            = "/api/v3/hosts/search/asstdetail"
+	updateHostInfoBatchPattern         = "/api/v3/hosts/batch"
+	updateHostPropertyBatchPattern     = "/api/v3/hosts/property/batch"
+	findHostsWithModulesPattern        = "/api/v3/findmany/modulehost"
+	findHostsByServiceTemplatesPattern = "/api/v3/findmany/hosts/by_service_templates"
+	findHostsBySetTemplatesPattern     = "/api/v3/findmany/hosts/by_set_templates"
 
 	// 特殊接口，给蓝鲸业务使用
 	hostInstallPattern = "/api/v3/host/install/bk"
@@ -373,6 +375,50 @@ func (ps *parseStream) host() *parseStream {
 			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 			if err != nil {
 				ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
+				return ps
+			}
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findHostsByServiceTemplatesPattern, http.MethodPost) {
+		bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+		if bizID == 0 {
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = fmt.Errorf("find hosts by service templates but parse business id failed, err: %v", err)
+				return ps
+			}
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findHostsBySetTemplatesPattern, http.MethodPost) {
+		bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+		if bizID == 0 {
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = fmt.Errorf("find hosts by set templates but parse business id failed, err: %v", err)
 				return ps
 			}
 		}

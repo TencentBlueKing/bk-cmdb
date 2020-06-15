@@ -222,6 +222,13 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit, option metadata.Li
 		filter[common.BKServiceTemplateIDField] = option.ServiceTemplateID
 	}
 
+	// use param ServiceTemplateIDs when ServiceTemplateID is not set
+	if len(option.ServiceTemplateIDs) > 0 && option.ServiceTemplateID == 0 {
+		filter[common.BKServiceTemplateIDField] = map[string]interface{}{
+			common.BKDBIN: option.ServiceTemplateIDs,
+		}
+	}
+
 	if len(option.HostIDs) > 0 {
 		filter[common.BKHostIDField] = map[string]interface{}{
 			common.BKDBIN: option.HostIDs,

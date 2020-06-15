@@ -223,6 +223,9 @@ const (
 	// CCErrCommRedisOPErr operate redis error.
 	CCErrCommRedisOPErr = 1199088
 
+	// CCErrArrayLengthWrong the length of the array is wrong
+	CCErrArrayLengthWrong = 1199089
+
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
 
