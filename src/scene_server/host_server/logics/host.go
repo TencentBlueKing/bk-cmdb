@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -109,9 +110,13 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 	if !isExist {
 		return lgc.ccErr.Errorf(common.CCErrTopoCloudNotFound)
 	}
-	conds := map[string]interface{}{
-		common.BKHostInnerIPField: ip,
-		common.BKCloudIDField:     cloudID,
+	ipArr := strings.Split(ip, ",")
+	conds := mapstr.MapStr{
+		common.BKHostInnerIPField: map[string]interface{}{
+			common.BKDBAll:  ipArr,
+			common.BKDBSize: len(ipArr),
+		},
+		common.BKCloudIDField: cloudID,
 	}
 	hostList, err := lgc.GetHostInfoByConds(ctx, conds)
 	if nil != err {
@@ -574,9 +579,13 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, appID int64, srcHostID
 // IPCloudToHost get host id by ip and cloud
 func (lgc *Logics) IPCloudToHost(ctx context.Context, ip string, cloudID int64) (HostMap mapstr.MapStr, hostID int64, err errors.CCErrorCoder) {
 	// FIXME there must be a better ip to hostID solution
+	ipArr := strings.Split(ip, ",")
 	condition := mapstr.MapStr{
-		common.BKHostInnerIPField: ip,
-		common.BKCloudIDField:     cloudID,
+		common.BKHostInnerIPField: map[string]interface{}{
+			common.BKDBAll:  ipArr,
+			common.BKDBSize: len(ipArr),
+		},
+		common.BKCloudIDField: cloudID,
 	}
 
 	hostInfoArr, err := lgc.GetHostInfoByConds(ctx, condition)
