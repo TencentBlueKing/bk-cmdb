@@ -18,6 +18,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -50,12 +52,7 @@ func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrad
 		exitsAsstHostIDArr = append(exitsAsstHostIDArr, instAsst.InstID)
 	}
 
-	type hostInfoStruct struct {
-		HostID  int64  `bson:"bk_host_id"`
-		PlatID  int64  `bson:"bk_cloud_id"`
-		OwnerID string `bson:"bk_supplier_account"`
-	}
-	hostInfoMap := make([]hostInfoStruct, 0)
+	hostInfoMap := make([]metadata.HostMapStr, 0)
 	fields := []string{common.BKHostIDField, common.BKCloudIDField, common.BKOwnerIDField}
 	hostCondition := make(mapstr.MapStr)
 	if 0 < len(exitsAsstHostIDArr) {
@@ -69,9 +66,19 @@ func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrad
 
 	nowTime := time.Now().UTC()
 	for _, host := range hostInfoMap {
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			return err
+		}
+		platID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			return err
+		}
+		ownerID := util.GetStrByInterface(host[common.BkSupplierAccount])
+
 		instAsstConditionMap := mapstr.MapStr{
 			common.BKObjIDField:     common.BKInnerObjIDHost,
-			common.BKInstIDField:    host.HostID,
+			common.BKInstIDField:    hostID,
 			common.BKAsstObjIDField: common.BKInnerObjIDPlat,
 		}
 		cnt, err := db.Table(common.BKTableNameInstAsst).Find(instAsstConditionMap).Count(ctx)
@@ -85,11 +92,11 @@ func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrad
 			}
 			addAsstInst := instAsstStruct{
 				ID:           int64(id),
-				InstID:       host.HostID,
+				InstID:       hostID,
 				ObjectID:     common.BKInnerObjIDHost,
-				AsstInstID:   host.PlatID,
+				AsstInstID:   platID,
 				AsstObjectID: common.BKInnerObjIDPlat,
-				OwnerID:      host.OwnerID,
+				OwnerID:      ownerID,
 				CreateTime:   nowTime,
 				LastTime:     nowTime,
 			}
