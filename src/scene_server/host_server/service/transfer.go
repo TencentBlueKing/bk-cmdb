@@ -510,6 +510,7 @@ func (s *Service) generateTransferPlans(srvData *srvComm, bizID int64, withHostA
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
 	hostModuleResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, hostModuleOption)
 	if err != nil {

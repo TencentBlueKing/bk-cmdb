@@ -114,6 +114,12 @@ export const addBeforeHooks = function (hook) {
     beforeHooks.add(hook)
 }
 
+function cancelRequest (app) {
+    const pendingRequest = app.$http.queue.get()
+    const cancelId = pendingRequest.filter(request => request.cancelWhenRouteChange).map(request => request.requestId)
+    app.$http.cancelRequest(cancelId)
+}
+
 const checkViewAuthorize = async to => {
     // owener判断已经发现无业务时
     if (to.meta.view === 'permission') {
@@ -152,6 +158,7 @@ const setupStatus = {
 }
 
 router.beforeEach((to, from, next) => {
+    cancelRequest(router.app)
     router.app.$store.commit('setTitle', '')
     if (to.meta.view !== 'permission') {
         Vue.set(to.meta, 'view', 'default')

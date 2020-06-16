@@ -1,5 +1,5 @@
 <template>
-    <div class="apply-edit">
+    <div class="apply-edit" v-bkloading="{ isLoading: $loading(['getHostApplyTopopath']) }">
         <component
             :is="currentView"
             :module-ids="moduleIds"
@@ -86,6 +86,9 @@
                     bizId: this.bizId,
                     params: {
                         topo_nodes: this.moduleIds.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
+                    },
+                    config: {
+                        requestId: 'getHostApplyTopopath'
                     }
                 })
             },

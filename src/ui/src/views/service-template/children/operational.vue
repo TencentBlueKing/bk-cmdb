@@ -600,8 +600,13 @@
                         service_category_id: this.formData.secondaryClassification
                     }, { injectBizId: true })
                 }).then(data => {
-                    this.formData.templateId = data.id
-                    this.handleSubmitProcessList()
+                    if (this.processList.length) {
+                        this.formData.templateId = data.id
+                        this.handleSubmitProcessList()
+                    } else {
+                        this.$success(this.$t('创建成功'))
+                        this.handleCancelOperation()
+                    }
                 })
             },
             handleReturn () {

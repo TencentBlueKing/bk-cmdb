@@ -678,6 +678,7 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
 	hostModuleRelations, e := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, listHostOption)
 	if e != nil {

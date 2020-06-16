@@ -83,7 +83,7 @@ func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, hostID int64) (ma
 	return hostInfo, ip, nil
 }
 
-// GetConfigByCond get hosts owened set, module info, where hosts must match condition specify by cond.
+// GetConfigByCond get hosts owned set, module info, where hosts must match condition specify by cond.
 func (lgc *Logics) GetConfigByCond(ctx context.Context, input metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &input)
@@ -253,6 +253,7 @@ const (
 // available condition fields are bk_supplier_account, bk_biz_id, bk_host_id, bk_module_id, bk_set_id
 func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond metadata.HostModuleRelationRequest) ([]int64, errors.CCError) {
 
+	cond.Fields = []string{common.BKHostIDField}
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
 	if err != nil {
 		blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(), cond, lgc.rid)

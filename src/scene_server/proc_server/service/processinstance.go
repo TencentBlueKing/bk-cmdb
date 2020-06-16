@@ -299,11 +299,11 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 	for _, hostID := range hostIDs {
 		hostIDHit[hostID] = false
 	}
-	hostConfigFilter := &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		HostIDArr:     hostIDs,
+	hostConfigFilter := &metadata.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{bizID},
+		HostIDArr:        hostIDs,
 	}
-	result, err := ps.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, hostConfigFilter)
+	result, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostConfigFilter)
 	if err != nil {
 		blog.ErrorJSON("CheckHostInBusiness failed, GetHostModuleRelation failed, filter: %s, err: %s, rid: %s", hostConfigFilter, err.Error(), ctx.Kit.Rid)
 		e, ok := err.(errors.CCErrorCoder)
@@ -313,8 +313,8 @@ func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostI
 			return ctx.Kit.CCError.CCError(common.CCErrWebGetHostFail)
 		}
 	}
-	for _, item := range result.Data.Info {
-		hostIDHit[item.HostID] = true
+	for _, id := range result.Data.IDArr {
+		hostIDHit[id] = true
 	}
 	invalidHost := make([]int64, 0)
 	for hostID, hit := range hostIDHit {

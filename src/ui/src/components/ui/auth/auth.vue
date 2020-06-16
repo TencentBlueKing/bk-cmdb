@@ -4,7 +4,9 @@
         v-cursor="{
             active: !isAuthorized,
             auth: resources
-        }">
+        }"
+        :class="{ disabled }"
+        @click="handleClick">
         <slot :disabled="disabled"></slot>
     </component>
 </template>
@@ -65,6 +67,12 @@
                 this.isAuthorized = isPass
                 this.disabled = !isPass
                 this.$emit('update-auth', isPass)
+            },
+            handleClick () {
+                if (this.disabled) {
+                    return
+                }
+                this.$emit('click')
             }
         }
     }

@@ -384,6 +384,7 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
 	relationResult, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, &relationOption)
 	if err != nil {
@@ -519,6 +520,7 @@ func (s *Service) ListSetTplRelatedSetsWeb(ctx *rest.Contexts) {
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKSetIDField, common.BKHostIDField},
 	}
 	relations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, filter)
 	if err != nil {
@@ -608,6 +610,7 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 			Page: metadata.BasePage{
 				Limit: common.BKNoLimit,
 			},
+			Fields: []string{common.BKModuleIDField},
 		}
 		relationResult, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
 		if err != nil {

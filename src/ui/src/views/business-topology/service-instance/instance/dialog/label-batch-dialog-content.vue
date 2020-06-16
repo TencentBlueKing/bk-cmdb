@@ -6,7 +6,7 @@
                 <span>{{$t('已有标签提示')}}</span>
             </div>
             <div class="label-set">
-                <span class="label-item" :key="index" v-for="(label, index) in localExisitingLabel">
+                <span class="label-item" :key="index" v-for="(label, index) in localLabels">
                     {{`${label.key}：${label.value}`}}
                     <i class="bk-icon icon-close-circle-shape" @click="handleRemove(index)"></i>
                 </span>
@@ -22,32 +22,21 @@
 <script>
     export default {
         props: {
-            exisitingLabel: {
+            labels: {
                 type: Array,
                 default: () => []
             }
         },
         data () {
             return {
-                localExisitingLabel: [],
-                removeList: []
+                localLabels: [...this.labels],
+                removeLabels: []
             }
-        },
-        watch: {
-            exisitingLabel (list) {
-                this.localExisitingLabel = this.$tools.clone(list)
-            }
-        },
-        created () {
-            this.initValue()
         },
         methods: {
-            initValue () {
-                this.localExisitingLabel = this.$tools.clone(this.exisitingLabel)
-            },
             handleRemove (index) {
-                this.removeList.push(this.localExisitingLabel[index])
-                this.localExisitingLabel.splice(index, 1)
+                this.removeLabels.push(this.localLabels[index])
+                this.localLabels.splice(index, 1)
             }
         }
     }

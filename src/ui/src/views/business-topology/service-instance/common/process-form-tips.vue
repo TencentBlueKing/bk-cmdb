@@ -17,7 +17,7 @@
                 this.$routerActions.redirect({
                     name: 'operationalTemplate',
                     params: {
-                        bizId: this.$route.params.bizId,
+                        bizId: this.$store.getters['objectBiz/bizId'],
                         templateId: this.serviceTemplateId
                     },
                     history: true
