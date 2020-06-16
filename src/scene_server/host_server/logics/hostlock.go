@@ -49,7 +49,7 @@ func (lgc *Logics) UnlockHost(ctx context.Context, input *metadata.HostLockReque
 	return nil
 }
 
-func (lgc *Logics) QueryHostLock(ctx context.Context, input *metadata.QueryHostLockRequest) (map[string]bool, errors.CCError) {
+func (lgc *Logics) QueryHostLock(ctx context.Context, input *metadata.QueryHostLockRequest) (map[int64]bool, errors.CCError) {
 
 	hostLockResult, err := lgc.CoreAPI.CoreService().Host().QueryHostLock(ctx, lgc.header, input)
 	if nil != err {
@@ -60,12 +60,12 @@ func (lgc *Logics) QueryHostLock(ctx context.Context, input *metadata.QueryHostL
 		blog.Errorf("query host lock  error, error code:%d error message:%s,input:%+v,logID:%s", hostLockResult.Code, hostLockResult.ErrMsg, input, lgc.rid)
 		return nil, lgc.ccErr.New(hostLockResult.Code, hostLockResult.ErrMsg)
 	}
-	hostLockMap := make(map[string]bool, 0)
-	for _, ip := range input.IPS {
-		hostLockMap[ip] = false
+	hostLockMap := make(map[int64]bool, 0)
+	for _, id := range input.IDS {
+		hostLockMap[id] = false
 	}
 	for _, hostLock := range hostLockResult.Data.Info {
-		hostLockMap[hostLock.IP] = true
+		hostLockMap[hostLock.ID] = true
 	}
 
 	return hostLockMap, nil
