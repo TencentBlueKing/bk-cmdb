@@ -39,6 +39,7 @@ func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClien
 
 	query := &metadata.HostModuleRelationRequest{
 		HostIDArr: *hostIDArr,
+		Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	result, err := coreService.Host().GetHostModuleRelation(ctx, *requestHeader, query)
 	if err != nil {
@@ -227,6 +228,7 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 	// inject business,set,module info to HostSimplify
 	query := &metadata.HostModuleRelationRequest{
 		HostIDArr: hostIDs,
+		Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	hostModuleResult, err := am.clientSet.CoreService().Host().GetHostModuleRelation(ctx, header, query)
 	if err != nil {

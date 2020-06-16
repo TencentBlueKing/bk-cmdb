@@ -1264,5 +1264,14 @@
     "删除字段": "Delete Attribute",
     "暂无可复制的IP": "No IP to copy",
     "请输入IP，多个IP请使用换行分隔": "Please input IP, use newline to seperate multiple IP",
-    "全部模型": "All Models"
+    "普通服务实例无进程提示": "No Process，{link}.",
+    "模板服务实例无进程提示": "No template process, {link}.",
+    "跳转添加并同步": "edit and sync",
+    "切换进程视角提示语": "Toggle view for batch update process",
+    "全部模型": "All Models",
+    "实例名称": "Instance Name",
+    "实例操作": "Instance Operation",
+    "所属实例": "Instance",
+    "确定删除N个进程": "Confirm to delete {count} selected process?",
+    "确定删除该进程": "Confirm to delete this process?"
 }

@@ -177,7 +177,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 		curData[k] = v
 	}
 
-	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}}
+	input := &metadata.HostModuleRelationRequest{HostIDArr: []int64{hostID}, Fields: []string{common.BKAppIDField}}
 	moduleHost, err := h.CoreAPI.CoreService().Host().GetHostModuleRelation(h.ctx, header, input)
 	if err != nil {
 		blog.Errorf("snapshot get host: %d/%s module relation failed, err:%v, rid: %s", hostID, innerIP, err, rid)

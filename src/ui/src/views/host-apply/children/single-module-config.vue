@@ -1,5 +1,5 @@
 <template>
-    <div class="single-module-config">
+    <div class="single-module-config" v-bkloading="{ isLoading: $loading(['getHostApplyConfigs']) }">
         <div class="config-body">
             <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]">
                 <div class="choose-hd">
@@ -127,7 +127,7 @@
                         bk_module_ids: [this.moduleId]
                     },
                     config: {
-                        requestId: `getHostApplyRules`
+                        requestId: 'getHostApplyConfigs'
                     }
                 })
             },

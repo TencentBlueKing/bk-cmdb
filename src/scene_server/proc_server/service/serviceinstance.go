@@ -316,6 +316,7 @@ func (ps *ProcServer) createServiceInstancesPreview(ctx *rest.Contexts, input me
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	})
 	if err != nil {
 		blog.Errorf("GetHostModuleRelation failed, err: %v, bizID: %d, hostIDs: %+v, rid: %s", err, input.BizID, hostIDs, rid)

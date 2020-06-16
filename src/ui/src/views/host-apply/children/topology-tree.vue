@@ -52,6 +52,7 @@
 <script>
     import { mapGetters, mapState } from 'vuex'
     import Bus from '@/utils/bus'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         props: {
             treeOptions: {
@@ -143,8 +144,12 @@
                 this.setDefaultState(data)
             })
         },
+        mounted () {
+            addResizeListener(this.$el, this.handleResize)
+        },
         beforeDestroy () {
             Bus.$off('topology-search', this.handleSearch)
+            removeResizeListener(this.$el, this.handleResize)
         },
         methods: {
             async handleSearch (params) {
@@ -233,7 +238,8 @@
                     config: {
                         params: {
                             with_default: 1
-                        }
+                        },
+                        requestId: 'getTopologyData'
                     }
                 })
             },
@@ -272,6 +278,9 @@
             },
             handleCheckChange (id, checked) {
                 this.$emit('checked', id, checked)
+            },
+            handleResize () {
+                this.$refs.tree.resize()
             }
         }
     }

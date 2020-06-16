@@ -348,6 +348,8 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 func (c *commonInst) innerHasHost(kit *rest.Kit, moduleIDS []int64) (bool, error) {
 	option := &metadata.HostModuleRelationRequest{
 		ModuleIDArr: moduleIDS,
+		Fields:      []string{common.BKHostIDField},
+		Page:        metadata.BasePage{Limit: 1},
 	}
 	rsp, err := c.clientSet.CoreService().Host().GetHostModuleRelation(context.Background(), kit.Header, option)
 	if nil != err {

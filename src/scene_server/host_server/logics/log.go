@@ -338,6 +338,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context) errors.CCError {
 func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.ModuleHost, errors.CCError) {
 	conds := &metadata.HostModuleRelationRequest{
 		HostIDArr: h.hostIDArr,
+		Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
 	result, err := h.logic.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, h.header, conds)
 	if err != nil {
