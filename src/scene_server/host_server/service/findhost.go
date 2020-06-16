@@ -226,10 +226,8 @@ func (s *Service) listBizHosts(header http.Header, bizID int64, parameter meta.L
 		for _, set := range setList.Data.Info {
 			id, err := util.GetInt64ByInterface(set[common.BKSetIDField])
 			if err != nil {
-				if err != nil {
-					blog.Errorf("get set id: %v failed, err: %v, rid: %s", set[common.BKSetIDField], err, rid)
-					return nil, errors.New(common.CCErrCommParamsInvalid, "bk_set_id")
-				}
+				blog.Errorf("get set id: %v failed, err: %v, rid: %s", set[common.BKSetIDField], err, rid)
+				return nil, errors.New(common.CCErrCommParamsInvalid, "bk_set_id")
 			}
 
 			if id == 0 {
