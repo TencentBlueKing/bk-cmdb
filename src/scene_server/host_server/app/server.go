@@ -117,11 +117,7 @@ func (h *HostServer) WebService() *restful.Container {
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	var err error
 
-	h.Config.Redis.Address = current.ConfigMap["redis.host"]
-	h.Config.Redis.Database = current.ConfigMap["redis.database"]
-	h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
-	h.Config.Redis.Port = current.ConfigMap["redis.port"]
-	h.Config.Redis.MasterName = current.ConfigMap["redis.user"]
+	h.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
 
 	h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 	if err != nil {

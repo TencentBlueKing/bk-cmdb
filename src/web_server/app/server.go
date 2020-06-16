@@ -73,15 +73,17 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return errors.New("configuration item not found")
 	}
 
-	redisAddress := webSvr.Config.Session.Host
+	redisAddress := webSvr.Config.Session.Address
+	if redisAddress == "" {
+		redisAddress = webSvr.Config.Session.Host
+		if !strings.Contains(redisAddress, ":") && len(webSvr.Config.Session.Port) > 0 {
+			redisAddress = webSvr.Config.Session.Host + ":" + webSvr.Config.Session.Port
+		}
+	}
 	redisSecret := strings.TrimSpace(webSvr.Config.Session.Secret)
 
-	if !strings.Contains(redisAddress, ":") && len(webSvr.Config.Session.Port) > 0 {
-		redisAddress = webSvr.Config.Session.Host + ":" + webSvr.Config.Session.Port
-	}
-
 	var redisErr error
-	if 0 == len(webSvr.Config.Session.Address) {
+	if 0 == len(webSvr.Config.Session.MasterName) {
 		// address 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
 		service.Session, redisErr = sessions.NewRedisStore(10, "tcp", redisAddress, webSvr.Config.Session.Secret, []byte("secret"))
 		if redisErr != nil {
@@ -89,7 +91,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}
 	} else {
 		// address 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
-		address := strings.Split(webSvr.Config.Session.Address, ";")
+		address := strings.Split(redisAddress, ";")
 		service.Session, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Session.MasterName, "tcp", webSvr.Config.Session.Secret, []byte("secret"))
 		if redisErr != nil {
 			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
