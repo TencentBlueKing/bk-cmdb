@@ -27,8 +27,7 @@ const dev = {
         'BUILD_VERSION': 'dev',
         'USER_ROLE': '"1"',
         'USER_NAME': '"admin"',
-        'FULL_TEXT_SEARCH': '"off"',
-        'BK_DESKTOP': '""'
+        'FULL_TEXT_SEARCH': '"off"'
     }),
 
     // Paths
@@ -96,8 +95,7 @@ module.exports = {
             'AUTH_CENTER': '{{.authCenter}}',
             'USER_ROLE': '{{.role}}',
             'USER_NAME': '{{.userName}}',
-            'FULL_TEXT_SEARCH': '{{.fullTextSearch}}',
-            'BK_DESKTOP': '{{.bkDesktop}}'
+            'FULL_TEXT_SEARCH': '{{.fullTextSearch}}'
         }),
 
         // Template for index.html
