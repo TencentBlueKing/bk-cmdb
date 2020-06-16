@@ -94,16 +94,16 @@ func (h *Hash) updateLoop() {
 			blog.Errorf("Hash| update services hash values, %+v", err)
 			continue
 		}
+		blog.Infof("Hash| discovery newest servers now, %+v", servers)
 
 		// query.
 		newest := make(map[string]string)
-		for _, svr := range servers {
-			blog.Infof("Hash| update newest servers, node: %s", svr)
 
+		for _, svr := range servers {
 			// parse servers address, format: "scheme://ip:port".
 			u, err := url.Parse(svr)
 			if err != nil {
-				blog.Errorf("Hash| update newest servers, %+v", err)
+				blog.Errorf("Hash| update newest servers, node: %s, %+v", svr, err)
 				continue
 			}
 
@@ -120,6 +120,7 @@ func (h *Hash) updateLoop() {
 		for hashValue, svr := range newest {
 			if _, isExist := h.nodes[hashValue]; !isExist {
 				// new node, add to consistent, do not add more replicas.
+				blog.Infof("Hash| add new consistent hash node, %s", hashValue)
 				h.consistent.Add(hashValue)
 			}
 
@@ -130,9 +131,11 @@ func (h *Hash) updateLoop() {
 		// delete.
 		for hashValue, _ := range h.nodes {
 			if _, isExist := newest[hashValue]; !isExist {
+				blog.Infof("Hash| remove old consistent hash node, %s", hashValue)
 				h.consistent.Remove(hashValue)
 				delete(h.nodes, hashValue)
 			}
 		}
+		blog.Infof("Hash| sync consistent hash done, members %+v", h.consistent.Members())
 	}
 }

@@ -239,6 +239,7 @@ func (c *DataCollection) initConfigs() error {
 	}
 
 	var err error
+	blog.Info("DataCollection| found configs to run the new datacollection server now!")
 
 	// mongodb.
 	c.config.MongoDB, err = c.engine.WithMongo()
@@ -288,6 +289,7 @@ func (c *DataCollection) initModules() error {
 	}
 	c.db = mgoCli
 	c.service.SetDB(mgoCli)
+	blog.Info("DataCollection| init modules, create mongo client success[%+v]", c.config.MongoDB.GetMongoConf())
 
 	// create blueking ESB client.
 	esb, err := esbserver.NewEsb(c.engine.ApiMachineryConfig(), nil, /* you can update it by a chan here */
@@ -295,6 +297,7 @@ func (c *DataCollection) initModules() error {
 	if err != nil {
 		return fmt.Errorf("create ESB client, %+v", err)
 	}
+	blog.Info("DataCollection| init modules, create ESB success[%+v]", c.config.Esb)
 
 	// build logics comm.
 	c.service.SetLogics(mgoCli, esb)
@@ -304,9 +307,9 @@ func (c *DataCollection) initModules() error {
 	if err != nil {
 		return fmt.Errorf("connect to cc main redis, %+v", err)
 	}
-	blog.Infof("DataCollection| connected to cc main redis, %+v", c.config.CCRedis)
 	c.redisCli = redisCli
 	c.service.SetCache(redisCli)
+	blog.Infof("DataCollection| init modules, connected to cc main redis, %+v", c.config.CCRedis)
 
 	// connect to snap redis.
 	if c.config.SnapRedis.Enable != "false" {
@@ -316,6 +319,7 @@ func (c *DataCollection) initModules() error {
 		}
 		c.snapCli = snapCli
 		c.service.SetSnapCli(snapCli)
+		blog.Infof("DataCollection| init modules, connected to snap redis, %+v", c.config.SnapRedis)
 	}
 
 	// connect to discover redis.
@@ -324,9 +328,9 @@ func (c *DataCollection) initModules() error {
 		if nil != err {
 			return fmt.Errorf("connect to discover redis, %+v", err)
 		}
-		blog.Infof("DataCollection| connected to discover redis, %+v", c.config.DiscoverRedis)
 		c.disCli = disCli
 		c.service.SetDiscoverCli(disCli)
+		blog.Infof("DataCollection| init modules, connected to discover redis, %+v", c.config.DiscoverRedis)
 	}
 
 	// connect to net collect redis.
@@ -335,9 +339,9 @@ func (c *DataCollection) initModules() error {
 		if nil != err {
 			return fmt.Errorf("connect to netcollect redis, %+v", err)
 		}
-		blog.Infof("DataCollection| connected to netcollect redis, %+v", c.config.NetCollectRedis)
 		c.netCli = netCli
 		c.service.SetNetCollectCli(netCli)
+		blog.Infof("DataCollection| init modules, connected to netcollect redis, %+v", c.config.NetCollectRedis)
 	}
 
 	// handle authorize.
@@ -347,6 +351,7 @@ func (c *DataCollection) initModules() error {
 			return fmt.Errorf("create new authorize failed, %+v", err)
 		}
 		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, authorize)
+		blog.Infof("DataCollection| init modules, create authorize success[%+v]", c.config.AuthConfig)
 	}
 
 	return nil
@@ -427,30 +432,34 @@ func (c *DataCollection) runCollectPorters() {
 			err, defaultAppInitWaitDuration)
 		time.Sleep(defaultAppInitWaitDuration)
 	}
+	blog.Info("DataCollection| get default appid id success[%s]", c.defaultAppID)
 
 	// create and add new porters.
 	if c.snapCli != nil {
 		topic := c.snapMessageTopic(c.defaultAppID)
-		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.db, c.engine, *c.authManager)
+		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.db, c.engine, c.authManager)
 
 		porter := collections.NewSimplePorter(snapPorterName, c.engine, c.hash, analyzer, c.snapCli, topic, c.registry)
 		c.porterManager.AddPorter(porter)
+		blog.Info("DataCollection| create hostsnap analyzer with target porter[%s] on topic[%s] success", snapPorterName, topic)
 	}
 
 	if c.disCli != nil {
 		topic := c.discoverMessageTopic(c.defaultAppID)
-		analyzer := middleware.NewDiscover(c.ctx, c.redisCli, c.engine, *c.authManager)
+		analyzer := middleware.NewDiscover(c.ctx, c.redisCli, c.engine, c.authManager)
 
 		porter := collections.NewSimplePorter(middlewarePorterName, c.engine, c.hash, analyzer, c.disCli, topic, c.registry)
 		c.porterManager.AddPorter(porter)
+		blog.Info("DataCollection| create discover analyzer with target porter[%s] on topic[%s] success", middlewarePorterName, topic)
 	}
 
 	if c.netCli != nil {
 		topic := c.netcollectMessageTopic(c.defaultAppID)
-		analyzer := netcollect.NewNetCollect(c.ctx, c.db, *c.authManager)
+		analyzer := netcollect.NewNetCollect(c.ctx, c.db, c.authManager)
 
 		porter := collections.NewSimplePorter(netCollectPorterName, c.engine, c.hash, analyzer, c.netCli, topic, c.registry)
 		c.porterManager.AddPorter(porter)
+		blog.Info("DataCollection| create netcollect analyzer with target porter[%s] on topic[%s] success", netCollectPorterName, topic)
 	}
 }
 
@@ -460,14 +469,18 @@ func (c *DataCollection) Run() error {
 	if err := c.initConfigs(); err != nil {
 		return err
 	}
+	blog.Info("init configs success!")
 
 	// ready to setup comms for new server instance now.
 	if err := c.initModules(); err != nil {
 		return err
 	}
+	blog.Info("init modules success!")
 
 	// run collection porters for new datacollection instance.
 	c.runCollectPorters()
+
+	blog.Info("run collect porters success!")
 
 	return nil
 }
@@ -489,6 +502,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		dataCollection.Service().WebService(), true); err != nil {
 		return err
 	}
+	blog.Info("DataCollection init and run success!")
 
 	<-ctx.Done()
 	blog.Info("DataCollection stopping now!")

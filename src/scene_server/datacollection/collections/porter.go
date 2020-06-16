@@ -32,8 +32,8 @@ const (
 	// defaultMessageChanTimeout is default timeout of analyzer message channel.
 	defaultMessageChanTimeout = time.Second
 
-	// defaultMessageChanSize is default size of analyzer message channel, 14kB * 10000 = 140M.
-	defaultMessageChanSize = 50000
+	// defaultMessageChanSize is default size of analyzer message channel, 14kB * 100000 = 1400MB.
+	defaultMessageChanSize = 100000
 
 	// defaultFusingCheckInterval is default internal for fusing.
 	defaultFusingCheckInterval = 3 * time.Second
@@ -42,13 +42,13 @@ const (
 	defaultFusingThresholdPercent = 90
 
 	// defaultFusingPercent is default fusing percent.
-	defaultFusingPercent = 50
+	defaultFusingPercent = 90
 
 	// defaultReSubscribeWaitDuration is default wait duration before re-subscribe.
 	defaultReSubscribeWaitDuration = time.Second
 
 	// defaultDebugInterval is default internal for debuging.
-	defaultDebugInterval = time.Minute
+	defaultDebugInterval = 30 * time.Second
 )
 
 // SimplePorter is simple porter handles message from collectors.
@@ -122,6 +122,7 @@ func NewSimplePorter(name string, engine *backbone.Engine, hash *Hash, analyzer 
 func (p *SimplePorter) init() {
 	// register metrics.
 	p.registerMetrics()
+	blog.Infof("SimplePorter[%s]| init metrics success!", p.name)
 }
 
 // registerMetrics registers prometheus metrics.
@@ -211,13 +212,15 @@ func (p *SimplePorter) AddMessage(message string) error {
 	case p.msgChan <- message:
 
 	case <-time.After(defaultMessageChanTimeout):
-		return fmt.Errorf("add to analyzer message channel timeout")
+		return fmt.Errorf("channel timeout")
 	}
 	return nil
 }
 
 // analyzeLoop keeps analyzing message from collectors.
 func (p *SimplePorter) analyzeLoop() {
+	blog.Infof("SimplePorter[%s]| start a new analyze loop now!", p.name)
+
 	for msg := range p.msgChan {
 		// once analyze cost duration.
 		cost := time.Now()
@@ -269,6 +272,8 @@ func (p *SimplePorter) collectLoop() error {
 
 			// ignoring invalid payloads.
 			if len(newMsg.Payload) == 0 {
+				blog.Errorf("SimplePorter[%s]| recved a message with empty payload!", p.name)
+
 				// metrics stats for invalid message.
 				p.receiveInvalidTotal.Inc()
 				continue
@@ -277,6 +282,8 @@ func (p *SimplePorter) collectLoop() error {
 			// message data sharding hashring check.
 			hash, err := p.analyzer.Hash(newMsg.Payload)
 			if err != nil {
+				blog.Errorf("SimplePorter[%s]| calculates message hash failed, %+v", p.name, err)
+
 				// metrics stats for invalid message.
 				p.receiveInvalidTotal.Inc()
 				continue
@@ -291,6 +298,8 @@ func (p *SimplePorter) collectLoop() error {
 			p.receiveShardingTotal.Inc()
 
 			if err := p.AddMessage(newMsg.Payload); err != nil {
+				blog.Errorf("SimplePorter[%s]| add message to analyze, %+v", p.name, err)
+
 				// metrics stats for message sending timeout.
 				p.receiveTimeoutTotal.Inc()
 			}
@@ -307,6 +316,8 @@ func (p *SimplePorter) collectLoop() error {
 // fusing is fuse controller, it would weed out the stacked message in channel,
 // in order to keep the newest message could be analyzed in time.
 func (p *SimplePorter) fusing() {
+	blog.Infof("SimplePorter[%s]| fusing running now!", p.name)
+
 	ticker := time.NewTicker(defaultFusingCheckInterval)
 	defer ticker.Stop()
 
@@ -321,12 +332,18 @@ func (p *SimplePorter) fusing() {
 		// check threshold percent.
 		if percent < defaultFusingThresholdPercent {
 			isStackedInLastCheck = false
+
+			blog.Infof("SimplePorter[%s]| no-need fusing now, percent[%d] < threshold percent[%d]",
+				p.name, percent, defaultFusingThresholdPercent)
 			continue
 		}
 
 		// stacked in current check.
 		if !isStackedInLastCheck {
 			isStackedInLastCheck = true
+
+			blog.Infof("SimplePorter[%s]| no-need fusing now, percent[%d] > threshold percent[%d] first time!",
+				p.name, percent, defaultFusingThresholdPercent)
 			continue
 		}
 
@@ -442,9 +459,9 @@ func (p *SimplePorter) debug() {
 		fusingTotalNum := pbmetric.GetCounter().GetValue()
 
 		// debug infos.
-		blog.Infof("SimplePorter[%s]| DEBUG[%+v], msgChanStage[%d], recvTotal[%d] recvInvalid[%d]"+
-			"recvSharding[%d] recvTimeout[%d] analyzeFailedTotal[%d] analyzeSuccTotal[%d] analyzeDuration[%d] fuseTotal[%d] in last %+v",
+		blog.Infof("SimplePorter[%s]| DEBUG[%+v], msgChanStage[%d], recvTotal[%f] recvInvalid[%f]"+
+			"recvSharding[%f] recvTimeout[%f] analyzeFailedTotal[%f] analyzeSuccTotal[%f] analyzeDuration[%f] fuseTotal[%f] in last %+v",
 			p.name, now, msgChanStage, recvTotalNum, receiveInvalidTotalNum, receiveShardingTotalNum, receiveTimeoutTotalNum,
-			analyzeTotalFailedNum, analyzeTotalSuccNum, analyzeDuration, defaultDebugInterval, fusingTotalNum)
+			analyzeTotalFailedNum, analyzeTotalSuccNum, analyzeDuration, fusingTotalNum, defaultDebugInterval)
 	}
 }

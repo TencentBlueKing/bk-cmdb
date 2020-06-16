@@ -31,11 +31,11 @@ import (
 type NetCollect struct {
 	ctx         context.Context
 	db          dal.RDB
-	authManager extensions.AuthManager
+	authManager *extensions.AuthManager
 }
 
 // NewNetCollect returns a new netcollector
-func NewNetCollect(ctx context.Context, db dal.RDB, authManager extensions.AuthManager) *NetCollect {
+func NewNetCollect(ctx context.Context, db dal.RDB, authManager *extensions.AuthManager) *NetCollect {
 	h := &NetCollect{
 		ctx:         ctx,
 		db:          db,

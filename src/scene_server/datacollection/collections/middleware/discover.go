@@ -31,12 +31,12 @@ type Discover struct {
 
 	redisCli *redis.Client
 	*backbone.Engine
-	authManager extensions.AuthManager
+	authManager *extensions.AuthManager
 }
 
 var msgHandlerCnt = int64(0)
 
-func NewDiscover(ctx context.Context, redisCli *redis.Client, backbone *backbone.Engine, authManager extensions.AuthManager) *Discover {
+func NewDiscover(ctx context.Context, redisCli *redis.Client, backbone *backbone.Engine, authManager *extensions.AuthManager) *Discover {
 	header := http.Header{}
 	header.Add(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
 	header.Add(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
