@@ -60,6 +60,30 @@
 ### 5. 配置数据库
 
 1. Redis需要打开auth认证的功能，并为其配置密码
+(1)修改配置文件
+Redis的配置文件默认在/etc/redis.conf，找到如下行：
+#requirepass foobared
+去掉前面的注释，并修改为所需要的密码：
+requirepass myPassword （其中myPassword就是要设置的密码）
+(2)重启Redis
+如果Redis已经配置为service服务，可以通过以下方式重启：
+service redis restart
+如果Redis没有配置为service服务，可以通过以下方式重启：
+/usr/local/bin/redis-cli shutdown
+/usr/local/bin/redis-server /etc/redis.conf
+(3)登录验证
+设置Redis认证密码后，客户端登录时需要使用-a参数输入认证密码，不添加该参数虽然也可以登录成功，但是没有任何操作权限。如下： 
+$ ./redis-cli -h 127.0.0.1 -p 6379
+127.0.0.1:6379> keys *
+(error) NOAUTH Authentication required.
+使用密码认证登录，并验证操作权限：
+
+$ ./redis-cli -h 127.0.0.1 -p 6379 -a myPassword
+127.0.0.1:6379> config get requirepass
+1) "requirepass"
+2) "myPassword"
+看到类似上面的输出，说明Reids密码认证配置成功。
+
 2. 安装MongoDB后，创建数据库 cmdb
 3. 为新创建的数据库设置用户名和密码
 
