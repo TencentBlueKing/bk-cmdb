@@ -83,10 +83,10 @@ var _ = Describe("host test", func() {
 				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{
 					"4": map[string]interface{}{
-						"bk_host_innerip": "1.0.0.1",
+						"bk_host_innerip": "127.0.0.1",
 						"bk_asset_id":     "addhost_api_asset_1",
 						"bk_cloud_id":     0,
-						"bk_comment":      "1.0.0.1 comment",
+						"bk_comment":      "127.0.0.1 comment",
 					},
 				},
 			}
@@ -100,7 +100,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Ip: params.IPInfo{
-					Data:  []string{"1.0.0.1"},
+					Data:  []string{"127.0.0.1"},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
@@ -114,7 +114,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.1"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.1"))
 			Expect(data["bk_asset_id"].(string)).To(Equal("addhost_api_asset_1"))
 			hostId1 = int64(data["bk_host_id"].(float64))
 		})
@@ -124,9 +124,9 @@ var _ = Describe("host test", func() {
 				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{
 					"5": map[string]interface{}{
-						"bk_host_innerip": "1.0.0.2",
+						"bk_host_innerip": "127.0.0.2",
 						"bk_asset_id":     "addhost_excel_asset_1",
-						"bk_host_name":    "1.0.0.2",
+						"bk_host_name":    "127.0.0.2",
 					},
 				},
 				"input_type": "excel",
@@ -141,7 +141,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Ip: params.IPInfo{
-					Data:  []string{"1.0.0.2"},
+					Data:  []string{"127.0.0.2"},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
@@ -155,9 +155,9 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.2"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.2"))
 			Expect(data["bk_asset_id"].(string)).To(Equal("addhost_excel_asset_1"))
-			Expect(data["bk_host_name"].(string)).To(Equal("1.0.0.2"))
+			Expect(data["bk_host_name"].(string)).To(Equal("127.0.0.2"))
 			hostId2 = int64(data["bk_host_id"].(float64))
 		})
 
@@ -166,8 +166,8 @@ var _ = Describe("host test", func() {
 				AppID: int(bizId),
 				Ip: params.IPInfo{
 					Data: []string{
-						"1.0.0.1",
-						"1.0.0.2",
+						"127.0.0.1",
+						"127.0.0.2",
 					},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
@@ -187,7 +187,7 @@ var _ = Describe("host test", func() {
 		// It("add host using agent", func() {
 		// 	input := map[string]interface{}{
 		// 		"host_info": map[string]interface{}{
-		// 			"bk_host_innerip": "1.0.0.3",
+		// 			"bk_host_innerip": "127.0.0.3",
 		// 			"bk_asset_id":     "addhost_agent_asset_1",
 		// 			"bk_cloud_id":     0,
 		// 		},
@@ -202,7 +202,7 @@ var _ = Describe("host test", func() {
 		// 	input := &params.HostCommonSearch{
 		// 		AppID: int(bizId),
 		// 		Ip: params.IPInfo{
-		// 			Data:  []string{"1.0.0.3"},
+		// 			Data:  []string{"127.0.0.3"},
 		// 			Exact: 1,
 		// 			Flag:  "bk_host_innerip|bk_host_outerip",
 		// 		},
@@ -216,7 +216,7 @@ var _ = Describe("host test", func() {
 		// 	Expect(rsp.Result).To(Equal(true))
 		// 	Expect(rsp.Data.Count).To(Equal(1))
 		// 	data := rsp.Data.Info[0]["host"].(map[string]interface{})
-		// 	Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.3"))
+		// 	Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.3"))
 		// 	Expect(data["bk_asset_id"].(string)).To(Equal("addhost_agent_asset_1"))
 		// })
 
@@ -224,7 +224,7 @@ var _ = Describe("host test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"4": map[string]interface{}{
-						"bk_host_innerip": "1.0.0.4",
+						"bk_host_innerip": "127.0.0.4",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -261,7 +261,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.4"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.4"))
 			hostId = int64(data["bk_host_id"].(float64))
 		})
 
@@ -272,7 +272,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			for _, data := range rsp.Data {
 				if data.PropertyID == "bk_host_innerip" {
-					Expect(data.PropertyValue).To(Equal("1.0.0.4"))
+					Expect(data.PropertyValue).To(Equal("127.0.0.4"))
 					break
 				}
 			}
@@ -292,8 +292,8 @@ var _ = Describe("host test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
-			Expect(rsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("1.0.0.1"))
-			Expect(rsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("1.0.0.2"))
+			Expect(rsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("127.0.0.1"))
+			Expect(rsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("127.0.0.2"))
 		})
 
 		It("transfer resourcehost to idlemodule", func() {
@@ -321,9 +321,9 @@ var _ = Describe("host test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(3))
-			Expect(rsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("1.0.0.1"))
-			Expect(rsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("1.0.0.2"))
-			Expect(rsp.Data.Info[2]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("1.0.0.4"))
+			Expect(rsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("127.0.0.1"))
+			Expect(rsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("127.0.0.2"))
+			Expect(rsp.Data.Info[2]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("127.0.0.4"))
 		})
 
 		It("transfer host to resourcemodule", func() {
@@ -351,8 +351,8 @@ var _ = Describe("host test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
-			Expect(rsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("1.0.0.2"))
-			Expect(rsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("1.0.0.4"))
+			Expect(rsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("127.0.0.2"))
+			Expect(rsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_innerip"].(string)).To(Equal("127.0.0.4"))
 		})
 
 		It("transfer host module", func() {
@@ -415,7 +415,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 			host := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(host["bk_host_innerip"].(string)).To(Equal("1.0.0.2"))
+			Expect(host["bk_host_innerip"].(string)).To(Equal("127.0.0.2"))
 			Expect(int64(host["bk_host_id"].(float64))).To(Equal(hostId2))
 			module := rsp.Data.Info[0]["module"].([]interface{})[0].(map[string]interface{})
 			Expect(module["bk_module_name"].(string)).To(Equal("cc_module"))
@@ -427,7 +427,7 @@ var _ = Describe("host test", func() {
 				"bk_biz_id": 1,
 				"host_info": map[string]interface{}{
 					"4": map[string]interface{}{
-						"bk_host_innerip": "1.0.0.5",
+						"bk_host_innerip": "127.0.0.5",
 						"bk_asset_id":     "add_clone_destion_host",
 						"bk_cloud_id":     0,
 					},
@@ -441,8 +441,8 @@ var _ = Describe("host test", func() {
 		It("clone host", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   1,
-				OrgIP:   "1.0.0.1",
-				DstIP:   "1.0.0.5",
+				OrgIP:   "127.0.0.1",
+				DstIP:   "127.0.0.5",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -455,7 +455,7 @@ var _ = Describe("host test", func() {
 			input := &params.HostCommonSearch{
 				AppID: -1,
 				Ip: params.IPInfo{
-					Data:  []string{"1.0.0.5"},
+					Data:  []string{"127.0.0.5"},
 					Exact: 0,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
@@ -479,8 +479,8 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.5"))
-			Expect(data["bk_comment"].(string)).To(Equal("1.0.0.1 comment"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.5"))
+			Expect(data["bk_comment"].(string)).To(Equal("127.0.0.1 comment"))
 
 		})
 
@@ -596,7 +596,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.2"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.2"))
 		})
 
 		It("search transfered module host", func() {
@@ -663,7 +663,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.4"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.4"))
 		})
 
 		It("transfer host to idle module", func() {
@@ -706,7 +706,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
 			data1 := rsp.Data.Info[1]["host"].(map[string]interface{})
-			Expect("1.0.0.2").To(SatisfyAny(Equal(data["bk_host_innerip"].(string)), Equal(data1["bk_host_innerip"].(string))))
+			Expect("127.0.0.2").To(SatisfyAny(Equal(data["bk_host_innerip"].(string)), Equal(data1["bk_host_innerip"].(string))))
 		})
 
 		It("search fault host", func() {
@@ -829,7 +829,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(3))
 			Expect(len(rsp.Data.Info)).To(Equal(1))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.5"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.5"))
 		})
 
 		It("search idle host", func() {
@@ -860,7 +860,7 @@ var _ = Describe("host test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "1.0.0.6",
+						"bk_host_innerip": "127.0.0.6",
 						"bk_asset_id":     "host_sync_asset_1",
 						"bk_cloud_id":     0,
 					},
@@ -902,7 +902,7 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[1]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.6"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.6"))
 			hostId3 = int64(data["bk_host_id"].(float64))
 		})
 
@@ -990,9 +990,9 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_innerip"].(string)).To(Equal("1.0.0.4"))
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.4"))
 			data1 := rsp.Data.Info[1]["host"].(map[string]interface{})
-			Expect(data1["bk_host_innerip"].(string)).To(Equal("1.0.0.6"))
+			Expect(data1["bk_host_innerip"].(string)).To(Equal("127.0.0.6"))
 		})
 
 		It("move all module hosts to idle", func() {
@@ -1198,10 +1198,10 @@ var _ = Describe("list_hosts_topo test", func() {
 			"bk_biz_id": bizId,
 			"host_info": map[string]interface{}{
 				"4": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.1",
+					"bk_host_innerip": "127.0.0.1",
 				},
 				"5": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.2",
+					"bk_host_innerip": "127.0.0.2",
 				},
 			},
 		}
@@ -1264,10 +1264,10 @@ var _ = Describe("batch_update_host test", func() {
 		hostInput := map[string]interface{}{
 			"host_info": map[string]interface{}{
 				"4": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.1",
+					"bk_host_innerip": "127.0.0.1",
 				},
 				"5": map[string]interface{}{
-					"bk_host_innerip": "1.0.0.2",
+					"bk_host_innerip": "127.0.0.2",
 				},
 			},
 		}
@@ -1305,7 +1305,7 @@ var _ = Describe("batch_update_host test", func() {
 					common.BKHostIDField: hostId2,
 					"properties": map[string]interface{}{
 						"bk_bak_operator": "admin",
-						"bk_host_outerip": "1.2.3.4",
+						"bk_host_outerip": "127.2.3.4",
 					},
 				},
 			},
@@ -1325,6 +1325,6 @@ var _ = Describe("batch_update_host test", func() {
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_comment"].(string)).To(Equal("test"))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_isp_name"].(string)).To(Equal("1"))
 		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_bak_operator"].(string)).To(Equal("admin"))
-		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_outerip"].(string)).To(Equal("1.2.3.4"))
+		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_outerip"].(string)).To(Equal("127.2.3.4"))
 	})
 })

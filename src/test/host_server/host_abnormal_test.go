@@ -186,7 +186,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": noExistID,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -202,7 +202,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": "test",
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -218,7 +218,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     -1,
 						},
 					},
@@ -250,7 +250,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.e",
+							"bk_host_innerip": "127.0.1.e",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -311,7 +311,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     noExistID,
 						},
 					},
@@ -328,7 +328,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 						},
 					},
 				}
@@ -343,7 +343,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -359,7 +359,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -382,11 +382,11 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.13",
+							"bk_host_innerip": "127.0.1.13",
 							"bk_cloud_id":     0,
 						},
 						"5": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.14",
+							"bk_host_innerip": "127.0.1.14",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -420,7 +420,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": noExistID,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -437,7 +437,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": "test",
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -454,7 +454,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     -1,
 						},
 					},
@@ -488,7 +488,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.e",
+							"bk_host_innerip": "127.0.1.e",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -551,7 +551,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     noExistID,
 						},
 					},
@@ -568,7 +568,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 						},
 					},
 					"input_type": "excel",
@@ -584,7 +584,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -601,7 +601,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_host_innerip": "2.0.0.1",
+							"bk_host_innerip": "127.0.1.1",
 							"bk_cloud_id":     0,
 						},
 					},
@@ -670,7 +670,7 @@ var _ = Describe("host abnormal test", func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 				Ip: params.IPInfo{
-					Data:  []string{"1.0.0"},
+					Data:  []string{"127.0.0"},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
@@ -690,9 +690,9 @@ var _ = Describe("host abnormal test", func() {
 				AppID: int(bizId),
 				Ip: params.IPInfo{
 					Data: []string{
-						"2.0.0.1",
-						"2.0.0",
-						"2.0.0.2",
+						"127.0.1.1",
+						"127.0.1",
+						"127.0.1.2",
 					},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
@@ -1456,7 +1456,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.16",
+						"bk_host_innerip": "127.0.1.16",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1487,7 +1487,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.17",
+						"bk_host_innerip": "127.0.1.17",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1503,7 +1503,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.17",
+						"bk_host_innerip": "127.0.1.17",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1520,7 +1520,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0",
+						"bk_host_innerip": "127.0.1",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1539,7 +1539,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.18",
+						"bk_host_innerip": "127.0.1.18",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1558,7 +1558,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.19",
+						"bk_host_innerip": "127.0.1.19",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1577,7 +1577,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.20",
+						"bk_host_innerip": "127.0.1.20",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1597,11 +1597,11 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.21",
+						"bk_host_innerip": "127.0.1.21",
 						"bk_cloud_id":     0,
 					},
 					"1": map[string]interface{}{
-						"bk_host_innerip": "2.0.0",
+						"bk_host_innerip": "127.0.1",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1620,11 +1620,11 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.3",
+						"bk_host_innerip": "127.0.1.3",
 						"bk_cloud_id":     0,
 					},
 					"1": map[string]interface{}{
-						"bk_host_innerip": "2.0.0",
+						"bk_host_innerip": "127.0.1",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1643,7 +1643,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.5",
+						"bk_host_innerip": "127.0.1.5",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1687,11 +1687,11 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.8",
+						"bk_host_innerip": "127.0.1.8",
 						"bk_cloud_id":     0,
 					},
 					"1": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.9",
+						"bk_host_innerip": "127.0.1.9",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1733,7 +1733,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
-						"bk_host_innerip": "2.0.0.7",
+						"bk_host_innerip": "127.0.1.7",
 						"bk_cloud_id":     0,
 					},
 				},
@@ -1751,8 +1751,8 @@ var _ = Describe("host abnormal test", func() {
 
 		It("clone host less biz", func() {
 			input := &metadata.CloneHostPropertyParams{
-				OrgIP:   "2.0.0.1",
-				DstIP:   "2.0.0.2",
+				OrgIP:   "127.0.1.1",
+				DstIP:   "127.0.1.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1764,7 +1764,7 @@ var _ = Describe("host abnormal test", func() {
 		It("clone host less srcip", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
-				DstIP:   "2.0.0.2",
+				DstIP:   "127.0.1.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1776,7 +1776,7 @@ var _ = Describe("host abnormal test", func() {
 		It("clone host less dstip", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
-				OrgIP:   "2.0.0.1",
+				OrgIP:   "127.0.1.1",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1788,8 +1788,8 @@ var _ = Describe("host abnormal test", func() {
 		It("clone host invalid biz", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   noExistID,
-				OrgIP:   "2.0.0.1",
-				DstIP:   "2.0.0.2",
+				OrgIP:   "127.0.1.1",
+				DstIP:   "127.0.1.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1801,8 +1801,8 @@ var _ = Describe("host abnormal test", func() {
 		It("clone host invalid srcip", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
-				OrgIP:   "2.0.0",
-				DstIP:   "2.0.0.2",
+				OrgIP:   "127.0.1",
+				DstIP:   "127.0.1.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1814,8 +1814,8 @@ var _ = Describe("host abnormal test", func() {
 		It("clone host invalid dstip", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
-				OrgIP:   "2.0.0.1",
-				DstIP:   "2.0.0",
+				OrgIP:   "127.0.1.1",
+				DstIP:   "127.0.1",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1827,8 +1827,8 @@ var _ = Describe("host abnormal test", func() {
 		It("clone host exist dstip", func() {
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
-				OrgIP:   "2.0.0.1",
-				DstIP:   "2.0.0.2",
+				OrgIP:   "127.0.1.1",
+				DstIP:   "127.0.1.2",
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
@@ -1991,11 +1991,11 @@ func prepareData() {
 		"bk_biz_id": bizId,
 		"host_info": map[string]interface{}{
 			"4": map[string]interface{}{
-				"bk_host_innerip": "2.0.0.1",
+				"bk_host_innerip": "127.0.1.1",
 				"bk_cloud_id":     0,
 			},
 			"5": map[string]interface{}{
-				"bk_host_innerip": "2.0.0.2",
+				"bk_host_innerip": "127.0.1.2",
 				"bk_cloud_id":     0,
 			},
 		},
@@ -2024,11 +2024,11 @@ func prepareData() {
 		"bk_biz_id": bizId1,
 		"host_info": map[string]interface{}{
 			"4": map[string]interface{}{
-				"bk_host_innerip": "2.0.0.3",
+				"bk_host_innerip": "127.0.1.3",
 				"bk_cloud_id":     0,
 			},
 			"5": map[string]interface{}{
-				"bk_host_innerip": "2.0.0.4",
+				"bk_host_innerip": "127.0.1.4",
 				"bk_cloud_id":     0,
 			},
 		},
@@ -2056,7 +2056,7 @@ func prepareData() {
 	input4 := map[string]interface{}{
 		"host_info": map[string]interface{}{
 			"4": map[string]interface{}{
-				"bk_host_innerip": "2.0.0.5",
+				"bk_host_innerip": "127.0.1.5",
 				"bk_cloud_id":     0,
 			},
 		},
