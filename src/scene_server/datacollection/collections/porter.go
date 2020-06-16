@@ -36,7 +36,7 @@ const (
 	defaultMessageChanSize = 100000
 
 	// defaultFusingCheckInterval is default internal for fusing.
-	defaultFusingCheckInterval = 3 * time.Second
+	defaultFusingCheckInterval = 10 * time.Second
 
 	// defaultFusingThresholdPercent is default fusing threshold percent.
 	defaultFusingThresholdPercent = 90
@@ -48,7 +48,7 @@ const (
 	defaultReSubscribeWaitDuration = time.Second
 
 	// defaultDebugInterval is default internal for debuging.
-	defaultDebugInterval = 30 * time.Second
+	defaultDebugInterval = 10 * time.Second
 )
 
 // SimplePorter is simple porter handles message from collectors.
@@ -100,6 +100,8 @@ type SimplePorter struct {
 
 	// registry is prometheus register.
 	registry prometheus.Registerer
+
+	needDebug bool
 }
 
 // NewSimplePorter creates a new SimplePorter object.
@@ -107,14 +109,15 @@ func NewSimplePorter(name string, engine *backbone.Engine, hash *Hash, analyzer 
 	redisCli *redis.Client, topics []string, registry prometheus.Registerer) *SimplePorter {
 
 	return &SimplePorter{
-		name:     name,
-		engine:   engine,
-		hash:     hash,
-		analyzer: analyzer,
-		msgChan:  make(chan string, defaultMessageChanSize),
-		redisCli: redisCli,
-		topics:   topics,
-		registry: registry,
+		name:      name,
+		engine:    engine,
+		hash:      hash,
+		analyzer:  analyzer,
+		msgChan:   make(chan string, defaultMessageChanSize),
+		redisCli:  redisCli,
+		topics:    topics,
+		registry:  registry,
+		needDebug: false,
 	}
 }
 
@@ -399,6 +402,10 @@ func (p *SimplePorter) Run() error {
 
 // debug stats and prints internal debug infos in duration.
 func (p *SimplePorter) debug() {
+	if !p.needDebug {
+		return
+	}
+
 	ticker := time.NewTicker(defaultDebugInterval)
 	defer ticker.Stop()
 
