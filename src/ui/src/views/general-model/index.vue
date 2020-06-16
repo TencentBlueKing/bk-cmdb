@@ -136,9 +136,9 @@
         <bk-sideslider
             v-transfer-dom
             :is-show.sync="slider.show"
-            :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
+            <div slot="header" class="sideslider-title" :title="slider.title">{{slider.title}}</div>
             <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.contentShow">
                 <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
@@ -822,5 +822,9 @@
     }
     .models-table{
         margin-top: 14px;
+    }
+    .sideslider-title {
+        width: 700px;
+        @include ellipsis;
     }
 </style>
