@@ -317,6 +317,9 @@ const (
 	updateHostCloudAreaFieldPattern     = "/api/v3/updatemany/hosts/cloudarea_field"
 	updateImportHostsPattern            = "/api/v3/hosts/update"
 	getHostModuleRelationPattern        = "/api/v3/hosts/modules/read"
+	lockHostPattern                     = "/api/v3/host/lock"
+	unLockHostPattern                   = "/api/v3/host/lock"
+	queryHostLockPattern                = "/api/v3/host/lock/search"
 
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -386,7 +389,42 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	// TODO: add host lock authorize filter if needed.
+	// host lock authorize filter
+	if ps.hitPattern(lockHostPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(unLockHostPattern, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(queryHostLockPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
 
 	// delete hosts batch operation.
 	if ps.hitPattern(deleteHostBatchPattern, http.MethodDelete) {

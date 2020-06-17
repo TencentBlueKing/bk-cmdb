@@ -19,24 +19,21 @@ import (
 )
 
 type HostLockRequest struct {
-	IPS     []string `json:"ip_list"`
-	CloudID int64    `json:"bk_cloud_id"`
+	IDS []int64 `json:"id_list"`
 }
 
 type QueryHostLockRequest struct {
-	IPS     []string `json:"ip_list"`
-	CloudID int64    `json:"bk_cloud_id"`
+	IDS []int64 `json:"id_list"`
 }
 
 type HostLockResultResponse struct {
 	BaseResp `json:",inline"`
-	Data     map[string]bool `json:"data"`
+	Data     map[int64]bool `json:"data"`
 }
 
 type HostLockData struct {
 	User       string    `json:"bk_user" bson:"bk_user"`
-	IP         string    `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	CloudID    int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	ID         int64     `json:"bk_host_id" bson:"bk_host_id"`
 	CreateTime time.Time `json:"create_time" bson:"create_time"`
 	OwnerID    string    `json:"-" bson:"bk_supplier_account"`
 }

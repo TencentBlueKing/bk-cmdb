@@ -105,6 +105,12 @@ export const addBeforeHooks = function (hook) {
     beforeHooks.add(hook)
 }
 
+function cancelRequest (app) {
+    const pendingRequest = app.$http.queue.get()
+    const cancelId = pendingRequest.filter(request => request.cancelWhenRouteChange).map(request => request.requestId)
+    app.$http.cancelRequest(cancelId)
+}
+
 const checkViewAuthorize = async to => {
     // owener判断已经发现无业务时
     if (to.meta.view === 'permission') {
@@ -137,18 +143,13 @@ const setAdminView = to => {
     router.app.$store.commit('setAdminView', isAdminView)
 }
 
-const clearPageAPICache = () => {
-    const pageCache = Object.values(router.app.$http.cache.pageCache)
-    router.app.$http.cache.delete(pageCache)
-}
-
 const setupStatus = {
     preload: true,
     afterload: true
 }
 
 router.beforeEach((to, from, next) => {
-    clearPageAPICache()
+    cancelRequest(router.app)
     router.app.$store.commit('setTitle', '')
     if (to.meta.view !== 'permission') {
         Vue.set(to.meta, 'view', 'default')

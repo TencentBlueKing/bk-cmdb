@@ -27,6 +27,15 @@ const actions = {
     },
     previewDeleteServiceInstances (context, { params, config }) {
         return $http.post('deletemany/proc/service_instance/preview', params, config)
+    },
+    getMoudleProcessList (context, { params, config }) {
+        return $http.post(`findmany/proc/process_instance/name_ids`, params, config)
+    },
+    getProcessListById (context, { params, config }) {
+        return $http.post('findmany/proc/process_instance/detail/by_ids', params, config)
+    },
+    batchUpdateProcess (context, { params, config }) {
+        return $http.put('update/proc/process_instance/by_ids', params, config)
     }
 }
 
