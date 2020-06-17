@@ -23,8 +23,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
-
-	"github.com/tidwall/gjson"
 )
 
 // NetCollect collect the net information
@@ -45,13 +43,10 @@ func NewNetCollect(ctx context.Context, db dal.RDB, authManager *extensions.Auth
 }
 
 // Hash returns hash value base on message.
-func (h *NetCollect) Hash(msg string) (string, error) {
-	cloudid := gjson.Get(msg, "cloudid").String()
+func (h *NetCollect) Hash(cloudid, ip string) (string, error) {
 	if len(cloudid) == 0 {
 		return "", fmt.Errorf("can't make hash from invalid message format, cloudid empty")
 	}
-
-	ip := gjson.Get(msg, "ip").String()
 	if len(ip) == 0 {
 		return "", fmt.Errorf("can't make hash from invalid message format, ip empty")
 	}
@@ -67,19 +62,23 @@ func (h *NetCollect) Mock() string {
 }
 
 // Analyze implements the Analyzer interface
-func (h *NetCollect) Analyze(raw string) error {
-	blog.V(4).Infof("[data-collection][netcollect] received message: %s", raw)
-	msg := ReportMessage{}
-	err := json.Unmarshal([]byte(raw), &msg)
-	if err != nil {
-		return fmt.Errorf("unmarshal message error: %v, raw: %s", err, raw)
+func (h *NetCollect) Analyze(msg *string) error {
+	if msg == nil {
+		return fmt.Errorf("message nil")
 	}
 
-	for _, report := range msg.Data {
-		if err = h.handleReport(&report); err != nil {
-			blog.Errorf("[data-collection][netcollect] handleData failed: %v,raw: %s", err, raw)
+	data := ReportMessage{}
+
+	if err := json.Unmarshal([]byte(*msg), &data); err != nil {
+		return fmt.Errorf("unmarshal message error: %+v", err)
+	}
+
+	for _, report := range data.Data {
+		if err := h.handleReport(&report); err != nil {
+			blog.Errorf("[data-collection][netcollect] handleData failed: %+v", err)
 		}
 	}
+
 	return nil
 }
 

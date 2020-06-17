@@ -21,7 +21,6 @@ import (
 	bkc "configcenter/src/common"
 	"configcenter/src/common/backbone"
 
-	"github.com/tidwall/gjson"
 	"gopkg.in/redis.v5"
 )
 
@@ -52,13 +51,10 @@ func NewDiscover(ctx context.Context, redisCli *redis.Client, backbone *backbone
 }
 
 // Hash returns hash value base on message.
-func (d *Discover) Hash(msg string) (string, error) {
-	cloudid := gjson.Get(msg, "cloudid").String()
+func (d *Discover) Hash(cloudid, ip string) (string, error) {
 	if len(cloudid) == 0 {
 		return "", fmt.Errorf("can't make hash from invalid message format, cloudid empty")
 	}
-
-	ip := gjson.Get(msg, "ip").String()
 	if len(ip) == 0 {
 		return "", fmt.Errorf("can't make hash from invalid message format, ip empty")
 	}
@@ -73,7 +69,7 @@ func (d *Discover) Mock() string {
 	return MockMessage
 }
 
-func (d *Discover) Analyze(msg string) error {
+func (d *Discover) Analyze(msg *string) error {
 	err := d.UpdateOrCreateInst(msg)
 	if err != nil {
 		return fmt.Errorf("create inst err: %v, raw: %s", err, msg)

@@ -64,13 +64,10 @@ var compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk",
 	common.HostFieldDockerClientVersion, common.HostFieldDockerServerVersion}
 
 // Hash returns hash value base on message.
-func (h *HostSnap) Hash(msg string) (string, error) {
-	cloudid := gjson.Get(msg, "cloudid").String()
+func (h *HostSnap) Hash(cloudid, ip string) (string, error) {
 	if len(cloudid) == 0 {
 		return "", fmt.Errorf("can't make hash from invalid message format, cloudid empty")
 	}
-
-	ip := gjson.Get(msg, "ip").String()
 	if len(ip) == 0 {
 		return "", fmt.Errorf("can't make hash from invalid message format, ip empty")
 	}
@@ -85,14 +82,20 @@ func (h *HostSnap) Mock() string {
 	return MockMessage
 }
 
-func (h *HostSnap) Analyze(mesg string) error {
-	var data = mesg
-	if !gjson.Get(mesg, "cloudid").Exists() {
-		data = gjson.Get(mesg, "data").String()
+func (h *HostSnap) Analyze(msg *string) error {
+	if msg == nil {
+		return fmt.Errorf("message nil")
+	}
+
+	var data string
+
+	if !gjson.Get(*msg, "cloudid").Exists() {
+		data = gjson.Get(*msg, "data").String()
+	} else {
+		data = *msg
 	}
 
 	header, rid := newHeaderWithRid()
-	blog.V(5).Infof("analyze snapshot %s, rid: %s", data, rid)
 
 	val := gjson.Parse(data)
 	cloudID := val.Get("cloudid").Int()
@@ -235,7 +238,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 	}
 
 	blog.V(5).Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %s, rid: %s",
-		hostID, innerIP, gjson.Get(mesg, "cloudid").String(), rid)
+		hostID, innerIP, cloudID, rid)
 
 	return nil
 }

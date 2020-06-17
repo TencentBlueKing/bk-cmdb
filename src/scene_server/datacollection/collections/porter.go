@@ -22,6 +22,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
+	"github.com/tidwall/gjson"
 	"gopkg.in/redis.v5"
 )
 
@@ -32,23 +33,26 @@ const (
 	// defaultMessageChanTimeout is default timeout of analyzer message channel.
 	defaultMessageChanTimeout = time.Second
 
-	// defaultMessageChanSize is default size of analyzer message channel, 14kB * 100000 = 1400MB.
-	defaultMessageChanSize = 100000
+	// defaultMessageChanSize is default size of analyzer message channel, 1MB * 5000.
+	defaultMessageChanSize = 5000
 
 	// defaultFusingCheckInterval is default internal for fusing.
-	defaultFusingCheckInterval = 10 * time.Second
+	defaultFusingCheckInterval = 30 * time.Second
 
 	// defaultFusingThresholdPercent is default fusing threshold percent.
 	defaultFusingThresholdPercent = 90
 
 	// defaultFusingPercent is default fusing percent.
-	defaultFusingPercent = 90
+	defaultFusingPercent = 50
 
 	// defaultReSubscribeWaitDuration is default wait duration before re-subscribe.
 	defaultReSubscribeWaitDuration = time.Second
 
 	// defaultDebugInterval is default internal for debuging.
 	defaultDebugInterval = 10 * time.Second
+
+	// needInternalDebug is flag for internal debug.
+	needInternalDebug = false
 )
 
 // SimplePorter is simple porter handles message from collectors.
@@ -67,7 +71,7 @@ type SimplePorter struct {
 	analyzer Analyzer
 
 	// msgChan is message channel that analyzer consumes from.
-	msgChan chan string
+	msgChan chan *string
 
 	// message channel redis, read collector data
 	// from it by subscribe target topics.
@@ -113,11 +117,11 @@ func NewSimplePorter(name string, engine *backbone.Engine, hash *Hash, analyzer 
 		engine:    engine,
 		hash:      hash,
 		analyzer:  analyzer,
-		msgChan:   make(chan string, defaultMessageChanSize),
+		msgChan:   make(chan *string, defaultMessageChanSize),
 		redisCli:  redisCli,
 		topics:    topics,
 		registry:  registry,
-		needDebug: false,
+		needDebug: needInternalDebug,
 	}
 }
 
@@ -203,14 +207,19 @@ func (p *SimplePorter) Name() string {
 
 // Mock handles a mock message.
 func (p *SimplePorter) Mock() error {
-	if err := p.AddMessage(p.analyzer.Mock()); err != nil {
+	mock := p.analyzer.Mock()
+	if err := p.AddMessage(&mock); err != nil {
 		return fmt.Errorf("mock failed, %+v", err)
 	}
 	return nil
 }
 
 // Mock handles a mock message.
-func (p *SimplePorter) AddMessage(message string) error {
+func (p *SimplePorter) AddMessage(message *string) error {
+	if message == nil {
+		return fmt.Errorf("message nil")
+	}
+
 	select {
 	case p.msgChan <- message:
 
@@ -230,7 +239,7 @@ func (p *SimplePorter) analyzeLoop() {
 
 		// analyze message from collectors.
 		if err := p.analyzer.Analyze(msg); err != nil {
-			blog.Errorf("SimplePorter[%s]| analyze message failed, %+v, raw: %s", p.name, err, msg)
+			blog.Errorf("SimplePorter[%s]| analyze message failed, %+v", p.name, err)
 
 			// metrics stats for analyze failed.
 			p.analyzeTotal.WithLabelValues("failed").Inc()
@@ -283,16 +292,16 @@ func (p *SimplePorter) collectLoop() error {
 			}
 
 			// message data sharding hashring check.
-			hash, err := p.analyzer.Hash(newMsg.Payload)
+			hashKey, err := p.analyzer.Hash(gjson.Get(newMsg.Payload, "cloudid").String(), gjson.Get(newMsg.Payload, "ip").String())
 			if err != nil {
-				blog.Errorf("SimplePorter[%s]| calculates message hash failed, %+v", p.name, err)
+				blog.Errorf("SimplePorter[%s]| calculates message hash key failed, %+v", p.name, err)
 
 				// metrics stats for invalid message.
 				p.receiveInvalidTotal.Inc()
 				continue
 			}
 
-			if !p.hash.IsMatch(hash) {
+			if !p.hash.IsMatch(hashKey) {
 				// ignore message.
 				continue
 			}
@@ -300,7 +309,7 @@ func (p *SimplePorter) collectLoop() error {
 			// metrics stats for suitable sharding message.
 			p.receiveShardingTotal.Inc()
 
-			if err := p.AddMessage(newMsg.Payload); err != nil {
+			if err := p.AddMessage(&newMsg.Payload); err != nil {
 				blog.Errorf("SimplePorter[%s]| add message to analyze, %+v", p.name, err)
 
 				// metrics stats for message sending timeout.

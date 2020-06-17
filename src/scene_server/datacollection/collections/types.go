@@ -15,10 +15,10 @@ package collections
 // Analyzer is common collection analyzer interface.
 type Analyzer interface {
 	// Analyze analyzes message from collectors.
-	Analyze(message string) error
+	Analyze(message *string) error
 
 	// Hash returns a hash value of the input message string.
-	Hash(string) (string, error)
+	Hash(cloudid, ip string) (string, error)
 
 	// Mock returns mock message that could be analyzed by the Analyzer.
 	Mock() string
