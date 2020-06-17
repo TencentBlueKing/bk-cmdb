@@ -269,6 +269,14 @@ func (s *coreService) AddUserCustom(ctx *rest.Contexts) {
 	}
 	data["id"] = ID.String()
 	data["bk_user"] = ctx.Kit.User
+	if strings.Contains(ctx.Kit.User, ".") {
+		transformedData := make(map[string]interface{}, len(data))
+		for key, value := range data {
+			transformedData[strings.Replace(key, ".", "\u002e", -1)] = value
+		}
+		data = transformedData
+	}
+
 	data = util.SetModOwner(data, ctx.Kit.SupplierAccount)
 	err := s.db.Table(common.BKTableNameUserCustom).Insert(ctx.Kit.Ctx, data)
 	if nil != err {
@@ -288,6 +296,13 @@ func (s *coreService) UpdateUserCustomByID(ctx *rest.Contexts) {
 	conditons := make(map[string]interface{})
 	conditons["id"] = ctx.Request.PathParameter("id")
 	conditons["bk_user"] = ctx.Request.PathParameter("bk_user")
+	if strings.Contains(ctx.Request.PathParameter("bk_user"), ".") {
+		transformedData := make(map[string]interface{}, len(data))
+		for key, value := range data {
+			transformedData[strings.Replace(key, ".", "\u002e", -1)] = value
+		}
+		data = transformedData
+	}
 	conditons = util.SetModOwner(conditons, ctx.Kit.SupplierAccount)
 	err := s.db.Table(common.BKTableNameUserCustom).Update(ctx.Kit.Ctx, conditons, data)
 	if nil != err {
@@ -311,10 +326,18 @@ func (s *coreService) GetUserCustomByUser(ctx *rest.Contexts) {
 		return
 	}
 
+	if strings.Contains(ctx.Request.PathParameter("bk_user"), ".") {
+		transformedData := make(map[string]interface{}, len(result))
+		for key, value := range result {
+			transformedData[strings.Replace(key, "\u002e", ".", -1)] = value
+		}
+		result = transformedData
+	}
+
 	ctx.RespEntity(result)
 }
 
-// GetDefaultUserCustom  find user custom set table heaher for any object
+// GetDefaultUserCustom  find user custom set table header for any object
 func (s *coreService) GetDefaultUserCustom(ctx *rest.Contexts) {
 	conds := make(map[string]interface{})
 	conds[common.BKDefaultField] = 1
@@ -331,11 +354,11 @@ func (s *coreService) GetDefaultUserCustom(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// UpdatDefaultUserCustom update user custom set table header for any object
-func (s *coreService) UpdatDefaultUserCustom(ctx *rest.Contexts) {
-	conditons := make(map[string]interface{})
-	conditons[common.BKDefaultField] = 1
-	conditons = util.SetModOwner(conditons, ctx.Kit.SupplierAccount)
+// UpdateDefaultUserCustom update user custom set table header for any object
+func (s *coreService) UpdateDefaultUserCustom(ctx *rest.Contexts) {
+	conditions := make(map[string]interface{})
+	conditions[common.BKDefaultField] = 1
+	conditions = util.SetModOwner(conditions, ctx.Kit.SupplierAccount)
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)
@@ -343,7 +366,7 @@ func (s *coreService) UpdatDefaultUserCustom(ctx *rest.Contexts) {
 	}
 	data[common.ModifierField] = ctx.Kit.User
 	data[common.LastTimeField] = util.GetCurrentTimePtr()
-	err := s.db.Table(common.BKTableNameUserCustom).Upsert(ctx.Kit.Ctx, conditons, data)
+	err := s.db.Table(common.BKTableNameUserCustom).Upsert(ctx.Kit.Ctx, conditions, data)
 	if nil != err {
 		blog.Errorf("update  default custom failed, err: %v, data:%v, rid: %s", err, data, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))

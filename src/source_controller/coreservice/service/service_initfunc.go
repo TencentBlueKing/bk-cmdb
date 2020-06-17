@@ -198,7 +198,7 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/{bk_user}/{id}", Handler: s.UpdateUserCustomByID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/usercustom/user/search/{bk_user}", Handler: s.GetUserCustomByUser})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/usercustom/default", Handler: s.GetDefaultUserCustom})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/default", Handler: s.UpdatDefaultUserCustom})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/default", Handler: s.UpdateDefaultUserCustom})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/hosts/favorites/{user}", Handler: s.AddHostFavourite})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/hosts/favorites/{user}/{id}", Handler: s.UpdateHostFavouriteByID})
