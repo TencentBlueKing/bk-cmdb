@@ -1,6 +1,11 @@
 <template>
     <div class="cloud-area-layout">
-        <cmdb-tips class="cloud-area-tips">提示语</cmdb-tips>
+        <cmdb-tips class="cloud-area-tips" tips-key="cloud-area-tips">
+            <i18n path="云区域提示语">
+                <bk-button text size="small" place="resource" style="padding: 0" @click="linkResource">{{$t('云资源发现')}}</bk-button>
+                <bk-button text size="small" place="agent" style="padding: 0" @click="linkAgent">{{$t('节点管理')}}</bk-button>
+            </i18n>
+        </cmdb-tips>
         <bk-table class="cloud-area-table"
             v-bkloading="{ isLoading: $loading(request.search) }"
             :data="list"
@@ -21,7 +26,7 @@
                 </div>
             </bk-table-column>
             <bk-table-column :label="$t('所属云厂商')" prop="bk_cloud_vendor" sortable="custom">
-                <template slot-scope="{ row }">{{row.bk_cloud_vendor | formatter('singlechar')}}</template>
+                <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
             </bk-table-column>
             <bk-table-column :label="$t('区域')" prop="bk_region">
                 <template slot-scope="{ row }">{{row.bk_region | formatter('singlechar')}}</template>
@@ -52,7 +57,12 @@
 </template>
 
 <script>
+    import CmdbVendor from '@/components/ui/other/vendor'
+    import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
     export default {
+        components: {
+            CmdbVendor
+        },
         data () {
             return {
                 list: [{}, {}],
@@ -136,6 +146,29 @@
                     return `${id}(${name})`
                 }
                 return id
+            },
+            linkResource () {
+                this.$routerActions.redirect({
+                    name: MENU_RESOURCE_CLOUD_RESOURCE,
+                    history: true
+                })
+            },
+            linkAgent () {
+                const agent = window.Site.agent
+                if (agent) {
+                    const topWindow = window.top
+                    const isPaasConsole = topWindow !== window
+                    if (isPaasConsole) {
+                        topWindow.postMessage(JSON.stringify({
+                            action: 'open_other_app',
+                            app_code: 'bk_nodeman'
+                        }), '*')
+                    } else {
+                        window.open(agent)
+                    }
+                } else {
+                    this.$warn(this.$t('未配置Agent安装APP地址'))
+                }
             }
         }
     }

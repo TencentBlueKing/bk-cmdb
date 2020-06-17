@@ -17,7 +17,9 @@
                 sortable="custom"
                 show-overflow-tooltip>
             </bk-table-column>
-            <bk-table-column :label="$t('账号类型')" prop="bk_cloud_vendor" sortable="custom"></bk-table-column>
+            <bk-table-column :label="$t('账号类型')" prop="bk_cloud_vendor" sortable="custom">
+                <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
+            </bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="bk_last_editor" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{row.bk_last_editor | formatter('singlechar')}}</template>
             </bk-table-column>
@@ -45,9 +47,11 @@
 
 <script>
     import AccountSideslider from './children/account-sideslider.vue'
+    import CmdbVendor from '@/components/ui/other/vendor'
     export default {
         components: {
-            AccountSideslider
+            AccountSideslider,
+            CmdbVendor
         },
         data () {
             return {

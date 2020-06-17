@@ -1268,5 +1268,7 @@
     "全部模型": "All Models",
     "确认删除xx": "Confirm to delete {model} {instance}?",
     "云账户禁止删除提示": "Cloud account was bound with task, can not delete.",
-    "同步频率提示语": "Support real-time synchronization."
+    "同步频率提示语": "Support real-time synchronization.",
+    "云区域提示语": "Cloud area enter from {resource} 或者 create from {agent}",
+    "云资源发现提示语": "Create cloud host task to automatic discovery and synchronization new host or attribute changed host to resource pool"
 }

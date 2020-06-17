@@ -103,11 +103,12 @@ function runBeforeHooks () {
 
 export const addBeforeHooks = function (hook) {
     beforeHooks.add(hook)
-const beforeCallbacks = []
-const afterCallbacks = []
+}
 
-const flushCallbacks = callbacks => {
-    return Promise.all(callbacks.map(callback => callback()))
+function cancelRequest (app) {
+    const pendingRequest = app.$http.queue.get()
+    const cancelId = pendingRequest.filter(request => request.cancelWhenRouteChange).map(request => request.requestId)
+    app.$http.cancelRequest(cancelId)
 }
 
 const checkViewAuthorize = async to => {
@@ -142,19 +143,13 @@ const setAdminView = to => {
     router.app.$store.commit('setAdminView', isAdminView)
 }
 
-const clearPageAPICache = () => {
-    const pageCache = Object.values(router.app.$http.cache.pageCache)
-    router.app.$http.cache.delete(pageCache)
-}
-
 const setupStatus = {
     preload: true,
     afterload: true
 }
 
 router.beforeEach(async (to, from, next) => {
-    clearPageAPICache()
-    await flushCallbacks(beforeCallbacks)
+    cancelRequest(router.app)
     router.app.$store.commit('setTitle', '')
     if (to.meta.view !== 'permission') {
         Vue.set(to.meta, 'view', 'default')
@@ -203,7 +198,6 @@ router.beforeEach(async (to, from, next) => {
 
 router.afterEach(async (to, from) => {
     try {
-        await flushCallbacks(beforeCallbacks)
         if (setupStatus.afterload) {
             afterload(router.app, to, from)
         }
@@ -215,17 +209,3 @@ router.afterEach(async (to, from) => {
 })
 
 export default router
-
-export function before (callback) {
-    const exist = beforeCallbacks.includes(callback)
-    if (!exist) {
-        beforeCallbacks.push(callback)
-    }
-}
-
-export function after (callback) {
-    const exist = afterCallbacks.includes(callback)
-    if (!exist) {
-        afterCallbacks.push(callback)
-    }
-}

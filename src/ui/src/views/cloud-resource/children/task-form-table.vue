@@ -1,9 +1,19 @@
 <template>
     <bk-table class="form-table"
+        v-bkloading="{
+            isLoading: $loading(request.createArea),
+            title: this.$t('正在创建云区域')
+        }"
         :data="list">
         <bk-table-column :label="$t('云区域')" prop="bk_cloud_id" width="200" :resizable="false">
             <template slot-scope="{ row }">
-                <task-cloud-area-input :disabled="row.bk_cloud_id !== -1"></task-cloud-area-input>
+                <task-cloud-area-input
+                    v-model="row.bk_cloud_name"
+                    :key="row.bk_vpc_id"
+                    :id="row.bk_cloud_id"
+                    :error="row.bk_cloud_error"
+                    @input="handleAreaChange(row, ...arguments)">
+                </task-cloud-area-input>
             </template>
         </bk-table-column>
         <bk-table-column label="VPC" prop="vpc" :formatter="vpcFormatter" show-overflow-tooltip></bk-table-column>
@@ -18,8 +28,9 @@
         <bk-table-column :label="$t('主机录入到')" prop="directory" width="200" :render-header="directoryHeaderRender" :resizable="false">
             <template slot-scope="{ row }">
                 <task-directory-selector class="form-table-selector"
-                    v-model="directorySelection[row.bk_vpc_id]"
+                    v-model="row.bk_sync_dir"
                     v-validate="'required'"
+                    :key="row.bk_vpc_id"
                     :data-vv-name="`directory-selector-${row.bk_vpc_id}`"
                     :class="{ 'is-error': errors.has(`directory-selector-${row.bk_vpc_id}`) }">
                 </task-directory-selector>
@@ -33,6 +44,8 @@
     import TaskDirectorySelector from './task-directory-selector.vue'
     import TaskRegionSelector from './task-region-selector.vue'
     import TaskCloudAreaInput from './task-cloud-area-input.vue'
+    import Bus from '@/utils/bus'
+    import symbols from '../common/symbol'
     export default {
         name: 'task-form-table',
         components: {
@@ -47,28 +60,34 @@
         data () {
             return {
                 list: [],
-                directorySelection: {},
                 selection: [],
-                directorys: []
+                directorys: [],
+                request: {
+                    createArea: symbols.get('createArea')
+                }
             }
         },
         watch: {
             selected: {
                 immediate: true,
                 handler () {
-                    this.updateData()
+                    this.updateList()
                 }
             }
         },
         methods: {
-            updateData () {
-                this.list = [...this.selected]
-                const newSelection = {}
-                this.list.forEach(vpc => {
-                    const id = vpc.bk_vpc_id
-                    newSelection[id] = this.directorySelection[id] || vpc.bk_sync_dir || 1
+            updateList () {
+                const oldList = this.list
+                this.list = this.selected.map(vpc => {
+                    const newRow = { ...vpc }
+                    const oldRow = oldList.find(row => row.bk_vpc_id === vpc.bk_vpc_id)
+                    newRow.bk_sync_dir = oldRow ? oldRow.bk_sync_dir : vpc.bk_sync_dir
+                    newRow.bk_cloud_id = oldRow ? oldRow.bk_cloud_id : vpc.bk_cloud_id
+                    // bk_cloud_name、bk_cloud_error用于创建新的云区域
+                    newRow.bk_cloud_name = oldRow ? oldRow.bk_cloud_name : ''
+                    newRow.bk_cloud_error = oldRow ? oldRow.bk_cloud_error : false
+                    return newRow
                 })
-                this.directorySelection = newSelection
             },
             vpcFormatter (row, column) {
                 const vpcId = row.bk_vpc_id
@@ -79,8 +98,8 @@
                 return vpcId
             },
             handleMultipleSelected (value) {
-                Object.keys(this.directorySelection).forEach(id => {
-                    this.directorySelection[id] = value
+                this.list.forEach(row => {
+                    row.bk_sync_dir = value
                 })
             },
             directoryHeaderRender (h, data) {
@@ -94,15 +113,66 @@
                     })
                 ])
             },
-            getSyncVPC () {
-                return this.list.map(vpc => {
-                    return {
-                        bk_vpc_id: vpc.bk_vpc_id,
-                        bk_vpc_name: vpc.bk_vpc_name,
-                        bk_sync_dir: this.directorySelection[vpc.bk_vpc_id],
-                        bk_region: vpc.bk_region
+            handleAreaChange (row, cloudName) {
+                row.bk_cloud_name = cloudName
+                row.bk_cloud_error = false
+            },
+            // task-form保存时调用，创建新的云区域
+            async createCloudArea (accountInfo) {
+                try {
+                    const newAreaList = this.list.filter(row => row.bk_cloud_id === -1)
+                    if (!newAreaList.length) {
+                        return Promise.resolve(true)
+                    }
+                    const valid = this.validate(newAreaList)
+                    if (!valid) {
+                        return Promise.resolve(false)
+                    }
+                    
+                    const results = await this.$store.dispatch('cloud/area/batchCreate', {
+                        params: {
+                            data: newAreaList.map(row => {
+                                return {
+                                    bk_cloud_name: row.bk_cloud_name,
+                                    bk_vpc_id: row.bk_vpc_id,
+                                    bk_vpc_name: row.bk_vpc_name,
+                                    bk_region: row.bk_region,
+                                    bk_cloud_vendor: accountInfo.bk_cloud_vendor,
+                                    bk_account_id: accountInfo.bk_account_id
+                                }
+                            })
+                        },
+                        config: {
+                            requestId: this.request.createArea
+                        }
+                    })
+                    
+                    let hasError = false
+                    results.forEach((result, index) => {
+                        if (result.bk_cloud_id === -1) {
+                            newAreaList[index].bk_cloud_error = result.err_msg
+                            hasError = true
+                        } else {
+                            newAreaList[index].bk_cloud_id = result.bk_cloud_id
+                            newAreaList[index].bk_cloud_error = false
+                        }
+                    })
+                    Bus.$emit('refresh-cloud-area')
+                    return Promise.resolve(!hasError)
+                } catch (error) {
+                    console.error(error)
+                    return Promise.resolve(false)
+                }
+            },
+            validate (list) {
+                let valid = true
+                list.forEach(row => {
+                    if (!row.bk_cloud_name) {
+                        row.bk_cloud_error = this.$t('请填写云区域')
+                        valid = false
                     }
                 })
+                return valid
             }
         }
     }

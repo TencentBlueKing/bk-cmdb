@@ -4,7 +4,7 @@
         :readonly="readonly"
         :disabled="disabled"
         :placeholder="$t('请选择xx', { name: $t('账户名称') })"
-        :loading="$loading(requestId)"
+        :loading="$loading(Object.values(request))"
         v-model="selected">
         <bk-option v-for="account in accounts"
             :key="account.bk_account_id"
@@ -12,10 +12,13 @@
             :id="account.bk_account_id">
         </bk-option>
     </bk-select>
-    <span v-else>{{getAccountInfo()}}</span>
+    <span v-else>{{selectedAccount ? selectedAccount.bk_account_name : '--'}}</span>
 </template>
 
 <script>
+    import symbols from '../common/symbol'
+    import { CLOUD_AREA_PROPERTIES } from '@/dictionary/request-symbol'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'task-account-selector',
         props: {
@@ -32,10 +35,15 @@
         data () {
             return {
                 accounts: [],
-                requestId: 'taskAccountSelectorRequest'
+                vendors: [],
+                request: {
+                    account: symbols.get('account'),
+                    properties: Symbol('properties')
+                }
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount']),
             selected: {
                 get () {
                     return this.value
@@ -44,31 +52,60 @@
                     this.$emit('input', value)
                     this.$emit('change', value, oldValue)
                 }
+            },
+            selectedAccount () {
+                return this.accounts.find(account => account.bk_account_id === this.selected)
+            },
+            accountVendor () {
+                if (!this.selectedAccount) {
+                    return null
+                }
+                // return this.vendors.find(vendor => vendor.name === this.selectedAccount.bk_cloud_vendor)
+                const vendors = [{
+                    id: '1',
+                    name: 'aws'
+                }, {
+                    id: '2',
+                    name: 'tencent_cloud'
+                }]
+                return vendors.find(vendor => vendor.name === this.selectedAccount.bk_cloud_vendor)
             }
         },
-        created () {
-            this.getAccounts()
+        async created () {
+            try {
+                const [{ info: accounts }, properties] = await Promise.all([
+                    this.getAccounts(),
+                    this.getCloudAreaProperties()
+                ])
+                this.accounts = accounts
+                const venderProperty = properties.find(property => property.bk_property_id === 'bk_cloud_vendor')
+                this.vendors = venderProperty ? venderProperty.option : []
+            } catch (error) {
+                this.accounts = []
+                this.vendors = []
+            }
         },
         methods: {
-            async getAccounts () {
-                try {
-                    const { info: accounts } = await this.$store.dispatch('cloud/account/findMany', {
-                        params: {},
-                        config: {
-                            requestId: this.requestId,
-                            fromCache: true,
-                            cacheExpire: 'page'
-                        }
-                    })
-                    this.accounts = accounts
-                } catch (e) {
-                    console.error(e)
-                    this.accounts = []
-                }
+            getAccounts () {
+                return this.$store.dispatch('cloud/account/findMany', {
+                    params: {},
+                    config: {
+                        requestId: this.request.account,
+                        fromCache: true
+                    }
+                })
             },
-            getAccountInfo () {
-                const account = this.accounts.find(account => account.bk_account_id === this.value)
-                return account ? account.bk_account_name : '--'
+            getCloudAreaProperties () {
+                return this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
+                    params: {
+                        bk_obj_id: 'plat',
+                        bk_supplier_account: this.supplierAccount
+                    },
+                    config: {
+                        requestId: CLOUD_AREA_PROPERTIES,
+                        fromCache: true
+                    }
+                })
             }
         }
     }

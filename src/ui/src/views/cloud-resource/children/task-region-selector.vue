@@ -17,6 +17,7 @@
 </template>
 
 <script>
+    import symbols from '../common/symbol'
     export default {
         name: 'task-region-selector',
         props: {
@@ -34,7 +35,7 @@
         data () {
             return {
                 regions: [],
-                request: `taskRegionSelection-${this.account}`
+                request: symbols.get(`taskRegionSelection-${this.account}`)
             }
         },
         computed: {
@@ -61,8 +62,7 @@
                         },
                         config: {
                             requestId: this.request,
-                            fromCache: true,
-                            cacheExpire: 'page'
+                            fromCache: true
                         }
                     })
                     this.regions = regions

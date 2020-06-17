@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@blueking/paas-login": "0.0.6",
-    "@icon-cool/bk-icon-cmdb": "0.0.15",
+    "@icon-cool/bk-icon-cmdb": "0.0.16",
+    "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
     "axios": "0.18.0",
     "bk-magic-vue": "2.1.17-beta.3",
     "cytoscape": "3.10.0",

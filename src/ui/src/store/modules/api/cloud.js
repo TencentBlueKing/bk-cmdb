@@ -7,6 +7,9 @@ const cloudArea = {
         },
         delete (context, { id, config }) {
             return $http.delete(`delete/cloudarea/${id}`, config)
+        },
+        batchCreate (context, { params, config }) {
+            return $http.post('createmany/cloudarea', params, config)
         }
     }
 }

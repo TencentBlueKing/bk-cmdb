@@ -1,6 +1,8 @@
 <template>
     <div class="cloud-account-layout">
-        <cmdb-tips class="cloud-account-tips">提示语</cmdb-tips>
+        <cmdb-tips class="cloud-account-tips" tips-key="cloud-account-tips">
+            {{$t('云资源发现提示语')}}
+        </cmdb-tips>
         <div class="cloud-account-options">
             <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
         </div>
@@ -26,7 +28,9 @@
                     :value="row.bk_account_id">
                 </task-account-selector>
             </bk-table-column>
-            <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" :formatter="vendorFormatter" sortable="custom"></bk-table-column>
+            <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" sortable="custom">
+                <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
+            </bk-table-column>
             <bk-table-column :label="$t('最近同步状态')" prop="bk_sync_status" sortable="custom">
                 <div class="row-status"
                     slot-scope="{ row }"
@@ -63,14 +67,16 @@
 <script>
     import TaskSideslider from './children/task-sideslider.vue'
     import { formatter as resourceTypeFormatter } from '@/dictionary/cloud-resource-type'
-    import { formatter as vendorFormatter } from '@/dictionary/cloud-vendor'
     import TaskAccountSelector from './children/task-account-selector.vue'
     import TaskForm from './children/task-form.vue'
     import Bus from '@/utils/bus.js'
+    import symbols from './common/symbol'
+    import CmdbVendor from '@/components/ui/other/vendor'
     export default {
         components: {
             TaskSideslider,
-            TaskAccountSelector
+            TaskAccountSelector,
+            CmdbVendor
         },
         data () {
             return {
@@ -89,6 +95,7 @@
         },
         beforeDestroy () {
             Bus.$off('request-refresh', this.getData)
+            this.$http.cancelCache(symbols.all)
         },
         methods: {
             handleCreate () {
@@ -188,9 +195,6 @@
             },
             resourceTypeFormatter (row, column) {
                 return this.$t(resourceTypeFormatter(row[column.property]))
-            },
-            vendorFormatter (row, column) {
-                return this.$t(vendorFormatter(row[column.property]))
             }
         }
     }

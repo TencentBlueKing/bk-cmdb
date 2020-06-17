@@ -23,7 +23,9 @@
                         :key="vendor.id"
                         :name="vendor.name"
                         :id="vendor.id">
+                        <cmdb-vendor :type="vendor.id"></cmdb-vendor>
                     </bk-option>
+                    <cmdb-vendor class="vendor-selector-trigger" slot="trigger" :type="form.bk_cloud_vendor" empty-text=""></cmdb-vendor>
                 </bk-select>
                 <p class="create-form-error" v-if="errors.has('bk_cloud_vendor')">
                     {{errors.first('bk_cloud_vendor')}}
@@ -93,6 +95,7 @@
 
 <script>
     import vendors from '@/dictionary/cloud-vendor'
+    import CmdbVendor from '@/components/ui/other/vendor'
     const DEFAULT_FORM = {
         bk_account_name: '',
         bk_cloud_vendor: '',
@@ -102,6 +105,9 @@
     }
     export default {
         name: 'cloud-account-form',
+        components: {
+            CmdbVendor
+        },
         props: {
             container: {
                 type: Object,
@@ -241,7 +247,7 @@
                         type: 'details',
                         title: `${this.$t('账户详情')} 【${this.account.bk_account_name}】`,
                         props: {
-                            id: 1
+                            id: this.account.bk_account_id
                         }
                     })
                 } else {
@@ -275,6 +281,11 @@
                 display: block;
                 width: auto;
                 overflow: hidden;
+            }
+            .vendor-selector-trigger {
+                display: flex;
+                height: 30px;
+                padding-left: 10px;
             }
         }
         .create-form-button {

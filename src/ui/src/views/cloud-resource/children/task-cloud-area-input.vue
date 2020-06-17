@@ -1,15 +1,14 @@
 <template>
     <div class="cloud-area-input-wrapper">
         <input class="cloud-area-input"
-            v-model="localValue"
-            :disabled="disabled"
+            v-model.trim="localValue"
             :readonly="readonly"
             :class="{
                 'has-tips': hasTips,
                 'has-error': error
             }">
         <i class="tips-icon icon icon-cc-tips"
-            v-if="!!cloudId"
+            v-if="readonly"
             v-bk-tooltips="{
                 content: $t('VPC已绑定云区域')
             }">
@@ -17,22 +16,20 @@
         <i class="tips-icon bk-icon icon-exclamation-circle-shape"
             v-else-if="error"
             v-bk-tooltips="{
-                content: errorMessage || $t('请填写云区域')
+                content: error
             }">
         </i>
     </div>
 </template>
 
 <script>
-    import CacheLoader from '@/utils/cache-loader'
-    const LOADER_ID = Symbol('cloudArea')
+    import symbols from '../common/symbol'
+    import Bus from '@/utils/bus'
     export default {
         props: {
+            id: Number,
             value: String,
-            cloudId: Number,
-            disabled: Boolean,
-            readonly: Boolean,
-            errorMessage: String,
+            error: [Boolean, String],
             mode: {
                 type: String,
                 default: 'create',
@@ -43,36 +40,51 @@
         },
         data () {
             return {
-                error: true,
-                cloudAreaList: []
+                list: []
             }
         },
         computed: {
+            readonly () {
+                return this.id !== -1
+            },
             localValue: {
                 get () {
-                    return this.value
+                    const area = this.list.find(area => area.bk_cloud_id === this.id)
+                    return area ? area.bk_cloud_name : this.value
                 },
                 set (value) {
                     this.$emit('input', value)
                 }
             },
             hasTips () {
-                return this.error || !!this.cloudId
+                return this.error || this.readonly
             }
         },
         async created () {
+            Bus.$on('refresh-cloud-area', this.refresh)
             try {
-                const { info } = await CacheLoader.use(LOADER_ID, this.dataRequest)
-                this.cloudAreaList = info
+                const { info } = await this.getList()
+                this.list = info
             } catch (e) {
                 console.error(e)
             }
         },
+        beforeDestroy () {
+            Bus.$off('refresh-cloud-area', this.refresh)
+        },
         methods: {
-            dataRequest () {
+            refresh () {
+                this.$http.cancelCache(symbols.get('cloudArea'))
+                this.$nextTick(this.getList)
+            },
+            getList () {
                 return this.$store.dispatch('cloud/area/findMany', {
                     params: {
                         page: {}
+                    },
+                    config: {
+                        requestId: symbols.get('cloudArea'),
+                        fromCache: true
                     }
                 })
             },
@@ -80,13 +92,7 @@
                 if (this.mode === 'read') {
                     return true
                 }
-                return !!this.value.length
-            },
-            getMessage (val) {
-                if (!val.length) {
-                    return this.$t('请填写云区域')
-                }
-                return this.errorMessage
+                return !!this.localValue.length
             }
         }
     }
