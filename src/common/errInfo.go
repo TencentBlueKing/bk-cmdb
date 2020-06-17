@@ -538,6 +538,7 @@ const (
 	CCErrCloudCreateSyncTaskFail         = 1106021
 	CCErrCloudConfirmHistoryAddFail      = 1106022
 	CCErrCloudSyncHistorySearchFail      = 1106023
+	CCErrHostGetSnapshotBatch            = 1106024
 
 	// process controller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001

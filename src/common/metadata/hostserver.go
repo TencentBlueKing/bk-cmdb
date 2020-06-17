@@ -45,6 +45,11 @@ type HostSnapResult struct {
 	Data     map[string]interface{} `json:"data"`
 }
 
+type HostSnapBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     []map[string]interface{} `json:"data"`
+}
+
 type UserCustomQueryDetailResult struct {
 	BaseResp `json:",inline"`
 	Data     map[string]interface{} `json:"data"`

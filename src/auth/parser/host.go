@@ -1096,6 +1096,8 @@ func (ps *parseStream) cloudResourceSync() *parseStream {
 
 var (
 	findHostSnapshotAPIRegexp = regexp.MustCompile(`^/api/v3/hosts/snapshot/[0-9]+/?$`)
+
+	findHostSnapshotBatchPattern = "/api/v3/hosts/snapshot/batch"
 )
 
 func (ps *parseStream) hostSnapshot() *parseStream {
@@ -1119,6 +1121,20 @@ func (ps *parseStream) hostSnapshot() *parseStream {
 		}
 		return ps
 	}
+
+	if ps.hitPattern(findHostSnapshotBatchPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	return ps
 }
 
