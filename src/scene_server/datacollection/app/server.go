@@ -31,6 +31,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/collections"
 	"configcenter/src/scene_server/datacollection/collections/hostsnap"
@@ -373,18 +374,11 @@ func (c *DataCollection) getDefaultAppID() (string, error) {
 		return "", fmt.Errorf("target app not found")
 	}
 
-	defaultAppID := ""
-
-	switch id := results[0][common.BKAppIDField].(type) {
-	case int:
-		defaultAppID = strconv.Itoa(id)
-
-	case int64:
-		defaultAppID = strconv.FormatInt(id, 10)
-
-	default:
+	id, err := util.GetInt64ByInterface(results[0][common.BKAppIDField])
+	if err != nil {
 		return "", fmt.Errorf("can't query default appid, unkonw id type, %+v", reflect.TypeOf(results[0][common.BKAppIDField]))
 	}
+	defaultAppID := strconv.FormatInt(id, 10)
 
 	return defaultAppID, nil
 }
