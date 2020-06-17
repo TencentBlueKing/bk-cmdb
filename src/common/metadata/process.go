@@ -22,6 +22,7 @@ import (
 	"unicode/utf8"
 
 	"configcenter/src/common"
+	cErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
@@ -256,6 +257,52 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 	Page                BasePage  `json:"page" field:"page" bson:"page"`
 }
 
+type UpdateProcessByIDsInput struct {
+	BizID      int64                  `json:"bk_biz_id"`
+	ProcessIDs []int64                `json:"process_ids"`
+	UpdateData map[string]interface{} `json:"update_data"`
+}
+
+// Validate validates the input param
+func (o *UpdateProcessByIDsInput) Validate() (rawError cErr.RawErrorInfo) {
+	if o.BizID <= 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	if len(o.ProcessIDs) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"process_ids"},
+		}
+	}
+
+	if len(o.ProcessIDs) > common.BKMaxPageSize {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrExceedMaxOperationRecordsAtOnce,
+			Args:    []interface{}{common.BKMaxPageSize},
+		}
+	}
+
+	if len(o.UpdateData) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"update_data"},
+		}
+	}
+
+	if _, ok := o.UpdateData[common.BKProcessIDField]; ok{
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"update_data.bk_process_id"},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
 type SyncServiceInstanceByTemplateOption struct {
 	Metadata  *Metadata `json:"metadata"`
 	BizID     int64     `json:"bk_biz_id"`
@@ -288,6 +335,71 @@ type ListProcessInstancesWithHostOption struct {
 	BizID   int64    `json:"bk_biz_id"`
 	HostIDs []int64  `json:"bk_host_ids"`
 	Page    BasePage `json:"page"`
+}
+
+type ListProcessInstancesNameIDsOption struct {
+	BizID       int64    `json:"bk_biz_id"`
+	ModuleID    int64    `json:"bk_module_id"`
+	ProcessName string   `json:"process_name"`
+	Page        BasePage `json:"page"`
+}
+
+// Validate validates the input param
+func (o *ListProcessInstancesNameIDsOption) Validate() (rawError cErr.RawErrorInfo) {
+	if o.BizID <= 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	if o.ModuleID <= 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_module_id"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
+type ListProcessInstancesDetailsByIDsOption struct {
+	BizID      int64    `json:"bk_biz_id"`
+	ProcessIDs []int64  `json:"process_ids"`
+	Page       BasePage `json:"page"`
+}
+
+// Validate validates the input param
+func (o *ListProcessInstancesDetailsByIDsOption) Validate() (rawError cErr.RawErrorInfo) {
+	if o.BizID <= 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	if len(o.ProcessIDs) == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"process_ids"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return cErr.RawErrorInfo{}
 }
 
 type RemoveTemplateBindingOnModuleOption struct {
@@ -1640,6 +1752,18 @@ type HostProcessInstance struct {
 	BindIP    string       `json:"bind_ip"`
 	Port      string       `json:"port"`
 	Protocol  ProtocolType `json:"protocol"`
+}
+
+type ProcessInstanceNameIDs struct {
+	ProcessName string  `json:"bk_process_name"`
+	ProcessIDs  []int64 `json:"process_ids"`
+}
+
+type ProcessInstanceDetailByID struct {
+	ProcessID           int64                   `json:"process_id"`
+	ServiceInstanceName string                  `json:"service_instance_name"`
+	Property            mapstr.MapStr           `json:"property"`
+	Relation            ProcessInstanceRelation `json:"relation"`
 }
 
 type ProcessInstance struct {
