@@ -124,7 +124,6 @@ type HostModuleFind struct {
 }
 
 type FindHostsBySrvTplOpt struct {
-	BusinessID         int64    `json:"bk_biz_id"`
 	ServiceTemplateIDs []int64  `json:"bk_service_template_ids"`
 	ModuleIDs          []int64  `json:"bk_module_ids"`
 	Fields             []string `json:"fields"`
@@ -132,13 +131,6 @@ type FindHostsBySrvTplOpt struct {
 }
 
 func (o *FindHostsBySrvTplOpt) Validate() (rawError errors.RawErrorInfo) {
-	if o.BusinessID <= 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"bk_biz_id"},
-		}
-	}
-
 	if len(o.ServiceTemplateIDs) == 0 || len(o.ServiceTemplateIDs) > common.BKMaxInstanceLimit {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrArrayLengthWrong,
@@ -171,7 +163,6 @@ func (o *FindHostsBySrvTplOpt) Validate() (rawError errors.RawErrorInfo) {
 }
 
 type FindHostsBySetTplOpt struct {
-	BusinessID     int64    `json:"bk_biz_id"`
 	SetTemplateIDs []int64  `json:"bk_set_template_ids"`
 	SetIDs         []int64  `json:"bk_set_ids"`
 	Fields         []string `json:"fields"`
@@ -179,13 +170,6 @@ type FindHostsBySetTplOpt struct {
 }
 
 func (o *FindHostsBySetTplOpt) Validate() (rawError errors.RawErrorInfo) {
-	if o.BusinessID <= 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{"bk_biz_id"},
-		}
-	}
-
 	if len(o.SetTemplateIDs) == 0 || len(o.SetTemplateIDs) > common.BKMaxInstanceLimit {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrArrayLengthWrong,

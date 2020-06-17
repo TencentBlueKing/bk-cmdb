@@ -151,8 +151,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
 
-	api.Route(api.POST("/findmany/hosts/by_service_templates").To(s.FindHostsByServiceTemplates))
-	api.Route(api.POST("/findmany/hosts/by_set_templates").To(s.FindHostsBySetTemplates))
+	api.Route(api.POST("/findmany/hosts/by_service_templates/biz/{bk_biz_id}").To(s.FindHostsByServiceTemplates))
+	api.Route(api.POST("/findmany/hosts/by_set_templates/biz/{bk_biz_id}").To(s.FindHostsBySetTemplates))
 
 
 	// first install use api

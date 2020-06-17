@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -227,6 +228,29 @@ func (lgc *Logics) GetHostInfoByConds(ctx context.Context, cond map[string]inter
 		Start:     0,
 		Limit:     common.BKNoLimit,
 		Sort:      common.BKHostIDField,
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Host().GetHosts(ctx, lgc.header, query)
+	if err != nil {
+		blog.Errorf("GetHostInfoByConds GetHosts http do error, err:%s, input:%+v,rid:%s", err.Error(), query, lgc.rid)
+		return nil, lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if err := result.CCError(); err != nil {
+		blog.Errorf("GetHostInfoByConds GetHosts http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		return nil, err
+	}
+
+	return result.Data.Info, nil
+}
+
+// SearchHostInfo search host info by QueryCondition
+func (lgc *Logics) SearchHostInfo(ctx context.Context, cond metadata.QueryCondition) ([]mapstr.MapStr, errors.CCErrorCoder) {
+	query := &metadata.QueryInput{
+		Condition: cond.Condition,
+		Fields:    strings.Join(cond.Fields, ","),
+		Start:     cond.Page.Start,
+		Limit:     cond.Page.Limit,
+		Sort:      cond.Page.Sort,
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHosts(ctx, lgc.header, query)

@@ -321,16 +321,14 @@ const (
 	queryHostLockPattern                = "/api/v3/host/lock/search"
 
 	// used in sync framework.
-	moveHostToBusinessOrModulePattern  = "/api/v3/hosts/sync/new/host"
-	findHostsWithConditionPattern      = "/api/v3/hosts/search"
-	findBizHostsWithoutAppPattern      = "/api/v3/hosts/list_hosts_without_app"
-	findResourcePoolHostsPattern       = "/api/v3/hosts/list_resource_pool_hosts"
-	findHostsDetailsPattern            = "/api/v3/hosts/search/asstdetail"
-	updateHostInfoBatchPattern         = "/api/v3/hosts/batch"
-	updateHostPropertyBatchPattern     = "/api/v3/hosts/property/batch"
-	findHostsWithModulesPattern        = "/api/v3/findmany/modulehost"
-	findHostsByServiceTemplatesPattern = "/api/v3/findmany/hosts/by_service_templates"
-	findHostsBySetTemplatesPattern     = "/api/v3/findmany/hosts/by_set_templates"
+	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
+	findHostsWithConditionPattern     = "/api/v3/hosts/search"
+	findBizHostsWithoutAppPattern     = "/api/v3/hosts/list_hosts_without_app"
+	findResourcePoolHostsPattern      = "/api/v3/hosts/list_resource_pool_hosts"
+	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
+	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
+	updateHostPropertyBatchPattern    = "/api/v3/hosts/property/batch"
+	findHostsWithModulesPattern       = "/api/v3/findmany/modulehost"
 
 	// 特殊接口，给蓝鲸业务使用
 	hostInstallPattern = "/api/v3/host/install/bk"
@@ -349,6 +347,9 @@ var (
 	transferHostWithAutoClearServiceInstancePreviewRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview/?$")
 
 	countHostByTopoNodeRegexp = regexp.MustCompile(`^/api/v3/host/count_by_topo_node/bk_biz_id/[0-9]+$`)
+
+	findHostsByServiceTemplatesRegex = regexp.MustCompile(`^/api/v3/findmany/hosts/by_service_templates/biz/\d+$`)
+	findHostsBySetTemplatesRegex     = regexp.MustCompile(`^/api/v3/findmany/hosts/by_set_templates/biz/\d+$`)
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -390,16 +391,13 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(findHostsByServiceTemplatesPattern, http.MethodPost) {
-		bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
-		if bizID == 0 {
-			var err error
-			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-			if err != nil {
-				ps.err = fmt.Errorf("find hosts by service templates but parse business id failed, err: %v", err)
-				return ps
-			}
+	if ps.hitRegexp(findHostsByServiceTemplatesRegex, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find hosts by service templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])
+			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
@@ -412,16 +410,13 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(findHostsBySetTemplatesPattern, http.MethodPost) {
-		bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
-		if bizID == 0 {
-			var err error
-			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-			if err != nil {
-				ps.err = fmt.Errorf("find hosts by set templates but parse business id failed, err: %v", err)
-				return ps
-			}
+	if ps.hitRegexp(findHostsBySetTemplatesRegex, http.MethodPost) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("find hosts by set templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])
+			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
