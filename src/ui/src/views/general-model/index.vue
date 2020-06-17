@@ -63,20 +63,20 @@
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
+                    @keydown.enter="handlePageChange(1)">
                 <input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
+                    @keydown.enter="handlePageChange(1)">
                 <input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
+                    @keydown.enter="handlePageChange(1)">
                 <i class="filter-search bk-icon icon-search"
                     v-show="filter.type !== 'enum'"
-                    @click="getTableData"></i>
+                    @click="handlePageChange(1)"></i>
             </div>
         </div>
         <cmdb-table class="models-table" ref="table"
