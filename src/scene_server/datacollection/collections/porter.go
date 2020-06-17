@@ -476,8 +476,8 @@ func (p *SimplePorter) debug() {
 
 		// debug infos.
 		blog.Infof("SimplePorter[%s]| DEBUG[%+v], msgChanStage[%d], recvTotal[%f] recvInvalid[%f]"+
-			"recvSharding[%f] recvTimeout[%f] analyzeFailedTotal[%f] analyzeSuccTotal[%f] analyzeDuration[%f] fuseTotal[%f] in last %+v",
+			"recvSharding[%f] recvTimeout[%f] analyzeFailedTotal[%f] analyzeSuccTotal[%f] analyzeDuration[%f] fuseTotal[%f]",
 			p.name, now, msgChanStage, recvTotalNum, receiveInvalidTotalNum, receiveShardingTotalNum, receiveTimeoutTotalNum,
-			analyzeTotalFailedNum, analyzeTotalSuccNum, analyzeDuration, fusingTotalNum, defaultDebugInterval)
+			analyzeTotalFailedNum, analyzeTotalSuccNum, analyzeDuration, fusingTotalNum)
 	}
 }
