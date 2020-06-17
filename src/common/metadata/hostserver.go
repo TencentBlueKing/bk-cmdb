@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
@@ -120,6 +121,84 @@ type HostModuleFind struct {
 	AppID     int64     `json:"bk_biz_id"`
 	Fields    []string  `json:"fields"`
 	Page      BasePage  `json:"page"`
+}
+
+type FindHostsBySrvTplOpt struct {
+	ServiceTemplateIDs []int64  `json:"bk_service_template_ids"`
+	ModuleIDs          []int64  `json:"bk_module_ids"`
+	Fields             []string `json:"fields"`
+	Page               BasePage `json:"page"`
+}
+
+func (o *FindHostsBySrvTplOpt) Validate() (rawError errors.RawErrorInfo) {
+	if len(o.ServiceTemplateIDs) == 0 || len(o.ServiceTemplateIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_service_template_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.ModuleIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_module_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+type FindHostsBySetTplOpt struct {
+	SetTemplateIDs []int64  `json:"bk_set_template_ids"`
+	SetIDs         []int64  `json:"bk_set_ids"`
+	Fields         []string `json:"fields"`
+	Page           BasePage `json:"page"`
+}
+
+func (o *FindHostsBySetTplOpt) Validate() (rawError errors.RawErrorInfo) {
+	if len(o.SetTemplateIDs) == 0 || len(o.SetTemplateIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_set_template_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.SetIDs) > common.BKMaxInstanceLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrArrayLengthWrong,
+			Args:    []interface{}{"bk_set_ids", common.BKMaxInstanceLimit},
+		}
+	}
+
+	if len(o.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if o.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"page.limit"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }
 
 type ListHostsParameter struct {
