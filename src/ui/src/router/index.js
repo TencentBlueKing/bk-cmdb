@@ -148,7 +148,7 @@ const setupStatus = {
     afterload: true
 }
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from, next) => {
     cancelRequest(router.app)
     router.app.$store.commit('setTitle', '')
     if (to.meta.view !== 'permission') {

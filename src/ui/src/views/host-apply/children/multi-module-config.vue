@@ -1,5 +1,5 @@
 <template>
-    <div class="multi-module-config">
+    <div class="multi-module-config" v-bkloading="{ isLoading: $loading(['getHostApplyConfigs']) }">
         <div class="config-bd">
             <div class="config-item">
                 <div class="item-label">

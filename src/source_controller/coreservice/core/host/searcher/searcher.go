@@ -49,12 +49,14 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 	if option.BizID != 0 {
 		relationFilter[common.BKAppIDField] = option.BizID
 	}
-	if option.ModuleIDs != nil {
+
+	if len(option.ModuleIDs) != 0 {
 		relationFilter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,
 		}
 	}
-	if option.SetIDs != nil {
+
+	if len(option.SetIDs) != 0 {
 		relationFilter[common.BKSetIDField] = map[string]interface{}{
 			common.BKDBIN: option.SetIDs,
 		}

@@ -598,29 +598,6 @@ func (t *genericTransfer) HasInnerModule(kit *rest.Kit) (bool, error) {
 	return false, nil
 }
 
-// DoTransferToInnerCheck check whether could be transfer to inner module
-func (t *genericTransfer) DoTransferToInnerCheck(kit *rest.Kit, hostIDs []int64) error {
-	if len(hostIDs) == 0 {
-		return nil
-	}
-
-	// check: 不能有服务实例/进程实例绑定主机实例
-	filter := map[string]interface{}{
-		common.BKHostIDField: map[string][]int64{common.BKDBIN: hostIDs},
-	}
-	var count uint64
-	count, err := t.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(kit.Ctx)
-	if err != nil {
-		blog.Errorf("DoTransferToInnerCheck failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-	if count > 0 {
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
-	}
-
-	return nil
-}
-
 func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, moduleID []int64, fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	moduleConds := condition.CreateCondition()
 	moduleConds.Field(common.BKAppIDField).Eq(appID)

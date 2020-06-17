@@ -28,7 +28,7 @@ import (
 // CreateProperty create net property
 func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
 	pHeader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	netPropertyInfo := meta.NetcollectProperty{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&netPropertyInfo); nil != err {
@@ -37,7 +37,7 @@ func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	result, err := s.Logics.AddProperty(pHeader, netPropertyInfo)
+	result, err := s.logics.AddProperty(pHeader, netPropertyInfo)
 	if nil != err {
 		if err.Error() == defErr.Error(common.CCErrCollectNetPropertyCreateFail).Error() {
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
@@ -54,7 +54,7 @@ func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
 // UpdateProperty update net property
 func (s *Service) UpdateProperty(req *restful.Request, resp *restful.Response) {
 	pHeader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	netPropertyID, err := checkNetPropertyIDPathParam(defErr, req.PathParameter("netcollect_property_id"))
 	if nil != err {
@@ -69,7 +69,7 @@ func (s *Service) UpdateProperty(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if err = s.Logics.UpdateProperty(pHeader, netPropertyID, netPropertyInfo); nil != err {
+	if err = s.logics.UpdateProperty(pHeader, netPropertyID, netPropertyInfo); nil != err {
 		if err.Error() == defErr.Error(common.CCErrCollectNetPropertyUpdateFail).Error() {
 			_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
@@ -85,7 +85,7 @@ func (s *Service) UpdateProperty(req *restful.Request, resp *restful.Response) {
 // BatchCreateProperty batch create net property
 func (s *Service) BatchCreateProperty(req *restful.Request, resp *restful.Response) {
 	pHeader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	batchAddNetProperty := new(meta.BatchAddNetProperty)
 	if err := json.NewDecoder(req.Request.Body).Decode(&batchAddNetProperty); err != nil {
@@ -94,7 +94,7 @@ func (s *Service) BatchCreateProperty(req *restful.Request, resp *restful.Respon
 		return
 	}
 	propertyList := batchAddNetProperty.Data
-	resultList, hasError := s.Logics.BatchCreateProperty(pHeader, propertyList)
+	resultList, hasError := s.logics.BatchCreateProperty(pHeader, propertyList)
 	if hasError {
 		_ = resp.WriteEntity(meta.Response{
 			BaseResp: meta.BaseResp{
@@ -112,7 +112,7 @@ func (s *Service) BatchCreateProperty(req *restful.Request, resp *restful.Respon
 // SearchProperty search net property
 func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
 	pHeader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	body := new(meta.NetCollSearchParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(body); nil != err {
@@ -121,7 +121,7 @@ func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	propertys, err := s.Logics.SearchProperty(pHeader, body)
+	propertys, err := s.logics.SearchProperty(pHeader, body)
 	if nil != err {
 		blog.Errorf("[NetProperty] search net property failed, err: %v", err)
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetPropertyGetFail)})
@@ -137,7 +137,7 @@ func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
 // DeleteProperty delete net propertys
 func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
 	pHeader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	deleteNetPropertyBatchOpt := new(meta.DeleteNetPropertyBatchOpt)
 	if err := json.NewDecoder(req.Request.Body).Decode(deleteNetPropertyBatchOpt); nil != err {
@@ -147,7 +147,7 @@ func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
 	}
 
 	for _, netPropertyID := range deleteNetPropertyBatchOpt.NetcollectPropertyIDs {
-		if err := s.Logics.DeleteProperty(pHeader, netPropertyID); nil != err {
+		if err := s.logics.DeleteProperty(pHeader, netPropertyID); nil != err {
 			blog.Errorf("[NetProperty] delete net property failed, with netcollect_property_id [%d], err: %v", netPropertyID, err)
 
 			if defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist).Error() == err.Error() {

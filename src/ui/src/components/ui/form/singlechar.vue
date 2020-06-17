@@ -1,10 +1,9 @@
 <template>
     <bk-input type="text"
+        v-model="localValue"
         :placeholder="localPlaceholder"
         :maxlength="maxlength"
-        :value="value"
         :disabled="disabled"
-        @input="handleInput"
         @change="handleChange"
         @enter="handleEnter">
     </bk-input>
@@ -34,12 +33,17 @@
         computed: {
             localPlaceholder () {
                 return this.placeholder || this.$t('请输入短字符')
+            },
+            localValue: {
+                get () {
+                    return (this.value === null || this.value === undefined) ? '' : this.value
+                },
+                set (value) {
+                    this.$emit('input', value)
+                }
             }
         },
         methods: {
-            handleInput (value) {
-                this.$emit('input', value)
-            },
             handleChange (value) {
                 this.$emit('on-change', value)
             },

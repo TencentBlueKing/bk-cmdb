@@ -46,7 +46,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`find/proc/proc_template/id/${params.processTemplateId}`, config)
+        return $http.post(`find/proc/proc_template/id/${params.processTemplateId}`, {}, config)
     },
     /**
      * 更新服务模板中的进程模板

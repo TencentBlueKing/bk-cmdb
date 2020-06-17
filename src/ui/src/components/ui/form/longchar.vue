@@ -1,13 +1,12 @@
 <template>
     <bk-input
+        v-model="localValue"
         :placeholder="placeholder || $t('请输入长字符')"
         :disabled="disabled"
         :type="'textarea'"
         :rows="row"
         :maxlength="maxlength"
-        :value="value"
         :clearable="!disabled"
-        @input="handleInput"
         @enter="handleEnter"
         @on-change="handleChange">
     </bk-input>
@@ -42,10 +41,17 @@
                 default: ''
             }
         },
+        computed: {
+            localValue: {
+                get () {
+                    return (this.value === null || this.value === undefined) ? '' : this.value
+                },
+                set (value) {
+                    this.$emit('input', value)
+                }
+            }
+        },
         methods: {
-            handleInput (value) {
-                this.$emit('input', value)
-            },
             handleChange (value) {
                 this.$emit('on-change', value)
             },
