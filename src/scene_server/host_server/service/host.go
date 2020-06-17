@@ -419,10 +419,6 @@ func (s *Service) HostSnapInfoBatch(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	fields := option.Fields
-	if len(fields) == 0 {
-		fields = []string{"bk_host_id", "bk_all_ips"}
-	}
 	ret := make([]map[string]interface{}, 0)
 	for hostID, snapData := range result.Data {
 		if snapData == "" {
@@ -437,7 +433,7 @@ func (s *Service) HostSnapInfoBatch(req *restful.Request, resp *restful.Response
 			return
 		}
 		snapFields := make(map[string]interface{})
-		for _, field := range fields {
+		for _, field := range option.Fields {
 			if _, ok := snap[field]; ok {
 				snapFields[field] = snap[field]
 			}

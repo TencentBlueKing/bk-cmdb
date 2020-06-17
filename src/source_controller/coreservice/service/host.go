@@ -250,7 +250,11 @@ func (s *coreService) GetHostSnapBatch(ctx *rest.Contexts) {
 	}
 
 	res, err := s.rds.MGet(keys...).Result()
-	if nil != err && err != redis.Nil {
+	if err != nil {
+		if err == redis.Nil {
+			ctx.RespEntity(map[int64]string{})
+			return
+		}
 		blog.Errorf("get host snapshot failed, keys: %#v, err: %v, rid: %s", keys, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
 		return
