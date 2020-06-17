@@ -252,7 +252,15 @@ func (s *coreService) UserConfigDetail(params core.ContextParams, pathParams, qu
 func (s *coreService) AddUserCustom(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	ID := xid.New()
 	data["id"] = ID.String()
-	data["bk_user"] = pathParams("bk_user")
+	user := pathParams("bk_user")
+	data["bk_user"] = user
+	if strings.Contains(user, ".") {
+		transformedData := make(map[string]interface{}, len(data))
+		for key, value := range data {
+			transformedData[strings.Replace(key, ".", "\u002e", -1)] = value
+		}
+		data = transformedData
+	}
 	data = util.SetModOwner(data, params.SupplierAccount)
 	err := s.db.Table(common.BKTableNameUserCustom).Insert(params.Context, data)
 	if nil != err {
@@ -265,7 +273,15 @@ func (s *coreService) AddUserCustom(params core.ContextParams, pathParams, query
 func (s *coreService) UpdateUserCustomByID(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	conditons := make(map[string]interface{})
 	conditons["id"] = pathParams("id")
-	conditons["bk_user"] = pathParams("bk_user")
+	user := pathParams("bk_user")
+	conditons["bk_user"] = user
+	if strings.Contains(user, ".") {
+		transformedData := make(map[string]interface{}, len(data))
+		for key, value := range data {
+			transformedData[strings.Replace(key, ".", "\u002e", -1)] = value
+		}
+		data = transformedData
+	}
 	conditons = util.SetModOwner(conditons, params.SupplierAccount)
 	err := s.db.Table(common.BKTableNameUserCustom).Update(params.Context, conditons, data)
 	if nil != err {
@@ -277,7 +293,8 @@ func (s *coreService) UpdateUserCustomByID(params core.ContextParams, pathParams
 
 func (s *coreService) GetUserCustomByUser(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	conds := make(map[string]interface{})
-	conds["bk_user"] = pathParams("bk_user")
+	user := pathParams("bk_user")
+	conds["bk_user"] = user
 	conds = util.SetModOwner(conds, params.SupplierAccount)
 
 	result := make(map[string]interface{})
@@ -285,6 +302,14 @@ func (s *coreService) GetUserCustomByUser(params core.ContextParams, pathParams,
 	if nil != err && !s.db.IsNotFoundError(err) {
 		blog.Errorf("add  user custom failed, err: %v, params:%v, rid: %s", err, conds, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if strings.Contains(user, ".") {
+		transformedData := make(map[string]interface{}, len(result))
+		for key, value := range result {
+			transformedData[strings.Replace(key, "\u002e", ".", -1)] = value
+		}
+		result = transformedData
 	}
 
 	return result, nil
