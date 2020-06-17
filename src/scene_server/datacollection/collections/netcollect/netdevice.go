@@ -29,11 +29,11 @@ import (
 type NetCollect struct {
 	ctx         context.Context
 	db          dal.RDB
-	authManager extensions.AuthManager
+	authManager *extensions.AuthManager
 }
 
 // NewNetCollect returns a new netcollector
-func NewNetCollect(ctx context.Context, db dal.RDB, authManager extensions.AuthManager) *NetCollect {
+func NewNetCollect(ctx context.Context, db dal.RDB, authManager *extensions.AuthManager) *NetCollect {
 	h := &NetCollect{
 		ctx:         ctx,
 		db:          db,
@@ -42,20 +42,43 @@ func NewNetCollect(ctx context.Context, db dal.RDB, authManager extensions.AuthM
 	return h
 }
 
-// Analyze implements the Analyzer interface
-func (h *NetCollect) Analyze(raw string) error {
-	blog.V(4).Infof("[data-collection][netcollect] received message: %s", raw)
-	msg := ReportMessage{}
-	err := json.Unmarshal([]byte(raw), &msg)
-	if err != nil {
-		return fmt.Errorf("unmarshal message error: %v, raw: %s", err, raw)
+// Hash returns hash value base on message.
+func (h *NetCollect) Hash(cloudid, ip string) (string, error) {
+	if len(cloudid) == 0 {
+		return "", fmt.Errorf("can't make hash from invalid message format, cloudid empty")
+	}
+	if len(ip) == 0 {
+		return "", fmt.Errorf("can't make hash from invalid message format, ip empty")
 	}
 
-	for _, report := range msg.Data {
-		if err = h.handleReport(&report); err != nil {
-			blog.Errorf("[data-collection][netcollect] handleData failed: %v,raw: %s", err, raw)
+	hash := fmt.Sprintf("%s:%s", cloudid, ip)
+
+	return hash, nil
+}
+
+// Mock returns local mock message for testing.
+func (h *NetCollect) Mock() string {
+	return MockMessage
+}
+
+// Analyze implements the Analyzer interface
+func (h *NetCollect) Analyze(msg *string) error {
+	if msg == nil {
+		return fmt.Errorf("message nil")
+	}
+
+	data := ReportMessage{}
+
+	if err := json.Unmarshal([]byte(*msg), &data); err != nil {
+		return fmt.Errorf("unmarshal message error: %+v", err)
+	}
+
+	for _, report := range data.Data {
+		if err := h.handleReport(&report); err != nil {
+			blog.Errorf("[data-collection][netcollect] handleData failed: %+v", err)
 		}
 	}
+
 	return nil
 }
 

@@ -36,9 +36,8 @@ const (
 	defaultRelateAttr = "host"
 )
 
-func (d *Discover) parseData(msg string) (data map[string]interface{}, err error) {
-
-	dataStr := gjson.Get(msg, "data.data").String()
+func (d *Discover) parseData(msg *string) (data map[string]interface{}, err error) {
+	dataStr := gjson.Get(*msg, "data.data").String()
 	if err = json.Unmarshal([]byte(dataStr), &data); err != nil {
 		blog.Errorf("parse data error: %s", err)
 		return
@@ -46,12 +45,12 @@ func (d *Discover) parseData(msg string) (data map[string]interface{}, err error
 	return
 }
 
-func (d *Discover) parseObjID(msg string) string {
-	return gjson.Get(msg, "data.meta.model.bk_obj_id").String()
+func (d *Discover) parseObjID(msg *string) string {
+	return gjson.Get(*msg, "data.meta.model.bk_obj_id").String()
 }
 
-func (d *Discover) parseOwnerId(msg string) string {
-	ownerId := gjson.Get(msg, "data.meta.model.bk_supplier_account").String()
+func (d *Discover) parseOwnerId(msg *string) string {
+	ownerId := gjson.Get(*msg, "data.meta.model.bk_supplier_account").String()
 
 	if ownerId == "" {
 		ownerId = common.BKDefaultOwnerID
@@ -136,7 +135,11 @@ func (d *Discover) GetInst(ownerID, objID string, instKey string, cond map[strin
 	return nil, nil
 }
 
-func (d *Discover) UpdateOrCreateInst(msg string) error {
+func (d *Discover) UpdateOrCreateInst(msg *string) error {
+	if msg == nil {
+		return fmt.Errorf("message nil")
+	}
+
 	rid := util.GetHTTPCCRequestID(d.httpHeader)
 
 	ownerID := d.parseOwnerId(msg)
