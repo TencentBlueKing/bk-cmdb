@@ -60,6 +60,122 @@ func (s *Service) FindModuleHost(req *restful.Request, resp *restful.Response) {
 	})
 }
 
+// FindModuleHostRelation find host with module by module id
+func (s *Service) FindModuleHostRelation(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
+
+	bizID, err := util.GetInt64ByInterface(req.PathParameter("bk_biz_id"))
+	if err != nil {
+		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", req.PathParameter("bk_biz_id"), srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		return
+	}
+	if bizID == 0 {
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)})
+		return
+	}
+
+	body := new(meta.FindModuleHostRelationParameter)
+	if err := json.NewDecoder(req.Request.Body).Decode(body); err != nil {
+		blog.Error("decode http body failed, err: %v, rid:%s", err, srvData.rid)
+		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	rawErr := body.Validate()
+	if rawErr.ErrCode != 0 {
+		blog.ErrorJSON("validate request body err: %s, body: %s, rid: %s", rawErr.ToCCError(defErr).Error(), *body, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: rawErr.ToCCError(defErr)})
+		return
+	}
+
+	// get host info
+	distinctHostCond := &meta.DistinctHostIDByTopoRelationRequest{
+		ApplicationIDArr: []int64{bizID},
+		ModuleIDArr:      body.ModuleIDS,
+	}
+	hostFields := append(body.HostFields, common.BKHostIDField)
+	searchHostCond := &meta.QueryCondition{
+		Fields: hostFields,
+		Page:   body.Page,
+	}
+	hostRes, err := s.findDistinctHostInfo(req.Request.Header, distinctHostCond, searchHostCond)
+	if err != nil {
+		blog.Errorf("findDistinctHostInfo failed, err: %s, distinctHostCond: %s, searchHostCond: %s, rid:%s", err.Error(), *distinctHostCond, *searchHostCond, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+		return
+	}
+
+	hostLen := len(hostRes.Data.Info)
+	if hostLen == 0 {
+		_ = resp.WriteEntity(meta.FindModuleHostRelationResp{
+			BaseResp: meta.SuccessBaseResp,
+			Data: meta.FindModuleHostRelationResult{
+				Count:    hostRes.Data.Count,
+				Relation: []meta.ModuleHostRelation{},
+			},
+		})
+	}
+	hostIDArr := make([]int64, hostLen)
+	for index, host := range hostRes.Data.Info {
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.ErrorJSON("host id not integer, host: %s, rid: %s", host, srvData.rid)
+			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+			return
+		}
+		hostIDArr[index] = hostID
+	}
+
+	// get module info
+	hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: hostIDArr,
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField}})
+	if err != nil {
+		blog.Errorf("GetConfigByCond failed, err: %v, hostIDArr: %v, rid: %s", err, hostIDArr, srvData.rid)
+		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	hostModuleMap := make(map[int64][]int64, hostLen)
+	moduleIDArr := make([]int64, 0)
+	for _, relation := range hostModuleConfig {
+		hostModuleMap[relation.HostID] = append(hostModuleMap[relation.HostID], relation.ModuleID)
+		moduleIDArr = append(moduleIDArr, relation.ModuleID)
+	}
+
+	moduleFields := append(body.ModuleFields, common.BKModuleIDField)
+	moduleInfoMap, err := srvData.lgc.GetModuleMapByCond(srvData.ctx, moduleFields, map[string]interface{}{
+		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: moduleIDArr},
+	})
+	if err != nil {
+		blog.Errorf("GetModuleMapByCond failed, err: %s, moduleIDArr: %v, rid:%s", err.Error(), moduleIDArr, srvData.rid)
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+		return
+	}
+
+	// assemble host and module info
+	relation := make([]meta.ModuleHostRelation, hostLen)
+	for index, host := range hostRes.Data.Info {
+		hostID, _ := util.GetInt64ByInterface(host[common.BKHostIDField])
+		moduleIDs := hostModuleMap[hostID]
+		modules := make([]map[string]interface{}, len(moduleIDs))
+		for index, moduleID := range moduleIDs {
+			modules[index] = moduleInfoMap[moduleID]
+		}
+		relation[index] = meta.ModuleHostRelation{
+			Host:    host,
+			Modules: modules,
+		}
+	}
+
+	_ = resp.WriteEntity(meta.FindModuleHostRelationResp{
+		BaseResp: meta.SuccessBaseResp,
+		Data: meta.FindModuleHostRelationResult{
+			Count:    hostRes.Data.Count,
+			Relation: relation,
+		},
+	})
+}
+
 // FindHostsByServiceTemplates find hosts by service templates
 func (s *Service) FindHostsByServiceTemplates(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)

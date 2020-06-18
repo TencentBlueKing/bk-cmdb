@@ -206,6 +206,62 @@ func (o *FindHostsBySetTplOpt) Validate() (rawError errors.RawErrorInfo) {
 	return errors.RawErrorInfo{}
 }
 
+type FindModuleHostRelationParameter struct {
+	ModuleIDS    []int64  `json:"bk_module_ids"`
+	ModuleFields []string `json:"module_fields"`
+	HostFields   []string `json:"host_fields"`
+	Page         BasePage `json:"page"`
+}
+
+func (param FindModuleHostRelationParameter) Validate() errors.RawErrorInfo {
+	if len(param.ModuleIDS) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_module_ids"},
+		}
+	}
+	if len(param.ModuleIDS) > 200 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_module_ids", 200},
+		}
+	}
+	if param.Page.IsIllegal() {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"page"},
+		}
+	}
+	if len(param.HostFields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"host_fields"},
+		}
+	}
+	if len(param.ModuleFields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"module_fields"},
+		}
+	}
+	return errors.RawErrorInfo{}
+}
+
+type ModuleHostRelation struct {
+	Host    map[string]interface{}   `json:"host"`
+	Modules []map[string]interface{} `json:"modules"`
+}
+
+type FindModuleHostRelationResult struct {
+	Count    int                  `json:"count"`
+	Relation []ModuleHostRelation `json:"relation"`
+}
+
+type FindModuleHostRelationResp struct {
+	BaseResp `json:",inline"`
+	Data     FindModuleHostRelationResult `json:"data"`
+}
+
 type ListHostsParameter struct {
 	SetIDs             []int64                   `json:"bk_set_ids"`
 	SetCond            []ConditionItem           `json:"set_cond"`
