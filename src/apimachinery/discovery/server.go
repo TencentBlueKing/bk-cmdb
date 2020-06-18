@@ -55,11 +55,11 @@ func (s *server) GetServers() ([]string, error) {
 	if s == nil {
 		return []string{}, nil
 	}
-	s.RLock()
-	defer s.RUnlock()
 
+	s.Lock()
 	num := len(s.servers)
 	if num == 0 {
+		s.Unlock()
 		return []string{}, fmt.Errorf("oops, there is no %s can be used", s.name)
 	}
 
@@ -70,6 +70,7 @@ func (s *server) GetServers() ([]string, error) {
 		s.index = 0
 		s.servers = append(s.servers[num-1:], s.servers[:num-1]...)
 	}
+	s.Unlock()
 
 	return s.GetRegAddrs(), nil
 }
@@ -141,25 +142,26 @@ func (s *server) updateServer(svrs []string) {
 		}
 
 		servers = append(servers, server)
-
 	}
 
-	s.Lock()
-	defer s.Unlock()
-
 	if len(servers) != 0 {
+		s.Lock()
 		s.servers = servers
-		regAddrs := s.GetRegAddrs()
-		blog.V(5).Infof("update component with new server instance[%s] about path: %s", strings.Join(regAddrs, "; "), s.path)
+		s.Unlock()
+
+		if blog.V(5) {
+			blog.Infof("update component with new server instance[%s] about path: %s", strings.Join(s.GetRegAddrs(), "; "), s.path)
+		}
 	}
 }
 
 // 获取注册地址
 func (s *server) GetRegAddrs() []string {
+	s.RLock()
 	regAddrs := make([]string, 0)
 	for _, server := range s.servers {
-		host := server.RegisterAddress()
-		regAddrs = append(regAddrs, host)
+		regAddrs = append(regAddrs, server.RegisterAddress())
 	}
+	s.RUnlock()
 	return regAddrs
 }
