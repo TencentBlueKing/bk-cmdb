@@ -4,7 +4,7 @@
 
 * ZooKeeper >= 3.4.11
 * Redis   >= 3.2.11
-* MongoDB >= 3.6.0
+* MongoDB >= 4.2
 * Elasticsearch >= 5.0.0 & < 7 (用于全文检索功能，推荐使用5.x的版本)
 * Mongo-connector >= 2.5.0 (用于全文检索功能，推荐3.1.1)
 
@@ -51,7 +51,7 @@
 
 请参考官方资料 [MongoDB](https://docs.mongodb.com/manual/installation/)
 
-推荐版本下载：[MongoDB 3.6.0](http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel70-3.6.0-rc5.tgz?_ga=2.109966917.1194957577.1522583108-162706957.1522583108)
+推荐版本下载：[MongoDB 4.2.8](https://www.mongodb.com/dr/fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel70-4.2.8.tgz/download)
 
 ### 4. Release包下载
 
@@ -59,20 +59,57 @@
 
 ### 5. 配置数据库
 
-1. Redis需要打开auth认证的功能，并为其配置密码
-2. 安装MongoDB后，创建数据库 cmdb
-3. 为新创建的数据库设置用户名和密码
+#### 1. Redis需要打开auth认证的功能，并为其配置密码
+
+##### a. 修改配置文件
+redis的配置文件默认在/etc/redis.conf，找到如下行：
+``` json
+#requirepass foobared
+``` 
+去掉前面的注释，并修改为所需要的密码：
+``` json
+ requirepass myPassword （其中myPassword就是要设置的密码）
+``` 
+##### b. 重启Redis
+如果Redis已经配置为service服务，可以通过以下方式重启：
+```json
+service redis restart
+```
+##### c. 登录验证
+设置Redis认证密码后，客户端登录时需要使用-a参数输入认证密码,举例如下：
+```json
+$ ./redis-cli -h 127.0.0.1 -p 6379 -a myPassword
+127.0.0.1:6379> config get requirepass
+1) "requirepass"
+2) "myPassword"
+```
+看到类似上面的输出，说明Reids密码认证配置成功。
+
+#### 2. 安装MongoDB后，配置集群，创建数据库 cmdb
+
+#### 3. 为新创建的数据库设置用户名和密码
 
 > MongoDB 示例:
 
-登陆MongoDB后执行以下命令:
+mongodb以集群的方式启动，需加入参数--replSet,如--replSet=rs0
+
+进入mongodb后，在members中配置集群ip和端口
+
+如: 配置集群中只有单台机器
+```json
+ >rs.initiate({ _id : "rs0",members: [{ _id: 0, host: "ip:port" }]})
+```
+
+注:rs0为集群名字，仅作展示，用户使用中可以根据实际情况自行配置
+
+接下来登陆MongoDB后执行以下命令:
 
 ``` json
  > use cmdb
  > db.createUser({user: "cc",pwd: "cc",roles: [ { role: "readWrite", db: "cmdb" } ]})
 ```
 
-**注：以上用户名、密码、数据库名仅作示例展示，用户使用中可以更具实际情况自行配置。如果安装的MongoDB的版本大于等于3.6，需要手动修改init.py自动生成的配置文件，详细步骤参看init.py相关小节。**
+**注：以上用户名、密码、数据库名仅作示例展示，用户使用中可以根据实际情况自行配置。如果安装的MongoDB的版本大于等于3.6，需要手动修改init.py自动生成的配置文件，详细步骤参看init.py相关小节。**
 
 详细手册请参考官方资料 [MongoDB](https://docs.mongodb.com/manual/reference/method/db.createUser/)
 
@@ -82,7 +119,7 @@
 搜索5.x的版本下载，推荐下载5.0.2, 5.6.16
 下载后解压即可，解压后找到配置文件config/elasticsearch.yml，可以配置指定network.host为
 具体的host的地址
-然后到目录的bin目录下运行(注意，不能使用root权限运行，要普通用户)：
+然后到目录的bin目录下运行(注意，不能使用root权限运行，**要普通用户**)：
 ```
 ./elasticsearch
 ```
@@ -101,7 +138,7 @@ pip install 'mongo-connector[elastic5]'
 
 下载后请检查python包版本，尤其python elasticsearch大版本要和下载的elasticsearch一致
 
-配置配置文件config.json(配置说明参见[config](https://github.com/yougov/mongo-connector/wiki/Configuration%20Options)):
+创建并配置配置文件config.json(配置说明参见[config](https://github.com/yougov/mongo-connector/wiki/Configuration%20Options)):
 
 主要配置
 key前面添加__代表忽略此配置
@@ -110,6 +147,7 @@ authentication暂时先别配置，认证有问题
 namespaces里面配置要同步的mongo里的table，false代表不同步，true代表同步,
 可以自行配置需要同步哪些table用于全文检索
 
+内容举例如下：
 ```
 {
     "__comment__": "Configuration options starting with '__' are disabled",
@@ -149,7 +187,7 @@ namespaces里面配置要同步的mongo里的table，false代表不同步，true
         "cmdb.cc_ObjectBase": true,
         "cmdb.cc_ObjDes": true,
         "cmdb.cc_ApplicationBase": true,
-        "cmdb.cc_AuditLog": false
+        "cmdb.cc_OperationLog": false
     },
 
     "docManagers": [
@@ -163,6 +201,12 @@ namespaces里面配置要同步的mongo里的table，false代表不同步，true
     ]
 }
 ```
+**注: mainAddress处根据实际情况写上本机的ip，举例若按上面的配置，需要创建/var/log/mongo-connector目录,也可通过修改logging filename自定义目录**
+```
+  mkdir -p /var/log/mongo-connector 
+```
+
+
 
 然后运行命令启动：
 ```
