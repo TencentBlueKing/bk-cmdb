@@ -276,7 +276,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 		}
 
 		property, ok := valid.properties[key]
-		if !ok {
+		if !ok || !property.IsEditable {
 			delete(instanceData, key)
 			continue
 		}
