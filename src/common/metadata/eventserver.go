@@ -19,6 +19,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"configcenter/src/common/mapstr"
 )
 
 type RspSubscriptionCreate struct {
@@ -54,17 +56,17 @@ type RspSubscriptionTestCallback struct {
 
 // Subscription define
 type Subscription struct {
-	SubscriptionID   int64  `bson:"subscription_id" json:"subscription_id"`
-	SubscriptionName string `bson:"subscription_name" json:"subscription_name"`
-	SystemName       string `bson:"system_name" json:"system_name"`
-	CallbackURL      string `bson:"callback_url" json:"callback_url"`
-	ConfirmMode      string `bson:"confirm_mode" json:"confirm_mode"`
-	ConfirmPattern   string `bson:"confirm_pattern" json:"confirm_pattern"`
-	TimeOutSeconds   int64  `bson:"time_out" json:"time_out"` // second
+	SubscriptionID   int64  `field:"subscription_id" bson:"subscription_id" json:"subscription_id"`
+	SubscriptionName string `field:"subscription_name" bson:"subscription_name" json:"subscription_name"`
+	SystemName       string `field:"system_name" bson:"system_name" json:"system_name"`
+	CallbackURL      string `field:"callback_url" bson:"callback_url" json:"callback_url"`
+	ConfirmMode      string `field:"confirm_mode" bson:"confirm_mode" json:"confirm_mode"`
+	ConfirmPattern   string `field:"confirm_pattern" bson:"confirm_pattern" json:"confirm_pattern"`
+	TimeOutSeconds   int64  `field:"time_out" bson:"time_out" json:"time_out"` // second
 	// SubscriptionForm is a list of event types split by comma
-	SubscriptionForm string      `bson:"subscription_form" json:"subscription_form"`
-	Operator         string      `bson:"operator" json:"operator"`
-	OwnerID          string      `bson:"bk_supplier_account" json:"bk_supplier_account"`
+	SubscriptionForm string      `field:"subscription_form" bson:"subscription_form" json:"subscription_form"`
+	Operator         string      `field:"operator" bson:"operator" json:"operator"`
+	OwnerID          string      `field:"bk_supplier_account" bson:"bk_supplier_account" json:"bk_supplier_account"`
 	LastTime         Time        `bson:"last_time" json:"last_time"`
 	Statistics       *Statistics `bson:"-" json:"statistics"`
 }
@@ -97,6 +99,11 @@ func (s Subscription) GetCacheKey() string {
 
 func (s Subscription) GetTimeout() time.Duration {
 	return time.Second * time.Duration(s.TimeOutSeconds)
+}
+
+// ToMapStr to mapstr
+func (s *Subscription) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(s)
 }
 
 type EventInst struct {

@@ -151,6 +151,14 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	//make auditLog
+	err = NewEventAudit(s.ctx, header, s.CoreAPI).buildSnapshotForCur(*sub).SaveAuditLog(metadata.AuditCreate)
+	if err != nil {
+		blog.Errorf("Subscribe subscription_name %s success, but update to auditLog failed, err: %v", sub.SubscriptionName, err)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrAuditSaveLogFailed, err)}
+		resp.WriteError(http.StatusOK, result)
+	}
+
 	result := NewCreateSubscriptionResult(sub.SubscriptionID)
 	resp.WriteEntity(result)
 }
@@ -191,6 +199,10 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
+
+	//build preData for AuditLog
+	auditLog := NewEventAudit(s.ctx, header, s.CoreAPI).buildSnapshotForPre(sub)
+
 	// execute delete command
 	if delErr := s.db.Table(common.BKTableNameSubscription).Delete(s.ctx, condition); nil != delErr {
 		blog.Errorf("fail to delete subscription by id %v, error information is %v, rid: %s", id, delErr, rid)
@@ -236,6 +248,13 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed, err)}
 		resp.WriteError(http.StatusOK, result)
 		return
+	}
+	//SaveAuditLog
+	err = auditLog.SaveAuditLog(metadata.AuditDelete)
+	if err != nil {
+		blog.Errorf("UnSubscribe subscription_name %s success, but update to auditLog failed, err: %v", sub.SubscriptionName, err)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrAuditSaveLogFailed, err)}
+		resp.WriteError(http.StatusOK, result)
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -335,6 +354,9 @@ func (s *Service) updateSubscription(header http.Header, id int64, ownerID strin
 		}
 	}
 
+	//build preData for AuditLog
+	auditLog := NewEventAudit(s.ctx, header, s.CoreAPI).buildSnapshotForPre(oldSub)
+
 	sub.SubscriptionID = oldSub.SubscriptionID
 	if sub.TimeOutSeconds <= 0 {
 		sub.TimeOutSeconds = 10
@@ -374,6 +396,11 @@ func (s *Service) updateSubscription(header http.Header, id int64, ownerID strin
 			blog.Errorf("create subscription failed, error:%s, rid: %s", err.Error(), rid)
 			return err
 		}
+	}
+
+	err := auditLog.buildSnapshotForCur(*sub).SaveAuditLog(metadata.AuditUpdate)
+	if err != nil {
+		blog.Errorf("UpdateSubscribe subscription_name %s success, but update to auditLog failed, err: %v", sub.SubscriptionName, err)
 	}
 
 	mesg, err := json.Marshal(&sub)
