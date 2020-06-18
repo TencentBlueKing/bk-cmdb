@@ -13,6 +13,9 @@
 package service
 
 import (
+	"bytes"
+
+	"io/ioutil"
 	"sort"
 	"strconv"
 
@@ -21,6 +24,9 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
+
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 // CreateMainLineObject create a new model in the main line topo
@@ -208,9 +214,20 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts, withStatistics bool) ([
 }
 
 func SortTopoInst(instData []*metadata.TopoInstRst) {
+	for _, data := range instData {
+		instNameInGBK, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(data.InstName)), simplifiedchinese.GBK.NewEncoder()))
+		data.InstName = string(instNameInGBK)
+	}
+
 	sort.Slice(instData, func(i, j int) bool {
 		return instData[i].InstName < instData[j].InstName
 	})
+
+	for _, data := range instData {
+		instNameInUTF, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(data.InstName)), simplifiedchinese.GBK.NewDecoder()))
+		data.InstName = string(instNameInUTF)
+	}
+
 	for idx := range instData {
 		SortTopoInst(instData[idx].Child)
 	}
