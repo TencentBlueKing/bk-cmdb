@@ -314,7 +314,6 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 
 	// 预定义字段，只能更新分组、分组内排序、名称、单位、提示语和option
 	if hasIsPreProperty {
-		hasNotAllowField := false
 		_ = data.ForEach(func(key string, val interface{}) error {
 			if key != metadata.AttributeFieldPropertyGroup &&
 				key != metadata.AttributeFieldPropertyIndex &&
@@ -322,15 +321,10 @@ func (m *modelAttribute) checkUpdate(ctx core.ContextParams, data mapstr.MapStr,
 				key != metadata.AttributeFieldUnit &&
 				key != metadata.AttributeFieldPlaceHolder &&
 				key != metadata.AttributeFieldOption {
-				hasNotAllowField = true
+				data.Remove(key)
 			}
 			return nil
 		})
-		// 出现编辑预定义属性的字段
-		if hasNotAllowField {
-			blog.ErrorJSON("update model predefined attribute,input:%s, attr info:%s, rid:%s", cond.ToMapStr(), dbAttributeArr, ctx.ReqID)
-			return changeRow, ctx.Error.Error(common.CCErrCoreServiceNotUpdatePredefinedAttrErr)
-		}
 	}
 
 	if option, exists := data.Get(metadata.AttributeFieldOption); exists {
