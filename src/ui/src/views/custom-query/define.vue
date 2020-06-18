@@ -21,7 +21,7 @@
                 <label class="userapi-label">
                     {{$t("CustomQuery['查询名称']")}}<span class="color-danger"> * </span>
                 </label>
-                <input type="text" class="cmdb-form-input" 
+                <input type="text" class="cmdb-form-input"
                 v-model.trim="name"
                 :name="$t('CustomQuery[\'查询名称\']')"
                 :disabled="!authority.includes('update')"
@@ -144,9 +144,9 @@
                 </bk-button>
             </div>
         </div>
-        <v-preview ref="preview" 
-            v-if="isPreviewShow" 
-            :apiParams="apiParams" 
+        <v-preview ref="preview"
+            v-if="isPreviewShow"
+            :apiParams="apiParams"
             :attribute="object"
             :tableHeader="attribute.selected"
             @close="isPreviewShow = false">
@@ -331,6 +331,12 @@
                             field: property.propertyId,
                             operator: property.operator,
                             value: property.value === 'true'
+                        })
+                    } else if (property.operator === '$multilike') {
+                        param.condition.push({
+                            field: property.propertyId,
+                            operator: property.operator,
+                            value: property.value.split('\n').filter(str => str.trim().length).map(str => str.trim())
                         })
                     } else {
                         let operator = property.operator
