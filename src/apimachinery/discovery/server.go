@@ -54,8 +54,8 @@ func (s *server) GetServers() ([]string, error) {
 	if s == nil {
 		return []string{}, nil
 	}
-	s.RLock()
-	defer s.RUnlock()
+	s.Lock()
+	defer s.Unlock()
 
 	num := len(s.servers)
 	if num == 0 {
