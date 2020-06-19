@@ -1081,8 +1081,8 @@ var _ = Describe("host test", func() {
 
 		It("update idle host", func() {
 			input := map[string]interface{}{
-				"bk_host_id":   fmt.Sprintf("%v,%v", hostId, hostId3),
-				"bk_host_name": "update_host_name",
+				"bk_host_id": fmt.Sprintf("%v,%v", hostId, hostId3),
+				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1113,9 +1113,9 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
-			Expect(data["bk_host_name"].(string)).To(Equal("update_host_name"))
+			Expect(data["bk_sn"].(string)).To(Equal("update_bk_sn"))
 			data1 := rsp.Data.Info[1]["host"].(map[string]interface{})
-			Expect(data1["bk_host_name"].(string)).To(Equal("update_host_name"))
+			Expect(data1["bk_sn"].(string)).To(Equal("update_bk_sn"))
 		})
 
 		It("delete resource host", func() {
@@ -1321,7 +1321,7 @@ var _ = Describe("batch_update_host test", func() {
 		hostId2, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
 		Expect(err).NotTo(HaveOccurred())
 
-		By("update host property batch")
+		By("update host property batch, bk_host_name is not editable field")
 		updateInput := map[string]interface{}{
 			"update": []map[string]interface{}{
 				{
@@ -1352,7 +1352,7 @@ var _ = Describe("batch_update_host test", func() {
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
-		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_name"].(string)).To(Equal("batch_update1"))
+		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_name"].(string)).To(Equal(""))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["operator"].(string)).To(Equal("admin"))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_comment"].(string)).To(Equal("test"))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_isp_name"].(string)).To(Equal("1"))
