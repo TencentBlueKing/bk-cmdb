@@ -74,6 +74,9 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, req types.PullResourceReq) (
 			}
 			ids = append(ids, id)
 		}
+		cond[idField] = map[string]interface{}{
+			common.BKDBIN: ids,
+		}
 	}
 
 	param := metadata.PullResourceParam{
