@@ -377,6 +377,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		Condition: map[string]interface{}{
 			instIDField: instID,
 		},
+		CanEditAll: true,
 	}
 	resp, err := d.CoreAPI.CoreService().Instance().UpdateInstance(d.ctx, d.httpHeader, objID, &input)
 	if err != nil {
