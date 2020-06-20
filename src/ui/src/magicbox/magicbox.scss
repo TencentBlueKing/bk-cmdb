@@ -68,6 +68,11 @@
     }
     .bk-table-fixed-right {
         border-bottom: none;
+        tr.bk-table-row-last {
+            td.is-last {
+                border-bottom: 1px solid #dfe0e5;
+            }
+        }
     }
     .bk-table-body {
         .is-highlight {

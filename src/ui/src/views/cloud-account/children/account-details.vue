@@ -11,7 +11,7 @@
             <bk-form-item class="details-item" label="ID">
                 {{account.bk_secret_id}}
             </bk-form-item>
-            <bk-form-item class="details-item" label="Key">******</bk-form-item>
+            <bk-form-item class="details-item" label="Key">{{account.bk_secret_key}}</bk-form-item>
             <bk-form-item class="details-item" :label="$t('备注')">
                 {{account.bk_description | formatter('longchar')}}
             </bk-form-item>
@@ -66,12 +66,16 @@
         methods: {
             async getAccountData () {
                 try {
-                    this.account = await this.$store.dispatch('cloud/account/findOne', {
+                    const account = await this.$store.dispatch('cloud/account/findOne', {
                         id: this.id,
                         config: {
                             requestId: this.requestId
                         }
                     })
+                    this.account = {
+                        ...account,
+                        bk_secret_key: '******'
+                    }
                 } catch (e) {
                     this.account = {}
                     console.error(e)

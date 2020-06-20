@@ -79,6 +79,7 @@
         display: inline-flex;
         align-items: center;
         vertical-align: middle;
+        @include ellipsis;
         .icon {
             width: 14px;
             height: 14px;
