@@ -255,6 +255,7 @@ func (s *Service) ListModulesByServiceTemplateID(params types.ContextParams, pat
 	requestBody := struct {
 		Page    *metadata.BasePage `field:"page" json:"page" mapstructure:"page"`
 		Keyword string             `field:"keyword" json:"keyword" mapstructure:"keyword"`
+		Modules []int64            `field:"bk_module_ids" json:"bk_module_ids" mapstructure:"bk_module_ids"`
 	}{}
 	if err := mapstruct.Decode2Struct(data, &requestBody); err != nil {
 		blog.Errorf("ListModulesByServiceTemplateID failed, parse request body failed, err: %s, rid: %s", err.Error(), params.ReqID)
@@ -262,7 +263,7 @@ func (s *Service) ListModulesByServiceTemplateID(params types.ContextParams, pat
 	}
 
 	start := int64(0)
-	limit := int64(common.BKDefaultLimit)
+	limit := int64(common.BKNoLimit)
 	sortArr := make([]metadata.SearchSort, 0)
 	if requestBody.Page != nil {
 		limit = int64(requestBody.Page.Limit)
@@ -273,6 +274,11 @@ func (s *Service) ListModulesByServiceTemplateID(params types.ContextParams, pat
 		common.BKServiceTemplateIDField: serviceTemplateID,
 		common.BKAppIDField:             bizID,
 	}
+
+	if requestBody.Modules != nil {
+		filter[common.BKModuleIDField] = mapstr.MapStr{common.BKDBIN: requestBody.Modules}
+	}
+
 	if len(requestBody.Keyword) != 0 {
 		filter[common.BKModuleNameField] = map[string]interface{}{
 			common.BKDBLIKE: requestBody.Keyword,

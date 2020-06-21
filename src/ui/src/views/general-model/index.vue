@@ -60,8 +60,8 @@
                     searchable
                     font-size="medium"
                     :clearable="false">
-                    <bk-option v-for="(option, index) in filter.options"
-                        :key="index"
+                    <bk-option v-for="option in filter.options"
+                        :key="option.id"
                         :id="option.id"
                         :name="option.name">
                     </bk-option>

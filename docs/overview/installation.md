@@ -87,7 +87,7 @@
 ./elasticsearch
 ```
 
-如果想部署高可能可扩展的ES，可参考官方文档[ES-Guide](https://www.elastic.co/guide/index.html)
+如果想部署高可用可扩展的ES，可参考官方文档[ES-Guide](https://www.elastic.co/guide/index.html)
 
 ### 7. 部署mongo-connector (用于全文检索, 可选, 控制开关见第9步的full_text_search)
 

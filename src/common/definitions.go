@@ -453,7 +453,7 @@ const (
 	BKPort = "port"
 
 	// BKProcPortEnable whether enable port,  enable port use for monitor app. default value
-	BKProcPortEnable = "bk_port_enable"
+	BKProcPortEnable = "bk_enable_port"
 
 	// BKUser the user
 	BKUser = "user"
@@ -879,7 +879,7 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	//BKSessionLanugageKey = "language"
-	BKHTTPSupplierID = "bk_supplier_id"
+	BKHTTPSupplierID     = "bk_supplier_id"
 	BKHTTPRequestAppCode = "Bk-App-Code"
 
 	// BKHTTPCCRequestID cc request id cc_request_id

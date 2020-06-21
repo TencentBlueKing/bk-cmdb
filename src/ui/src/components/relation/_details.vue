@@ -150,6 +150,7 @@
         top: 0;
         bottom: 0;
         text-align: right;
+        cursor: default;
         &.full-screen {
             text-align: center;
         }

@@ -223,8 +223,7 @@ func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64
 
 	blog.V(5).Infof("findHostServiceInst query host and process relation. hostID:%#v, relation:%#v, rid;%s", hostIDs, relations, ctx.ReqID)
 
-	var procIDs []int64
-	var serviceInstIDs []int64
+	procIDs, serviceInstIDs := make([]int64, 0), make([]int64, 0)
 	// 进程与服务实例的关系
 	procServiceInstMap := make(map[int64][]int64, 0)
 	for _, relation := range relations {

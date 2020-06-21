@@ -49,6 +49,9 @@ func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 	client.SetSyncTimeout(timeout)
 	client.SetSocketTimeout(timeout)
 	client.SetPoolLimit(1000)
+	if err := client.Ping(); err != nil {
+		return nil, err
+	}
 	return &Mongo{
 		dbc:    client,
 		dbname: cs.Database,

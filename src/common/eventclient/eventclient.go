@@ -52,10 +52,10 @@ type ClientViaRedis struct {
 	queueLock sync.Mutex
 }
 
-func NewClientViaRedis(cache *redis.Client, rdb dal.RDB) *ClientViaRedis {
-	// we limit the queue size to 4k*2500=10M， assume that 4k per event
-	const queueSize = 2500
+// we limit the queue size to 4k*2500=10M， assume that 4k per event
+const queueSize = 2500
 
+func NewClientViaRedis(cache *redis.Client, rdb dal.RDB) *ClientViaRedis {
 	ec := &ClientViaRedis{
 		rdb:   rdb,
 		cache: cache,
@@ -66,10 +66,8 @@ func NewClientViaRedis(cache *redis.Client, rdb dal.RDB) *ClientViaRedis {
 }
 
 func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst) error {
-	c.queueLock.Lock()
 	for i := range events {
 		if events[i] == nil {
-			c.queueLock.Unlock()
 			return fmt.Errorf("[event] event could not be nil")
 		}
 
@@ -91,34 +89,41 @@ func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst
 
 		eventID, err := c.rdb.NextSequence(ctx, common.EventCacheEventIDKey)
 		if err != nil {
-			c.queueLock.Unlock()
 			return fmt.Errorf("[event] generate eventID failed: %v", err)
 		}
 		events[i].ID = int64(eventID)
 
 		value, err := json.Marshal(events[i])
 		if err != nil {
-			c.queueLock.Unlock()
 			return fmt.Errorf("[event] marshal json error: %v, raw: %#v", err, events[i])
 		}
 		et := &eventtmp{EventInst: events[i], data: value}
 		select {
 		case c.queue <- et:
 		default:
-			// channel fulled, so we drop 200 oldest events from queue
-			// TODO save to disk if possible
+			// queue is already full
+			c.queueLock.Lock()
 			c.pending = nil
 			var ok bool
-			for i := 0; i < 200; i-- {
-				_, ok = <-c.queue
-				if !ok {
-					break
+		loop:
+			for i := 0; i < 200; i++ {
+				select {
+				case _, ok = <-c.queue:
+					if !ok {
+						// c.queue has already been closed
+						blog.Errorf("queue closed")
+						c.queueLock.Unlock()
+						return fmt.Errorf("queue closed")
+					}
+				default:
+					// c.queue is already empty.
+					break loop
 				}
 			}
 			c.queue <- et
+			c.queueLock.Unlock()
 		}
 	}
-	c.queueLock.Unlock()
 	return nil
 }
 

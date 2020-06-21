@@ -400,7 +400,7 @@ type Process struct {
 	Description     *string       `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
 	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
-	PortEnable      *bool         `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
+	PortEnable      *bool         `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
 }
 
 type ServiceCategory struct {
@@ -861,7 +861,7 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
 			changed = true
 		} else if t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil {
-			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+			process["auto_time_gap"] = nil
 			changed = true
 		} else if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.AutoTimeGap {
 			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
@@ -1199,7 +1199,7 @@ type ProcessProperty struct {
 	Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
 	Description        PropertyString   `field:"description" json:"description" bson:"description"`
 	StartParamRegex    PropertyString   `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
-	PortEnable         PropertyBool     `field:"bk_port_enable" json:"bk_port_enable" bson:"bk_port_enable"`
+	PortEnable         PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {

@@ -1,5 +1,6 @@
 <template>
     <div class="form-layout">
+        <slot name="prepend"></slot>
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
@@ -19,6 +20,7 @@
                                             v-if="property['placeholder']"
                                             v-bk-tooltips="htmlEncode(property['placeholder'])">
                                         </i>
+                                        <form-tips :type="type" :property="property" :render="renderTips"></form-tips>
                                     </div>
                                     <div class="property-value clearfix">
                                         <slot :name="property.bk_property_id">
@@ -73,8 +75,12 @@
 <script>
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
+    import FormTips from './form-tips.js'
     export default {
         name: 'cmdb-form',
+        components: {
+            FormTips
+        },
         mixins: [formMixins],
         props: {
             inst: {
@@ -100,7 +106,8 @@
             saveAuth: {
                 type: [String, Array],
                 default: ''
-            }
+            },
+            renderTips: Function
         },
         data () {
             return {
@@ -250,6 +257,7 @@
             padding: 0 54px 0 0;
             font-size: 12px;
             flex: 0 0 50%;
+            max-width: 50%;
             .property-name{
                 display: block;
                 margin: 6px 0 10px;
@@ -280,6 +288,7 @@
                 width: 16px;
                 height: 16px;
                 font-size: 16px;
+                margin-right: 6px;
                 color: #c3cdd7;
             }
             .property-value{

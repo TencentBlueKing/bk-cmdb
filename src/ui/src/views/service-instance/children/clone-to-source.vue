@@ -112,6 +112,7 @@
                     'bk_start_param_regex',
                     'bind_ip',
                     'port',
+                    'bk_port_enable',
                     'protocol',
                     'work_path',
                     'user'

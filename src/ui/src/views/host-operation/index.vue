@@ -547,32 +547,10 @@
                     if (createComponent || hostAttrsComponent) {
                         params.options = {}
                         if (createComponent) {
-                            params.options.service_instance_options = createComponent.$refs.serviceInstance.map((component, index) => {
-                                const instance = createComponent.instances[index]
-                                return {
-                                    bk_module_id: instance.bk_module_id,
-                                    bk_host_id: instance.bk_host_id,
-                                    processes: component.processList.map((process, listIndex) => ({
-                                        process_template_id: component.templates[listIndex] ? component.templates[listIndex].id : 0,
-                                        process_info: process
-                                    }))
-                                }
-                            })
+                            params.options.service_instance_options = createComponent.getServiceInstanceOptions()
                         }
                         if (hostAttrsComponent) {
-                            const conflictResolveResult = hostAttrsComponent.$refs.confirmTable.conflictResolveResult
-                            const conflictResolvers = []
-                            Object.keys(conflictResolveResult).forEach(key => {
-                                const propertyList = conflictResolveResult[key]
-                                propertyList.forEach(property => {
-                                    conflictResolvers.push({
-                                        bk_host_id: Number(key),
-                                        bk_attribute_id: property.id,
-                                        bk_property_value: property.__extra__.value
-                                    })
-                                })
-                            })
-                            params.options.host_apply_conflict_resolvers = conflictResolvers
+                            params.options.host_apply_conflict_resolvers = hostAttrsComponent.getHostApplyConflictResolvers()
                         }
                     }
                     await this.$http.post(

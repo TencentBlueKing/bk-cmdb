@@ -51,7 +51,7 @@
                                 </bk-button>
                             </cmdb-auth>
                             <div class="property-form" v-if="property === editState.property">
-                                <div class="form-component">
+                                <div :class="['form-component', property.bk_property_type]">
                                     <component
                                         :is="`cmdb-form-${property.bk_property_type}`"
                                         :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
@@ -416,7 +416,8 @@
             color: $cmdbDangerColor;
         }
         .form-component {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             vertical-align: middle;
             height: 32px;
             width: 260px;
