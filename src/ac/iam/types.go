@@ -145,8 +145,7 @@ const (
 	SysSystemBase   ResourceTypeID = "sys_system_base"
 	SysEventPushing ResourceTypeID = "sys_event_pushing"
 	SysModelGroup   ResourceTypeID = "sys_model_group"
-	// special model group and model resource for selection of instance, not including biz topology and host model group
-	SysInstanceModelGroup    ResourceTypeID = "sys_instance_model_group"
+	// special model resource for selection of instance, not including models whose instances are managed separately
 	SysInstanceModel         ResourceTypeID = "sys_instance_model"
 	SysModel                 ResourceTypeID = "sys_model"
 	SysInstance              ResourceTypeID = "sys_instance"
@@ -162,9 +161,9 @@ const (
 )
 
 const (
-	Business                  ResourceTypeID = "business"
-	Set                       ResourceTypeID = "set"
-	Module                    ResourceTypeID = "module"
+	Business ResourceTypeID = "business"
+	//Set                       ResourceTypeID = "set"
+	//Module                    ResourceTypeID = "module"
 	BizCustomQuery            ResourceTypeID = "biz_custom_query"
 	BizTopology               ResourceTypeID = "biz_topology"
 	BizCustomField            ResourceTypeID = "biz_custom_field"
