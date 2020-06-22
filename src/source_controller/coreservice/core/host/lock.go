@@ -13,7 +13,7 @@
 package host
 
 import (
-	"strings"
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
@@ -26,33 +26,31 @@ import (
 )
 
 func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError {
-	fields := []string{common.BKHostIDField, common.BKHostInnerIPField}
+	input.IDS = util.IntArrayUnique(input.IDS)
 	condition := mapstr.MapStr{
-		common.BKCloudIDField:     input.CloudID,
-		common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS},
+		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
 	}
 	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
 	hostInfos := make([]mapstr.MapStr, 0)
-	limit := uint64(len(input.IPS))
-	err := hm.DbProxy.Table(common.BKTableNameBaseHost).Find(condition).Fields(fields...).Limit(limit).All(kit.Ctx, &hostInfos)
+	limit := uint64(len(input.IDS))
+	err := hm.DbProxy.Table(common.BKTableNameBaseHost).Find(condition).Fields(common.BKHostIDField).Limit(limit).All(kit.Ctx, &hostInfos)
 	if nil != err {
 		blog.Errorf("lock host, query host from db error, condition: %+v, err: %+v, rid: %s", condition, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommDBSelectFailed)
 	}
 
-	diffIP := diffHostLockIP(input.IPS, hostInfos, kit.Rid)
-	if 0 != len(diffIP) {
-		blog.Errorf("lock host, not found, ip:%+v, rid:%s", diffIP, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, " ip_list["+strings.Join(diffIP, ",")+"]")
+	diffID := diffHostLockID(input.IDS, hostInfos, kit.Rid)
+	if 0 != len(diffID) {
+		blog.Errorf("lock host, not found, id: %+v, rid: %s", diffID, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, fmt.Sprintf(" id_list %v", diffID))
 	}
 
 	user := util.GetUser(kit.Header)
 	var insertDataArr []interface{}
 	ts := time.Now().UTC()
-	for _, ip := range input.IPS {
+	for _, id := range input.IDS {
 		conds := mapstr.MapStr{
-			common.BKHostInnerIPField: ip,
-			common.BKCloudIDField:     input.CloudID,
+			common.BKHostIDField: id,
 		}
 		conds = util.SetQueryOwner(conds, kit.SupplierAccount)
 		cnt, err := hm.DbProxy.Table(common.BKTableNameHostLock).Find(conds).Count(kit.Ctx)
@@ -63,8 +61,7 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 		if 0 == cnt {
 			insertDataArr = append(insertDataArr, metadata.HostLockData{
 				User:       user,
-				IP:         ip,
-				CloudID:    input.CloudID,
+				ID:         id,
 				CreateTime: ts,
 				OwnerID:    util.GetOwnerID(kit.Header),
 			})
@@ -83,8 +80,7 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 
 func (hm *hostManager) UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError {
 	conds := mapstr.MapStr{
-		common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS},
-		common.BKCloudIDField:     input.CloudID,
+		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
 	}
 	conds = util.SetModOwner(conds, kit.SupplierAccount)
 	err := hm.DbProxy.Table(common.BKTableNameHostLock).Delete(kit.Ctx, conds)
@@ -99,11 +95,10 @@ func (hm *hostManager) UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest
 func (hm *hostManager) QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLockRequest) ([]metadata.HostLockData, errors.CCError) {
 	hostLockInfoArr := make([]metadata.HostLockData, 0)
 	conds := mapstr.MapStr{
-		common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS},
-		common.BKCloudIDField:     input.CloudID,
+		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
 	}
 	conds = util.SetModOwner(conds, kit.SupplierAccount)
-	limit := uint64(len(input.IPS))
+	limit := uint64(len(input.IDS))
 	err := hm.DbProxy.Table(common.BKTableNameHostLock).Find(conds).Limit(limit).All(kit.Ctx, &hostLockInfoArr)
 	if nil != err {
 		blog.Errorf("query lock host, query host lock from db error, err: %+v, rid:%s", err, kit.Rid)
@@ -112,22 +107,22 @@ func (hm *hostManager) QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLoc
 	return hostLockInfoArr, nil
 }
 
-func diffHostLockIP(ips []string, hostInfos []mapstr.MapStr, rid string) []string {
-	mapInnerIP := make(map[string]bool)
+func diffHostLockID(ids []int64, hostInfos []mapstr.MapStr, rid string) []int64 {
+	mapInnerID := make(map[int64]bool)
 	for _, hostInfo := range hostInfos {
-		innerIP, err := hostInfo.String(common.BKHostInnerIPField)
+		id, err := hostInfo.Int64(common.BKHostIDField)
 		if nil != err {
-			blog.ErrorJSON("different host lock IP not inner ip, %s, rid: %s", hostInfo, rid)
+			blog.ErrorJSON("different host lock ID not valid, hostInfo: %s, rid: %s", hostInfo, rid)
 			continue
 		}
-		mapInnerIP[innerIP] = true
+		mapInnerID[id] = true
 	}
-	var diffIPS []string
-	for _, ip := range ips {
-		_, exist := mapInnerIP[ip]
+	var diffIDS []int64
+	for _, id := range ids {
+		_, exist := mapInnerID[id]
 		if !exist {
-			diffIPS = append(diffIPS, ip)
+			diffIDS = append(diffIDS, id)
 		}
 	}
-	return diffIPS
+	return diffIDS
 }

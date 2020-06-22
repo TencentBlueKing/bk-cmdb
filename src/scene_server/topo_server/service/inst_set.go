@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
 )
@@ -436,20 +437,19 @@ func (s *Service) SearchSetBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(option.Fields) == 0 {
-		option.Fields = []string{common.BKSetIDField, common.BKSetNameField}
-	}
-
+	setIDs := util.IntArrayUnique(option.IDs)
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 		common.BKSetIDField: mapstr.MapStr{
-			common.BKDBIN: option.InstIDs,
+			common.BKDBIN: setIDs,
 		},
 	}
 
 	qc := &metadata.QueryCondition{
-		Fields:    option.Fields,
-		Page:      option.Page,
+		Fields: option.Fields,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
 		Condition: cond,
 	}
 	instanceResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDSet, qc)
@@ -463,5 +463,5 @@ func (s *Service) SearchSetBatch(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.New(instanceResult.Code, instanceResult.ErrMsg))
 		return
 	}
-	ctx.RespEntity(instanceResult.Data)
+	ctx.RespEntity(instanceResult.Data.Info)
 }

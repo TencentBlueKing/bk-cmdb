@@ -503,8 +503,10 @@
                 }
             },
             isMultipleProperty (property) {
-                return ['list', 'enum', 'timezone', 'organization'].includes(property.propertyType)
-                    || ['bk_cloud_id'].includes(property.propertyId)
+                const propertyType = property.propertyType || property.bk_property_type
+                const propertyId = property.propertyId || property.bk_property_id
+                return ['list', 'enum', 'timezone', 'organization'].includes(propertyType)
+                    || ['bk_cloud_id'].includes(propertyId)
             },
             async previewUserAPI () {
                 if (!await this.$validator.validateAll()) {

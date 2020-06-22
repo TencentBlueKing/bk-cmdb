@@ -1,5 +1,5 @@
 <template>
-    <div class="host-apply">
+    <div class="host-apply" v-bkloading="{ isLoading: $loading(['getHostPropertyList', 'getTopologyData']) }">
         <div class="main-wrapper">
             <cmdb-resize-layout class="tree-layout fl"
                 direction="right"
@@ -8,7 +8,7 @@
                 :max="480">
                 <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
             </cmdb-resize-layout>
-            <div class="main-content">
+            <div class="main-content" v-bkloading="{ isLoading: $loading(['getHostApplyRules']) }">
                 <template v-if="moduleId">
                     <div class="config-panel" v-show="!batchAction">
                         <div class="config-head">
@@ -225,7 +225,7 @@
                         bk_module_ids: [this.moduleId]
                     },
                     config: {
-                        requestId: `getHostApplyRules`
+                        requestId: 'getHostApplyRules'
                     }
                 })
             },
@@ -236,7 +236,7 @@
                         bk_module_ids: [this.moduleId]
                     },
                     config: {
-                        requestId: `getHostApplyPreview`
+                        requestId: 'getHostApplyPreview'
                     }
                 })
             },

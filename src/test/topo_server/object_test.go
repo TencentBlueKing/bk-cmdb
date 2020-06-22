@@ -1320,21 +1320,16 @@ var _ = Describe("object test", func() {
 			sid, _ := strconv.ParseInt(setId, 10, 64)
 			sid2, _ := strconv.ParseInt(setId, 10, 64)
 			input := &metadata.SearchInstBatchOption{
-				InstIDs: []int64{sid, sid2},
-				Fields:  []string{"bk_set_id", "bk_set_name"},
-				Page: metadata.BasePage{
-					Sort:  "-bk_set_id",
-					Limit: 10,
-					Start: 0,
-				},
+				IDs:    []int64{sid, sid2},
+				Fields: []string{"bk_set_id", "bk_set_name"},
 			}
 			rsp, err := instClient.SearchSetBatch(context.Background(), bizId, header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(1))
-			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_set_id"])).To(Equal(setId))
-			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_set_name"])).To(Equal("new_test"))
+			Expect(len(rsp.Data)).To(Equal(1))
+			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_set_id"])).To(Equal(setId))
+			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_set_name"])).To(Equal("new_test"))
 		})
 	})
 
@@ -1522,21 +1517,16 @@ var _ = Describe("object test", func() {
 			mid, _ := strconv.ParseInt(moduleId, 10, 64)
 			mid2, _ := strconv.ParseInt(moduleId1, 10, 64)
 			input := &metadata.SearchInstBatchOption{
-				InstIDs: []int64{mid, mid2},
-				Fields:  []string{"bk_module_id", "bk_module_name"},
-				Page: metadata.BasePage{
-					Sort:  "-bk_module_id",
-					Limit: 10,
-					Start: 0,
-				},
+				IDs:    []int64{mid, mid2},
+				Fields: []string{"bk_module_id", "bk_module_name"},
 			}
 			rsp, err := instClient.SearchModuleBatch(context.Background(), bizId, header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data.Count).To(Equal(1))
-			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_module_id"])).To(Equal(moduleId))
-			Expect(commonutil.GetStrByInterface(rsp.Data.Info[0]["bk_module_name"])).To(Equal("new_module"))
+			Expect(len(rsp.Data)).To(Equal(1))
+			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_module_id"])).To(Equal(moduleId))
+			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_module_name"])).To(Equal("new_module"))
 		})
 	})
 })

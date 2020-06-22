@@ -130,19 +130,6 @@ func (f *Flow) cleanExpiredEvents() {
 				}
 			}
 
-			lastNode := expiredNodes[len(expiredNodes)-1]
-			// set head cursor to last node's next node.
-			headNode := &watch.ChainNode{
-				Cursor:     headKey,
-				NextCursor: lastNode.NextCursor,
-			}
-
-			hBytes, err := json.Marshal(headNode)
-			if err != nil {
-				blog.Errorf("clean expired events for key: %s, but marshal head node failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
-				continue
-			}
-
 			// get operate lock to avoid concurrent revise the chain
 			success, err := f.rds.SetNX(f.key.LockKey(), 1, 5*time.Second).Result()
 			if err != nil {
@@ -164,6 +151,19 @@ func (f *Flow) cleanExpiredEvents() {
 				}
 			}
 
+			lastNode := expiredNodes[len(expiredNodes)-1]
+			// set head cursor to last node's next node.
+			headNode := &watch.ChainNode{
+				Cursor:     headKey,
+				NextCursor: lastNode.NextCursor,
+			}
+
+			hBytes, err := json.Marshal(headNode)
+			if err != nil {
+				blog.Errorf("clean expired events for key: %s, but marshal head node failed, err: %v, rid: %s", f.key.Namespace(), err, rid)
+				continue
+			}
+
 			expireCursor := make([]string, 0)
 			pipe := f.rds.Pipeline()
 			// redirect the head key.
@@ -178,7 +178,7 @@ func (f *Flow) cleanExpiredEvents() {
 
 			// if last node is tail key, which means we have scan to the end.
 			// then we need to update the tail key next_cursor to head key.
-			if lastNode.Cursor == tailKey {
+			if lastNode.NextCursor == tailKey {
 				// update continue loop flag, we have to the end the loop,
 				// and sleep wait for another loop.
 				continueLoop = false

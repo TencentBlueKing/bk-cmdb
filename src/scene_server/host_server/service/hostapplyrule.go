@@ -329,33 +329,12 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
+	}
+	if planRequest.HostIDs != nil {
+		relationRequest.HostIDArr = planRequest.HostIDs
 	}
 	hostRelations, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relationRequest)
-	if err != nil {
-		blog.Errorf("generateApplyPlan failed, err: %+v, rid: %s", err, rid)
-		return planResult, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if hostRelations.Code != 0 {
-		blog.ErrorJSON("generateApplyPlan failed, response failed, filter: %s, response: %s, err: %s, rid: %s", relationRequest, hostRelations, err, rid)
-		return planResult, errors.New(hostRelations.Code, hostRelations.ErrMsg)
-	}
-	hostIDs := make([]int64, 0)
-	for _, item := range hostRelations.Data.Info {
-		if planRequest.HostIDs != nil {
-			if util.InArray(item.HostID, planRequest.HostIDs) == false {
-				continue
-			}
-		}
-		hostIDs = append(hostIDs, item.HostID)
-	}
-	relationRequest = &metadata.HostModuleRelationRequest{
-		ApplicationID: bizID,
-		HostIDArr:     hostIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	hostRelations, err = s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relationRequest)
 	if err != nil {
 		blog.Errorf("generateApplyPlan failed, err: %+v, rid: %s", err, rid)
 		return planResult, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -367,9 +346,6 @@ func (s *Service) generateApplyPlan(srvData *srvComm, bizID int64, planRequest m
 	hostModuleMap := make(map[int64][]int64)
 	moduleIDs := make([]int64, 0)
 	for _, item := range hostRelations.Data.Info {
-		if util.InArray(item.HostID, hostIDs) == false {
-			continue
-		}
 		if _, exist := hostModuleMap[item.HostID]; exist == false {
 			hostModuleMap[item.HostID] = make([]int64, 0)
 		}
@@ -635,6 +611,7 @@ func (s *Service) listHostRelatedApplyRule(srvData *srvComm, bizID int64, option
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
+		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
 	relationResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relationOption)
 	if err != nil {

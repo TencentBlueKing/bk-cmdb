@@ -15,8 +15,6 @@ package service
 import (
 	"strconv"
 
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -25,6 +23,7 @@ import (
 	"configcenter/src/common/util"
 
 	"gopkg.in/mgo.v2/bson"
+	"gopkg.in/redis.v5"
 )
 
 func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
@@ -231,6 +230,52 @@ func (s *coreService) GetHostSnap(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.HostSnap{
 		Data: result,
 	})
+}
+
+func (s *coreService) GetHostSnapBatch(ctx *rest.Contexts) {
+	input := metadata.HostSnapBatchInput{}
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(input.HostIDs) == 0 {
+		ctx.RespEntity(map[int64]string{})
+		return
+	}
+
+	keys := []string{}
+	for _, id := range input.HostIDs {
+		keys = append(keys, common.RedisSnapKeyPrefix+strconv.FormatInt(id, 10))
+	}
+
+	res, err := s.rds.MGet(keys...).Result()
+	if err != nil {
+		if err == redis.Nil {
+			ctx.RespEntity(map[int64]string{})
+			return
+		}
+		blog.Errorf("get host snapshot failed, keys: %#v, err: %v, rid: %s", keys, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetSnapshot))
+		return
+	}
+
+	ret := make(map[int64]string)
+	for i, hostID := range input.HostIDs {
+		if res[i] == nil {
+			ret[hostID] = ""
+			continue
+		}
+		value, ok := res[i].(string)
+		if !ok {
+			blog.Errorf("GetHostSnapBatch failed, hostID: %d, value in redis is not type string, but tyep: %T, value:%#v, rid: %s", hostID, res[i], res[i], ctx.Kit.Rid)
+			ret[hostID] = ""
+			continue
+		}
+		ret[hostID] = value
+	}
+
+	ctx.RespEntity(ret)
 }
 
 // GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition

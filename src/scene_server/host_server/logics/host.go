@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -83,7 +84,7 @@ func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, hostID int64) (ma
 	return hostInfo, ip, nil
 }
 
-// GetConfigByCond get hosts owened set, module info, where hosts must match condition specify by cond.
+// GetConfigByCond get hosts owned set, module info, where hosts must match condition specify by cond.
 func (lgc *Logics) GetConfigByCond(ctx context.Context, input metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &input)
@@ -242,6 +243,29 @@ func (lgc *Logics) GetHostInfoByConds(ctx context.Context, cond map[string]inter
 	return result.Data.Info, nil
 }
 
+// SearchHostInfo search host info by QueryCondition
+func (lgc *Logics) SearchHostInfo(ctx context.Context, cond metadata.QueryCondition) ([]mapstr.MapStr, errors.CCErrorCoder) {
+	query := &metadata.QueryInput{
+		Condition: cond.Condition,
+		Fields:    strings.Join(cond.Fields, ","),
+		Start:     cond.Page.Start,
+		Limit:     cond.Page.Limit,
+		Sort:      cond.Page.Sort,
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Host().GetHosts(ctx, lgc.header, query)
+	if err != nil {
+		blog.Errorf("GetHostInfoByConds GetHosts http do error, err:%s, input:%+v,rid:%s", err.Error(), query, lgc.rid)
+		return nil, lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if err := result.CCError(); err != nil {
+		blog.Errorf("GetHostInfoByConds GetHosts http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		return nil, err
+	}
+
+	return result.Data.Info, nil
+}
+
 // HostSearch search host by multiple condition
 const (
 	SplitFlag      = "##"
@@ -253,6 +277,7 @@ const (
 // available condition fields are bk_supplier_account, bk_biz_id, bk_host_id, bk_module_id, bk_set_id
 func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond metadata.HostModuleRelationRequest) ([]int64, errors.CCError) {
 
+	cond.Fields = []string{common.BKHostIDField}
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
 	if err != nil {
 		blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(), cond, lgc.rid)

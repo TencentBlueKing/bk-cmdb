@@ -38,6 +38,9 @@ const (
 	// max limit of a page
 	BKMaxPageSize = 1000
 
+	// max limit of instance count
+	BKMaxInstanceLimit = 500
+
 	// 一次最大操作记录数
 	BKMaxRecordsAtOnce = 2000
 

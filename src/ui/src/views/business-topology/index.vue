@@ -26,7 +26,7 @@
                             <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
                         </div>
                     </div>
-                    <service-instance v-else ref="serviceInstance"></service-instance>
+                    <service-instance-view v-else-if="activeTab === 'serviceInstance'"></service-instance-view>
                 </bk-tab-panel>
                 <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
                     <div class="default-node-info" v-if="!showNodeInfo">
@@ -46,17 +46,17 @@
 <script>
     import TopologyTree from './children/topology-tree.vue'
     import HostList from './host/host-list.vue'
-    import ServiceInstance from './children/service-instances.vue'
     import ServiceNodeInfo from './children/service-node-info.vue'
     import { mapGetters } from 'vuex'
     import Bus from '@/utils/bus.js'
     import RouterQuery from '@/router/query'
+    import ServiceInstanceView from './service-instance/view'
     export default {
         components: {
             TopologyTree,
             HostList,
             ServiceNodeInfo,
-            ServiceInstance
+            ServiceInstanceView
         },
         data () {
             return {
@@ -89,6 +89,8 @@
                 const refresh = (this.$refs[tab] || {}).refresh
                 typeof refresh === 'function' && refresh(1)
                 RouterQuery.set('tab', tab)
+                RouterQuery.delete('page')
+                RouterQuery.delete('limit')
             }
         },
         async created () {
