@@ -45,19 +45,19 @@ const (
 	TencentCloud string = "tencent_cloud"
 )
 
+var VendorNamesMap = map[string]string{
+	"1": AWS,
+	"2": TencentCloud,
+}
+
+var SupportedCloudVendors = []string{"1", "2"}
+
 // 同步状态
 const (
 	CloudSyncSuccess    string = "cloud_sync_success"
 	CloudSyncFail       string = "cloud_sync_fail"
 	CloudSyncInProgress string = "cloud_sync_in_progress"
 )
-
-var SupportedCloudVendors = []string{"aws", "tencent_cloud"}
-
-var VendorNameIDs = map[string]string{
-	"aws":           "1",
-	"tencent_cloud": "2",
-}
 
 var CloudHostStatusIDs = map[string]string{
 	"starting": "1",
@@ -95,7 +95,7 @@ type SearchVpcHostCntOption struct {
 
 type RegionVpc struct {
 	Region string `json:"bk_region"`
-	VpcID   string `json:"bk_vpc_id"`
+	VpcID  string `json:"bk_vpc_id"`
 }
 
 type SearchVpcOption struct {

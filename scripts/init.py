@@ -224,7 +224,6 @@ database = $db
 maxOpenConns = 3000
 maxIDleConns = 100
 mechanism = SCRAM-SHA-1
-txnEnabled = $txn_enabled
 
 [redis]
 host = $redis_host
@@ -269,7 +268,6 @@ database = $db
 maxOpenConns = 3000
 maxIDleConns = 100
 mechanism = SCRAM-SHA-1
-txnEnabled = $txn_enabled
 '''
 
     template = FileTemplate(auth_file_template_str)
