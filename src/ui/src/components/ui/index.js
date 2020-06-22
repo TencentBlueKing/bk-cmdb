@@ -17,7 +17,7 @@ import longchar from './form/longchar.vue'
 import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
 import enumeration from './form/enum.vue'
-import objuser from './form/async-objuser.vue'
+import objuser from './form/user.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
 import collapse from './collapse/collapse'
@@ -32,7 +32,6 @@ import auth from './auth/auth.vue'
 import tableEmpty from './table-empty/table-empty.vue'
 import list from './form/list.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
-import user from './user/user.vue'
 import textButton from './button/link-button.vue'
 import stickyLayout from './other/sticky-layout.vue'
 import permission from './permission/embed-permission.vue'
@@ -75,7 +74,6 @@ const install = (Vue, opts = {}) => {
         tableEmpty,
         list,
         leaveConfirm,
-        user,
         textButton,
         stickyLayout,
         permission,

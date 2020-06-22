@@ -1,5 +1,6 @@
 <template>
-    <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`">{{displayValue}}</compmoent>
+    <cmdb-form-objuser :value="value" type="info" v-if="isUser"></cmdb-form-objuser>
+    <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`" v-else>{{displayValue}}</compmoent>
 </template>
 
 <script>
@@ -59,6 +60,10 @@
                 }
 
                 return attrs
+            },
+            isUser () {
+                const type = typeof this.property === 'object' ? this.property.bk_property_type : this.property
+                return type === 'objuser'
             }
         },
         watch: {
@@ -71,6 +76,7 @@
         },
         methods: {
             async setDisplayValue (value) {
+                if (this.isUser) return
                 let displayValue
                 const isPropertyObject = Object.prototype.toString.call(this.property) === '[object Object]'
                 const type = isPropertyObject ? this.property.bk_property_type : this.property
