@@ -212,7 +212,7 @@ func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 
 	return []RscTypeAndID{
 		{
-			ResourceType: SysModel,
+			ResourceType: SysInstanceModel,
 			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
 		},
 		{

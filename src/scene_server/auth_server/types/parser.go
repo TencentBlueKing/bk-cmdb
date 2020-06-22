@@ -188,7 +188,7 @@ func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 		return common.BKHostIDField
 	case iam.SysEventPushing:
 		return common.BKSubscriptionIDField
-	case iam.SysModelGroup, iam.SysInstanceModelGroup:
+	case iam.SysModelGroup:
 		return common.BKClassificationIDField
 	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKObjIDField
@@ -208,10 +208,10 @@ func GetResourceIDField(resourceType iam.ResourceTypeID) string {
 		return common.BKAppIDField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldID
-	case iam.Set:
-		return common.BKSetIDField
-	case iam.Module:
-		return common.BKModuleIDField
+	//case iam.Set:
+	//	return common.BKSetIDField
+	//case iam.Module:
+	//	return common.BKModuleIDField
 	default:
 		return ""
 	}
@@ -224,7 +224,7 @@ func GetResourceNameField(resourceType iam.ResourceTypeID) string {
 		return common.BKHostInnerIPField
 	case iam.SysEventPushing:
 		return common.BKSubscriptionNameField
-	case iam.SysModelGroup, iam.SysInstanceModelGroup:
+	case iam.SysModelGroup:
 		return common.BKClassificationNameField
 	case iam.SysModel, iam.SysInstanceModel:
 		return common.BKObjNameField
@@ -244,10 +244,10 @@ func GetResourceNameField(resourceType iam.ResourceTypeID) string {
 		return common.BKAppNameField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldName
-	case iam.Set:
-		return common.BKSetNameField
-	case iam.Module:
-		return common.BKModuleNameField
+	//case iam.Set:
+	//	return common.BKSetNameField
+	//case iam.Module:
+	//	return common.BKModuleNameField
 	default:
 		return ""
 	}

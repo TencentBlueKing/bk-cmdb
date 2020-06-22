@@ -33,7 +33,7 @@ func (s *AuthService) PullSystemResource(ctx *rest.Contexts) {
 	}
 
 	switch query.Type {
-	case iam.SysEventPushing, iam.SysModelGroup, iam.SysInstanceModelGroup, iam.SysModel, iam.SysInstanceModel,
+	case iam.SysEventPushing, iam.SysModelGroup, iam.SysModel, iam.SysInstanceModel,
 		iam.SysAssociationType, iam.SysCloudAccount, iam.SysCloudResourceTask, iam.SysResourcePoolDirectory:
 	default:
 		ctx.RespHTTPBody(types.BaseResp{
@@ -60,13 +60,7 @@ func (s *AuthService) PullSystemResource(ctx *rest.Contexts) {
 		})
 		return
 	case types.ListInstanceMethod:
-		var res *types.ListInstanceResult
-		var err error
-		if query.Type == iam.SysModel || query.Type == iam.SysInstanceModel {
-			res, err = s.lgc.ListModel(ctx.Kit, query)
-		} else {
-			res, err = s.lgc.ListSystemInstance(ctx.Kit, query)
-		}
+		res, err := s.lgc.ListSystemInstance(ctx.Kit, query)
 		if err != nil {
 			ctx.RespHTTPBody(types.BaseResp{
 				Code:    types.InternalServerErrorCode,

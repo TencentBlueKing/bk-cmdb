@@ -44,14 +44,14 @@ func GenerateInstanceSelections() []InstanceSelection {
 			ResourceTypeChain: []ResourceChain{
 				// select the business at first.
 				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       Set,
-				},
-				{
-					SystemID: SystemIDCMDB,
-					ID:       Module,
-				},
+				//{
+				//	SystemID: SystemIDCMDB,
+				//	ID:       Set,
+				//},
+				//{
+				//	SystemID: SystemIDCMDB,
+				//	ID:       Module,
+				//},
 				// then select the host instances.
 				{
 					SystemID: SystemIDCMDB,
@@ -128,10 +128,6 @@ func GenerateInstanceSelections() []InstanceSelection {
 			ResourceTypeChain: []ResourceChain{
 				{
 					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModelGroup,
-				},
-				{
-					SystemID: SystemIDCMDB,
 					ID:       SysInstanceModel,
 				},
 				{
@@ -145,10 +141,6 @@ func GenerateInstanceSelections() []InstanceSelection {
 			Name:   "实例模型列表",
 			NameEn: "Instance Model List",
 			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModelGroup,
-				},
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysInstanceModel,
@@ -193,10 +185,6 @@ func GenerateInstanceSelections() []InstanceSelection {
 			Name:   "模型列表",
 			NameEn: "Model List",
 			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysModelGroup,
-				},
 				{
 					SystemID: SystemIDCMDB,
 					ID:       SysModel,
