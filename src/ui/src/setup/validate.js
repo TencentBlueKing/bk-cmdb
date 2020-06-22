@@ -145,6 +145,11 @@ const customRules = {
             }
             return true
         }
+    },
+    reservedWord: {
+        validate: value => {
+            return /^(?!bk_).*/.test(value)
+        }
     }
 }
 
@@ -184,7 +189,8 @@ const dictionary = {
             instanceTagValue: () => '请输入英文 / 数字',
             instanceTagKey: () => '请输入英文 / 数字, 以英文开头',
             setNameLen: () => '请输入256个字符以内的内容',
-            businessTopoInstNames: () => '格式不正确，不能包含特殊字符 #/,><|'
+            businessTopoInstNames: () => '格式不正确，不能包含特殊字符 #/,><|',
+            reservedWord: () => '不能以"bk_"开头'
         },
         custom: {
             asst: {
@@ -227,7 +233,8 @@ const dictionary = {
             instanceTagKey: () => 'Please enter letter / number starts with letter',
             repeatTagKey: () => 'Label key cannot be repeated',
             setNameLen: () => 'Content length max than 256',
-            businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters #/,><|'
+            businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters #/,><|',
+            reservedWord: () => 'Can not start with "bk_"'
         },
         custom: {
             asst: {

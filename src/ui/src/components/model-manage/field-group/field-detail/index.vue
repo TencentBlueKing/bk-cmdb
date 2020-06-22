@@ -12,11 +12,11 @@
                         v-model.trim="fieldInfo['bk_property_id']"
                         :placeholder="$t('请输入唯一标识')"
                         :disabled="isEditField"
-                        v-validate="'required|fieldId|length:128'">
+                        v-validate="'required|fieldId|reservedWord|length:128'">
                     </bk-input>
                     <p class="form-error" :title="errors.first('fieldId')">{{errors.first('fieldId')}}</p>
                 </div>
-                <i class="icon-cc-exclamation-tips" tabindex="-1" v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"></i>
+                <i class="icon-cc-exclamation-tips" tabindex="-1" v-bk-tooltips="$t('模型字段唯一标识提示语')"></i>
             </label>
             <label class="form-label">
                 <span class="label-text">
