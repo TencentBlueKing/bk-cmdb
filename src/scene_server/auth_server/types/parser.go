@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
@@ -30,11 +31,11 @@ const (
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
 // TODO confirm how to filter path attribute
-func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
+func ParseFilterToMongo(filter *metadata.PolicyExpression, resourceType iam.ResourceTypeID) (map[string]interface{}, error) {
 	operator := filter.Operator
 
 	// parse filter which is composed of multiple sub filters
-	if operator == OperatorAnd || operator == OperatorOr {
+	if operator == metadata.OperatorAnd || operator == metadata.OperatorOr {
 		if filter.Content == nil || len(filter.Content) == 0 {
 			return nil, fmt.Errorf("filter operator %s content can't be empty", operator)
 		}
@@ -79,7 +80,7 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeI
 	}
 
 	switch operator {
-	case OperatorEqual, OperatorNotEqual:
+	case metadata.OperatorEqual, metadata.OperatorNotEqual:
 		if getValueType(value) == "" {
 			return nil, fmt.Errorf("filter operator %s value %#v isn't string, numeric or boolean type", operator, value)
 		}
@@ -88,7 +89,7 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeI
 				operatorMap[operator]: value,
 			},
 		}, nil
-	case OperatorIn, OperatorNotIn:
+	case metadata.OperatorIn, metadata.OperatorNotIn:
 		valueArr, ok := value.([]interface{})
 		if !ok || len(valueArr) == 0 {
 			return nil, fmt.Errorf("filter operator %s value %#v isn't array type or is empty", operator, value)
@@ -107,7 +108,7 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeI
 				operatorMap[operator]: valueArr,
 			},
 		}, nil
-	case OperatorLessThan, OperatorLessThanOrEqual, OperatorGreaterThan, OperatorGreaterThanOrEqual:
+	case metadata.OperatorLessThan, metadata.OperatorLessThanOrEqual, metadata.OperatorGreaterThan, metadata.OperatorGreaterThanOrEqual:
 		if !util.IsNumeric(value) {
 			return nil, fmt.Errorf("filter operator %s value %#v isn't numeric type", operator, value)
 		}
@@ -116,7 +117,7 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeI
 				operatorMap[operator]: value,
 			},
 		}, nil
-	case OperatorContains, OperatorStartsWith, OperatorEndsWith:
+	case metadata.OperatorContains, metadata.OperatorStartsWith, metadata.OperatorEndsWith:
 		valueStr, ok := value.(string)
 		if !ok {
 			return nil, fmt.Errorf("filter operator %s value %#v isn't string type", operator, value)
@@ -126,7 +127,7 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeI
 				common.BKDBLIKE: fmt.Sprintf(operatorRegexFmtMap[operator], valueStr),
 			},
 		}, nil
-	case OperatorNotContains, OperatorNotStartsWith, OperatorNotEndsWith:
+	case metadata.OperatorNotContains, metadata.OperatorNotStartsWith, metadata.OperatorNotEndsWith:
 		valueStr, ok := value.(string)
 		if !ok {
 			return nil, fmt.Errorf("filter operator %s value %#v isn't string type", operator, value)
@@ -136,7 +137,7 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeI
 				common.BKDBNot: fmt.Sprintf(operatorRegexFmtMap[operator], valueStr),
 			},
 		}, nil
-	case OperatorAny:
+	case metadata.OperatorAny:
 		// operator any means having all permissions of this resource
 		return make(map[string]interface{}), nil
 	default:
@@ -145,26 +146,26 @@ func ParseFilterToMongo(filter *FilterExpression, resourceType iam.ResourceTypeI
 }
 
 var (
-	operatorMap = map[Operator]string{
-		OperatorAnd:                common.BKDBAND,
-		OperatorOr:                 common.BKDBOR,
-		OperatorEqual:              common.BKDBEQ,
-		OperatorNotEqual:           common.BKDBNE,
-		OperatorIn:                 common.BKDBIN,
-		OperatorNotIn:              common.BKDBNIN,
-		OperatorLessThan:           common.BKDBLT,
-		OperatorLessThanOrEqual:    common.BKDBLTE,
-		OperatorGreaterThan:        common.BKDBGT,
-		OperatorGreaterThanOrEqual: common.BKDBGTE,
+	operatorMap = map[metadata.Operator]string{
+		metadata.OperatorAnd:                common.BKDBAND,
+		metadata.OperatorOr:                 common.BKDBOR,
+		metadata.OperatorEqual:              common.BKDBEQ,
+		metadata.OperatorNotEqual:           common.BKDBNE,
+		metadata.OperatorIn:                 common.BKDBIN,
+		metadata.OperatorNotIn:              common.BKDBNIN,
+		metadata.OperatorLessThan:           common.BKDBLT,
+		metadata.OperatorLessThanOrEqual:    common.BKDBLTE,
+		metadata.OperatorGreaterThan:        common.BKDBGT,
+		metadata.OperatorGreaterThanOrEqual: common.BKDBGTE,
 	}
 
-	operatorRegexFmtMap = map[Operator]string{
-		OperatorContains:      "%s",
-		OperatorNotContains:   "%s",
-		OperatorStartsWith:    "^%s",
-		OperatorNotStartsWith: "^%s",
-		OperatorEndsWith:      "%s$",
-		OperatorNotEndsWith:   "%s$",
+	operatorRegexFmtMap = map[metadata.Operator]string{
+		metadata.OperatorContains:      "%s",
+		metadata.OperatorNotContains:   "%s",
+		metadata.OperatorStartsWith:    "^%s",
+		metadata.OperatorNotStartsWith: "^%s",
+		metadata.OperatorEndsWith:      "%s$",
+		metadata.OperatorNotEndsWith:   "%s$",
 	}
 )
 

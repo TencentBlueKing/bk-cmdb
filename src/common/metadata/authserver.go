@@ -29,3 +29,75 @@ type PullResourceResult struct {
 	Count int64                    `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
 }
+
+type QueryPolicyParam struct {
+	System    string     `json:"system"`
+	Subject   Subject    `json:"subject"`
+	Action    Action     `json:"action"`
+	Resources []Resource `json:"resources"`
+}
+
+type Subject struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type Action struct {
+	ID string `json:"id"`
+}
+
+type BaseResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type QueryPolicyResponse struct {
+	BaseResponse `json:",inline"`
+	Data         *PolicyExpression `json:"data"`
+}
+
+type Operator string
+
+const (
+	OperatorAnd                Operator = "AND"
+	OperatorOr                 Operator = "OR"
+	OperatorEqual              Operator = "eq"
+	OperatorNotEqual           Operator = "not_eq"
+	OperatorIn                 Operator = "in"
+	OperatorNotIn              Operator = "not_in"
+	OperatorContains           Operator = "contains"
+	OperatorNotContains        Operator = "not_contains"
+	OperatorStartsWith         Operator = "starts_with"
+	OperatorNotStartsWith      Operator = "not_starts_with"
+	OperatorEndsWith           Operator = "ends_with"
+	OperatorNotEndsWith        Operator = "not_ends_with"
+	OperatorLessThan           Operator = "lt"
+	OperatorLessThanOrEqual    Operator = "lte"
+	OperatorGreaterThan        Operator = "gt"
+	OperatorGreaterThanOrEqual Operator = "gte"
+	OperatorAny                Operator = "any"
+)
+
+type PolicyExpression struct {
+	Operator Operator            `json:"op"`
+	Content  []*PolicyExpression `json:"content,omitempty"`
+	Field    string              `json:"field,omitempty"`
+	Value    interface{}         `json:"value,omitempty"`
+}
+
+type QueryPolicyByActionParam struct {
+	System    string     `json:"system"`
+	Subject   Subject    `json:"subject"`
+	Action    []Action   `json:"actions"`
+	Resources []Resource `json:"resources"`
+}
+
+type QueryPolicyByActionResponse struct {
+	BaseResponse `json:",inline"`
+	Data         []QueryPolicyByActionResult `json:"data"`
+}
+
+type QueryPolicyByActionResult struct {
+	ActionID  string            `json:"action_id"`
+	Condition *PolicyExpression `json:"condition"`
+}
