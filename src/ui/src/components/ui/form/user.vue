@@ -37,11 +37,7 @@
         },
         methods: {
             focus () {
-                setTimeout(() => {
-                    debugger
-                    this.$refs.userSelector.focus()
-                    this.$refs.userSelector.calcOverflow()
-                }, 0)
+                this.$refs.userSelector.focus()
             }
         }
     }

@@ -22,11 +22,6 @@
                                         <span class="property-value-text fl">{{getValue(property)}}</span>
                                         <span class="property-value-unit fl" v-if="getValue(property) !== '--'">{{property.unit}}</span>
                                     </span>
-                                    <cmdb-form-objuser class="property-value fl"
-                                        v-bk-overflow-tips
-                                        v-else-if="property.bk_property_type === 'objuser'"
-                                        type="info">
-                                    </cmdb-form-objuser>
                                     <cmdb-property-value
                                         v-else
                                         v-bk-overflow-tips

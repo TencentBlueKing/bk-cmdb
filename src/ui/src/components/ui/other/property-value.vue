@@ -1,12 +1,16 @@
 <template>
-    <cmdb-form-objuser :value="value" type="info" v-if="isUser"></cmdb-form-objuser>
+    <user-value :value="value" v-if="isUser"></user-value>
     <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`" v-else>{{displayValue}}</compmoent>
 </template>
 
 <script>
+    import UserValue from './user-value'
     const ORG_CACHES = {}
     export default {
         name: 'cmdb-property-value',
+        components: {
+            UserValue
+        },
         props: {
             value: {
                 type: [String, Number, Array, Boolean],
