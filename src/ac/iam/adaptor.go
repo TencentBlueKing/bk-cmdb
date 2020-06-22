@@ -13,6 +13,7 @@
 package iam
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -28,24 +29,63 @@ import (
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
-// ResourceTypeID is resource's type in auth center.
-func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
-	var err error
-	info := new(ResourceInfo)
-	info.ResourceName = attribute.Basic.Name
+// convert cc auth attributes to iam resources TODO add resource attributes when attribute filter is enabled
+func adaptor(attributes []meta.ResourceAttribute) ([]Resource, error) {
+	resources := make([]Resource, len(attributes))
+	for index, attribute := range attributes {
+		info := Resource{
+			System: SystemIDCMDB,
+		}
 
-	resourceTypeID, err := ConvertResourceType(attribute.Type, attribute.BusinessID)
-	if err != nil {
-		return nil, err
+		resourceTypeID, err := ConvertResourceType(attribute.Type, attribute.BusinessID)
+		if err != nil {
+			return nil, err
+		}
+		info.Type = *resourceTypeID
+
+		resourceIDArr, err := GenerateResourceID(info.Type, &attribute)
+		if err != nil {
+			return nil, err
+		}
+		resourceIDArrLen := len(resourceIDArr)
+		if resourceIDArrLen == 0 {
+			resources[index] = info
+			continue
+		}
+		// no biz or parent parentPath related, no need to fill parentPath attribute
+		if attribute.BusinessID <= 0 && resourceIDArrLen == 1 {
+			info.ID = resourceIDArr[0].ResourceID
+			resources[index] = info
+			continue
+		}
+
+		// generate iam path attribute by biz and parent layer
+		pathArr := make([]string, 0)
+		if attribute.BusinessID > 0 {
+			businessPath := "/" + string(Business) + "," + strconv.FormatInt(attribute.BusinessID, 10) + "/"
+			pathArr = append(pathArr, businessPath)
+		}
+		var parentPath bytes.Buffer
+		parentPath.WriteByte('/')
+		for i := 0; i < resourceIDArrLen-1; i++ {
+			resourceIDAndType := resourceIDArr[i]
+			parentPath.WriteString(string(resourceIDAndType.ResourceType))
+			parentPath.WriteByte(',')
+			parentPath.WriteString(resourceIDAndType.ResourceID)
+			parentPath.WriteByte('/')
+		}
+		if parentPath.Len() > 0 {
+			pathArr = append(pathArr, parentPath.String())
+		}
+
+		info.Attribute = map[string]interface{}{
+			IamPathField: pathArr,
+		}
+		info.ID = resourceIDArr[resourceIDArrLen-1].ResourceID
+		resources[index] = info
 	}
-	info.ResourceType = *resourceTypeID
 
-	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
-	if err != nil {
-		return nil, err
-	}
-
-	return info, nil
+	return resources, nil
 }
 
 func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
@@ -119,6 +159,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysCloudAccount
 	case meta.CloudResourceTask:
 		iamResourceType = SysCloudResourceTask
+	case meta.EventWatch:
+		iamResourceType = SysEventWatch
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -312,6 +354,18 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		},
 		meta.AuditLog: {
 			meta.Find: FindAuditLog,
+		},
+		meta.SystemBase: {
+			meta.ModelTopologyView:      EditModelTopologyView,
+			meta.ModelTopologyOperation: EditBusinessTopology,
+			// TODO add conversion of meta.AdminEntrance
+		},
+		meta.EventWatch: {
+			meta.WatchHost:         WatchHostEvent,
+			meta.WatchHostRelation: WatchHostRelationEvent,
+			meta.WatchBiz:          WatchBizEvent,
+			meta.WatchSet:          WatchSetEvent,
+			meta.WatchModule:       WatchModuleEvent,
 		},
 	}
 	if _, exist := resourceActionMap[resourceType]; exist {

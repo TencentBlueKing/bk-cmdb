@@ -39,6 +39,9 @@ const (
 	ScopeTypeIDBizNameEn = "business"
 
 	SystemIDIAM = "bk_iam"
+
+	// the topology path of resource, in the form of /parent,parent_id/secondary_parent,secondary_parent_id/
+	IamPathField = "_bk_iam_path_"
 )
 
 type AuthConfig struct {
@@ -414,26 +417,16 @@ func (s *iamDiscovery) GetServersChan() chan []string {
 	return nil
 }
 
-type ScopeInfo struct {
-	ScopeType string `json:"scope_type,omitempty"`
-	ScopeID   string `json:"scope_id,omitempty"`
-}
-
-type ResourceEntity struct {
-	ResourceType ResourceTypeID `json:"resource_type"`
-	ScopeInfo
-	ResourceName string         `json:"resource_name,omitempty"`
-	ResourceID   []RscTypeAndID `json:"resource_id,omitempty"`
-}
-
+// resource type with id, used to represent resource layer from root to leaf
 type RscTypeAndID struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
 	ResourceID   string         `json:"resource_id,omitempty"`
 }
 
-type ResourceInfo struct {
-	ResourceType ResourceTypeID `json:"resource_type"`
-	// this filed is not always used, it's decided by the api
-	// that is used.
-	ResourceEntity
+// iam resource, system is resource's iam system id, type is resource type, resource id and attribute are used for filtering
+type Resource struct {
+	System    string                 `json:"system"`
+	Type      ResourceTypeID         `json:"type"`
+	ID        string                 `json:"id,omitempty"`
+	Attribute map[string]interface{} `json:"attribute,omitempty"`
 }

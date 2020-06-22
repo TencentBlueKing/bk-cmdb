@@ -72,6 +72,7 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 	case meta.SystemBase:
 		return make([]RscTypeAndID, 0), nil
 	case meta.Plat:
+		// TODO change to SysCloudArea, should not use instance authorization
 		return platID(resourceType, attribute)
 	case meta.Process:
 		return processResourceID(resourceType, attribute)
@@ -93,6 +94,8 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return hostApplyResourceID(resourceType, attribute)
 	case meta.ResourcePoolDirectory:
 		return resourcePoolDirectoryResourceID(resourceType, attribute)
+	case meta.EventWatch:
+		return resourceWatch(resourceType, attribute)
 	case meta.CloudAccount:
 		return cloudAccountResourceID(resourceType, attribute)
 	case meta.CloudResourceTask:
@@ -371,7 +374,7 @@ func platID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]R
 	instanceID := fmt.Sprintf("plat:%d", attribute.InstanceID)
 	return []RscTypeAndID{
 		{
-			ResourceType: SysModel,
+			ResourceType: SysInstanceModel,
 			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
 		},
 		{
@@ -483,6 +486,11 @@ func resourcePoolDirectoryResourceID(resourceType ResourceTypeID, attribute *met
 			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 		},
 	}, nil
+}
+
+func resourceWatch(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+
+	return make([]RscTypeAndID, 0), nil
 }
 
 func cloudAccountResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
