@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strconv"
 	"sync"
@@ -94,9 +95,6 @@ type DataCollectionConfig struct {
 
 	// AuthConfig auth configs.
 	AuthConfig authcenter.AuthConfig
-
-	// DefaultAppName default name of this app.
-	DefaultAppName string
 }
 
 // DataCollection is data collection server.
@@ -104,8 +102,8 @@ type DataCollection struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	defaultAppID   string
-	defaultAppName string
+	defaultAppID    string
+	snapshotBizName string
 
 	// config for this DataCollection app.
 	config *DataCollectionConfig
@@ -211,13 +209,6 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 		c.config.Esb.Addrs = curr.ConfigMap["esb.addr"]
 		c.config.Esb.AppCode = curr.ConfigMap["esb.appCode"]
 		c.config.Esb.AppSecret = curr.ConfigMap["esb.appSecret"]
-
-		// default app name.
-		c.config.DefaultAppName = curr.ConfigMap["biz.default_app_name"]
-		if len(c.config.DefaultAppName) == 0 {
-			c.config.DefaultAppName = common.BKAppName
-		}
-		c.defaultAppName = c.config.DefaultAppName
 	}
 }
 
@@ -241,6 +232,11 @@ func (c *DataCollection) initConfigs() error {
 
 	var err error
 	blog.Info("DataCollection| found configs to run the new datacollection server now!")
+
+	// set snapshot biz name
+	if err := c.setSnapshotBizName(); err != nil {
+		return err
+	}
 
 	// mongodb.
 	c.config.MongoDB, err = c.engine.WithMongo()
@@ -361,7 +357,7 @@ func (c *DataCollection) initModules() error {
 // getDefaultAppID returns default appid of this DataCollection server.
 func (c *DataCollection) getDefaultAppID() (string, error) {
 	// query condition.
-	condition := map[string]interface{}{common.BKAppNameField: c.defaultAppName}
+	condition := map[string]interface{}{common.BKAppNameField: c.snapshotBizName}
 
 	// query results.
 	results := []map[string]interface{}{}
@@ -500,5 +496,31 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	<-ctx.Done()
 	blog.Info("DataCollection stopping now!")
+	return nil
+}
+
+func (c *DataCollection) setSnapshotBizName() error {
+	tryCnt := 30
+	for i := 1; i <= tryCnt; i++ {
+		time.Sleep(time.Second * 2)
+		res, err := c.engine.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), http.Header{})
+		if err != nil {
+			blog.Warnf("setSnapshotBizName failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
+			continue
+		}
+		if res.Result == false {
+			blog.Warnf("setSnapshotBizName failed,  try count:%d, SearchConfigAdmin err: %s", i, res.ErrMsg)
+			continue
+		}
+		c.snapshotBizName = res.Data.Backend.SnapshotBizName
+		break
+	}
+
+	if c.snapshotBizName == "" {
+		blog.Errorf("setSnapshotBizName failed, SnapshotBizName is empty, check the coreservice and the value in table cc_System")
+		return fmt.Errorf("setSnapshotBizName failed")
+	}
+
+	blog.Infof("setSnapshotBizName successfully, SnapshotBizName is %s", c.snapshotBizName)
 	return nil
 }

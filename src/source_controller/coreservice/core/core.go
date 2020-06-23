@@ -283,6 +283,7 @@ type HostApplyRuleOperation interface {
 
 type SystemOperation interface {
 	GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder)
+	SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin, errors.CCErrorCoder)
 }
 
 type core struct {

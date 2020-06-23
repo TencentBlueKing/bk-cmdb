@@ -10,27 +10,28 @@
  * limitations under the License.
  */
 
-package auditlog
+package y3_8_202006092135
 
 import (
 	"context"
-	"net/http"
 
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-type SystemClientInterface interface {
-	GetUserConfig(ctx context.Context, h http.Header) (*metadata.ResponseSysUserConfigData, errors.CCErrorCoder)
-
-	SearchConfigAdmin(ctx context.Context, h http.Header) (*metadata.ConfigAdminResult, error)
+func init() {
+	upgrader.RegistUpgrader("y3.8.202006092135", upgrade)
 }
 
-func NewSystemClientInterface(client rest.ClientInterface) SystemClientInterface {
-	return &system{client: client}
-}
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.8.202006092135")
 
-type system struct {
-	client rest.ClientInterface
+	err = initConfigAdmin(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade y3.8.202006092135] initConfigAdmin failed, error  %s", err.Error())
+		return err
+	}
+
+	return nil
 }

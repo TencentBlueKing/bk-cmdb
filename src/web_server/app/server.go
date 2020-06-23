@@ -134,7 +134,6 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
 	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
 	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
-	w.Config.BkDesktopUrl = current.ConfigMap["site.bk_desktop_url"]
 	w.Config.Site.PaasDomainUrl = current.ConfigMap["site.paas_domain_url"]
 
 	w.Config.Session.Name = current.ConfigMap["session.name"]
