@@ -12,10 +12,6 @@
 
 package meta
 
-import (
-	"configcenter/src/common/metadata"
-)
-
 type AuthAttribute struct {
 	User UserInfo
 	// the business id that this resource belongs to, but it's not necessary for
@@ -53,7 +49,7 @@ type Basic struct {
 
 	// the action that user want to do with this resource.
 	// this field should be empty when it's used in resource handle operation.
-	Action Action `json:"action"'`
+	Action Action `json:"action"`
 
 	// the name of the resource, which could be a bk-route, etc.
 	// this filed is not necessary for all the resources.
@@ -132,7 +128,6 @@ const (
 	// system base
 	ModelTopologyView      Action = "modelTopologyView"
 	ModelTopologyOperation Action = "modelTopologyOperation"
-	AdminEntrance          Action = "adminEntrance"
 
 	// event watch
 	WatchHost         Action = "host"
@@ -141,10 +136,3 @@ const (
 	WatchSet          Action = "set"
 	WatchModule       Action = "module"
 )
-
-type InitConfig struct {
-	Bizs             []metadata.BizInst
-	Models           []metadata.Object
-	Classifications  []metadata.Classification
-	AssociationKinds []metadata.AssociationKind
-}
