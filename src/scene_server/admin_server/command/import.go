@@ -773,7 +773,7 @@ func getSetParentID(ctx context.Context, bizID int64, db dal.DB) (int64, error) 
 	searchCond.Field(common.BKDefaultField).Eq(common.NormalModuleFlag)
 
 	result := make(map[string]int64, 0)
-	err := db.Table(common.BKTableNameBaseSet).Find(searchCond.ToMapStr()).Fields(common.BKParentIDField).One(ctx, result)
+	err := db.Table(common.BKTableNameBaseSet).Find(searchCond.ToMapStr()).Fields(common.BKParentIDField).One(ctx, &result)
 	if err != nil {
 		return 0, fmt.Errorf("find set parent id error. err:%s", err.Error())
 	}
@@ -791,7 +791,7 @@ func getBKBizID(ctx context.Context, db dal.DB) (int64, error) {
 	searchCond := condition.CreateCondition()
 	searchCond.Field(common.BKAppNameField).Eq(common.BKAppName)
 	result := make(map[string]int64, 0)
-	err := db.Table(common.BKTableNameBaseApp).Find(searchCond.ToMapStr()).Fields(common.BKAppIDField).One(ctx, result)
+	err := db.Table(common.BKTableNameBaseApp).Find(searchCond.ToMapStr()).Fields(common.BKAppIDField).One(ctx, &result)
 	if err != nil {
 		return 0, fmt.Errorf("find 蓝鲸 business id error. err:%s", err.Error())
 	}
