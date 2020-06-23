@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@blueking/paas-login": "0.0.6",
+    "@blueking/user-selector": "^1.0.5-beta.2",
     "@icon-cool/bk-icon-cmdb": "0.0.15",
     "axios": "0.18.0",
     "bk-magic-vue": "2.1.17",
@@ -48,7 +49,7 @@
   },
   "devDependencies": {
     "@babel/helper-module-imports": "^7.7.4",
-    "autoprefixer": "^7.1.2",
+    "autoprefixer": "^9.8.2",
     "babel-core": "^6.22.1",
     "babel-eslint": "^10.0.1",
     "babel-helper-vue-jsx-merge-props": "^2.0.3",
@@ -61,7 +62,7 @@
     "babel-preset-stage-2": "^6.22.0",
     "chalk": "^2.0.1",
     "copy-webpack-plugin": "^4.0.1",
-    "css-loader": "^0.28.0",
+    "css-loader": "^3.6.0",
     "eslint": "^5.15.1",
     "eslint-config-standard": "^12.0.0",
     "eslint-friendly-formatter": "^4.0.1",

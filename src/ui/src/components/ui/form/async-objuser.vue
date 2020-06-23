@@ -1,6 +1,6 @@
 <template>
     <!-- eslint-disable vue/space-infix-ops -->
-    <div class="cmdb-form form-objuser"
+    <div class="cmdb-form form-objuser" v-if="isSelector"
         v-click-outside="handleClickOutside"
         @mousedown="shouldUpdate = false"
         @click="handleClick">
@@ -75,6 +75,7 @@
                 @click.stop="handleCopy">{{$t('复制')}}</a>
         </div>
     </div>
+    <span class="cmdb-form form-objuser-text" v-else>{{value}}</span>
 </template>
 
 <script>
@@ -101,6 +102,13 @@
             exclude: {
                 type: Boolean,
                 default: true
+            },
+            type: {
+                type: String,
+                default: 'selector',
+                validator (val) {
+                    return ['selector', 'info'].includes(val)
+                }
             }
         },
         data () {
@@ -125,6 +133,9 @@
             }
         },
         computed: {
+            isSelector () {
+                return this.type === 'selector'
+            },
             localDisabled () {
                 return this.disabled
             },
@@ -664,6 +675,9 @@
     .popover-content {
         width: 100%;
         min-height: 32px;
+    }
+    .form-objuser-text {
+        font-size: inherit;
     }
 </style>
 
