@@ -93,6 +93,8 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return hostApplyResourceID(resourceType, attribute)
 	case meta.ResourcePoolDirectory:
 		return resourcePoolDirectoryResourceID(resourceType, attribute)
+	case meta.EventWatch:
+		return resourceWatch(resourceType, attribute)
 	case meta.CloudAccount:
 		return cloudAccountResourceID(resourceType, attribute)
 	case meta.CloudResourceTask:
@@ -212,7 +214,7 @@ func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 
 	return []RscTypeAndID{
 		{
-			ResourceType: SysModel,
+			ResourceType: SysInstanceModel,
 			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
 		},
 		{
@@ -368,15 +370,10 @@ func platID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]R
 		return nil, NotEnoughLayer
 	}
 
-	instanceID := fmt.Sprintf("plat:%d", attribute.InstanceID)
 	return []RscTypeAndID{
 		{
-			ResourceType: SysModel,
-			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
-		},
-		{
 			ResourceType: resourceType,
-			ResourceID:   instanceID,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 		},
 	}, nil
 }
@@ -483,6 +480,11 @@ func resourcePoolDirectoryResourceID(resourceType ResourceTypeID, attribute *met
 			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 		},
 	}, nil
+}
+
+func resourceWatch(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+
+	return make([]RscTypeAndID, 0), nil
 }
 
 func cloudAccountResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
