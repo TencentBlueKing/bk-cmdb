@@ -184,6 +184,7 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host/{bk_host_id}", Handler: s.GetHostByID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/search", Handler: s.GetHosts})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host/snapshot/{bk_host_id}", Handler: s.GetHostSnap})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/snapshot/batch", Handler: s.GetHostSnapBatch})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/lock", Handler: s.LockHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/host/lock", Handler: s.UnlockHost})
@@ -198,7 +199,7 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/{bk_user}/{id}", Handler: s.UpdateUserCustomByID})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/usercustom/user/search/{bk_user}", Handler: s.GetUserCustomByUser})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/usercustom/default", Handler: s.GetDefaultUserCustom})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/default", Handler: s.UpdatDefaultUserCustom})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/usercustom/default", Handler: s.UpdateDefaultUserCustom})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/hosts/favorites/{user}", Handler: s.AddHostFavourite})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/hosts/favorites/{user}/{id}", Handler: s.UpdateHostFavouriteByID})

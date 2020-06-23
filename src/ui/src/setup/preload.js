@@ -46,7 +46,7 @@ export async function getConfig (app) {
     }).then(data => {
         app.$store.commit('setConfig', data)
     }).catch(() => {
-        return {}
+        window.CMDB_CONFIG = {}
     })
 }
 

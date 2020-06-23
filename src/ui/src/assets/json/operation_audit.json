@@ -57,16 +57,18 @@
         }, {
             "id": "model_attribute",
             "name": "自定义字段",
-            "operations": [{
-                "id": "model_attribute-create",
-                "name": "新增字段"
-            }, {
-                "id": "model_attribute-update",
-                "name": "修改字段"
-            }, {
-                "id": "model_attribute-delete",
-                "name": "删除字段"
-            }]
+            "operations": [
+                {
+                    "id": "model_attribute-create",
+                    "name": "新增字段"
+                }, {
+                    "id": "model_attribute-update",
+                    "name": "修改字段"
+                }, {
+                    "id": "model_attribute-delete",
+                    "name": "删除字段"
+                }
+            ]
         }
     ],
     "resource": [
@@ -124,12 +126,125 @@
         }, {
             "id": "instance_association",
             "name": "关联关系",
-            "operations": [{
+            "operations": [
+                {
                     "id": "instance_association-create",
                     "name": "新增关联"
                 }, {
                     "id": "instance_association-delete",
                     "name": "删除关联"
+                }
+            ]
+        }
+    ],
+    "other": [
+        {
+            "id": "model_classification",
+            "name": "模型分组",
+            "operations": [
+                {
+                    "id": "model_classification-create",
+                    "name": "新增模型分组"
+                },
+                {
+                    "id": "model_classification-update",
+                    "name": "修改模型分组"
+                },
+                {
+                    "id": "model_classification-delete",
+                    "name": "删除模型分组"
+                }
+            ]
+        },
+        {
+            "id": "model",
+            "name": "模型",
+            "operations": [
+                {
+                    "id": "model-create",
+                    "name": "新增模型"
+                },
+                {
+                    "id": "model-update",
+                    "name": "修改模型"
+                },
+                {
+                    "id": "model-delete",
+                    "name": "删除模型"
+                },
+                {
+                    "id": "model-pause",
+                    "name": "停用模型"
+                },
+                {
+                    "id": "model-reuse",
+                    "name": "启用模型"
+                },
+                {
+                    "id": "model_attribute-create",
+                    "name": "新增字段"
+                },
+                {
+                    "id": "model_attribute-update",
+                    "name": "修改字段"
+                },
+                {
+                    "id": "model_attribute-delete",
+                    "name": "删除字段"
+                },
+                {
+                    "id": "model_association-create",
+                    "name": "新增关联"
+                },
+                {
+                    "id": "model_association-update",
+                    "name": "修改关联"
+                },
+                {
+                    "id": "model_association-delete",
+                    "name": "删除关联"
+                },
+                {
+                    "id": "model_unique-create",
+                    "name": "新增唯一校验"
+                },
+                {
+                    "id": "model_unique-update",
+                    "name": "修改唯一校验"
+                },
+                {
+                    "id": "model_unique-delete",
+                    "name": "删除唯一校验"
+                },
+                {
+                    "id": "model_group-create",
+                    "name": "新增字段分组"
+                },
+                {
+                    "id": "model_group-update",
+                    "name": "修改字段分组"
+                },
+                {
+                    "id": "model_group-delete",
+                    "name": "删除字段分组"
+                }
+            ]
+        },
+        {
+            "id": "event",
+            "name": "事件订阅",
+            "operations": [
+                {
+                    "id": "event-create",
+                    "name": "新增订阅"
+                },
+                {
+                    "id": "event-update",
+                    "name": "修改订阅"
+                },
+                {
+                    "id": "event-delete",
+                    "name": "删除订阅"
                 }
             ]
         }

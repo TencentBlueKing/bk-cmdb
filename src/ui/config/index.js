@@ -18,16 +18,17 @@ process.CMDB_CONFIG = config
 const dev = {
     // custom config
     config: Object.assign({}, config, {
-        'API_URL': '"http://{host}:{port}/proxy/"',
-        'API_VERSION': '"v3"',
-        'API_LOGIN': '""',
-        'AGENT_URL': 'null',
-        'AUTH_SCHEME': '"internal"',
-        'AUTH_CENTER': '{}',
-        'BUILD_VERSION': 'dev',
-        'USER_ROLE': '"1"',
-        'USER_NAME': '"admin"',
-        'FULL_TEXT_SEARCH': '"off"'
+        API_URL: JSON.stringify('http://{host}:{port}/proxy/'),
+        API_VERSION: JSON.stringify('v3'),
+        API_LOGIN: JSON.stringify(''),
+        AGENT_URL: JSON.stringify(''),
+        AUTH_SCHEME: JSON.stringify('internal'),
+        AUTH_CENTER: JSON.stringify({}),
+        BUILD_VERSION: JSON.stringify('dev'),
+        USER_ROLE: JSON.stringify(1),
+        USER_NAME: JSON.stringify('admin'),
+        FULL_TEXT_SEARCH: JSON.stringify('off'),
+        USER_MANAGE: JSON.stringify('')
     }),
 
     // Paths
@@ -86,16 +87,17 @@ module.exports = {
     build: {
         // custom config
         config: Object.assign({}, config, {
-            'API_URL': '{{.site}}',
-            'API_VERSION': '{{.version}}',
-            'BUILD_VERSION': '{{.ccversion}}',
-            'API_LOGIN': '{{.curl}}',
-            'AGENT_URL': '{{.agentAppUrl}}',
-            'AUTH_SCHEME': '{{.authscheme}}',
-            'AUTH_CENTER': '{{.authCenter}}',
-            'USER_ROLE': '{{.role}}',
-            'USER_NAME': '{{.userName}}',
-            'FULL_TEXT_SEARCH': '{{.fullTextSearch}}'
+            API_URL: '{{.site}}',
+            API_VERSION: '{{.version}}',
+            BUILD_VERSION: '{{.ccversion}}',
+            API_LOGIN: '{{.curl}}',
+            AGENT_URL: '{{.agentAppUrl}}',
+            AUTH_SCHEME: '{{.authscheme}}',
+            AUTH_CENTER: '{{.authCenter}}',
+            USER_ROLE: '{{.role}}',
+            USER_NAME: '{{.userName}}',
+            FULL_TEXT_SEARCH: '{{.fullTextSearch}}',
+            USER_MANAGE: '{{.userManage}}'
         }),
 
         // Template for index.html

@@ -88,6 +88,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.DELETE("/hosts/batch").To(s.DeleteHostBatchFromResourcePool))
 	api.Route(api.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	api.Route(api.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
+	api.Route(api.POST("/hosts/snapshot/batch").To(s.HostSnapInfoBatch))
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
 	// api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
 	api.Route(api.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
@@ -150,6 +151,10 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
 	api.Route(api.DELETE("/delete/cloudarea/{bk_cloud_id}").To(s.DelPlat))
+
+	api.Route(api.POST("/findmany/hosts/by_service_templates/biz/{bk_biz_id}").To(s.FindHostsByServiceTemplates))
+	api.Route(api.POST("/findmany/hosts/by_set_templates/biz/{bk_biz_id}").To(s.FindHostsBySetTemplates))
+
 
 	// first install use api
 	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))

@@ -778,6 +778,97 @@ var _ = Describe("no service template test", func() {
 			Expect(resMap["process_instance"]).To(Equal(j))
 		})
 
+		It("list process instance names with their ids in one module", func() {
+			input := map[string]interface{}{
+				"bk_module_id":      moduleId,
+				common.BKAppIDField: bizId,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 10,
+					"sort":  "bk_process_name",
+				},
+			}
+			rsp, err := processClient.ListProcessInstancesNameIDsInModule(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+			data := struct {
+				Count int64                             `json:"count"`
+				Info  []metadata.ProcessInstanceNameIDs `json:"info"`
+			}{}
+			j, err := json.Marshal(rsp.Data)
+			json.Unmarshal(j, &data)
+			Expect(data.Count).To(Equal(int64(2)))
+			Expect(data.Info[0].ProcessName).To(Equal("p1"))
+		})
+
+		It("list process instance details by their ids", func() {
+			input := map[string]interface{}{
+				common.BKAppIDField: bizId,
+				"process_ids":       []int64{processId},
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 10,
+					"sort":  "bk_process_id",
+				},
+			}
+			rsp, err := processClient.ListProcessInstancesDetailsByIDs(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+			data := struct {
+				Count int64                                `json:"count"`
+				Info  []metadata.ProcessInstanceDetailByID `json:"info"`
+			}{}
+			j, err := json.Marshal(rsp.Data)
+			json.Unmarshal(j, &data)
+			Expect(data.Count).To(Equal(int64(1)))
+			Expect(data.Info[0].Property[common.BKProcessNameField]).To(Equal("p3"))
+		})
+
+		It("update process instances by their ids", func() {
+			input := map[string]interface{}{
+				common.BKAppIDField: bizId,
+				"process_ids":       []int64{processId},
+				"update_data": map[string]interface{}{
+					common.BKProcPortEnable:   true,
+					common.BKDescriptionField: "aaa",
+					common.BKProtocol:         "1",
+				},
+			}
+			rsp, err := processClient.UpdateProcessInstancesByIDs(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+		})
+
+		It("list process instance details by their ids", func() {
+			input := map[string]interface{}{
+				common.BKAppIDField: bizId,
+				"process_ids":       []int64{processId},
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 10,
+					"sort":  "bk_process_id",
+				},
+			}
+			rsp, err := processClient.ListProcessInstancesDetailsByIDs(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
+			data := struct {
+				Count int64                                `json:"count"`
+				Info  []metadata.ProcessInstanceDetailByID `json:"info"`
+			}{}
+			j, err := json.Marshal(rsp.Data)
+			json.Unmarshal(j, &data)
+			Expect(data.Count).To(Equal(int64(1)))
+			Expect(data.Info[0].Property[common.BKProcessNameField]).To(Equal("p3"))
+			Expect(data.Info[0].Property[common.BKProcPortEnable]).To(Equal(true))
+			Expect(data.Info[0].Property[common.BKDescriptionField]).To(Equal("aaa"))
+			Expect(data.Info[0].Property[common.BKProtocol]).To(Equal("1"))
+		})
+
 		It("delete process instance", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,

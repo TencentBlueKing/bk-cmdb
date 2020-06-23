@@ -105,7 +105,7 @@ div.cmdb-form-item {
             top: 100%;
             left: 0;
             font-size: 12px;
-            line-height: 14px;
+            line-height: 16px;
             color: $cmdbDangerColor;
             max-width: 100%;
             @include ellipsis;
@@ -368,8 +368,4 @@ input.cmdb-form-input {
     background-position: center center;
     background-size: 12px 16px;
     background-image: url("../images/lock.svg");
-}
-
-.v-overflow-tips-theme {
-    word-break: break-all;
 }

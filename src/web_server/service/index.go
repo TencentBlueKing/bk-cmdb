@@ -38,5 +38,6 @@ func (s *Service) Index(c *gin.Context) {
 		"agentAppUrl":    s.Config.AgentAppUrl,
 		"authCenter":     s.Config.AuthCenter,
 		"bkDesktop":      s.Config.BkDesktopUrl,
+		"userManage":     s.Config.Site.PaasDomainUrl + "/api/c/compapi/v2/usermanage/fs_list_users/",
 	})
 }

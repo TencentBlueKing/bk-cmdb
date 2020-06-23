@@ -8,7 +8,7 @@
                         :data-vv-name="'key-' + index"
                         v-validate="getValidateRules(index, 'key')"
                         v-model="label.key"
-                        :placeholder="$t('标签键')">
+                        :placeholder="`Key: ${$validator.dictionary.getMessage($i18n.locale, 'instanceTagKey')}`">
                     <p class="input-error">{{errors.first('key-' + index)}}</p>
                 </div>
                 <span class="symbol">:</span>
@@ -17,7 +17,7 @@
                         :data-vv-name="'value-' + index"
                         v-validate="getValidateRules(index, 'value')"
                         v-model="label.value"
-                        :placeholder="$t('标签值')">
+                        :placeholder="`Value: ${$validator.dictionary.getMessage($i18n.locale, 'instanceTagValue')}`">
                     <p class="input-error">{{errors.first('value-' + index)}}</p>
                 </div>
                 <i class="bk-icon icon-plus-circle-shape icon-btn"
@@ -171,11 +171,11 @@
         }
         .label-key {
             position: relative;
-            width: 172px;
+            width: 232px;
         }
         .label-value {
             position: relative;
-            width: 292px;
+            width: 232px;
             margin-right: 10px;
         }
         .symbol {

@@ -33,7 +33,8 @@
             row: Object
         },
         computed: {
-            ...mapGetters('objectBiz', ['bizId'])
+            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('businessHost', ['selectedNode'])
         },
         methods: {
             handleClone () {

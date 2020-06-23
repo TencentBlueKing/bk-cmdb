@@ -152,6 +152,11 @@ const customRules = {
             }
             return true
         }
+    },
+    reservedWord: {
+        validate: value => {
+            return /^(?!bk_).*/.test(value)
+        }
     }
 }
 
@@ -188,10 +193,11 @@ const dictionary = {
             repeatTagKey: () => '标签键不能重复',
             setNameMap: () => '集群名称重复',
             emptySetName: () => '请勿输入空白集群名称',
-            instanceTagValue: () => '请输入英文 / 数字',
-            instanceTagKey: () => '请输入英文 / 数字, 以英文开头',
+            instanceTagValue: () => '请输入英文数字的组合',
+            instanceTagKey: () => '请输入英文开头数字的组合',
             setNameLen: () => '请输入256个字符以内的内容',
-            businessTopoInstNames: () => '格式不正确，不能包含特殊字符 #/,><|'
+            businessTopoInstNames: () => '格式不正确，不能包含特殊字符 #/,><|',
+            reservedWord: () => '不能以"bk_"开头'
         },
         custom: {
             asst: {
@@ -230,11 +236,12 @@ const dictionary = {
             max_value: () => 'This value is greater than the maximum',
             setNameMap: () => 'Duplicate Set name',
             emptySetName: () => 'Do not enter blank Set name',
-            instanceTagValue: () => 'Please enter letter / number',
-            instanceTagKey: () => 'Please enter letter / number starts with letter',
+            instanceTagValue: () => 'Please enter letter, number',
+            instanceTagKey: () => 'Please enter letter, number starts with letter',
             repeatTagKey: () => 'Label key cannot be repeated',
             setNameLen: () => 'Content length max than 256',
-            businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters #/,><|'
+            businessTopoInstNames: () => 'The format is incorrect and cannot contain special characters #/,><|',
+            reservedWord: () => 'Can not start with "bk_"'
         },
         custom: {
             asst: {
@@ -270,7 +277,7 @@ const customConfigRules = [
 ]
 
 const mixinConfig = () => {
-    const { validationRules } = window.CMDB_CONFIG
+    const { validationRules = {} } = window.CMDB_CONFIG || {}
     for (const item of customConfigRules) {
         const useCb = typeof item !== 'string'
         const key = useCb ? Object.keys(item)[0] : item

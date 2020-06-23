@@ -39,7 +39,7 @@ import (
 
 type HostSnap struct {
 	redisCli    *redis.Client
-	authManager extensions.AuthManager
+	authManager *extensions.AuthManager
 	*backbone.Engine
 
 	filter *filter
@@ -47,7 +47,7 @@ type HostSnap struct {
 	db     dal.RDB
 }
 
-func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager extensions.AuthManager) *HostSnap {
+func NewHostSnap(ctx context.Context, redisCli *redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
 	h := &HostSnap{
 		redisCli:    redisCli,
 		ctx:         ctx,
@@ -63,14 +63,39 @@ var compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_cpu_mhz", "bk_disk",
 	"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
 	common.HostFieldDockerClientVersion, common.HostFieldDockerServerVersion}
 
-func (h *HostSnap) Analyze(mesg string) error {
-	var data = mesg
-	if !gjson.Get(mesg, "cloudid").Exists() {
-		data = gjson.Get(mesg, "data").String()
+// Hash returns hash value base on message.
+func (h *HostSnap) Hash(cloudid, ip string) (string, error) {
+	if len(cloudid) == 0 {
+		return "", fmt.Errorf("can't make hash from invalid message format, cloudid empty")
+	}
+	if len(ip) == 0 {
+		return "", fmt.Errorf("can't make hash from invalid message format, ip empty")
+	}
+
+	hash := fmt.Sprintf("%s:%s", cloudid, ip)
+
+	return hash, nil
+}
+
+// Mock returns local mock message for testing.
+func (h *HostSnap) Mock() string {
+	return MockMessage
+}
+
+func (h *HostSnap) Analyze(msg *string) error {
+	if msg == nil {
+		return fmt.Errorf("message nil")
+	}
+
+	var data string
+
+	if !gjson.Get(*msg, "cloudid").Exists() {
+		data = gjson.Get(*msg, "data").String()
+	} else {
+		data = *msg
 	}
 
 	header, rid := newHeaderWithRid()
-	blog.V(5).Infof("analyze snapshot %s, rid: %s", data, rid)
 
 	val := gjson.Parse(data)
 	cloudID := val.Get("cloudid").Int()
@@ -113,7 +138,7 @@ func (h *HostSnap) Analyze(mesg string) error {
 		return nil
 	}
 
-	blog.Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
+	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
 		hostID, innerIP, cloudID, host, raw, rid)
 
 	// add auditLog
@@ -132,7 +157,8 @@ func (h *HostSnap) Analyze(mesg string) error {
 		Condition: map[string]interface{}{
 			common.BKHostIDField: hostID,
 		},
-		Data: mapstr.NewFromMap(setter),
+		Data:       mapstr.NewFromMap(setter),
+		CanEditAll: true,
 	}
 
 	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)
@@ -212,8 +238,8 @@ func (h *HostSnap) Analyze(mesg string) error {
 		return fmt.Errorf("create host audit log failed, err: %s", result.ErrMsg)
 	}
 
-	blog.Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %s, rid: %s",
-		hostID, innerIP, gjson.Get(mesg, "cloudid").String(), rid)
+	blog.V(5).Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %s, rid: %s",
+		hostID, innerIP, cloudID, rid)
 
 	return nil
 }

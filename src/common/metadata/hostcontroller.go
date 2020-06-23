@@ -93,6 +93,15 @@ type GetHostSnapResult struct {
 	Data     HostSnap `json:"data"`
 }
 
+type HostSnapBatchInput struct {
+	HostIDs []int64 `json:"host_ids"`
+}
+
+type GetHostSnapBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     map[int64]string `json:"data"`
+}
+
 type GetHostModuleIDsResult struct {
 	BaseResp `json:",inline"`
 	Data     []int64 `json:"data"`

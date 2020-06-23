@@ -1861,7 +1861,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("update host less hostid", func() {
 			input := map[string]interface{}{
-				"bk_host_name": "update_host_name",
+				"bk_sn": "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1871,8 +1871,8 @@ var _ = Describe("host abnormal test", func() {
 
 		It("update host invalid hostid", func() {
 			input := map[string]interface{}{
-				"bk_host_id":   "2ew213,fe",
-				"bk_host_name": "update_host_name",
+				"bk_host_id": "2ew213,fe",
+				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1882,8 +1882,8 @@ var _ = Describe("host abnormal test", func() {
 
 		It("update host empty hostid", func() {
 			input := map[string]interface{}{
-				"bk_host_id":   "",
-				"bk_host_name": "update_host_name",
+				"bk_host_id": "",
+				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1891,11 +1891,11 @@ var _ = Describe("host abnormal test", func() {
 			Expect(rsp.Result).To(Equal(false))
 		})
 
-		// the hostId1's bk_host_name will be updated successfully, noExistID is ignored
+		// the hostId1's bk_sn will be updated successfully, noExistID is ignored
 		It("update host one nonexist hostid", func() {
 			input := map[string]interface{}{
-				"bk_host_id":   fmt.Sprintf("%v,%v", hostId1, noExistID),
-				"bk_host_name": "update_host_name",
+				"bk_host_id": fmt.Sprintf("%v,%v", hostId1, noExistID),
+				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1906,7 +1906,7 @@ var _ = Describe("host abnormal test", func() {
 		It("update host one nonexist attr", func() {
 			input := map[string]interface{}{
 				"bk_host_id":      fmt.Sprintf("%v,%v", hostId1, hostId3),
-				"bk_host_name":    "update_host_name",
+				"bk_sn":           "update_bk_sn",
 				"fecfecefrrwdxww": "test",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
@@ -1919,8 +1919,8 @@ var _ = Describe("host abnormal test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			for _, data := range rsp1.Data {
-				if data.PropertyID == "bk_host_name" {
-					Expect(data.PropertyValue).To(Equal("update_host_name"))
+				if data.PropertyID == "bk_sn" {
+					Expect(data.PropertyValue).To(Equal("update_bk_sn"))
 					break
 				}
 			}
@@ -1928,8 +1928,8 @@ var _ = Describe("host abnormal test", func() {
 
 		It("update host one invalid attr value", func() {
 			input := map[string]interface{}{
-				"bk_host_id":   fmt.Sprintf("%v,%v", hostId1, hostId3),
-				"bk_host_name": 1,
+				"bk_host_id": fmt.Sprintf("%v,%v", hostId1, hostId3),
+				"bk_sn":      1,
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
 			util.RegisterResponse(rsp)

@@ -1,4 +1,4 @@
-  /*
+/*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
@@ -155,6 +155,9 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/process_instance", Handler: ps.DeleteProcessInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance", Handler: ps.ListProcessInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/with_host", Handler: ps.ListProcessInstancesWithHost})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/name_ids", Handler: ps.ListProcessInstancesNameIDsInModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/detail/by_ids", Handler: ps.ListProcessInstancesDetailsByIDs})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/process_instance/by_ids", Handler: ps.UpdateProcessInstancesByIDs})
 
 	// module
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/template_binding_on_module", Handler: ps.RemoveTemplateBindingOnModule})
