@@ -61,6 +61,7 @@ type Site struct {
 	AuthScheme string
 	// available value: off, on
 	FullTextSearch string
+	PaasDomainUrl  string
 }
 
 type Config struct {
