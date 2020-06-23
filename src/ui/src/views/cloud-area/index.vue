@@ -28,10 +28,10 @@
             <bk-table-column :label="$t('所属云厂商')" prop="bk_cloud_vendor" sortable="custom">
                 <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
             </bk-table-column>
-            <bk-table-column :label="$t('区域')" prop="bk_region">
+            <bk-table-column :label="$t('地域')" prop="bk_region">
                 <template slot-scope="{ row }">{{row.bk_region | formatter('singlechar')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('VPC')" prop="bk_vpc_name" show-overflow-tooltip>
+            <bk-table-column label="VPC" prop="bk_vpc_name" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{getVpcInfo(row) | formatter('singlechar')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('主机数量')" prop="host_count">

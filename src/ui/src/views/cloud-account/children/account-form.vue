@@ -16,6 +16,7 @@
                     :placeholder="$t('请选择xx', { name: $t('账户类型') })"
                     :readonly="!isCreateMode"
                     :data-vv-as="$t('账户类型')"
+                    :loading="$loading(request.property)"
                     data-vv-name="bk_cloud_vendor"
                     v-model="form.bk_cloud_vendor"
                     v-validate="'required'">
@@ -59,7 +60,8 @@
                     data-vv-as="Key"
                     data-vv-name="bk_secret_key"
                     v-model.trim="form.bk_secret_key"
-                    v-validate="'required|length:256'">
+                    v-validate="'required|length:256'"
+                    @focus="handleSecretKeyFocus">
                 </bk-input>
                 <template v-if="verifyResult.hasOwnProperty('done')">
                     <p class="create-verify-success" v-if="verifyResult.connected">
@@ -86,7 +88,7 @@
                 <p class="create-form-error" v-if="errors.has('bk_description')">{{errors.first('bk_description')}}</p>
             </bk-form-item>
             <div class="create-form-options">
-                <bk-button class="mr10" theme="primary" @click.stop.prevent="handleSubmit">{{isCreateMode ? $t('提交') : $t('保存')}}</bk-button>
+                <bk-button class="mr10" theme="primary" :disabled="!hasChange" @click.stop.prevent="handleSubmit">{{isCreateMode ? $t('提交') : $t('保存')}}</bk-button>
                 <bk-button theme="default" @click.stop.prevent="handleCancel(null)">{{$t('取消')}}</bk-button>
             </div>
         </bk-form>
@@ -94,8 +96,9 @@
 </template>
 
 <script>
-    import vendors from '@/dictionary/cloud-vendor'
     import CmdbVendor from '@/components/ui/other/vendor'
+    import { mapGetters } from 'vuex'
+    import { CLOUD_AREA_PROPERTIES } from '@/dictionary/request-symbol'
     const DEFAULT_FORM = {
         bk_account_name: '',
         bk_cloud_vendor: '',
@@ -124,19 +127,21 @@
         },
         data () {
             return {
-                vendors: vendors,
                 form: {
                     ...DEFAULT_FORM
                 },
                 verifyResult: {},
+                properties: [],
                 request: {
                     create: Symbol('create'),
                     update: Symbol('update'),
-                    verify: Symbol('verify')
+                    verify: Symbol('verify'),
+                    property: CLOUD_AREA_PROPERTIES
                 }
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount']),
             isCreateMode () {
                 return this.mode === 'create'
             },
@@ -150,9 +155,23 @@
             verifyRequired () {
                 const changed = ['bk_cloud_vendor', 'bk_secret_id', 'bk_secret_key'].some(key => this.form[key] !== this.verifyResult[key])
                 return changed || !this.verifyResult.connected
+            },
+            vendors () {
+                const vendorProperty = this.properties.find(property => property.bk_property_id === 'bk_cloud_vendor')
+                if (vendorProperty) {
+                    return vendorProperty.option || []
+                }
+                return []
+            },
+            hasChange () {
+                if (this.isCreateMode) {
+                    return true
+                }
+                return Object.keys(this.form).some(key => this.form[key] !== this.account[key])
             }
         },
         created () {
+            this.getCloudAreaProperties()
             if (!this.isCreateMode) {
                 Object.keys(DEFAULT_FORM).forEach(key => {
                     this.form[key] = this.account[key]
@@ -166,6 +185,27 @@
             }
         },
         methods: {
+            async getCloudAreaProperties () {
+                try {
+                    this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
+                        params: {
+                            bk_obj_id: 'plat',
+                            bk_supplier_account: this.supplierAccount
+                        },
+                        config: {
+                            requestId: CLOUD_AREA_PROPERTIES,
+                            fromCache: true
+                        }
+                    })
+                } catch (error) {
+                    console.error(error)
+                }
+            },
+            handleSecretKeyFocus () {
+                if (this.form.bk_secret_key === '******') {
+                    this.form.bk_secret_key = ''
+                }
+            },
             async handleTest () {
                 const isValid = await this.$validator.validateAll()
                 if (!isValid) {
@@ -203,7 +243,7 @@
                     return false
                 }
                 if (this.verifyRequired) {
-                    this.$error(this.$t('账户连通测试提示'))
+                    this.$error(this.$t('请先进行账户连通测试'))
                     return false
                 }
                 if (this.isCreateMode) {

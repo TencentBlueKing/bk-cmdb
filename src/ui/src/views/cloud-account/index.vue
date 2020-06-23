@@ -1,6 +1,10 @@
 <template>
     <div class="cloud-account-layout">
-        <cmdb-tips class="cloud-account-tips">提示语</cmdb-tips>
+        <cmdb-tips class="cloud-account-tips" tips-key="cloud-account-tips">
+            <i18n path="云账户提示语">
+                <bk-button text size="small" place="resource" style="padding: 0" @click="linkResource">{{$t('云资源')}}</bk-button>
+            </i18n>
+        </cmdb-tips>
         <div class="cloud-account-options">
             <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
         </div>
@@ -17,7 +21,7 @@
                 sortable="custom"
                 show-overflow-tooltip>
             </bk-table-column>
-            <bk-table-column :label="$t('账号类型')" prop="bk_cloud_vendor" sortable="custom">
+            <bk-table-column :label="$t('账户类型')" prop="bk_cloud_vendor" sortable="custom">
                 <cmdb-vendor slot-scope="{ row }" :type="row.bk_cloud_vendor"></cmdb-vendor>
             </bk-table-column>
             <bk-table-column :label="$t('修改人')" prop="bk_last_editor" show-overflow-tooltip>
@@ -48,6 +52,7 @@
 <script>
     import AccountSideslider from './children/account-sideslider.vue'
     import CmdbVendor from '@/components/ui/other/vendor'
+    import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
     export default {
         components: {
             AccountSideslider,
@@ -147,6 +152,12 @@
                     this.list = []
                     this.pagination.count = 0
                 }
+            },
+            linkResource () {
+                this.$routerActions.redirect({
+                    name: MENU_RESOURCE_CLOUD_RESOURCE,
+                    history: true
+                })
             }
         }
     }

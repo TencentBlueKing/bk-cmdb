@@ -4,7 +4,7 @@
             <svg class="icon" aria-hidden="true">
                 <use :xlink:href="icon"></use>
             </svg>
-            {{vendor ? vendor.name : emptyText }}
+            <slot>{{vendor ? vendor.name : emptyText }}</slot>
         </template>
         <template v-else>{{emptyText}}</template>
     </span>
@@ -29,12 +29,7 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             vendor () {
-                const idMap = {
-                    'aws': '1',
-                    'tencent_cloud': '2'
-                }
-                const id = idMap[this.type] || this.type
-                return this.vendors.find(vendor => vendor.id === id)
+                return this.vendors.find(vendor => vendor.id === this.type)
             },
             icon () {
                 if (!this.vendor) {

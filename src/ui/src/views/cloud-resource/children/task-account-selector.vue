@@ -10,6 +10,7 @@
             :key="account.bk_account_id"
             :name="account.bk_account_name"
             :id="account.bk_account_id">
+            <cmdb-vendor :type="account.bk_cloud_vendor">{{account.bk_account_name}}</cmdb-vendor>
         </bk-option>
     </bk-select>
     <span v-else>{{selectedAccount ? selectedAccount.bk_account_name : '--'}}</span>
@@ -19,8 +20,12 @@
     import symbols from '../common/symbol'
     import { CLOUD_AREA_PROPERTIES } from '@/dictionary/request-symbol'
     import { mapGetters } from 'vuex'
+    import CmdbVendor from '@/components/ui/other/vendor'
     export default {
         name: 'task-account-selector',
+        components: {
+            CmdbVendor
+        },
         props: {
             display: {
                 type: String,
@@ -60,15 +65,7 @@
                 if (!this.selectedAccount) {
                     return null
                 }
-                // return this.vendors.find(vendor => vendor.name === this.selectedAccount.bk_cloud_vendor)
-                const vendors = [{
-                    id: '1',
-                    name: 'aws'
-                }, {
-                    id: '2',
-                    name: 'tencent_cloud'
-                }]
-                return vendors.find(vendor => vendor.name === this.selectedAccount.bk_cloud_vendor)
+                return this.vendors.find(vendor => vendor.id === this.selectedAccount.bk_cloud_vendor)
             }
         },
         async created () {

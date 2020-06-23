@@ -48,7 +48,7 @@
             <bk-table-column :label="$t('最近同步时间')" prop="bk_last_sync_time" show-overflow-tooltip sortable="custom">
                 <template slot-scope="{ row }">{{row.bk_last_sync_time | formatter('time')}}</template>
             </bk-table-column>
-            <bk-table-column :label="$t('最近编辑人')" prop="bk_last_editor">
+            <bk-table-column :label="$t('编辑人')" prop="bk_last_editor">
                 <template slot-scope="{ row }">{{row.bk_last_editor | formatter('singlechar')}}</template>
             </bk-table-column>
             <bk-table-column :label="$t('操作')" fixed="right">
