@@ -29,7 +29,7 @@
             return {
                 isAuthorized: true,
                 disabled: true,
-                turnOnVerify: window.Site.authscheme === 'iam'
+                turnOnVerify: window.CMDB_CONFIG.site.authscheme === 'iam'
             }
         },
         computed: {

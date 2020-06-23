@@ -512,9 +512,9 @@ func (i *Inst) set(key string, value interface{}) error {
 		case common.BKCloudIDField:
 			i.ident.CloudID, err = util.GetInt64ByInterface(value)
 		case common.BKHostInnerIPField:
-			i.ident.InnerIP = getString(value)
+			i.ident.InnerIP = metadata.StringArrayToString(getString(value))
 		case common.BKHostOuterIPField:
-			i.ident.OuterIP = getString(value)
+			i.ident.OuterIP = metadata.StringArrayToString(getString(value))
 		case common.BKOSTypeField:
 			i.ident.OSType = getString(value)
 		case common.BKOSNameField:
@@ -575,8 +575,8 @@ func NewHostIdentifier(m map[string]interface{}) (*metadata.HostIdentifier, erro
 		blog.Errorf("%s is not integer, %+v", common.BKCloudIDField, m)
 		return nil, err
 	}
-	ident.InnerIP = getString(m[common.BKHostInnerIPField])
-	ident.OuterIP = getString(m[common.BKHostOuterIPField])
+	ident.InnerIP = metadata.StringArrayToString(getString(m[common.BKHostInnerIPField]))
+	ident.OuterIP = metadata.StringArrayToString(getString(m[common.BKHostOuterIPField]))
 	ident.OSType = getString(m[common.BKOSTypeField])
 	ident.OSName = getString(m[common.BKOSNameField])
 	ident.HostID, err = util.GetInt64ByInterface(m[common.BKHostIDField])

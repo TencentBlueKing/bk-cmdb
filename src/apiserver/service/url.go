@@ -184,7 +184,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	return false
 }
 
-// hostCloudAreaURLRegexp host server opeator cloud area api regex
+// hostCloudAreaURLRegexp host server operator cloud area api regex
 var hostCloudAreaURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(cloudarea|cloudarea/.*)$", verbs))
 var hostURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(host|hosts|host_apply_rule|host_apply_plan)/.*$", verbs))
 
@@ -222,6 +222,9 @@ func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, hostRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/system/config"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/findmany/module_relation/bk_biz_id/"):
 		from, to, isHit = rootPath, hostRoot, true
 	default:
 		isHit = false
@@ -300,6 +303,7 @@ func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 }
 
 var operationUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/operation/.*$", verbs))
+
 // WithOperation transform OperationStatistic's url
 func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
 	statisticsRoot := "/operation/v3"

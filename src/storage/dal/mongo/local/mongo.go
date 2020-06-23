@@ -263,6 +263,13 @@ func (f *Find) Limit(limit uint64) types.Find {
 	return f
 }
 
+var hostSpecialFieldMap = map[string]bool{
+	common.BKHostInnerIPField: true,
+	common.BKHostOuterIPField: true,
+	common.BKOperatorField:    true,
+	common.BKBakOperatorField: true,
+}
+
 // All 查询多个
 func (f *Find) All(ctx context.Context, result interface{}) error {
 	rid := ctx.Value(common.ContextRequestIDField)
@@ -270,6 +277,11 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 	defer func() {
 		blog.V(4).InfoDepthf(2, "mongo find-all cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
+
+	err := validHostType(f.collName, f.projection, result, rid)
+	if err != nil {
+		return err
+	}
 
 	findOpts := &options.FindOptions{}
 	if len(f.projection) != 0 {
@@ -305,6 +317,11 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	defer func() {
 		blog.V(4).InfoDepthf(2, "mongo find-one cost %dms, rid: %v", time.Since(start)/time.Millisecond, rid)
 	}()
+
+	err := validHostType(f.collName, f.projection, result, rid)
+	if err != nil {
+		return err
+	}
 
 	findOpts := &options.FindOptions{}
 	if len(f.projection) != 0 {
@@ -905,5 +922,94 @@ func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result inte
 	}
 
 	resultv.Elem().Set(slice)
+	return nil
+}
+
+// validHostType valid if host query uses specified type that transforms ip & operator array to string
+func validHostType(collection string, projection map[string]int, result interface{}, rid interface{}) error {
+	if collection != common.BKTableNameBaseHost {
+		return nil
+	}
+
+	// check if specified fields include special fields
+	if len(projection) != 0 {
+		needCheck := false
+		for field := range projection {
+			if hostSpecialFieldMap[field] {
+				needCheck = true
+				break
+			}
+		}
+		if !needCheck {
+			return nil
+		}
+	}
+
+	resType := reflect.TypeOf(result)
+	if resType.Kind() != reflect.Ptr {
+		blog.Errorf("host query result type(%v) not pointer type, rid: %v", resType, rid)
+		return fmt.Errorf("host query result type invalid")
+	}
+	// if result is *map[string]interface{} type, it must be *metadata.HostMapStr type
+	if resType.ConvertibleTo(reflect.TypeOf(&map[string]interface{}{})) {
+		if resType != reflect.TypeOf(&metadata.HostMapStr{}) {
+			blog.Errorf("host query result type(%v) not match *metadata.HostMapStr type, rid: %v", resType, rid)
+			return fmt.Errorf("host query result type invalid")
+		}
+		return nil
+	}
+
+	resElem := resType.Elem()
+	switch resElem.Kind() {
+	case reflect.Struct:
+		// if result is *struct type, the special field in it must be metadata.StringArrayToString type
+		numField := resElem.NumField()
+		validType := reflect.TypeOf(metadata.StringArrayToString(""))
+		for i := 0; i < numField; i++ {
+			field := resElem.Field(i)
+			bsonTag := field.Tag.Get("bson")
+			if bsonTag == "" {
+				blog.Errorf("host query result field(%s) has empty bson tag, rid: %v", field.Name, rid)
+				return fmt.Errorf("host query result type invalid")
+			}
+			if hostSpecialFieldMap[bsonTag] && field.Type != validType {
+				blog.Errorf("host query result field type(%v) not match *metadata.StringArrayToString type", field.Type)
+				return fmt.Errorf("host query result type invalid")
+			}
+		}
+	case reflect.Slice:
+		// check if slice item is valid type, map or struct validation is similar as before
+		resArrElem := resElem.Elem()
+		if resArrElem.ConvertibleTo(reflect.TypeOf(map[string]interface{}{})) {
+			if resArrElem != reflect.TypeOf(metadata.HostMapStr{}) {
+				blog.Errorf("host query result type(%v) not match *[]metadata.HostMapStr type", resType)
+				return fmt.Errorf("host query result type invalid")
+			}
+			return nil
+		}
+
+		elem := resArrElem.Elem()
+		if elem.Kind() != reflect.Struct {
+			blog.Errorf("host query result type(%v) not struct pointer type or map type", resType)
+			return fmt.Errorf("host query result type invalid")
+		}
+		numField := elem.NumField()
+		validType := reflect.TypeOf(metadata.StringArrayToString(""))
+		for i := 0; i < numField; i++ {
+			field := elem.Field(i)
+			bsonTag := field.Tag.Get("bson")
+			if bsonTag == "" {
+				blog.Errorf("host query result field(%s) has empty bson tag, rid: %v", field.Name, rid)
+				return fmt.Errorf("host query result type invalid")
+			}
+			if hostSpecialFieldMap[bsonTag] && field.Type != validType {
+				blog.Errorf("host query result field type(%v) not match *metadata.StringArrayToString type", field.Type)
+				return fmt.Errorf("host query result type invalid")
+			}
+		}
+	default:
+		blog.Errorf("host query result type(%v) not pointer of map, struct or slice, rid: %v", resType, rid)
+		return fmt.Errorf("host query result type invalid")
+	}
 	return nil
 }

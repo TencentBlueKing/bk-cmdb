@@ -125,33 +125,37 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		Data: mapstr.NewFromMap(input),
 	}
 
-	res, err := s.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, instInfo)
-	if nil != err {
-		blog.Errorf("CreatePlat error: %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)})
+	var res *metadata.CreatedOneOptionResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		var err error
+		res, err = s.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, instInfo)
+		if nil != err {
+			blog.Errorf("CreatePlat error: %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			return srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)
+		}
+
+		if false == res.Result {
+			blog.Errorf("GetPlat error.err code:%d,err msg:%s,input:%+v,rid:%s", res.Code, res.ErrMsg, input, srvData.rid)
+			return errors.New(res.Code, res.ErrMsg)
+		}
+
+		// register plat to iam
+		platID := int64(res.Data.Created.ID)
+		if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platID); err != nil {
+			blog.Errorf("CreatePlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
+			return srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-
-	if false == res.Result {
-		blog.Errorf("GetPlat error.err code:%d,err msg:%s,input:%+v,rid:%s", res.Code, res.ErrMsg, input, srvData.rid)
-		_ = resp.WriteHeaderAndJson(http.StatusInternalServerError, res, "application/json")
-		return
-	}
-
-	// register plat to iam
-	platID := int64(res.Data.Created.ID)
-	if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platID); err != nil {
-		blog.Errorf("CreatePlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
-		ccErr := srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
-		return
-	}
-
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     res.Data,
 	})
-
 }
 
 func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
@@ -215,28 +219,31 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 		Condition: mapstr.MapStr{common.BKCloudIDField: platID},
 	}
 
-	res, err := s.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, delCond)
-	if nil != err {
-		blog.Errorf("DelPlat do error: %v, input:%d,rid:%s", err, platID, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed)})
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		res, err := s.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, delCond)
+		if nil != err {
+			blog.Errorf("DelPlat do error: %v, input:%d,rid:%s", err, platID, srvData.rid)
+			return srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed)
+		}
+
+		if false == res.Result {
+			blog.Errorf("DelPlat http response error. err code:%d,err msg:%s,input:%s,rid:%s", res.Code, res.ErrMsg, platID, srvData.rid)
+			return srvData.ccErr.New(res.Code, res.ErrMsg)
+
+		}
+
+		// deregister plat
+		if err := s.AuthManager.Authorize.DeregisterResource(srvData.ctx, iamResource...); err != nil {
+			blog.Errorf("DelPlat success, but DeregisterResource from iam failed, platID: %d, err: %+v,rid:%s", platID, err, srvData.rid)
+			return srvData.ccErr.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-
-	if false == res.Result {
-		blog.Errorf("DelPlat http response error. err code:%d,err msg:%s,input:%s,rid:%s", res.Code, res.ErrMsg, platID, srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
-		return
-
-	}
-
-	// deregister plat
-	if err := s.AuthManager.Authorize.DeregisterResource(srvData.ctx, iamResource...); err != nil {
-		blog.Errorf("DelPlat success, but DeregisterResource from iam failed, platID: %d, err: %+v,rid:%s", platID, err, srvData.rid)
-		ccErr := srvData.ccErr.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
-		return
-	}
-
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     "",
@@ -282,32 +289,34 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 			common.BKCloudIDField: platID,
 		},
 	}
-	res, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, updateOption)
-	if nil != err {
-		blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, err:%s, rid:%s", updateOption, err.Error(), srvData.rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed)})
-		return
-	}
-	if res.Result == false || res.Code != 0 {
-		blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, response:%s, rid:%s", updateOption, res, srvData.rid)
-		ccErr := &meta.RespError{Msg: errors.New(res.Code, res.ErrMsg)}
-		_ = resp.WriteError(http.StatusInternalServerError, ccErr)
-		return
-	}
 
-	// auth: sync resource info to iam
-	iamPlat := extensions.PlatSimplify{
-		BKCloudIDField:   platID,
-		BKCloudNameField: input.CloudName,
-	}
-	if err := s.AuthManager.UpdateRegisteredPlat(srvData.ctx, srvData.header, iamPlat); err != nil {
-		blog.Errorf("UpdatePlat success, but UpdateRegisteredPlat failed, plat: %d, err: %v, rid: %s", platID, err, srvData.rid)
-		ccErr := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)}
-		_ = resp.WriteError(http.StatusInternalServerError, ccErr)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		res, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, updateOption)
+		if nil != err {
+			blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, err:%s, rid:%s", updateOption, err.Error(), srvData.rid)
+			return srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed)
+		}
+		if res.Result == false || res.Code != 0 {
+			blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, response:%s, rid:%s", updateOption, res, srvData.rid)
+			return errors.New(res.Code, res.ErrMsg)
+		}
+
+		// auth: sync resource info to iam
+		iamPlat := extensions.PlatSimplify{
+			BKCloudIDField:   platID,
+			BKCloudNameField: input.CloudName,
+		}
+		if err := s.AuthManager.UpdateRegisteredPlat(srvData.ctx, srvData.header, iamPlat); err != nil {
+			blog.Errorf("UpdatePlat success, but UpdateRegisteredPlat failed, plat: %d, err: %v, rid: %s", platID, err, srvData.rid)
+			return srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-
-	// response success
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     "",
@@ -332,14 +341,19 @@ func (s *Service) UpdateHostCloudAreaField(req *restful.Request, resp *restful.R
 		return
 	}
 
-	ccErr := s.CoreAPI.CoreService().Host().UpdateHostCloudAreaField(srvData.ctx, srvData.header, input)
-	if ccErr != nil {
-		blog.ErrorJSON("UpdateHostCloudAreaField failed, core service UpdateHostCloudAreaField failed, input: %s, err: %s, rid: %s", input, ccErr.Error(), rid)
-		_ = resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: ccErr})
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(srvData.ctx, s.EnableTxn, srvData.header, func() error {
+		ccErr := s.CoreAPI.CoreService().Host().UpdateHostCloudAreaField(srvData.ctx, srvData.header, input)
+		if ccErr != nil {
+			blog.ErrorJSON("UpdateHostCloudAreaField failed, core service UpdateHostCloudAreaField failed, input: %s, err: %s, rid: %s", input, ccErr.Error(), rid)
+			return ccErr
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: txnErr})
 		return
 	}
-
-	// response success
 	_ = resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     "",

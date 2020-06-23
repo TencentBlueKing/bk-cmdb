@@ -6,7 +6,7 @@ const path = require('path')
 const fs = require('fs')
 
 const config = {
-    'BUILD_TITLE': '配置平台 | 蓝鲸智云企业版',
+    'BUILD_TITLE': '',
     'BUILD_OUTPUT': '../bin/enterprise/cmdb'
 }
 
@@ -28,7 +28,6 @@ const dev = {
         USER_ROLE: JSON.stringify(1),
         USER_NAME: JSON.stringify('admin'),
         FULL_TEXT_SEARCH: JSON.stringify('off'),
-        BK_DESKTOP: JSON.stringify(''),
         USER_MANAGE: JSON.stringify('')
     }),
 
@@ -98,7 +97,6 @@ module.exports = {
             USER_ROLE: '{{.role}}',
             USER_NAME: '{{.userName}}',
             FULL_TEXT_SEARCH: '{{.fullTextSearch}}',
-            BK_DESKTOP: '{{.bkDesktop}}',
             USER_MANAGE: '{{.userManage}}'
         }),
 

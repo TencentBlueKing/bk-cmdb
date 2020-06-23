@@ -40,6 +40,7 @@ type Service struct {
 	disc        discovery.DiscoveryInterface
 	CacheDB     *redis.Client
 	AuthManager *extensions.AuthManager
+	EnableTxn   bool
 }
 
 type srvComm struct {
@@ -147,6 +148,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/host/count_by_topo_node/bk_biz_id/{bk_biz_id}").To(s.CountTopoNodeHosts))
 
 	api.Route(api.POST("/findmany/modulehost").To(s.FindModuleHost))
+	api.Route(api.POST("/findmany/module_relation/bk_biz_id/{bk_biz_id}").To(s.FindModuleHostRelation))
 	api.Route(api.POST("/findmany/cloudarea").To(s.FindManyCloudArea))
 	api.Route(api.POST("/create/cloudarea").To(s.CreatePlat))
 	api.Route(api.PUT("/update/cloudarea/{bk_cloud_id}").To(s.UpdatePlat))
@@ -154,7 +156,6 @@ func (s *Service) WebService() *restful.Container {
 
 	api.Route(api.POST("/findmany/hosts/by_service_templates/biz/{bk_biz_id}").To(s.FindHostsByServiceTemplates))
 	api.Route(api.POST("/findmany/hosts/by_set_templates/biz/{bk_biz_id}").To(s.FindHostsBySetTemplates))
-
 
 	// first install use api
 	api.Route(api.POST("/host/install/bk").To(s.BKSystemInstall))

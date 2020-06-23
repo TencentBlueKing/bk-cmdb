@@ -1360,3 +1360,52 @@ var _ = Describe("batch_update_host test", func() {
 		Expect(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_outerip"].(string)).To(Equal("127.2.3.4"))
 	})
 })
+
+var _ = Describe("multiple ip host validation test", func() {
+	It("multiple ip host validation", func() {
+		test.ClearDatabase()
+
+		By("add hosts with one same ip using api")
+		hostInput := map[string]interface{}{
+			"host_info": map[string]interface{}{
+				"1": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.1,1.0.0.2",
+				},
+				"2": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.1",
+				},
+				"3": map[string]interface{}{
+					"bk_host_innerip": "1.0.0.1,1.0.0.2,1.0.0.3",
+				},
+			},
+		}
+		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
+		util.RegisterResponse(hostRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
+
+		By("search hosts")
+		searchInput := &params.HostCommonSearch{
+			Page: params.PageInfo{
+				Sort: common.BKHostIDField,
+			},
+		}
+		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
+		util.RegisterResponse(searchRsp)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count).To(Equal(3))
+
+		By("add same multiple ip host using api")
+		input := &metadata.CreateModelInstance{
+			Data: map[string]interface{}{
+				"bk_host_innerip": "1.0.0.1,1.0.0.2",
+				"bk_cloud_id" : 0,
+			},
+		}
+		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		util.RegisterResponse(addHostResult)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())
+	})
+})

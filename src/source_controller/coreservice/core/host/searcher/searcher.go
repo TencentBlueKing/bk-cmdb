@@ -117,11 +117,14 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 		query = query.Sort(common.BKHostIDField)
 	}
 
-	hosts := make([]map[string]interface{}, 0)
+	hosts := make([]metadata.HostMapStr, 0)
 	if err := query.All(ctx, &hosts); err != nil {
 		blog.Errorf("ListHosts failed, db select hosts failed, filter: %+v, err: %+v, rid: %s", finalFilter, err, rid)
 		return nil, err
 	}
-	searchResult.Info = hosts
+	searchResult.Info = make([]map[string]interface{}, len(hosts))
+	for index, host := range hosts {
+		searchResult.Info[index] = host
+	}
 	return searchResult, nil
 }
