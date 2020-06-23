@@ -24,6 +24,13 @@ import (
 	"configcenter/src/common/util"
 )
 
+var hostSpecialFieldMap = map[string]bool{
+	common.BKHostInnerIPField: true,
+	common.BKHostOuterIPField: true,
+	common.BKOperatorField:    true,
+	common.BKBakOperatorField: true,
+}
+
 // validCreateUnique  valid create inst data unique
 func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.MapStr, instMedataData metadata.Metadata, instanceManager *instanceManager) error {
 	uniqueAttr, err := valid.dependent.SearchUnique(kit, valid.objID)
@@ -63,7 +70,19 @@ func (valid *validator) validCreateUnique(kit *rest.Kit, instanceData mapstr.Map
 			if !ok || isEmpty(val) {
 				anyEmpty = true
 			}
-			cond.Element(&mongo.Eq{Key: key, Val: val})
+			if valid.objID == common.BKInnerObjIDHost && hostSpecialFieldMap[key] {
+				valStr, _ := val.(string)
+				valArr := strings.Split(valStr, ",")
+				cond.Element(&mongo.KV{
+					Key: key,
+					Val: map[string]interface{}{
+						common.BKDBAll:  valArr,
+						common.BKDBSize: len(valArr),
+					},
+				})
+			} else {
+				cond.Element(&mongo.Eq{Key: key, Val: val})
+			}
 		}
 
 		if anyEmpty && !unique.MustCheck {
@@ -144,7 +163,19 @@ func (valid *validator) validUpdateUnique(kit *rest.Kit, updateData mapstr.MapSt
 			if !ok || isEmpty(val) {
 				anyEmpty = true
 			}
-			cond.Element(&mongo.Eq{Key: key, Val: val})
+			if valid.objID == common.BKInnerObjIDHost && hostSpecialFieldMap[key] {
+				valStr, _ := val.(string)
+				valArr := strings.Split(valStr, ",")
+				cond.Element(&mongo.KV{
+					Key: key,
+					Val: map[string]interface{}{
+						common.BKDBAll:  valArr,
+						common.BKDBSize: len(valArr),
+					},
+				})
+			} else {
+				cond.Element(&mongo.Eq{Key: key, Val: val})
+			}
 		}
 
 		if anyEmpty && !unique.MustCheck {

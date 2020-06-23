@@ -150,7 +150,7 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 		return
 	}
 
-	result := make(map[string]interface{}, 0)
+	result := make(metadata.HostMapStr, 0)
 	condition := common.KvMap{common.BKHostIDField: hostID}
 	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	err = s.db.Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx, &result)
@@ -193,7 +193,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	condition = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
-	result := make([]mapstr.MapStr, 0)
+	result := make([]metadata.HostMapStr, 0)
 	dbInst := s.db.Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
 	if 0 < len(fieldArr) {
 		dbInst.Fields(fieldArr...)
@@ -211,9 +211,13 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		return
 	}
 
+	info := make([]mapstr.MapStr, len(result))
+	for index, host := range result {
+		info[index] = mapstr.MapStr(host)
+	}
 	ctx.RespEntity(metadata.HostInfo{
 		Count: int(count),
-		Info:  result,
+		Info:  info,
 	})
 }
 

@@ -31,7 +31,7 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
 	}
 	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
-	hostInfos := make([]mapstr.MapStr, 0)
+	hostInfos := make([]metadata.HostMapStr, 0)
 	limit := uint64(len(input.IDS))
 	err := hm.DbProxy.Table(common.BKTableNameBaseHost).Find(condition).Fields(common.BKHostIDField).Limit(limit).All(kit.Ctx, &hostInfos)
 	if nil != err {
@@ -107,10 +107,10 @@ func (hm *hostManager) QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLoc
 	return hostLockInfoArr, nil
 }
 
-func diffHostLockID(ids []int64, hostInfos []mapstr.MapStr, rid string) []int64 {
+func diffHostLockID(ids []int64, hostInfos []metadata.HostMapStr, rid string) []int64 {
 	mapInnerID := make(map[int64]bool)
 	for _, hostInfo := range hostInfos {
-		id, err := hostInfo.Int64(common.BKHostIDField)
+		id, err := util.GetInt64ByInterface(hostInfo[common.BKHostIDField])
 		if nil != err {
 			blog.ErrorJSON("different host lock ID not valid, hostInfo: %s, rid: %s", hostInfo, rid)
 			continue

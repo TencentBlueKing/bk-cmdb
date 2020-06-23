@@ -97,6 +97,13 @@ export function list (value) {
     return defaultFormatter(value)
 }
 
+export function implode (value, separator = ',') {
+    if (Array.isArray(value)) {
+        return value.join(separator)
+    }
+    return value.toString()
+}
+
 const formatterMap = {
     singlechar,
     longchar,
