@@ -157,7 +157,8 @@ func (h *HostSnap) Analyze(msg *string) error {
 		Condition: map[string]interface{}{
 			common.BKHostIDField: hostID,
 		},
-		Data: mapstr.NewFromMap(setter),
+		Data:       mapstr.NewFromMap(setter),
+		CanEditAll: true,
 	}
 
 	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)

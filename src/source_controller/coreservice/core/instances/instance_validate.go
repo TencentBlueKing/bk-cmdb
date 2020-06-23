@@ -238,7 +238,8 @@ func getHostRelatedBizID(kit *rest.Kit, dbProxy dal.DB, hostID int64) (bizID int
 	return bizID, nil
 }
 
-func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
+func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr,
+	instMetaData metadata.Metadata, instID uint64, canEditAll bool) error {
 	updateData, err := m.getInstDataByID(kit, objID, instID, m)
 	if err != nil {
 		blog.ErrorJSON("validUpdateInstanceData failed, getInstDataByID failed, err: %s, objID: %s, instID: %s, rid: %s", err, instID, objID, kit.Rid)
@@ -276,7 +277,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, i
 		}
 
 		property, ok := valid.properties[key]
-		if !ok {
+		if !ok || (!property.IsEditable && !canEditAll) {
 			delete(instanceData, key)
 			continue
 		}
