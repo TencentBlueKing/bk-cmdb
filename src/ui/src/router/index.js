@@ -15,11 +15,13 @@ import {
     MENU_BUSINESS,
     MENU_RESOURCE,
     MENU_MODEL,
-    MENU_ANALYSIS
+    MENU_ANALYSIS,
+    MENU_ADMIN
 } from '@/dictionary/menu-symbol'
 
 import {
     indexViews,
+    adminViews,
     businessViews,
     resourceViews,
     modelViews,
@@ -62,6 +64,13 @@ const router = new Router({
             children: indexViews,
             path: '/',
             redirect: '/index'
+        },
+        {
+            name: MENU_ADMIN,
+            component: dynamicRouterView,
+            children: adminViews,
+            path: '/admin',
+            redirect: '/admin/index'
         },
         {
             name: MENU_BUSINESS,
@@ -196,12 +205,14 @@ router.beforeEach((to, from, next) => {
     })
 })
 
-router.afterEach((to, from) => {
+router.afterEach(async (to, from) => {
     try {
         if (setupStatus.afterload) {
-            afterload(router.app, to, from)
+            setupStatus.afterload = false
+            await afterload(router.app, to, from)
         }
     } catch (e) {
+        setupStatus.afterload = true
         console.error(e)
     } finally {
         setLoading(false)
