@@ -466,7 +466,6 @@ const (
 	CCErrorTopoResourceDirIdleModuleCanNotRemove   = 1101104
 	CCErrorTopoResourceDirUsedInCloudSync          = 1101105
 
-
 	CCErrorModelNotFound = 1101102
 	// object controller 1102XXX
 
@@ -836,6 +835,7 @@ const (
 	CCErrCloudRegionGetFail               = 1118014
 	CCErrCloudSyncDirNoChosen             = 1118015
 	CCErrCloudSyncDirNoExist              = 1118016
+	CCErrCloudAccountCreateFail           = 1118017
 
 	/** TODO: 以下错误码需要改造 **/
 

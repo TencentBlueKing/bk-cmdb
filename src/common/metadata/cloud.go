@@ -14,7 +14,10 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 // 云账户
@@ -32,6 +35,44 @@ type CloudAccount struct {
 	LastTime    time.Time `json:"last_time" bson:"last_time"`
 }
 
+func (c *CloudAccount) Validate() (rawError errors.RawErrorInfo) {
+	if c.AccountName == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_account_name"},
+		}
+	}
+
+	if c.CloudVendor == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_cloud_vendor"},
+		}
+	}
+
+	if !util.InStrArr(SupportedCloudVendors, c.CloudVendor) {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCloudVendorNotSupport,
+		}
+	}
+
+	if c.SecretID == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_secret_id"},
+		}
+	}
+
+	if c.SecretKey == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_secret_key"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 // 带有额外信息的云账户
 type CloudAccountWithExtraInfo struct {
 	CloudAccount `json:",inline"`
@@ -40,17 +81,15 @@ type CloudAccountWithExtraInfo struct {
 }
 
 // 云厂商
+// 和属性表中的bk_cloud_vendor值相对应
 const (
-	AWS          string = "aws"
-	TencentCloud string = "tencent_cloud"
+	AWS          string = "1"
+	TencentCloud string = "2"
 )
 
-var VendorNamesMap = map[string]string{
-	"1": AWS,
-	"2": TencentCloud,
-}
-
-var SupportedCloudVendors = []string{"1", "2"}
+// 支持的云厂商
+// 实现了相应的云厂商插件
+var SupportedCloudVendors = []string{AWS, TencentCloud}
 
 // 同步状态
 const (
@@ -315,4 +354,19 @@ type SyncResult struct {
 	Detail            SyncDetail      `json:"detail" bson:"detail"`
 	SyncStatus        string          `json:"bk_sync_status" bson:"bk_sync_status"`
 	StatusDescription SyncStatusDesc  `json:"bk_status_description" bson:"bk_status_description"`
+}
+
+type SecretKeyResult struct {
+	Code    int           `json:"code"`
+	Message string        `json:"message"`
+	Result  bool          `json:"result"`
+	Data    SecretKeyInfo `json:"data"`
+}
+
+type SecretKeyInfo struct {
+	Content SecretContent `json:"content"`
+}
+
+type SecretContent struct {
+	SecretKey string `json:"secret_key"`
 }

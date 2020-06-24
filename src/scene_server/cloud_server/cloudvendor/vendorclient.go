@@ -43,12 +43,8 @@ func Register(vendorName string, client VendorClient) {
 func GetVendorClient(conf metadata.CloudAccountConf) (VendorClient, error) {
 	var client VendorClient
 	var ok bool
-	vendorName, ok := metadata.VendorNamesMap[conf.VendorName]
-	if !ok {
-		return nil, fmt.Errorf("vendor %s is invalid, it's not in VendorNamesMap %#v", conf.VendorName, metadata.VendorNamesMap)
-	}
-	if client, ok = vendorClients[vendorName]; !ok {
-		return nil, fmt.Errorf("vendor %s is not supported", vendorName)
+	if client, ok = vendorClients[conf.VendorName]; !ok {
+		return nil, fmt.Errorf("vendor %s is not supported", conf.VendorName)
 	}
 	client.SetCredential(conf.SecretID, conf.SecretKey)
 	return client, nil

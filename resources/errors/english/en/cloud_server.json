@@ -14,7 +14,8 @@
   "1118013": "Get cloud vendor VPC info failed",
   "1118014": "Get cloud vendor region info failed",
   "1118015": "No cloud sync dir was chosen",
-  "1118016": "cloud sync dir ID %d is not exist",
+  "1118016": "Cloud sync dir ID %d is not exist",
+  "1118017": "Cloud account create failed",
 
   "": ""
 }

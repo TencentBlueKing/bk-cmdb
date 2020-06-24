@@ -908,6 +908,10 @@ const (
 	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
 	BKHTTPOtherRequestID = "X-Bkapi-Request-Id"
+
+	BKHTTPSecretsToken   = "BK-Secrets-Token"
+	BKHTTPSecretsProject = "BK-Secrets-Project"
+	BKHTTPSecretsEnv     = "BK-Secrets-Env"
 )
 
 // transaction related

@@ -10,29 +10,36 @@
  * limitations under the License.
  */
 
-package logics
+package cryptor
 
 import (
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/cryptor"
-	"configcenter/src/storage/dal"
-
-	"gopkg.in/redis.v5"
+	"testing"
 )
 
-// Logics framwork need
-type Logics struct {
-	*backbone.Engine
-	db      dal.RDB
-	cache   *redis.Client
-	cryptor cryptor.Cryptor
+var aesCryp Cryptor
+
+func init() {
+	key := "123456781234567812345678"
+	aesCryp = NewAesEncrpytor(key)
 }
 
-func NewLogics(engine *backbone.Engine, db dal.RDB, cache *redis.Client, cryptor cryptor.Cryptor) *Logics {
-	return &Logics{
-		Engine:  engine,
-		db:      db,
-		cache:   cache,
-		cryptor: cryptor,
+func TestAES(t *testing.T) {
+	plainText := "hello world"
+	cryptedText, err := aesCryp.Encrypt(plainText)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("cryptedText is %s\n", cryptedText)
+
+	result, err := aesCryp.Decrypt(cryptedText)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("result is %s\n", result)
+
+	if result != plainText {
+		t.Fatal("AES encrypt & decrypt fail")
 	}
 }
