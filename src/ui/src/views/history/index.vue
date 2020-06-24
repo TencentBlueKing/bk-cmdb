@@ -33,7 +33,14 @@
                 :prop="column.id"
                 :label="column.name"
                 show-overflow-tooltip>
-                <template slot-scope="{ row }">{{ row[column.id] | formatter(column.property) }}</template>
+                <template slot-scope="{ row }">
+                    <cmdb-property-value
+                        :theme="column.id === 'bk_inst_id' ? 'primary' : 'default'"
+                        :show-unit="false"
+                        :value="row[column.id]"
+                        :property="column.property">
+                    </cmdb-property-value>
+                </template>
             </bk-table-column>
             <bk-table-column prop="op_time" :label="$t('更新时间')" show-overflow-tooltip>
                 <template slot-scope="{ row }">{{$tools.formatTime(row.op_time)}}</template>
@@ -243,7 +250,6 @@
                     condition: {
                         action: ['delete'],
                         bk_biz_id: null,
-                        category: this.objId === 'host' ? 'business' : 'resource',
                         operation_time: this.opTime,
                         resource_id: null,
                         resource_name: null,
