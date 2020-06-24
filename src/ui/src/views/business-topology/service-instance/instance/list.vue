@@ -26,7 +26,7 @@
             <list-cell-tag slot-scope="{ row }" :row="row" @update-labels="handleUpdateLabels(row, ...arguments)"></list-cell-tag>
         </bk-table-column>
         <bk-table-column :label="$t('操作')" :min-width="$i18n.locale === 'en' ? 200 : 150">
-            <list-cell-operation slot-scope="{ row }" :row="row"></list-cell-operation>
+            <list-cell-operation slot-scope="{ row }" :row="row" @refresh-count="handleRefreshCount"></list-cell-operation>
         </bk-table-column>
     </bk-table>
 </template>

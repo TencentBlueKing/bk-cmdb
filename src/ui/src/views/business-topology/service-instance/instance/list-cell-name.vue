@@ -1,6 +1,7 @@
 <template>
     <div :class="{ 'instance-name': true, disabled }">
         <span class="name-text" v-bk-overflow-tips>{{row.name}}</span>
+        <!-- 点菜单改变为行操作，代码暂时保留 -->
         <cmdb-dot-menu class="instance-dot-menu" trigger="click" @click.native.stop>
             <ul class="menu-list">
                 <cmdb-auth tag="li" class="menu-item"
