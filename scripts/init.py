@@ -115,9 +115,6 @@ pwd = L%blKas
 [timer]
 spec = 00:30  # 00:00 - 23:59
 
-[level]
-businessTopoMax = 7
-
 [es]
 full_text_search = $full_text_search
 url=$es_url
@@ -140,15 +137,11 @@ bk_account_url = ${paas_url}/login/accounts/get_all_user/?bk_token=%s
 resources_path = /tmp/
 html_root = $ui_root
 full_text_search = $full_text_search
-bk_desktop_url = ${paas_url}
 [app]
 agent_app_url = ${agent_url}/console/?app=bk_agent_setup
 authscheme = $auth_scheme
 [login]
 version=$loginVersion
-
-[biz]
-default_app_name=蓝鲸
     '''
 
     template = FileTemplate(common_file_template_str)

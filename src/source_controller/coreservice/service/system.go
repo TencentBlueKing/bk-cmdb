@@ -19,3 +19,12 @@ import (
 func (s *coreService) GetSystemUserConfig(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.SystemOperation().GetSystemUserConfig(ctx.Kit))
 }
+
+func (s *coreService) SearchConfigAdmin(ctx *rest.Contexts) {
+	conf, err := s.core.SystemOperation().SearchConfigAdmin(ctx.Kit)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(conf)
+}

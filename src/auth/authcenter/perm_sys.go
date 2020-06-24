@@ -279,4 +279,22 @@ var expectSystemResourceType = []ResourceType{
 			},
 		},
 	},
+	{
+		ResourceTypeID:       SysConfigAdmin,
+		ResourceTypeName:     "配置管理",
+		ParentResourceTypeID: "",
+		Share:                false,
+		Actions: []Action{
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
+				IsRelatedResource: false,
+			},
+		},
+	},
 }

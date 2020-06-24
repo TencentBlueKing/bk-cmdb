@@ -160,7 +160,7 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 	for _, origin := range origins {
 		instIDI := origin[instIDFieldName]
 		instID, _ := util.GetInt64ByInterface(instIDI)
-		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, uint64(instID))
+		err := m.validUpdateInstanceData(kit, objID, inputParam.Data, instMedataData, uint64(instID), inputParam.CanEditAll)
 		if nil != err {
 			blog.Errorf("update model instance validate error :%v ,rid:%s", err, kit.Rid)
 			return nil, err
@@ -201,11 +201,20 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
 	instItems := make([]mapstr.MapStr, 0)
-	instErr := m.dbProxy.Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
+	query := m.dbProxy.Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
 		Limit(uint64(inputParam.Page.Limit)).
 		Sort(inputParam.Page.Sort).
-		Fields(inputParam.Fields...).
-		All(kit.Ctx, &instItems)
+		Fields(inputParam.Fields...)
+	var instErr error
+	if objID == common.BKInnerObjIDHost {
+		hosts := make([]metadata.HostMapStr, 0)
+		instErr = query.All(kit.Ctx, &hosts)
+		for _, host := range hosts {
+			instItems = append(instItems, mapstr.MapStr(host))
+		}
+	} else {
+		instErr = query.All(kit.Ctx, &instItems)
+	}
 	if instErr != nil {
 		blog.Errorf("search instance error [%v], rid: %s", instErr, kit.Rid)
 		return nil, instErr

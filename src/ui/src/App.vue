@@ -36,21 +36,14 @@
         },
         data () {
             const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
-            const siteLoginUrl = window.Site.login
-            const loginStrIndex = siteLoginUrl.indexOf('login')
-            let loginModalUrl
-            if (loginStrIndex > -1) {
-                loginModalUrl = siteLoginUrl.substring(0, loginStrIndex) + 'login/plain'
-            }
             return {
                 showBrowserTips,
-                loginUrl: loginModalUrl,
-                loginSuccessUrl: window.Site.url + 'static/login_success.html'
+                loginSuccessUrl: window.location.origin + '/static/login_success.html'
                 // execMainScrollListener
             }
         },
         computed: {
-            ...mapGetters(['globalLoading', 'mainFullScreen']),
+            ...mapGetters(['site', 'globalLoading', 'mainFullScreen']),
             ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey']),
             isIndex () {
                 return this.$route.name === MENU_INDEX
@@ -61,6 +54,24 @@
             topView () {
                 const topRoute = this.$route.matched[0]
                 return (topRoute && topRoute.meta.view) || 'default'
+            },
+            loginUrl () {
+                const siteLoginUrl = this.site.login || ''
+                const loginStrIndex = siteLoginUrl.indexOf('login')
+                let loginModalUrl
+                if (loginStrIndex > -1) {
+                    loginModalUrl = siteLoginUrl.substring(0, loginStrIndex) + 'login/plain'
+                }
+                return loginModalUrl
+            }
+        },
+        watch: {
+            site (site) {
+                let language = (this.$i18n.locale || 'cn').toLocaleLowerCase()
+                if (['zh-cn', 'zh_cn', 'zh', 'cn'].includes(language)) {
+                    language = 'cn'
+                }
+                document.title = site.title.i18n[language] || site.title.value
             }
         },
         mounted () {

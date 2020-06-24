@@ -91,13 +91,23 @@ type Meminfo struct {
 
 // Net
 type Net struct {
-	Dev []DevInfo `json:"dev"`
+	Dev       []DevInfo       `json:"dev"`
+	Interface []InterfaceInfo `json:"interface"`
 }
 
 type DevInfo struct {
 	Name      string `json:"name"`
 	SpeedSent uint64 `json:"speedSent"`
 	SpeedRecv uint64 `json:"speedRecv"`
+}
+
+type InterfaceInfo struct {
+	HardwareAddr string `json:"hardwareaddr"`
+	Addrs        []Addr `json:"addrs"`
+}
+
+type Addr struct {
+	Addr string `json:"addr"`
 }
 
 // System
@@ -236,6 +246,7 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 	// net info
 	if net := snap.Net; net != nil {
 		ret["rcvRate"], ret["sendRate"], _ = calculateNetSpeed(net.Dev, unitMB)
+		ret["bk_all_ips"] = getAllIPs(net.Interface)
 	}
 
 	return ret, nil
@@ -257,4 +268,30 @@ func calculateNetSpeed(netInfo []DevInfo, unitMB uint64) (uint64, uint64, error)
 	rcvRate = 100 * rcvRate / unitMB
 	sendRate = 100 * sendRate / unitMB
 	return rcvRate, sendRate, nil
+}
+
+func getAllIPs(interfaceInfo []InterfaceInfo) map[string]interface{} {
+	allIPs := make(map[string]interface{})
+	interfaceArr := make([]interface{}, 0)
+
+	for _, info := range interfaceInfo {
+		addrs := make([]map[string]string, 0)
+		for _, addr := range info.Addrs {
+			// ignore the loopback ip
+			if strings.Contains(addr.Addr, "127.0.0.1") || strings.Contains(addr.Addr, "::1") {
+				continue
+			}
+			// append ip address without mask
+			addrs = append(addrs, map[string]string{"ip": strings.Split(addr.Addr, "/")[0]})
+		}
+		if len(addrs) != 0 {
+			interfaceArr = append(interfaceArr, map[string]interface{}{
+				"mac":   info.HardwareAddr,
+				"addrs": addrs,
+			})
+		}
+	}
+
+	allIPs["interface"] = interfaceArr
+	return allIPs
 }

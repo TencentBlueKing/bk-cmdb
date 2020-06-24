@@ -23,11 +23,13 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 	"configcenter/src/storage/stream/types"
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/bsonx"
+
 	"gopkg.in/redis.v5"
 )
 
@@ -64,6 +66,9 @@ func (f *Flow) RunFlow(ctx context.Context) error {
 			Collection:      f.Collection,
 			StartAfterToken: nil,
 		},
+	}
+	if f.Collection == common.BKTableNameBaseHost {
+		watchOpts.EventStruct = &metadata.HostMapStr{}
 	}
 
 	if len(startToken) != 0 {

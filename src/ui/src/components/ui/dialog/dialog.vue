@@ -147,7 +147,8 @@
                 width: 32px;
                 height: 32px;
                 line-height: 32px;
-                font-size: 16px;
+                font-size: 22px;
+                font-weight: 700;
                 text-align: center;
                 color: #D8D8D8;
                 cursor: pointer;

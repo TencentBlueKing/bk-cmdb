@@ -61,6 +61,7 @@ type Site struct {
 	AuthScheme string
 	// available value: off, on
 	FullTextSearch string
+	PaasDomainUrl  string
 }
 
 type Config struct {
@@ -71,7 +72,6 @@ type Config struct {
 	AgentAppUrl  string
 	LoginUrl     string
 	LoginVersion string
-	BkDesktopUrl string
 	ConfigMap    map[string]string
 	AuthCenter   AppInfo
 }

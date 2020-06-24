@@ -7,10 +7,6 @@ Vue.use(VueI18n)
 
 const locale = Cookies.get('blueking_language') === 'en' ? 'en' : 'zh_CN'
 
-if (locale === 'en') {
-    document.title = 'CMDB | BlueKing'
-}
-
 const i18n = new VueI18n({
     locale,
     fallbackLocale: 'zh_CN',

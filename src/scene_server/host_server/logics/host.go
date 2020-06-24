@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -109,9 +110,13 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 	if !isExist {
 		return lgc.ccErr.Errorf(common.CCErrTopoCloudNotFound)
 	}
-	conds := map[string]interface{}{
-		common.BKHostInnerIPField: ip,
-		common.BKCloudIDField:     cloudID,
+	ipArr := strings.Split(ip, ",")
+	conds := mapstr.MapStr{
+		common.BKHostInnerIPField: map[string]interface{}{
+			common.BKDBAll:  ipArr,
+			common.BKDBSize: len(ipArr),
+		},
+		common.BKCloudIDField: cloudID,
 	}
 	hostList, err := lgc.GetHostInfoByConds(ctx, conds)
 	if nil != err {
@@ -227,6 +232,29 @@ func (lgc *Logics) GetHostInfoByConds(ctx context.Context, cond map[string]inter
 		Start:     0,
 		Limit:     common.BKNoLimit,
 		Sort:      common.BKHostIDField,
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Host().GetHosts(ctx, lgc.header, query)
+	if err != nil {
+		blog.Errorf("GetHostInfoByConds GetHosts http do error, err:%s, input:%+v,rid:%s", err.Error(), query, lgc.rid)
+		return nil, lgc.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if err := result.CCError(); err != nil {
+		blog.Errorf("GetHostInfoByConds GetHosts http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		return nil, err
+	}
+
+	return result.Data.Info, nil
+}
+
+// SearchHostInfo search host info by QueryCondition
+func (lgc *Logics) SearchHostInfo(ctx context.Context, cond metadata.QueryCondition) ([]mapstr.MapStr, errors.CCErrorCoder) {
+	query := &metadata.QueryInput{
+		Condition: cond.Condition,
+		Fields:    strings.Join(cond.Fields, ","),
+		Start:     cond.Page.Start,
+		Limit:     cond.Page.Limit,
+		Sort:      cond.Page.Sort,
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHosts(ctx, lgc.header, query)
@@ -575,9 +603,13 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, appID int64, srcHostID
 // IPCloudToHost get host id by ip and cloud
 func (lgc *Logics) IPCloudToHost(ctx context.Context, ip string, cloudID int64) (HostMap mapstr.MapStr, hostID int64, err errors.CCErrorCoder) {
 	// FIXME there must be a better ip to hostID solution
+	ipArr := strings.Split(ip, ",")
 	condition := mapstr.MapStr{
-		common.BKHostInnerIPField: ip,
-		common.BKCloudIDField:     cloudID,
+		common.BKHostInnerIPField: map[string]interface{}{
+			common.BKDBAll:  ipArr,
+			common.BKDBSize: len(ipArr),
+		},
+		common.BKCloudIDField: cloudID,
 	}
 
 	hostInfoArr, err := lgc.GetHostInfoByConds(ctx, condition)
