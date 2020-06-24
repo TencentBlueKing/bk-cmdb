@@ -16,9 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -47,9 +47,9 @@ func RemoveMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 
 func removeMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableName string) error {
 	type MetaDataItem struct {
-		ID       int64                  `bson:"id"`
-		Metadata map[string]interface{} `bson:"metadata"`
-		BizID    int64                  `bson:"bk_biz_id"`
+		ID       int64             `bson:"id"`
+		Metadata metadata.Metadata `bson:"metadata"`
+		BizID    int64             `bson:"bk_biz_id"`
 	}
 	items := make([]MetaDataItem, 0)
 	start := uint64(0)
@@ -69,7 +69,7 @@ func removeMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config, tabl
 			if item.BizID != 0 {
 				continue
 			}
-			bizID, err := extensions.ParseBizIDFromMetadata(item.Metadata)
+			bizID, err := item.Metadata.ParseBizID()
 			if err != nil {
 				blog.Errorf("parse bk_biz_id field failed, table: %s, item, err: %+v", tableName, item, err)
 				return fmt.Errorf("parse bk_biz_id field failed, err: %+v", err)
@@ -98,9 +98,9 @@ func removeMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config, tabl
 func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameBaseProcess
 	type MetaDataItem struct {
-		ProcessID int64                  `bson:"bk_process_id"`
-		Metadata  map[string]interface{} `bson:"metadata"`
-		BizID     int64                  `bson:"bk_biz_id"`
+		ProcessID int64             `bson:"bk_process_id"`
+		Metadata  metadata.Metadata `bson:"metadata"`
+		BizID     int64             `bson:"bk_biz_id"`
 	}
 	items := make([]MetaDataItem, 0)
 	start := uint64(0)
@@ -120,7 +120,7 @@ func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			if item.BizID != 0 {
 				continue
 			}
-			bizID, err := extensions.ParseBizIDFromMetadata(item.Metadata)
+			bizID, err := item.Metadata.ParseBizID()
 			if err != nil {
 				blog.Errorf("parse bk_biz_id field failed, table: %s, item, err: %+v", tableName, item, err)
 				return fmt.Errorf("parse bk_biz_id field failed, err: %+v", err)
@@ -149,12 +149,12 @@ func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 func RemoveMetadataFromRelation(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameProcessInstanceRelation
 	type MetaDataItem struct {
-		BkProcessID       int64                  `bson:"bk_process_id"`
-		ServiceInstanceID int64                  `bson:"service_instance_id"`
-		ProcessTemplateID int64                  `bson:"process_template_id"`
-		BkHostID          int64                  `bson:"bk_host_id"`
-		Metadata          map[string]interface{} `bson:"metadata"`
-		BizID             int64                  `bson:"bk_biz_id"`
+		BkProcessID       int64             `bson:"bk_process_id"`
+		ServiceInstanceID int64             `bson:"service_instance_id"`
+		ProcessTemplateID int64             `bson:"process_template_id"`
+		BkHostID          int64             `bson:"bk_host_id"`
+		Metadata          metadata.Metadata `bson:"metadata"`
+		BizID             int64             `bson:"bk_biz_id"`
 	}
 	items := make([]MetaDataItem, 0)
 	start := uint64(0)
@@ -174,7 +174,7 @@ func RemoveMetadataFromRelation(ctx context.Context, db dal.RDB, conf *upgrader.
 			if item.BizID != 0 {
 				continue
 			}
-			bizID, err := extensions.ParseBizIDFromMetadata(item.Metadata)
+			bizID, err := item.Metadata.ParseBizID()
 			if err != nil {
 				blog.Errorf("parse bk_biz_id field failed, table: %s, item, err: %+v", tableName, item, err)
 				return fmt.Errorf("parse bk_biz_id field failed, err: %+v", err)

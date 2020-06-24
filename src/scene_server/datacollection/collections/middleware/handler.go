@@ -310,12 +310,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		}(); err != nil && blog.V(3) {
 			blog.Errorf("save inst create audit log failed, err: %+v, rid: %s", err.Error(), rid)
 		}
-
-		// update registry to iam
-		if err := d.authManager.RegisterInstancesByID(d.ctx, d.httpHeader, objID, instID); err != nil {
-			blog.Errorf("UpdateOrCreateInst success, but RegisterInstancesByID failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err, rid)
-			return err
-		}
 		return nil
 	}
 
@@ -461,12 +455,6 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		return nil
 	}(); err != nil && blog.V(3) {
 		blog.Errorf("save inst update audit log failed, err: %s, rid: %s", err.Error(), rid)
-	}
-
-	// update registry to iam
-	if err := d.authManager.UpdateRegisteredInstanceByID(d.ctx, d.httpHeader, objID, instID); err != nil {
-		blog.Errorf("UpdateOrCreateInst success, but UpdateRegisteredInstanceByID failed, objID: %s, instID: %d, err: %s, rid: %s", objID, instID, err, rid)
-		return err
 	}
 
 	return nil

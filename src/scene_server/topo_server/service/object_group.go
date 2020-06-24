@@ -39,12 +39,6 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 		if nil != err {
 			return err
 		}
-
-		// auth: register attribute group
-		if err := s.AuthManager.RegisterModelAttributeGroup(ctx.Kit.Ctx, ctx.Kit.Header, rsp.Group()); err != nil {
-			blog.Errorf("create object group success, but register attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-		}
 		return nil
 	})
 
@@ -85,12 +79,6 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 		for _, item := range result {
 			attributeGroups = append(attributeGroups, item.Group())
 		}
-
-		// auth: register attribute group
-		if err := s.AuthManager.UpdateRegisteredModelAttributeGroup(ctx.Kit.Ctx, ctx.Kit.Header, attributeGroups...); err != nil {
-			blog.Errorf("update object group success, but update attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-		}
 		return nil
 	})
 
@@ -114,12 +102,6 @@ func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 		if nil != err {
 			return err
 		}
-		// auth: deregister attribute group
-		if err := s.AuthManager.DeregisterModelAttributeGroupByID(ctx.Kit.Ctx, ctx.Kit.Header, gid); err != nil {
-			blog.Errorf("delete object group failed, deregister attribute group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		}
-
 		return nil
 	})
 

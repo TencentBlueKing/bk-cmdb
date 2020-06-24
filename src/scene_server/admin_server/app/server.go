@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
-	"configcenter/src/scene_server/admin_server/authsynchronizer"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo"
@@ -125,17 +124,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 		if auth.IsAuthed() {
 			blog.Info("enable auth center access.")
-			authCli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter, engine.Metric().Registry())
-			if err != nil {
-				return fmt.Errorf("new authcenter client failed: %v", err)
-			}
-			process.Service.SetAuthCenter(authCli)
-
-			if process.Config.AuthCenter.EnableSync {
-				authSynchronizer := authsynchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry(), service.Engine)
-				authSynchronizer.Run()
-				blog.Info("enable auth center and enable auth sync function.")
-			}
 
 			iamCli, err := iam.NewIam(nil, process.Config.Iam, engine.Metric().Registry())
 			if err != nil {

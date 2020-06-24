@@ -58,18 +58,6 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 			blog.Errorf("create business failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
-
-		businessID, err := business.GetInstID()
-		if err != nil {
-			blog.Errorf("unexpected error, create business success, but get id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid)
-		}
-
-		// auth: register business to iam
-		if err := s.AuthManager.RegisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, businessID); err != nil {
-			blog.Errorf("create business success, but register to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		}
 		return nil
 	})
 
@@ -102,11 +90,6 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
-		// auth: deregister business to iam
-		if err := s.AuthManager.DeregisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, bizID); err != nil {
-			blog.Errorf("delete business failed, deregister business failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		}
 		if err := s.Core.BusinessOperation().DeleteBusiness(ctx.Kit, obj, bizID, md.Metadata); err != nil {
 			return err
 		}
@@ -146,12 +129,6 @@ func (s *Service) UpdateBusiness(ctx *rest.Contexts) {
 		err = s.Core.BusinessOperation().UpdateBusiness(ctx.Kit, dataWithMetadata.Data, obj, bizID, dataWithMetadata.Metadata)
 		if err != nil {
 			return err
-		}
-
-		// auth: update registered business to iam
-		if err := s.AuthManager.UpdateRegisteredBusinessByID(ctx.Kit.Ctx, ctx.Kit.Header, bizID); err != nil {
-			blog.Errorf("update business success, but update registered business failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
 		}
 		return nil
 	})
@@ -242,10 +219,6 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
-		}
-		if err := s.AuthManager.UpdateRegisteredBusinessByID(ctx.Kit.Ctx, ctx.Kit.Header, bizID); err != nil {
-			blog.Errorf("UpdateBusinessStatus failed, update register business info failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 		return nil
 	})
@@ -566,18 +539,6 @@ func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("create business failed, err: %+v", err)
 			return err
-		}
-
-		businessID, err := business.GetInstID()
-		if err != nil {
-			blog.Errorf("unexpected error, create default business success, but get id failed, err: %+v", err)
-			return err
-		}
-
-		// auth: register business to iam
-		if err := s.AuthManager.RegisterBusinessesByID(ctx.Kit.Ctx, ctx.Kit.Header, businessID); err != nil {
-			blog.Errorf("create default business failed, register business failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
 		}
 		return nil
 	})

@@ -46,13 +46,6 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", mainLineAssociation.ObjectID, err, ctx.Kit.Rid)
 			return err
 		}
-
-		// auth: register mainline object
-		if err := s.AuthManager.RegisterMainlineObject(ctx.Kit.Ctx, ctx.Kit.Header, ret.Object()); err != nil {
-			blog.Errorf("create mainline object success, but register mainline model to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommRegistResourceToIAMFailed)
-		}
-
 		return nil
 	})
 
@@ -67,27 +60,9 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 // DeleteMainLineObject delete a object int the main line topo
 func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
-	var bizID int64
 	md := new(MetaShell)
 	if err := ctx.DecodeInto(md); err != nil {
 		ctx.RespAutoError(err)
-		return
-	}
-	if md.Metadata != nil {
-		var err error
-		bizID, err = metadata.BizIDFromMetadata(*md.Metadata)
-		if err != nil {
-			blog.Errorf("parse business id from request failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
-			return
-		}
-	}
-
-	// auth: collection iam resource before it really be deleted
-	iamResources, err := s.AuthManager.MakeResourcesByObjectIDs(ctx.Kit.Ctx, ctx.Kit.Header, bizID, objID)
-	if err != nil {
-		blog.Errorf("MakeResourcesByObjectIDs failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed))
 		return
 	}
 
@@ -96,12 +71,6 @@ func (s *Service) DeleteMainLineObject(ctx *rest.Contexts) {
 		if err := s.Core.AssociationOperation().DeleteMainlineAssociation(ctx.Kit, objID, md.Metadata); err != nil {
 			blog.Errorf("DeleteMainlineAssociation failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return ctx.Kit.CCError.CCError(common.CCErrTopoObjectDeleteFailed)
-		}
-
-		// auth: do deregister
-		if err := s.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
-			blog.Errorf("delete mainline association success, but deregister mainline model failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
 		return nil
 	})

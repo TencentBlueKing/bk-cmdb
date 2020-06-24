@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"reflect"
 
-	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -187,14 +186,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	// register plat to iam
 	platID := int64(createRes.Data.Created.ID)
-	if err := s.AuthManager.RegisterPlatByID(srvData.ctx, srvData.header, platID); err != nil {
-		blog.Errorf("CreatePlat failed, RegisterPlatByID failed, err: %s, rid:%s", err.Error(), srvData.rid)
-		ccErr := srvData.ccErr.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
-		return
-	}
 
 	// add auditLog
 	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
@@ -265,16 +257,6 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	iamResource, err := s.AuthManager.MakeResourcesByPlatID(srvData.header, authmeta.Delete, platID)
-	if err != nil {
-		blog.Errorf("DelPlat failed, MakeResourcesByPlatID failed, err: %v, input:%d, rid:%s", err, platID, srvData.rid)
-		result := &meta.RespError{
-			Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed),
-		}
-		_ = resp.WriteError(http.StatusInternalServerError, result)
-		return
-	}
-
 	// add auditLog preData
 	auditLog := srvData.lgc.NewCloudAreaLog(srvData.ctx, srvData.ownerID)
 	if err := auditLog.WithPrevious(srvData.ctx, platID); err != nil {
@@ -297,14 +279,6 @@ func (s *Service) DeletePlat(req *restful.Request, resp *restful.Response) {
 		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
 		return
 
-	}
-
-	// deregister plat
-	if err := s.AuthManager.Authorize.DeregisterResource(srvData.ctx, iamResource...); err != nil {
-		blog.Errorf("DelPlat success, but DeregisterResource from iam failed, platID: %d, err: %+v,rid:%s", platID, err, srvData.rid)
-		ccErr := srvData.ccErr.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
-		_ = resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: ccErr})
-		return
 	}
 
 	if err := auditLog.SaveAuditLog(srvData.ctx, metadata.AuditDelete); err != nil {
@@ -392,16 +366,6 @@ func (s *Service) UpdatePlat(req *restful.Request, resp *restful.Response) {
 	if false == platInfo.Result {
 		blog.Errorf("UpdatePlat ReadInstance http reply error.  query:%#v, err code:%d, err msg:%s, rid:%s", query, platInfo.Code, platInfo.ErrMsg, srvData.rid)
 		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.New(platInfo.Code, platInfo.ErrMsg)})
-		return
-	}
-	iamPlat := extensions.PlatSimplify{
-		BKCloudIDField:   platID,
-		BKCloudNameField: platInfo.Data.Info[0][common.BKCloudNameField].(string),
-	}
-	if err := s.AuthManager.UpdateRegisteredPlat(srvData.ctx, srvData.header, iamPlat); err != nil {
-		blog.Errorf("UpdatePlat success, but UpdateRegisteredPlat failed, plat: %d, err: %v, rid: %s", platID, err, srvData.rid)
-		ccErr := &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)}
-		_ = resp.WriteError(http.StatusInternalServerError, ccErr)
 		return
 	}
 

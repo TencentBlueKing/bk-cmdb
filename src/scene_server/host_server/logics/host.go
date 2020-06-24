@@ -356,11 +356,6 @@ func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dst
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, lgc.rid)
 		return lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
-	// auth: deregister
-	if err := lgc.AuthManager.DeregisterHostsByID(ctx, lgc.header, hostID...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", hostID, err, lgc.rid)
-		return lgc.ccErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
-	}
 	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: hostID, DstApplicationID: dstAppID, DstModuleIDArr: moduleID}
 	delRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(ctx, lgc.header, conf)
 	if err != nil {
@@ -378,11 +373,6 @@ func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dst
 
 	}
 
-	// auth: register host
-	if err := lgc.AuthManager.RegisterHostsByID(ctx, lgc.header, hostID...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid: %s", hostID, err, lgc.rid)
-		return lgc.ccErr.Errorf(common.CCErrCommRegistResourceToIAMFailed)
-	}
 	return nil
 }
 
@@ -393,11 +383,6 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 	if err := lgc.AuthManager.AuthorizeByHostsIDs(ctx, lgc.header, meta.MoveHostFromModuleToResPool, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommAuthorizeFailed)
-	}
-	// auth: deregister
-	if err := lgc.AuthManager.DeregisterHostsByID(ctx, lgc.header, hostIDArr...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
 	hostFields, err := lgc.GetHostAttributes(ctx, lgc.ownerID, metadata.BizLabelNotExist)

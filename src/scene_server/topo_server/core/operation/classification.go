@@ -94,11 +94,7 @@ func (c *classification) CreateClassification(kit *rest.Kit, data mapstr.MapStr)
 		return nil, err
 	}
 
-	// auth: register new created classify
 	class := cls.Classify()
-	if err := c.authManager.RegisterClassification(kit.Ctx, kit.Header, class); err != nil {
-		return nil, kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
 
 	//package audit response
 	err = NewObjectClsAudit(kit, c.clientSet, class.ID).buildSnapshotForCur().SaveAuditLog(metadata.AuditCreate)
@@ -136,10 +132,6 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64, cond cond
 		if 0 != len(objs) {
 			blog.Warnf("[operation-cls] the classification(%s) has some objects, forbidden to delete, rid: %s", cls.Classify().ClassificationID, kit.Rid)
 			return kit.CCError.Error(common.CCErrTopoObjectClassificationHasObject)
-		}
-
-		if err := c.authManager.DeregisterClassification(kit.Ctx, kit.Header, cls.Classify()); err != nil {
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 
 	}
@@ -273,19 +265,6 @@ func (c *classification) UpdateClassification(kit *rest.Kit, data mapstr.MapStr,
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s, rid: %s", cls, err.Error(), kit.Rid)
 		return err
-	}
-
-	// auth: update registered classifications
-	if len(class.ClassificationID) > 0 {
-		if err := c.authManager.UpdateRegisteredClassificationByID(kit.Ctx, kit.Header, class.ClassificationID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	} else {
-		if err := c.authManager.UpdateRegisteredClassificationByRawID(kit.Ctx, kit.Header, class.ID); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v, rid: %s", class.ClassificationName, err, kit.Rid)
-			return kit.CCError.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
 	}
 
 	//get CurData and saveAuditLog
