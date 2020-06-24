@@ -85,6 +85,7 @@
             max-width: calc(100% - 25px);
             font-weight: bold;
             @include ellipsis;
+            cursor: default;
         }
         .instance-dot-menu {
             display: none;
