@@ -9,45 +9,46 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list">
-                            <li class="property-item"
-                                v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                                v-if="!uneditableProperties.includes(property.bk_property_id)"
-                                :key="propertyIndex">
-                                <div class="property-name">
-                                    <bk-checkbox class="property-name-checkbox"
-                                        :id="`property-name-${property['bk_property_id']}`"
-                                        v-model="editable[property['bk_property_id']]">
-                                    </bk-checkbox>
-                                    <label class="property-name-text"
-                                        :for="`property-name-${property['bk_property_id']}`"
-                                        :class="{ required: property['isrequired'] && editable[property.bk_property_id] }">
-                                        {{property['bk_property_name']}}
-                                    </label>
-                                    <i class="property-name-tooltips icon icon-cc-tips"
-                                        v-if="property['placeholder']"
-                                        v-bk-tooltips="htmlEncode(property['placeholder'])">
-                                    </i>
-                                </div>
-                                <div class="property-value">
-                                    <component class="form-component"
-                                        :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :unit="property['unit']"
-                                        :row="2"
-                                        :disabled="!editable[property['bk_property_id']]"
-                                        :options="property.option || []"
-                                        :data-vv-name="property['bk_property_id']"
-                                        :auto-select="false"
-                                        :placeholder="getPlaceholder(property)"
-                                        v-validate="getValidateRules(property)"
-                                        v-model.trim="values[property['bk_property_id']]">
-                                    </component>
-                                    <span class="form-error"
-                                        :title="errors.first(property['bk_property_id'])">
-                                        {{errors.first(property['bk_property_id'])}}
-                                    </span>
-                                </div>
-                            </li>
+                            <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
+                                <li class="property-item"
+                                    v-if="!uneditableProperties.includes(property.bk_property_id)"
+                                    :key="propertyIndex">
+                                    <div class="property-name" :title="property['bk_property_name']">
+                                        <bk-checkbox class="property-name-checkbox"
+                                            :id="`property-name-${property['bk_property_id']}`"
+                                            v-model="editable[property['bk_property_id']]">
+                                            <span class="property-name-text"
+                                                :for="`property-name-${property['bk_property_id']}`"
+                                                :class="{ required: property['isrequired'] && editable[property.bk_property_id] }">
+                                                {{property['bk_property_name']}}
+                                            </span>
+                                        </bk-checkbox>
+                                        <i class="property-name-tooltips icon icon-cc-tips"
+                                            v-if="property['placeholder']"
+                                            v-bk-tooltips="htmlEncode(property['placeholder'])">
+                                        </i>
+                                    </div>
+                                    <div class="property-value">
+                                        <component class="form-component"
+                                            :is="`cmdb-form-${property['bk_property_type']}`"
+                                            :class="{ error: errors.has(property['bk_property_id']) }"
+                                            :unit="property['unit']"
+                                            :row="2"
+                                            :disabled="!editable[property['bk_property_id']]"
+                                            :options="property.option || []"
+                                            :data-vv-name="property['bk_property_id']"
+                                            :auto-select="false"
+                                            :placeholder="getPlaceholder(property)"
+                                            v-validate="getValidateRules(property)"
+                                            v-model.trim="values[property['bk_property_id']]">
+                                        </component>
+                                        <span class="form-error"
+                                            :title="errors.first(property['bk_property_id'])">
+                                            {{errors.first(property['bk_property_id'])}}
+                                        </span>
+                                    </div>
+                                </li>
+                            </template>
                         </ul>
                     </cmdb-collapse>
                 </div>
@@ -231,49 +232,56 @@
 </script>
 
 <style lang="scss" scoped>
-    .form-layout{
+    .form-layout {
         height: 100%;
         @include scrollbar;
     }
-    .form-groups{
+    .form-groups {
         padding: 0 0 0 32px;
     }
-    .property-group{
+    .property-group {
         padding: 7px 0 10px 0;
         &:first-child{
             padding: 28px 0 10px 0;
         }
     }
-    .group-name{
+    .group-name {
         font-size: 14px;
         line-height: 14px;
         color: #333948;
         overflow: visible;
     }
-    .property-list{
+    .property-list {
         padding: 4px 0;
         display: flex;
         flex-wrap: wrap;
-        .property-item{
+        .property-item {
             margin: 12px 0 0;
             padding: 0 54px 0 0;
             font-size: 12px;
             flex: 0 0 50%;
             max-width: 50%;
-            .property-name{
-                display: block;
+            .property-name {
+                display: flex;
                 margin: 6px 0 10px;
                 color: $cmdbTextColor;
                 font-size: 0;
                 line-height: 18px;
             }
-            .property-name-checkbox{
+            .property-name-checkbox {
                 margin: 0 6px 0 0;
+                max-width: calc(100% - 30px);
+                display: flex;
+
+                /deep/ .bk-checkbox-text {
+                    width: calc(100% - 30px);
+                    flex: 1;
+                }
             }
-            .property-name-text{
+            .property-name-text {
                 position: relative;
                 display: inline-block;
-                max-width: calc(100% - 20px);
+                max-width: 100%;
                 padding: 0 10px 0 0;
                 vertical-align: top;
                 font-size: 14px;
@@ -287,7 +295,7 @@
                     color: #ff5656;
                 }
             }
-            .property-name-tooltips{
+            .property-name-tooltips {
                 display: inline-block;
                 vertical-align: middle;
                 width: 16px;
@@ -295,7 +303,7 @@
                 font-size: 16px;
                 color: #c3cdd7;
             }
-            .property-value{
+            .property-value {
                 font-size: 0;
                 position: relative;
                 /deep/ .control-append-group {
@@ -306,7 +314,7 @@
             }
         }
     }
-    .form-options{
+    .form-options {
         position: sticky;
         bottom: 0;
         left: 0;
@@ -317,11 +325,11 @@
             border-top: 1px solid $cmdbBorderColor;
             background-color: #fff;
         }
-        .button-save{
+        .button-save {
             min-width: 76px;
             margin-right: 4px;
         }
-        .button-cancel{
+        .button-cancel {
             min-width: 76px;
             background-color: #fff;
         }
@@ -336,7 +344,7 @@
         max-width: 100%;
         @include ellipsis;
     }
-    .form-empty{
+    .form-empty {
         height: 100%;
         text-align: center;
         &:before{
