@@ -12,6 +12,12 @@
 
 package meta
 
+import (
+	"net/http"
+
+	"configcenter/src/common"
+)
+
 type AuthAttribute struct {
 	User UserInfo
 	// the business id that this resource belongs to, but it's not necessary for
@@ -82,6 +88,22 @@ type Decision struct {
 
 	// the detailed reason for this authorize.
 	Reason string
+}
+
+type ListAuthorizedResourcesParam struct {
+	Username     string       `json:"user_name"`
+	BizID        int64        `json:"bk_biz_id"`
+	ResourceType ResourceType `json:"resource_type"`
+	Action       Action       `json:"action"`
+}
+
+func GetAuthHeader() http.Header {
+	header := make(http.Header)
+	header.Add(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+	header.Add(common.BKSupplierIDField, "0")
+	header.Add(common.BKHTTPHeaderUser, common.CCSystemOperatorUserName)
+	header.Add("Content-Type", "application/json")
+	return header
 }
 
 type Action string

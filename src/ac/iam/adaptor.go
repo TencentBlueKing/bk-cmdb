@@ -14,17 +14,10 @@ package iam
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"configcenter/src/ac/meta"
-	"configcenter/src/apimachinery"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -376,119 +369,7 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 	return Unknown, fmt.Errorf("unsupported action: %s", action)
 }
 
-func GetBizNameByID(clientSet apimachinery.ClientSetInterface, header http.Header, bizID int64) (string, error) {
-	ctx := util.NewContextFromHTTPHeader(header)
-
-	result, err := clientSet.TopoServer().Instance().GetAppBasicInfo(ctx, header, bizID)
-	if err != nil {
-		return "", err
-	}
-	if result.Code == common.CCNoPermission {
-		return "", nil
-	}
-	if !result.Result {
-		return "", errors.New(result.ErrMsg)
-	}
-	bizName := result.Data.BizName
-	return bizName, nil
-}
-
 // AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
-var actionMap map[ResourceActionID]ResourceAction
-var resourceTypeMap map[ResourceTypeID]ResourceType
-
-func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
-	rid := util.GetHTTPCCRequestID(h)
-	language := util.GetLanguage(h)
-
-	ps := make([]metadata.Permission, 0)
-	bizIDMap := make(map[int64]string)
-	if actionMap == nil {
-		actionMap = make(map[ResourceActionID]ResourceAction)
-		for _, action := range GenerateActions() {
-			actionMap[action.ID] = action
-		}
-	}
-	if resourceTypeMap == nil {
-		resourceTypeMap = make(map[ResourceTypeID]ResourceType)
-		for _, resource := range GenerateResourceTypes() {
-			resourceTypeMap[resource.ID] = resource
-		}
-	}
-	for _, r := range rs {
-		var p metadata.Permission
-		p.SystemID = SystemIDCMDB
-		if language == string(common.English) {
-			p.SystemName = SystemNameCMDBEn
-		} else {
-			p.ScopeName = SystemNameCMDB
-		}
-
-		if r.BusinessID > 0 {
-			p.ScopeType = ScopeTypeIDBiz
-			if language == string(common.English) {
-				p.ScopeTypeName = ScopeTypeIDBizNameEn
-			} else {
-				p.ScopeTypeName = ScopeTypeIDBizName
-			}
-			p.ScopeID = strconv.FormatInt(r.BusinessID, 10)
-			scopeName, exist := bizIDMap[r.BusinessID]
-			if !exist {
-				var err error
-				scopeName, err = GetBizNameByID(api, h, r.BusinessID)
-				if err != nil {
-					blog.Errorf("AdoptPermissions failed, GetBizNameByID failed, bizID: %d, err: %s, rid: %s", r.BusinessID, err.Error(), rid)
-				} else {
-					bizIDMap[r.BusinessID] = scopeName
-				}
-			}
-			p.ScopeName = scopeName
-		} else {
-			p.ScopeType = ScopeTypeIDSystem
-			p.ScopeID = SystemIDCMDB
-			if language == string(common.English) {
-				p.ScopeTypeName = ScopeTypeIDSystemNameEn
-				p.ScopeName = SystemNameCMDBEn
-			} else {
-				p.ScopeTypeName = ScopeTypeIDSystemName
-				p.ScopeName = SystemNameCMDB
-			}
-		}
-
-		actID, err := ConvertResourceAction(r.Type, r.Action, r.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-		p.ActionID = string(actID)
-		if language == string(common.English) {
-			p.ActionName = actionMap[actID].NameEn
-		} else {
-			p.ActionName = actionMap[actID].Name
-		}
-
-		rscType, err := ConvertResourceType(r.Basic.Type, r.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-
-		rscIDs, err := GenerateResourceID(*rscType, &r)
-		if err != nil {
-			return nil, err
-		}
-
-		var rsc metadata.Resource
-		rsc.ResourceType = string(*rscType)
-		if language == string(common.English) {
-			p.ResourceTypeName = resourceTypeMap[*rscType].NameEn
-		} else {
-			p.ResourceTypeName = resourceTypeMap[*rscType].Name
-		}
-		if len(rscIDs) != 0 {
-			rsc.ResourceID = rscIDs[len(rscIDs)-1].ResourceID
-		}
-		rsc.ResourceName = r.Basic.Name
-		p.Resources = [][]metadata.Resource{{rsc}}
-		ps = append(ps, p)
-	}
-	return ps, nil
-}
+//func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
+//	// TODO implement this
+//}

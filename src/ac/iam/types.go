@@ -423,6 +423,8 @@ type RscTypeAndID struct {
 	ResourceID   string         `json:"resource_id,omitempty"`
 }
 
+type IamResource []RscTypeAndID
+
 // iam resource, system is resource's iam system id, type is resource type, resource id and attribute are used for filtering
 type Resource struct {
 	System    string                 `json:"system"`
