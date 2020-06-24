@@ -73,6 +73,7 @@
     import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'
     import { Validator } from 'vee-validate'
+    import { MULTIPLE_IP_REGEXP } from '@/dictionary/regexp.js'
     export default {
         components: {
             ViewSwitcher
@@ -207,7 +208,7 @@
                     this.selection.forEach(row => {
                         const ip = row.name.split('_')[0]
                         validPromise.push(new Promise(async resolve => {
-                            const { valid } = await validator.verify(ip, 'ip')
+                            const { valid } = await validator.verify(ip, MULTIPLE_IP_REGEXP)
                             resolve({ valid, ip })
                         }))
                     })
