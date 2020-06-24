@@ -7,31 +7,33 @@
                 <i class="bk-icon icon-plus"></i>
                 {{$t('添加主机')}}
             </bk-button>
-            <div class="create-tables">
-                <service-instance-table class="service-instance-table"
-                    v-for="(data, index) in hosts"
-                    ref="serviceInstanceTable"
-                    deletable
-                    expanded
-                    :key="data.host.bk_host_id"
-                    :index="index"
-                    :id="data.host.bk_host_id"
-                    :name="data.host.bk_host_innerip"
-                    :source-processes="sourceProcesses"
-                    @delete-instance="handleDeleteInstance">
-                </service-instance-table>
-                <div class="buttons">
-                    <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
-                        <bk-button slot-scope="{ disabled }"
-                            theme="primary"
-                            :disabled="!hosts.length || disabled"
-                            @click="handleConfirm">
-                            {{$t('确定')}}
-                        </bk-button>
-                    </cmdb-auth>
-                    <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
-                </div>
+            <div class="create-tables" ref="createTables">
+                <transition-group name="list-complete" tag="div">
+                    <service-instance-table class="service-instance-table"
+                        v-for="(data, index) in hosts"
+                        ref="serviceInstanceTable"
+                        deletable
+                        expanded
+                        :key="data.host.bk_host_id"
+                        :index="index"
+                        :id="data.host.bk_host_id"
+                        :name="data.host.bk_host_innerip"
+                        :source-processes="sourceProcesses"
+                        @delete-instance="handleDeleteInstance">
+                    </service-instance-table>
+                </transition-group>
             </div>
+        </div>
+        <div class="buttons" :class="{ 'is-sticky': hasScrollbar }">
+            <cmdb-auth class="mr5" :auth="$authResources({ type: $OPERATION.C_SERVICE_INSTANCE })">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    :disabled="!hosts.length || disabled"
+                    @click="handleConfirm">
+                    {{$t('确定')}}
+                </bk-button>
+            </cmdb-auth>
+            <bk-button @click="handleBackToModule">{{$t('取消')}}</bk-button>
         </div>
         <cmdb-dialog v-model="dialog.show" :width="850" :height="460" :show-close-icon="false">
             <component
@@ -47,6 +49,7 @@
 <script>
     import HostSelector from '@/views/business-topology/host/host-selector'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     export default {
         name: 'clone-to-other',
         components: {
@@ -74,7 +77,8 @@
                     component: null,
                     props: {}
                 },
-                hosts: []
+                hosts: [],
+                hasScrollbar: false
             }
         },
         computed: {
@@ -90,6 +94,12 @@
             setId () {
                 return parseInt(this.$route.params.setId)
             }
+        },
+        mounted () {
+            addResizeListener(this.$refs.createTables, this.resizeHandler)
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.createTables, this.resizeHandler)
         },
         methods: {
             handleAddHost () {
@@ -137,6 +147,12 @@
             },
             handleBackToModule () {
                 this.$routerActions.back()
+            },
+            resizeHandler () {
+                this.$nextTick(() => {
+                    const scroller = this.$el.parentElement
+                    this.hasScrollbar = scroller.scrollHeight > scroller.offsetHeight
+                })
             }
         }
     }
@@ -153,6 +169,7 @@
         width: 100px;
         position: relative;
         line-height: 32px;
+        text-align: right;
         &:after {
             content: "*";
             margin: 0 0 0 4px;
@@ -162,6 +179,7 @@
     }
     .create-hosts {
         padding-left: 10px;
+        padding-right: 20px;
         height: 100%;
         overflow: hidden;
     }
@@ -185,11 +203,29 @@
         height: calc(100% - 54px);
         margin: 20px 0 0 0;
         @include scrollbar-y;
-        .buttons {
-            padding: 8px 0 0 0;
+        position: relative;
+    }
+    .buttons {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        padding: 10px 0 10px 110px;
+
+        &.is-sticky {
+            background-color: #FFF;
+            border-top: 1px solid $borderColor;
+            z-index: 100;
         }
     }
     .service-instance-table {
         margin-bottom: 12px;
+    }
+
+    .list-complete-leave-active {
+        position: absolute;
+    }
+
+    .list-complete-move {
+        transition: all .5s;
     }
 </style>
