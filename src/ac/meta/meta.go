@@ -97,15 +97,6 @@ type ListAuthorizedResourcesParam struct {
 	Action       Action       `json:"action"`
 }
 
-func GetAuthHeader() http.Header {
-	header := make(http.Header)
-	header.Add(common.BKHTTPOwnerID, common.BKSuperOwnerID)
-	header.Add(common.BKSupplierIDField, "0")
-	header.Add(common.BKHTTPHeaderUser, common.CCSystemOperatorUserName)
-	header.Add("Content-Type", "application/json")
-	return header
-}
-
 type Action string
 
 func (a Action) String() string {

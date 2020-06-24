@@ -83,39 +83,6 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp(resources))
 }
 
-func (s *service) GetAdminEntrance(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	rid := util.GetHTTPCCRequestID(pheader)
-
-	if s.authorizer.Enabled() == false {
-		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
-		return
-	}
-
-	userInfo := meta.UserInfo{
-		UserName:        util.GetUser(pheader),
-		SupplierAccount: util.GetOwnerID(pheader),
-	}
-
-	systemlist, err := s.authorizer.AdminEntrance(req.Request.Context(), userInfo)
-	if err != nil {
-		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
-		return
-	}
-
-	result := struct {
-		Passed bool `json:"is_pass"`
-	}{}
-	if len(systemlist) > 0 {
-		result.Passed = true
-	}
-
-	resp.WriteEntity(metadata.NewSuccessResp(result))
-}
-
 func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))

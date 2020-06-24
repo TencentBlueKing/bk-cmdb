@@ -203,9 +203,6 @@ res = conf/language
 address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
-enableSync = false
-syncWorkers = $auth_sync_workers
-syncIntervalMinutes = $auth_sync_interval_minutes
     '''
 
     template = FileTemplate(migrate_file_template_str)
