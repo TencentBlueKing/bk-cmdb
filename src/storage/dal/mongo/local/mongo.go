@@ -772,13 +772,16 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 	isInt := false
 	isUint := false
 	isStr := false
+	isBool := false
 	switch elemt.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		isInt = true
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		isUint = true
 	case reflect.String:
-		isStr = false
+		isStr = true
+	case reflect.Bool:
+		isBool = true
 	default:
 		return errors.New("not support decode distinct result to " + elemt.Kind().String())
 	}
@@ -803,7 +806,7 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 			} else if isUint {
 				elemp.Elem().SetUint(uint64(val))
 			} else {
-				return errors.New("not can " + " to int8" + elemt.Kind().String())
+				return errors.New("not can int8 to " +  elemt.Kind().String())
 			}
 		case int16:
 			if isInt {
@@ -811,7 +814,7 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 			} else if isUint {
 				elemp.Elem().SetUint(uint64(val))
 			} else {
-				return errors.New("not can " + " to int16" + elemt.Kind().String())
+				return errors.New("not can int16 to " + elemt.Kind().String())
 			}
 		case int32:
 			if isInt {
@@ -819,7 +822,7 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 			} else if isUint {
 				elemp.Elem().SetUint(uint64(val))
 			} else {
-				return errors.New("not can " + " to int32" + elemt.Kind().String())
+				return errors.New("not can int32 to " + elemt.Kind().String())
 			}
 		case int64:
 			if isInt {
@@ -827,7 +830,7 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 			} else if isUint {
 				elemp.Elem().SetUint(uint64(val))
 			} else {
-				return errors.New("not can " + " to int64" + elemt.Kind().String())
+				return errors.New("not can int64 to " + elemt.Kind().String())
 			}
 		case uint:
 			if isInt {
@@ -835,7 +838,7 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 			} else if isUint {
 				elemp.Elem().SetUint(uint64(val))
 			} else {
-				return errors.New("not can " + " to uint" + elemt.Kind().String())
+				return errors.New("not can uint to "+ elemt.Kind().String())
 			}
 		case uint8:
 			if isInt {
@@ -843,7 +846,7 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 			} else if isUint {
 				elemp.Elem().SetUint(uint64(val))
 			} else {
-				return errors.New("not can " + " to uint8" + elemt.Kind().String())
+				return errors.New("not can uint8 to " + elemt.Kind().String())
 			}
 		case uint16:
 			if isInt {
@@ -851,7 +854,7 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 			} else if isUint {
 				elemp.Elem().SetUint(uint64(val))
 			} else {
-				return errors.New("not can " + " to uint16" + elemt.Kind().String())
+				return errors.New("not can uint16 to " + elemt.Kind().String())
 			}
 		case uint32:
 			if isInt {
@@ -859,7 +862,7 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 			} else if isUint {
 				elemp.Elem().SetUint(uint64(val))
 			} else {
-				return errors.New("not can uint32 to" + elemt.Kind().String())
+				return errors.New("not can uint32 to " + elemt.Kind().String())
 			}
 		case uint64:
 			if isInt {
@@ -867,13 +870,31 @@ func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, resul
 			} else if isUint {
 				elemp.Elem().SetUint(uint64(val))
 			} else {
-				return errors.New("not can uint64 to" + elemt.Kind().String())
+				return errors.New("not can uint64 to " + elemt.Kind().String())
 			}
 		case string:
 			if !isStr {
-				return errors.New("not can string to" + elemt.Kind().String())
+				return errors.New("not can string to " + elemt.Kind().String())
 			}
 			elemp.Elem().SetString(val)
+		case bool:
+			if isBool{
+				elemp.Elem().SetBool(val)
+			} else if isInt {
+				if val == true{
+					elemp.Elem().SetInt(int64(1))
+				} else{
+					elemp.Elem().SetInt(int64(0))
+				}
+			} else if isUint {
+				if val == true{
+					elemp.Elem().SetUint(uint64(1))
+				} else{
+					elemp.Elem().SetUint(uint64(0))
+				}
+			}else{
+				return errors.New("not can bool to " + elemt.Kind().String())
+			}
 		default:
 			return errors.New("not can " + elemt.Kind().String())
 		}
