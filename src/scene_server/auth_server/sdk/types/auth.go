@@ -12,7 +12,23 @@
 
 package types
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+
+	"configcenter/src/scene_server/auth_server/sdk/client"
+	"configcenter/src/scene_server/auth_server/sdk/operator"
+	"github.com/prometheus/client_golang/prometheus"
+)
+
+type Config struct {
+	Iam     client.IamConfig
+	Options Options
+}
+
+type Options struct {
+	Metric prometheus.Registerer
+}
 
 type ResourceType string
 
@@ -25,6 +41,62 @@ type Decision struct {
 type AuthOptions struct {
 	System    string     `json:"system"`
 	Subject   Subject    `json:"subject"`
+	Action    Action     `json:"action"`
+	Resources []Resource `json:"resources"`
+}
+
+func (a AuthOptions) Validate() error {
+	if len(a.System) == 0 {
+		return errors.New("system is empty")
+	}
+
+	if len(a.Subject.Type) == 0 {
+		return errors.New("subject.type is empty")
+	}
+
+	if len(a.Subject.ID) == 0 {
+		return errors.New("subject.id is empty")
+	}
+
+	if len(a.Action.ID) == 0 {
+		return errors.New("action.id is empty")
+	}
+
+	return nil
+}
+
+type AuthBatchOptions struct {
+	System  string       `json:"system"`
+	Subject Subject      `json:"subject"`
+	Batch   []*AuthBatch `json:"batch"`
+}
+
+func (a AuthBatchOptions) Validate() error {
+	if len(a.System) == 0 {
+		return errors.New("system is empty")
+	}
+
+	if len(a.Subject.Type) == 0 {
+		return errors.New("subject.type is empty")
+	}
+
+	if len(a.Subject.ID) == 0 {
+		return errors.New("subject.id is empty")
+	}
+
+	if len(a.Batch) == 0 {
+		return nil
+	}
+
+	for _, b := range a.Batch {
+		if len(b.Action.ID) == 0 {
+			return errors.New("empty action id")
+		}
+	}
+	return nil
+}
+
+type AuthBatch struct {
 	Action    Action     `json:"action"`
 	Resources []Resource `json:"resources"`
 }
@@ -66,16 +138,10 @@ func (ae *AuthError) Error() string {
 	return fmt.Sprintf("code: %d, message: %s, rid :%s", ae.Code, ae.Message, ae.Rid)
 }
 
-type ListInstancesOptions struct {
-	Type ResourceType `json:"type"`
-	// only support "fetch_instance_info" value for now.
-	Method string     `json:"method"`
-	Filter ListFilter `json:"filter"`
-}
-
-type ListFilter struct {
-	// resource instance id list
-	IDList []string `json:"ids"`
-	// attribute key array
-	Attributes []string `json:"attrs"`
+type ListWithAttributes struct {
+	Operator operator.OperType `json:"op"`
+	// resource instance id list, this list is not required, it also
+	// one of the query filter with Operator.
+	IDList     []string               `json:"ids"`
+	Attributes []*operator.FieldValue `json:"attributes"`
 }

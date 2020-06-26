@@ -47,8 +47,9 @@ func (ac *authClient) GetUserPolicy(ctx context.Context, opt *types.GetPolicyOpt
 }
 
 // ListUserPolicies get a user's policy with multiple actions and resources
-func (ac *authClient) ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*operator.Policy,
-	error) {
+func (ac *authClient) ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) (
+	[]*operator.ActionPolicy, error) {
+
 	resp := new(types.ListPolicyResp)
 
 	result := ac.client.Post().

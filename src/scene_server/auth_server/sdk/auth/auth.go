@@ -14,16 +14,48 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
+	"configcenter/src/scene_server/auth_server/sdk/client"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
 type Authorizer interface {
-	Authorize(ctx context.Context, opts *types.AuthOptions) (types.Decision, error)
-	AuthorizeBatch(ctx context.Context, opts []*types.AuthOptions) ([]types.Decision, error)
+	// check if a user's operate resource is already authorized or not.
+	Authorize(ctx context.Context, opts *types.AuthOptions) (*types.Decision, error)
+
+	// check if a user's operate resources is authorized or not batch.
+	// Note: being authorized resources must be the same resource.
+	AuthorizeBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error)
+
+	// list a user's all the authorized resource instance list with an action.
+	// Note: opts.Resources is not required.
+	// the returned list may be huge, we do not do result paging
+	ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions) ([]string, error)
 }
 
-type ResourceGetter interface {
-	// get resource instance batch with options
-	ListInstances(ctx context.Context, opts *types.ListInstancesOptions)
+type ResourceFetcher interface {
+	// get "same" resource instances with attributes
+	// returned with the resource's instance id list matched with options.
+	ListInstancesWithAttributes(ctx context.Context, opts *types.ListWithAttributes) (idList []string, err error)
+}
+
+func NewAuth(conf types.Config, fetcher ResourceFetcher) (Authorizer, error) {
+
+	if fetcher == nil {
+		return nil, errors.New("fetcher can not be nil")
+	}
+
+	// initialize iam client.
+	opts := client.Options{Metric: conf.Options.Metric}
+	iam, err := client.NewClient(conf.Iam, opts)
+	if err != nil {
+		return nil, fmt.Errorf("new iam client failed, err: %v", err)
+	}
+
+	return &Authorize{
+		iam:     iam,
+		fetcher: fetcher,
+	}, nil
 }

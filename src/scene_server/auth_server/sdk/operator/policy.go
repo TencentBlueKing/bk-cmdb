@@ -19,6 +19,11 @@ import (
 	"fmt"
 )
 
+const (
+	IamIDKey   = "id"
+	IamPathKey = "_bk_iam_path_"
+)
+
 type Policy struct {
 	Operator OperType `json:"op"`
 	// Element is a pointer interface point to the implements struct,
@@ -44,9 +49,27 @@ func (p *Policy) UnmarshalJSON(i []byte) error {
 		return nil
 	}
 
-	p.Element = &FieldValue{
-		Field: broker.Field,
-		Value: broker.Value,
+	if broker.Operator == In || broker.Operator == Nin {
+		to := make([]interface{}, 0)
+		if err := json.Unmarshal(broker.Value, &to); err != nil {
+			return err
+		}
+
+		p.Element = &FieldValue{
+			Field: broker.Field,
+			Value: to,
+		}
+
+	} else {
+		to := new(interface{})
+		if err := json.Unmarshal(broker.Value, &to); err != nil {
+			return err
+		}
+
+		p.Element = &FieldValue{
+			Field: broker.Field,
+			Value: to,
+		}
 	}
 
 	return nil
@@ -56,11 +79,7 @@ type policyBroker struct {
 	Operator OperType        `json:"op"`
 	Content  json.RawMessage `json:"content"`
 	Field    Field           `json:"field"`
-	Value    string          `json:"value"`
-}
-
-type JsonRaw struct {
-	json.RawMessage
+	Value    json.RawMessage `json:"value"`
 }
 
 // MarshalJSON is used to marshal the policy to the standard
@@ -82,6 +101,11 @@ func (p *Policy) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+type ActionPolicy struct {
+	ActionID string  `json:"action_id"`
+	Policy   *Policy `json:"condition"`
+}
+
 type Element interface {
 	EleName() string
 }
@@ -98,11 +122,11 @@ func (e *Content) EleName() string {
 type FieldValue struct {
 	// Field and Value is only exist when OperType is not
 	// one of "And" or "OR"
-	Field Field  `json:"field"`
-	Value string `json:"value"`
+	Field Field       `json:"field"`
+	Value interface{} `json:"value"`
 }
 
-func (e *FieldValue) EleName() string {
+func (f *FieldValue) EleName() string {
 	return "field_value"
 }
 

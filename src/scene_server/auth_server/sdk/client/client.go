@@ -25,10 +25,14 @@ import (
 
 type Interface interface {
 	GetUserPolicy(ctx context.Context, opt *types.GetPolicyOption) (*operator.Policy, error)
-	ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*operator.Policy, error)
+	ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*operator.ActionPolicy, error)
 }
 
-func NewClient(conf AuthConfig, opt Options) (Interface, error) {
+func NewClient(conf IamConfig, opt Options) (Interface, error) {
+
+	if err := conf.Validate(); err != nil {
+		return nil, err
+	}
 
 	client, err := util.NewClient(&conf.TLS)
 	if err != nil {
