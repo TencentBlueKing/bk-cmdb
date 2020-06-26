@@ -55,30 +55,6 @@ func NewAuthCommand() *cobra.Command {
 
 	subCmds := make([]*cobra.Command, 0)
 
-	subCmds = append(subCmds, &cobra.Command{
-		Use:   "register",
-		Short: "register resource to auth center",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runAuthRegisterCmd(conf)
-		},
-	})
-
-	subCmds = append(subCmds, &cobra.Command{
-		Use:   "deregister",
-		Short: "deregister resource from auth center",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runAuthDeregisterCmd(conf)
-		},
-	})
-
-	subCmds = append(subCmds, &cobra.Command{
-		Use:   "update",
-		Short: "update resource in auth center",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runAuthUpdateCmd(conf)
-		},
-	})
-
 	userName := new(string)
 	supplierAccount := new(string)
 	checkCmd := &cobra.Command{
@@ -169,48 +145,6 @@ func newAuthService(c *authConf) (*authService, error) {
 		}
 	}
 	return service, nil
-}
-
-func runAuthRegisterCmd(c *authConf) error {
-	srv, err := newAuthService(c)
-	if err != nil {
-		return err
-	}
-	err = srv.authorize.RegisterResource(context.Background(), srv.resource...)
-	if err != nil {
-		return err
-	}
-	_, _ = fmt.Fprintln(os.Stdout, WithBlueColor("Register successful"))
-	return nil
-}
-
-func runAuthDeregisterCmd(c *authConf) error {
-	srv, err := newAuthService(c)
-	if err != nil {
-		return err
-	}
-	err = srv.authorize.DeregisterResource(context.Background(), srv.resource...)
-	if err != nil {
-		return err
-	}
-	_, _ = fmt.Fprintln(os.Stdout, WithBlueColor("Deregister successful"))
-	return nil
-}
-
-func runAuthUpdateCmd(c *authConf) error {
-	srv, err := newAuthService(c)
-	if err != nil {
-		return err
-	}
-	for _, res := range srv.resource {
-		err = srv.authorize.UpdateResource(context.Background(), &res)
-		if err != nil {
-			return err
-		}
-
-	}
-	_, _ = fmt.Fprintln(os.Stdout, WithBlueColor("Update successful"))
-	return nil
 }
 
 func runAuthCheckCmd(c *authConf, userName string, supplierAccount string) error {

@@ -100,6 +100,11 @@ func (s *AuthService) WebService() *restful.Container {
 	container := restful.NewContainer()
 	container.Add(api)
 
+	authAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	authAPI.Path("/auth/v3")
+	s.initAuth(authAPI)
+	container.Add(authAPI)
+
 	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
 	container.Add(healthzAPI)
@@ -117,6 +122,19 @@ func (s *AuthService) initResourcePull(api *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instance/resource", Handler: s.PullInstanceResource})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/system/resource", Handler: s.PullSystemResource})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/business/resource", Handler: s.PullBusinessResource})
+
+	utility.AddToRestfulWebService(api)
+}
+
+func (s *AuthService) initAuth(api *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize", Handler: s.Authorize})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/authorize/batch", Handler: s.AuthorizeBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/authorized_resource", Handler: s.ListAuthorizedResources})
 
 	utility.AddToRestfulWebService(api)
 }

@@ -15,6 +15,7 @@ package apimachinery
 import (
 	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/apiserver"
+	"configcenter/src/apimachinery/authserver"
 	"configcenter/src/apimachinery/cloudserver"
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/apimachinery/discovery"
@@ -39,6 +40,7 @@ type ClientSetInterface interface {
 	CoreService() coreservice.CoreServiceClientInterface
 	TaskServer() taskserver.TaskServerClientInterface
 	CloudServer() cloudserver.CloudServerClientInterface
+	AuthServer() authserver.AuthServerClientInterface
 
 	Healthz() healthz.HealthzInterface
 }
@@ -179,4 +181,14 @@ func (cs *ClientSet) CloudServer() cloudserver.CloudServerClientInterface {
 		Mock:     cs.Mock,
 	}
 	return cloudserver.NewCloudServerClientInterface(c, cs.version)
+}
+
+func (cs *ClientSet) AuthServer() authserver.AuthServerClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.AuthServer(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	return authserver.NewAuthServerClientInterface(c, cs.version)
 }

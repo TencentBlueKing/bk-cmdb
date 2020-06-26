@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -52,11 +51,6 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("create service template failed, err: %v", err)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if err := ps.AuthManager.RegisterServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
-			blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
 		}
 
 		return nil
@@ -132,12 +126,6 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 			blog.Errorf("update service template failed, err: %v", err)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
-
-		if err := ps.AuthManager.UpdateRegisteredServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, *tpl); err != nil {
-			blog.Errorf("create service template success, but register to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommRegistResourceToIAMFailed)
-		}
-
 		return nil
 	})
 
@@ -322,23 +310,11 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		}
 	}
 
-	iamResources, err := ps.AuthManager.MakeResourcesByServiceTemplateIDs(ctx.Kit.Ctx, ctx.Kit.Header, meta.Delete, bizID, input.ServiceTemplateID)
-	if err != nil {
-		blog.Errorf("make iam resource by service template failed, templateID: %d, err: %+v, rid: %s", input.ServiceTemplateID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ps.EnableTxn, ctx.Kit.Header, func() error {
-		err = ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
+		err := ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
 		if err != nil {
 			blog.Errorf("delete service template: %d failed", input.ServiceTemplateID)
 			return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceTemplateFailed)
-		}
-
-		if err := ps.AuthManager.Authorize.DeregisterResource(ctx.Kit.Ctx, iamResources...); err != nil {
-			blog.Errorf("delete service template success, but deregister from iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommUnRegistResourceToIAMFailed)
 		}
 		return nil
 	})

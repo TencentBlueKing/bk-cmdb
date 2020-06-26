@@ -138,10 +138,6 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			fchain.ProcessFilter(req, resp)
 			return
 		}
-		if path == "/api/v3/auth/admin_entrance" {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
 
 		if path == "/api/v3/auth/skip_url" {
 			fchain.ProcessFilter(req, resp)

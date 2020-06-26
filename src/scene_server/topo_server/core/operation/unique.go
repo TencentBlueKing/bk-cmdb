@@ -81,11 +81,6 @@ func (a *unique) Update(kit *rest.Kit, objectID string, id uint64, request *meta
 		return kit.CCError.New(resp.Code, resp.ErrMsg)
 	}
 
-	// auth: update register to iam
-	if err := a.authManager.UpdateRegisteredModelUniqueByID(kit.Ctx, kit.Header, int64(id)); err != nil {
-		blog.V(2).Infof("update unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, kit.Rid)
-		return err
-	}
 	return nil
 }
 
@@ -101,11 +96,6 @@ func (a *unique) Delete(kit *rest.Kit, objectID string, id uint64, metaData *met
 	}
 	if !resp.Result {
 		return kit.CCError.New(resp.Code, resp.ErrMsg)
-	}
-	// auth: deregister to iam
-	if err := a.authManager.DeregisterModelUniqueByID(kit.Ctx, kit.Header, int64(id)); err != nil {
-		blog.V(2).Infof("deregister unique %d for model %s failed, authorization failed, err: %+v, rid: %s", id, objectID, err, kit.Rid)
-		return err
 	}
 	return nil
 }
