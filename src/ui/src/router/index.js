@@ -201,6 +201,8 @@ router.beforeEach((to, from, next) => {
             } else {
                 next()
             }
+        } finally {
+            setLoading(false)
         }
     })
 })
@@ -214,8 +216,6 @@ router.afterEach(async (to, from) => {
     } catch (e) {
         setupStatus.afterload = true
         console.error(e)
-    } finally {
-        setLoading(false)
     }
 })
 

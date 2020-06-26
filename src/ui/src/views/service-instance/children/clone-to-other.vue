@@ -8,7 +8,7 @@
                 {{$t('添加主机')}}
             </bk-button>
             <div class="create-tables" ref="createTables">
-                <transition-group name="list-complete" tag="div">
+                <transition-group name="service-table-list" tag="div">
                     <service-instance-table class="service-instance-table"
                         v-for="(data, index) in hosts"
                         ref="serviceInstanceTable"
@@ -105,7 +105,7 @@
             handleAddHost () {
                 this.dialog.component = HostSelector.name
                 this.dialog.props = {
-                    exist: this.hosts.map(datum => datum.host.bk_host_id),
+                    exist: this.hosts,
                     exclude: [this.hostId]
                 }
                 this.dialog.show = true
@@ -221,11 +221,11 @@
         margin-bottom: 12px;
     }
 
-    .list-complete-leave-active {
-        position: absolute;
+    .service-table-list-enter-active, .service-table-list-leave-active {
+        transition: all .7s ease-in;
     }
-
-    .list-complete-move {
-        transition: all .5s;
+    .service-table-list-leave-to {
+        opacity: 0;
+        transform: translateX(30px);
     }
 </style>
