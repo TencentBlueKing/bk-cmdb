@@ -19,12 +19,7 @@ type BaseResp struct {
 	Message string `json:"message"`
 }
 
-type GetPolicyOption struct {
-	System    string     `json:"system"`
-	Subject   Subject    `json:"subject"`
-	Action    Action     `json:"action"`
-	Resources []Resource `json:"resources"`
-}
+type GetPolicyOption AuthOptions
 
 type GetPolicyResp struct {
 	BaseResp `json:",inline"`

@@ -18,6 +18,56 @@ import (
 	"strings"
 )
 
+var factory map[string]Operator
+
+func init() {
+	equal := EqualOper("")
+	factory[equal.Name()] = &equal
+
+	notEqual := NotEqualOper("")
+	factory[notEqual.Name()] = &notEqual
+
+	in := InOper("")
+	factory[in.Name()] = &in
+
+	notIn := NotInOper("")
+	factory[notIn.Name()] = &notIn
+
+	contains := ContainsOper("")
+	factory[contains.Name()] = &contains
+
+	notContains := NotContainsOper("")
+	factory[notContains.Name()] = &notContains
+
+	startWith := StartsWithOper("")
+	factory[startWith.Name()] = &startWith
+
+	notStartWith := NotStartsWithOper("")
+	factory[notStartWith.Name()] = &notStartWith
+
+	endWith := EndsWithOper("")
+	factory[endWith.Name()] = &endWith
+
+	notEndWith := NotEndsWithOper("")
+	factory[notEndWith.Name()] = &notEndWith
+
+	lessThan := LessThanOper("")
+	factory[lessThan.Name()] = &lessThan
+
+	lessThanEqual := LessThanEqualOper("")
+	factory[lessThanEqual.Name()] = &lessThanEqual
+
+	greaterThan := GreaterThanOper("")
+	factory[greaterThan.Name()] = &greaterThan
+
+	greaterThanEqual := GreaterThanEqualOper("")
+	factory[greaterThanEqual.Name()] = &greaterThanEqual
+
+	any := AnyOper("")
+	factory[any.Name()] = &any
+
+}
+
 type Operator interface {
 	// name of the operator
 	Name() string
@@ -31,15 +81,59 @@ type Operator interface {
 	Match(match interface{}, with interface{}) (bool, error)
 }
 
+const (
+	Unknown          = "unknown"
+	Equal            = "eq"
+	NEqual           = "neq"
+	Any              = "any"
+	In               = "in"
+	Nin              = "nin"
+	Contains         = "contains"
+	NContains        = "not_contains"
+	StartWith        = "start_with"
+	NStartWith       = "not_starts_with"
+	EndWith          = "ends_with"
+	NEndWith         = "not_ends_with"
+	LessThan         = "lt"
+	LessThanEqual    = "lte"
+	GreaterThan      = "gt"
+	GreaterThanEqual = "gte"
+)
+
 type OperType string
 
-type Equal OperType
+func (o *OperType) Operator() Operator {
+	if o == nil {
+		unknown := UnknownOper("")
+		return &unknown
+	}
 
-func (e *Equal) Name() string {
-	return "eq"
+	oper, support := factory[string(*o)]
+	if !support {
+		unknown := UnknownOper("")
+		return &unknown
+	}
+
+	return oper
 }
 
-func (e *Equal) Match(match interface{}, with interface{}) (bool, error) {
+type UnknownOper OperType
+
+func (u *UnknownOper) Name() string {
+	return Unknown
+}
+
+func (u *UnknownOper) Match(_ interface{}, _ interface{}) (bool, error) {
+	return false, errors.New("unknown type, can not do match")
+}
+
+type EqualOper OperType
+
+func (e *EqualOper) Name() string {
+	return Equal
+}
+
+func (e *EqualOper) Match(match interface{}, with interface{}) (bool, error) {
 	mType := reflect.TypeOf(match)
 	wType := reflect.TypeOf(with)
 	if mType.Kind() != wType.Kind() {
@@ -49,13 +143,13 @@ func (e *Equal) Match(match interface{}, with interface{}) (bool, error) {
 	return reflect.DeepEqual(match, with), nil
 }
 
-type NotEqual OperType
+type NotEqualOper OperType
 
-func (e *NotEqual) Name() string {
-	return "neq"
+func (e *NotEqualOper) Name() string {
+	return NEqual
 }
 
-func (e *NotEqual) Match(match interface{}, with interface{}) (bool, error) {
+func (e *NotEqualOper) Match(match interface{}, with interface{}) (bool, error) {
 	mType := reflect.TypeOf(match)
 	wType := reflect.TypeOf(with)
 	if mType.Kind() != wType.Kind() {
@@ -65,13 +159,13 @@ func (e *NotEqual) Match(match interface{}, with interface{}) (bool, error) {
 	return !reflect.DeepEqual(match, with), nil
 }
 
-type In OperType
+type InOper OperType
 
-func (e *In) Name() string {
-	return "in"
+func (e *InOper) Name() string {
+	return In
 }
 
-func (e *In) Match(match interface{}, with interface{}) (bool, error) {
+func (e *InOper) Match(match interface{}, with interface{}) (bool, error) {
 	if match == nil || with == nil {
 		return false, errors.New("invalid parameter")
 	}
@@ -140,14 +234,14 @@ func (e *In) Match(match interface{}, with interface{}) (bool, error) {
 
 }
 
-type NotIn OperType
+type NotInOper OperType
 
-func (n *NotIn) Name() string {
-	return "nin"
+func (n *NotInOper) Name() string {
+	return Nin
 }
 
-func (n *NotIn) Match(match interface{}, with interface{}) (bool, error) {
-	inOper := In("in")
+func (n *NotInOper) Match(match interface{}, with interface{}) (bool, error) {
+	inOper := InOper("in")
 	hit, err := inOper.Match(match, with)
 	if err != nil {
 		return false, err
@@ -156,13 +250,13 @@ func (n *NotIn) Match(match interface{}, with interface{}) (bool, error) {
 	return !hit, nil
 }
 
-type Contains OperType
+type ContainsOper OperType
 
-func (c *Contains) Name() string {
-	return "contains"
+func (c *ContainsOper) Name() string {
+	return Contains
 }
 
-func (c *Contains) Match(match interface{}, with interface{}) (bool, error) {
+func (c *ContainsOper) Match(match interface{}, with interface{}) (bool, error) {
 	m, ok := match.(string)
 	if !ok {
 		return false, errors.New("invalid parameter")
@@ -176,13 +270,13 @@ func (c *Contains) Match(match interface{}, with interface{}) (bool, error) {
 	return strings.Contains(m, w), nil
 }
 
-type NotContains OperType
+type NotContainsOper OperType
 
-func (c *NotContains) Name() string {
-	return "not_contains"
+func (c *NotContainsOper) Name() string {
+	return NContains
 }
 
-func (c *NotContains) Match(match interface{}, with interface{}) (bool, error) {
+func (c *NotContainsOper) Match(match interface{}, with interface{}) (bool, error) {
 	m, ok := match.(string)
 	if !ok {
 		return false, errors.New("invalid parameter")
@@ -196,13 +290,13 @@ func (c *NotContains) Match(match interface{}, with interface{}) (bool, error) {
 	return !strings.Contains(m, w), nil
 }
 
-type StartsWith OperType
+type StartsWithOper OperType
 
-func (s *StartsWith) Name() string {
-	return "starts_with"
+func (s *StartsWithOper) Name() string {
+	return StartWith
 }
 
-func (s *StartsWith) Match(match interface{}, with interface{}) (bool, error) {
+func (s *StartsWithOper) Match(match interface{}, with interface{}) (bool, error) {
 	m, ok := match.(string)
 	if !ok {
 		return false, errors.New("invalid parameter")
@@ -216,13 +310,13 @@ func (s *StartsWith) Match(match interface{}, with interface{}) (bool, error) {
 	return strings.HasPrefix(m, w), nil
 }
 
-type NotStartsWith OperType
+type NotStartsWithOper OperType
 
-func (n *NotStartsWith) Name() string {
-	return "not_starts_with"
+func (n *NotStartsWithOper) Name() string {
+	return NStartWith
 }
 
-func (n *NotStartsWith) Match(match interface{}, with interface{}) (bool, error) {
+func (n *NotStartsWithOper) Match(match interface{}, with interface{}) (bool, error) {
 	m, ok := match.(string)
 	if !ok {
 		return false, errors.New("invalid parameter")
@@ -236,13 +330,13 @@ func (n *NotStartsWith) Match(match interface{}, with interface{}) (bool, error)
 	return !strings.HasPrefix(m, w), nil
 }
 
-type EndsWith OperType
+type EndsWithOper OperType
 
-func (e *EndsWith) Name() string {
-	return "ends_with"
+func (e *EndsWithOper) Name() string {
+	return EndWith
 }
 
-func (e *EndsWith) Match(match interface{}, with interface{}) (bool, error) {
+func (e *EndsWithOper) Match(match interface{}, with interface{}) (bool, error) {
 	m, ok := match.(string)
 	if !ok {
 		return false, errors.New("invalid parameter")
@@ -256,13 +350,13 @@ func (e *EndsWith) Match(match interface{}, with interface{}) (bool, error) {
 	return strings.HasSuffix(m, w), nil
 }
 
-type NotEndsWith OperType
+type NotEndsWithOper OperType
 
-func (e *NotEndsWith) Name() string {
-	return "not_ends_with"
+func (e *NotEndsWithOper) Name() string {
+	return NEndWith
 }
 
-func (e *NotEndsWith) Match(match interface{}, with interface{}) (bool, error) {
+func (e *NotEndsWithOper) Match(match interface{}, with interface{}) (bool, error) {
 	m, ok := match.(string)
 	if !ok {
 		return false, errors.New("invalid parameter")
@@ -276,13 +370,13 @@ func (e *NotEndsWith) Match(match interface{}, with interface{}) (bool, error) {
 	return !strings.HasSuffix(m, w), nil
 }
 
-type LessThan OperType
+type LessThanOper OperType
 
-func (l *LessThan) Name() string {
-	return "lt"
+func (l *LessThanOper) Name() string {
+	return LessThan
 }
 
-func (l *LessThan) Match(match interface{}, with interface{}) (bool, error) {
+func (l *LessThanOper) Match(match interface{}, with interface{}) (bool, error) {
 	if !isNumeric(match) || !isNumeric(with) {
 		return false, errors.New("invalid parameter")
 	}
@@ -290,13 +384,13 @@ func (l *LessThan) Match(match interface{}, with interface{}) (bool, error) {
 	return toFloat64(match) < toFloat64(with), nil
 }
 
-type LessThanEqual OperType
+type LessThanEqualOper OperType
 
-func (l *LessThanEqual) Name() string {
-	return "lte"
+func (l *LessThanEqualOper) Name() string {
+	return LessThanEqual
 }
 
-func (l *LessThanEqual) Match(match interface{}, with interface{}) (bool, error) {
+func (l *LessThanEqualOper) Match(match interface{}, with interface{}) (bool, error) {
 	if !isNumeric(match) || !isNumeric(with) {
 		return false, errors.New("invalid parameter")
 	}
@@ -304,13 +398,13 @@ func (l *LessThanEqual) Match(match interface{}, with interface{}) (bool, error)
 	return toFloat64(match) <= toFloat64(with), nil
 }
 
-type GreaterThan OperType
+type GreaterThanOper OperType
 
-func (gt *GreaterThan) Name() string {
-	return "gt"
+func (gt *GreaterThanOper) Name() string {
+	return GreaterThan
 }
 
-func (gt *GreaterThan) Match(match interface{}, with interface{}) (bool, error) {
+func (gt *GreaterThanOper) Match(match interface{}, with interface{}) (bool, error) {
 	if !isNumeric(match) || !isNumeric(with) {
 		return false, errors.New("invalid parameter")
 	}
@@ -318,13 +412,13 @@ func (gt *GreaterThan) Match(match interface{}, with interface{}) (bool, error) 
 	return toFloat64(match) > toFloat64(with), nil
 }
 
-type GreaterThanEqual OperType
+type GreaterThanEqualOper OperType
 
-func (gte *GreaterThanEqual) Name() string {
-	return "gte"
+func (gte *GreaterThanEqualOper) Name() string {
+	return GreaterThanEqual
 }
 
-func (gte *GreaterThanEqual) Match(match interface{}, with interface{}) (bool, error) {
+func (gte *GreaterThanEqualOper) Match(match interface{}, with interface{}) (bool, error) {
 	if !isNumeric(match) || !isNumeric(with) {
 		return false, errors.New("invalid parameter")
 	}
@@ -332,13 +426,13 @@ func (gte *GreaterThanEqual) Match(match interface{}, with interface{}) (bool, e
 	return toFloat64(match) > toFloat64(with), nil
 }
 
-type Any OperType
+type AnyOper OperType
 
-func (a *Any) Name() string {
-	return "any"
+func (a *AnyOper) Name() string {
+	return Any
 }
 
-func (a *Any) Match(match interface{}, with interface{}) (bool, error) {
+func (a *AnyOper) Match(match interface{}, _ interface{}) (bool, error) {
 	if !reflect.ValueOf(match).IsValid() {
 		return false, errors.New("invalid parameter")
 	}

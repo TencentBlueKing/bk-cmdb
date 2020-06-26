@@ -17,3 +17,10 @@ const (
 	RequestIDKey       = "rid"
 	RequestIDHeaderKey = "X-Request-Id"
 )
+
+const (
+	// the key to describe the auth path that this resource need to auth.
+	// only if the path is matched one of the use's auth policy, then a use's
+	// have this resource's operate authorize.
+	IamPathKey = "_bk_iam_path_"
+)
