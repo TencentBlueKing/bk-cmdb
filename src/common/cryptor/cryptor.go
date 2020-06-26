@@ -10,29 +10,13 @@
  * limitations under the License.
  */
 
-package logics
+package cryptor
 
-import (
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/cryptor"
-	"configcenter/src/storage/dal"
+// Cryptor 密码器
+type Cryptor interface {
+	// Encrypt 加密方法
+	Encrypt(plainText string) (string, error)
 
-	"gopkg.in/redis.v5"
-)
-
-// Logics framwork need
-type Logics struct {
-	*backbone.Engine
-	db      dal.RDB
-	cache   *redis.Client
-	cryptor cryptor.Cryptor
-}
-
-func NewLogics(engine *backbone.Engine, db dal.RDB, cache *redis.Client, cryptor cryptor.Cryptor) *Logics {
-	return &Logics{
-		Engine:  engine,
-		db:      db,
-		cache:   cache,
-		cryptor: cryptor,
-	}
+	// Decrypt 解密方法
+	Decrypt(cryptedText string) (string, error)
 }
