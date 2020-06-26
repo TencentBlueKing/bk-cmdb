@@ -63,7 +63,7 @@ func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
 
 		}
 		id := result.Data["id"].(string)
-		res, err := s.CoreAPI.CoreService().Host().UpdateUserCustomByID(srvData.ctx, srvData.user, id, srvData.header, params)
+		res, err = s.CoreAPI.CoreService().Host().UpdateUserCustomByID(srvData.ctx, srvData.user, id, srvData.header, params)
 		if err != nil {
 			blog.Errorf("SaveUserCustom UpdateUserCustomByID http do error,err:%s,input:%s, rid:%s", err.Error(), params, srvData.rid)
 			return srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
