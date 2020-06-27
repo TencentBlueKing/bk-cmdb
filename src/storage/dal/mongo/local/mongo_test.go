@@ -1406,12 +1406,12 @@ func TestDistinct(t *testing.T) {
 			"type":   "int",
 		},
 		map[string]interface{}{
-			"str":  "aa",
-			"type": "str",
+			"string":  "bb",
+			"type": "string",
 		},
 		map[string]interface{}{
-			"str":  "bb",
-			"type": "str",
+			"string":  "aa",
+			"type": "string",
 		},
 		map[string]interface{}{
 			"bool": true,
@@ -1453,5 +1453,5 @@ func TestDistinct(t *testing.T) {
 	// distinct bool 字段， db 数据为bool,返回的结构都是bool
 	ret, dbErr = table.Distinct(context.TODO(), "bool", map[string]string{"type": "bool"})
 	require.NoError(t, dbErr, "find distinct string error")
-	assertBoolEqual(t, []bool{true, false}, ret)
+	assertBoolEqual(t, []bool{false, true}, ret)
 }
