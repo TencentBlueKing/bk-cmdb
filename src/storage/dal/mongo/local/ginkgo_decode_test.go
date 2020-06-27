@@ -20,7 +20,7 @@ var _ = PDescribe("Decode", func() {
 	Context("[]int test", func() {
 		It("", func() {
 			var src = []int{1,2,3,4,100,-20,10}
-			results,err := TODOdecodeDistinctIntoSlice(ctx,convert2Sliceface(src))
+			results,err := decodeDistinctIntoSlice(ctx,convert2Sliceface(src))
 
 			//err == nil
 			Expect(err).NotTo(HaveOccurred())
@@ -41,7 +41,7 @@ var _ = PDescribe("Decode", func() {
 		It("", func() {
 			var src = []uint{1,2,3,4,100,111111111,2222222,18446744073709551615}
 
-			results,err := TODOdecodeDistinctIntoSlice(ctx,convert2Sliceface(src))
+			results,err := decodeDistinctIntoSlice(ctx,convert2Sliceface(src))
 
 			//err == nil
 			Expect(err).NotTo(HaveOccurred())
@@ -63,7 +63,7 @@ var _ = PDescribe("Decode", func() {
 		It("", func() {
 			var src = []string{"a","b","c","hello world",""}
 
-			results,err := TODOdecodeDistinctIntoSlice(ctx,convert2Sliceface(src))
+			results,err := decodeDistinctIntoSlice(ctx,convert2Sliceface(src))
 
 			//err == nil
 			Expect(err).NotTo(HaveOccurred())
@@ -84,7 +84,7 @@ var _ = PDescribe("Decode", func() {
 		It("", func() {
 			var src = []bool{true,false,true}
 
-			results,err := TODOdecodeDistinctIntoSlice(ctx,convert2Sliceface(src))
+			results,err := decodeDistinctIntoSlice(ctx,convert2Sliceface(src))
 
 			//err == nil
 			Expect(err).NotTo(HaveOccurred())
@@ -104,7 +104,7 @@ var _ = PDescribe("Decode", func() {
 	Context("nil text", func() {
 		It("", func() {
 
-			results,err := TODOdecodeDistinctIntoSlice(ctx,nil)
+			results,err := decodeDistinctIntoSlice(ctx,nil)
 
 			//err == nil
 			Expect(err).NotTo(HaveOccurred())
@@ -124,7 +124,7 @@ var _ = PDescribe("Decode", func() {
 			for i := range bad{
 				src[i] = bad[i]
 			}
-			_,err := TODOdecodeDistinctIntoSlice(ctx,src)
+			_,err := decodeDistinctIntoSlice(ctx,src)
 
 			Expect(err).To(HaveOccurred())
 		})
