@@ -526,11 +526,23 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
-	hostIDArr := make([]int64, 0)
-	err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond, &hostIDArr)
+	ret,err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)
+
 	if err != nil {
 		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	//  ret convert to []int64 and put to hostIDArr
+	hostIDArr := make([]int64, len(ret))
+
+	for index,item := range ret{
+		val,ok := item.(int64)
+		if !ok {
+			blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed) //TODO : this is really good?
+		}
+		hostIDArr[index] = val
 	}
 
 	return hostIDArr, nil

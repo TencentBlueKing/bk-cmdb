@@ -751,12 +751,12 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 	})
 
 }
-
+//TODO
 // Distinct Finds the distinct values for a specified field across a single collection or view and returns the results in an
 // field the field for which to return distinct values.
 // filter query that specifies the documents from which to retrieve the distinct values.
 // result execute query result.  result must be ptr, ptr raw type is must be array,  array item type can integer(int8,int16,int31,int64,int,uint8,uint16,uint31,uint64,uint),string
-func (c *Collection) Distinct(ctx context.Context, field string, filter types.Filter, results interface{}) error {
+func (c *Collection) Distinct(ctx context.Context, field string, filter types.Filter) ([]interface{},error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -766,140 +766,64 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 	if filter == nil {
 		filter = bson.M{}
 	}
+	var results []interface{} = nil
 
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		dbResults, err := c.dbc.Database(c.dbname).Collection(c.collName).Distinct(ctx, field, filter)
 		if err != nil {
 			return err
 		}
-
-		return decodeDistinctIntoSlice(ctx, dbResults, results)
+		//get []interface{}
+		results , err = decodeDistinctIntoSlice(ctx, dbResults)
+		return err
 
 	})
+	return results,err
 }
-
-func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}, results interface{}) error {
-	resultv := reflect.ValueOf(results)
-	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
-		return errors.New("result argument must be a slice address")
+func decodeDistinctIntoSlice(ctx context.Context, dbResults []interface{}) ([]interface{},error){
+	// len == 0  direct return
+	if len(dbResults) == 0 {
+		return  nil,nil
 	}
 
-	elemt := resultv.Elem().Type().Elem()
-
-	isInt := false
-	isUint := false
-	isStr := false
-	switch elemt.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		isInt = true
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		isUint = true
-	case reflect.String:
-		isStr = false
-	default:
-		return errors.New("not support decode distinct result to " + elemt.Kind().String())
+	//int64,string,bool  direct return
+	switch dbResults[0].(type) {
+	case int64:
+		return dbResults,nil
+	case string:
+		return dbResults,nil
+	case bool:
+		return dbResults,nil
 	}
-
-	slice := reflect.MakeSlice(resultv.Elem().Type(), 0, len(dbResults))
-
-	for _, item := range dbResults {
-
-		elemp := reflect.New(elemt)
+	var results = make([]interface{},len(dbResults))
+	for i,item := range dbResults{
 		switch val := item.(type) {
 		case int:
-			if isInt {
-				elemp.Elem().SetInt(int64(val))
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can int to " + elemt.Kind().String())
-			}
+			results[i] = int64(val)
 		case int8:
-			if isInt {
-				elemp.Elem().SetInt(int64(val))
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can " + " to int8" + elemt.Kind().String())
-			}
+			results[i] = int64(val)
 		case int16:
-			if isInt {
-				elemp.Elem().SetInt(int64(val))
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can " + " to int16" + elemt.Kind().String())
-			}
+			results[i] = int64(val)
 		case int32:
-			if isInt {
-				elemp.Elem().SetInt(int64(val))
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can " + " to int32" + elemt.Kind().String())
-			}
+			results[i] = int64(val)
 		case int64:
-			if isInt {
-				elemp.Elem().SetInt(val)
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can " + " to int64" + elemt.Kind().String())
-			}
+			results[i] = val
+
 		case uint:
-			if isInt {
-				elemp.Elem().SetInt(int64(val))
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can " + " to uint" + elemt.Kind().String())
-			}
+			results[i] = int64(val)
 		case uint8:
-			if isInt {
-				elemp.Elem().SetInt(int64(val))
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can " + " to uint8" + elemt.Kind().String())
-			}
+			results[i] = int64(val)
 		case uint16:
-			if isInt {
-				elemp.Elem().SetInt(int64(val))
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can " + " to uint16" + elemt.Kind().String())
-			}
+			results[i] = int64(val)
 		case uint32:
-			if isInt {
-				elemp.Elem().SetInt(int64(val))
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can uint32 to" + elemt.Kind().String())
-			}
+			results[i] = int64(val)
 		case uint64:
-			if isInt {
-				elemp.Elem().SetInt(int64(val))
-			} else if isUint {
-				elemp.Elem().SetUint(uint64(val))
-			} else {
-				return errors.New("not can uint64 to" + elemt.Kind().String())
-			}
-		case string:
-			if !isStr {
-				return errors.New("not can string to" + elemt.Kind().String())
-			}
-			elemp.Elem().SetString(val)
+			results[i] = int64(val)
 		default:
-			return errors.New("not can " + elemt.Kind().String())
+			return nil,errors.New("no can to int64 or bool or string")
 		}
-		slice = reflect.Append(slice, elemp.Elem())
-
 	}
-	resultv.Elem().Set(slice)
-
-	return nil
+	return results,nil
 }
 
 func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {
