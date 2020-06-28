@@ -32,7 +32,7 @@ func (s *Service) SyncModuleTaskHandler(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	err := backendWorker.DoModuleSyncTask(task.Header, task.Set, task.ModuleDiff)
+	err := backendWorker.DoModuleSyncTask(ctx.Kit.Header, task.Set, task.ModuleDiff)
 	if err != nil {
 		blog.ErrorJSON("DoModuleSyncTask failed, task: %s, err: %s, rid: %s", task, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

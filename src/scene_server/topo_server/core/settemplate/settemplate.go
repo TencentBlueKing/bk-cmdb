@@ -192,7 +192,6 @@ func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateI
 		tasks := make([]metadata.SyncModuleTask, 0)
 		for _, moduleDiff := range setDiff.ModuleDiffs {
 			task := metadata.SyncModuleTask{
-				Header:             kit.Header,
 				Set:                setDiff.SetDetail,
 				ModuleDiff:         moduleDiff,
 				SetTopoPath:        setDiff.TopoPath,

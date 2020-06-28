@@ -354,6 +354,18 @@ func (lgc *Logics) GetHostModuleRelation(ctx context.Context, cond metadata.Host
 		return nil, lgc.ccErr.CCError(common.CCErrCommPageLimitIsExceeded)
 	}
 
+	if len(cond.SetIDArr) > 200 {
+		return nil, lgc.ccErr.CCErrorf(common.CCErrCommXXExceedLimit, "bk_set_ids", 200)
+	}
+
+	if len(cond.ModuleIDArr) > 500 {
+		return nil, lgc.ccErr.CCErrorf(common.CCErrCommXXExceedLimit, "bk_module_ids", 500)
+	}
+
+	if len(cond.HostIDArr) > 500 {
+		return nil, lgc.ccErr.CCErrorf(common.CCErrCommXXExceedLimit, "bk_host_ids", 500)
+	}
+
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
 	if err != nil {
 		blog.Errorf("GetHostModuleRelation http do error, err:%s, input:%+v, rid:%s", err.Error(), cond, lgc.rid)
