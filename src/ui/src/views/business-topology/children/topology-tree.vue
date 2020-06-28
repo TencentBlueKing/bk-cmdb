@@ -163,20 +163,14 @@
             }
         },
         created () {
-            this.unwatch = RouterQuery.watch('keyword', value => {
-                this.filter = value
-            })
             Bus.$on('refresh-count', this.refreshCount)
-            this.handleFilter = debounce(() => {
-                this.$refs.tree.filter(this.filter)
-            }, 300)
             this.initTopology()
         },
         mounted () {
             addResizeListener(this.$el, this.handleResize)
         },
         beforeDestroy () {
-            this.unwatch()
+            this.destroyWatcher()
             Bus.$off('refresh-count', this.refreshCount)
             clearInterval(this.timer)
             removeResizeListener(this.$el, this.handleResize)
@@ -210,10 +204,23 @@
                     children.unshift(idlePool)
                     this.isBlueKing = root.bk_inst_name === '蓝鲸'
                     this.$refs.tree.setData(topology)
-                    this.setDefaultState()
+                    this.createWatcher()
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            createWatcher () {
+                this.nodeUnwatch = RouterQuery.watch('node', this.setDefaultState, { immediate: true })
+                this.filterUnwatch = RouterQuery.watch('keyword', value => {
+                    this.filter = value
+                })
+                this.handleFilter = debounce(() => {
+                    this.$refs.tree.filter(this.filter)
+                }, 300)
+            },
+            destroyWatcher () {
+                this.nodeUnwatch && this.nodeUnwatch()
+                this.filterUnwatch && this.filterUnwatch()
             },
             setDefaultState () {
                 const defaultNodeId = this.getDefaultNodeId()
