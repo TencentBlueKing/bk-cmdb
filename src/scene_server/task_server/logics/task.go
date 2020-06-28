@@ -44,7 +44,7 @@ func (lgc *Logics) Create(ctx context.Context, input *metadata.CreateTaskRequest
 	dbTask.Name = input.Name
 	dbTask.User = lgc.user
 	dbTask.Flag = input.Flag
-	dbTask.Header = getDBHTTPHeader(lgc.header)
+	dbTask.Header = GetDBHTTPHeader(lgc.header)
 	dbTask.Status = metadata.APITaskStatusNew
 	dbTask.CreateTime = time.Now()
 	dbTask.LastTime = time.Now()
@@ -217,16 +217,20 @@ func (lgc *Logics) changeStatus(ctx context.Context, taskID, subTaskID string, s
 	return nil
 }
 
-func getDBHTTPHeader(header http.Header) http.Header {
+func GetDBHTTPHeader(header http.Header) http.Header {
 
-	header.Del("Cookie")
-	header.Del("User-Agent")
-	header.Del("Origin")
-	header.Del("Host")
-	header.Del("Content-Length")
-	header.Del("Connection")
+	newHeader := make(http.Header, 0)
+	newHeader.Add(common.BKHTTPCCRequestID, header.Get(common.BKHTTPCCRequestID))
+	newHeader.Add(common.BKHTTPCookieLanugageKey, header.Get(common.BKHTTPCookieLanugageKey))
+	newHeader.Add(common.BKHTTPHeaderUser, header.Get(common.BKHTTPHeaderUser))
+	newHeader.Add(common.BKHTTPLanguage, header.Get(common.BKHTTPLanguage))
+	newHeader.Add(common.BKHTTPOwner, header.Get(common.BKHTTPOwner))
+	newHeader.Add(common.BKHTTPOwnerID, header.Get(common.BKHTTPOwnerID))
+	newHeader.Add(common.BKHTTPRequestAppCode, header.Get(common.BKHTTPRequestAppCode))
+	newHeader.Add(common.BKHTTPRequestRealIP, header.Get(common.BKHTTPRequestRealIP))
+	newHeader.Add(common.BKHTTPSupplierID, header.Get(common.BKHTTPSupplierID))
 
-	return header
+	return newHeader
 }
 
 func getStrTaskID(prefix string) string {

@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/task_server/logics"
 	"configcenter/src/scene_server/task_server/taskconfig"
 )
 
@@ -177,6 +178,8 @@ func (tq *TaskQueue) executePush(ctx context.Context, taskInfo TaskInfo, taskQue
 	var err error
 	blog.InfoJSON("task execute task id:%s", taskQueue.TaskID)
 
+	header := logics.GetDBHTTPHeader(taskQueue.Header)
+
 	allSucc := true
 
 	for _, subTask := range taskQueue.Detail {
@@ -191,10 +194,10 @@ func (tq *TaskQueue) executePush(ctx context.Context, taskInfo TaskInfo, taskQue
 			break
 		}
 		for retry := int64(0); retry < taskInfo.Retry; retry++ {
-			resp, err = tq.service.CoreAPI.TaskServer().Queue(taskInfo.Name).Post(ctx, taskQueue.Header, taskInfo.Path, subTask.Data)
+			resp, err = tq.service.CoreAPI.TaskServer().Queue(taskInfo.Name).Post(ctx, header, taskInfo.Path, subTask.Data)
 			if err != nil {
 				time.Sleep(time.Millisecond * 100)
-				blog.ErrorJSON("task execute http do error. taskID:%s, path:%s, taskName:%s, err:%s", taskQueue.TaskID, taskInfo.Path, taskInfo.Name, err.Error())
+				blog.ErrorJSON("task execute http do error. taskID:%s, path:%s, taskName:%s, header: %s, err:%s", taskQueue.TaskID, taskInfo.Path, taskInfo.Name, header, err.Error())
 				continue
 			}
 			break

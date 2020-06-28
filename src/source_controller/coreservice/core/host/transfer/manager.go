@@ -431,6 +431,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	hostModuleArr := make([]metadata.ModuleHost, 0)
 	db := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).
 		Find(cond).
+		Fields(input.Fields...).
 		Start(uint64(input.Page.Start)).
 		Sort(input.Page.Sort)
 
