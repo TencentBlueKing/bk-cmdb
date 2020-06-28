@@ -43,10 +43,10 @@
 </template>
 
 <script>
-    import { processPropertyRequestId } from '../common/symbol'
+    import { processPropertyRequestId } from '@/components/service/form/symbol'
     import { processTableHeader } from '@/dictionary/table-header'
     import { mapGetters } from 'vuex'
-    import Form from '../common/form.js'
+    import Form from '@/components/service/form/form.js'
     import Bus from '../common/bus'
     export default {
         props: {

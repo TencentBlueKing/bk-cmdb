@@ -38,7 +38,7 @@
 <script>
     import ViewSwitcher from '../common/view-switcher'
     import Bus from '../common/bus'
-    import FormMultiple from '../common/form-multiple.js'
+    import FormMultiple from '@/components/service/form/form-multiple.js'
     import { mapGetters } from 'vuex'
     export default {
         components: {
