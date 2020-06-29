@@ -6,7 +6,15 @@
             </i18n>
         </cmdb-tips>
         <div class="cloud-account-options">
-            <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
+            <div class="options-left">
+                <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
+            </div>
+            <div class="options-right">
+                <bk-input class="options-filter" clearable
+                    v-model.trim="filter"
+                    :placeholder="$t('请输入xx', { name: $t('账户名称') })">
+                </bk-input>
+            </div>
         </div>
         <bk-table class="cloud-account-table" v-bkloading="{ isLoading: $loading(request.search) }"
             :data="list"
@@ -53,6 +61,7 @@
     import AccountSideslider from './children/account-sideslider.vue'
     import CmdbVendor from '@/components/ui/other/vendor'
     import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
+    import throttle from 'lodash.throttle'
     export default {
         components: {
             AccountSideslider,
@@ -60,12 +69,19 @@
         },
         data () {
             return {
+                filter: '',
                 list: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
                 sort: 'bk_account_id',
                 request: {
                     search: Symbol('search')
-                }
+                },
+                scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true })
+            }
+        },
+        watch: {
+            filter () {
+                this.scheduleSearch()
             }
         },
         created () {
@@ -135,6 +151,9 @@
                             page: {
                                 ...this.$tools.getPageParams(this.pagination),
                                 sort: this.sort
+                            },
+                            condition: {
+                                bk_account_name: this.filter
                             }
                         },
                         config: {
@@ -172,6 +191,12 @@
     }
     .cloud-account-options {
         margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        .options-filter {
+            width: 200px;
+        }
     }
     .cloud-account-table {
         margin-top: 10px;

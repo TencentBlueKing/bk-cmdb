@@ -6,6 +6,12 @@
                 <bk-button text size="small" place="agent" style="padding: 0" @click="linkAgent">{{$t('节点管理')}}</bk-button>
             </i18n>
         </cmdb-tips>
+        <div class="cloud-area-options">
+            <bk-input class="options-filter" clearable
+                v-model.trim="filter"
+                :placeholder="$t('请输入xx', { name: $t('云区域名称') })">
+            </bk-input>
+        </div>
         <bk-table class="cloud-area-table"
             v-bkloading="{ isLoading: $loading(request.search) }"
             :data="list"
@@ -58,6 +64,7 @@
 
 <script>
     import CmdbVendor from '@/components/ui/other/vendor'
+    import throttle from 'lodash.throttle'
     import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
     export default {
         components: {
@@ -65,12 +72,19 @@
         },
         data () {
             return {
-                list: [{}, {}],
+                filter: '',
+                list: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
                 sort: 'bk_cloud_id',
                 request: {
                     search: Symbol('search')
-                }
+                },
+                scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true })
+            }
+        },
+        watch: {
+            filter () {
+                this.scheduleSearch()
             }
         },
         created () {
@@ -121,10 +135,14 @@
                                 ...this.$tools.getPageParams(this.pagination),
                                 sort: this.sort
                             },
-                            host_count: true
+                            host_count: true,
+                            condition: {
+                                bk_cloud_name: this.filter
+                            }
                         },
                         config: {
-                            requestId: this.request.search
+                            requestId: this.request.search,
+                            cancelPrevious: true
                         }
                     })
                     if (data.count && !data.info.length) {
@@ -177,6 +195,12 @@
 <style lang="scss" scoped>
     .cloud-area-layout {
         padding: 0 20px;
+    }
+    .cloud-area-options {
+        margin-top: 10px;
+        .options-filter {
+            width: 200px;
+        }
     }
     .cloud-area-tips {
         margin-top: 10px;

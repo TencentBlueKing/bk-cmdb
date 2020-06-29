@@ -4,7 +4,15 @@
             {{$t('云资源发现提示语')}}
         </cmdb-tips>
         <div class="cloud-account-options">
-            <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
+            <div class="options-left">
+                <bk-button theme="primary" @click="handleCreate">{{$t('新建')}}</bk-button>
+            </div>
+            <div class="options-right">
+                <bk-input class="options-filter" clearable
+                    v-model.trim="filter"
+                    :placeholder="$t('请输入xx', { name: $t('任务名称') })">
+                </bk-input>
+            </div>
         </div>
         <bk-table class="cloud-account-table"
             v-bkloading="{ isLoading: $loading(Object.values(request)) }"
@@ -72,6 +80,7 @@
     import Bus from '@/utils/bus.js'
     import symbols from './common/symbol'
     import CmdbVendor from '@/components/ui/other/vendor'
+    import throttle from 'lodash.throttle'
     export default {
         components: {
             TaskSideslider,
@@ -80,13 +89,20 @@
         },
         data () {
             return {
+                filter: '',
                 list: [],
                 pagination: this.$tools.getDefaultPaginationConfig(),
                 sort: 'bk_task_id',
                 request: {
                     findTask: Symbol('findTask'),
                     findAccount: Symbol('findAccount')
-                }
+                },
+                scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true })
+            }
+        },
+        watch: {
+            filter () {
+                this.scheduleSearch()
             }
         },
         created () {
@@ -170,7 +186,9 @@
                     const data = await this.$store.dispatch('cloud/resource/findTask', {
                         params: {
                             fields: [],
-                            condition: {},
+                            condition: {
+                                bk_task_name: this.filter
+                            },
                             exact: false,
                             page: {
                                 ...this.$tools.getPageParams(this.pagination),
@@ -209,6 +227,12 @@
     }
     .cloud-account-options {
         margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        .options-filter {
+            width: 200px;
+        }
     }
     .cloud-account-table {
         margin-top: 10px;
