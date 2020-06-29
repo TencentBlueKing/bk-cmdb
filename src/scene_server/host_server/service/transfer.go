@@ -46,7 +46,7 @@ transfer模块 实现带实例自动清除的主机转移操作
 // - 如果 add_to_modules 是普通模块，主机当前数据空先机/故障机/待回收模块中的一个，必须显式指定 remove_from_node(可指定成业务节点), 否则报主机不能属于互斥模块错误
 // - 模块同时出现在 add_to_modules 和 remove_from_node 时，不会导致对应的服务实例被删除然后重新添加
 func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
-	
+
 	option := metadata.TransferHostWithAutoClearServiceInstanceOption{}
 	if err := ctx.DecodeInto(&option); nil != err {
 		ctx.RespAutoError(err)

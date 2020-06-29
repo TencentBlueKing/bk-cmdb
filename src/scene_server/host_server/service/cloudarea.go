@@ -100,7 +100,7 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 	}
 	if false == res.Result {
 		blog.Errorf("FindManyCloudArea http reply error.  query:%#v, err code:%d, err msg:%s, rid:%s", query, res.Code, res.ErrMsg, rid)
-		ctx.RespAutoError(ctx.Kit.CCError.New(res.Code, res.ErrMsg))
+		ctx.RespAutoError(res.CCError())
 		return
 	}
 
@@ -224,6 +224,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	user := util.GetUser(ctx.Request.Request.Header)
 	input[common.BKCreator] = user
 	input[common.BKLastEditor] = user
