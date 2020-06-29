@@ -224,7 +224,6 @@
             async getPreviewData () {
                 try {
                     this.$store.commit('setGlobalLoading', this.hasScrollbar)
-                    console.log('getPreviewDatagetPreviewData')
                     const data = await this.$store.dispatch('serviceInstance/createProcServiceInstancePreview', {
                         params: this.$injectMetadata(this.confirmParams, { injectBizId: true }),
                         config: {
