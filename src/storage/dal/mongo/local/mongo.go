@@ -182,6 +182,16 @@ func (c *Mongo) Table(collName string) types.Table {
 	return &col
 }
 
+// get db client
+func (c *Mongo) GetDBClient() *mongo.Client {
+	return c.dbc
+}
+
+// get db name
+func (c *Mongo) GetDBName() string {
+	return c.dbname
+}
+
 // Collection implement client.Collection interface
 type Collection struct {
 	collName string // 集合名
