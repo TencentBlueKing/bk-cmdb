@@ -32,11 +32,19 @@ func (s *Service) SyncModuleTaskHandler(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	err := backendWorker.DoModuleSyncTask(ctx.Kit.Header, task.Set, task.ModuleDiff)
-	if err != nil {
-		blog.ErrorJSON("DoModuleSyncTask failed, task: %s, err: %s, rid: %s", task, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, s.EnableTxn, ctx.Kit.Header, func() error {
+		if err := backendWorker.DoModuleSyncTask(ctx.Kit.Header, task.Set, task.ModuleDiff); err != nil {
+			blog.ErrorJSON("DoModuleSyncTask failed, task: %s, err: %s, rid: %s", task, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 	ctx.RespEntity(nil)
+
 }
