@@ -335,7 +335,22 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 	}
 	input.Condition[common.BKAppIDField] = bizID
 	input.Condition[common.BKSetIDField] = setID
-	query := &metadata.QueryCondition{Condition: input.Condition}
+	fields := input.Fields
+	// must have fields bk_moudle_id and bk_module_name
+	if !util.InArray(fields, common.BKModuleIDField) {
+		fields = append(fields, common.BKModuleIDField)
+	}
+	if !util.InArray(fields, common.BKModuleNameField) {
+		fields = append(fields, common.BKModuleNameField)
+	}
+	query := &metadata.QueryCondition{
+		Fields: fields,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+			Sort:  input.Page.Sort,
+		},
+		Condition: input.Condition,
+	}
 	rsp, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.Errorf("SearchResourceDirectory failed, coreservice http ReadInstance fail, input: %v, err: %v, %s", input, err, ctx.Kit.Rid)
@@ -350,6 +365,7 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 
 	moduleIDArr := make([]int64, 0)
 	mapModuleIdInfo := make(map[int64]mapstr.MapStr)
+	IdleMoudleID := int64(0)
 	for _, item := range rsp.Data.Info {
 		moduleID, err := item.Int64(common.BKModuleIDField)
 		if err != nil {
@@ -357,8 +373,23 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 			ctx.RespAutoError(err)
 			return
 		}
-		moduleIDArr = append(moduleIDArr, moduleID)
+		defaultVal, err := item.Int64(common.BKDefaultField)
+		if err != nil {
+			blog.ErrorJSON("SearchResourceDirectory fail with defaultVal convert from interface to int64 failed, err: %s, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		if int(defaultVal) == common.DefaultAppFlag {
+			IdleMoudleID = moduleID
+		} else {
+			moduleIDArr = append(moduleIDArr, moduleID)
+
+		}
 		mapModuleIdInfo[moduleID] = item
+	}
+	// always put idle module in the first position
+	if IdleMoudleID != int64(0) {
+		moduleIDArr = append([]int64{IdleMoudleID}, moduleIDArr...)
 	}
 
 	// count hosts
@@ -384,7 +415,8 @@ func (s *Service) SearchResourceDirectory(ctx *rest.Contexts) {
 		moduleHostsCount[item.ModuleID] += 1
 	}
 	retInfo := make([]mapstr.MapStr, 0)
-	for moduleID, moduleInfo := range mapModuleIdInfo {
+	for _, moduleID := range moduleIDArr {
+		moduleInfo := mapModuleIdInfo[moduleID]
 		moduleInfo["host_count"] = 0
 		if count, exist := moduleHostsCount[moduleID]; exist == true {
 			moduleInfo["host_count"] = count
