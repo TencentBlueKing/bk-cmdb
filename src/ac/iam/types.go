@@ -30,14 +30,6 @@ const (
 	SystemNameCMDBEn = "cmdb"
 	SystemNameCMDB   = "配置平台"
 
-	ScopeTypeIDSystem       = "system"
-	ScopeTypeIDSystemName   = "全局"
-	ScopeTypeIDSystemNameEn = "system"
-
-	ScopeTypeIDBiz       = "biz"
-	ScopeTypeIDBizName   = "业务"
-	ScopeTypeIDBizNameEn = "business"
-
 	SystemIDIAM = "bk_iam"
 
 	// the topology path of resource, in the form of /parent,parent_id/secondary_parent,secondary_parent_id/
@@ -422,8 +414,6 @@ type RscTypeAndID struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
 	ResourceID   string         `json:"resource_id,omitempty"`
 }
-
-type IamResource []RscTypeAndID
 
 // iam resource, system is resource's iam system id, type is resource type, resource id and attribute are used for filtering
 type Resource struct {

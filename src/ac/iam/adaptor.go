@@ -18,15 +18,16 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/meta"
+	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
 // convert cc auth attributes to iam resources TODO add resource attributes when attribute filter is enabled
-func adaptor(attributes []meta.ResourceAttribute) ([]Resource, error) {
-	resources := make([]Resource, len(attributes))
+func Adaptor(attributes []meta.ResourceAttribute) ([]types.Resource, error) {
+	resources := make([]types.Resource, len(attributes))
 	for index, attribute := range attributes {
-		info := Resource{
+		info := types.Resource{
 			System: SystemIDCMDB,
 		}
 
@@ -34,9 +35,9 @@ func adaptor(attributes []meta.ResourceAttribute) ([]Resource, error) {
 		if err != nil {
 			return nil, err
 		}
-		info.Type = *resourceTypeID
+		info.Type = types.ResourceType(*resourceTypeID)
 
-		resourceIDArr, err := GenerateResourceID(info.Type, &attribute)
+		resourceIDArr, err := GenerateResourceID(ResourceTypeID(info.Type), &attribute)
 		if err != nil {
 			return nil, err
 		}
@@ -210,10 +211,11 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 			meta.Create: EditModel,
 		},
 		meta.Business: {
-			meta.Archive: ArchiveBusiness,
-			meta.Create:  CreateBusiness,
-			meta.Update:  EditBusiness,
-			meta.Find:    FindBusiness,
+			meta.Archive:              ArchiveBusiness,
+			meta.Create:               CreateBusiness,
+			meta.Update:               EditBusiness,
+			meta.Find:                 FindBusiness,
+			meta.ViewBusinessResource: ViewBusinessResource,
 		},
 		meta.DynamicGrouping: {
 			meta.Delete:  DeleteBusinessCustomQuery,
