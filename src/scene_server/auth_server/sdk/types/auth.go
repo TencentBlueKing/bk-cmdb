@@ -173,4 +173,5 @@ type ListWithAttributes struct {
 	// one of the query filter with Operator.
 	IDList     []string               `json:"ids"`
 	Attributes []*operator.FieldValue `json:"attributes"`
+	Type       ResourceType           `json:"type"`
 }

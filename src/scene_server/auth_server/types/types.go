@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/scene_server/auth_server/sdk/operator"
 )
 
 const (
@@ -32,24 +33,6 @@ const (
 	ListInstanceMethod         Method = "list_instance"
 	FetchInstanceInfoMethod    Method = "fetch_instance_info"
 	ListInstanceByPolicyMethod Method = "list_instance_by_policy"
-
-	OperatorAnd                Operator = "AND"
-	OperatorOr                 Operator = "OR"
-	OperatorEqual              Operator = "eq"
-	OperatorNotEqual           Operator = "not_eq"
-	OperatorIn                 Operator = "in"
-	OperatorNotIn              Operator = "not_in"
-	OperatorContains           Operator = "contains"
-	OperatorNotContains        Operator = "not_contains"
-	OperatorStartsWith         Operator = "starts_with"
-	OperatorNotStartsWith      Operator = "not_starts_with"
-	OperatorEndsWith           Operator = "ends_with"
-	OperatorNotEndsWith        Operator = "not_ends_with"
-	OperatorLessThan           Operator = "lt"
-	OperatorLessThanOrEqual    Operator = "lte"
-	OperatorGreaterThan        Operator = "gt"
-	OperatorGreaterThanOrEqual Operator = "gte"
-	OperatorAny                Operator = "any"
 
 	IDField   = "id"
 	NameField = "display_name"
@@ -159,15 +142,7 @@ type FetchInstanceInfoFilter struct {
 }
 
 type ListInstanceByPolicyFilter struct {
-	Expression *FilterExpression `json:"expression"`
-}
-
-type Operator string
-type FilterExpression struct {
-	Operator Operator            `json:"op"`
-	Content  []*FilterExpression `json:"content,omitempty"`
-	Field    string              `json:"field,omitempty"`
-	Value    interface{}         `json:"value,omitempty"`
+	Expression *operator.Policy `json:"expression"`
 }
 
 type BaseResp struct {

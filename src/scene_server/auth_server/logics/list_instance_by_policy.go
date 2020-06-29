@@ -13,9 +13,18 @@
 package logics
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/auth_server/sdk/operator"
+	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
@@ -49,4 +58,74 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, req types.PullResourceReq
 		}, nil
 	}
 	return lgc.ListInstance(kit, cond, req.Type, req.Page)
+}
+
+// list resource instances that user is privileged to access by policy
+func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string, error) {
+	resourceType := iam.ResourceTypeID(opts.Type)
+	collection := getResourceTableName(resourceType)
+	idField := types.GetResourceIDField(resourceType)
+	if collection == "" || idField == "" {
+		return nil, fmt.Errorf("request type %s is invalid", opts.Type)
+	}
+
+	policyArr := make([]*operator.Policy, len(opts.Attributes))
+	for index, element := range opts.Attributes {
+		policyArr[index] = &operator.Policy{
+			Operator: opts.Operator,
+			Element:  element,
+		}
+	}
+	policy := &operator.Policy{
+		Operator: operator.And,
+		Element: &operator.Content{
+			Content: policyArr,
+		},
+	}
+	cond, err := types.ParseFilterToMongo(policy, resourceType)
+	if err != nil {
+		blog.ErrorJSON("parse request filter expression %s failed, error: %s", policy, err.Error())
+		return nil, err
+	}
+	if cond == nil {
+		return []string{}, nil
+	}
+
+	param := metadata.PullResourceParam{
+		Condition: cond,
+		Fields:    []string{idField},
+		Limit:     common.BKNoLimit,
+	}
+	header := make(http.Header)
+	header.Add(common.BKHTTPOwnerID, "0")
+	header.Add(common.BKSupplierIDField, "0")
+	header.Add(common.BKHTTPHeaderUser, "admin")
+	header.Add("Content-Type", "application/json")
+	res, err := lgc.CoreAPI.CoreService().Auth().SearchAuthResource(ctx, header, param)
+	if err != nil {
+		blog.ErrorJSON("search auth resource failed, error: %s, param: %s", err.Error(), param)
+		return nil, err
+	}
+	if !res.Result {
+		blog.ErrorJSON("search auth resource failed, error code: %s, error message: %s, param: %s", res.Code, res.ErrMsg, param)
+		return nil, res.Error()
+	}
+
+	idMap := make(map[string]bool)
+	needFilterID := false
+	if len(opts.IDList) > 0 {
+		needFilterID = true
+		for _, id := range opts.IDList {
+			idMap[id] = true
+		}
+	}
+	idList := make([]string, 0)
+	for _, instance := range res.Data.Info {
+		id := util.GetStrByInterface(instance[idField])
+		if needFilterID && !idMap[id] {
+			continue
+		}
+		idList = append(idList, id)
+	}
+	return []string{}, nil
 }
