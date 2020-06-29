@@ -178,6 +178,7 @@ router.beforeEach((to, from, next) => {
             await checkViewAuthorize(to)
             return next()
         } catch (e) {
+            console.error('shit')
             console.error(e)
             setupStatus.preload = true
             if (e.__CANCEL__) {

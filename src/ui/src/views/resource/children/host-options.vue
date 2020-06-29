@@ -2,7 +2,7 @@
     <div class="options-layout clearfix">
         <div class="options-left">
             <template v-if="scope === 1">
-                <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
+                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.C_RESOURCE_HOST }">
                     <bk-button slot-scope="{ disabled }"
                         theme="primary"
                         style="margin-left: 0"
@@ -11,8 +11,9 @@
                         {{$t('导入主机')}}
                     </bk-button>
                 </cmdb-auth>
-                <cmdb-auth class="mr10" :auth="$authResources({ type: $OPERATION.U_RESOURCE_HOST })">
+                <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_RESOURCE_HOST }">
                     <bk-select slot-scope="{ disabled }"
+                        class="assign-selector"
                         font-size="medium"
                         :popover-width="180"
                         :disabled="!table.checked.length || disabled"
@@ -20,7 +21,6 @@
                         :placeholder="$t('分配到')"
                         v-model="assign.curSelected"
                         @selected="handleAssignHosts">
-                        <bk-option id="empty" :name="$t('分配到')" hidden></bk-option>
                         <bk-option v-for="option in assignTarget"
                             :key="option.id"
                             :id="option.id"
@@ -29,26 +29,16 @@
                     </bk-select>
                 </cmdb-auth>
             </template>
-            <cmdb-auth v-else class="mr10" :auth="$authResources({ type: $OPERATION.U_RESOURCE_HOST })">
-                <bk-button slot-scope="{ disabled }"
-                    theme="primary"
-                    style="margin-left: 0"
-                    :disabled="disabled || !table.checked.length"
-                    @click="handleMultipleEdit">
-                    {{$t('编辑')}}
-                </bk-button>
-            </cmdb-auth>
             <cmdb-clipboard-selector class="options-clipboard mr10"
                 :list="clipboardList"
                 :disabled="!table.checked.length"
                 @on-copy="handleCopy">
             </cmdb-clipboard-selector>
-            <cmdb-button-group v-if="scope === 1"
+            <cmdb-button-group
                 class="mr10"
                 :buttons="buttons"
                 :expand="false">
             </cmdb-button-group>
-            <bk-button v-else theme="default" :disabled="!table.checked.length" @click="exportField">{{$t('导出')}}</bk-button>
         </div>
         <div class="options-right">
             <cmdb-host-filter class="ml10"
@@ -104,18 +94,15 @@
             :title="slider.title"
             :width="800"
             :before-close="handleSliderBeforeClose">
-            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-if="slider.show">
-                <bk-tab-panel name="attribute" :label="$t('属性')" style="width: calc(100% + 40px);margin: 0 -20px;">
-                    <cmdb-form-multiple v-if="tab.attribute.type === 'multiple'"
-                        ref="multipleForm"
-                        :properties="properties.host"
-                        :property-groups="propertyGroups"
-                        :object-unique="objectUnique"
-                        @on-submit="handleMultipleSave"
-                        @on-cancel="handleSliderBeforeClose">
-                    </cmdb-form-multiple>
-                </bk-tab-panel>
-            </bk-tab>
+            <cmdb-form-multiple v-if="slider.show"
+                slot="content"
+                ref="multipleForm"
+                :properties="properties.host"
+                :property-groups="propertyGroups"
+                :object-unique="objectUnique"
+                @on-submit="handleMultipleSave"
+                @on-cancel="handleSliderBeforeClose">
+            </cmdb-form-multiple>
         </bk-sideslider>
 
         <bk-sideslider
@@ -143,7 +130,7 @@
             :esc-close="false"
             :close-icon="false"
             :title="assign.title"
-            @cancel="handleCancelAssignHosts">
+            @cancel="closeAssignDialog">
             <div class="assign-content">
                 <i18n class="assign-count" tag="div" path="已选择主机">
                     <span place="count">{{table.checked.length}}</span>
@@ -180,7 +167,7 @@
                     @click="handleConfirmAssign">
                     {{$t('确定')}}
                 </bk-button>
-                <bk-button theme="default" :disabled="$loading(assign.requestId)" @click="handleCancelAssignHosts">{{$t('取消')}}</bk-button>
+                <bk-button theme="default" :disabled="$loading(assign.requestId)" @click="closeAssignDialog">{{$t('取消')}}</bk-button>
             </div>
         </bk-dialog>
     </div>
@@ -194,6 +181,7 @@
     import cmdbHostFilter from '@/components/hosts/filter/index.vue'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import Bus from '@/utils/bus.js'
+    import RouterQuery from '@/router/query'
     export default {
         components: {
             cmdbImport,
@@ -203,6 +191,7 @@
         },
         data () {
             return {
+                scope: '',
                 importInst: {
                     show: false,
                     active: 'import',
@@ -215,17 +204,6 @@
                     show: false,
                     title: ''
                 },
-                tab: {
-                    active: 'attribute',
-                    attribute: {
-                        type: 'details',
-                        inst: {
-                            details: {},
-                            edit: {},
-                            original: {}
-                        }
-                    }
-                },
                 columnsConfig: {
                     show: false,
                     selected: [],
@@ -234,7 +212,7 @@
                 assign: {
                     show: false,
                     id: '',
-                    curSelected: 'empty',
+                    curSelected: '',
                     placeholder: this.$t('请选择xx', { name: this.$t('业务') }),
                     label: this.$t('业务列表'),
                     title: this.$t('分配到业务空闲机'),
@@ -266,9 +244,6 @@
                     }
                 })
             },
-            scope () {
-                return this.$parent.scope
-            },
             properties () {
                 return this.$parent.properties
             },
@@ -282,24 +257,28 @@
                 return this.$parent.columnsConfig.selected
             },
             buttons () {
-                return [{
+                const buttonConfig = [{
                     id: 'edit',
                     text: this.$t('编辑'),
                     handler: this.handleMultipleEdit,
                     disabled: !this.table.checked.length,
-                    auth: this.$authResources({ type: this.$OPERATION.U_RESOURCE_HOST })
+                    auth: { type: this.$OPERATION.U_RESOURCE_HOST }
                 }, {
                     id: 'delete',
                     text: this.$t('删除'),
                     handler: this.handleMultipleDelete,
                     disabled: !this.table.checked.length,
-                    auth: this.$authResources({ type: this.$OPERATION.D_RESOURCE_HOST })
+                    auth: { type: this.$OPERATION.D_RESOURCE_HOST }
                 }, {
                     id: 'export',
                     text: this.$t('导出'),
                     handler: this.exportField,
                     disabled: !this.table.checked.length
                 }]
+                if (this.scope === 1) {
+                    return buttonConfig.slice(0)
+                }
+                return buttonConfig.slice(2)
             },
             filterProperties () {
                 const { module, set, host } = this.properties
@@ -332,10 +311,16 @@
         },
         async created () {
             try {
+                this.unwatchScope = RouterQuery.watch('scope', (scope = 1) => {
+                    this.scope = isNaN(scope) ? 'all' : parseInt(scope)
+                }, { immediate: true })
                 await this.getFullAmountBusiness()
             } catch (e) {
                 console.error(e.message)
             }
+        },
+        beforeDestroy () {
+            this.unwatchScope()
         },
         methods: {
             async getFullAmountBusiness () {
@@ -376,25 +361,17 @@
                 }
                 this.assign.show = true
             },
-            handleCancelAssignHosts () {
+            closeAssignDialog () {
                 this.assign.id = ''
                 this.assign.show = false
-                this.assign.curSelected = 'empty'
-            },
-            hasSelectAssignedHost () {
-                const allList = this.$parent.table.list
-                const list = allList.filter(item => this.table.checked.includes(item['host']['bk_host_id']))
-                const existAssigned = list.some(item => item['biz'].some(biz => biz.default !== 1))
-                return existAssigned
+                this.assign.curSelected = ''
             },
             handleConfirmAssign () {
                 this.assign.curSelected === 'toBusiness' ? this.assignHostsToBusiness() : this.changeHostsDir()
             },
             async assignHostsToBusiness () {
-                const moduleId = this.activeDirectory.bk_module_id
                 await this.$store.dispatch('resourceDirectory/assignHostsToBusiness', {
                     params: {
-                        bk_module_id: moduleId,
                         bk_biz_id: this.assign.id,
                         bk_host_id: this.table.checked
                     },
@@ -404,9 +381,11 @@
                 }).then(() => {
                     Bus.$emit('refresh-dir-count')
                     this.$success(this.$t('分配成功'))
-                    this.$parent.table.checked = []
-                    this.$parent.handlePageChange(1)
-                    this.handleCancelAssignHosts()
+                    this.closeAssignDialog()
+                    RouterQuery.set({
+                        page: 1,
+                        _t: Date.now()
+                    })
                 }).catch(e => {
                     console.error(e)
                 })
@@ -421,9 +400,11 @@
                     })
                     Bus.$emit('refresh-dir-count')
                     this.$success(this.$t('转移成功'))
-                    this.$parent.table.checked = []
-                    this.$parent.handlePageChange(1)
-                    this.handleCancelAssignHosts()
+                    this.closeAssignDialog()
+                    RouterQuery.set({
+                        page: 1,
+                        _t: Date.now()
+                    })
                 } catch (e) {
                     console.error(e)
                 }
@@ -462,34 +443,26 @@
                 }
             },
             async handleMultipleEdit () {
-                if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('请勿选择已分配主机'))
-                    return false
-                }
                 this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
                     objId: 'host',
-                    params: this.$injectMetadata({}, {
-                        inject: this.$route.name !== 'resource'
-                    })
+                    params: {}
                 })
-                this.tab.attribute.type = 'multiple'
                 this.slider.title = this.$t('主机属性')
                 this.slider.show = true
             },
             async handleMultipleSave (changedValues) {
                 await this.$store.dispatch('hostUpdate/updateHost', {
-                    params: this.$injectMetadata({
+                    params: {
                         ...changedValues,
                         'bk_host_id': this.table.checked.join(',')
-                    }, { inject: this.$route.name !== 'resource' })
+                    }
                 })
                 this.slider.show = false
+                RouterQuery.set({
+                    _t: Date.now()
+                })
             },
             handleMultipleDelete () {
-                if (this.hasSelectAssignedHost()) {
-                    this.$error(this.$t('请勿选择已分配主机'))
-                    return false
-                }
                 this.$bkInfo({
                     title: `${this.$t('确定删除选中的主机')}？`,
                     confirmFn: () => {
@@ -502,32 +475,31 @@
                             }
                         }).then(() => {
                             this.$success(this.$t('成功删除选中的主机'))
-                            this.$parent.table.checked = []
-                            this.$parent.handlePageChange(1)
+                            RouterQuery.set({
+                                page: 1,
+                                _t: Date.now()
+                            })
                         })
                     }
                 })
             },
             handleSliderBeforeClose () {
-                if (this.tab.active === 'attribute' && this.tab.attribute.type !== 'details') {
-                    const $form = this.tab.attribute.type === 'update' ? this.$refs.form : this.$refs.multipleForm
-                    const changedValues = $form.changedValues
-                    if (Object.keys(changedValues).length) {
-                        return new Promise((resolve, reject) => {
-                            this.$bkInfo({
-                                title: this.$t('确认退出'),
-                                subTitle: this.$t('退出会导致未保存信息丢失'),
-                                extCls: 'bk-dialog-sub-header-center',
-                                confirmFn: () => {
-                                    this.slider.show = false
-                                },
-                                cancelFn: () => {
-                                    resolve(false)
-                                }
-                            })
+                const $form = this.$refs.multipleForm
+                const changedValues = $form.changedValues
+                if (Object.keys(changedValues).length) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('确认退出'),
+                            subTitle: this.$t('退出会导致未保存信息丢失'),
+                            extCls: 'bk-dialog-sub-header-center',
+                            confirmFn: () => {
+                                this.slider.show = false
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
                         })
-                    }
-                    this.slider.show = false
+                    })
                 }
                 this.slider.show = false
             },
@@ -568,17 +540,27 @@
                 this.$refs.hostFilter.$refs.filterPopper.instance.hide()
             },
             routeToHistory () {
-                this.$router.push({ name: 'hostHistory' })
+                this.$routerActions.redirect({
+                    name: 'hostHistory',
+                    history: true
+                })
             },
             handleApplyColumnsConfig (properties) {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    [this.$parent.columnsConfigKey]: properties.map(property => property['bk_property_id'])
+                    [this.$route.meta.customInstanceColumn]: properties.map(property => property['bk_property_id'])
                 })
                 this.columnsConfig.show = false
+                RouterQuery.set({
+                    _t: Date.now()
+                })
             },
             handleResetColumnsConfig () {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    [this.$parent.columnsConfigKey]: []
+                    [this.$route.meta.customInstanceColumn]: []
+                })
+                this.columnsConfig.show = false
+                RouterQuery.set({
+                    _t: Date.now()
                 })
             },
             async handleApplyPermission () {
@@ -606,6 +588,9 @@
     .options-left {
         float: left;
         font-size: 0;
+        .assign-selector {
+            min-width: 80px;
+        }
     }
     .options-right {
         float: right;

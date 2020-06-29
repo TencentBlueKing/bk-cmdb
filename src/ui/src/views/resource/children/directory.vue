@@ -23,69 +23,52 @@
                     @enter="handleConfirm(true)">
                 </bk-input>
             </li>
-            <cmdb-auth
-                style="display: block;"
-                tag="li"
-                :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })"
-                v-for="(dir, index) in filterDirList"
-                :key="index">
-                <template slot-scope="{ disabled }">
-                    <div
-                        class="dir-item"
-                        :class="{
-                            'edit-status': editDir.id === dir.bk_module_id,
-                            'disabled': disabled,
-                            'selected': acitveDirId === dir.bk_module_id && !disabled
-                        }"
-                        @click="handleSearchHost(dir)">
-                        <template v-if="editDir.id === dir.bk_module_id">
-                            <bk-input
-                                style="width: 100%"
-                                v-click-outside="handleCancelEdit"
-                                v-validate="'required|singlechar|length:256'"
-                                :placeholder="$t('请输入目录名称，回车结束')"
-                                :ref="`dir-node-${dir.bk_module_id}`"
-                                v-model="editDir.name"
-                                @enter="handleConfirm(false)"
-                                @click.native.stop>
-                            </bk-input>
-                        </template>
-                        <template v-else>
-                            <i class="icon-cc-memory"></i>
-                            <span class="dir-name" :title="dir.bk_module_name">{{dir.bk_module_name}}</span>
-                            <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
-                                <div class="dot-content">
-                                    <cmdb-auth :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
-                                        <bk-button slot-scope="{ disabled: btnDisabled }"
-                                            class="menu-btn"
-                                            :disabled="btnDisabled"
-                                            :text="true"
-                                            @click="handleResetName(dir)">
-                                            {{$t('重命名')}}
-                                        </bk-button>
-                                    </cmdb-auth>
-                                    <cmdb-auth :auth="$authResources({ type: $OPERATION.C_RESOURCE_HOST })">
-                                        <template slot-scope="{ disabled: btnDisabled }">
-                                            <bk-button v-if="true"
-                                                class="menu-btn"
-                                                :text="true"
-                                                :disabled="btnDisabled"
-                                                @click="handleDelete(dir, index)">
-                                                {{$t('删除')}}
-                                            </bk-button>
-                                            <span class="menu-btn no-allow-btn" v-else v-bk-tooltips.right="$t('主机不为空，不能删除')">
-                                                {{$t('删除')}}
-                                            </span>
-                                        </template>
-                                    </cmdb-auth>
-                                </div>
-                            </cmdb-dot-menu>
-                            <i v-if="disabled" class="icon-cc-lock" v-bk-tooltips.top="$t('无权限')"></i>
-                            <span class="host-count" v-else>{{dir.host_count}}</span>
-                        </template>
-                    </div>
+            <li v-for="(dir, index) in filterDirList"
+                :key="index"
+                :class="{
+                    'dir-item': true,
+                    'edit-status': editDir.id === dir.bk_module_id,
+                    'selected': acitveDirId === dir.bk_module_id
+                }"
+                @click="handleSearchHost(dir)">
+                <template v-if="editDir.id === dir.bk_module_id">
+                    <bk-input
+                        style="width: 100%"
+                        v-click-outside="handleCancelEdit"
+                        v-validate="'required|singlechar|length:256'"
+                        :placeholder="$t('请输入目录名称，回车结束')"
+                        :ref="`dir-node-${dir.bk_module_id}`"
+                        v-model="editDir.name"
+                        @enter="handleConfirm(false)"
+                        @click.native.stop>
+                    </bk-input>
                 </template>
-            </cmdb-auth>
+                <template v-else>
+                    <i class="icon-cc-memory"></i>
+                    <span class="dir-name" :title="dir.bk_module_name">{{dir.bk_module_name}}</span>
+                    <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
+                        <div class="dot-content">
+                            <bk-button
+                                class="menu-btn"
+                                :text="true"
+                                @click="handleResetName(dir)">
+                                {{$t('重命名')}}
+                            </bk-button>
+                            <bk-button
+                                class="menu-btn"
+                                :text="true"
+                                v-bk-tooltips.right="{
+                                    content: $t('主机不为空，不能删除'),
+                                    disabled: !dir.host_count
+                                }"
+                                @click="handleDelete(dir, index)">
+                                {{$t('删除')}}
+                            </bk-button>
+                        </div>
+                    </cmdb-dot-menu>
+                    <span class="host-count">{{dir.host_count}}</span>
+                </template>
+            </li>
         </ul>
     </div>
 </template>
@@ -93,6 +76,7 @@
 <script>
     import { mapGetters } from 'vuex'
     import Bus from '@/utils/bus.js'
+    import RouterQuery from '@/router/query'
     export default {
         data () {
             return {
@@ -106,12 +90,7 @@
                     id: null,
                     name: ''
                 },
-                acitveDirId: -1,
-                defaultDir: {
-                    bk_module_id: -1,
-                    bk_module_name: '默认',
-                    host_count: 0
-                }
+                acitveDirId: null
             }
         },
         computed: {
@@ -125,37 +104,39 @@
                 return this.directoryList
             }
         },
-        async created () {
-            Bus.$on('refresh-dir-count', this.refreshCount)
-            try {
-                const data = await this.getDirectoryList()
-                this.setDefaultState(data)
-            } catch (e) {
-                console.error(e)
+        watch: {
+            acitveDirId (id) {
+                RouterQuery.set({
+                    directory: id,
+                    page: 1,
+                    _t: Date.now()
+                })
             }
         },
+        async created () {
+            Bus.$on('refresh-dir-count', this.getDirectoryList)
+            this.getDirectoryList()
+        },
         beforeDestroy () {
-            Bus.$off('refresh-dir-count', this.refreshCount)
+            Bus.$off('refresh-dir-count', this.getDirectoryList)
         },
         methods: {
             async getDirectoryList () {
-                return this.$store.dispatch('resourceDirectory/getDirectoryList', {
-                    params: {
-                        page: {
-                            sort: '-bk_module_id'
+                try {
+                    const { info } = await this.$store.dispatch('resourceDirectory/getDirectoryList', {
+                        params: {
+                            page: {
+                                sort: '-bk_module_name'
+                            }
+                        },
+                        config: {
+                            requestId: 'getDirectoryList'
                         }
-                    },
-                    config: {
-                        requestId: 'getDirectoryList'
-                    }
-                })
-            },
-            setDefaultState (data) {
-                const directoryList = data.info || []
-                const firstDir = directoryList[0] || {}
-                this.acitveDirId = firstDir.bk_module_id
-                this.$store.commit('resourceHost/setActiveDirectory', firstDir)
-                this.$store.commit('resourceHost/setDirectoryList', directoryList)
+                    })
+                    this.$store.commit('resourceHost/setDirectoryList', info)
+                } catch (error) {
+                    console.error(error)
+                }
             },
             async createdDir () {
                 try {
@@ -271,14 +252,6 @@
                         }
                     }
                 })
-            },
-            async refreshCount () {
-                try {
-                    const { info } = await this.getDirectoryList()
-                    this.$store.commit('resourceHost/refreshDirectoryCount', info || [])
-                } catch (e) {
-                    console.error(e)
-                }
             }
         }
     }
