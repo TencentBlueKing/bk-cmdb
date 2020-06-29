@@ -52,6 +52,7 @@
             <bk-form-item class="create-form-item clearfix" label="Key" required>
                 <bk-button class="create-form-button fr"
                     :loading="$loading(request.verify)"
+                    :disabled="form.bk_secret_key === fakeSecret"
                     @click="handleTest">
                     {{$t('连通测试')}}
                 </bk-button>
@@ -61,7 +62,8 @@
                     data-vv-name="bk_secret_key"
                     v-model.trim="form.bk_secret_key"
                     v-validate="'required|length:256'"
-                    @focus="handleSecretKeyFocus">
+                    @focus="handleSecretKeyFocus"
+                    @blur="handleSecretKeyBlur">
                 </bk-input>
                 <template v-if="verifyResult.hasOwnProperty('done')">
                     <p class="create-verify-success" v-if="verifyResult.connected">
@@ -130,6 +132,7 @@
                 form: {
                     ...DEFAULT_FORM
                 },
+                fakeSecret: '******',
                 verifyResult: {},
                 properties: [],
                 request: {
@@ -202,9 +205,20 @@
                 }
             },
             handleSecretKeyFocus () {
-                if (this.form.bk_secret_key === '******') {
-                    this.form.bk_secret_key = ''
+                if (this.isCreateMode || this.form.bk_secret_key !== this.fakeSecret) {
+                    return
                 }
+                this.form.bk_secret_key = ''
+                this.$nextTick(async () => {
+                    await this.$validator.validateAll()
+                    this.errors.clear()
+                })
+            },
+            handleSecretKeyBlur () {
+                if (this.isCreateMode || this.form.bk_secret_key) {
+                    return
+                }
+                this.form.bk_secret_key = this.fakeSecret
             },
             async handleTest () {
                 const isValid = await this.$validator.validateAll()
@@ -268,9 +282,13 @@
             },
             async doUpdate () {
                 try {
+                    const params = { ...this.form }
+                    if (this.form.bk_secret_key === this.fakeSecret) {
+                        delete params.bk_secret_key
+                    }
                     await this.$store.dispatch('cloud/account/update', {
                         id: this.account.bk_account_id,
-                        params: this.form,
+                        params: params,
                         config: {
                             requestId: this.request.update
                         }
