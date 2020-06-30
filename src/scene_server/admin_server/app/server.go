@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"configcenter/src/ac/iam"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
@@ -64,11 +63,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.Register.Address = config.ConfigMap["register-server.addrs"]
 
 	process.Config.ProcSrvConfig.CCApiSrvAddr, _ = config.ConfigMap["procsrv.cc_api"]
-
-	process.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", config.ConfigMap)
-	if err != nil && auth.IsAuthed() {
-		blog.Errorf("parse authcenter error: %v, config: %+v", err, config.ConfigMap)
-	}
 
 	process.Config.Iam, err = iam.ParseConfigFromKV("auth", config.ConfigMap)
 	if err != nil && auth.IsAuthed() {

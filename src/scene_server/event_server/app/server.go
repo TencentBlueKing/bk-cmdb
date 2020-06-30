@@ -19,8 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -71,10 +69,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if err != nil {
 			return err
 		}
-		process.Config.Auth, err = engine.WithAuth()
-		if err != nil {
-			return err
-		}
 
 		db, err := local.NewMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
 		if err != nil {
@@ -92,13 +86,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if err != nil {
 			return fmt.Errorf("connect subcli redis server failed, err: %s", err.Error())
 		}
-
-		authCli, err := authcenter.NewAuthCenter(nil, process.Config.Auth, engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
-		}
-		process.Service.SetAuth(authCli)
-		blog.Infof("enable auth center: %v", auth.IsAuthed())
 
 		go func() {
 			errCh <- distribution.SubscribeChannel(subCli)

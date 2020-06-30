@@ -17,7 +17,7 @@ import (
 	"net/http"
 	"reflect"
 
-	authmeta "configcenter/src/auth/meta"
+	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -72,7 +72,7 @@ func (s *Service) FindManyCloudArea(req *restful.Request, resp *restful.Response
 	filter := input.Condition
 	if s.AuthManager.Enabled() && !s.AuthManager.SkipReadAuthorization {
 		// auth: get authorized resources
-		authorizedPlatIDs, err := s.AuthManager.ListAuthorizedPlatIDs(srvData.ctx, srvData.user)
+		authorizedPlatIDs, err := s.AuthManager.ListAuthorizedPlatIDs(srvData.ctx, srvData.header, srvData.user)
 		if err != nil {
 			blog.Errorf("FindManyCloudArea failed, ListAuthorizedPlatIDs failed, user: %s, err: %+v, rid: %s", srvData.user, err, rid)
 			_ = resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommListAuthorizedResourceFromIAMFailed)})

@@ -13,12 +13,11 @@
 package options
 
 import (
-	"github.com/spf13/pflag"
-
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/spf13/pflag"
 )
 
 // ServerOption define option of server in flags
@@ -46,5 +45,4 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 type Config struct {
 	Redis redis.Config
-	Auth  authcenter.AuthConfig
 }

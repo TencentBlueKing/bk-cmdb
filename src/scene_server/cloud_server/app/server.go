@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -88,11 +87,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}
 		process.Service.SetCache(cache)
 
-		authCli, err := authcenter.NewAuthCenter(nil, process.Config.Auth, engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
-		}
-		process.Service.SetAuth(authCli)
 		blog.Infof("enable auth center: %v", auth.IsAuthed())
 
 		process.Service.Logics = logics.NewLogics(service.Engine, db, cache)
@@ -133,7 +127,6 @@ type CloudServer struct {
 var configLock sync.Mutex
 
 func (c *CloudServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	var err error
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
@@ -143,10 +136,5 @@ func (c *CloudServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		// ignore err, cause ConfigMap is map[string]string
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")
 		blog.Infof("config updated: \n%s", out)
-
-		c.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
-		if err != nil {
-			blog.Errorf("parse auth center config failed: %v", err)
-		}
 	}
 }

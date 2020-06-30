@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	authmeta "configcenter/src/auth/meta"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -256,12 +256,26 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 	}
 
 	if s.AuthManager.Enabled() {
-		user := authmeta.UserInfo{UserName: ctx.Kit.User, SupplierAccount: ctx.Kit.SupplierAccount}
-		appList, err := s.AuthManager.Authorize.GetAnyAuthorizedBusinessList(ctx.Kit.Ctx, user)
+		authInput := meta.ListAuthorizedResourcesParam{
+			UserName:     ctx.Kit.User,
+			ResourceType: meta.Business,
+			Action:       meta.ViewBusinessResource,
+		}
+		authorizedResources, err := s.Engine.CoreAPI.AuthServer().ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
 		if err != nil {
-			blog.Errorf("[api-biz] SearchReducedBusinessList failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), ctx.Kit.Rid)
+			blog.Errorf("[api-biz] SearchReducedBusinessList failed, ListAuthorizedResources failed, user: %s, err: %s, rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoGetAuthorizedBusinessListFailed))
 			return
+		}
+		appList := make([]int64, 0)
+		for _, resourceID := range authorizedResources {
+			bizID, err := strconv.ParseInt(resourceID, 10, 64)
+			if err != nil {
+				blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+				return
+			}
+			appList = append(appList, bizID)
 		}
 
 		// sort for prepare to find business with page.
@@ -437,12 +451,26 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	}
 
 	if s.AuthManager.Enabled() {
-		user := authmeta.UserInfo{UserName: ctx.Kit.User, SupplierAccount: ctx.Kit.SupplierAccount}
-		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(ctx.Kit.Ctx, user)
+		authInput := meta.ListAuthorizedResourcesParam{
+			UserName:     ctx.Kit.User,
+			ResourceType: meta.Business,
+			Action:       meta.Find,
+		}
+		authorizedResources, err := s.Engine.CoreAPI.AuthServer().ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
 		if err != nil {
-			blog.Errorf("[api-biz] SearchBusiness failed, GetExactAuthorizedBusinessList failed, user: %s, err: %s, rid: %s", user, err.Error(), ctx.Kit.Rid)
+			blog.Errorf("[api-biz] SearchBusiness failed, ListAuthorizedResources failed, user: %s, err: %s, rid: %s", ctx.Kit.User, err.Error(), ctx.Kit.Rid)
 			ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
 			return
+		}
+		appList := make([]int64, 0)
+		for _, resourceID := range authorizedResources {
+			bizID, err := strconv.ParseInt(resourceID, 10, 64)
+			if err != nil {
+				blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+				return
+			}
+			appList = append(appList, bizID)
 		}
 
 		if len(bizIDs) > 0 {

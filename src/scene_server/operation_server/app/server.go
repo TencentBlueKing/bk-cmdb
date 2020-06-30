@@ -17,8 +17,7 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -61,17 +60,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		return err
 	}
-	operationSvr.Config.Auth, err = engine.WithAuth()
-	if err != nil {
-		return err
-	}
 
-	authorize, err := auth.NewAuthorize(nil, operationSvr.Config.Auth, engine.Metric().Registry())
-	if err != nil {
-		return fmt.Errorf("new authorize failed, err: %v", err)
-	}
-
-	operationSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
+	operationSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI)
 	operationSvr.Engine = engine
 
 	go operationSvr.InitFunc()

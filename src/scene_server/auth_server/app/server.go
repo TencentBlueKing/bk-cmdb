@@ -64,10 +64,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return err
 		}
 
-		authConf, err := engine.WithAuth()
-		if err != nil {
-			return err
-		}
+		authConf := authServer.Config.Auth
 		authConfig := sdktypes.Config{
 			Iam: sdktypes.IamConfig{
 				Address:   authConf.Address,

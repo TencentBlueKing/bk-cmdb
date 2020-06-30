@@ -15,7 +15,7 @@ package logics
 import (
 	"context"
 
-	"configcenter/src/auth/meta"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"

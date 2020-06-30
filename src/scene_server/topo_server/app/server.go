@@ -19,8 +19,7 @@ import (
 	"strconv"
 	"time"
 
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -97,16 +96,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		return err
 	}
-	server.Config.Auth, err = engine.WithAuth()
-	if err != nil {
-		return err
-	}
-
-	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
-	if err != nil {
-		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
-		return err
-	}
 
 	essrv := new(elasticsearch.EsSrv)
 	if server.Config.Es.FullTextSearch == "on" {
@@ -118,7 +107,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		essrv.Client = esClient
 	}
 
-	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)
+	authManager := extensions.NewAuthManager(engine.CoreAPI)
 	server.Service = &service.Service{
 		Language:    engine.Language,
 		Engine:      engine,

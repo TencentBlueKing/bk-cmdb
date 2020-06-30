@@ -14,7 +14,6 @@ package options
 
 import (
 	"configcenter/src/ac/iam"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -53,7 +52,6 @@ type Config struct {
 	Register      RegisterConfig
 	ProcSrvConfig ProcSrvConfig
 	Redis         redis.Config
-	AuthCenter    authcenter.AuthConfig
 	Iam           iam.AuthConfig
 }
 
