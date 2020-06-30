@@ -333,3 +333,25 @@ func (p *setTemplate) ListSetTemplateSyncHistory(ctx context.Context, header htt
 
 	return ret.Data, nil
 }
+
+func (p *setTemplate) ModifySetTemplateSyncStatus(ctx context.Context, header http.Header, setID int64, syncStatus metadata.SyncStatus) errors.CCErrorCoder {
+	ret := struct {
+		metadata.BaseResp
+	}{}
+	subPath := "/update/topo/set_template_sync_status/bk_set_id/%d/status/%s"
+
+	err := p.client.Put().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, setID, syncStatus).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		blog.Errorf("UpdateSetTemplateSyncStatus failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+
+	return ret.CCError()
+}

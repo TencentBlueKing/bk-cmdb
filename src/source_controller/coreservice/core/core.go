@@ -267,6 +267,7 @@ type SetTemplateOperation interface {
 	ListSetTemplateSyncStatus(kit *rest.Kit, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
 	ListSetTemplateSyncHistory(kit *rest.Kit, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
 	DeleteSetTemplateSyncStatus(kit *rest.Kit, option metadata.DeleteSetTemplateSyncStatusOption) errors.CCErrorCoder
+	ModifySetTemplateSyncStatus(kit *rest.Kit, setID int64, sysncStatus metadata.SyncStatus) errors.CCErrorCoder
 }
 
 type HostApplyRuleOperation interface {

@@ -107,3 +107,31 @@ func (p *setTemplateOperation) DeleteSetTemplateSyncStatus(kit *rest.Kit, option
 	}
 	return nil
 }
+
+func (sto *setTemplateOperation) ModifySetTemplateSyncStatus(kit *rest.Kit, setID int64, sysncStatus metadata.SyncStatus) errors.CCErrorCoder {
+
+	// 最好有前后状态对比，避免跨状态转移
+	filter := map[string]interface{}{
+		common.BKSetIDField: setID,
+	}
+	doc := map[string]interface{}{
+		common.BKStatusField: sysncStatus,
+	}
+	// check 数据是否存在
+	cnt, err := sto.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Find(filter).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("ModifyStatus failed, db upsert sync status failed, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if cnt <= 0 {
+		blog.Errorf("ModifyStatus failed, db upsert sync status failed, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommNotFound)
+	}
+
+	if err := sto.dbProxy.Table(common.BKTableNameSetTemplateSyncStatus).Upsert(kit.Ctx, filter, doc); err != nil {
+		blog.Errorf("ModifyStatus failed, db upsert sync status failed, id: %d, status: %s, err: %s, rid: %s", setID, sysncStatus, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+	}
+
+	return nil
+}

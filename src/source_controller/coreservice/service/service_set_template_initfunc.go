@@ -37,6 +37,7 @@ func (s *coreService) initSetTemplate(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}", Handler: s.ListSetTemplateSyncStatus})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template_sync_history/bk_biz_id/{bk_biz_id}", Handler: s.ListSetTemplateSyncHistory})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}", Handler: s.DeleteSetTemplateSyncStatus})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/topo/set_template_sync_status/bk_set_id/{bk_set_id}/status/{status}", Handler: s.ModifySetTemplateSyncStatus})
 
 	utility.AddToRestfulWebService(web)
 }

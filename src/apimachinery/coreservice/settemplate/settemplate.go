@@ -34,6 +34,7 @@ type SetTemplateInterface interface {
 	ListSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
 	DeleteSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64, setIDs []int64) errors.CCErrorCoder
 	ListSetTemplateSyncHistory(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder)
+	ModifySetTemplateSyncStatus(ctx context.Context, header http.Header, setID int64, syncStatus metadata.SyncStatus) errors.CCErrorCoder
 }
 
 func NewSetTemplateInterfaceClient(client rest.ClientInterface) SetTemplateInterface {
