@@ -15,9 +15,12 @@ package iam
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"configcenter/src/ac/meta"
+	"configcenter/src/apimachinery"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
@@ -372,6 +375,7 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 }
 
 // AdoptPermissions 用于鉴权没有通过时，根据鉴权的资源信息生成需要申请的权限信息
-//func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
-//	// TODO implement this
-//}
+func AdoptPermissions(h http.Header, api apimachinery.ClientSetInterface, rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
+	// TODO implement this
+	return []metadata.Permission{}, nil
+}

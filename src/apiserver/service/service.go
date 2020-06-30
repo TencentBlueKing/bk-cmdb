@@ -13,9 +13,9 @@
 package service
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
@@ -26,8 +26,9 @@ import (
 
 // Service service methods
 type Service interface {
-	WebServices(auth authcenter.AuthConfig) []*restful.WebService
-	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize, cache *redis.Client, limiter *Limiter)
+	WebServices() []*restful.WebService
+	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
+		clientSet apimachinery.ClientSetInterface, cache *redis.Client, limiter *Limiter)
 }
 
 // NewService create a new service instance
@@ -36,24 +37,25 @@ func NewService() Service {
 }
 
 type service struct {
-	engine     *backbone.Engine
-	client     HTTPClient
-	discovery  discovery.DiscoveryInterface
-	authorizer auth.Authorizer
-	cache      *redis.Client
-	limiter    *Limiter
+	engine    *backbone.Engine
+	client    HTTPClient
+	discovery discovery.DiscoveryInterface
+	clientSet apimachinery.ClientSetInterface
+	cache     *redis.Client
+	limiter   *Limiter
 }
 
-func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize, cache *redis.Client, limiter *Limiter) {
+func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
+	clientSet apimachinery.ClientSetInterface, cache *redis.Client, limiter *Limiter) {
 	s.engine = engine
 	s.client = httpClient
 	s.discovery = discovery
-	s.authorizer = authorize
+	s.clientSet = clientSet
 	s.cache = cache
 	s.limiter = limiter
 }
 
-func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService {
+func (s *service) WebServices() []*restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
 	}
@@ -65,7 +67,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws.Filter(rdapi.RequestLogFilter())
 	ws.Filter(s.LimiterFilter())
 	ws.Produces(restful.MIME_JSON)
-	if s.authorizer.Enabled() == true {
+	if auth.IsAuthed() {
 		ws.Filter(s.authFilter(getErrFun))
 	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
