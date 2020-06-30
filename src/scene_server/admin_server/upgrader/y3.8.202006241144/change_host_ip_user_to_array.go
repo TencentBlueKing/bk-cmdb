@@ -14,13 +14,17 @@ package y3_8_202006241144
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // change host inner ip and outer ip and operator and bak operator value from string split by comma to array
@@ -30,12 +34,24 @@ func changeHostIPAndUserToArray(ctx context.Context, db dal.RDB, conf *upgrader.
 		blog.Errorf("count hosts failed, err: %s", err.Error())
 		return err
 	}
+	mongo, ok := db.(*local.Mongo)
+	if !ok {
+		return fmt.Errorf("db is not *local.Mongo type")
+	}
+	dbc := mongo.GetDBClient()
 	needChangeFields := []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField, common.BKBakOperatorField}
 	for i := uint64(0); i < count; i += common.BKMaxPageSize {
-		hosts := make([]metadata.HostMapStr, 0)
-		if err := db.Table(common.BKTableNameBaseHost).Find(nil).Start(i).Limit(common.BKMaxPageSize).
-			Fields(append(needChangeFields, common.BKHostIDField)...).All(ctx, &hosts); err != nil {
+		hosts := make([]map[string]interface{}, 0)
+		findOpts := &options.FindOptions{}
+		findOpts.SetSkip(int64(i))
+		findOpts.SetLimit(common.BKMaxPageSize)
+		cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, bson.M{}, findOpts)
+		if err != nil {
 			blog.Errorf("find hosts starting from %d failed, err: %s", i, err.Error())
+			return err
+		}
+		if err := cursor.All(ctx, &hosts); err != nil {
+			blog.Errorf("decode hosts failed, err: %s", i, err.Error())
 			return err
 		}
 		for _, host := range hosts {
