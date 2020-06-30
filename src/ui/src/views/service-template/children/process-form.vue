@@ -110,6 +110,10 @@
             auth: {
                 type: Object,
                 default: () => ({})
+            },
+            submitFormat: {
+                type: Function,
+                default: data => data
             }
         },
         data () {
@@ -303,7 +307,7 @@
                         this.$emit('on-cancel')
                     } else if (result && this.isCreatedService) {
                         const cloneValues = this.$tools.clone(this.values)
-                        const formatValue = this.$parent.$parent.formatSubmitData(cloneValues)
+                        const formatValue = this.submitFormat(cloneValues)
                         if (this.type === 'create') {
                             this.addLocalProcessTemplate(formatValue)
                             this.$emit('on-cancel')
