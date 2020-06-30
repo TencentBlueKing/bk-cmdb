@@ -1,5 +1,5 @@
 <template>
-    <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
+    <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="info clearfix mb20">
             <label class="info-label fl">{{$t('已选主机')}}：</label>
             <div class="info-content">
@@ -32,20 +32,22 @@
                         </template>
                     </ul>
                     <div class="tab-component" v-show="activeTab.id === 'createServiceInstance'">
-                        <service-instance-table class="service-instance-table"
-                            v-for="(instance, index) in instances"
-                            ref="serviceInstanceTable"
-                            deletable
-                            expanded
-                            :key="instance.bk_host_id"
-                            :index="index"
-                            :id="instance.bk_host_id"
-                            :name="getName(instance)"
-                            :source-processes="getSourceProcesses(instance)"
-                            :templates="getServiceTemplates(instance)"
-                            :addible="!withTemplate"
-                            @delete-instance="handleDeleteInstance">
-                        </service-instance-table>
+                        <transition-group name="service-table-list" tag="div">
+                            <service-instance-table class="service-instance-table"
+                                v-for="(instance, index) in instances"
+                                ref="serviceInstanceTable"
+                                deletable
+                                expanded
+                                :key="instance.bk_host_id"
+                                :index="index"
+                                :id="instance.bk_host_id"
+                                :name="getName(instance)"
+                                :source-processes="getSourceProcesses(instance)"
+                                :templates="getServiceTemplates(instance)"
+                                :addible="!withTemplate"
+                                @delete-instance="handleDeleteInstance">
+                            </service-instance-table>
+                        </transition-group>
                     </div>
                     <div class="tab-component" v-show="activeTab.id === 'hostAttrsAutoApply'">
                         <property-confirm-table class="mt10"
@@ -210,14 +212,18 @@
             },
             async getSelectedHost () {
                 try {
+                    this.$store.commit('setGlobalLoading', this.hasScrollbar)
                     const result = await this.getHostInfo()
                     this.hosts = result.info || []
                 } catch (e) {
                     console.error(e)
+                } finally {
+                    this.$store.commit('setGlobalLoading', false)
                 }
             },
             async getPreviewData () {
                 try {
+                    this.$store.commit('setGlobalLoading', this.hasScrollbar)
                     const data = await this.$store.dispatch('serviceInstance/createProcServiceInstancePreview', {
                         params: this.$injectMetadata(this.confirmParams, { injectBizId: true }),
                         config: {
@@ -232,6 +238,8 @@
                     if (e.code === 9900403) {
                         this.$route.meta.view = 'permission'
                     }
+                } finally {
+                    this.$store.commit('setGlobalLoading', false)
                 }
             },
             getHostInfo () {
@@ -552,5 +560,13 @@
             border-top: 1px solid $borderColor;
             z-index: 100;
         }
+    }
+
+    .service-table-list, .service-table-list-leave-active {
+        transition: all .7s ease-in;
+    }
+    .service-table-list-leave-to {
+        opacity: 0;
+        transform: translateX(30px);
     }
 </style>
