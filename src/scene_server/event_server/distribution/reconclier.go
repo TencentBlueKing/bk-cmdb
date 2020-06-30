@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -182,5 +183,34 @@ func cleanExpiredEvents(redisCli *redis.Client) {
 				blog.Errorf("scan expired events failed: %v", err)
 			}
 		}
+	}
+}
+
+func cleanEventQueue(redisCli *redis.Client, disc discovery.ServiceManageInterface) {
+	timeout := 30 * time.Second
+	for {
+		time.Sleep(timeout)
+		if !disc.IsMaster() {
+			continue
+		}
+		length, err := redisCli.LLen(types.EventCacheEventQueueKey).Result()
+		if err != nil {
+			blog.Errorf("LLen failed, error: %v", err)
+			continue
+		}
+		blog.V(5).Infof("start cleaning event queue, length: %d", length)
+		if length < 20000 {
+			continue
+		}
+		if length < 50000 {
+			if _, err = redisCli.LTrim(types.EventCacheEventQueueKey, 0, length-10000).Result(); err != nil {
+				blog.Errorf("trim event queue failed, error: %v, queue length %d ", err, length-10000)
+			}
+			continue
+		}
+		if _, err = redisCli.Del(types.EventCacheEventQueueKey).Result(); err != nil {
+			blog.Errorf("delete event queue failed, error: %v", err)
+		}
+		blog.V(5).Infof("finish cleaning event queue")
 	}
 }
