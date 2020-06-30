@@ -178,6 +178,7 @@ router.beforeEach((to, from, next) => {
             await checkViewAuthorize(to)
             return next()
         } catch (e) {
+            console.error('shit')
             console.error(e)
             setupStatus.preload = true
             if (e.__CANCEL__) {
@@ -196,7 +197,7 @@ router.beforeEach((to, from, next) => {
     })
 })
 
-router.afterEach((to, from) => {
+router.afterEach(async (to, from) => {
     try {
         if (setupStatus.afterload) {
             afterload(router.app, to, from)

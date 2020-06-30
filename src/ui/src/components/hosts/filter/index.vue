@@ -619,6 +619,7 @@
             position: absolute;
             right: 0px;
             top: 0px;
+            font-size: 20px;
             color: #979BA5;
             &:hover {
                 color: #63656E;

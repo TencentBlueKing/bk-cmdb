@@ -373,7 +373,7 @@
             border-radius: 2px;
             border: 1px solid #c4c6cc;
             line-height: 30px;
-            font-size: 12px;
+            font-size: 20px;
             text-align: center;
             cursor: pointer;
             &.form-confirm {

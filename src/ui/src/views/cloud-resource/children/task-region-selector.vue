@@ -1,6 +1,7 @@
 <template>
     <bk-select v-if="display === 'selector'"
         searchable
+        :clearable="false"
         :readonly="readonly"
         :disabled="disabled"
         :placeholder="$t('请选择xx', { name: $t('地域') })"
@@ -16,6 +17,7 @@
 </template>
 
 <script>
+    import symbols from '../common/symbol'
     export default {
         name: 'task-region-selector',
         props: {
@@ -33,7 +35,7 @@
         data () {
             return {
                 regions: [],
-                request: `taskRegionSelection-${this.account}`
+                request: symbols.get(`taskRegionSelection-${this.account}`)
             }
         },
         computed: {
@@ -60,8 +62,7 @@
                         },
                         config: {
                             requestId: this.request,
-                            fromCache: true,
-                            cacheExpire: 'page'
+                            fromCache: true
                         }
                     })
                     this.regions = regions

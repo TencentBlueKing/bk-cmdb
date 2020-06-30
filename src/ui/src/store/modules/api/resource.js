@@ -17,9 +17,27 @@ const directory = {
     }
 }
 
+const host = {
+    namespaced: true,
+    modules: {
+        transfer: {
+            namespaced: true,
+            actions: {
+                directory (context, { params, config }) {
+                    return $http.post('host/transfer/resource/directory', params, config)
+                },
+                idle (context, { params, config }) {
+                    return $http.post('hosts/modules/resource/idle', params, config)
+                }
+            }
+        }
+    }
+}
+
 export default {
     namespaced: true,
     modules: {
-        directory
+        directory,
+        host
     }
 }

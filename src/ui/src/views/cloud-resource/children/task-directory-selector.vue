@@ -40,6 +40,7 @@
 </template>
 
 <script>
+    import symbols from '../common/symbol'
     export default {
         name: 'task-directory-selector',
         props: {
@@ -59,7 +60,7 @@
                 newDirectory: '',
                 directories: [],
                 request: {
-                    findMany: 'taskDirectorySelectorFindMany',
+                    findMany: symbols.get('directory'),
                     create: Symbol('create')
                 }
             }
@@ -87,12 +88,14 @@
                         },
                         config: {
                             requestId: this.request.findMany,
-                            fromCache: true,
-                            cacheExpire: 'page'
+                            fromCache: true
                         }
                     })
                     // 直接进行赋值，后面新增目录后，其他的地方也能获得相同的数据
                     this.directories = info
+                    if (!this.selected && info.length) {
+                        this.selected = info[0].bk_module_id
+                    }
                 } catch (e) {
                     this.directories = []
                     console.error(e)

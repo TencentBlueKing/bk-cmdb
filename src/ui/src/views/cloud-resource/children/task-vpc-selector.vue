@@ -21,8 +21,8 @@
                         <li class="vpc-item"
                             v-for="vpc in regionVPC[currentRegion]"
                             :key="vpc.bk_vpc_id">
-                            {{getVpcName(vpc)}}
-                            <bk-checkbox class="vpc-item-checkbox fr"
+                            <span class="vpc-item-name" v-bk-overflow-tips>{{getVpcName(vpc)}}</span>
+                            <bk-checkbox class="vpc-item-checkbox"
                                 :checked="selectionMap.hasOwnProperty(vpc.bk_vpc_id)"
                                 @change="handleVpcChange(vpc, ...arguments)">
                             </bk-checkbox>
@@ -64,7 +64,11 @@
         </div>
         <div class="clearfix"></div>
         <div class="bottom-options">
-            <bk-button class="mr10" theme="primary" @click="handleConfirm">{{$t('确定')}}</bk-button>
+            <bk-button class="mr10" theme="primary"
+                :disabled="!selection.length"
+                @click="handleConfirm">
+                {{$t('确定')}}
+            </bk-button>
             <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
         </div>
     </div>
@@ -234,10 +238,20 @@
         .vpc-list {
             padding: 0 20px;
             .vpc-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
                 margin: 0 0 18px 0;
                 font-size: 12px;
                 line-height: 16px;
-                @include ellipsis;
+                .vpc-item-name {
+                    margin-right: 20px;
+                    @include ellipsis;
+                }
+                .vpc-item-checkbox {
+                    display: block;
+                    flex: 16px 0 0;
+                }
             }
         }
         .vpc-empty {
