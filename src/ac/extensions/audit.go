@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/ac/parser"
@@ -38,12 +39,25 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 
 	businessIDs := make([]int64, 0)
 	if businessID == 0 {
-		ids, err := am.Authorize.GetAnyAuthorizedBusinessList(ctx, commonInfo.User)
+		input := meta.ListAuthorizedResourcesParam{
+			UserName:     commonInfo.User.UserName,
+			BizID:        0,
+			ResourceType: meta.Business,
+			Action:       meta.ViewBusinessResource,
+		}
+		authorizedResources, err := am.clientSet.AuthServer().ListAuthorizedResources(ctx, header, input)
 		if err != nil {
 			blog.Errorf("make condition from authorization failed, get authorized businesses failed, err: %+v, rid: %s", err, rid)
 			return nil, false, fmt.Errorf("make condition from authorization failed, get authorized businesses failed, err: %+v", err)
 		}
-		businessIDs = ids
+
+		for _, resourceID := range authorizedResources {
+			bizID, err := strconv.ParseInt(resourceID, 10, 64)
+			if err != nil {
+				return nil, false, fmt.Errorf("make condition from authorization failed, parse authorized businesses id(%s) failed, err: %+v", resourceID, err)
+			}
+			businessIDs = append(businessIDs, bizID)
+		}
 	}
 	businessIDs = append(businessIDs, 0)
 	blog.V(5).Infof("audit on business %+v to be check", businessIDs)
@@ -57,33 +71,33 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 	}
 
 	for _, businessID := range businessIDs {
-		auditList, err := am.Authorize.GetAuthorizedAuditList(ctx, commonInfo.User, businessID)
+		input := meta.ListAuthorizedResourcesParam{
+			UserName:     commonInfo.User.UserName,
+			BizID:        businessID,
+			ResourceType: meta.AuditLog,
+			Action:       meta.Find,
+		}
+		auditList, err := am.clientSet.AuthServer().ListAuthorizedResources(ctx, header, input)
 		if err != nil {
-			blog.Errorf("get authorized audit by business %d failed, err: %+v, rid: %s", businessID, err, rid)
-			return nil, false, fmt.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
+			blog.Errorf("make condition from authorization failed, get authorized businesses failed, err: %+v, rid: %s", err, rid)
+			return nil, false, fmt.Errorf("make condition from authorization failed, get authorized businesses failed, err: %+v", err)
 		}
 		blog.Infof("get authorized audit by business %d result: %s", businessID, auditList)
 		blog.InfoJSON("get authorized audit by business %s result: %s", businessID, auditList)
 
 		resourceTypes := make([]metadata.ResourceType, 0)
 		auditTypes := make([]metadata.AuditType, 0)
-		for _, authorizedList := range auditList {
-			for _, resourceID := range authorizedList.ResourceIDs {
-				if len(resourceID) == 0 {
-					continue
+		for _, modelID := range auditList {
+			id := util.GetStrByInterface(modelID)
+			isMainline := false
+			for _, mainline := range asst.Data.Info {
+				if mainline.ObjectID == id || mainline.AsstObjID == id {
+					isMainline = true
+					break
 				}
-				modelID := resourceID[len(resourceID)-1].ResourceID
-				id := util.GetStrByInterface(modelID)
-				isMainline := false
-				for _, mainline := range asst.Data.Info {
-					if mainline.ObjectID == id || mainline.AsstObjID == id {
-						isMainline = true
-						break
-					}
-				}
-				resourceTypes = append(resourceTypes, metadata.GetResourceTypeByObjID(id, isMainline))
-				auditTypes = append(auditTypes, metadata.GetAuditTypeByObjID(id, isMainline))
 			}
+			resourceTypes = append(resourceTypes, metadata.GetResourceTypeByObjID(id, isMainline))
+			auditTypes = append(auditTypes, metadata.GetAuditTypeByObjID(id, isMainline))
 		}
 
 		if len(resourceTypes) == 0 {

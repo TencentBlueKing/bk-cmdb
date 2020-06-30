@@ -128,7 +128,7 @@ func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Heade
 
 func (am *AuthManager) ListAuthorizedPlatIDs(ctx context.Context, header http.Header, username string) ([]int64, error) {
 	input := meta.ListAuthorizedResourcesParam{
-		Username:     username,
+		UserName:     username,
 		BizID:        0,
 		ResourceType: meta.Plat,
 		Action:       meta.FindMany,
@@ -139,19 +139,22 @@ func (am *AuthManager) ListAuthorizedPlatIDs(ctx context.Context, header http.He
 	}
 
 	authorizedPlatIDs := make([]int64, 0)
-	for _, iamResource := range authorizedResources {
-		if len(iamResource) == 0 {
-			continue
-		}
-		resource := iamResource[len(iamResource)-1]
-		if strings.HasPrefix(resource.ResourceID, "plat:") {
-			parts := strings.Split(resource.ResourceID, ":")
+	for _, resourceID := range authorizedResources {
+		// compatible for previous usage
+		if strings.HasPrefix(resourceID, "plat:") {
+			parts := strings.Split(resourceID, ":")
 			if len(parts) < 2 {
-				return nil, fmt.Errorf("parse platID from iamResource failed,  iamResourceID: %s, format error", resource.ResourceID)
+				return nil, fmt.Errorf("parse platID from iamResource failed,  iamResourceID: %s, format error", resourceID)
 			}
 			platID, err := strconv.ParseInt(parts[1], 10, 64)
 			if err != nil {
-				return nil, fmt.Errorf("parse platID from iamResource failed, iamResourceID: %s, err: %+v", resource.ResourceID, err)
+				return nil, fmt.Errorf("parse platID from iamResource failed, iamResourceID: %s, err: %+v", resourceID, err)
+			}
+			authorizedPlatIDs = append(authorizedPlatIDs, platID)
+		} else {
+			platID, err := strconv.ParseInt(resourceID, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("parse platID from iamResource failed, iamResourceID: %s, err: %+v", resourceID, err)
 			}
 			authorizedPlatIDs = append(authorizedPlatIDs, platID)
 		}
