@@ -15,15 +15,18 @@ package settemplate
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/redis"
 )
 
 func (st *setTemplate) GetOneSet(kit *rest.Kit, setID int64) (metadata.SetInst, errors.CCErrorCoder) {
@@ -239,4 +242,26 @@ func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
 		}
 		delete(subTaskDetail, "header")
 	}
+}
+
+// TriggerCheckSetTemplateSyncingStatus  触发对正在同步中任务的状态改变处理
+func (st *setTemplate) TriggerCheckSetTemplateSyncingStatus(kit *rest.Kit, bizID, setTemplateID, setID int64) errors.CCErrorCoder {
+	setTempLock := lock.NewLocker(redis.Client())
+	key := lock.GetLockKey(lock.CheckSetTemplateSyncFormat, setID)
+	locked, err := setTempLock.Lock(key, time.Minute)
+	if err != nil {
+		blog.Errorf("get sync set template  lock error. set template id: %d, setID: %d, err: %s, rid: %s", setTemplateID, setID, err.Error(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommRedisOPErr)
+	}
+	if locked {
+		defer setTempLock.Unlock()
+		_, err := st.UpdateSetSyncStatus(kit, setID)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		blog.Warnf("skip task, reason not get lock . set template id: %d, setID: %d, rid: %s", setTemplateID, setID, kit.Rid)
+	}
+	return nil
 }
