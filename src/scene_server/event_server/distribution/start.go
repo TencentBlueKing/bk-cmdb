@@ -21,6 +21,7 @@ import (
 
 	"gopkg.in/redis.v5"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -29,7 +30,7 @@ import (
 	"configcenter/src/storage/rpc"
 )
 
-func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) error {
+func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client, disc discovery.ServiceManageInterface) error {
 	chErr := make(chan error, 1)
 	err := migrateIDToMongo(ctx, cache, db)
 	if err != nil {
@@ -52,6 +53,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 	}()
 
 	go cleanExpiredEvents(cache)
+	go cleanEventQueue(cache, disc)
 
 	if rc != nil {
 		th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, committed: make(chan string, 100), shouldClose: util.NewBool(false)}

@@ -69,10 +69,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		if err != nil {
-			return fmt.Errorf("connect tmserver failed, err: %s", err.Error())
-		}
-
 		var db dal.RDB
 		var rpcCli rpc.Client
 		if process.Config.MongoDB.Enable == "true" {
@@ -112,7 +108,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		}()
 
 		go func() {
-			errCh <- distribution.Start(ctx, cache, db, rpcCli)
+			errCh <- distribution.Start(ctx, cache, db, rpcCli, engine.ServiceManageInterface)
 		}()
 
 		break
