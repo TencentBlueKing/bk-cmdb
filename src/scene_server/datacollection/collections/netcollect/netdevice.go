@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"

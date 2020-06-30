@@ -20,6 +20,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+
 	"golang.org/x/net/context"
 )
 
@@ -28,7 +29,7 @@ type Interface interface {
 	ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*operator.ActionPolicy, error)
 }
 
-func NewClient(conf IamConfig, opt Options) (Interface, error) {
+func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {
 
 	if err := conf.Validate(); err != nil {
 		return nil, err

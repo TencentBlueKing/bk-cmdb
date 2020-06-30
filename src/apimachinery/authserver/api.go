@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -76,18 +75,10 @@ func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, user met
 	return response.Data, nil
 }
 
-func (a *authServer) ListAuthorizedResources(ctx context.Context, h http.Header, username string, bizID int64,
-	resourceType meta.ResourceType, action meta.Action) ([]iam.IamResource, error) {
-
-	input := meta.ListAuthorizedResourcesParam{
-		Username:     username,
-		BizID:        bizID,
-		ResourceType: resourceType,
-		Action:       action,
-	}
+func (a *authServer) ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) ([]string, error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
-		Data              []iam.IamResource `json:"data"`
+		Data              []string `json:"data"`
 	})
 	subPath := "/findmany/authorized_resource"
 

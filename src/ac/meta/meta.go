@@ -12,12 +12,6 @@
 
 package meta
 
-import (
-	"net/http"
-
-	"configcenter/src/common"
-)
-
 type AuthAttribute struct {
 	User UserInfo
 	// the business id that this resource belongs to, but it's not necessary for
@@ -91,7 +85,7 @@ type Decision struct {
 }
 
 type ListAuthorizedResourcesParam struct {
-	Username     string       `json:"user_name"`
+	UserName     string       `json:"user_name"`
 	BizID        int64        `json:"bk_biz_id"`
 	ResourceType ResourceType `json:"resource_type"`
 	Action       Action       `json:"action"`
@@ -148,4 +142,7 @@ const (
 	WatchBiz          Action = "biz"
 	WatchSet          Action = "set"
 	WatchModule       Action = "module"
+
+	// can view business related resources, including business and business collection resources
+	ViewBusinessResource Action = "viewBusinessResource"
 )

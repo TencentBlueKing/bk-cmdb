@@ -19,10 +19,10 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/extensions"
-	authmeta "configcenter/src/auth/meta"
+	"configcenter/src/ac"
+	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
+	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -167,11 +167,11 @@ func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *re
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Delete, iHostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", iHostIDArr, err, srvData.rid)
-		if err != auth.NoAuthorizeError {
+		if err != ac.NoAuthorizeError {
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
 		}
-		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Delete, iHostIDArr)
+		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, iam.Delete, iHostIDArr)
 		if err != nil {
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 			return
@@ -699,13 +699,13 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, srvData.rid)
-		if err != nil && err != auth.NoAuthorizeError {
+		if err != nil && err != ac.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Edit, hostIDArr)
-		if err != nil && err != auth.NoAuthorizeError {
+		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, iam.Edit, hostIDArr)
+		if err != nil && err != ac.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
 			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
@@ -862,13 +862,13 @@ func (s *Service) UpdateHostPropertyBatch(req *restful.Request, resp *restful.Re
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, srvData.rid)
-		if err != nil && err != auth.NoAuthorizeError {
+		if err != nil && err != ac.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Edit, hostIDArr)
-		if err != nil && err != auth.NoAuthorizeError {
+		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, iam.Edit, hostIDArr)
+		if err != nil && err != ac.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
 			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
@@ -1314,7 +1314,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, dstHostID); err != nil {
-		if err != auth.NoAuthorizeError {
+		if err != ac.NoAuthorizeError {
 			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", dstHostID, err, srvData.rid)
 			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
@@ -1393,13 +1393,13 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, srvData.rid)
-		if err != nil && err != auth.NoAuthorizeError {
+		if err != nil && err != ac.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, authcenter.Edit, hostIDArr)
-		if err != nil && err != auth.NoAuthorizeError {
+		perm, err := s.AuthManager.GenEditHostBatchNoPermissionResp(srvData.ctx, srvData.header, iam.Edit, hostIDArr)
+		if err != nil && err != ac.NoAuthorizeError {
 			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(), srvData.rid)
 			_ = resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return

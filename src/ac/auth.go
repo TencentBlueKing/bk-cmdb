@@ -15,8 +15,11 @@ package ac
 
 import (
 	"context"
+	"errors"
 	"net/http"
 )
+
+var NoAuthorizeError = errors.New("no authorize")
 
 type AuthInterface interface {
 	RegisterSystem(ctx context.Context, host string) error

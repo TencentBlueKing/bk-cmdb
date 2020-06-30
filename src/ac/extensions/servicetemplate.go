@@ -122,7 +122,7 @@ func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header h
 func (am *AuthManager) ListAuthorizedServiceTemplateIDs(ctx context.Context, header http.Header, bizID int64) ([]int64, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	input := meta.ListAuthorizedResourcesParam{
-		Username:     util.GetUser(header),
+		UserName:     util.GetUser(header),
 		BizID:        0,
 		ResourceType: meta.ProcessServiceTemplate,
 		Action:       meta.FindMany,
@@ -133,15 +133,13 @@ func (am *AuthManager) ListAuthorizedServiceTemplateIDs(ctx context.Context, hea
 		return nil, err
 	}
 	ids := make([]int64, 0)
-	for _, item := range resources {
-		for _, resource := range item {
-			id, err := strconv.ParseInt(resource.ResourceID, 10, 64)
-			if err != nil {
-				blog.Errorf("list authorized service template from iam failed, err: %+v, rid: %s", err, rid)
-				return nil, fmt.Errorf("parse resource id into int64 failed, err: %+v", err)
-			}
-			ids = append(ids, id)
+	for _, resourceID := range resources {
+		id, err := strconv.ParseInt(resourceID, 10, 64)
+		if err != nil {
+			blog.Errorf("list authorized service template from iam failed, err: %+v, rid: %s", err, rid)
+			return nil, fmt.Errorf("parse resource id into int64 failed, err: %+v", err)
 		}
+		ids = append(ids, id)
 	}
 	return ids, nil
 }

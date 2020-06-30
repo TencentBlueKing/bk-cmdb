@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/extensions"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"

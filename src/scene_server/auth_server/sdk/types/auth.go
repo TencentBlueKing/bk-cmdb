@@ -16,14 +16,43 @@ import (
 	"errors"
 	"fmt"
 
-	"configcenter/src/scene_server/auth_server/sdk/client"
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Config struct {
-	Iam     client.IamConfig
+	Iam     IamConfig
 	Options Options
+}
+
+type IamConfig struct {
+	// blueking's auth center addresses
+	Address []string
+	// app code is used for authorize used.
+	AppCode string
+	// app secret is used for authorized
+	AppSecret string
+	// the system id which used in auth center.
+	SystemID string
+	// http TLS config
+	TLS util.TLSClientConfig
+}
+
+func (a IamConfig) Validate() error {
+	if len(a.Address) == 0 {
+		return errors.New("no iam address")
+	}
+
+	if len(a.AppCode) == 0 {
+		return errors.New("no iam app code")
+	}
+
+	if len(a.AppSecret) == 0 {
+		return errors.New("no iam app secret")
+	}
+	return nil
 }
 
 type Options struct {
@@ -144,4 +173,5 @@ type ListWithAttributes struct {
 	// one of the query filter with Operator.
 	IDList     []string               `json:"ids"`
 	Attributes []*operator.FieldValue `json:"attributes"`
+	Type       ResourceType           `json:"type"`
 }

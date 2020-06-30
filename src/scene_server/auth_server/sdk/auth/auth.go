@@ -48,8 +48,7 @@ func NewAuth(conf types.Config, fetcher ResourceFetcher) (Authorizer, error) {
 	}
 
 	// initialize iam client.
-	opts := client.Options{Metric: conf.Options.Metric}
-	iam, err := client.NewClient(conf.Iam, opts)
+	iam, err := client.NewClient(conf.Iam, conf.Options)
 	if err != nil {
 		return nil, fmt.Errorf("new iam client failed, err: %v", err)
 	}

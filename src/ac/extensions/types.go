@@ -22,19 +22,19 @@ import (
 type AuthManager struct {
 	clientSet apimachinery.ClientSetInterface
 
-	RegisterModuleEnabled         bool
-	RegisterSetEnabled            bool
-	RegisterAuditCategoryEnabled  bool
-	SkipReadAuthorization         bool
+	RegisterModuleEnabled        bool
+	RegisterSetEnabled           bool
+	RegisterAuditCategoryEnabled bool
+	SkipReadAuthorization        bool
 }
 
 func NewAuthManager(clientSet apimachinery.ClientSetInterface) *AuthManager {
 	return &AuthManager{
-		clientSet:                     clientSet,
-		RegisterModuleEnabled:         false,
-		RegisterSetEnabled:            false,
-		SkipReadAuthorization:         true,
-		RegisterAuditCategoryEnabled:  false,
+		clientSet:                    clientSet,
+		RegisterModuleEnabled:        false,
+		RegisterSetEnabled:           false,
+		SkipReadAuthorization:        true,
+		RegisterAuditCategoryEnabled: false,
 	}
 }
 

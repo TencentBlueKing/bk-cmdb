@@ -21,6 +21,8 @@ import (
 var factory map[string]Operator
 
 func init() {
+	factory = make(map[string]Operator)
+
 	equal := EqualOper("")
 	factory[equal.Name()] = &equal
 

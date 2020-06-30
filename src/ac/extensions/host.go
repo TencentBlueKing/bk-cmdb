@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -165,7 +165,7 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	return am.batchAuthorize(ctx, header, resources...)
 }
 
-func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, header http.Header, action authcenter.ActionID, hostIDs []int64) (*metadata.BaseResp, error) {
+func (am *AuthManager) GenEditHostBatchNoPermissionResp(ctx context.Context, header http.Header, action iam.ActionType, hostIDs []int64) (*metadata.BaseResp, error) {
 	// TODO implement this
 	resp := metadata.NewNoPermissionResp([]metadata.Permission{})
 	return &resp, nil

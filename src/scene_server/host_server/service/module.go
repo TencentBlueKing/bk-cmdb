@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/auth"
-	authmeta "configcenter/src/auth/meta"
+	"configcenter/src/ac"
+	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -65,7 +65,7 @@ func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Respons
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveBizHostToModule, config.HostID...); err != nil {
 		blog.Errorf("check move host to module authorization failed, hosts: %+v, err: %v", config.HostID, err)
-		if err != auth.NoAuthorizeError {
+		if err != ac.NoAuthorizeError {
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
@@ -129,7 +129,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostFromModuleToResPool, conf.HostIDs...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostIDs, err)
-		if err != auth.NoAuthorizeError {
+		if err != ac.NoAuthorizeError {
 			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
@@ -442,7 +442,7 @@ func (s *Service) moveHostToDefaultModule(req *restful.Request, resp *restful.Re
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, action, conf.HostIDs...); err != nil {
 		blog.Errorf("auth host from iam failed, hosts: %+v, err: %v, rid: %s", conf.HostIDs, err, srvData.rid)
-		if err != auth.NoAuthorizeError {
+		if err != ac.NoAuthorizeError {
 			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
