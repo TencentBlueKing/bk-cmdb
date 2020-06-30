@@ -14,7 +14,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -27,8 +26,6 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
-	"configcenter/src/common/http/httpclient"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/cloud_server/app/options"
 	"configcenter/src/scene_server/cloud_server/cloudsync"
@@ -36,6 +33,7 @@ import (
 	svc "configcenter/src/scene_server/cloud_server/service"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdpartyclient/secrets"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -115,6 +113,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	blog.Infof("enable auth center: %v", auth.IsAuthed())
 
 	var accountCryptor cryptor.Cryptor
+	blog.Infof("enable cryptor: %v", op.EnableCryptor)
 	if op.EnableCryptor == true {
 		secretKey, err := process.getSecretKey()
 		if err != nil {
@@ -164,14 +163,20 @@ func (c *CloudServer) onCloudConfigUpdate(previous, current cc.ProcessConfig) {
 		c.Config = new(options.Config)
 	}
 	c.Config.SecretKeyUrl = current.ConfigMap["cryptor.secret_key_url"]
+	c.Config.SecretsAddrs = current.ConfigMap["cryptor.secrets_addrs"]
 	c.Config.SecretsToken = current.ConfigMap["cryptor.secrets_token"]
 	c.Config.SecretsProject = current.ConfigMap["cryptor.secrets_project"]
 	c.Config.SecretsEnv = current.ConfigMap["cryptor.secrets_env"]
 }
 
+// getSecretKey get the secret key from bk-secrets service
 func (c *CloudServer) getSecretKey() (string, error) {
 	if c.Config.SecretKeyUrl == "" {
 		return "", errors.New("config cryptor.secret_key_url is not set")
+	}
+
+	if c.Config.SecretsAddrs == "" {
+		return "", errors.New("config cryptor.secrets_addrs is not set")
 	}
 
 	if c.Config.SecretsToken == "" {
@@ -186,29 +191,19 @@ func (c *CloudServer) getSecretKey() (string, error) {
 		return "", errors.New("config cryptor.secrets_env is not set")
 	}
 
-	header := http.Header{}
-	header.Set(common.BKHTTPSecretsToken, c.Config.SecretsToken)
-	header.Set(common.BKHTTPSecretsProject, c.Config.SecretsProject)
-	header.Set(common.BKHTTPSecretsEnv, c.Config.SecretsEnv)
-	out, err := httpclient.NewHttpClient().GET(c.Config.SecretKeyUrl, header, nil)
+	secretsConfig := secrets.SecretsConfig{
+		SecretKeyUrl:   c.Config.SecretKeyUrl,
+		SecretsAddrs:   c.Config.SecretsAddrs,
+		SecretsToken:   c.Config.SecretsToken,
+		SecretsProject: c.Config.SecretsProject,
+		SecretsEnv:     c.Config.SecretsEnv,
+	}
+
+	secretsClient, err := secrets.NewSecretsClient(nil, secretsConfig, nil)
 	if err != nil {
-		blog.Errorf("http get err:%s", err.Error())
+		blog.Errorf("NewSecretsClient err:%s", err.Error())
 		return "", err
 	}
 
-	resp := metadata.SecretKeyResult{}
-	err = json.Unmarshal(out, &resp)
-	if err != nil {
-		blog.Errorf("json Unmarshal err:%s", err.Error())
-		return "", err
-	}
-	if !resp.Result {
-		return "", errors.New(resp.Message)
-	}
-
-	secretKey := resp.Data.Content.SecretKey
-	if len(secretKey)!=16 && len(secretKey)!=24 && len(secretKey)!=32 {
-		return "", errors.New("secret_key is invalid, it must be 128,192 or 256 bit")
-	}
-	return secretKey, nil
+	return secretsClient.GetCloudAccountSecretKey(context.Background(), http.Header{})
 }
