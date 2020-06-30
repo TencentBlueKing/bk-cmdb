@@ -17,7 +17,7 @@ def generate_config_file(
         redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip,
-        enable_cryptor_v, secret_key_url_v, secrets_token_v, secrets_project_v, secrets_env_v
+        enable_cryptor_v, secret_key_url_v, secrets_addrs_v, secrets_token_v, secrets_project_v, secrets_env_v
 ):
     output = os.getcwd() + "/cmdb_adminserver/configures/"
     context = dict(
@@ -50,6 +50,7 @@ def generate_config_file(
         user_info=user_info,
         enable_cryptor = enable_cryptor_v,
         secret_key_url = secret_key_url_v,
+        secrets_addrs = secrets_addrs_v,
         secrets_token = secrets_token_v,
         secrets_project = secrets_project_v,
         secrets_env = secrets_env_v,
@@ -156,6 +157,7 @@ version=$loginVersion
 [cryptor]
 enable_cryptor = ${enable_cryptor}
 secret_key_url = ${secret_key_url}
+secrets_addrs = ${secrets_addrs}
 secrets_token = ${secrets_token}
 secrets_project = ${secrets_project}
 secrets_env = ${secrets_env}
@@ -332,6 +334,7 @@ def main(argv):
     user_info = ''
     enable_cryptor = 'false'
     secret_key_url = ''
+    secrets_addrs = ''
     secrets_token = ''
     secrets_project = ''
     secrets_env = ''
@@ -359,7 +362,7 @@ def main(argv):
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip=",
-        "enable_cryptor=", "secret_key_url=", "secrets_token=", "secrets_project=", "secrets_env="
+        "enable_cryptor=", "secret_key_url=", "secrets_addrs=", "secrets_token=", "secrets_project=", "secrets_env="
     ]
     usage = '''
     usage:
@@ -390,9 +393,10 @@ def main(argv):
       --user_info          <user_info>            the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
       --enable_cryptor     <enable_cryptor>       enable cryptor,true or false, default is false
       --secret_key_url     <secret_key_url>       the url to get secret_key which used to encrypt and decrypt cloud account
-      --secrets_token      <secrets_token>        secrets_token, as a header param for send the api request of secret_key_url
-      --secrets_project    <secrets_project>      secrets_project, as a header param for send the api request of secret_key_url
-      --secrets_env        <secrets_env>          secrets_env, as a header param for send the api request of secret_key_url
+      --secrets_addrs      <secrets_addrs>        secrets_addrs, the addrs of bk-secrets service, start with http:// or https://
+      --secrets_token      <secrets_token>        secrets_token , as a header param for sending the api request to bk-secrets service
+      --secrets_project    <secrets_project>      secrets_project, as a header param for sending the api request to bk-secrets service
+      --secrets_env        <secrets_env>          secrets_env, as a header param for sending the api request to bk-secrets service
 
     demo:
     python init.py  \\
@@ -527,6 +531,9 @@ def main(argv):
         elif opt in("--secret_key_url",):
             secret_key_url = arg
             print('secret_key_url:', secret_key_url)
+        elif opt in("--secrets_addrs",):
+            secrets_addrs = arg
+            print('secrets_addrs:', secrets_addrs)
         elif opt in("--secrets_token",):
             secrets_token = arg
             print('secrets_token:', secrets_token)
@@ -583,8 +590,8 @@ def main(argv):
             sys.exit()
 
     if enable_cryptor == "true":
-        if len(secret_key_url) == 0 or len(secrets_token) == 0 or len(secrets_project) == 0 or len(secrets_env) == 0:
-            print('secret_key_url, secrets_token, secrets_project, secrets_env must be set when enable_cryptor is true')
+        if len(secret_key_url) == 0 or len(secrets_addrs) == 0 or len(secrets_token) == 0 or len(secrets_project) == 0 or len(secrets_env) == 0:
+            print('secret_key_url, secrets_addrs, secrets_token, secrets_project, secrets_env must be set when enable_cryptor is true')
             sys.exit()
 
     if auth["auth_scheme"] not in ["internal", "iam"]:
@@ -635,6 +642,7 @@ def main(argv):
         user_info=user_info,
         enable_cryptor_v=enable_cryptor,
         secret_key_url_v=secret_key_url,
+        secrets_addrs_v=secrets_addrs,
         secrets_token_v = secrets_token,
         secrets_project_v = secrets_project,
         secrets_env_v = secrets_env,

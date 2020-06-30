@@ -48,6 +48,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 type Config struct {
 	Auth           authcenter.AuthConfig
 	SecretKeyUrl   string
+	SecretsAddrs   string
 	SecretsToken   string
 	SecretsProject string
 	SecretsEnv     string
