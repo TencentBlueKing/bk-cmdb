@@ -15,6 +15,7 @@ package operation
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -120,6 +121,8 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 	}
 
 	results := &BatchResult{}
+	colIdxErrMap := map[int]string{}
+	colIdxList := []int{}
 	if batchInfo.InputType != common.InputTypeExcel {
 		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
 	}
@@ -175,13 +178,17 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 			err = item.UpdateInstance(filter, colInput, nonInnerAttributes)
 			if nil != err {
 				blog.Errorf("[operation-inst] failed to update the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), kit.Rid)
-				results.Errors = append(results.Errors, c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error()))
+				errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+				colIdxList = append(colIdxList, int(colIdx))
+				colIdxErrMap[int(colIdx)] = errStr
 				continue
 			}
 			instID, err := item.GetInstID()
 			if err != nil {
 				blog.ErrorJSON("update inst success, but get id field failed, inst: %s, err: %s, rid: %s", item.GetValues(), err.Error(), kit.Rid)
-				results.Errors = append(results.Errors, c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error()))
+				errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+				colIdxList = append(colIdxList, int(colIdx))
+				colIdxErrMap[int(colIdx)] = errStr
 				continue
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, instID)
@@ -200,7 +207,9 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 		err = item.Create()
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s, rid: %s", object.ObjectID, colInput, err.Error(), kit.Rid)
-			results.Errors = append(results.Errors, c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error()))
+			errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef("import_row_int_error_str", colIdx, err.Error())
+			colIdxList = append(colIdxList, int(colIdx))
+			colIdxErrMap[int(colIdx)] = errStr
 			continue
 		}
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
@@ -216,6 +225,13 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 
 	results.SuccessCreated = createdInstanceIDs
 	results.SuccessUpdated = updatedInstanceIDs
+	sort.Strings(results.Success)
+
+	//sort error
+	sort.Ints(colIdxList)
+	for colIdx := range colIdxList {
+		results.Errors = append(results.Errors, colIdxErrMap[colIdx])
+	}
 
 	return results, nil
 }
