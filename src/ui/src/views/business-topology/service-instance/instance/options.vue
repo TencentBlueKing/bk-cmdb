@@ -58,7 +58,6 @@
                 :placeholder="$t('请输入实例名称或选择标签')"
                 :data="searchMenuList"
                 v-model="searchValue"
-                @menu-child-condition-select="handleSearchConditionSelect"
                 @change="handleSearch">
             </bk-search-select>
             <view-switcher class="ml10" active="instance"></view-switcher>
@@ -73,6 +72,7 @@
     import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
     import { mapGetters } from 'vuex'
     import { Validator } from 'vee-validate'
+    import { MULTIPLE_IP_REGEXP } from '@/dictionary/regexp.js'
     export default {
         components: {
             ViewSwitcher
@@ -83,16 +83,6 @@
                 hasDifference: false,
                 allExpanded: false,
                 historyLabels: {},
-                searchData: [{
-                    id: 'name',
-                    name: this.$t('服务实例名')
-                }, {
-                    id: 'tagValue',
-                    name: this.$t('标签值')
-                }, {
-                    id: 'tagKey',
-                    name: this.$t('标签键')
-                }],
                 searchValue: [],
                 request: {
                     label: Symbol('label')
@@ -109,10 +99,24 @@
                 return this.searchValue.findIndex(data => data.id === 'name')
             },
             searchMenuList () {
+                const hasHistoryLables = Object.keys(this.historyLabels).length > 0
+                const list = [{
+                    id: 'name',
+                    name: this.$t('服务实例名')
+                }, {
+                    id: 'tagValue',
+                    name: this.$t('标签值'),
+                    conditions: Object.keys(this.historyLabels).map(key => ({ id: key, name: key + ':' })),
+                    disabled: !hasHistoryLables
+                }, {
+                    id: 'tagKey',
+                    name: this.$t('标签键'),
+                    disabled: !hasHistoryLables
+                }]
                 if (this.nameFilterIndex > -1) {
-                    return this.searchData.slice(1)
+                    return list.slice(1)
                 }
-                return this.searchData.slice(0)
+                return list.slice(0)
             }
         },
         watch: {
@@ -141,13 +145,27 @@
                 this.allExpanded = false
             })
             Bus.$on('instance-selection-change', this.handleInstanceSelectionChange)
+            Bus.$on('update-labels', this.updateHistoryLabels)
             this.setFilter()
+            this.updateHistoryLabels()
         },
         beforeDestroy () {
             this.unwatch()
             Bus.$off('instance-selection-change', this.handleInstanceSelectionChange)
+            Bus.$off('update-labels', this.updateHistoryLabels)
         },
         methods: {
+            async updateHistoryLabels () {
+                try {
+                    this.historyLabels = await this.$store.dispatch('instanceLabel/getHistoryLabel', {
+                        params: {
+                            bk_biz_id: this.bizId
+                        }
+                    })
+                } catch (error) {
+                    console.error(error)
+                }
+            },
             setFilter () {
                 const filterName = RouterQuery.get('instanceName')
                 if (!filterName) {
@@ -207,7 +225,7 @@
                     this.selection.forEach(row => {
                         const ip = row.name.split('_')[0]
                         validPromise.push(new Promise(async resolve => {
-                            const { valid } = await validator.verify(ip, 'ip')
+                            const { valid } = await validator.verify(ip, MULTIPLE_IP_REGEXP)
                             resolve({ valid, ip })
                         }))
                     })
@@ -258,19 +276,6 @@
                     history: true
                 })
             },
-            handleSearchConditionSelect (cur, index) {
-                const values = this.historyLabels[cur.id]
-                const children = values.map(item => {
-                    return {
-                        id: item,
-                        name: item
-                    }
-                })
-                const searchSelect = this.$refs.searchSelect
-                searchSelect.curItem.children = children
-                searchSelect.updateChildMenu(cur, index, false)
-                searchSelect.showChildMenu(children)
-            },
             handleSearch (filters) {
                 const transformedFilters = []
                 filters.forEach(data => {
@@ -286,9 +291,8 @@
                             })
                         }
                     } else if (data.id === 'tagValue') {
-                        const name = data.values[0].name
-                        const hasColon = /[:：]/.test(name)
-                        if (hasColon) {
+                        const [{ name }] = data.values
+                        if (name) {
                             transformedFilters.push(data)
                         }
                     } else {

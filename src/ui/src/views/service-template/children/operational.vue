@@ -1,8 +1,7 @@
 <template>
-    <div class="create-template-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+    <cmdb-sticky-layout class="create-template-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
         <div class="info-group">
             <h3>{{$t('基本属性')}}</h3>
-
             <div class="template-info clearfix"
                 v-if="isFormMode"
                 :class="{
@@ -136,18 +135,24 @@
                     :list="processList">
                 </process-table>
                 <div v-else-if="!isFormMode" class="process-empty">{{$t('暂未配置进程')}}</div>
-                <div class="btn-box" v-show="insideMode !== 'edit'">
-                    <cmdb-auth class="mr5" :auth="$authResources(auth)">
-                        <bk-button slot-scope="{ disabled }"
-                            theme="primary"
-                            :disabled="disabled"
-                            @click="handleSubmit">
-                            {{getButtonText()}}
-                        </bk-button>
-                    </cmdb-auth>
-                    <bk-button @click="handleReturn" v-show="isFormMode">{{$t('取消')}}</bk-button>
-                </div>
             </div>
+        </div>
+        <div v-if="insideMode !== 'edit'"
+            slot="footer"
+            slot-scope="{ sticky }"
+            :class="{
+                'info-footer': true,
+                'is-sticky': sticky
+            }">
+            <cmdb-auth class="mr5" :auth="$authResources(auth)">
+                <bk-button slot-scope="{ disabled }"
+                    theme="primary"
+                    :disabled="disabled"
+                    @click="handleSubmit">
+                    {{getButtonText()}}
+                </bk-button>
+            </cmdb-auth>
+            <bk-button @click="handleReturn" v-show="isFormMode">{{$t('取消')}}</bk-button>
         </div>
         <bk-sideslider
             v-transfer-dom
@@ -167,6 +172,7 @@
                     :data-index="attribute.dataIndex"
                     :save-disabled="false"
                     :has-used="hasUsed"
+                    :submit-format="formatSubmitData"
                     @on-submit="handleSaveProcess"
                     @on-cancel="handleCancelProcess">
                 </process-form>
@@ -186,7 +192,7 @@
                 </div>
             </div>
         </bk-dialog>
-    </div>
+    </cmdb-sticky-layout>
 </template>
 
 <script>
@@ -724,6 +730,9 @@
 
 <style lang="scss" scoped>
     .create-template-wrapper {
+        max-height: 100%;
+        padding-top: 15px;
+        @include scrollbar-y;
         .template-info {
             &.is-edit {
                 .form-info {
@@ -788,6 +797,7 @@
             background-repeat: no-repeat;
         }
         .info-group {
+            padding: 0 60px 20px 40px;
             h3 {
                 color: #63656e;
                 font-size: 14px;
@@ -843,8 +853,15 @@
             .process-empty {
                 font-size: 14px;
             }
-            .btn-box {
-                padding-top: 30px;
+        }
+        .info-footer {
+            padding: 0 0 0 70px;
+            display: flex;
+            align-items: center;
+            &.is-sticky {
+                background-color: #fff;
+                border-top: 1px solid $borderColor;
+                padding: 10px 0 10px 70px;
             }
         }
     }

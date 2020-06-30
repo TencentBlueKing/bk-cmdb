@@ -1,11 +1,14 @@
 <template>
-    <div class="template-layout" :style="{ padding: isUpdate ? '0' : '15px 0 0 0' }">
+    <div class="template-layout">
         <bk-tab class="template-tab"
             type="unborder-card"
+            :class="{
+                'no-header': !isUpdate
+            }"
             :show-header="isUpdate"
             :active.sync="active">
             <bk-tab-panel :label="$t('服务模板配置')" name="config">
-                <service-template-config :style="{ padding: isUpdate ? '20px 18px' : '0 20px' }"></service-template-config>
+                <service-template-config></service-template-config>
             </bk-tab-panel>
             <bk-tab-panel :label="$t('服务模板实例')" name="instance" v-if="isUpdate">
                 <service-template-instance :active="active === 'instance'"></service-template-instance>
@@ -46,9 +49,19 @@
 
 <style lang="scss" scoped>
     .template-tab {
-        /deep/ .bk-tab-header {
-            padding: 0;
-            margin: 0 20px;
+        /deep/ {
+            .bk-tab-header {
+                padding: 0;
+                margin: 0 20px;
+            }
+            .bk-tab-section {
+                padding: 0;
+            }
+        }
+        &.no-header {
+            /deep/ .bk-tab-section {
+                height: 100%;
+            }
         }
     }
 </style>
